@@ -744,6 +744,7 @@ class ContextTracker:
         """End all open LLM spans, TASK spans, and TOOL spans; clear thread-local."""
         for ctx in self._contexts.values():
             if ctx.llm_span:
+                self._mark_output_usage_unknown(ctx)
                 ctx.llm_span.end()
                 ctx.llm_span = None
             if ctx.task_span:
@@ -884,6 +885,8 @@ class ContextTracker:
 
     def _handle_result(self, message: Any) -> None:
         self._active_key = None
+        for ctx in self._contexts.values():
+            self._mark_output_usage_unknown(ctx)
         result_value = getattr(message, "result", None)
         if result_value is not None:
             self._result_output = result_value
@@ -901,11 +904,17 @@ class ContextTracker:
             if v is not None
         }
         result_metrics: dict[str, float] = {}
-        if not self._include_partial_messages:
-            raw_usage = getattr(message, "usage", None)
-            _, usage_metadata = extract_anthropic_usage(raw_usage)
-            result_metadata.update(usage_metadata)
-            aggregate_usage = _aggregate_model_usage(getattr(message, "model_usage", None))
+        raw_usage = getattr(message, "usage", None)
+        _, usage_metadata = extract_anthropic_usage(raw_usage)
+        result_metadata.update(usage_metadata)
+        aggregate_usage = _aggregate_model_usage(getattr(message, "model_usage", None))
+        if self._include_partial_messages:
+            # Keep the complete turn-level total visible without adding it as
+            # another token metric alongside the per-call LLM span metrics.
+            complete_usage = aggregate_usage or _copy_usage(raw_usage)
+            if complete_usage:
+                result_metadata["model_usage"] = complete_usage
+        else:
             usage = aggregate_usage or _copy_usage(raw_usage)
             result_metrics, _ = extract_anthropic_usage(usage)
         if result_metadata or result_metrics:
@@ -1008,6 +1017,7 @@ class ContextTracker:
         first_token_time = time.time()
 
         if ctx.llm_span:
+            self._mark_output_usage_unknown(ctx)
             ctx.llm_span.end(end_time=resolved_start)
 
         final_content, span = _create_llm_span_for_messages(
@@ -1046,6 +1056,12 @@ class ContextTracker:
         metrics, _ = extract_anthropic_usage(usage, include_output=has_final_output)
         _, metadata = extract_anthropic_usage(raw_message_usage, include_output=False)
         ctx.llm_span.log(metrics=metrics or None, metadata=metadata or None)
+
+    def _mark_output_usage_unknown(self, ctx: _AgentContext) -> None:
+        """Mark missing output only once an LLM span is finalized."""
+        if ctx.llm_span is None or ctx.llm_message_id in self._final_output_usage_message_ids:
+            return
+        ctx.llm_span.log(metadata={"usage_output_tokens_unknown": True})
 
     def _process_task_event(self, message: Any, agent_span_export: str | None) -> None:
         """Handle TaskStarted / TaskProgress / TaskNotification system messages."""
@@ -1094,11 +1110,14 @@ class RequestTracker:
         query_start_time: float | None = None,
         captured_messages: list[dict[str, Any]] | None = None,
         include_partial_messages: bool = False,
+        verbatim_prompts: bool = False,
     ) -> None:
+        metadata = {"verbatim_prompts": True} if verbatim_prompts else None
         self._root_span = start_span(
             name=CLAUDE_AGENT_TASK_SPAN_NAME,
             span_attributes={"type": SpanTypeAttribute.TASK},
             input=prompt or None,
+            metadata=metadata,
             start_time=query_start_time,
         )
         self._context_tracker = ContextTracker(
@@ -1274,6 +1293,10 @@ def _include_partial_messages(options: Any) -> bool:
     return getattr(options, "include_partial_messages", False) is True
 
 
+def _verbatim_prompts(options: Any) -> bool:
+    return getattr(options, "verbatim_prompts", False) is True
+
+
 async def _stream_messages_with_tracing(
     generator: AsyncIterable[Any],
     *,
@@ -1321,6 +1344,7 @@ def _create_query_wrapper_function(original_query: Any) -> Any:
             query_start_time=query_start_time,
             captured_messages=captured_messages,
             include_partial_messages=_include_partial_messages(options),
+            verbatim_prompts=_verbatim_prompts(options),
         )
         generator = _bind_request_tracker_to_query(original_query(*args, **kwargs), request_tracker)
 
@@ -1341,6 +1365,7 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
         def __init__(self, *args: Any, **kwargs: Any):
             options = args[0] if args else kwargs.get("options")
             self.__include_partial_messages = _include_partial_messages(options)
+            self.__verbatim_prompts = _verbatim_prompts(options)
             client = original_client_class(*args, **kwargs)
             super().__init__(client)
             self.__client = client
@@ -1402,6 +1427,7 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
                 query_start_time=self.__query_start_time,
                 captured_messages=self.__captured_messages,
                 include_partial_messages=self.__include_partial_messages,
+                verbatim_prompts=self.__verbatim_prompts,
             )
             query = getattr(self.__client, "_query", None)
             _install_query_message_tracing(query)

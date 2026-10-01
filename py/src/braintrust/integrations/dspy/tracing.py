@@ -68,8 +68,8 @@ class BraintrustDSpyCallback(BaseCallback):
         ```
 
     Advanced Example with LiteLLM Patching:
-        For additional detailed token metrics from LiteLLM's wrapper, patch before importing DSPy
-        and disable DSPy's disk cache:
+        To capture additional provider-level spans from LiteLLM, patch before importing DSPy and
+        disable DSPy's disk cache:
 
         ```python
         from braintrust.integrations.litellm import patch_litellm
@@ -95,8 +95,8 @@ class BraintrustDSpyCallback(BaseCallback):
     - Tool calls
     - Evaluation runs
 
-    For detailed token usage and cost metrics, use LiteLLM patching (see Advanced Example above).
-    The patched LiteLLM wrapper will create additional "Completion" spans with comprehensive metrics.
+    Token usage metrics are read from the DSPy LM's history. LiteLLM patching (see Advanced Example
+    above) can additionally create "Completion" spans with provider-level details.
 
     Spans are automatically nested based on the execution hierarchy.
     """
@@ -108,6 +108,7 @@ class BraintrustDSpyCallback(BaseCallback):
         super().__init__()
         # Map call_id to span objects for proper nesting
         self._spans: dict[str, Any] = {}
+        self._lm_calls: dict[str, tuple[Any, dict[str, Any], Any | None]] = {}
 
     def on_lm_start(
         self,
@@ -141,12 +142,19 @@ class BraintrustDSpyCallback(BaseCallback):
         )
         span.set_current()
         self._spans[call_id] = span
+        try:
+            history = getattr(instance, "history", None)
+            last_history_entry = history[-1] if isinstance(history, list) and history else None
+        except Exception:
+            last_history_entry = None
+        self._lm_calls[call_id] = (instance, dict(inputs), last_history_entry)
 
     def _end_span(
         self,
         call_id: str,
         outputs: Any | None,
         exception: Exception | None = None,
+        metrics: dict[str, int] | None = None,
     ):
         """Pop span by call_id, log outputs/exception, and end it."""
         span = self._spans.pop(call_id, None)
@@ -159,6 +167,8 @@ class BraintrustDSpyCallback(BaseCallback):
                 log_data["error"] = exception
             if outputs is not None:
                 log_data["output"] = outputs
+            if metrics:
+                log_data["metrics"] = metrics
 
             if log_data:
                 span.log(**log_data)
@@ -179,7 +189,48 @@ class BraintrustDSpyCallback(BaseCallback):
             outputs: Output from the LM, or None if there was an exception
             exception: Exception raised during execution, if any
         """
-        self._end_span(call_id, outputs, exception)
+        call = self._lm_calls.pop(call_id, None)
+        metrics: dict[str, int] = {}
+        try:
+            if call is not None and outputs is not None:
+                instance, inputs, last_history_entry = call
+                history = getattr(instance, "history", None)
+                if isinstance(history, list):
+                    if last_history_entry is None:
+                        new_entries = history
+                    else:
+                        marker_index = next(
+                            (index for index, entry in enumerate(history) if entry is last_history_entry), None
+                        )
+                        new_entries = history[marker_index + 1 :] if marker_index is not None else []
+
+                    input_matches = [
+                        entry
+                        for entry in new_entries
+                        if isinstance(entry, dict)
+                        and entry.get("prompt") == inputs.get("prompt")
+                        and entry.get("messages") == inputs.get("messages")
+                    ]
+                    # DSPy stores the same outputs object it returns to on_lm_end. Identity
+                    # disambiguates concurrent calls with equal input and output values.
+                    matching_entries = [entry for entry in input_matches if entry.get("outputs") is outputs]
+                    if not matching_entries:
+                        matching_entries = [entry for entry in input_matches if entry.get("outputs") == outputs]
+                    usage = matching_entries[0].get("usage") if len(matching_entries) == 1 else None
+                    if isinstance(usage, dict):
+                        for source, target in (
+                            ("prompt_tokens", "prompt_tokens"),
+                            ("completion_tokens", "completion_tokens"),
+                            ("total_tokens", "tokens"),
+                        ):
+                            value = usage.get(source)
+                            if isinstance(value, int) and not isinstance(value, bool) and value >= 0:
+                                metrics[target] = value
+        except Exception:
+            # Usage extraction is best-effort and must not affect the DSPy call.
+            pass
+
+        self._end_span(call_id, outputs, exception, metrics or None)
 
     def on_module_start(
         self,

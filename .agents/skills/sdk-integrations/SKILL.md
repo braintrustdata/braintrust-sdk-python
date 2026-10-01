@@ -190,7 +190,7 @@ def start_span(*args, **kwargs):
     return _bt_start_span(*args, **kwargs)
 ```
 
-Module-level `start_span(...)` calls flow through automatically. Calls that go through a `Logger` / `Experiment` / parent-`Span` instance (`logger.start_span(...)`, `parent.start_span(...)`) need `internal={"instrumentation": _INSTRUMENTATION}` explicitly. Tests assert `span["context"]["span_origin"]["instrumentation"]["name"] == "<provider>-auto"`; `SpanImpl._instrumentation` exposes the resolved value.
+Module-level `start_span(...)` calls flow through automatically. Calls that go through a `Logger` / `Experiment` / parent-`Span` instance (`logger.start_span(...)`, `parent.start_span(...)`) need `internal={"instrumentation": _INSTRUMENTATION}` explicitly. Tests assert the exported provenance: `span["context"]["span_origin"]["instrumentation"]["name"] == "<provider>-auto"`.
 
 ## Metrics
 

@@ -949,7 +949,7 @@ _LIVEKIT_METRICS_METADATA_ALLOWLIST: dict[str, tuple[str, ...]] = {
         "ttft",
     ),
     "tts_metrics": ("audio_duration", "cancelled", "characters_count", "streamed"),
-    "stt_metrics": ("audio_duration", "streamed"),
+    "stt_metrics": ("audio_duration", "input_audio_tokens", "streamed", "total_tokens"),
     "eou_metrics": (
         "end_of_turn_delay",
         "end_of_utterance_delay",

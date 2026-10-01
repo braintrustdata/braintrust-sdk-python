@@ -346,6 +346,60 @@ def test_anthropic_beta_messages_create_captures_compaction_metadata(memory_logg
 
 
 @pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
+def test_anthropic_beta_messages_create_preserves_inline_mcp_blocks(memory_logger):
+    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
+        pytest.skip("Inline MCP tool definitions require the latest Anthropic API")
+
+    client = wrap_anthropic(_get_client())
+    response = client.beta.messages.create(
+        model=LATEST_MODEL,
+        max_tokens=512,
+        messages=[
+            {
+                "role": "user",
+                "content": (
+                    "Use the ask_wiki_question tool for repository braintrustdata/braintrust-sdk-python. "
+                    "Ask what language the SDK is written in, then reply briefly."
+                ),
+            }
+        ],
+        mcp_servers=[
+            {
+                "type": "url",
+                "name": "braintrust-test",
+                "url": "https://mcp.deepwiki.com/mcp",
+            }
+        ],
+        tools=[{"type": "mcp_toolset", "mcp_server_name": "braintrust-test"}],
+        betas=["mcp-client-2026-09-15"],
+    )
+
+    span = find_span_by_name(memory_logger.pop(), "anthropic.messages.create")
+    assert "error" not in span
+    assert span["metadata"]["tools"] == [{"type": "mcp_toolset", "mcp_server_name": "braintrust-test"}]
+
+    output_content = span["output"]["content"]
+    output_types = [block["type"] for block in output_content]
+    assert {"mcp_tool_listing", "mcp_tool_use", "mcp_tool_result"} <= set(output_types)
+    assert output_types == [block.type for block in response.content]
+
+    listing = next(block for block in output_content if block["type"] == "mcp_tool_listing")
+    response_listing = next(block for block in response.content if block.type == "mcp_tool_listing")
+    assert listing["mcp_server_name"] == response_listing.mcp_server_name
+    assert listing["tools"] == [tool.model_dump(exclude_none=True) for tool in response_listing.tools]
+
+    tool_use = next(block for block in output_content if block["type"] == "mcp_tool_use")
+    response_tool_use = next(block for block in response.content if block.type == "mcp_tool_use")
+    assert tool_use["input"] == response_tool_use.input
+    assert tool_use["server_name"] == response_tool_use.server_name
+
+    tool_result = next(block for block in output_content if block["type"] == "mcp_tool_result")
+    response_tool_result = next(block for block in response.content if block.type == "mcp_tool_result")
+    assert tool_result["tool_use_id"] == response_tool_result.tool_use_id
+    assert tool_result["content"][0]["text"] == response_tool_result.content[0].text
+
+
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
 def test_anthropic_messages_create_captures_refusal_stop_details(memory_logger):
     if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
         pytest.skip("Refusal stop details require the latest Anthropic API")

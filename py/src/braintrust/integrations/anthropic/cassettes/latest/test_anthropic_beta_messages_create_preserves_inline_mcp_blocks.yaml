@@ -1,0 +1,143 @@
+interactions:
+- request:
+    body: '{"max_tokens":512,"messages":[{"role":"user","content":"Use the ask_wiki_question
+      tool for repository braintrustdata/braintrust-sdk-python. Ask what language
+      the SDK is written in, then reply briefly."}],"model":"claude-haiku-4-5-20251001","mcp_servers":[{"type":"url","name":"braintrust-test","url":"https://mcp.deepwiki.com/mcp"}],"tools":[{"type":"mcp_toolset","mcp_server_name":"braintrust-test"}]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate, zstd
+      anthropic-beta:
+      - mcp-client-2026-09-15
+      anthropic-version:
+      - '2023-06-01'
+      connection:
+      - keep-alive
+      content-length:
+      - '402'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 1.8.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.8.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+      x-stainless-timeout:
+      - '600'
+    method: POST
+    uri: https://api.anthropic.com/v1/messages?beta=true
+  response:
+    body:
+      string: '{"model":"claude-haiku-4-5-20251001","id":"msg_011CfWR7cj2gjAVLoER8Tmdn","type":"message","role":"assistant","content":[{"type":"mcp_tool_listing","mcp_server_name":"braintrust-test","tools":[{"name":"ask_wiki_question","description":"Ask
+        any question about a GitHub repository''s codebase and get an AI-powered answer\ngrounded
+        in its DeepWiki.","input_schema":{"properties":{"repoName":{"anyOf":[{"type":"string"},{"items":{"type":"string"},"type":"array"}],"description":"GitHub
+        repository or list of repositories (max 10) in owner/repo format."},"question":{"description":"The
+        question to ask about the repository.","type":"string"}},"required":["repoName","question"],"type":"object"}},{"name":"read_wiki_contents","description":"View
+        documentation about a GitHub repository.","input_schema":{"properties":{"repoName":{"description":"GitHub
+        repository in owner/repo format (e.g. \"facebook/react\").","type":"string"}},"required":["repoName"],"type":"object"}},{"name":"read_wiki_structure","description":"Get
+        a list of documentation topics for a GitHub repository.","input_schema":{"properties":{"repoName":{"description":"GitHub
+        repository in owner/repo format (e.g. \"facebook/react\").","type":"string"}},"required":["repoName"],"type":"object"}}]},{"type":"mcp_tool_use","id":"mcptoolu_01RtXoGtAkP2hPmac6exzVzA","name":"ask_wiki_question","input":{"repoName":"braintrustdata/braintrust-sdk-python","question":"What
+        language is the SDK written in?"},"server_name":"braintrust-test"},{"type":"mcp_tool_result","tool_use_id":"mcptoolu_01RtXoGtAkP2hPmac6exzVzA","is_error":false,"content":[{"type":"text","text":"The
+        Braintrust SDK is primarily written in Python. This is evident from various
+        files within the repository, including the `setup.py` file which defines the
+        package for Python, and numerous workflow files that specify Python versions
+        for testing and publishing. \n\n## Evidence of Python Usage\n\n*   **`setup.py`**:
+        This file is a standard Python setup script used to package Python projects.
+        It specifies the package name as \"braintrust\" and lists Python versions
+        `3.10` and above as requirements. \n*   **GitHub Actions Workflows**:\n    *   The
+        `py.yaml` workflow explicitly sets up Python for various versions (3.10, 3.11,
+        3.12, 3.13) for building and testing the SDK. \n    *   The `publish-py-sdk.yaml`
+        and `test-publish-py-sdk.yaml` workflows also set up Python 3.13 for building
+        and publishing the SDK to PyPI and TestPyPI, respectively. \n*   **`README.md`**:
+        The quickstart guide in the `README.md` provides instructions for installing
+        the library using `pip` and running Python code snippets. \n*   **Integration
+        Files**: Files within the `integrations` directory, such as `integrations/langchain-py/src/braintrust_langchain/callbacks.py`,
+        explicitly mention `\"language\": \"python\"` within their metadata. \n\n##
+        Notes\n\nThe codebase also contains configuration files for various tools
+        and integrations, such as `pyproject.toml` files for `braintrust-langchain`
+        and `braintrust-adk`, which further specify Python dependencies and versions.
+        \n\nWiki pages you might want to explore:\n- [CI/CD and Release (braintrustdata/braintrust-sdk-python)](/wiki/braintrustdata/braintrust-sdk-python#10)\n\nView
+        this search on DeepWiki: https://deepwiki.com/search/what-language-is-the-sdk-writt_3b46472c-f8fb-42ea-9266-5ed302b20494\n"}]},{"type":"text","text":"The
+        **braintrust-sdk-python** is written in **Python**. The SDK supports Python
+        versions 3.10 and above, as specified in the `setup.py` file. The codebase
+        includes Python-specific files and GitHub Actions workflows for testing and
+        publishing the SDK to PyPI."}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":2347,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":167,"service_tier":"standard","inference_geo":"not_available","server_tool_use":{"web_search_requests":0,"web_fetch_requests":0}},"diagnostics":null}'
+    headers:
+      anthropic-organization-id:
+      - 27796668-7351-40ac-acc4-024aee8995a5
+      anthropic-ratelimit-input-tokens-limit:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '9999000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2026-09-28T19:49:07Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2026-09-28T19:49:07Z'
+      anthropic-ratelimit-requests-limit:
+      - '20000'
+      anthropic-ratelimit-requests-remaining:
+      - '19999'
+      anthropic-ratelimit-requests-reset:
+      - '2026-09-28T19:48:53Z'
+      anthropic-ratelimit-tokens-limit:
+      - '12000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '11999000'
+      anthropic-ratelimit-tokens-reset:
+      - '2026-09-28T19:49:07Z'
+      anthropic-workspace-id:
+      - wrkspc_018bFG1FgNVWqx5pthtdGTzS
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a42544a31dcf52e6-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '4063'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Mon, 28 Sep 2026 19:49:08 GMT
+      request-id:
+      - req_011CfWR7bVMmWYRQJoyVG5Yx
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      traceresponse:
+      - 00-dbac084249b3d5b8857406404987a18c-feb44a2ef3e2c50e-01
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+version: 1

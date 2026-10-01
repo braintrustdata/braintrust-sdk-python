@@ -1157,7 +1157,7 @@ def deserialize_plain_string_as_json(s: str) -> Any:
 def parse_filters(filters: list[str]) -> list[Filter]:
     result = []
     for f in filters:
-        equals_idx = f.index("=")
+        equals_idx = f.find("=")
         if equals_idx == -1:
             raise ValueError(f"Invalid filter {f}")
         path, value = f[:equals_idx], f[equals_idx + 1 :]

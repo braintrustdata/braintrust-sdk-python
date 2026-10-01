@@ -2,10 +2,12 @@
 # pyright: reportPrivateUsage=false
 import asyncio
 import builtins
+import copy
 import importlib
 import inspect
 import json
 import logging
+import operator
 import os
 import sys
 import threading
@@ -31,19 +33,17 @@ from braintrust import (
 from braintrust.api import BraintrustTransportError
 from braintrust.db_fields import AUDIT_METADATA_FIELD
 from braintrust.git_fields import GitMetadataSettings, RepoInfo
-from braintrust.gitutil import get_repo_info
-from braintrust.id_gen import OTELIDGenerator, get_id_generator
 from braintrust.logger import (
     BraintrustState,
     RemoteEvalParameters,
     _check_org_info,
+    _compute_logger_metadata,
     _extract_attachments,
     parent_context,
     render_message,
-    render_mustache,
     stringify_exception,
 )
-from braintrust.prompt import PromptChatBlock, PromptData, PromptMessage, PromptSchema
+from braintrust.prompt import PromptChatBlock, PromptData, PromptMessage
 from braintrust.prompt_cache.lru_cache import LRUCache
 from braintrust.prompt_cache.parameters_cache import ParametersCache
 from braintrust.prompt_cache.prompt_cache import PromptCache
@@ -52,7 +52,6 @@ from braintrust.test_helpers import (
     assert_logged_out,
     init_test_exp,
     init_test_logger,
-    preserve_env_vars,
     simulate_login,  # noqa: F401 # type: ignore[reportUnusedImport]
     simulate_logout,
     with_memory_logger,  # noqa: F401 # type: ignore[reportUnusedImport]
@@ -142,33 +141,6 @@ class TestInit(TestCase):
 
         assert str(cm.exception) == f"duplicate tag: {tag}"
 
-    def test_init_with_dataset_id_only(self):
-        """Test that init accepts dataset={'id': '...'} parameter"""
-        # Test the logic that extracts dataset_id from the dict
-        from braintrust.logger import Dataset
-
-        # Test 1: dict with only id
-        dataset_dict = {"id": "dataset-id-123"}
-        assert isinstance(dataset_dict, dict)
-        assert not isinstance(dataset_dict, Dataset)
-        assert dataset_dict["id"] == "dataset-id-123"
-
-        # Test 2: full Dataset object has different behavior
-        # (We can't easily instantiate a Dataset here, but we can verify
-        # that the isinstance check distinguishes them)
-
-    def test_init_with_dataset_id_and_version(self):
-        """Test that init accepts dataset={'id': '...', 'version': '...'} parameter"""
-        # Test the logic that extracts both dataset_id and dataset_version from the dict
-        from braintrust.logger import Dataset
-
-        # Test: dict with id and version
-        dataset_dict = {"id": "dataset-id-123", "version": "v2"}
-        assert isinstance(dataset_dict, dict)
-        assert not isinstance(dataset_dict, Dataset)
-        assert dataset_dict["id"] == "dataset-id-123"
-        assert dataset_dict["version"] == "v2"
-
     def test_init_with_repo_info_does_not_raise(self):
         """Test that passing repo_info to init() doesn't cause an UnboundLocalError.
 
@@ -193,41 +165,6 @@ class TestInit(TestCase):
 
         assert metadata.project.id == "test-project-id"
         assert metadata.experiment.name == "test-exp"
-
-    def test_init_enable_atexit_flush(self):
-        from braintrust.logger import _HTTPBackgroundLogger
-
-        api_con_response = lambda: {
-            "project": {"id": "test-project-id", "name": "test-project"},
-            "experiment": {"id": "test-exp-id", "name": "test-exp"},
-        }
-
-        with patch("atexit.register") as mock_register:
-            _HTTPBackgroundLogger(LazyValue(api_con_response, use_mutex=False))  # type: ignore
-            mock_register.assert_called()
-
-    def test_init_disable_atexit_flush(self):
-        from braintrust.logger import _HTTPBackgroundLogger
-
-        api_con_response = lambda: {
-            "project": {"id": "test-project-id", "name": "test-project"},
-            "experiment": {"id": "test-exp-id", "name": "test-exp"},
-        }
-
-        with patch.dict(os.environ, {"BRAINTRUST_DISABLE_ATEXIT_FLUSH": "True"}):
-            with patch("atexit.register") as mock_register:
-                _HTTPBackgroundLogger(LazyValue(api_con_response, use_mutex=False))  # type: ignore
-                mock_register.assert_not_called()
-
-        with patch.dict(os.environ, {"BRAINTRUST_DISABLE_ATEXIT_FLUSH": "1"}):
-            with patch("atexit.register") as mock_register:
-                _HTTPBackgroundLogger(LazyValue(api_con_response, use_mutex=False))  # type: ignore
-                mock_register.assert_not_called()
-
-        with patch.dict(os.environ, {"BRAINTRUST_DISABLE_ATEXIT_FLUSH": "yes"}):
-            with patch("atexit.register") as mock_register:
-                _HTTPBackgroundLogger(LazyValue(api_con_response, use_mutex=False))  # type: ignore
-                mock_register.assert_not_called()
 
     def test_init_without_git_metadata_override_uses_org_policy(self):
         for org_settings in (
@@ -299,6 +236,28 @@ class TestInit(TestCase):
         payload = api_client.experiments.post_experiment.call_args.kwargs["body"]
         assert payload["parameters_id"] == "params-123"
         assert payload["parameters_version"] == "v1"
+
+
+@pytest.mark.parametrize(
+    ("disable_atexit_flush", "registers"),
+    [
+        pytest.param(None, True, id="unset"),
+        pytest.param("false", True, id="false"),
+        pytest.param("true", False, id="true"),
+    ],
+)
+def test_http_background_logger_atexit_flush(monkeypatch, disable_atexit_flush, registers):
+    from braintrust.logger import _HTTPBackgroundLogger
+
+    if disable_atexit_flush is None:
+        monkeypatch.delenv("BRAINTRUST_DISABLE_ATEXIT_FLUSH", raising=False)
+    else:
+        monkeypatch.setenv("BRAINTRUST_DISABLE_ATEXIT_FLUSH", disable_atexit_flush)
+
+    with patch("atexit.register") as mock_register:
+        _HTTPBackgroundLogger(LazyValue(MagicMock, use_mutex=False))
+
+    assert mock_register.called is registers
 
 
 class TestHTTPBackgroundLoggerLogs3(TestCase):
@@ -568,17 +527,28 @@ def test_load_prompt_does_not_fall_back_to_cache_for_non_transient_errors(server
             _ = second_prompt.slug
 
 
-def test_load_prompt_falls_back_to_cache_for_transient_wrapped_transport_errors():
-    simulate_login()
-    prompt_cache = PromptCache(memory_cache=LRUCache(max_size=10))
-    request_client = MagicMock()
-    server_error = BraintrustTransportError(
+def _wrapped_transport_error() -> BraintrustTransportError:
+    error = BraintrustTransportError(
         method="GET",
         url="https://api.example.com/v1/prompt",
         attempts=1,
         retryable=False,
     )
-    server_error.__cause__ = ConnectionError("custom adapter exhausted its retries")
+    error.__cause__ = ConnectionError("custom adapter exhausted its retries")
+    return error
+
+
+@pytest.mark.parametrize(
+    "server_error",
+    [
+        pytest.param(_http_error(500), id="http-500"),
+        pytest.param(_wrapped_transport_error(), id="wrapped-connection-error"),
+    ],
+)
+def test_load_prompt_falls_back_to_same_api_keys_cache_for_transient_errors(server_error):
+    simulate_login()
+    prompt_cache = PromptCache(memory_cache=LRUCache(max_size=10))
+    request_client = MagicMock()
     request_client.openapi.prompts.get_prompt.side_effect = [_prompt_response("saved-prompt"), server_error]
 
     with (
@@ -599,30 +569,7 @@ def test_load_prompt_falls_back_to_cache_for_transient_wrapped_transport_errors(
         )
         assert cached_prompt.slug == "saved-prompt"
 
-
-def test_load_prompt_uses_same_api_keys_cache_for_transient_errors():
-    simulate_login()
-    prompt_cache = PromptCache(memory_cache=LRUCache(max_size=10))
-    request_client = MagicMock()
-    request_client.openapi.prompts.get_prompt.side_effect = [_prompt_response("saved-prompt"), _http_error(500)]
-
-    with (
-        patch.object(logger._state, "_prompt_cache", prompt_cache),
-        patch.object(logger, "_login_loader_client", return_value=request_client),
-    ):
-        first_prompt = braintrust.load_prompt(
-            project="test-project",
-            slug="saved-prompt",
-            api_key="prompt-api-key",
-        )
-        assert first_prompt.slug == "saved-prompt"
-
-        cached_prompt = braintrust.load_prompt(
-            project="test-project",
-            slug="saved-prompt",
-            api_key="prompt-api-key",
-        )
-        assert cached_prompt.slug == "saved-prompt"
+    assert request_client.openapi.prompts.get_prompt.call_count == 2
 
 
 def test_load_prompt_does_not_use_another_api_keys_transient_fallback_cache():
@@ -701,573 +648,344 @@ async def test_load_prompt_async_loads_prompts_in_parallel(with_simulate_login):
     assert mock_api_client.prompts.get_prompt.call_count == 2
 
 
-class TestLogger(TestCase):
-    def test_load_prompt_prefers_version_over_environment_for_project_slug(self):
-        mock_api_client = MagicMock()
-        mock_api_client.prompts.get_prompt.return_value = {
-            "objects": [
-                {
-                    "id": "prompt-123",
-                    "project_id": "project-123",
-                    "name": "Saved prompt",
-                    "slug": "saved-prompt",
-                    "_xact_id": "v1",
-                    "description": None,
-                    "tags": None,
-                    "prompt_data": {
-                        "prompt": {
-                            "type": "chat",
-                            "messages": [{"role": "user", "content": "Hello"}],
-                        },
-                        "options": {"model": "gpt-5-mini"},
-                    },
-                }
-            ]
-        }
+@pytest.mark.parametrize(
+    ("load", "endpoint", "response", "lookup", "expected_call", "expected_id"),
+    [
+        pytest.param(
+            braintrust.load_prompt,
+            "prompts.get_prompt",
+            _prompt_response("saved-prompt"),
+            {"project": "test-project", "slug": "saved-prompt"},
+            call(project_name="test-project", project_id=None, slug="saved-prompt", version="v1", environment=None),
+            "prompt-saved-prompt",
+            id="prompt-by-slug",
+        ),
+        pytest.param(
+            braintrust.load_prompt,
+            "prompts.get_prompt_id",
+            _prompt_response("saved-prompt")["objects"][0],
+            {"id": "prompt-saved-prompt"},
+            call("prompt-saved-prompt", version="v1", environment=None),
+            "prompt-saved-prompt",
+            id="prompt-by-id",
+        ),
+        pytest.param(
+            braintrust.load_parameters,
+            "functions.get_function",
+            _parameters_response("saved-parameters"),
+            {"project": "test-project", "slug": "saved-parameters"},
+            call(
+                project_name="test-project", project_id=None, slug="saved-parameters", version="v1", environment=None
+            ),
+            "parameters-saved-parameters",
+            id="parameters-by-slug",
+        ),
+        pytest.param(
+            braintrust.load_parameters,
+            "functions.get_function_id",
+            _parameters_response("saved-parameters")["objects"][0],
+            {"id": "parameters-saved-parameters"},
+            call("parameters-saved-parameters", version="v1", environment=None),
+            "parameters-saved-parameters",
+            id="parameters-by-id",
+        ),
+    ],
+)
+def test_load_prefers_version_over_environment(load, endpoint, response, lookup, expected_call, expected_id):
+    simulate_login()
+    mock_api_client = MagicMock()
+    endpoint_mock = operator.attrgetter(endpoint)(mock_api_client)
+    endpoint_mock.return_value = response
 
-        simulate_login()
-        with patch.object(logger._state, "api_client", return_value=mock_api_client):
-            prompt = braintrust.load_prompt(
-                project="test-project",
-                slug="saved-prompt",
-                version="v1",
-                environment="production",
-            )
-            assert prompt.slug == "saved-prompt"
+    with patch.object(logger._state, "api_client", return_value=mock_api_client):
+        loaded = load(**lookup, version="v1", environment="production")
+        # Prompts load lazily; reading an attribute forces the request.
+        assert loaded.id == expected_id
 
-        mock_api_client.prompts.get_prompt.assert_called_once_with(
-            project_name="test-project",
-            project_id=None,
-            slug="saved-prompt",
-            version="v1",
-            environment=None,
-        )
+    assert endpoint_mock.call_args_list == [expected_call]
 
-    def test_load_prompt_prefers_version_over_environment_for_id(self):
-        mock_api_client = MagicMock()
-        mock_api_client.prompts.get_prompt_id.return_value = {
-            "id": "prompt-123",
-            "project_id": "project-123",
-            "name": "Saved prompt",
-            "slug": "saved-prompt",
-            "_xact_id": "v1",
-            "description": None,
-            "tags": None,
-            "prompt_data": {
-                "prompt": {
-                    "type": "chat",
-                    "messages": [{"role": "user", "content": "Hello"}],
-                },
-                "options": {"model": "gpt-5-mini"},
-            },
-        }
 
-        simulate_login()
-        with patch.object(logger._state, "api_client", return_value=mock_api_client):
-            prompt = braintrust.load_prompt(
-                id="prompt-123",
-                version="v1",
-                environment="production",
-            )
-            assert prompt.id == "prompt-123"
+def test_load_parameters_returns_remote_object():
+    simulate_login()
+    mock_api_client = MagicMock()
+    mock_api_client.functions.get_function.return_value = _parameters_response("saved-parameters")
 
-        mock_api_client.prompts.get_prompt_id.assert_called_once_with(
-            "prompt-123",
-            version="v1",
-            environment=None,
-        )
+    with patch.object(logger._state, "api_client", return_value=mock_api_client):
+        parameters = braintrust.load_parameters(project="test-project", slug="saved-parameters")
 
-    def test_load_parameters_returns_remote_object(self):
-        mock_api_client = MagicMock()
-        mock_api_client.functions.get_function.return_value = {
-            "objects": [
-                {
-                    "id": "params-123",
-                    "project_id": "project-123",
-                    "name": "Saved parameters",
-                    "slug": "saved-parameters",
-                    "_xact_id": "v1",
-                    "function_data": {
-                        "type": "parameters",
-                        "data": {"prefix": "hello"},
-                        "__schema": {
-                            "type": "object",
-                            "properties": {
-                                "prefix": {"type": "string", "default": "hello"},
-                            },
-                            "additionalProperties": True,
-                        },
-                    },
-                }
-            ]
-        }
+    assert isinstance(parameters, RemoteEvalParameters)
+    assert parameters.id == "parameters-saved-parameters"
+    assert parameters.version == "v1"
+    assert parameters.data == {"prefix": "saved-parameters"}
+    cache_namespace = logger._resolve_loader_login_options(
+        app_url=None,
+        api_key=None,
+        org_name=None,
+    ).cache_namespace
+    cached = logger._state._parameters_cache.get(
+        slug="saved-parameters",
+        version="latest",
+        project_name="test-project",
+        cache_namespace=cache_namespace,
+    )
+    assert cached.id == "parameters-saved-parameters"
 
-        simulate_login()
-        with patch.object(logger._state, "api_client", return_value=mock_api_client):
-            parameters = braintrust.load_parameters(project="test-project", slug="saved-parameters")
 
-        assert isinstance(parameters, RemoteEvalParameters)
-        assert parameters.id == "params-123"
-        assert parameters.version == "v1"
-        assert parameters.data == {"prefix": "hello"}
-        cache_namespace = logger._resolve_loader_login_options(
-            app_url=None,
-            api_key=None,
-            org_name=None,
-        ).cache_namespace
-        assert (
-            logger._state._parameters_cache.get(
-                slug="saved-parameters",
-                version="latest",
-                project_name="test-project",
-                cache_namespace=cache_namespace,
-            ).id
-            == "params-123"
-        )
+def test_extract_attachments_no_op():
+    attachments: list[BaseAttachment] = []
 
-    def test_load_parameters_prefers_version_over_environment_for_project_slug(self):
-        mock_api_client = MagicMock()
-        mock_api_client.functions.get_function.return_value = {
-            "objects": [
-                {
-                    "id": "params-123",
-                    "project_id": "project-123",
-                    "name": "Saved parameters",
-                    "slug": "saved-parameters",
-                    "_xact_id": "v1",
-                    "function_data": {
-                        "type": "parameters",
-                        "data": {"prefix": "hello"},
-                        "__schema": {
-                            "type": "object",
-                            "properties": {
-                                "prefix": {"type": "string", "default": "hello"},
-                            },
-                            "additionalProperties": True,
-                        },
-                    },
-                }
-            ]
-        }
+    _extract_attachments({}, attachments)
+    assert len(attachments) == 0
 
-        simulate_login()
-        with patch.object(logger._state, "api_client", return_value=mock_api_client):
-            parameters = braintrust.load_parameters(
-                project="test-project",
-                slug="saved-parameters",
-                version="v1",
-                environment="production",
-            )
+    event = {"foo": "foo", "bar": None, "baz": [1, 2, 3]}
+    baz = event["baz"]
+    _extract_attachments(event, attachments)
+    assert len(attachments) == 0
+    assert event["baz"] is baz
+    assert event == {"foo": "foo", "bar": None, "baz": [1, 2, 3]}
 
-        assert parameters.version == "v1"
-        mock_api_client.functions.get_function.assert_called_once_with(
-            project_name="test-project",
-            project_id=None,
-            slug="saved-parameters",
-            version="v1",
-            environment=None,
-        )
 
-    def test_load_parameters_prefers_version_over_environment_for_id(self):
-        mock_api_client = MagicMock()
-        mock_api_client.functions.get_function_id.return_value = {
-            "id": "params-123",
-            "project_id": "project-123",
-            "name": "Saved parameters",
-            "slug": "saved-parameters",
-            "_xact_id": "v1",
-            "function_data": {
-                "type": "parameters",
-                "data": {"prefix": "hello"},
-                "__schema": {
-                    "type": "object",
-                    "properties": {
-                        "prefix": {"type": "string", "default": "hello"},
-                    },
-                    "additionalProperties": True,
-                },
-            },
-        }
-
-        simulate_login()
-        with patch.object(logger._state, "api_client", return_value=mock_api_client):
-            parameters = braintrust.load_parameters(
-                id="params-123",
-                version="v1",
-                environment="production",
-            )
-
-        assert parameters.id == "params-123"
-        mock_api_client.functions.get_function_id.assert_called_once_with(
-            "params-123",
-            version="v1",
-            environment=None,
-        )
-
-    def test_extract_attachments_no_op(self):
-        attachments: list[BaseAttachment] = []
-
-        _extract_attachments({}, attachments)
-        self.assertEqual(len(attachments), 0)
-
-        event = {"foo": "foo", "bar": None, "baz": [1, 2, 3]}
-        _extract_attachments(event, attachments)
-        self.assertEqual(len(attachments), 0)
-        # Same instance
-        self.assertIs(event["baz"], event["baz"])
-        # Same content
-        self.assertEqual(event, {"foo": "foo", "bar": None, "baz": [1, 2, 3]})
-
-    def test_extract_attachments_with_attachments(self):
-        attachment1 = Attachment(
-            data=b"data",
-            filename="filename",
-            content_type="text/plain",
-        )
-        attachment2 = Attachment(
-            data=b"data2",
-            filename="filename2",
-            content_type="text/plain",
-        )
-        attachment3 = ExternalAttachment(
-            url="s3://bucket/path/to/key.pdf",
-            filename="filename3",
-            content_type="application/pdf",
-        )
-        date = "2024-10-23T05:02:48.796Z"
-        event = {
-            "foo": "bar",
-            "baz": [1, 2],
-            "attachment1": attachment1,
+def test_extract_attachments_with_attachments():
+    attachment1 = Attachment(
+        data=b"data",
+        filename="filename",
+        content_type="text/plain",
+    )
+    attachment2 = Attachment(
+        data=b"data2",
+        filename="filename2",
+        content_type="text/plain",
+    )
+    attachment3 = ExternalAttachment(
+        url="s3://bucket/path/to/key.pdf",
+        filename="filename3",
+        content_type="application/pdf",
+    )
+    date = "2024-10-23T05:02:48.796Z"
+    event = {
+        "foo": "bar",
+        "baz": [1, 2],
+        "attachment1": attachment1,
+        "attachment3": attachment3,
+        "nested": {
+            "attachment2": attachment2,
             "attachment3": attachment3,
-            "nested": {
-                "attachment2": attachment2,
-                "attachment3": attachment3,
-                "info": "another string",
-                "anArray": [
-                    attachment1,
-                    None,
-                    "string",
-                    attachment2,
-                    attachment1,
-                    attachment3,
-                    attachment3,
-                ],
-            },
-            "null": None,
-            "undefined": None,
-            "date": date,
-            "f": "Math.max",
-            "empty": {},
-        }
-        saved_nested = event["nested"]
-
-        attachments: list[BaseAttachment] = []
-        _extract_attachments(event, attachments)
-
-        self.assertEqual(
-            attachments,
-            [
+            "info": "another string",
+            "anArray": [
                 attachment1,
-                attachment3,
-                attachment2,
-                attachment3,
-                attachment1,
+                None,
+                "string",
                 attachment2,
                 attachment1,
                 attachment3,
                 attachment3,
             ],
-        )
-        self.assertIs(attachments[0], attachment1)
-        self.assertIs(attachments[1], attachment3)
-        self.assertIs(attachments[2], attachment2)
-        self.assertIs(attachments[3], attachment3)
-        self.assertIs(attachments[4], attachment1)
-        self.assertIs(attachments[5], attachment2)
-        self.assertIs(attachments[6], attachment1)
-        self.assertIs(attachments[7], attachment3)
-        self.assertIs(attachments[8], attachment3)
+        },
+        "null": None,
+        "undefined": None,
+        "date": date,
+        "f": "Math.max",
+        "empty": {},
+    }
+    saved_nested = event["nested"]
 
-        self.assertIs(event["nested"], saved_nested)
+    attachments: list[BaseAttachment] = []
+    _extract_attachments(event, attachments)
 
-        self.assertEqual(
-            event,
-            {
-                "foo": "bar",
-                "baz": [1, 2],
-                "attachment1": attachment1.reference,
-                "attachment3": attachment3.reference,
-                "nested": {
-                    "attachment2": attachment2.reference,
-                    "attachment3": attachment3.reference,
-                    "info": "another string",
-                    "anArray": [
-                        attachment1.reference,
-                        None,
-                        "string",
-                        attachment2.reference,
-                        attachment1.reference,
-                        attachment3.reference,
-                        attachment3.reference,
-                    ],
-                },
-                "null": None,
-                "undefined": None,
-                "date": date,
-                "f": "Math.max",
-                "empty": {},
-            },
-        )
+    expected = [
+        attachment1,
+        attachment3,
+        attachment2,
+        attachment3,
+        attachment1,
+        attachment2,
+        attachment1,
+        attachment3,
+        attachment3,
+    ]
+    assert len(attachments) == len(expected)
+    assert all(actual is want for actual, want in zip(attachments, expected))
 
-    def test_prompt_build_with_structured_output_templating(self):
-        self.maxDiff = None
-        prompt = Prompt(
-            LazyValue(
-                lambda: PromptSchema(
-                    id="id",
-                    project_id="project_id",
-                    _xact_id="_xact_id",
-                    name="name",
-                    slug="slug",
-                    description="description",
-                    prompt_data=PromptData(
-                        prompt=PromptChatBlock(
-                            messages=[
-                                PromptMessage(
-                                    role="system",
-                                    content="Please compute {{input.expression}} and return the result in JSON.",
-                                ),
-                            ],
-                        ),
-                        options={
-                            "model": "gpt-4o",
-                            "params": {
-                                "response_format": {
-                                    "type": "json_schema",
-                                    "json_schema": {
-                                        "name": "schema",
-                                        "schema": "{{input.schema}}",
-                                        "strict": True,
-                                    },
-                                },
-                            },
-                        },
-                    ),
-                    tags=None,
-                ),
-                use_mutex=True,
-            ),
-            {},
-            False,
-        )
+    assert event["nested"] is saved_nested
 
-        result = prompt.build(
-            **{
-                "input": {
-                    "expression": "2 + 3",
-                    "schema": {
-                        "type": "object",
-                        "properties": {
-                            "final_answer": {
-                                "type": "string",
-                            },
-                        },
-                        "required": ["final_answer"],
-                        "additionalProperties": False,
-                    },
-                },
-            }
-        )
-
-        self.assertEqual(
-            result["response_format"],
-            {
-                "type": "json_schema",
-                "json_schema": {
-                    "name": "schema",
-                    "schema": {
-                        "type": "object",
-                        "properties": {
-                            "final_answer": {"type": "string"},
-                        },
-                        "required": ["final_answer"],
-                        "additionalProperties": False,
-                    },
-                    "strict": True,
-                },
-            },
-        )
-
-    def test_lint_template_valid_variables(self):
-        """Test lint_template passes with all variables present."""
-
-        template = "Hello {{name}}, you are {{age}} years old"
-        args = {"name": "John", "age": 30}
-
-        # Should not raise any exception
-        try:
-            render_mustache(template, args, strict=True)
-        except ValueError:
-            self.fail("lint_template raised ValueError unexpectedly")
-
-    def test_lint_template_missing_variable(self):
-        template = "Hello {{name}}, you are {{age}} years old"
-        args = {"name": "John"}  # Missing 'age'
-
-        with self.assertRaises(ValueError) as context:
-            render_mustache(template, args, strict=True)
-
-        self.assertIn("Template rendering failed: Could not find key 'age'", str(context.exception))
-
-    def test_prompt_build_strict_mode_enabled(self):
-        """Test Prompt.build with strict mode enabled validates variables."""
-        from braintrust.prompt import PromptChatBlock, PromptData, PromptMessage, PromptSchema
-
-        # Create prompt using the proper structure
-        prompt_schema = PromptSchema(
-            id="test-id",
-            project_id="test-project",
-            _xact_id="test-xact",
-            name="test-prompt",
-            slug="test-prompt",
-            description="test",
-            prompt_data=PromptData(
-                prompt=PromptChatBlock(
-                    messages=[PromptMessage(role="user", content="Hello {{name}}, please help with {{task}}")]
-                ),
-                options={"model": "gpt-4o"},
-            ),
-            tags=None,
-        )
-        lazy_prompt = LazyValue(lambda: prompt_schema, use_mutex=False)
-        prompt = Prompt(lazy_prompt, {}, False)
-
-        # Valid build with all variables
-        result = prompt.build(name="John", task="coding", strict=True)
-        self.assertEqual(result["messages"][0]["content"], "Hello John, please help with coding")
-
-        # Invalid build missing variables should raise ValueError
-        with self.assertRaises(ValueError) as context:
-            prompt.build(name="John", strict=True)  # Missing 'task'
-
-        self.assertIn("Template rendering failed: Could not find key 'task'", str(context.exception))
-
-    def test_prompt_build_strict_mode_disabled(self):
-        """Test Prompt.build with strict mode disabled allows missing variables."""
-        from braintrust.prompt import PromptChatBlock, PromptData, PromptMessage, PromptSchema
-
-        prompt_schema = PromptSchema(
-            id="test-id",
-            project_id="test-project",
-            _xact_id="test-xact",
-            name="test-prompt",
-            slug="test-prompt",
-            description="test",
-            prompt_data=PromptData(
-                prompt=PromptChatBlock(
-                    messages=[PromptMessage(role="user", content="Hello {{name}}, please help with {{task}}")]
-                ),
-                options={"model": "gpt-4o"},
-            ),
-            tags=None,
-        )
-        lazy_prompt = LazyValue(lambda: prompt_schema, use_mutex=False)
-        prompt = Prompt(lazy_prompt, {}, False)
-
-        # Should work even with missing variables when strict=False (default)
-        result = prompt.build(name="John")
-        # Missing variables render as empty strings in chevron
-        self.assertEqual(result["messages"][0]["content"], "Hello John, please help with ")
-
-    def _create_test_prompt(self, content: str):
-        """Helper to create a test prompt with the proper structure."""
-        from braintrust.prompt import PromptChatBlock, PromptData, PromptMessage, PromptSchema
-
-        prompt_schema = PromptSchema(
-            id="test-id",
-            project_id="test-project",
-            _xact_id="test-xact",
-            name="test-prompt",
-            slug="test-prompt",
-            description="test",
-            prompt_data=PromptData(
-                prompt=PromptChatBlock(messages=[PromptMessage(role="user", content=content)]),
-                options={"model": "gpt-4o"},
-            ),
-            tags=None,
-        )
-        lazy_prompt = LazyValue(lambda: prompt_schema, use_mutex=False)
-        return Prompt(lazy_prompt, {}, False)
-
-    def test_prompt_build_nested_variables_strict(self):
-        """Test Prompt.build with nested object variables in strict mode."""
-        prompt = self._create_test_prompt("User {{user.name}} with email {{user.profile.email}}")
-
-        # Valid nested data
-        user_data = {"user": {"name": "John", "profile": {"email": "john@example.com"}}}
-        result = prompt.build(strict=True, **user_data)
-        expected = "User John with email john@example.com"
-        self.assertEqual(result["messages"][0]["content"], expected)
-
-        # Missing nested property should fail in strict mode
-        invalid_data = {"user": {"name": "John"}}  # Missing profile.email
-        with self.assertRaises(ValueError):
-            prompt.build(strict=True, **invalid_data)
-
-    def test_prompt_build_array_variables_strict(self):
-        """Test Prompt.build with array variables in strict mode."""
-        prompt = self._create_test_prompt("Items: {{items.0}}, {{items.1}}")
-
-        # Valid array with enough items
-        result = prompt.build(items=["first", "second", "third"], strict=True)
-        self.assertEqual(result["messages"][0]["content"], "Items: first, second")
-
-        # Array too short should fail in strict mode
-        with self.assertRaises(ValueError):
-            prompt.build(items=["only_one"], strict=True)
-
-    def test_render_message_with_file_content_parts(self):
-        """Test render_message with mixed text, image, and file content parts including all file fields."""
-        message = PromptMessage(
-            role="user",
-            content=[
-                {"type": "text", "text": "Here is a {{item}}:"},
-                {"type": "image_url", "image_url": {"url": "{{image_url}}"}},
-                {
-                    "type": "file",
-                    "file": {
-                        "file_data": "{{file_data}}",
-                        "file_id": "{{file_id}}",
-                        "filename": "{{filename}}",
-                    },
-                },
+    assert event == {
+        "foo": "bar",
+        "baz": [1, 2],
+        "attachment1": attachment1.reference,
+        "attachment3": attachment3.reference,
+        "nested": {
+            "attachment2": attachment2.reference,
+            "attachment3": attachment3.reference,
+            "info": "another string",
+            "anArray": [
+                attachment1.reference,
+                None,
+                "string",
+                attachment2.reference,
+                attachment1.reference,
+                attachment3.reference,
+                attachment3.reference,
             ],
-        )
+        },
+        "null": None,
+        "undefined": None,
+        "date": date,
+        "f": "Math.max",
+        "empty": {},
+    }
 
-        rendered = render_message(
-            lambda template: (
-                template.replace("{{item}}", "document")
-                .replace("{{image_url}}", "https://example.com/image.png")
-                .replace("{{file_data}}", "base64data")
-                .replace("{{file_id}}", "file-456")
-                .replace("{{filename}}", "report.pdf")
-            ),
-            message,
-        )
 
-        assert rendered["content"] == [
-            {"type": "text", "text": "Here is a document:"},
-            {"type": "image_url", "image_url": {"url": "https://example.com/image.png"}},
+def _test_prompt(content: str, options: dict | None = None) -> Prompt:
+    """Create a chat prompt with a single user message."""
+    return Prompt.from_prompt_data(
+        "test-prompt",
+        PromptData(
+            prompt=PromptChatBlock(messages=[PromptMessage(role="user", content=content)]),
+            options=options or {"model": "gpt-4o"},
+        ),
+    )
+
+
+def test_prompt_build_with_structured_output_templating():
+    prompt = _test_prompt(
+        "Please compute {{input.expression}} and return the result in JSON.",
+        options={
+            "model": "gpt-4o",
+            "params": {
+                "response_format": {
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": "schema",
+                        "schema": "{{input.schema}}",
+                        "strict": True,
+                    },
+                },
+            },
+        },
+    )
+    schema = {
+        "type": "object",
+        "properties": {
+            "final_answer": {"type": "string"},
+        },
+        "required": ["final_answer"],
+        "additionalProperties": False,
+    }
+
+    result = prompt.build(input={"expression": "2 + 3", "schema": schema})
+
+    assert result["response_format"] == {
+        "type": "json_schema",
+        "json_schema": {
+            "name": "schema",
+            "schema": schema,
+            "strict": True,
+        },
+    }
+
+
+@pytest.mark.parametrize(
+    ("template", "args", "expected"),
+    [
+        pytest.param(
+            "Hello {{name}}, please help with {{task}}",
+            {"name": "John", "task": "coding"},
+            "Hello John, please help with coding",
+            id="flat",
+        ),
+        pytest.param(
+            "User {{user.name}} with email {{user.profile.email}}",
+            {"user": {"name": "John", "profile": {"email": "john@example.com"}}},
+            "User John with email john@example.com",
+            id="nested",
+        ),
+        pytest.param(
+            "Items: {{items.0}}, {{items.1}}",
+            {"items": ["first", "second", "third"]},
+            "Items: first, second",
+            id="array",
+        ),
+    ],
+)
+def test_prompt_build_strict_renders_present_variables(template, args, expected):
+    result = _test_prompt(template).build(strict=True, **args)
+    assert result["messages"][0]["content"] == expected
+
+
+@pytest.mark.parametrize(
+    ("template", "args", "error"),
+    [
+        pytest.param(
+            "Hello {{name}}, please help with {{task}}",
+            {"name": "John"},
+            "Template rendering failed: Could not find key 'task'",
+            id="flat",
+        ),
+        pytest.param(
+            "User {{user.name}} with email {{user.profile.email}}",
+            {"user": {"name": "John"}},
+            "Template rendering failed",
+            id="nested",
+        ),
+        pytest.param(
+            "Items: {{items.0}}, {{items.1}}",
+            {"items": ["only_one"]},
+            "Template rendering failed",
+            id="array",
+        ),
+    ],
+)
+def test_prompt_build_strict_rejects_missing_variables(template, args, error):
+    with pytest.raises(ValueError, match=error):
+        _test_prompt(template).build(strict=True, **args)
+
+
+def test_prompt_build_non_strict_renders_missing_variables_as_empty():
+    result = _test_prompt("Hello {{name}}, please help with {{task}}").build(name="John")
+    assert result["messages"][0]["content"] == "Hello John, please help with "
+
+
+def test_render_message_with_file_content_parts():
+    """Test render_message with mixed text, image, and file content parts including all file fields."""
+    message = PromptMessage(
+        role="user",
+        content=[
+            {"type": "text", "text": "Here is a {{item}}:"},
+            {"type": "image_url", "image_url": {"url": "{{image_url}}"}},
             {
                 "type": "file",
                 "file": {
-                    "file_data": "base64data",
-                    "file_id": "file-456",
-                    "filename": "report.pdf",
+                    "file_data": "{{file_data}}",
+                    "file_id": "{{file_id}}",
+                    "filename": "{{filename}}",
                 },
             },
-        ]
+        ],
+    )
+
+    rendered = render_message(
+        lambda template: (
+            template.replace("{{item}}", "document")
+            .replace("{{image_url}}", "https://example.com/image.png")
+            .replace("{{file_data}}", "base64data")
+            .replace("{{file_id}}", "file-456")
+            .replace("{{filename}}", "report.pdf")
+        ),
+        message,
+    )
+
+    assert rendered["content"] == [
+        {"type": "text", "text": "Here is a document:"},
+        {"type": "image_url", "image_url": {"url": "https://example.com/image.png"}},
+        {
+            "type": "file",
+            "file": {
+                "file_data": "base64data",
+                "file_id": "file-456",
+                "filename": "report.pdf",
+            },
+        },
+    ]
 
 
 def test_noop_permalink_issue_1837():
@@ -1279,32 +997,6 @@ def test_noop_permalink_issue_1837():
     assert link == "https://www.braintrust.dev/noop-span"
 
     assert span.link() == "https://www.braintrust.dev/noop-span"
-
-
-def test_span_log_with_simple_circular_reference(with_memory_logger):
-    """Test that span.log() with simple circular reference works gracefully."""
-    logger = init_test_logger(__name__)
-
-    with logger.start_span(name="test_span") as span:
-        # Create simple circular reference
-        data = {"key": "value"}
-        data["self"] = data
-
-        # Should handle circular reference gracefully
-        span.log(
-            input={"test": "simple circular ref"},
-            output=data,
-        )
-
-    # Verify the log was recorded with circular reference replaced by placeholder
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-
-    logged_output = logs[0]["output"]
-    assert logged_output["key"] == "value"
-    # Circular reference should be replaced with a placeholder string
-    assert isinstance(logged_output["self"], str)
-    assert "circular" in logged_output["self"].lower()
 
 
 def test_span_log_accepts_pydantic_model_metadata(with_memory_logger):
@@ -1345,25 +1037,57 @@ def _init_test_dataset():
     return Dataset(lazy_metadata=LazyValue(lambda: metadata, use_mutex=False))
 
 
-def test_span_log_accepts_model_dump_metadata(with_memory_logger):
-    logger = init_test_logger(__name__)
+def _span_log_metadata(metadata):
+    with init_test_logger(__name__).start_span(name="test_span") as span:
+        span.log(metadata=metadata)
 
-    with logger.start_span(name="test_span") as span:
-        span.log(metadata=_ModelDumpMetadata(foo="bar"))
+
+@pytest.mark.parametrize(
+    ("log_with_metadata", "metadata_field"),
+    [
+        pytest.param(_span_log_metadata, "metadata", id="span.log"),
+        pytest.param(
+            lambda m: init_test_logger(__name__).log(input="input", output="output", metadata=m),
+            "metadata",
+            id="logger.log",
+        ),
+        pytest.param(
+            lambda m: init_test_exp("test-experiment", "test-project").log(
+                input="input", output="output", scores={"score": 1}, metadata=m
+            ),
+            "metadata",
+            id="experiment.log",
+        ),
+        pytest.param(
+            lambda m: init_test_logger(__name__).log_feedback(id="event-id", scores={"score": 1}, metadata=m),
+            AUDIT_METADATA_FIELD,
+            id="logger.log_feedback",
+        ),
+        pytest.param(
+            lambda m: init_test_exp("test-experiment", "test-project").log_feedback(
+                id="event-id", scores={"score": 1}, metadata=m
+            ),
+            AUDIT_METADATA_FIELD,
+            id="experiment.log_feedback",
+        ),
+        pytest.param(
+            lambda m: _init_test_dataset().insert(input="input", expected="expected", metadata=m),
+            "metadata",
+            id="dataset.insert",
+        ),
+        pytest.param(
+            lambda m: _init_test_dataset().update(id="record-id", metadata=m),
+            "metadata",
+            id="dataset.update",
+        ),
+    ],
+)
+def test_logging_apis_accept_model_dump_metadata(with_memory_logger, log_with_metadata, metadata_field):
+    log_with_metadata(_ModelDumpMetadata(foo="bar"))
 
     logs = with_memory_logger.pop()
     assert len(logs) == 1
-    assert logs[0]["metadata"] == {"foo": "bar"}
-
-
-def test_logger_log_accepts_model_dump_metadata(with_memory_logger):
-    logger = init_test_logger(__name__)
-
-    logger.log(input="input", output="output", metadata=_ModelDumpMetadata(foo="bar"))
-
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-    assert logs[0]["metadata"] == {"foo": "bar"}
+    assert logs[0][metadata_field] == {"foo": "bar"}
 
 
 def test_logger_emit_log_without_active_span(with_memory_logger):
@@ -1376,9 +1100,12 @@ def test_logger_emit_log_without_active_span(with_memory_logger):
     )
     second_id = test_logger.emit_log(body="Retrying payment", level="info")
 
+    # Each call enqueues exactly one complete row, not a start row plus a merge.
+    assert len(with_memory_logger.logs) == 2
     logs = with_memory_logger.pop()
     assert len(logs) == 2
     first, second = logs
+    assert first["_is_merge"] is False
     assert first_id == first["id"]
     assert second_id == second["id"]
     assert first["id"] != second["id"]
@@ -1398,17 +1125,6 @@ def test_logger_emit_log_without_active_span(with_memory_logger):
     assert second["span_attributes"]["log_level"] == "info"
 
 
-def test_logger_emit_log_enqueues_single_row(with_memory_logger):
-    test_logger = init_test_logger(__name__)
-
-    test_logger.info("Payment completed", metadata={"payment_id": "pay_123"})
-
-    assert len(with_memory_logger.logs) == 1
-    [row] = with_memory_logger.pop()
-    assert row["metrics"]["start"] == row["metrics"]["end"]
-    assert row["_is_merge"] is False
-
-
 def test_logger_emit_log_uses_distinct_baseline_trace_per_logger(with_memory_logger):
     first_logger = init_test_logger(f"{__name__}-first")
     second_logger = init_test_logger(f"{__name__}-second")
@@ -1423,7 +1139,7 @@ def test_logger_emit_log_uses_distinct_baseline_trace_per_logger(with_memory_log
 def test_logger_emit_log_uses_active_span(with_memory_logger):
     test_logger = init_test_logger(__name__)
 
-    with test_logger.start_span(name="owner") as owner:
+    with test_logger.start_span(name="owner"):
         log_id = test_logger.emit_log(body="Inside span", level="debug", metadata={"attempt": 1})
 
     rows = with_memory_logger.pop()
@@ -1439,140 +1155,130 @@ def test_logger_emit_log_uses_active_span(with_memory_logger):
 
 
 @pytest.mark.parametrize("level", ["trace", "debug", "info", "warn", "error", "fatal"])
-def test_logger_emit_log_adds_log_level_span_attribute(with_memory_logger, level):
+def test_logger_log_level_helpers(with_memory_logger, level):
+    """emit_log(level=...) and the matching level helper both record the log level."""
     test_logger = init_test_logger(__name__)
 
-    test_logger.emit_log(body="message", level=level)
+    emitted_id = test_logger.emit_log(body="message", level=level)
+    helper_id = getattr(test_logger, level)("message", metadata={"source": level})
+
+    rows = {row["id"]: row for row in with_memory_logger.pop()}
+    assert set(rows) == {emitted_id, helper_id}
+    assert not rows[emitted_id].get("metadata")
+    assert rows[helper_id]["metadata"] == {"source": level}
+    for row in rows.values():
+        assert row["output"] == "message"
+        assert row["span_attributes"]["log_level"] == level
+
+
+_requires_t_strings = pytest.mark.skipif(sys.version_info < (3, 14), reason="t-strings require Python 3.14+")
+
+
+def _t_string(*parts):
+    """Build a string.templatelib.Template; tuple parts become Interpolation(*part)."""
+    templatelib = importlib.import_module("string.templatelib")
+    return templatelib.Template(*(templatelib.Interpolation(*p) if isinstance(p, tuple) else p for p in parts))
+
+
+@pytest.mark.parametrize(
+    ("level", "make_message", "kwargs", "expected_output", "expected_metadata"),
+    [
+        pytest.param(
+            "info",
+            lambda: "User {user_id} paid {amount:.2f} with {method}",
+            {"metadata": {"source": "checkout"}, "user_id": "user-123", "amount": 12.5},
+            "User user-123 paid 12.50 with {method}",
+            {
+                "source": "checkout",
+                "braintrust.template.parameter.user_id": "user-123",
+                "braintrust.template.parameter.amount": 12.5,
+                "braintrust.template": "User {user_id} paid {amount:.2f} with {method}",
+            },
+            id="format-parameters",
+        ),
+        pytest.param(
+            "error",
+            lambda: "Payment {payment_id} failed",
+            {"payment_id": "pay-123"},
+            "Payment pay-123 failed",
+            {
+                "braintrust.template.parameter.payment_id": "pay-123",
+                "braintrust.template": "Payment {payment_id} failed",
+            },
+            id="error-level",
+        ),
+        pytest.param(
+            "info",
+            lambda: '{"key": "{value}"}',
+            {},
+            '{"key": "{value}"}',
+            None,
+            id="no-parameters-not-formatted",
+        ),
+        pytest.param(
+            "warn",
+            lambda: "Request failed: {error}",
+            {"error": ValueError("bad request")},
+            "Request failed: bad request",
+            {
+                "braintrust.template.parameter.error": "bad request",
+                "braintrust.template": "Request failed: {error}",
+            },
+            id="parameters-safely-serialized",
+        ),
+        pytest.param(
+            "info",
+            lambda: _t_string("User ", ("user-123", "user_id"), " paid ", (12.5, "amount", "r", ">8"), " with {card}"),
+            {"metadata": {"source": "checkout"}},
+            "User user-123 paid     12.5 with {card}",
+            {
+                "source": "checkout",
+                "braintrust.template.parameter.user_id": "user-123",
+                "braintrust.template.parameter.amount": 12.5,
+                "braintrust.template": "User {user_id} paid {amount!r:>8} with {{card}}",
+            },
+            id="t-string",
+            marks=_requires_t_strings,
+        ),
+        pytest.param(
+            "info",
+            lambda: _t_string((1, "next(it)"), " ", (2, "next(it)")),
+            {},
+            "1 2",
+            {
+                "braintrust.template": "{next(it)} {next(it)}",
+                "braintrust.template.parameter.next(it).0": 1,
+                "braintrust.template.parameter.next(it).1": 2,
+            },
+            id="t-string-repeated-expression",
+            marks=_requires_t_strings,
+        ),
+    ],
+)
+def test_logger_log_helpers_render_templates(
+    with_memory_logger, level, make_message, kwargs, expected_output, expected_metadata
+):
+    test_logger = init_test_logger(__name__)
+
+    log_id = getattr(test_logger, level)(make_message(), **kwargs)
 
     [row] = with_memory_logger.pop()
-    assert not row.get("metadata")
+    assert row["id"] == log_id
+    assert row["output"] == expected_output
+    assert row.get("metadata") == expected_metadata
     assert row["span_attributes"]["log_level"] == level
-
-
-@pytest.mark.parametrize("method_name", ["trace", "debug", "info", "warn", "error", "fatal"])
-def test_logger_log_level_helpers(with_memory_logger, method_name):
-    test_logger = init_test_logger(__name__)
-
-    log_id = getattr(test_logger, method_name)("message", metadata={"source": method_name})
-
-    [row] = with_memory_logger.pop()
-    assert row["id"] == log_id
-    assert row["output"] == "message"
-    assert row["metadata"] == {"source": method_name}
-    assert row["span_attributes"]["log_level"] == method_name
-
-
-def test_logger_log_helpers_render_template_parameters(with_memory_logger):
-    test_logger = init_test_logger(__name__)
-
-    log_id = test_logger.info(
-        "User {user_id} paid {amount:.2f} with {method}",
-        metadata={"source": "checkout"},
-        user_id="user-123",
-        amount=12.5,
-    )
-
-    [row] = with_memory_logger.pop()
-    assert row["id"] == log_id
-    assert row["output"] == "User user-123 paid 12.50 with {method}"
-    assert row["metadata"] == {
-        "source": "checkout",
-        "braintrust.template.parameter.user_id": "user-123",
-        "braintrust.template.parameter.amount": 12.5,
-        "braintrust.template": "User {user_id} paid {amount:.2f} with {method}",
-    }
-    assert row["span_attributes"]["log_level"] == "info"
-
-
-@pytest.mark.skipif(sys.version_info < (3, 14), reason="t-strings require Python 3.14+")
-def test_logger_log_helpers_render_t_string(with_memory_logger):
-    templatelib = importlib.import_module("string.templatelib")
-    template = templatelib.Template(
-        "User ",
-        templatelib.Interpolation("user-123", "user_id"),
-        " paid ",
-        templatelib.Interpolation(12.5, "amount", "r", ">8"),
-        " with {card}",
-    )
-    test_logger = init_test_logger(__name__)
-
-    log_id = test_logger.info(template, metadata={"source": "checkout"})
-
-    [row] = with_memory_logger.pop()
-    assert row["id"] == log_id
-    assert row["output"] == "User user-123 paid     12.5 with {card}"
-    assert row["metadata"] == {
-        "source": "checkout",
-        "braintrust.template.parameter.user_id": "user-123",
-        "braintrust.template.parameter.amount": 12.5,
-        "braintrust.template": "User {user_id} paid {amount!r:>8} with {{card}}",
-    }
-    assert row["span_attributes"]["log_level"] == "info"
-
-
-@pytest.mark.skipif(sys.version_info < (3, 14), reason="t-strings require Python 3.14+")
-def test_logger_t_string_retains_repeated_expression_values(with_memory_logger):
-    templatelib = importlib.import_module("string.templatelib")
-    template = templatelib.Template(
-        templatelib.Interpolation(1, "next(it)"),
-        " ",
-        templatelib.Interpolation(2, "next(it)"),
-    )
-    test_logger = init_test_logger(__name__)
-
-    test_logger.info(template)
-
-    [row] = with_memory_logger.pop()
-    assert row["output"] == "1 2"
-    assert row["metadata"] == {
-        "braintrust.template": "{next(it)} {next(it)}",
-        "braintrust.template.parameter.next(it).0": 1,
-        "braintrust.template.parameter.next(it).1": 2,
-    }
-
-
-@pytest.mark.skipif(sys.version_info < (3, 14), reason="t-strings require Python 3.14+")
-def test_logger_t_string_rejects_keyword_template_parameters(with_memory_logger):
-    templatelib = importlib.import_module("string.templatelib")
-    template = templatelib.Template("User ", templatelib.Interpolation("user-123", "user_id"))
-    test_logger = init_test_logger(__name__)
-
-    with pytest.raises(TypeError, match="already contain their interpolation values"):
-        test_logger.info(template, user_id="other-user")
-
-    assert with_memory_logger.pop() == []
-
-
-def test_logger_error_renders_template_without_error_field(with_memory_logger):
-    test_logger = init_test_logger(__name__)
-
-    test_logger.error("Payment {payment_id} failed", payment_id="pay-123")
-
-    [row] = with_memory_logger.pop()
-    assert row["output"] == "Payment pay-123 failed"
+    # Log levels never populate the span error field, even for error().
     assert "error" not in row
 
 
-def test_logger_log_helpers_do_not_format_without_parameters(with_memory_logger):
+@_requires_t_strings
+def test_logger_t_string_rejects_keyword_template_parameters(with_memory_logger):
     test_logger = init_test_logger(__name__)
 
-    test_logger.info('{"key": "{value}"}')
+    with pytest.raises(TypeError, match="already contain their interpolation values"):
+        test_logger.info(_t_string("User ", ("user-123", "user_id")), user_id="other-user")
 
-    [row] = with_memory_logger.pop()
-    assert row["output"] == '{"key": "{value}"}'
-    assert not row.get("metadata")
-    assert row["span_attributes"]["log_level"] == "info"
-
-
-def test_logger_log_template_parameters_are_safely_serialized(with_memory_logger):
-    test_logger = init_test_logger(__name__)
-
-    test_logger.warn("Request failed: {error}", error=ValueError("bad request"))
-
-    [row] = with_memory_logger.pop()
-    assert row["output"] == "Request failed: bad request"
-    assert row["metadata"]["braintrust.template.parameter.error"] == "bad request"
-    assert row["span_attributes"]["log_level"] == "warn"
+    assert with_memory_logger.pop() == []
 
 
 def test_logger_emit_log_rejects_invalid_level(with_memory_logger):
@@ -1582,56 +1288,6 @@ def test_logger_emit_log_rejects_invalid_level(with_memory_logger):
         test_logger.emit_log(body="message", level="warning")
 
     assert with_memory_logger.pop() == []
-
-
-def test_experiment_log_accepts_model_dump_metadata(with_memory_logger):
-    experiment = init_test_exp("test-experiment", "test-project")
-
-    experiment.log(input="input", output="output", scores={"score": 1}, metadata=_ModelDumpMetadata(foo="bar"))
-
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-    assert logs[0]["metadata"] == {"foo": "bar"}
-
-
-def test_logger_log_feedback_accepts_model_dump_metadata(with_memory_logger):
-    logger = init_test_logger(__name__)
-
-    logger.log_feedback(id="event-id", scores={"score": 1}, metadata=_ModelDumpMetadata(user_id="user-1"))
-
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-    assert logs[0][AUDIT_METADATA_FIELD] == {"user_id": "user-1"}
-
-
-def test_experiment_log_feedback_accepts_model_dump_metadata(with_memory_logger):
-    experiment = init_test_exp("test-experiment", "test-project")
-
-    experiment.log_feedback(id="event-id", scores={"score": 1}, metadata=_ModelDumpMetadata(user_id="user-1"))
-
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-    assert logs[0][AUDIT_METADATA_FIELD] == {"user_id": "user-1"}
-
-
-def test_dataset_insert_accepts_model_dump_metadata(with_memory_logger):
-    dataset = _init_test_dataset()
-
-    dataset.insert(input="input", expected="expected", metadata=_ModelDumpMetadata(foo="bar"))
-
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-    assert logs[0]["metadata"] == {"foo": "bar"}
-
-
-def test_dataset_update_accepts_model_dump_metadata(with_memory_logger):
-    dataset = _init_test_dataset()
-
-    dataset.update(id="record-id", metadata=_ModelDumpMetadata(foo="bar"))
-
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-    assert logs[0]["metadata"] == {"foo": "bar"}
 
 
 def test_span_log_rejects_metadata_with_non_string_keys(with_memory_logger):
@@ -1655,77 +1311,39 @@ def test_span_log_rejects_metadata_that_serializes_to_non_dict(with_memory_logge
             span.log(metadata=BadMetadata())
 
 
-def test_span_log_with_nested_circular_reference(with_memory_logger):
-    """Test that span.log() with nested circular reference works gracefully."""
+def test_span_log_replaces_circular_references(with_memory_logger):
+    """Self- and nested circular references are replaced with a placeholder instead of raising."""
+    logger = init_test_logger(__name__)
+
+    self_ref = {"key": "value"}
+    self_ref["self"] = self_ref
+    page = {"page_number": 1, "content": "text"}
+    document = {"pages": [page]}
+    page["document"] = document
+
+    with logger.start_span(name="test_span") as span:
+        span.log(input=self_ref, output=document)
+
+    logs = with_memory_logger.pop()
+    assert len(logs) == 1
+    assert logs[0]["input"]["key"] == "value"
+    assert "circular" in logs[0]["input"]["self"].lower()
+    logged_page = logs[0]["output"]["pages"][0]
+    assert logged_page["page_number"] == 1
+    assert logged_page["content"] == "text"
+    assert "circular" in logged_page["document"].lower()
+
+
+def test_span_log_converts_non_finite_floats_to_strings(with_memory_logger):
+    """NaN and +/-Infinity are logged as strings for JSON compatibility."""
     logger = init_test_logger(__name__)
 
     with logger.start_span(name="test_span") as span:
-        # Create nested structure with circular reference
-        page = {"page_number": 1, "content": "text"}
-        document = {"pages": [page]}
-        page["document"] = document
+        span.log(output={"nan": float("nan"), "inf": float("inf"), "neg_inf": float("-inf")})
 
-        # Should handle circular reference gracefully
-        span.log(
-            input={"file": "test.pdf"},
-            output=document,
-        )
-
-    # Verify the log was recorded with nested circular reference handled
     logs = with_memory_logger.pop()
     assert len(logs) == 1
-
-    logged_output = logs[0]["output"]
-    assert len(logged_output["pages"]) == 1
-    assert logged_output["pages"][0]["page_number"] == 1
-    assert logged_output["pages"][0]["content"] == "text"
-    # Circular reference should be replaced with a placeholder
-    assert isinstance(logged_output["pages"][0]["document"], str)
-    assert "circular" in logged_output["pages"][0]["document"].lower()
-
-
-def test_span_log_with_deep_document_structure(with_memory_logger):
-    """Test that span.log() with deeply nested document structure works gracefully."""
-    logger = init_test_logger(__name__)
-
-    with logger.start_span(name="test_span") as span:
-        # Create deeply nested document structure with circular reference
-        doc_data = {
-            "model_id": "document-model",
-            "content": "Document content",
-            "pages": [],
-        }
-
-        page = {
-            "page_number": 1,
-            "lines": [{"content": "Line 1"}],
-        }
-
-        # Create circular reference
-        page["document"] = doc_data
-        doc_data["pages"].append(page)
-
-        # Should handle circular reference gracefully
-        span.log(
-            input={"file": "test.pdf"},
-            output=doc_data,
-            metadata={"source": "document_processor"},
-        )
-
-    # Verify the log was recorded with proper structure
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-
-    logged_output = logs[0]["output"]
-    assert logged_output["model_id"] == "document-model"
-    assert logged_output["content"] == "Document content"
-    assert len(logged_output["pages"]) == 1
-    assert logged_output["pages"][0]["page_number"] == 1
-    assert len(logged_output["pages"][0]["lines"]) == 1
-    assert logged_output["pages"][0]["lines"][0]["content"] == "Line 1"
-    # Circular reference should be replaced with placeholder
-    assert isinstance(logged_output["pages"][0]["document"], str)
-    assert "circular" in logged_output["pages"][0]["document"].lower()
+    assert logs[0]["output"] == {"nan": "NaN", "inf": "Infinity", "neg_inf": "-Infinity"}
 
 
 def test_span_log_with_extremely_deep_nesting(with_memory_logger):
@@ -1760,118 +1378,8 @@ def test_span_log_with_extremely_deep_nesting(with_memory_logger):
     assert "nested" in logged_output
 
 
-def test_span_log_with_large_document_many_pages(with_memory_logger):
-    """Test that span.log() with large multi-page document works gracefully."""
-    logger = init_test_logger(__name__)
-
-    with logger.start_span(name="test_span") as span:
-        # Create realistic large document: 20 pages × 30 lines × 10 words
-        pages = []
-        for page_num in range(20):
-            lines = []
-            for line_num in range(30):
-                words = []
-                for word_num in range(10):
-                    words.append(
-                        {
-                            "content": f"word_{word_num}",
-                            "confidence": 0.98,
-                        }
-                    )
-                lines.append(
-                    {
-                        "content": f"line_{line_num}",
-                        "words": words,
-                    }
-                )
-            pages.append(
-                {
-                    "page_number": page_num + 1,
-                    "lines": lines,
-                }
-            )
-
-        # Should handle large document structure
-        span.log(
-            input={"file": "large_document.pdf"},
-            output={"pages": pages},
-        )
-
-    # Verify the log was recorded with full structure intact (no circular refs)
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-
-    logged_output = logs[0]["output"]
-    assert len(logged_output["pages"]) == 20
-    assert len(logged_output["pages"][0]["lines"]) == 30
-    assert len(logged_output["pages"][0]["lines"][0]["words"]) == 10
-    assert logged_output["pages"][0]["lines"][0]["words"][0]["content"] == "word_0"
-
-
-def test_span_log_handles_nan_gracefully(with_memory_logger):
-    """Test that span.log() handles NaN values by converting them to "NaN" string."""
-    logger = init_test_logger(__name__)
-
-    with logger.start_span(name="test_span") as span:
-        # Should NOT raise - should handle NaN gracefully
-        span.log(
-            input={"test": "input"},
-            output={"value": float("nan")},
-        )
-
-    # Verify the log was recorded with NaN handled appropriately
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-    assert logs[0]["input"]["test"] == "input"
-    # NaN should be converted to "NaN" string for JSON compatibility
-    output_value = logs[0]["output"]["value"]
-    assert output_value == "NaN"
-
-
-def test_span_log_handles_infinity_gracefully(with_memory_logger):
-    """Test that span.log() handles Infinity values by converting them to "Infinity"/"-Infinity" strings."""
-    logger = init_test_logger(__name__)
-
-    with logger.start_span(name="test_span") as span:
-        # Should NOT raise - should handle Infinity gracefully
-        span.log(
-            input={"test": "input"},
-            output={"value": float("inf"), "neg": float("-inf")},
-        )
-
-    # Verify the log was recorded with Infinity handled appropriately
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-    assert logs[0]["input"]["test"] == "input"
-    # Infinity should be converted to string representations for JSON compatibility
-    assert logs[0]["output"]["value"] == "Infinity"
-    assert logs[0]["output"]["neg"] == "-Infinity"
-
-
-def test_span_log_with_binary_data(with_memory_logger):
-    """Test how span.log() currently handles binary data."""
-    logger = init_test_logger(__name__)
-
-    with logger.start_span(name="test_span") as span:
-        span.log(
-            input={"file": "image.png"},
-            output={"embedding": b"\x00\x01\x02\x03" * 100},
-        )
-
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-    # Document actual behavior - binary data goes through deep_copy_and_sanitize_dict
-    # which uses bt_dumps/bt_loads roundtrip
-    assert logs[0]["input"]["file"] == "image.png"
-    # The embedding should be present (converted to some serializable form)
-    assert "embedding" in logs[0]["output"]
-
-
 def test_span_log_handles_unstringifiable_object_gracefully(with_memory_logger):
-    """Test that span.log() should handle objects with bad __str__ gracefully without raising.
-
-    This test currently FAILS - it demonstrates the desired behavior after the fix.
-    """
+    """Test that span.log() handles objects whose __str__ and __repr__ raise without raising itself."""
     logger = init_test_logger(__name__)
 
     class BadStrObject:
@@ -1897,35 +1405,6 @@ def test_span_log_handles_unstringifiable_object_gracefully(with_memory_logger):
     output_str = str(logs[0]["output"]["result"])
     # Should contain some indication of serialization failure
     assert "error" in output_str.lower() or "serializ" in output_str.lower()
-
-
-def test_span_log_handles_bad_dict_keys_gracefully(with_memory_logger):
-    """Test that span.log() should handle non-stringifiable dict keys gracefully.
-
-    This test currently FAILS - it demonstrates the desired behavior after the fix.
-    """
-    logger = init_test_logger(__name__)
-
-    class BadKey:
-        def __str__(self):
-            raise ValueError("Key cannot be stringified!")
-
-        def __repr__(self):
-            raise ValueError("Key cannot be stringified!")
-
-    with logger.start_span(name="test_span") as span:
-        # Should NOT raise - should handle gracefully
-        span.log(
-            input={"test": "input"},
-            output={BadKey(): "value"},
-        )
-
-    # Verify the log was recorded with the problematic key handled
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-    assert logs[0]["input"]["test"] == "input"
-    # The output should exist but the bad key should be replaced
-    assert "output" in logs[0]
 
 
 def test_span_link_logged_out(with_memory_logger):
@@ -1957,28 +1436,20 @@ def test_span_link_logged_out_org_name(with_memory_logger):
     )
 
 
-def test_span_link_logged_out_org_name_env_vars(with_memory_logger):
+def test_span_link_logged_out_org_name_env_vars(with_memory_logger, monkeypatch):
     simulate_logout()
     assert_logged_out()
-    keys = ["BRAINTRUST_APP_URL", "BRAINTRUST_ORG_NAME"]
-    originals = {k: os.environ.get(k) for k in keys}
-    try:
-        os.environ["BRAINTRUST_APP_URL"] = "https://my-own-thing.ca/foo/bar"
-        os.environ["BRAINTRUST_ORG_NAME"] = "my-own-thing"
+    monkeypatch.setenv("BRAINTRUST_APP_URL", "https://my-own-thing.ca/foo/bar")
+    monkeypatch.setenv("BRAINTRUST_ORG_NAME", "my-own-thing")
 
-        logger = init_logger(project_id="test-project-id")
-        span = logger.start_span(name="test-span")
-        span.end()
-        link = span.link()
-        assert (
-            link
-            == f"https://my-own-thing.ca/foo/bar/app/my-own-thing/object?object_type=project_logs&object_id=test-project-id&id={span._id}"
-        )
-    finally:
-        for k, v in originals.items():
-            os.environ.pop(k, None)
-            if v:
-                os.environ[k] = v
+    logger = init_logger(project_id="test-project-id")
+    span = logger.start_span(name="test-span")
+    span.end()
+    link = span.link()
+    assert (
+        link
+        == f"https://my-own-thing.ca/foo/bar/app/my-own-thing/object?object_type=project_logs&object_id=test-project-id&id={span._id}"
+    )
 
 
 def test_span_project_id_logged_in(with_memory_logger, with_simulate_login):
@@ -2050,38 +1521,27 @@ def test_span_link_with_unresolved_experiment(with_simulate_login, with_memory_l
     assert link == "https://www.braintrust.dev/error-generating-link?msg=resolve-experiment-id"
 
 
-def test_experiment_span_link_uses_env_vars_when_logged_out(with_memory_logger):
+def test_experiment_span_link_uses_env_vars_when_logged_out(with_memory_logger, monkeypatch):
     """Verify EXPERIMENT spans use BRAINTRUST_ORG_NAME env var when not logged in."""
     simulate_logout()
     assert_logged_out()
+    monkeypatch.setenv("BRAINTRUST_APP_URL", "https://test-app.example.com")
+    monkeypatch.setenv("BRAINTRUST_ORG_NAME", "env-org-name")
 
-    keys = ["BRAINTRUST_APP_URL", "BRAINTRUST_ORG_NAME"]
-    originals = {k: os.environ.get(k) for k in keys}
-    try:
-        os.environ["BRAINTRUST_APP_URL"] = "https://test-app.example.com"
-        os.environ["BRAINTRUST_ORG_NAME"] = "env-org-name"
+    experiment = braintrust.init(
+        project="test-project",
+        experiment="test-experiment",
+    )
 
-        experiment = braintrust.init(
-            project="test-project",
-            experiment="test-experiment",
-        )
+    # Create span with resolved experiment ID
+    span = experiment.start_span(name="test-span")
+    span.parent_object_id = LazyValue(lambda: "test-exp-id", use_mutex=False)
+    span.end()
 
-        # Create span with resolved experiment ID
-        span = experiment.start_span(name="test-span")
-        span.parent_object_id = LazyValue(lambda: "test-exp-id", use_mutex=False)
-        span.end()
-
-        link = span.link()
-
-        # Should use env var org name and app url
-        assert "env-org-name" in link
-        assert "test-app.example.com" in link
-        assert "test-exp-id" in link
-    finally:
-        for k, v in originals.items():
-            os.environ.pop(k, None)
-            if v:
-                os.environ[k] = v
+    assert (
+        span.link()
+        == f"https://test-app.example.com/app/env-org-name/object?object_type=experiment&object_id=test-exp-id&id={span._id}"
+    )
 
 
 def test_permalink_with_valid_span_logged_in(with_simulate_login, with_memory_logger):
@@ -2137,25 +1597,6 @@ async def test_span_link_in_async_context(with_simulate_login, with_memory_logge
 
 
 @pytest.mark.asyncio
-async def test_current_logger_after_multiple_awaits(with_simulate_login, with_memory_logger):
-    """Test that current_logger() works after multiple await points."""
-    import asyncio
-
-    logger = init_logger(project="test-project", project_id="test-project-id")
-
-    async def check_logger_after_awaits():
-        assert braintrust.current_logger() is logger
-        await asyncio.sleep(0.01)
-        assert braintrust.current_logger() is logger
-        await asyncio.sleep(0.01)
-        assert braintrust.current_logger() is logger
-        return braintrust.current_logger()
-
-    result = await check_logger_after_awaits()
-    assert result is logger
-
-
-@pytest.mark.asyncio
 async def test_current_logger_in_async_generator(with_simulate_login, with_memory_logger):
     """Test that current_logger() works within an async generator (yield)."""
     import asyncio
@@ -2163,7 +1604,7 @@ async def test_current_logger_in_async_generator(with_simulate_login, with_memor
     logger = init_logger(project="test-project", project_id="test-project-id")
 
     async def logger_generator():
-        for i in range(3):
+        for _ in range(3):
             await asyncio.sleep(0.01)
             yield braintrust.current_logger()
 
@@ -2193,33 +1634,6 @@ async def test_current_logger_in_separate_task(with_simulate_login, with_memory_
     assert result is logger
 
 
-@pytest.mark.asyncio
-async def test_span_link_in_nested_async(with_simulate_login, with_memory_logger):
-    """Test that span.link() works in deeply nested async calls."""
-    import asyncio
-
-    logger = init_logger(project="test-project", project_id="test-project-id")
-    span = logger.start_span(name="test-span")
-
-    async def level3():
-        await asyncio.sleep(0.01)
-        return span.link()
-
-    async def level2():
-        await asyncio.sleep(0.01)
-        return await level3()
-
-    async def level1():
-        await asyncio.sleep(0.01)
-        return await level2()
-
-    link = await level1()
-    span.end()
-
-    assert link != "https://www.braintrust.dev/noop-span"
-    assert span._id in link
-
-
 def test_current_logger_in_thread(with_simulate_login, with_memory_logger):
     """Test that current_logger() works correctly when called from a new thread.
 
@@ -2241,34 +1655,6 @@ def test_current_logger_in_thread(with_simulate_login, with_memory_logger):
     thread.join()
 
     assert thread_result["logger"] is logger
-
-
-def test_span_link_in_thread(with_simulate_login, with_memory_logger):
-    """Test that span.link() works correctly when called from a new thread.
-
-    The span should be able to generate a valid link even when link() is called
-    from a different thread than where the span was created.
-    """
-    import threading
-
-    logger = init_logger(project="test-project", project_id="test-project-id")
-    span = logger.start_span(name="test-span")
-
-    thread_result = {}
-
-    def get_link_in_thread():
-        # Call link() on the span directly (not via current_span() which uses ContextVar)
-        thread_result["link"] = span.link()
-
-    thread = threading.Thread(target=get_link_in_thread)
-    thread.start()
-    thread.join()
-    span.end()
-
-    # The link should NOT be the noop link
-    assert thread_result["link"] != "https://www.braintrust.dev/noop-span"
-    # The link should contain the span ID
-    assert span._id in thread_result["link"]
 
 
 @pytest.mark.asyncio
@@ -2307,9 +1693,6 @@ async def test_current_logger_async_context_isolation(with_simulate_login, with_
 def test_span_set_current(with_memory_logger):
     """Test that span.set_current() makes the span accessible via current_span()."""
     init_test_logger(__name__)
-
-    # Store initial current span
-    initial_current = braintrust.current_span()
 
     # Start a span that can be set as current (default behavior)
     span1 = logger.start_span(name="test-span-1")
@@ -2432,17 +1815,24 @@ async def test_traced_async_generator_with_subtasks(with_memory_logger):
 
 
 @pytest.mark.asyncio
-async def test_traced_async_function(with_memory_logger):
-    """Test tracing async functions."""
+@pytest.mark.parametrize(
+    ("decorator", "expected_name"),
+    [
+        pytest.param(logger.traced, "async_multiply", id="bare"),
+        pytest.param(logger.traced(), "async_multiply", id="called"),
+        pytest.param(logger.traced(name="async_multiply_with_name"), "async_multiply_with_name", id="named"),
+    ],
+)
+async def test_traced_async_function(with_memory_logger, decorator, expected_name):
+    """Test tracing async functions with each form of the @traced decorator."""
     init_test_logger(__name__)
 
-    @logger.traced
+    @decorator
     async def async_multiply(x: int, y: int) -> int:
         """An async function that multiplies two numbers."""
         await asyncio.sleep(0.001)  # Small delay to simulate async work
-        result = x * y
         logger.current_span().log(metadata={"operation": "multiply"})
-        return result
+        return x * y
 
     start_time = time.time()
     result = await async_multiply(3, 4)
@@ -2452,10 +1842,8 @@ async def test_traced_async_function(with_memory_logger):
 
     logs = with_memory_logger.pop()
     assert len(logs) == 1
-    log = logs[0]
-
     assert_dict_matches(
-        log,
+        logs[0],
         {
             "input": {"x": 3, "y": 4},
             "output": 12,
@@ -2465,77 +1853,7 @@ async def test_traced_async_function(with_memory_logger):
                 "end": lambda x: start_time <= x <= end_time,
             },
             "span_attributes": {
-                "name": "async_multiply",
-                "type": "function",
-            },
-        },
-    )
-
-    @logger.traced()
-    async def async_multiply(x: int, y: int) -> int:  # pylint: disable=function-redefined
-        """An async function that multiplies two numbers."""
-        await asyncio.sleep(0.001)  # Small delay to simulate async work
-        result = x * y
-        logger.current_span().log(metadata={"operation": "multiply"})
-        return result
-
-    start_time = time.time()
-    result = await async_multiply(3, 4)
-    end_time = time.time()
-
-    assert result == 12
-
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-    log = logs[0]
-
-    assert_dict_matches(
-        log,
-        {
-            "input": {"x": 3, "y": 4},
-            "output": 12,
-            "metadata": {"operation": "multiply"},
-            "metrics": {
-                "start": lambda x: start_time <= x <= end_time,
-                "end": lambda x: start_time <= x <= end_time,
-            },
-            "span_attributes": {
-                "name": "async_multiply",
-                "type": "function",
-            },
-        },
-    )
-
-    @logger.traced(name="async_multiply_with_name")
-    async def async_multiply(x: int, y: int) -> int:  # pylint: disable=function-redefined
-        """An async function that multiplies two numbers."""
-        await asyncio.sleep(0.001)  # Small delay to simulate async work
-        result = x * y
-        logger.current_span().log(metadata={"operation": "multiply"})
-        return result
-
-    start_time = time.time()
-    result = await async_multiply(3, 4)
-    end_time = time.time()
-
-    assert result == 12
-
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-    log = logs[0]
-
-    assert_dict_matches(
-        log,
-        {
-            "input": {"x": 3, "y": 4},
-            "output": 12,
-            "metadata": {"operation": "multiply"},
-            "metrics": {
-                "start": lambda x: start_time <= x <= end_time,
-                "end": lambda x: start_time <= x <= end_time,
-            },
-            "span_attributes": {
-                "name": "async_multiply_with_name",
+                "name": expected_name,
                 "type": "function",
             },
         },
@@ -2758,456 +2076,164 @@ async def test_traced_async_generator(with_memory_logger):
     )
 
 
-def test_traced_sync_generator_truncation(with_memory_logger, caplog):
-    """Test sync generator truncation behavior."""
+def _consume_sync_traced_generator(n: int) -> list[int]:
+    @logger.traced
+    def sync_generator():
+        yield from range(n)
+
+    return list(sync_generator())
+
+
+def _consume_async_traced_generator(n: int) -> list[int]:
+    @logger.traced
+    async def async_generator():
+        for i in range(n):
+            yield i
+
+    async def collect():
+        return [v async for v in async_generator()]
+
+    return asyncio.run(collect())
+
+
+_TRACED_GENERATOR_KINDS = pytest.mark.parametrize(
+    "consume",
+    [
+        pytest.param(_consume_sync_traced_generator, id="sync"),
+        pytest.param(_consume_async_traced_generator, id="async"),
+    ],
+)
+
+
+@_TRACED_GENERATOR_KINDS
+@pytest.mark.parametrize(
+    ("max_items", "logged_output", "warns"),
+    [
+        pytest.param("3", None, True, id="truncated"),
+        pytest.param("0", None, False, id="zero-drops-output"),
+        pytest.param("-1", list(range(10)), False, id="unlimited"),
+    ],
+)
+def test_traced_generator_max_items(with_memory_logger, monkeypatch, caplog, consume, max_items, logged_output, warns):
+    """BRAINTRUST_MAX_GENERATOR_ITEMS limits logged output but never what the generator yields."""
     init_test_logger(__name__)
+    monkeypatch.setenv("BRAINTRUST_MAX_GENERATOR_ITEMS", max_items)
 
-    original = os.environ.get("BRAINTRUST_MAX_GENERATOR_ITEMS")
-    try:
-        os.environ["BRAINTRUST_MAX_GENERATOR_ITEMS"] = "3"
+    with caplog.at_level(logging.WARNING):
+        assert consume(10) == list(range(10))
 
-        @logger.traced
-        def large_generator():
-            """A generator that yields more items than the limit."""
-            for i in range(10):
-                yield i
-
-        results = []
-        with caplog.at_level(logging.WARNING):
-            for value in large_generator():
-                results.append(value)
-
-        # All values should still be yielded
-        assert results == list(range(10))
-
-        # Check warning was logged
-        assert any("Generator output exceeded limit of 3 items" in record.message for record in caplog.records)
-
-        logs = with_memory_logger.pop()
-        assert len(logs) == 1
-        log = logs[0]
-
-        # Output should not be logged when truncated
-        assert "output" not in log or log.get("output") is None
-        assert log.get("input") == {}
-
-    finally:
-        os.environ.pop("BRAINTRUST_MAX_GENERATOR_ITEMS", None)
-        if original:
-            os.environ["BRAINTRUST_MAX_GENERATOR_ITEMS"] = original
+    [log] = with_memory_logger.pop()
+    assert log.get("output") == logged_output
+    assert log.get("input") == {}
+    warnings = [r.message for r in caplog.records if "Generator output exceeded limit" in r.message]
+    if warns:
+        assert "exceeded limit of 3 items" in warnings[0]
+    else:
+        assert not warnings
 
 
-@pytest.mark.asyncio
-async def test_traced_async_generator_truncation(with_memory_logger, caplog):
-    """Test async generator truncation behavior."""
+@_TRACED_GENERATOR_KINDS
+@pytest.mark.parametrize("value", ["", "  ", "not-a-number"])
+def test_traced_generators_ignore_invalid_max_items_env(with_memory_logger, monkeypatch, consume, value):
+    """An empty or non-numeric BRAINTRUST_MAX_GENERATOR_ITEMS falls back to the default instead of raising."""
     init_test_logger(__name__)
-
-    original = os.environ.get("BRAINTRUST_MAX_GENERATOR_ITEMS")
-    try:
-        os.environ["BRAINTRUST_MAX_GENERATOR_ITEMS"] = "3"
-
-        @logger.traced
-        async def large_async_generator():
-            """An async generator that yields more items than the limit."""
-            for i in range(10):
-                await asyncio.sleep(0.001)
-                yield i
-
-        results = []
-        with caplog.at_level(logging.WARNING):
-            async for value in large_async_generator():
-                results.append(value)
-
-        # All values should still be yielded
-        assert results == list(range(10))
-
-        # Check warning was logged
-        assert any("Generator output exceeded limit of 3 items" in record.message for record in caplog.records)
-
-        logs = with_memory_logger.pop()
-        assert len(logs) == 1
-        log = logs[0]
-
-        # Output should not be logged when truncated
-        assert "output" not in log or log.get("output") is None
-        assert log.get("input") == {}
-
-    finally:
-        os.environ.pop("BRAINTRUST_MAX_GENERATOR_ITEMS", None)
-        if original:
-            os.environ["BRAINTRUST_MAX_GENERATOR_ITEMS"] = original
-
-
-def test_traced_sync_generator_zero_limit_drops_output(with_memory_logger):
-    """Test sync generator with limit=0 drops all output but still yields values."""
-    init_test_logger(__name__)
-
-    original = os.environ.get("BRAINTRUST_MAX_GENERATOR_ITEMS")
-    try:
-        os.environ["BRAINTRUST_MAX_GENERATOR_ITEMS"] = "0"
-
-        @logger.traced
-        def no_output_logged_generator():
-            """Generator whose output won't be logged due to limit=0."""
-            for i in range(10):
-                yield i
-
-        results = []
-        for value in no_output_logged_generator():
-            results.append(value)
-
-        # Generator still yields all values
-        assert results == list(range(10))
-
-        logs = with_memory_logger.pop()
-        assert len(logs) == 1
-        log = logs[0]
-
-        # Output is not logged when limit is 0
-        assert "output" not in log or log.get("output") is None
-
-    finally:
-        os.environ.pop("BRAINTRUST_MAX_GENERATOR_ITEMS", None)
-        if original:
-            os.environ["BRAINTRUST_MAX_GENERATOR_ITEMS"] = original
-
-
-def test_traced_sync_generator_unlimited_with_minus_one(with_memory_logger):
-    """Test sync generator with limit=-1 buffers all output."""
-    init_test_logger(__name__)
-
-    original = os.environ.get("BRAINTRUST_MAX_GENERATOR_ITEMS")
-    try:
-        os.environ["BRAINTRUST_MAX_GENERATOR_ITEMS"] = "-1"
-
-        @logger.traced
-        def unlimited_buffer_generator():
-            """Generator that buffers all output with limit=-1."""
-            for i in range(3):
-                yield i * 2
-
-        results = []
-        for value in unlimited_buffer_generator():
-            results.append(value)
-
-        assert results == [0, 2, 4]
-
-        logs = with_memory_logger.pop()
-        assert len(logs) == 1
-        log = logs[0]
-
-        # All output should be logged when limit is -1
-        assert log.get("output") == [0, 2, 4]
-
-    finally:
-        os.environ.pop("BRAINTRUST_MAX_GENERATOR_ITEMS", None)
-        if original:
-            os.environ["BRAINTRUST_MAX_GENERATOR_ITEMS"] = original
-
-
-@pytest.mark.asyncio
-async def test_traced_async_generator_zero_limit_drops_output(with_memory_logger):
-    """Test async generator with limit=0 drops all output but still yields values."""
-    init_test_logger(__name__)
-
-    original = os.environ.get("BRAINTRUST_MAX_GENERATOR_ITEMS")
-    try:
-        os.environ["BRAINTRUST_MAX_GENERATOR_ITEMS"] = "0"
-
-        @logger.traced
-        async def no_output_logged_async_generator():
-            """Async generator whose output won't be logged due to limit=0."""
-            for i in range(10):
-                await asyncio.sleep(0.001)
-                yield i
-
-        results = []
-        async for value in no_output_logged_async_generator():
-            results.append(value)
-
-        # Generator still yields all values
-        assert results == list(range(10))
-
-        logs = with_memory_logger.pop()
-        assert len(logs) == 1
-        log = logs[0]
-
-        # Output is not logged when limit is 0
-        assert "output" not in log or log.get("output") is None
-
-    finally:
-        os.environ.pop("BRAINTRUST_MAX_GENERATOR_ITEMS", None)
-        if original:
-            os.environ["BRAINTRUST_MAX_GENERATOR_ITEMS"] = original
-
-
-@pytest.mark.asyncio
-async def test_traced_async_generator_unlimited_with_minus_one(with_memory_logger):
-    """Test async generator with limit=-1 buffers all output."""
-    init_test_logger(__name__)
-
-    original = os.environ.get("BRAINTRUST_MAX_GENERATOR_ITEMS")
-    try:
-        os.environ["BRAINTRUST_MAX_GENERATOR_ITEMS"] = "-1"
-
-        @logger.traced
-        async def unlimited_buffer_async_generator():
-            """Async generator that buffers all output with limit=-1."""
-            for i in range(3):
-                await asyncio.sleep(0.001)
-                yield i * 2
-
-        results = []
-        async for value in unlimited_buffer_async_generator():
-            results.append(value)
-
-        assert results == [0, 2, 4]
-
-        logs = with_memory_logger.pop()
-        assert len(logs) == 1
-        log = logs[0]
-
-        # All output should be logged when limit is -1
-        assert log.get("output") == [0, 2, 4]
-
-    finally:
-        os.environ.pop("BRAINTRUST_MAX_GENERATOR_ITEMS", None)
-        if original:
-            os.environ["BRAINTRUST_MAX_GENERATOR_ITEMS"] = original
-
-
-def test_masking_function_logger(with_memory_logger, with_simulate_login):
-    """Test that masking function is applied to logged data in Logger."""
-
-    def masking_function(data):
-        """Replace any occurrence of 'sensitive' with 'REDACTED'"""
-        if isinstance(data, str):
-            return data.replace("sensitive", "REDACTED")
-        elif isinstance(data, dict):
-            masked = {}
-            for k, v in data.items():
-                if isinstance(v, str) and "sensitive" in v:
-                    masked[k] = v.replace("sensitive", "REDACTED")
-                elif isinstance(v, dict):
-                    masked[k] = masking_function(v)
-                elif isinstance(v, list):
-                    masked[k] = [masking_function(item) if isinstance(item, (dict, list)) else item for item in v]
-                else:
-                    masked[k] = v
-            return masked
-        elif isinstance(data, list):
-            return [masking_function(item) if isinstance(item, (dict, list)) else item for item in data]
-        return data
-
-    # Set masking function globally
-    braintrust.set_masking_function(masking_function)
-
-    # Create test logger
-    test_logger = init_test_logger("test_project")
-
-    # Log some data with sensitive information
-    test_logger.log(
-        input="This is a sensitive input",
-        output={"message": "This contains sensitive data", "count": 42},
-        metadata={"user": "sensitive_user", "safe": "normal_data"},
-    )
-
-    # Check the logged data
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-    log = logs[0]
-
-    # Verify masking was applied
-    assert log["input"] == "This is a REDACTED input"
-    assert log["output"]["message"] == "This contains REDACTED data"
-    assert log["output"]["count"] == 42
-    assert log["metadata"]["user"] == "REDACTED_user"
-    assert log["metadata"]["safe"] == "normal_data"
-
-    # Clean up
-    braintrust.set_masking_function(None)
-
-
-def test_masking_function_experiment(with_memory_logger, with_simulate_login):
-    """Test that masking function is applied to logged data in Experiment."""
-
-    def masking_function(data):
-        """Replace any occurrence of 'password' with 'XXX'"""
-        if isinstance(data, str):
-            return data.replace("password", "XXX")
-        elif isinstance(data, dict):
-            masked = {}
-            for k, v in data.items():
-                if k == "password":
-                    # Mask the value when the key is "password"
-                    masked[k] = "XXX"
-                elif isinstance(v, str) and "password" in v:
-                    masked[k] = v.replace("password", "XXX")
-                elif isinstance(v, dict):
-                    masked[k] = masking_function(v)
-                elif isinstance(v, list):
-                    masked[k] = [masking_function(item) if isinstance(item, (dict, list)) else item for item in v]
-                else:
-                    masked[k] = v
-            return masked
-        elif isinstance(data, list):
-            return [masking_function(item) if isinstance(item, (dict, list)) else item for item in data]
-        return data
-
-    # Set masking function globally
-    braintrust.set_masking_function(masking_function)
-
-    # Create test experiment
-    from braintrust.logger import Experiment, ObjectMetadata, ProjectExperimentMetadata
-
-    project_metadata = ObjectMetadata(id="test_project", name="test_project", full_info=dict())
-    experiment_metadata = ObjectMetadata(id="test_experiment", name="test_experiment", full_info=dict())
-    metadata = ProjectExperimentMetadata(project=project_metadata, experiment=experiment_metadata)
-    lazy_metadata = LazyValue(lambda: metadata, use_mutex=False)
-    experiment = Experiment(lazy_metadata=lazy_metadata)
-
-    # Log some data with passwords
-    experiment.log(
-        input={"command": "login", "password": "secret123"},
-        output="Login successful with password validation",
-        scores={"accuracy": 0.95},
-    )
-
-    # Check the logged data
-    logs = with_memory_logger.pop()
-    assert len(logs) > 0  # Should have at least one log entry
-
-    # Debug: Print all logs to see what's there
-    print(f"Number of logs: {len(logs)}")
-    for i, log in enumerate(logs):
-        print(f"Log {i}: {log}")
-
-    # Find the main log entry (not the end span)
-    main_log = None
-    for log in logs:
-        if log.get("input") is not None:
-            main_log = log
-            break
-
-    assert main_log is not None, "Could not find main log entry"
-
-    # Verify masking was applied
-    assert main_log["input"]["command"] == "login"
-    assert main_log["input"]["password"] == "XXX"
-    assert main_log["output"] == "Login successful with XXX validation"
-    assert main_log["scores"]["accuracy"] == 0.95
-
-    # Clean up
-    braintrust.set_masking_function(None)
-
-
-def test_masking_function_propagates_to_spans(with_memory_logger, with_simulate_login):
-    """Test that masking function propagates from parent to child spans."""
-
-    def masking_function(data):
-        """Replace any 'api_key' field with 'HIDDEN'"""
-        if isinstance(data, dict):
-            masked = {}
-            for k, v in data.items():
-                if k == "api_key":
-                    masked[k] = "HIDDEN"
-                elif isinstance(v, dict):
-                    masked[k] = masking_function(v)
-                elif isinstance(v, list):
-                    masked[k] = [masking_function(item) if isinstance(item, (dict, list)) else item for item in v]
-                else:
-                    masked[k] = v
-            return masked
-        elif isinstance(data, list):
-            return [masking_function(item) if isinstance(item, (dict, list)) else item for item in data]
-        return data
-
-    # Set masking function globally
-    braintrust.set_masking_function(masking_function)
-
-    # Create test logger
-    test_logger = init_test_logger("test_project")
-
-    # Create parent span
-    with test_logger.start_span(name="parent_span") as parent:
-        parent.log(input={"api_key": "sk-12345", "query": "test"})
-
-        # Create child span
+    monkeypatch.setenv("BRAINTRUST_MAX_GENERATOR_ITEMS", value)
+
+    assert consume(3) == [0, 1, 2]
+
+    [log] = with_memory_logger.pop()
+    assert log.get("output") == [0, 1, 2]
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "BRAINTRUST_PROMPT_CACHE_MEMORY_MAX_SIZE",
+        "BRAINTRUST_PROMPT_CACHE_DISK_MAX_SIZE",
+        "BRAINTRUST_PARAMETERS_CACHE_MEMORY_MAX_SIZE",
+        "BRAINTRUST_PARAMETERS_CACHE_DISK_MAX_SIZE",
+    ],
+)
+@pytest.mark.parametrize("value", ["", "not-a-number"])
+def test_state_ignores_invalid_cache_size_env(monkeypatch, name, value):
+    """An empty or non-numeric cache size variable keeps the default instead of failing state creation."""
+    monkeypatch.setenv(name, value)
+    logger.BraintrustState()
+
+
+def _redact_secrets(data):
+    """Test masking function: redacts "secret" substrings and every "api_key" value."""
+    if isinstance(data, str):
+        return data.replace("secret", "REDACTED")
+    if isinstance(data, dict):
+        return {k: "REDACTED" if k == "api_key" else _redact_secrets(v) for k, v in data.items()}
+    if isinstance(data, list):
+        return [_redact_secrets(item) for item in data]
+    return data
+
+
+_SENSITIVE_INPUT = {"api_key": "sk-12345", "query": "a secret query"}
+_SENSITIVE_OUTPUT = {"response": "secret data", "api_key": "sk-67890", "items": ["secret", 42]}
+
+
+def _log_sensitive_data_to_child_span():
+    with init_test_logger("test_project").start_span(name="parent_span") as parent:
+        parent.log(input=_SENSITIVE_INPUT)
         with parent.start_span(name="child_span") as child:
-            child.log(output={"response": "data", "api_key": "sk-67890"})
-
-    # Check the logged data
-    logs = with_memory_logger.pop()
-
-    # Find parent and child logs
-    parent_log = next((log for log in logs if log.get("span_attributes", {}).get("name") == "parent_span"), None)
-    child_log = next((log for log in logs if log.get("span_attributes", {}).get("name") == "child_span"), None)
-
-    assert parent_log is not None
-    assert child_log is not None
-
-    # Verify masking was applied to both spans
-    assert parent_log["input"]["api_key"] == "HIDDEN"
-    assert parent_log["input"]["query"] == "test"
-    assert child_log["output"]["api_key"] == "HIDDEN"
-    assert child_log["output"]["response"] == "data"
+            child.log(output=_SENSITIVE_OUTPUT)
 
 
-def test_masking_function_dataset(with_memory_logger, with_simulate_login):
-    """Test that masking function is applied to dataset operations."""
+@pytest.mark.parametrize(
+    ("log_sensitive_data", "output_field", "other_input_row_fields"),
+    [
+        pytest.param(
+            lambda: init_test_logger("test_project").log(
+                input=_SENSITIVE_INPUT, output=_SENSITIVE_OUTPUT, metadata={"user": "secret_user", "safe": "normal"}
+            ),
+            "output",
+            {"metadata": {"user": "REDACTED_user", "safe": "normal"}},
+            id="logger",
+        ),
+        pytest.param(
+            lambda: init_test_exp("test_experiment", "test_project").log(
+                input=_SENSITIVE_INPUT, output=_SENSITIVE_OUTPUT, scores={"accuracy": 0.95}
+            ),
+            "output",
+            {"scores": {"accuracy": 0.95}},
+            id="experiment",
+        ),
+        pytest.param(_log_sensitive_data_to_child_span, "output", {}, id="child-span"),
+        pytest.param(
+            lambda: _init_test_dataset().insert(
+                input=_SENSITIVE_INPUT, expected=_SENSITIVE_OUTPUT, metadata={"admin": "secret"}
+            ),
+            "expected",
+            {"metadata": {"admin": "REDACTED"}},
+            id="dataset",
+        ),
+    ],
+)
+def test_masking_function_applies_to_logged_data(
+    with_memory_logger, with_simulate_login, log_sensitive_data, output_field, other_input_row_fields
+):
+    """The global masking function is applied to every logged field, including in child spans."""
+    braintrust.set_masking_function(_redact_secrets)
 
-    def masking_function(data):
-        """Replace email addresses with 'EMAIL_REDACTED'"""
-        if isinstance(data, dict):
-            masked = {}
-            for k, v in data.items():
-                if isinstance(v, str) and "@" in v and "." in v:
-                    # Simple email detection
-                    masked[k] = "EMAIL_REDACTED"
-                elif isinstance(v, dict):
-                    masked[k] = masking_function(v)
-                elif isinstance(v, list):
-                    masked[k] = [masking_function(item) if isinstance(item, (dict, list)) else item for item in v]
-                else:
-                    masked[k] = v
-            return masked
-        elif isinstance(data, list):
-            return [masking_function(item) if isinstance(item, (dict, list)) else item for item in data]
-        return data
+    log_sensitive_data()
 
-    # Set masking function globally
-    braintrust.set_masking_function(masking_function)
-
-    # Create test dataset
-    from braintrust.logger import Dataset, ObjectMetadata, ProjectDatasetMetadata
-
-    project_metadata = ObjectMetadata(id="test_project", name="test_project", full_info=dict())
-    dataset_metadata = ObjectMetadata(id="test_dataset", name="test_dataset", full_info=dict())
-    metadata = ProjectDatasetMetadata(project=project_metadata, dataset=dataset_metadata)
-    lazy_metadata = LazyValue(lambda: metadata, use_mutex=False)
-    dataset = Dataset(lazy_metadata=lazy_metadata)
-
-    # Insert data with email addresses
-    dataset.insert(
-        input={"user": "john@example.com", "action": "login"},
-        expected={"status": "success", "email": "john@example.com"},
-        metadata={"admin_email": "admin@example.com"},
-    )
-
-    # Check the logged data
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-    log = logs[0]
-
-    # Verify masking was applied
-    assert log["input"]["user"] == "EMAIL_REDACTED"
-    assert log["input"]["action"] == "login"
-    assert log["expected"]["status"] == "success"
-    assert log["expected"]["email"] == "EMAIL_REDACTED"
-    assert log["metadata"]["admin_email"] == "EMAIL_REDACTED"
-
-    # Clean up
-    braintrust.set_masking_function(None)
+    rows = with_memory_logger.pop()
+    input_row = next(row for row in rows if row.get("input"))
+    assert input_row["input"] == {"api_key": "REDACTED", "query": "a REDACTED query"}
+    assert next(row[output_field] for row in rows if row.get(output_field)) == {
+        "response": "REDACTED data",
+        "api_key": "REDACTED",
+        "items": ["REDACTED", 42],
+    }
+    for field, expected in other_input_row_fields.items():
+        assert input_row[field] == expected
+    serialized = json.dumps(rows)
+    assert "secret" not in serialized
+    assert "sk-" not in serialized
 
 
 def test_masking_function_with_error(with_memory_logger, with_simulate_login):
@@ -3333,120 +2359,42 @@ def test_parent_precedence_explicit_parent_overrides(with_memory_logger, with_si
 
 
 @pytest.fixture
-def reset_id_generator_state():
-    """Reset ID generator state and environment variables before each test"""
-    logger._state._reset_id_generator()
-    logger._state._reset_context_manager()
-    original_otel = os.getenv("BRAINTRUST_OTEL_COMPAT")
-    original_legacy = os.getenv("BRAINTRUST_LEGACY_IDS")
-    try:
-        yield
-    finally:
-        logger._state._reset_id_generator()
-        logger._state._reset_context_manager()
-        os.environ.pop("BRAINTRUST_OTEL_COMPAT", None)
-        os.environ.pop("BRAINTRUST_LEGACY_IDS", None)
-        if original_otel:
-            os.environ["BRAINTRUST_OTEL_COMPAT"] = original_otel
-        if original_legacy:
-            os.environ["BRAINTRUST_LEGACY_IDS"] = original_legacy
+def reset_id_generator_state(monkeypatch):
+    """Clear the ID-format env vars. conftest's reset_braintrust_state replaces the cached generator."""
+    monkeypatch.delenv("BRAINTRUST_OTEL_COMPAT", raising=False)
+    monkeypatch.delenv("BRAINTRUST_LEGACY_IDS", raising=False)
 
 
-def test_otel_compatible_span_export_import():
-    """Test that spans with OTEL-compatible IDs can be exported and imported correctly."""
-    from braintrust.span_identifier_v4 import SpanComponentsV4, SpanObjectTypeV3
-
-    # Generate OTEL-compatible IDs
-    otel_gen = OTELIDGenerator()
-    trace_id = otel_gen.get_trace_id()  # 32-char hex (16 bytes)
-    span_id = otel_gen.get_span_id()  # 16-char hex (8 bytes)
-
-    # Test that trace_id is 32 chars and span_id is 16 chars
-    assert len(trace_id) == 32
-    assert len(span_id) == 16
-    assert all(c in "0123456789abcdef" for c in trace_id)
-    assert all(c in "0123456789abcdef" for c in span_id)
-
-    # Create span components
-    components = SpanComponentsV4(
-        object_type=SpanObjectTypeV3.PROJECT_LOGS,
-        object_id="test-project-id",
-        row_id="test-row-id",
-        span_id=span_id,
-        root_span_id=trace_id,
-    )
-
-    # Test export/import cycle
-    exported = components.to_str()
-    imported = SpanComponentsV4.from_str(exported)
-
-    # Verify all fields match exactly
-    assert imported.object_type == components.object_type
-    assert imported.object_id == components.object_id
-    assert imported.row_id == components.row_id
-    assert imported.span_id == span_id
-    assert imported.root_span_id == trace_id
-
-
-def test_span_with_otel_ids_export_import(reset_id_generator_state):
+def test_span_with_otel_ids_export_import(reset_id_generator_state, monkeypatch):
     """Test that actual Span objects with OTEL IDs can export and be used as parent context."""
     init_test_logger(__name__)
-    os.environ["BRAINTRUST_OTEL_COMPAT"] = "true"
-
-    # Test that OTEL generator should not share root_span_id
-    generator = get_id_generator()
-    assert generator.share_root_span_id() == False
+    monkeypatch.setenv("BRAINTRUST_OTEL_COMPAT", "true")
 
     with logger.start_span(name="test") as span:
-        # Debug what we actually got
-        print(f"span_id: {span.span_id} (len={len(span.span_id)})")
-        print(f"root_span_id: {span.root_span_id} (len={len(span.root_span_id)})")
-
-        # Test that OTEL spans should not share span_id and root_span_id
+        # OTEL spans do not share span_id and root_span_id
         assert span.span_id != span.root_span_id
-
-        # Verify the span has OTEL-compatible IDs
         assert len(span.span_id) == 16  # 8-byte hex
         assert len(span.root_span_id) == 32  # 16-byte hex
-        assert all(c in "0123456789abcdef" for c in span.span_id)
-        assert all(c in "0123456789abcdef" for c in span.root_span_id)
 
-        # Export the span
-        exported = span.export()
-
-        # Parse it back
         from braintrust.span_identifier_v4 import SpanComponentsV4
 
-        imported = SpanComponentsV4.from_str(exported)
-
-        # Verify IDs are preserved exactly
+        imported = SpanComponentsV4.from_str(span.export())
         assert imported.span_id == span.span_id
         assert imported.root_span_id == span.root_span_id
 
 
-def test_span_with_uuid_ids_share_root_span_id(reset_id_generator_state):
+def test_span_with_uuid_ids_share_root_span_id(reset_id_generator_state, monkeypatch):
     """Test that legacy UUID generators share span_id as root_span_id for backwards compatibility."""
-    import os
-
-    # Opt into legacy UUID IDs (hex IDs are the default).
-    os.environ.pop("BRAINTRUST_OTEL_COMPAT", None)
-    os.environ["BRAINTRUST_LEGACY_IDS"] = "true"
-    logger._state._reset_id_generator()
-
+    monkeypatch.setenv("BRAINTRUST_LEGACY_IDS", "true")
     init_test_logger(__name__)
 
-    # Test that the legacy UUID generator shares root_span_id
-    generator = get_id_generator()
-    assert generator.share_root_span_id() == True
-
     with logger.start_span(name="test") as span:
-        # Test that UUID spans share span_id and root_span_id for backwards compatibility
         assert span.span_id == span.root_span_id
 
 
-def test_parent_context_with_otel_ids(with_memory_logger, reset_id_generator_state):
+def test_parent_context_with_otel_ids(with_memory_logger, reset_id_generator_state, monkeypatch):
     """Test that parent_context works correctly with OTEL-compatible IDs."""
-    os.environ["BRAINTRUST_OTEL_COMPAT"] = "true"
+    monkeypatch.setenv("BRAINTRUST_OTEL_COMPAT", "true")
     init_test_logger(__name__)
 
     # Create a span and export it
@@ -3454,12 +2402,6 @@ def test_parent_context_with_otel_ids(with_memory_logger, reset_id_generator_sta
         parent_export = parent_span.export()
         original_span_id = parent_span.span_id
         original_root_span_id = parent_span.root_span_id
-
-    def is_hex(s):
-        return all(c in "0123456789abcdef" for c in s.lower())
-
-    assert is_hex(original_span_id)
-    assert is_hex(original_root_span_id)
 
     # Use the exported span as parent context
     with parent_context(parent_export):
@@ -3479,16 +2421,13 @@ def test_parent_context_with_otel_ids(with_memory_logger, reset_id_generator_sta
     assert parent_log["span_id"] in child_log.get("span_parents", [])
 
 
-def test_nested_spans_with_export(with_memory_logger):
+def test_login_during_active_span_preserves_context_manager(with_memory_logger):
     """Test nested spans with login triggered during span execution.
 
     This reproduces a bug where calling state.login() during an active span
     calls copy_state(), which would overwrite _context_manager with None,
     causing a ContextVar token mismatch error when the span exits.
     """
-    from braintrust import logger
-    from braintrust.test_helpers import init_test_exp
-
     experiment = init_test_exp("test-experiment", "test-project")
 
     # Start a span, then trigger login which calls copy_state()
@@ -3508,8 +2447,6 @@ def test_span_start_span_with_explicit_parent(with_memory_logger):
     This verifies the fix where span.start_span(parent=exported) should use the
     exported parent, not the current span from the context manager.
     """
-    from braintrust.test_helpers import init_test_exp
-
     experiment = init_test_exp("test-experiment", "test-project")
 
     # Create a root span, log to it (creates row_id), and export it
@@ -3549,8 +2486,6 @@ def test_span_start_span_inherits_from_self(with_memory_logger):
 
     When no explicit parent is provided, the child should inherit from the current span.
     """
-    from braintrust.test_helpers import init_test_exp
-
     experiment = init_test_exp("test-experiment", "test-project")
 
     # Create a parent span
@@ -3569,45 +2504,6 @@ def test_span_start_span_inherits_from_self(with_memory_logger):
     assert child_log["root_span_id"] == parent_root_span_id
     assert parent_span_id in child_log.get("span_parents", []), (
         "child should have parent_span_id in span_parents when no explicit parent is provided"
-    )
-
-
-def test_span_start_span_with_exported_span_parent(with_memory_logger):
-    """Test that span.start_span() with exported span parent uses the exported span.
-
-    When an exported span (with row_id) is provided as parent, it should be used
-    instead of the context manager's current span.
-    """
-    from braintrust.test_helpers import init_test_exp
-
-    experiment = init_test_exp("test-experiment", "test-project")
-
-    # Create and export a span with row_id
-    with experiment.start_span(name="exported_parent") as exported_parent:
-        exported_parent.log(input="parent")
-        exported_parent_export = exported_parent.export()
-        exported_parent_span_id = exported_parent.span_id
-        exported_parent_root_span_id = exported_parent.root_span_id
-
-    # Create another span that will be the active context
-    with experiment.start_span(name="active_context") as active_context:
-        active_context_span_id = active_context.span_id
-
-        # Within active_context, create a child with explicit parent=exported_parent_export
-        # Should use exported_parent, not active_context
-        with active_context.start_span(parent=exported_parent_export, name="child") as child:
-            child.log(input="test")
-
-    logs = with_memory_logger.pop()
-    child_log = next(l for l in logs if l.get("span_attributes", {}).get("name") == "child")
-
-    # Child should inherit from exported_parent, not active_context
-    assert child_log["root_span_id"] == exported_parent_root_span_id
-    assert exported_parent_span_id in child_log.get("span_parents", []), (
-        "child should have exported_parent_span_id in span_parents"
-    )
-    assert active_context_span_id not in child_log.get("span_parents", []), (
-        "child should NOT have active_context_span_id in span_parents"
     )
 
 
@@ -3631,192 +2527,50 @@ def test_update_span_includes_span_id_and_root_span_id_from_export(with_memory_l
     assert updated_log["metadata"] == {"foo": "bar"}
 
 
-def test_get_exporter_returns_v4_by_default():
-    """Test that _get_exporter() returns SpanComponentsV4 by default (no env vars)."""
-    with preserve_env_vars("BRAINTRUST_OTEL_COMPAT", "BRAINTRUST_LEGACY_IDS"):
-        os.environ.pop("BRAINTRUST_OTEL_COMPAT", None)
-        os.environ.pop("BRAINTRUST_LEGACY_IDS", None)
-        from braintrust.logger import _get_exporter
-        from braintrust.span_identifier_v4 import SpanComponentsV4
+@pytest.mark.parametrize(
+    ("env", "expected_version"),
+    [
+        pytest.param({}, 4, id="default"),
+        pytest.param({"BRAINTRUST_LEGACY_IDS": "true"}, 3, id="legacy-ids"),
+        pytest.param({"BRAINTRUST_OTEL_COMPAT": "true", "BRAINTRUST_LEGACY_IDS": "true"}, 4, id="otel-compat-wins"),
+    ],
+)
+def test_export_format_follows_id_mode(reset_id_generator_state, monkeypatch, env, expected_version):
+    """Experiment.export() and Logger.export() use V3 only in legacy UUID mode."""
+    from braintrust.span_identifier_v4 import SpanComponentsV4
 
-        exporter = _get_exporter()
-        assert exporter == SpanComponentsV4, "Should return V4 by default"
+    for name, value in env.items():
+        monkeypatch.setenv(name, value)
 
-
-def test_get_exporter_returns_v3_when_legacy_uuid():
-    """Test that _get_exporter() returns SpanComponentsV3 in legacy UUID mode."""
-    with preserve_env_vars("BRAINTRUST_OTEL_COMPAT", "BRAINTRUST_LEGACY_IDS"):
-        os.environ.pop("BRAINTRUST_OTEL_COMPAT", None)
-        os.environ["BRAINTRUST_LEGACY_IDS"] = "true"
-        from braintrust.logger import _get_exporter
-        from braintrust.span_identifier_v3 import SpanComponentsV3
-
-        exporter = _get_exporter()
-        assert exporter == SpanComponentsV3, "Should return V3 in legacy UUID mode"
-
-
-def test_get_exporter_returns_v4_when_otel_enabled():
-    """Test that _get_exporter() returns SpanComponentsV4 when OTEL_COMPAT is true."""
-    with preserve_env_vars("BRAINTRUST_OTEL_COMPAT"):
-        os.environ["BRAINTRUST_OTEL_COMPAT"] = "true"
-        from braintrust.logger import _get_exporter
-        from braintrust.span_identifier_v4 import SpanComponentsV4
-
-        exporter = _get_exporter()
-        assert exporter == SpanComponentsV4, "Should return V4 when OTEL_COMPAT=true"
-
-
-def test_experiment_export_uses_v4_by_default():
-    """Test that Experiment.export() uses V4 by default."""
-    with preserve_env_vars("BRAINTRUST_OTEL_COMPAT", "BRAINTRUST_LEGACY_IDS"):
-        os.environ.pop("BRAINTRUST_OTEL_COMPAT", None)
-        os.environ.pop("BRAINTRUST_LEGACY_IDS", None)
-        experiment = init_test_exp("test-exp")
-        exported = experiment.export()
-
-        from braintrust.span_identifier_v4 import SpanComponentsV4
-
-        version = SpanComponentsV4.get_version(exported)
-        assert version == 4, f"Expected V4 encoding (version=4), got version={version}"
-
-
-def test_experiment_export_uses_v3_in_legacy_mode():
-    """Test that Experiment.export() uses V3 in legacy UUID mode."""
-    with preserve_env_vars("BRAINTRUST_OTEL_COMPAT", "BRAINTRUST_LEGACY_IDS"):
-        os.environ.pop("BRAINTRUST_OTEL_COMPAT", None)
-        os.environ["BRAINTRUST_LEGACY_IDS"] = "true"
-        experiment = init_test_exp("test-exp")
-        exported = experiment.export()
-
-        from braintrust.span_identifier_v4 import SpanComponentsV4
-
-        version = SpanComponentsV4.get_version(exported)
-        assert version == 3, f"Expected V3 encoding (version=3), got version={version}"
-
-
-def test_experiment_export_respects_otel_compat_enabled():
-    """Test that Experiment.export() uses V4 when OTEL_COMPAT is true."""
-    with preserve_env_vars("BRAINTRUST_OTEL_COMPAT"):
-        os.environ["BRAINTRUST_OTEL_COMPAT"] = "true"
-        experiment = init_test_exp("test-exp")
-        exported = experiment.export()
-
-        from braintrust.span_identifier_v4 import SpanComponentsV4
-
-        version = SpanComponentsV4.get_version(exported)
-        assert version == 4, f"Expected V4 encoding (version=4), got version={version}"
-
-
-def test_logger_export_uses_v4_by_default():
-    """Test that Logger.export() uses V4 by default."""
-    with preserve_env_vars("BRAINTRUST_OTEL_COMPAT", "BRAINTRUST_LEGACY_IDS"):
-        os.environ.pop("BRAINTRUST_OTEL_COMPAT", None)
-        os.environ.pop("BRAINTRUST_LEGACY_IDS", None)
-        test_logger = init_test_logger(__name__)
-        exported = test_logger.export()
-
-        from braintrust.span_identifier_v4 import SpanComponentsV4
-
-        version = SpanComponentsV4.get_version(exported)
-        assert version == 4, f"Expected V4 encoding (version=4), got version={version}"
-
-
-def test_logger_export_uses_v3_in_legacy_mode():
-    """Test that Logger.export() uses V3 in legacy UUID mode."""
-    with preserve_env_vars("BRAINTRUST_OTEL_COMPAT", "BRAINTRUST_LEGACY_IDS"):
-        os.environ.pop("BRAINTRUST_OTEL_COMPAT", None)
-        os.environ["BRAINTRUST_LEGACY_IDS"] = "true"
-        test_logger = init_test_logger(__name__)
-        exported = test_logger.export()
-
-        from braintrust.span_identifier_v4 import SpanComponentsV4
-
-        version = SpanComponentsV4.get_version(exported)
-        assert version == 3, f"Expected V3 encoding (version=3), got version={version}"
-
-
-def test_logger_export_respects_otel_compat_enabled():
-    """Test that Logger.export() uses V4 when OTEL_COMPAT is true."""
-    with preserve_env_vars("BRAINTRUST_OTEL_COMPAT"):
-        os.environ["BRAINTRUST_OTEL_COMPAT"] = "true"
-        test_logger = init_test_logger(__name__)
-        exported = test_logger.export()
-
-        from braintrust.span_identifier_v4 import SpanComponentsV4
-
-        version = SpanComponentsV4.get_version(exported)
-        assert version == 4, f"Expected V4 encoding (version=4), got version={version}"
+    assert SpanComponentsV4.get_version(init_test_exp("test-exp").export()) == expected_version
+    assert SpanComponentsV4.get_version(init_test_logger(__name__).export()) == expected_version
 
 
 def test_register_otel_flush_callback():
-    """Test that register_otel_flush registers a callback correctly."""
-    import asyncio
-
+    """flush_otel() is a no-op until a callback is registered, then invokes it."""
     from braintrust import register_otel_flush
     from braintrust.logger import _internal_get_global_state
-    from braintrust.test_helpers import init_test_logger
 
     init_test_logger(__name__)
     state = _internal_get_global_state()
+    asyncio.run(state.flush_otel())
 
-    # Track if callback was invoked
     callback_invoked = False
 
     async def mock_flush():
         nonlocal callback_invoked
         callback_invoked = True
 
-    # Register the callback
     register_otel_flush(mock_flush)
-
-    # Calling flush_otel should invoke the registered callback
     asyncio.run(state.flush_otel())
 
     assert callback_invoked is True
-
-
-def test_register_otel_flush_disables_span_cache():
-    """Test that register_otel_flush disables the span cache."""
-    from braintrust import register_otel_flush
-    from braintrust.logger import _internal_get_global_state
-    from braintrust.test_helpers import init_test_logger
-
-    init_test_logger(__name__)
-    state = _internal_get_global_state()
-
-    # Enable the cache (simulating what happens during eval)
-    state.span_cache.start()
-    assert state.span_cache.disabled is False
-
-    async def mock_flush():
-        pass
-
-    # Register OTEL flush
-    register_otel_flush(mock_flush)
-
-    # Cache should now be disabled
-    assert state.span_cache.disabled is True
-
-
-def test_flush_otel_noop_when_no_callback():
-    """Test that flush_otel is a no-op when no callback is registered."""
-    import asyncio
-
-    from braintrust.logger import _internal_get_global_state
-    from braintrust.test_helpers import init_test_logger
-
-    init_test_logger(__name__)
-    state = _internal_get_global_state()
-
-    # Should not throw even with no callback registered
-    asyncio.run(state.flush_otel())
 
 
 def test_register_otel_flush_permanently_disables_cache():
     """Test that register_otel_flush permanently disables the cache."""
     from braintrust import register_otel_flush
     from braintrust.logger import _internal_get_global_state
-    from braintrust.test_helpers import init_test_logger
 
     init_test_logger(__name__)
     state = _internal_get_global_state()
@@ -3874,22 +2628,6 @@ class TestJSONAttachment(TestCase):
         text = data.decode("utf-8")
         self.assertEqual(text, '{\n  "a": 1,\n  "b": 2\n}')
 
-    def test_large_transcript_scenario(self):
-        """Test handling large transcript data."""
-        large_transcript = [
-            {
-                "role": "user" if i % 2 == 0 else "assistant",
-                "content": f"Message {i}",
-                "timestamp": time.time() + i,
-            }
-            for i in range(1000)
-        ]
-
-        attachment = JSONAttachment(large_transcript, filename="transcript.json")
-
-        self.assertEqual(attachment.reference["filename"], "transcript.json")
-        self.assertEqual(attachment.reference["content_type"], "application/json")
-
     def test_arrays_and_primitives(self):
         """Test handling arrays and primitive values."""
         array_data = [1, 2, 3, 4, 5]
@@ -3898,34 +2636,6 @@ class TestJSONAttachment(TestCase):
         data = attachment.data
         parsed = json.loads(data.decode("utf-8"))
         self.assertEqual(parsed, array_data)
-
-    def test_integration_with_logger_patterns(self):
-        """Test the intended usage pattern with logger."""
-        log_data = {
-            "input": {
-                "type": "nameOfPrompt",
-                "transcript": JSONAttachment(
-                    [
-                        {"role": "user", "content": "Hello"},
-                        {"role": "assistant", "content": "Hi there!"},
-                    ]
-                ),
-                "configValue1": 123,
-                "configValue2": True,
-            },
-            "output": [{"type": "text", "value": "Generated response"}],
-            "metadata": {
-                "sessionId": "123",
-                "userId": "456",
-                "renderedPrompt": JSONAttachment(
-                    "This is a very long prompt template...",
-                    filename="prompt.json",
-                ),
-            },
-        }
-
-        self.assertIsInstance(log_data["input"]["transcript"], JSONAttachment)
-        self.assertIsInstance(log_data["metadata"]["renderedPrompt"], JSONAttachment)
 
     def test_extract_attachments_with_json_attachment(self):
         """Test that JSONAttachment works with _extract_attachments."""
@@ -4070,6 +2780,123 @@ class TestExperimentGeneratedAPI(TestCase):
             call("test-experiment-id", body={"limit": 1, "cursor": "next-page"}),
         ]
         mock_state.api_conn.assert_not_called()
+
+
+class TestLoggerProjectGroup(TestCase):
+    def setUp(self):
+        # init_test_logger permanently replaces the module-level function with a fake, so restore the real one.
+        metadata_patch = patch.object(logger, "_compute_logger_metadata", _compute_logger_metadata)
+        metadata_patch.start()
+        self.addCleanup(metadata_patch.stop)
+        self.state = MagicMock()
+        self.state.org_name = "test-org"
+        self.state.context_manager = BraintrustState().context_manager
+        self.state.id_generator = logger.id_gen.get_id_generator()
+        self.projects = self.state.api_client.return_value.projects
+        self.projects.post_project.return_value = {"id": "project-id", "name": "project"}
+        self.projects.get_project_id.return_value = {"id": "project-id", "name": "project"}
+
+    def test_registration_body_and_lazy_resolution(self):
+        for project in ["project", None]:
+            for group in ["my-group", None]:
+                with self.subTest(project=project, group=group):
+                    self.projects.reset_mock()
+                    instance = init_logger(
+                        project=project,
+                        _create_in_project_group=group,
+                        state=self.state,
+                        set_current=False,
+                    )
+                    self.projects.post_project.assert_not_called()
+                    self.assertEqual(instance.id, "project-id")
+                    # Second access must not re-register.
+                    self.assertEqual(instance.id, "project-id")
+                    body = {"name": project or "Global", "org_name": "test-org"}
+                    if group is not None:
+                        body["project_group_name"] = group
+                    self.projects.post_project.assert_called_once_with(body=body)
+
+    def test_project_id_takes_precedence(self):
+        for project in ["project", None]:
+            with self.subTest(project=project):
+                self.projects.reset_mock()
+                instance = init_logger(
+                    project=project,
+                    project_id="project-id",
+                    _create_in_project_group="my-group",
+                    state=self.state,
+                    set_current=False,
+                )
+                self.assertNotIn("project_group_name", instance._compute_metadata_args)
+                self.assertEqual(instance.id, "project-id")
+                self.projects.post_project.assert_not_called()
+                if project is None:
+                    self.projects.get_project_id.assert_called_once_with("project-id")
+                else:
+                    self.projects.get_project_id.assert_not_called()
+
+    def test_group_survives_unresolved_exports(self):
+        instance = init_logger(
+            project="project",
+            _create_in_project_group="my-group",
+            state=self.state,
+            set_current=False,
+        )
+        exports = [instance.export(), instance.start_span(name="parent").export()]
+        # Generated by JS's SpanComponentsV4 with the same logger options.
+        js_export = "BAIAeyJjb21wdXRlX29iamVjdF9tZXRhZGF0YV9hcmdzIjp7InByb2plY3RfbmFtZSI6InByb2plY3QiLCJwcm9qZWN0X2dyb3VwX25hbWUiOiJteS1ncm91cCJ9fQ=="
+        exports.append(js_export)
+        self.projects.post_project.assert_not_called()
+        for exported in exports:
+            with self.subTest(exported=exported):
+                self.projects.reset_mock()
+                components = logger.SpanComponentsV4.from_str(exported)
+                self.assertEqual(
+                    components.compute_object_metadata_args,
+                    {
+                        "project_name": "project",
+                        "project_group_name": "my-group",
+                        **({"project_id": None} if exported != js_export else {}),
+                    },
+                )
+                with patch.object(logger, "_state", self.state):
+                    self.assertEqual(logger.span_components_to_object_id(components), "project-id")
+                self.projects.post_project.assert_called_once_with(
+                    body={"name": "project", "org_name": "test-org", "project_group_name": "my-group"}
+                )
+
+    def test_otel_parent_resolves_project_id_when_grouped(self):
+        for group, expected_parent in [("my-group", "project_id:project-id"), (None, "project_name:project")]:
+            with self.subTest(group=group):
+                self.projects.reset_mock()
+                # Fresh loggers so each check starts from an unresolved project id.
+                span_logger, current = (
+                    init_logger(project="project", _create_in_project_group=group, state=self.state, set_current=False)
+                    for _ in range(2)
+                )
+                self.assertEqual(span_logger.start_span(name="parent")._get_otel_parent(), expected_parent)
+                with (
+                    patch.object(logger, "current_experiment", return_value=None),
+                    patch.object(logger, "current_logger", return_value=current),
+                ):
+                    self.assertEqual(logger._current_braintrust_parent(), expected_parent)
+                expected_calls = 0 if group is None else 2
+                self.assertEqual(self.projects.post_project.call_count, expected_calls)
+
+    def test_otel_parent_tolerates_failed_group_registration(self):
+        self.projects.post_project.side_effect = Exception("409 Conflict")
+        instance = init_logger(
+            project="project", _create_in_project_group="my-group", state=self.state, set_current=False
+        )
+        # Must not fall back to a `project_name:` parent, which would register the project outside its group.
+        self.assertIsNone(instance.start_span(name="parent")._get_otel_parent())
+        with (
+            patch.object(logger, "current_experiment", return_value=None),
+            patch.object(logger, "current_logger", return_value=instance),
+            self.assertLogs(level="WARNING") as logs,
+        ):
+            self.assertIsNone(logger._current_braintrust_parent())
+        self.assertIn("409 Conflict", "\n".join(logs.output))
 
 
 class TestProjectGeneratedAPI(TestCase):
@@ -4281,115 +3108,58 @@ class TestDatasetGeneratedAPI(TestCase):
         mock_state.api_conn.assert_not_called()
 
 
+@pytest.mark.parametrize(
+    ("runtime_btql", "internal_btql", "expected"),
+    [
+        pytest.param({"sample": 5}, None, {"sample": 5}, id="runtime-only"),
+        pytest.param(
+            {"sample": 5, "limit": 10},
+            {"filter": "metadata.kind = 'synthetic'", "sample": 2},
+            {"filter": "metadata.kind = 'synthetic'", "sample": 2, "limit": 10},
+            id="explicit-keys-win",
+        ),
+        pytest.param(None, None, None, id="no-runtime-value"),
+    ],
+)
+def test_init_dataset_merges_bt_eval_internal_btql(monkeypatch, runtime_btql, internal_btql, expected):
+    """bt eval's runtime BTQL is merged into _internal_btql; explicit keys take precedence."""
+    from braintrust.logger import init_dataset
+
+    monkeypatch.setattr(builtins, "__bt_eval_internal_btql", runtime_btql, raising=False)
+    original_internal_btql = copy.deepcopy(internal_btql)
+
+    dataset = init_dataset(
+        project="test-project",
+        name="test-dataset",
+        use_output=False,
+        _internal_btql=internal_btql,
+        state=MagicMock(),
+    )
+
+    assert dataset._internal_btql == expected
+    # The caller's dict is not mutated by the merge.
+    assert internal_btql == original_internal_btql
+
+
+def test_init_dataset_forwards_bt_eval_internal_btql_runtime_value_to_fetch(monkeypatch):
+    """Test that bt eval runtime BTQL is included in fetched dataset BTQL."""
+    from braintrust.logger import init_dataset
+
+    monkeypatch.setattr(builtins, "__bt_eval_internal_btql", {"sample": 5}, raising=False)
+    mock_state = MagicMock()
+    mock_response = MagicMock()
+    mock_response.json.return_value = {"data": [], "cursor": None}
+    mock_state.api_conn.return_value.post.return_value = mock_response
+
+    dataset = init_dataset(project="test-project", name="test-dataset", use_output=False, state=mock_state)
+    list(dataset.fetch())
+
+    query_json = mock_state.api_conn.return_value.post.call_args[1]["json"]["query"]
+    assert query_json["sample"] == 5
+
+
 class TestDatasetInternalBtql(TestCase):
     """Test that _internal_btql parameters (especially limit) are properly passed through to BTQL queries."""
-
-    def test_init_dataset_applies_bt_eval_internal_btql_runtime_value(self):
-        """Test that bt eval runtime BTQL is injected into dataset BTQL."""
-        from braintrust.logger import init_dataset
-
-        monkeypatch = pytest.MonkeyPatch()
-        monkeypatch.setattr(builtins, "__bt_eval_internal_btql", {"sample": 5}, raising=False)
-        try:
-            dataset = init_dataset(project="test-project", name="test-dataset", use_output=False, state=MagicMock())
-
-            self.assertEqual(dataset._internal_btql, {"sample": 5})
-        finally:
-            monkeypatch.undo()
-
-    def test_init_dataset_merges_bt_eval_internal_btql_with_internal_btql(self):
-        """Test that bt eval runtime BTQL is added to existing BTQL filters."""
-        from braintrust.logger import init_dataset
-
-        monkeypatch = pytest.MonkeyPatch()
-        monkeypatch.setattr(builtins, "__bt_eval_internal_btql", {"sample": 5, "limit": 10}, raising=False)
-        try:
-            internal_btql = {"where": {"op": "eq", "left": "metadata.kind", "right": "synthetic"}}
-            dataset = init_dataset(
-                project="test-project",
-                name="test-dataset",
-                use_output=False,
-                _internal_btql=internal_btql,
-                state=MagicMock(),
-            )
-
-            self.assertEqual(
-                dataset._internal_btql,
-                {
-                    "where": {"op": "eq", "left": "metadata.kind", "right": "synthetic"},
-                    "sample": 5,
-                    "limit": 10,
-                },
-            )
-            self.assertEqual(internal_btql, {"where": {"op": "eq", "left": "metadata.kind", "right": "synthetic"}})
-        finally:
-            monkeypatch.undo()
-
-    def test_init_dataset_merges_bt_eval_internal_btql_without_overriding_explicit_keys(self):
-        """Test that explicit BTQL keys override bt eval runtime BTQL."""
-        from braintrust.logger import init_dataset
-
-        monkeypatch = pytest.MonkeyPatch()
-        monkeypatch.setattr(builtins, "__bt_eval_internal_btql", {"sample": 5, "limit": 10}, raising=False)
-        try:
-            dataset = init_dataset(
-                project="test-project",
-                name="test-dataset",
-                use_output=False,
-                _internal_btql={"filter": "metadata.kind = 'synthetic'", "sample": 2},
-                state=MagicMock(),
-            )
-
-            self.assertEqual(
-                dataset._internal_btql,
-                {"filter": "metadata.kind = 'synthetic'", "sample": 2, "limit": 10},
-            )
-        finally:
-            monkeypatch.undo()
-
-    def test_init_dataset_keeps_btql_unchanged_without_eval_internal_btql_runtime_value(self):
-        """Test that ordinary init_dataset calls are unchanged without runtime BTQL."""
-        from braintrust.logger import init_dataset
-
-        monkeypatch = pytest.MonkeyPatch()
-        monkeypatch.delattr(builtins, "__bt_eval_internal_btql", raising=False)
-        try:
-            dataset = init_dataset(project="test-project", name="test-dataset", use_output=False, state=MagicMock())
-
-            self.assertIsNone(dataset._internal_btql)
-        finally:
-            monkeypatch.undo()
-
-    def test_init_dataset_forwards_bt_eval_internal_btql_runtime_value_to_fetch(self):
-        """Test that bt eval runtime BTQL is included in fetched dataset BTQL."""
-        from braintrust.logger import init_dataset
-
-        monkeypatch = pytest.MonkeyPatch()
-        monkeypatch.setattr(builtins, "__bt_eval_internal_btql", {"sample": 5}, raising=False)
-        try:
-            mock_state = MagicMock()
-            mock_state.org_id = "test-org"
-
-            mock_app_conn = MagicMock()
-            mock_app_conn.post_json.return_value = {
-                "project": {"id": "test-project-id", "name": "test-project"},
-                "dataset": {"id": "test-dataset-id", "name": "test-dataset"},
-            }
-            mock_state.app_conn.return_value = mock_app_conn
-
-            mock_api_conn = MagicMock()
-            mock_response = MagicMock()
-            mock_response.json.return_value = {"data": [], "cursor": None}
-            mock_api_conn.post.return_value = mock_response
-            mock_state.api_conn.return_value = mock_api_conn
-
-            dataset = init_dataset(project="test-project", name="test-dataset", use_output=False, state=mock_state)
-            list(dataset.fetch())
-
-            query_json = mock_api_conn.post.call_args[1]["json"]["query"]
-            self.assertEqual(query_json["sample"], 5)
-        finally:
-            monkeypatch.undo()
 
     @patch("braintrust.logger.BraintrustState")
     def test_dataset_internal_btql_limit_not_overwritten(self, mock_state_class):
@@ -4501,36 +3271,6 @@ class TestDatasetInternalBtql(TestCase):
             "test-dataset", body={"limit": DEFAULT_FETCH_BATCH_SIZE}
         )
 
-    def test_dataset_custom_batch_size_in_fetch(self):
-        """Custom batch sizes are forwarded to the generated fetch operation."""
-        from braintrust.logger import Dataset, LazyValue, ObjectMetadata, ProjectDatasetMetadata
-
-        mock_state = MagicMock()
-        mock_state.api_client.return_value.datasets.post_dataset_id_fetch.return_value = {
-            "events": [{"id": "1", "input": "test1", "expected": "output1"}]
-        }
-
-        # Create dataset
-        project_metadata = ObjectMetadata(id="test-project", name="test-project", full_info={})
-        dataset_metadata = ObjectMetadata(id="test-dataset", name="test-dataset", full_info={})
-        lazy_metadata = LazyValue(
-            lambda: ProjectDatasetMetadata(project=project_metadata, dataset=dataset_metadata),
-            use_mutex=False,
-        )
-
-        dataset = Dataset(
-            lazy_metadata=lazy_metadata,
-            state=mock_state,
-        )
-
-        # Trigger a fetch with custom batch_size
-        custom_batch_size = 250
-        list(dataset.fetch(batch_size=custom_batch_size))
-
-        mock_state.api_client.return_value.datasets.post_dataset_id_fetch.assert_called_once_with(
-            "test-dataset", body={"limit": custom_batch_size}
-        )
-
 
 @pytest.mark.vcr
 def test_dataset_internal_btql_limit_caps_total_results():
@@ -4546,75 +3286,6 @@ def test_dataset_internal_btql_limit_caps_total_results():
     dataset.flush()
 
     assert len(list(dataset)) == 1
-
-
-def test_attachment_identity_preserved_through_bt_safe_deep_copy():
-    """Test that attachment object identity is preserved through bt_safe_deep_copy."""
-    from braintrust.bt_json import bt_safe_deep_copy
-
-    attachment = Attachment(data=b"data", filename="file.txt", content_type="text/plain")
-    original_id = id(attachment)
-
-    # Simulate what happens in Span.log
-    partial_record = {"input": {"file": attachment}}
-    copied = bt_safe_deep_copy(partial_record)
-
-    # Verify identity preserved
-    assert copied["input"]["file"] is attachment
-    assert id(copied["input"]["file"]) == original_id
-
-
-def test_extract_attachments_collects_and_replaces():
-    """Test that _extract_attachments properly collects attachments and replaces them with references."""
-    from braintrust.logger import _extract_attachments
-
-    attachment1 = Attachment(data=b"data1", filename="file1.txt", content_type="text/plain")
-    attachment2 = Attachment(data=b"data2", filename="file2.txt", content_type="text/plain")
-    ext_attachment = ExternalAttachment(url="s3://bucket/key", filename="file3.pdf", content_type="application/pdf")
-
-    event = {
-        "input": {"file": attachment1},
-        "output": {"file": attachment2},
-        "metadata": {"files": [attachment1, ext_attachment]},
-    }
-
-    attachments = []
-    _extract_attachments(event, attachments)
-
-    # Should have collected all 4 attachment instances (attachment1 appears twice)
-    assert len(attachments) == 4
-    assert attachments[0] is attachment1
-    assert attachments[1] is attachment2
-    assert attachments[2] is attachment1  # Same instance collected again
-    assert attachments[3] is ext_attachment
-
-    # Event should have been modified to contain references
-    assert event["input"]["file"] == attachment1.reference
-    assert event["output"]["file"] == attachment2.reference
-    assert event["metadata"]["files"][0] == attachment1.reference
-    assert event["metadata"]["files"][1] == ext_attachment.reference
-
-
-def test_extract_attachments_preserves_identity():
-    """Test that the same attachment instance is collected multiple times when it appears in different places."""
-    from braintrust.logger import _extract_attachments
-
-    attachment = Attachment(data=b"data", filename="file.txt", content_type="text/plain")
-    original_id = id(attachment)
-
-    event = {
-        "input": attachment,
-        "output": attachment,  # Same instance
-        "metadata": {"file": attachment},  # Same instance again
-    }
-
-    attachments = []
-    _extract_attachments(event, attachments)
-
-    # Should collect the same instance 3 times
-    assert len(attachments) == 3
-    assert all(att is attachment for att in attachments)
-    assert all(id(att) == original_id for att in attachments)
 
 
 def test_attachment_upload_tracked_on_flush(with_memory_logger, with_simulate_login):
@@ -4637,23 +3308,6 @@ def test_attachment_upload_tracked_on_flush(with_memory_logger, with_simulate_lo
     assert with_memory_logger.upload_attempts[0] is attachment
 
 
-def test_multiple_attachments_upload_tracked(with_memory_logger, with_simulate_login):
-    """Test that upload is tracked for multiple attachments."""
-    attachment1 = Attachment(data=b"data1", filename="file1.txt", content_type="text/plain")
-    attachment2 = Attachment(data=b"data2", filename="file2.txt", content_type="text/plain")
-
-    logger = init_test_logger(__name__)
-    span = logger.start_span(name="test_span")
-    span.log(input={"file1": attachment1}, output={"file2": attachment2})
-    span.end()
-    logger.flush()
-
-    # Both attachments should be tracked
-    assert len(with_memory_logger.upload_attempts) == 2
-    assert attachment1 in with_memory_logger.upload_attempts
-    assert attachment2 in with_memory_logger.upload_attempts
-
-
 def test_same_attachment_logged_twice_tracked_twice(with_memory_logger, with_simulate_login):
     """Test that same attachment logged twice appears twice in upload attempts."""
     attachment = Attachment(data=b"data", filename="file.txt", content_type="text/plain")
@@ -4669,39 +3323,6 @@ def test_same_attachment_logged_twice_tracked_twice(with_memory_logger, with_sim
     assert len(with_memory_logger.upload_attempts) == 2
     assert with_memory_logger.upload_attempts[0] is attachment
     assert with_memory_logger.upload_attempts[1] is attachment
-
-
-def test_external_attachment_upload_tracked(with_memory_logger, with_simulate_login):
-    """Test that ExternalAttachment upload is also tracked."""
-    ext_attachment = ExternalAttachment(
-        url="s3://bucket/key.pdf", filename="external.pdf", content_type="application/pdf"
-    )
-
-    logger = init_test_logger(__name__)
-    span = logger.start_span(name="test_span")
-    span.log(input={"file": ext_attachment})
-    span.end()
-    logger.flush()
-
-    # ExternalAttachment should be tracked
-    assert len(with_memory_logger.upload_attempts) == 1
-    assert with_memory_logger.upload_attempts[0] is ext_attachment
-
-
-def test_json_attachment_upload_tracked(with_memory_logger, with_simulate_login):
-    """Test that JSONAttachment upload is tracked."""
-    data = {"key": "value", "nested": {"array": [1, 2, 3]}}
-    json_attachment = JSONAttachment(data, filename="data.json")
-
-    logger = init_test_logger(__name__)
-    span = logger.start_span(name="test_span")
-    span.log(output={"data": json_attachment})
-    span.end()
-    logger.flush()
-
-    # JSONAttachment should be tracked
-    assert len(with_memory_logger.upload_attempts) == 1
-    assert with_memory_logger.upload_attempts[0] is json_attachment
 
 
 def test_multiple_attachment_types_tracked(with_memory_logger, with_simulate_login):
@@ -4727,11 +3348,14 @@ def test_multiple_attachment_types_tracked(with_memory_logger, with_simulate_log
 
 
 def test_span_name_returns_explicit_name(with_memory_logger):
-    """Test that span.name returns the name passed to start_span()."""
+    """Test that span.name returns the name passed to start_span() and matches what is logged."""
     test_logger = init_test_logger(__name__)
 
     with test_logger.start_span(name="my-span") as span:
         assert span.name == "my-span"
+
+    logs = with_memory_logger.pop()
+    assert logs[0]["span_attributes"]["name"] == "my-span"
 
 
 def test_span_name_returns_inferred_root_name(with_memory_logger):
@@ -4748,10 +3372,12 @@ def test_span_name_returns_inferred_subspan_name(with_memory_logger):
     test_logger = init_test_logger(__name__)
 
     with test_logger.start_span(name="parent") as parent:
-        child = parent.start_span()
-        # The inferred name is based on caller location: "funcname:filename:lineno"
-        assert child.name is not None
-        assert len(child.name) > 0
+        # The name comes from the first caller outside braintrust.*, and this test module is
+        # itself braintrust.test_logger, so make the call from a user-named module.
+        user_module = {"__name__": "user_module", "parent": parent}
+        exec(compile("def user_fn():\n    return parent.start_span()\n", "user_module.py", "exec"), user_module)
+        child = user_module["user_fn"]()
+        assert child.name == "user_fn:user_module.py:2"
         child.end()
 
 
@@ -4765,39 +3391,13 @@ def test_span_name_updated_by_set_attributes(with_memory_logger):
         assert span.name == "renamed"
 
 
-def test_span_name_consistent_with_logged_data(with_memory_logger):
-    """Test that span.name matches the name in the logged span_attributes."""
-    test_logger = init_test_logger(__name__)
-
-    with test_logger.start_span(name="logged-name") as span:
-        assert span.name == "logged-name"
-
-    logs = with_memory_logger.pop()
-    logged_name = logs[0].get("span_attributes", {}).get("name")
-    assert logged_name == "logged-name"
-
-
-def test_noop_span_name_returns_none():
-    """Test that the noop span's name property returns None."""
-    span = braintrust.NOOP_SPAN
-    assert span.name == ""
-
-
-def test_current_span_name_accessible(with_memory_logger):
-    """Test that current_span().name works inside a traced context."""
-    test_logger = init_test_logger(__name__)
-
-    captured_name = None
-    with test_logger.start_span(name="active-span") as span:
-        span.set_current()
-        captured_name = braintrust.current_span().name
-
-    assert captured_name == "active-span"
+def test_noop_span_name_is_empty():
+    assert braintrust.NOOP_SPAN.name == ""
 
 
 def test_traced_decorator_span_name(with_memory_logger):
     """Test that @traced sets span name to the function name by default."""
-    test_logger = init_test_logger(__name__)
+    init_test_logger(__name__)
 
     captured_name = None
 
@@ -4939,20 +3539,16 @@ def test_check_org_info_with_git_metadata_uses_server_settings():
     assert set(state.git_metadata_settings.fields) == {"commit", "branch"}
 
 
-def test_proxy_conn_strips_v1_proxy_suffix():
-    """EU/self-hosted proxy_url ends in /v1/proxy; proxy_conn must target the API host root."""
+@pytest.mark.parametrize(
+    ("proxy_url", "expected_base_url"),
+    [
+        # EU/self-hosted proxy_url ends in /v1/proxy; proxy_conn must target the API host root.
+        pytest.param("https://api-eu.braintrust.dev/v1/proxy", "https://api-eu.braintrust.dev", id="v1-proxy-suffix"),
+        # A bare proxy host (US default) is used as-is.
+        pytest.param("https://api.braintrust.dev", "https://api.braintrust.dev", id="bare-host"),
+    ],
+)
+def test_proxy_conn_base_url(proxy_url, expected_base_url):
     state = BraintrustState()
-    state.proxy_url = "https://api-eu.braintrust.dev/v1/proxy"
-    assert state.proxy_conn().base_url == "https://api-eu.braintrust.dev"
-
-
-def test_proxy_conn_leaves_bare_host_unchanged():
-    """A bare proxy host (US default) is used as-is."""
-    state = BraintrustState()
-    state.proxy_url = "https://api.braintrust.dev"
-    assert state.proxy_conn().base_url == "https://api.braintrust.dev"
-
-
-def test_get_repo_info_without_settings_returns_none():
-    """Direct call to get_repo_info with settings=None should return None."""
-    assert get_repo_info(None) is None
+    state.proxy_url = proxy_url
+    assert state.proxy_conn().base_url == expected_base_url

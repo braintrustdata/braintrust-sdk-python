@@ -101,7 +101,7 @@ def _get_base_branch(remote=None):
             raise RuntimeError("Could not find HEAD branch in remote " + remote)
         branch = match.group(1)
     except Exception as e:
-        _logger.warning(f"Could not find base branch for remote {remote}", e)
+        _logger.warning(f"Could not find base branch for remote {remote}: {e}")
         branch = "main"
     return (remote, branch)
 

@@ -6,6 +6,7 @@ import uuid
 import litellm
 import pytest
 from braintrust import Attachment, logger
+from braintrust.conftest import get_vcr_config
 from braintrust.integrations.litellm import patch_litellm
 from braintrust.integrations.test_utils import (
     assert_metrics_are_valid,
@@ -23,6 +24,18 @@ TEST_SYSTEM_PROMPT = "You are a helpful assistant that only responds with number
 TEST_CACHE_MODEL = "anthropic/claude-haiku-4-5-20251001"
 TEST_CACHEABLE_PROMPT = "Braintrust LiteLLM prompt caching regression context. " * 400
 TEST_AUDIO_FILE = os.path.join(os.path.dirname(__file__), "..", "..", "fixtures", "test_audio.wav")
+
+
+@pytest.fixture(scope="module")
+def vcr_config():
+    # The LiteLLM 1.103.0 win_amd64 wheel ships its vendored tiktoken rank files
+    # with CRLF line endings, so tiktoken's hash check fails and it re-downloads
+    # cl100k_base on first use. Let that fetch through rather than record a
+    # ~1.7MB blob into every cassette.
+    config = get_vcr_config()
+    config["ignore_hosts"] = ["openaipublic.blob.core.windows.net"]
+    return config
+
 
 RERANK_MODEL = "cohere/rerank-english-v3.0"
 RERANK_QUERY = "What is the capital of France?"

@@ -8,6 +8,7 @@ from .patchers import (
     ChatModelPatcher,
     FanoutPipelinePatcher,
     SequentialPipelinePatcher,
+    TeamPipelineReplyStreamPatcher,
     ToolkitCallToolFunctionPatcher,
     ToolkitCallToolPatcher,
 )
@@ -24,6 +25,7 @@ class AgentScopeIntegration(BaseIntegration):
         AgentReplyPatcher,
         SequentialPipelinePatcher,
         FanoutPipelinePatcher,
+        TeamPipelineReplyStreamPatcher,
         ToolkitCallToolFunctionPatcher,
         ToolkitCallToolPatcher,
         ChatModelPatcher,

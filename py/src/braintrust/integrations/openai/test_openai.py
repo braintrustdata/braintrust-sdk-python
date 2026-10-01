@@ -1582,6 +1582,39 @@ async def test_openai_async_parallel_requests(memory_logger):
 
 
 @pytest.mark.vcr
+@pytest.mark.skipif(
+    Version(openai.__version__) < Version("3.19.1"), reason="iterable tools are supported by OpenAI 3.19.1+"
+)
+def test_openai_chat_parse_generator_tools_are_logged_as_list(memory_logger):
+    assert not memory_logger.pop()
+
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "lookup",
+                "description": "Look up a value",
+                "strict": True,
+                "parameters": {"type": "object", "properties": {}, "additionalProperties": False},
+            },
+        }
+    ]
+    client = wrap_openai(openai.OpenAI())
+
+    response = client.chat.completions.parse(
+        model=TEST_MODEL,
+        messages=[{"role": "user", "content": "Say 24."}],
+        tools=(tool for tool in tools),
+        tool_choice="none",
+    )
+
+    assert response.choices[0].message.content
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    assert spans[0]["metadata"]["tools"] == tools
+
+
+@pytest.mark.vcr
 def test_openai_not_given_filtering(memory_logger):
     """Test that NOT_GIVEN values are filtered out of logged inputs but API call still works."""
     assert not memory_logger.pop()

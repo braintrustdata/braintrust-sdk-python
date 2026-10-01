@@ -118,8 +118,8 @@ class SpanCache:
         self._root_span_index: set[str] = set()
         # Buffer for pending writes
         self._write_buffer: list[DiskSpanRecord] = []
-        # Unresolved customized exports must be cached before a trace read returns.
-        self._pending_records: dict[str, dict[object, LazyValue[dict[str, Any]]]] = {}
+        # Unresolved exports must be cached or dropped before a trace read returns.
+        self._pending_records: dict[str, dict[object, LazyValue[dict[str, Any] | None]]] = {}
         self._pending_lock = threading.Lock()
 
     def disable(self) -> None:
@@ -203,7 +203,7 @@ class SpanCache:
 
             atexit.register(cleanup_all_caches)
 
-    def _track_pending_record(self, root_span_id: str, key: object, record: LazyValue[dict[str, Any]]) -> None:
+    def _track_pending_record(self, root_span_id: str, key: object, record: LazyValue[dict[str, Any] | None]) -> None:
         with self._pending_lock:
             if not self.disabled:
                 self._pending_records.setdefault(root_span_id, {})[key] = record

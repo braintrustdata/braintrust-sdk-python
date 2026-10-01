@@ -8,6 +8,7 @@ from .tracing import (
     _fanout_pipeline_wrapper,
     _model_call_wrapper,
     _sequential_pipeline_wrapper,
+    _team_pipeline_reply_stream_wrapper,
     _toolkit_call_tool_function_wrapper,
 )
 
@@ -46,6 +47,16 @@ class FanoutPipelinePatcher(FunctionWrapperPatcher):
     target_module = "agentscope.pipeline"
     target_path = "fanout_pipeline"
     wrapper = _fanout_pipeline_wrapper
+
+
+class TeamPipelineReplyStreamPatcher(FunctionWrapperPatcher):
+    """Patch AgentScope team pipeline streaming replies (``TeamPipeline`` was added in 2.0.9)."""
+
+    name = "agentscope.pipeline.team_reply_stream"
+    target_module = "agentscope.pipeline"
+    target_path = "TeamPipeline.reply_stream"
+    version_spec = ">=2.0.9"
+    wrapper = _team_pipeline_reply_stream_wrapper
 
 
 class ToolkitCallToolFunctionPatcher(FunctionWrapperPatcher):

@@ -263,6 +263,10 @@ async def test_calculator_with_multiple_operations(memory_logger):
         assert len(ordered_llm_spans) == len(expected_partial_usage)
         for llm_span, usage in zip(ordered_llm_spans, expected_partial_usage, strict=True):
             assert llm_span["metrics"] | _metrics_from_exact_anthropic_usage(usage) == llm_span["metrics"]
+        llm_spans_with_output = [span for span in llm_spans if "completion_tokens" in span["metrics"]]
+        assert llm_spans_with_output
+        for llm_span in llm_spans_with_output:
+            assert "usage_output_tokens_unknown" not in llm_span.get("metadata", {})
     elif _sdk_version_at_least("0.1.11"):
         expected_usage_by_message_id: dict[str, dict[str, Any]] = {}
         for message in received_messages:
@@ -419,15 +423,22 @@ async def test_query_helper_keeps_options_untouched_and_logs_aggregate_task_usag
         pytest.skip("The 0.1.10 query() transport lifecycle is incompatible with the client cassette")
     assert not memory_logger.pop()
     prompt = "Say hello in one short sentence."
+    supports_verbatim_prompts = _sdk_version_at_least("0.2.158")
 
     hooks = {"UserPromptSubmit": [claude_agent_sdk.HookMatcher(hooks=[_concise_user_prompt_hook])]}
-    options = claude_agent_sdk.ClaudeAgentOptions(
-        model=TEST_MODEL,
-        permission_mode="bypassPermissions",
-        hooks=hooks,
-    )
+    option_values: dict[str, Any] = {
+        "model": TEST_MODEL,
+        "permission_mode": "bypassPermissions",
+        "hooks": hooks,
+    }
+    if supports_verbatim_prompts:
+        option_values["verbatim_prompts"] = True
+    options = claude_agent_sdk.ClaudeAgentOptions(**option_values)
+    cassette_name = "test_user_prompt_submit_hook_creates_function_span"
+    if supports_verbatim_prompts:
+        cassette_name = "test_query_helper_verbatim_prompts"
     transport = make_cassette_transport(
-        cassette_name="test_user_prompt_submit_hook_creates_function_span",
+        cassette_name=cassette_name,
         prompt="",
         options=options,
     )
@@ -447,6 +458,8 @@ async def test_query_helper_keeps_options_untouched_and_logs_aggregate_task_usag
 
     spans = memory_logger.pop()
     task_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.TASK), "Claude Agent")
+    if supports_verbatim_prompts:
+        assert task_span["metadata"]["verbatim_prompts"] is True
     llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
     assert len(llm_spans) == 1
     assert not {
@@ -1036,6 +1049,7 @@ async def test_bundled_subagent_creates_task_span(memory_logger):
             cwd=REPO_ROOT,
             permission_mode="bypassPermissions",
             max_turns=8,
+            include_partial_messages=True,
         )
         transport = make_cassette_transport(
             cassette_name="test_bundled_subagent_creates_task_span",
@@ -1043,6 +1057,7 @@ async def test_bundled_subagent_creates_task_span(memory_logger):
             options=options,
         )
 
+        result_message = None
         async with claude_agent_sdk.ClaudeSDKClient(options=options, transport=transport) as client:
             await client.query(
                 "You must delegate this task to the bundled general-purpose agent. "
@@ -1051,6 +1066,7 @@ async def test_bundled_subagent_creates_task_span(memory_logger):
             )
             async for message in client.receive_response():
                 if type(message).__name__ == "ResultMessage":
+                    result_message = message
                     break
 
     spans = memory_logger.pop()
@@ -1079,6 +1095,9 @@ async def test_bundled_subagent_creates_task_span(memory_logger):
             assert root_task_span["span_id"] in parents
 
     assert root_task_span.get("metadata", {}).get("task_events"), "Expected task events on root task span"
+    assert result_message is not None
+    assert root_task_span.get("metadata", {}).get("model_usage") == _aggregate_model_usage(result_message.model_usage)
+    assert not {"prompt_tokens", "completion_tokens", "tokens"}.intersection(root_task_span.get("metrics", {}))
 
     llm_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.LLM]
     _assert_llm_spans_have_time_to_first_token(llm_spans)
@@ -1094,6 +1113,11 @@ async def test_bundled_subagent_creates_task_span(memory_logger):
         if any(subagent_span["span_id"] in llm_span["span_parents"] for subagent_span in subagent_spans)
     ]
     assert delegated_llm_spans, "Expected at least one delegated LLM span nested under a subagent task span"
+    for llm_span in delegated_llm_spans:
+        assert llm_span["metrics"].get("prompt_tokens", 0) > 0
+        assert "completion_tokens" not in llm_span["metrics"]
+        assert "tokens" not in llm_span["metrics"]
+        assert llm_span.get("metadata", {}).get("usage_output_tokens_unknown") is True
 
     assert any(
         any(llm_span["span_id"] in tool_span["span_parents"] for llm_span in delegated_llm_spans)

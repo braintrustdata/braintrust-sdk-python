@@ -6,7 +6,7 @@ import binascii
 import inspect
 import json
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterable, Mapping
 from typing import Any
 
 from braintrust.integrations.utils import (
@@ -170,6 +170,9 @@ def _filter_metadata(params: dict[str, Any], allowlist: tuple[str, ...]) -> dict
         value = params[key]
         if _is_not_given(value):
             continue
+        if key == "tools" and not isinstance(value, (list, str, bytes, Mapping)) and isinstance(value, Iterable):
+            value = list(value)
+            params[key] = value
         if key in ("response_format", "text_format"):
             value = _serialize_response_format(value)
         metadata[key] = value

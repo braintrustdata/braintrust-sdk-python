@@ -8,34 +8,40 @@ interactions:
       Content-Type:
       - application/json
       user-agent:
-      - google-genai-sdk/2.23.0 gl-python/3.14.7 google-adk/2.9.0 gl-python/3.14.7
+      - google-genai-sdk/2.25.0 gl-python/3.14.7 google-adk/2.10.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/2.23.0 gl-python/3.14.7 google-adk/2.9.0 gl-python/3.14.7
+      - google-genai-sdk/2.25.0 gl-python/3.14.7 google-adk/2.10.0 gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"I'm sorry, I cannot process your request.
-        The input provided is not a valid JSON object. Please provide a valid JSON
-        object as input.\"\n          }\n        ],\n        \"role\": \"model\"\n
+        [\n          {\n            \"text\": \"I understand. You've provided a JSON
+        object with the keys \\\"name\\\" and \\\"age\\\" and their corresponding
+        values \\\"Alice\\\" and 30.\\n\\nDo you have any questions about this data,
+        or would you like me to perform any operations with it? For example, I could:\\n\\n*
+        \  **Validate the schema:** If you provide a schema, I can check if this JSON
+        conforms to it.\\n*   **Extract information:** I can pull out specific values.\\n*
+        \  **Transform the data:** I could reformat it or combine it with other data.\\n*
+        \  **Answer questions about the data:** You could ask things like \\\"What
+        is Alice's age?\\\"\"\n          }\n        ],\n        \"role\": \"model\"\n
         \     },\n      \"finishReason\": \"STOP\",\n      \"index\": 0\n    }\n  ],\n
         \ \"usageMetadata\": {\n    \"promptTokenCount\": 38,\n    \"candidatesTokenCount\":
-        30,\n    \"totalTokenCount\": 68,\n    \"promptTokensDetails\": [\n      {\n
+        141,\n    \"totalTokenCount\": 179,\n    \"promptTokensDetails\": [\n      {\n
         \       \"modality\": \"TEXT\",\n        \"tokenCount\": 38\n      }\n    ],\n
         \   \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n
-        \ \"responseId\": \"7vinavXCKOqq_PUPiaHToQk\"\n}\n"
+        \ \"responseId\": \"3Li6avrvKfvN-sAPlp2MyQM\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Mon, 14 Sep 2026 13:38:54 GMT
+      - Mon, 28 Sep 2026 18:58:37 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=419
+      - gfet4t7; dur=811
       Transfer-Encoding:
       - chunked
       Vary:
@@ -51,7 +57,7 @@ interactions:
       X-XSS-Protection:
       - '0'
       content-length:
-      - '681'
+      - '1134'
     status:
       code: 200
       message: OK

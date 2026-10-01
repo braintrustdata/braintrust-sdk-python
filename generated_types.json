@@ -113,6 +113,7 @@
           "org_project",
           "org_audit_logs",
           "project_group",
+          "project_group_projects",
           "ai_secret",
           "org_ai_secret",
           "org_account"
@@ -382,6 +383,15 @@
               "medium",
               "high"
             ]
+          },
+          "chat_template_kwargs": {
+            "type": "object",
+            "properties": {
+              "enable_thinking": {
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": {}
           },
           "verbosity": {
             "type": "string",
@@ -4962,6 +4972,15 @@
                   "medium",
                   "high"
                 ]
+              },
+              "chat_template_kwargs": {
+                "type": "object",
+                "properties": {
+                  "enable_thinking": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": {}
               },
               "verbosity": {
                 "type": "string",
@@ -9738,6 +9757,7 @@
                 "enum": [
                   "traces",
                   "spans",
+                  "logs",
                   "topics"
                 ]
               },

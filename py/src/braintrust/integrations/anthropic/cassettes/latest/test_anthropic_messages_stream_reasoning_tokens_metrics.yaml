@@ -18,7 +18,7 @@ interactions:
       host:
       - api.anthropic.com
       user-agent:
-      - Anthropic/Python 1.7.0
+      - Anthropic/Python 1.8.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -28,7 +28,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 1.7.0
+      - 1.8.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -43,51 +43,52 @@ interactions:
     uri: https://api.anthropic.com/v1/messages
   response:
     body:
-      string: "event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"model\":\"claude-haiku-4-5-20251001\",\"id\":\"msg_011CfJfFtRQAquRPqk7emteM\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[],\"container\":null,\"stop_reason\":null,\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":54,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"output_tokens\":8,\"service_tier\":\"standard\",\"inference_geo\":\"not_available\"}}
-        \              }\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"thinking\",\"thinking\":\"\",\"signature\":\"\"}
-        \  }\n\nevent: ping\ndata: {\"type\": \"ping\"}\n\nevent: content_block_delta\ndata:
-        {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"I
-        need to calculate 17 *\"}              }\n\nevent: content_block_delta\ndata:
-        {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"
-        23.\\n\\nLet me break\"} }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"
-        this down:\\n17 * \"}   }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"23
-        = 17 * (\"}     }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"20
-        + 3)\"}          }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"\\n=
-        17 * 20\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"
-        + 17 * 3\"}            }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"\\n=
-        340 + 51\"}     }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"\\n=
-        391\\n\\nLet me verify\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"
-        this another\"}      }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"
-        way:\\n23\"}              }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"
-        * 17 = 23\"}             }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"
-        * (10 + 7\"}               }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\")\"}
-        \    }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"\\n=
-        23\"}         }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"
-        * 10 + 23\"}       }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"
-        * 7\\n= 230\"}           }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"
-        + 161\\n= 391\"}              }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"\\n\\nYes,
-        that\"}   }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"'s
-        correct.\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"signature_delta\",\"signature\":\"EuMDCpoBCBIYAipACGqZaIjP/wYuby45gMpPN3l8CKawBu1IPjRDbqd4JCW/xWcCisSXnxxRxjGQ010pi583PmUy0NiGM9At06bOPTIZY2xhdWRlLWhhaWt1LTQtNS0yMDI1MTAwMTgAQgh0aGlua2luZ1okMjc3OTY2NjgtNzM1MS00MGFjLWFjYzQtMDI0YWVlODk5NWE1qAHxqcrVBhIMSfoLKov5juZlYolSGgzU2G5ElLfNVEoEzt4iMGGRTGrSExU32vq/RZyN6W2O47fWLYN8ZRLUX4Gjs4lhZJxns9LWneoJ3kZ1CrqsKir1AYjRQ3PlWsx6r8wqF9pKzGAZ5lx8NLiPOo16GEJKg3d7JLE17kbGgKClVYPh4Fg7WvFqbzAAfNm4NwvfjoRpuosp50jLnxCNa9Gmk6rVI1CIlYVLMTUcFdxNFmQXMHJvze+IyYUM/K0+hH8IeW0rH52KYkJCCpPjYuq29UYY37guqPo/8ZR7n3uIQXyZtthyvby4y/4gef2kjkfYRsDo996kfSysKg4hiMp8GolDW/PBDs71+i3g1ekZvIbftPGwrImgahFkpOfF+S5cm5nFPwVNoxaTRTtbELKppD1O/9dWQn8seNx8k9jSR6ciuSxfE9RClGluGAE=\"}
-        \ }\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":0
-        \      }\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":1,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\nevent:
-        content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"#\"}
+      string: "event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"model\":\"claude-haiku-4-5-20251001\",\"id\":\"msg_011CfWMFNosw5pTunkp4zwgR\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[],\"container\":null,\"stop_reason\":null,\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":54,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"output_tokens\":1,\"service_tier\":\"standard\",\"inference_geo\":\"not_available\"},\"diagnostics\":null}
+        \ }\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"thinking\",\"thinking\":\"\",\"signature\":\"\"}}\n\nevent:
+        ping\ndata: {\"type\": \"ping\"}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"17\"}
+        \ }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"
+        * 23\\n\\nLet\"}         }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"
+        me break\"}              }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"
+        this down:\\n17 \"}    }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"*
+        23 = \"}      }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"17
+        * (\"}   }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"20
+        + 3)\"}               }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"\\n=
+        17 *\"}     }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"
+        20 + 17\"}          }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"
+        * 3\\n=\"}      }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"
+        340 + 51\"}              }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"\\n=
+        391\\n\\nLet\"}             }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"
+        me verify\"}            }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"
+        another\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"
+        way:\\n(\"}          }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"20
+        -\"}  }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"
+        3) * 23\"}      }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"\\n=
+        20\"}               }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"
+        * 23 -\"}   }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"
+        3 * 23\"}      }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"\\n=
+        460 -\"}           }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"
+        69\\n= 391\"}            }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"\\n\\nBoth
+        methods give \"}    }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"391,\"}
+        \             }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"
+        so that's correct.\"}        }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"signature_delta\",\"signature\":\"EtMDCpoBCBIYAipARPCN27PL6j3xRJOCt1UO/LzIixyQ+HG/XoUvKNTk6MpgGItIAYZZF1ZxYrxNHVE3ksbbP0wKwFs9eypIr27RTjIZY2xhdWRlLWhhaWt1LTQtNS0yMDI1MTAwMTgAQgh0aGlua2luZ1okMjc3OTY2NjgtNzM1MS00MGFjLWFjYzQtMDI0YWVlODk5NWE1qAHD8erVBhIM79ow75qGrOMZTBKzGgz2j3zlY7z7/qFT5m8iMA30YjqED9o+NQ+xRNwJOD+gaha+LnE21Psy2rMY/ofQqC6ZfIZV1uRrHHibvRWPdSrlAcME+yILihvFC+oAIu3RTauVmNUFyVJth7KUuExiE5P2Xs8z01jXXPtis7MnDhvUx48SY0+a/BNmFIjvTrgFHGwbFvyDG9QPAHQaEVayybLaP+qFjXaJUxc7E6swD//9Brs9NCFpFQIxcDjR2r6PH2ry4+KyOyfd4spoSp4G+BZwqbhq8nu6uTHk2L/vNQiIWF7tR6BUwkAJnX890qpLCUmyhoxr878O03nW1F6k33gryNrRwFL5v7ZknuVC1ZtaDi/3xQXVFTJoD8Hj0WNAqn1H+FgnpMWbcEnvKjvWc+V2gxT2pLUYAQ==\"}}\n\nevent:
+        content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":0   }\n\nevent:
+        content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":1,\"content_block\":{\"type\":\"text\",\"text\":\"\"}
+        \            }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"Let\"}
         \        }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"
-        Calculating 17 \xD7 23\"}        }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"\\n\\nI\"}
-        \  }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"'ll
-        break\"}        }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"
-        this down:\"}         }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"\\n-
-        17 \xD7 23\"}              }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"
-        = 17 \xD7 (20\"}           }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"
-        + 3)\\n- =\"}     }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"
-        (\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"17
-        \xD7 20) + (\"}     }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"17
-        \xD7 3)\\n-\"}      }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"
-        = 340 + 51\"}           }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"\\n-
-        = **\"}   }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"391**\\n\\nThe\"}
-        \         }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"
-        answer is **391**.\"}       }\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":1
-        \  }\n\nevent: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"stop_details\":null,\"container\":null},\"usage\":{\"input_tokens\":54,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"output_tokens\":215,\"output_tokens_details\":{\"thinking_tokens\":132}}}\n\nevent:
-        message_stop\ndata: {\"type\":\"message_stop\"        }\n\n"
+        me work\"}  }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        through this:\"}               }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"\\n\\n17
+        \xD7 23\"}              }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        = 17 \xD7\"}  }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        (20 + 3\"}      }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\")\\n=
+        (\"}         }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"17
+        \xD7 20)\"}          }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        + (17 \xD7 \"}    }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"3)\\n=
+        340\"} }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        + 51\\n=\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        **\"}          }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"391**\"}
+        \       }\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":1
+        \             }\n\nevent: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"stop_details\":null,\"container\":null},\"usage\":{\"input_tokens\":54,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"output_tokens\":183,\"output_tokens_details\":{\"thinking_tokens\":122}}
+        \    }\n\nevent: message_stop\ndata: {\"type\":\"message_stop\"         }\n\n"
     headers:
       anthropic-organization-id:
       - 27796668-7351-40ac-acc4-024aee8995a5
@@ -96,25 +97,25 @@ interactions:
       anthropic-ratelimit-input-tokens-remaining:
       - '10000000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-09-22T14:47:12Z'
+      - '2026-09-28T18:58:10Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-09-22T14:47:12Z'
+      - '2026-09-28T18:58:10Z'
       anthropic-ratelimit-requests-limit:
       - '20000'
       anthropic-ratelimit-requests-remaining:
       - '19999'
       anthropic-ratelimit-requests-reset:
-      - '2026-09-22T14:47:12Z'
+      - '2026-09-28T18:58:10Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
       - '12000000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-09-22T14:47:12Z'
+      - '2026-09-28T18:58:10Z'
       anthropic-workspace-id:
       - wrkspc_018bFG1FgNVWqx5pthtdGTzS
       cache-control:
@@ -122,25 +123,25 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a3f21a7ed91e0fab-EWR
+      - a424fa5fd97460a9-YYZ
       connection:
       - keep-alive
       content-length:
-      - '6954'
+      - '7314'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Tue, 22 Sep 2026 14:47:12 GMT
+      - Mon, 28 Sep 2026 18:58:10 GMT
       request-id:
-      - req_011CfJfFt833ud5Jzi92VNvv
+      - req_011CfWMFNTXx8CQFVcMwAea1
       server:
       - cloudflare
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-f8a2a5f6e5d00a666935491bc7b47377-5e355a0a953b75b1-01
+      - 00-bd79d1dfe9ad30ab2996ce96fe16d3c2-e1c0e0473a537946-01
       transfer-encoding:
       - chunked
       vary:

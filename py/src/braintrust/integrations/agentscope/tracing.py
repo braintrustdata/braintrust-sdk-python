@@ -4,7 +4,7 @@ import contextlib
 import inspect
 import time
 from contextlib import aclosing
-from contextvars import ContextVar
+from contextvars import Context, ContextVar, copy_context
 from typing import Any
 
 from braintrust.integrations.utils import (
@@ -102,6 +102,20 @@ def _pipeline_metadata(args: Any, kwargs: dict[str, Any]) -> dict[str, Any]:
         agent_names = [getattr(agent, "name", agent.__class__.__name__) for agent in agents]
 
     return clean_nones({"agent_names": agent_names})
+
+
+def _team_pipeline_metadata(instance: Any) -> dict[str, Any]:
+    leader = getattr(instance, "leader", None)
+    members = getattr(instance, "members", None)
+    member_names = None
+    if isinstance(members, dict):
+        member_names = [member.agent.name for member in members.values() if getattr(member, "agent", None)]
+    return clean_nones(
+        {
+            "leader": getattr(leader, "name", None),
+            "member_names": member_names,
+        }
+    )
 
 
 def _extract_metrics(*candidates: Any) -> dict[str, float] | None:
@@ -244,6 +258,7 @@ def _deferred_stream_trace(
     stack: contextlib.ExitStack,
     log_fn: Any,
     on_first_chunk: Any = None,
+    on_error: Any = None,
 ) -> Any:
     """Wrap an async iterator so the span stays open until the stream is consumed.
 
@@ -257,16 +272,96 @@ def _deferred_stream_trace(
         with deferred:
             last_chunk = None
             first_seen = False
-            async with aclosing(result) as agen:
-                async for chunk in agen:
-                    if not first_seen:
-                        first_seen = True
-                        if on_first_chunk is not None:
-                            on_first_chunk()
-                    last_chunk = chunk
-                    yield chunk
-            if last_chunk is not None:
-                log_fn(span, last_chunk)
+            try:
+                async with aclosing(result) as agen:
+                    async for chunk in agen:
+                        if not first_seen:
+                            first_seen = True
+                            if on_first_chunk is not None:
+                                on_first_chunk()
+                        last_chunk = chunk
+                        yield chunk
+                if last_chunk is not None:
+                    log_fn(span, last_chunk)
+            except Exception as exc:
+                if on_error is not None:
+                    on_error(span, exc)
+                raise
+
+    return _trace()
+
+
+class _AwaitInContext:
+    """Await ``coro`` with every step run inside ``context``.
+
+    Like ``asyncio.create_task(coro, context=context)`` (Python 3.11+), but runs on
+    any Python version and without scheduling a separate task.
+    """
+
+    __slots__ = ("_context", "_coro")
+
+    def __init__(self, coro: Any, context: Context):
+        self._coro = coro
+        self._context = context
+
+    def __await__(self) -> Any:
+        coro, context = self._coro, self._context
+        step, value = coro.send, None
+        while True:
+            try:
+                yielded = context.run(step, value)
+            except StopIteration as exc:
+                return exc.value
+            try:
+                value = yield yielded
+                step = coro.send
+            except GeneratorExit:
+                context.run(coro.close)
+                raise
+            except BaseException as exc:
+                step, value = coro.throw, exc
+
+
+def _team_pipeline_reply_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: dict[str, Any]) -> Any:
+    """Trace a TeamPipeline reply for the lifetime of its event stream."""
+
+    async def _trace():
+        # The wrapped stream runs entirely in its own context, with the pipeline span
+        # current. Context changes it makes persist across events without leaking into
+        # the caller's context between them.
+        stream_context = copy_context()
+        span = stream_context.run(
+            lambda: start_span(
+                name="TeamPipeline.reply_stream",
+                type=SpanTypeAttribute.TASK,
+                input=_args_kwargs_input(args, kwargs),
+                metadata=_team_pipeline_metadata(instance),
+            )
+        )
+        stream_context.run(span.set_current)
+        stream = None
+        last_event = None
+        try:
+            stream = stream_context.run(wrapped, *args, **kwargs)
+            while True:
+                try:
+                    event = await _AwaitInContext(stream.__anext__(), stream_context)
+                except StopAsyncIteration:
+                    break
+                last_event = event
+                yield event
+        except Exception as exc:
+            span.log(error=exc)
+            raise
+        finally:
+            try:
+                if stream is not None:
+                    await _AwaitInContext(stream.aclose(), stream_context)
+            finally:
+                # Also runs when the caller closes the stream early.
+                if last_event is not None:
+                    span.log(output=last_event)
+                span.end()
 
     return _trace()
 

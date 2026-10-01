@@ -1,7 +1,7 @@
 import dataclasses
 import json
 from collections.abc import Callable, Mapping, Sequence
-from typing import Any, overload
+from typing import TYPE_CHECKING, Any, overload
 
 import slugify
 from braintrust.logger import _internal_get_global_state, api_conn, login
@@ -21,21 +21,28 @@ from .types import Metadata
 from .util import eprint
 
 
+if TYPE_CHECKING:
+    from braintrust.logger import _CreateProjectRequest
+
+
 class ProjectIdCache:
     def __init__(self):
         self._cache: dict[Project, str] = {}
         self._name_cache: dict[str, str] = {}
 
-    def get_by_name(self, project_name: str) -> str:
+    def get_by_name(self, project_name: str, project_group_name: str | None = None) -> str:
         if project_name not in self._name_cache:
             state = _internal_get_global_state()
-            project = state.api_client().projects.post_project(body={"name": project_name, "org_name": state.org_name})
+            body: _CreateProjectRequest = {"name": project_name, "org_name": state.org_name}
+            if project_group_name is not None:
+                body["project_group_name"] = project_group_name
+            project = state.api_client().projects.post_project(body=body)
             self._name_cache[project_name] = project["id"]
         return self._name_cache[project_name]
 
     def get(self, project: "Project") -> str:
         if project not in self._cache:
-            self._cache[project] = self.get_by_name(project.name)
+            self._cache[project] = self.get_by_name(project.name, project.project_group_name)
         return self._cache[project]
 
 
@@ -607,8 +614,9 @@ class ClassifierBuilder:
 class Project:
     """A handle to a Braintrust project."""
 
-    def __init__(self, name: str):
+    def __init__(self, name: str, project_group_name: str | None = None):
         self.name = name
+        self.project_group_name = project_group_name
         self.tools = ToolBuilder(self)
         self.prompts = PromptBuilder(self)
         self.parameters = ParametersBuilder(self)
@@ -659,8 +667,13 @@ class Project:
 class ProjectBuilder:
     """Creates handles to Braintrust projects."""
 
-    def create(self, name: str) -> Project:
-        return Project(name)
+    def create(self, name: str, project_group_name: str | None = None) -> Project:
+        """Create a handle to a Braintrust project.
+
+        :param name: The name of the project.
+        :param project_group_name: (Optional) If specified, creates the project inside the project group with this name when the project does not already exist. Requires permission to create projects in that group.
+        """
+        return Project(name, project_group_name=project_group_name)
 
 
 projects = ProjectBuilder()

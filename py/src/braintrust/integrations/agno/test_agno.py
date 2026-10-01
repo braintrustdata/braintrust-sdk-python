@@ -52,6 +52,122 @@ def _assert_tool_fields_not_in_input(llm_span) -> None:
 
 
 @pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_agno_agent_cancellation_stage_metadata(memory_logger):
+    """A real cancelled agent run puts its cancellation stage in span metadata."""
+    agent_module = pytest.importorskip("agno.agent")
+    openai_module = pytest.importorskip("agno.models.openai")
+    run_module = pytest.importorskip("agno.run.agent")
+    Agent = agent_module.Agent
+    OpenAIChat = openai_module.OpenAIChat
+    if "cancellation_stage" not in run_module.RunOutput.__dataclass_fields__:
+        pytest.skip("cancellation_stage requires Agno 3.0.11 or newer")
+
+    tool_started = asyncio.Event()
+    release_tool = asyncio.Event()
+
+    async def get_weather(agent: Agent, city: str) -> str:
+        """Return the current weather for *city*."""
+        assert agent.name == "Weather Agent"
+        assert city == "Paris"
+        tool_started.set()
+        await asyncio.wait_for(release_tool.wait(), timeout=10)
+        return "The weather in Paris is 72F and sunny."
+
+    agent = Agent(
+        name="Weather Agent",
+        model=OpenAIChat(id="gpt-4o-mini"),
+        tools=[get_weather],
+        instructions="Use the get_weather tool to answer questions.",
+    )
+    run_id = "agno-cancellation-stage-test"
+    run_task = asyncio.create_task(agent.arun("What's the weather in Paris?", run_id=run_id))
+    try:
+        await asyncio.wait_for(tool_started.wait(), timeout=10)
+        assert agent.cancel_run(run_id)
+    finally:
+        release_tool.set()
+
+    response = await asyncio.wait_for(run_task, timeout=10)
+    assert response.cancellation_stage.value == "EXECUTING"
+
+    spans = memory_logger.pop()
+    root = next(s for s in spans if s["span_attributes"]["name"] == "Weather Agent.arun")
+    assert root["metadata"]["cancellation_stage"] == "EXECUTING"
+
+    from agno.team import Team
+
+    team = Team(name="Weather Team", model=OpenAIChat(id="gpt-4o-mini"), members=[])
+    team_run_id = "agno-team-cancellation-stage-test"
+    assert not team.cancel_run(team_run_id)
+    team_response = await team.arun("Cancel before starting", run_id=team_run_id)
+    assert team_response.cancellation_stage.value == "EXECUTING"
+    team_spans = memory_logger.pop()
+    team_root = next(s for s in team_spans if s["span_attributes"]["name"] == "Weather Team.arun")
+    assert team_root["metadata"]["cancellation_stage"] == "EXECUTING"
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_agno_agent_stream_cancellation_stage_metadata(memory_logger):
+    """A cancelled streamed run logs its final cancellation stage."""
+    agent_module = pytest.importorskip("agno.agent")
+    openai_module = pytest.importorskip("agno.models.openai")
+    run_module = pytest.importorskip("agno.run.agent")
+    Agent = agent_module.Agent
+    OpenAIChat = openai_module.OpenAIChat
+    if "cancellation_stage" not in run_module.RunOutput.__dataclass_fields__:
+        pytest.skip("cancellation_stage requires Agno 3.0.11 or newer")
+
+    tool_started = asyncio.Event()
+    release_tool = asyncio.Event()
+
+    async def get_weather(agent: Agent, city: str) -> str:
+        """Return the current weather for *city*."""
+        assert agent.name == "Weather Agent"
+        assert city == "Paris"
+        tool_started.set()
+        await asyncio.wait_for(release_tool.wait(), timeout=10)
+        return "The weather in Paris is 72F and sunny."
+
+    agent = Agent(
+        name="Weather Agent",
+        model=OpenAIChat(id="gpt-4o-mini"),
+        tools=[get_weather],
+        instructions="Use the get_weather tool to answer questions.",
+    )
+    run_id = "agno-stream-cancellation-stage-test"
+
+    async def consume_run():
+        return [
+            chunk
+            async for chunk in agent.arun(
+                "What's the weather in Paris?",
+                run_id=run_id,
+                stream=True,
+                stream_events=True,
+                yield_run_output=True,
+            )
+        ]
+
+    run_task = asyncio.create_task(consume_run())
+    try:
+        await asyncio.wait_for(tool_started.wait(), timeout=10)
+        assert agent.cancel_run(run_id)
+    finally:
+        release_tool.set()
+
+    chunks = await asyncio.wait_for(run_task, timeout=10)
+    assert any(chunk.event == "RunCancelled" for chunk in chunks)
+    run_response = next(chunk for chunk in chunks if isinstance(chunk, run_module.RunOutput))
+    assert run_response.cancellation_stage.value == "EXECUTING"
+
+    spans = memory_logger.pop()
+    root = next(s for s in spans if s["span_attributes"]["name"] == "Weather Agent.arun")
+    assert root["metadata"]["cancellation_stage"] == "EXECUTING"
+
+
+@pytest.mark.vcr
 def test_agno_simple_agent_execution(memory_logger):
     agent_module = pytest.importorskip("agno.agent")
     openai_module = pytest.importorskip("agno.models.openai")

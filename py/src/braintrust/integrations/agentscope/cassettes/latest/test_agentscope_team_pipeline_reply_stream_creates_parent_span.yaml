@@ -1,0 +1,377 @@
+interactions:
+- request:
+    body: '{"messages":[{"role":"system","name":"system","content":[{"type":"text","text":"Delegate
+      the task to the most suitable team member, then summarize their reply."}]},{"role":"user","name":"user","content":[{"type":"text","text":"Ask
+      the researcher to explain why recorded tests are useful."}]},{"role":"user","content":[{"type":"text","text":"<system-reminder>Treat
+      the following as the ground truth at this point of the conversation. Anything
+      stated earlier is outdated, and a later reminder, if any, supersedes this one:\n<current-time>2026-09-28T19:45:06</current-time>\n<timezone>UTC</timezone>\n</system-reminder>"}]}],"model":"gpt-4o-mini","stream":false,"temperature":0.0,"tools":[{"type":"function","function":{"name":"TeamAssign","description":"Assign
+      a task to a team member and get its reply back as the result. The members are:\n-
+      Researcher: Answers factual questions.","parameters":{"type":"object","properties":{"member":{"type":"string","enum":["Researcher"],"description":"The
+      name of the member to assign to."},"prompt":{"type":"string","description":"The
+      complete task for the member. It cannot see your context, so include everything
+      it needs."}},"required":["member","prompt"]}}}]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '1200'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.31.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.31.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-ETBZbS4oyZ3ZJZnYeqsdCmSx0Zdbm\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1790624707,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
+        \           \"id\": \"call_4xuSRzuMi2cQMnIxg8vkFlo4\",\n            \"type\":
+        \"function\",\n            \"function\": {\n              \"name\": \"TeamAssign\",\n
+        \             \"arguments\": \"{\\\"member\\\":\\\"Researcher\\\",\\\"prompt\\\":\\\"Explain
+        why recorded tests are useful.\\\"}\"\n            }\n          }\n        ],\n
+        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
+        null,\n      \"finish_reason\": \"tool_calls\"\n    }\n  ],\n  \"usage\":
+        {\n    \"prompt_tokens\": 203,\n    \"completion_tokens\": 25,\n    \"total_tokens\":
+        228,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\": 0,\n      \"audio_tokens\":
+        0\n    },\n    \"completion_tokens_details\": {\n      \"reasoning_tokens\":
+        0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\": 0,\n
+        \     \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_d9f006541a\"\n}\n"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a4253f24d88660a9-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '1146'
+      content-type:
+      - application/json
+      date:
+      - Mon, 28 Sep 2026 19:45:08 GMT
+      openai-processing-ms:
+      - '732'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999892'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_eb32bc8414f3416a994de81e6f4ba735
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"system","name":"system","content":[{"type":"text","text":"Answer
+      factual questions concisely."}]},{"role":"user","name":"user","content":[{"type":"text","text":"Explain
+      why recorded tests are useful."}]},{"role":"user","content":[{"type":"text","text":"<system-reminder>Treat
+      the following as the ground truth at this point of the conversation. Anything
+      stated earlier is outdated, and a later reminder, if any, supersedes this one:\n<current-time>2026-09-28T19:45:08</current-time>\n<timezone>UTC</timezone>\n</system-reminder>"}]}],"model":"gpt-4o-mini","stream":false,"temperature":0.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '611'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.31.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.31.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-ETBZe2wI192o7cAeqL5gA5CcrwGD8\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1790624710,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"Recorded tests are useful for several
+        reasons:\\n\\n1. **Consistency**: They provide a standardized way to assess
+        performance, ensuring that the same conditions are applied across different
+        test instances.\\n\\n2. **Reproducibility**: Recorded tests can be replayed
+        multiple times, allowing for consistent results and easier identification
+        of issues.\\n\\n3. **Analysis and Debugging**: They enable detailed analysis
+        of test outcomes, making it easier to identify failures and understand the
+        behavior of the system under test.\\n\\n4. **Documentation**: Recorded tests
+        serve as documentation of the testing process, providing a reference for future
+        tests and helping to maintain knowledge within a team.\\n\\n5. **Automation**:
+        They can be integrated into automated testing frameworks, allowing for efficient
+        and rapid testing cycles.\\n\\n6. **Training and Onboarding**: Recorded tests
+        can be used to train new team members, providing them with practical examples
+        of how the system behaves and how to test it effectively.\\n\\n7. **Performance
+        Monitoring**: They can help in monitoring performance over time, allowing
+        teams to track improvements or regressions in system behavior.\\n\\nOverall,
+        recorded tests enhance the reliability and efficiency of the testing process,
+        contributing to higher quality software.\",\n        \"refusal\": null,\n
+        \       \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\":
+        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 102,\n    \"completion_tokens\":
+        235,\n    \"total_tokens\": 337,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_1bcbffccf6\"\n}\n"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a4253f2babc9dda9-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '2108'
+      content-type:
+      - application/json
+      date:
+      - Mon, 28 Sep 2026 19:45:11 GMT
+      openai-processing-ms:
+      - '3248'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999910'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_379edea85a164833a7283488c359173b
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"system","name":"system","content":[{"type":"text","text":"Delegate
+      the task to the most suitable team member, then summarize their reply."}]},{"role":"user","name":"user","content":[{"type":"text","text":"Ask
+      the researcher to explain why recorded tests are useful."}]},{"role":"user","content":[{"type":"text","text":"<system-reminder>Treat
+      the following as the ground truth at this point of the conversation. Anything
+      stated earlier is outdated, and a later reminder, if any, supersedes this one:\n<current-time>2026-09-28T19:45:06</current-time>\n<timezone>UTC</timezone>\n</system-reminder>"}]},{"role":"assistant","name":"Leader","content":null,"tool_calls":[{"id":"call_4xuSRzuMi2cQMnIxg8vkFlo4","type":"function","function":{"name":"TeamAssign","arguments":"{\"member\":\"Researcher\",\"prompt\":\"Explain
+      why recorded tests are useful.\"}"}}]},{"role":"tool","tool_call_id":"call_4xuSRzuMi2cQMnIxg8vkFlo4","content":"Recorded
+      tests are useful for several reasons:\n\n1. **Consistency**: They provide a
+      standardized way to assess performance, ensuring that the same conditions are
+      applied across different test instances.\n\n2. **Reproducibility**: Recorded
+      tests can be replayed multiple times, allowing for consistent results and easier
+      identification of issues.\n\n3. **Analysis and Debugging**: They enable detailed
+      analysis of test outcomes, making it easier to identify failures and understand
+      the behavior of the system under test.\n\n4. **Documentation**: Recorded tests
+      serve as documentation of the testing process, providing a reference for future
+      tests and helping to maintain knowledge within a team.\n\n5. **Automation**:
+      They can be integrated into automated testing frameworks, allowing for efficient
+      and rapid testing cycles.\n\n6. **Training and Onboarding**: Recorded tests
+      can be used to train new team members, providing them with practical examples
+      of how the system behaves and how to test it effectively.\n\n7. **Performance
+      Monitoring**: They can help in monitoring performance over time, allowing teams
+      to track improvements or regressions in system behavior.\n\nOverall, recorded
+      tests enhance the reliability and efficiency of the testing process, contributing
+      to higher quality software.","name":"TeamAssign"}],"model":"gpt-4o-mini","stream":false,"temperature":0.0,"tools":[{"type":"function","function":{"name":"TeamAssign","description":"Assign
+      a task to a team member and get its reply back as the result. The members are:\n-
+      Researcher: Answers factual questions.","parameters":{"type":"object","properties":{"member":{"type":"string","enum":["Researcher"],"description":"The
+      name of the member to assign to."},"prompt":{"type":"string","description":"The
+      complete task for the member. It cannot see your context, so include everything
+      it needs."}},"required":["member","prompt"]}}}]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '2847'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.31.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.31.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-ETBZgWD7fJWSLHPQNYzYNZLQG163Z\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1790624712,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"The researcher explained that recorded
+        tests are useful for several reasons:\\n\\n1. **Consistency**: They ensure
+        standardized assessment conditions across different test instances.\\n2. **Reproducibility**:
+        Recorded tests can be replayed, allowing for consistent results and easier
+        issue identification.\\n3. **Analysis and Debugging**: They facilitate detailed
+        analysis of outcomes, helping to pinpoint failures and understand system behavior.\\n4.
+        **Documentation**: They serve as a reference for future tests, maintaining
+        knowledge within a team.\\n5. **Automation**: Recorded tests can be integrated
+        into automated testing frameworks for efficient testing cycles.\\n6. **Training
+        and Onboarding**: They provide practical examples for training new team members
+        on system behavior and testing.\\n7. **Performance Monitoring**: They help
+        track performance over time, identifying improvements or regressions.\\n\\nOverall,
+        recorded tests enhance the reliability and efficiency of the testing process,
+        contributing to higher quality software.\",\n        \"refusal\": null,\n
+        \       \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\":
+        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 473,\n    \"completion_tokens\":
+        184,\n    \"total_tokens\": 657,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_d9f006541a\"\n}\n"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a4253f4189e560a9-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '1842'
+      content-type:
+      - application/json
+      date:
+      - Mon, 28 Sep 2026 19:45:13 GMT
+      openai-processing-ms:
+      - '1801'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999567'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_ca64aca887924369a561803f27bfb4b5
+    status:
+      code: 200
+      message: OK
+version: 1

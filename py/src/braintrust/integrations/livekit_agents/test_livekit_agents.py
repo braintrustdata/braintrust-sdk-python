@@ -476,6 +476,8 @@ def _assert_eou_spans(logs):
 
 
 def _assert_stt_spans(logs, speech_text):
+    from livekit.agents.metrics import STTMetrics
+
     stt_logs = _spans_named(logs, "stt_processing")
     _assert_any_span(stt_logs, lambda log: log.get("metrics", {}).get("duration", 0) > 0)
     _assert_any_span(stt_logs, lambda log: log.get("output", {}).get("text") == speech_text)
@@ -488,6 +490,14 @@ def _assert_stt_spans(logs, speech_text):
     assert "prompt_tokens" not in stt_log.get("metrics", {}), stt_log
     assert "completion_tokens" not in stt_log.get("metrics", {}), stt_log
     compact_livekit_metrics = stt_log.get("metadata", {}).get("livekit_metrics", {})
+    if {"input_audio_tokens", "total_tokens"}.issubset(STTMetrics.model_fields):
+        _assert_any_span(
+            stt_logs,
+            lambda log: all(
+                log.get("metadata", {}).get("livekit_metrics", {}).get(field, 0) > 0
+                for field in ("total_tokens", "input_audio_tokens")
+            ),
+        )
     assert "duration" not in compact_livekit_metrics, stt_log
     assert "label" not in compact_livekit_metrics, stt_log
     assert "metadata" not in compact_livekit_metrics, stt_log

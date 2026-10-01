@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 3.16.2
+      - OpenAI/Python 3.19.2
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.16.2
+      - 3.19.2
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,60 +39,65 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0f67d40f6fbf876c006ab2947b099887d282313e1ec544cc2f\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1790088315,\n  \"status\":
-        \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1790088316,\n  \"error\": null,\n
-        \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
+      string: "{\n  \"id\": \"resp_05d6a0f2c8e1a49b006abab89e860487d2a986194642f0e855\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1790621854,\n  \"status\":
+        \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1790621855,\n  \"error\":
+        null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4.1-mini-2025-04-14\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"ws_0f67d40f6fbf876c006ab2947b8b3887d2b6cd3a28e70d2e20\",\n
+        \     \"id\": \"ws_05d6a0f2c8e1a49b006abab89eaa9887d2b16b0b2f4cc9116e\",\n
         \     \"type\": \"web_search_call\",\n      \"status\": \"completed\",\n      \"action\":
         {\n        \"type\": \"search\",\n        \"queries\": [\n          \"Search
         the web for the current weather in Paris and answer in one sentence.\"\n        ],\n
         \       \"query\": \"Search the web for the current weather in Paris and answer
-        in one sentence.\"\n      }\n    },\n    {\n      \"id\": \"msg_0f67d40f6fbf876c006ab2947c107c87d29e49443cef7981c9\",\n
+        in one sentence.\"\n      }\n    },\n    {\n      \"id\": \"msg_05d6a0f2c8e1a49b006abab89f394487d2b994dfcd9d4e75d6\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"As of 4:45\\u202fPM
-        on Tuesday, September 22, 2026, in Paris, France, the weather is sunny with
-        a temperature of 75\\u00b0F (24\\u00b0C).\\n\\n## Weather for Paris, Paris,
-        France:\\nCurrent Conditions: Sunny, 75\\u00b0F (24\\u00b0C)\\n\\nDaily Forecast:\\n*
-        Tuesday, September 22: Low: 52\\u00b0F (11\\u00b0C), High: 77\\u00b0F (25\\u00b0C),
-        Description: Sunny, nice and warm\\n* Wednesday, September 23: Low: 55\\u00b0F
-        (13\\u00b0C), High: 79\\u00b0F (26\\u00b0C), Description: Partly sunny, very
-        warm and pleasant\\n* Thursday, September 24: Low: 51\\u00b0F (11\\u00b0C),
-        High: 73\\u00b0F (23\\u00b0C), Description: Warm with clouds followed by a
-        brightening sky\\n* Friday, September 25: Low: 54\\u00b0F (12\\u00b0C), High:
-        79\\u00b0F (26\\u00b0C), Description: Plenty of sun, very warm and pleasant\\n*
-        Saturday, September 26: Low: 56\\u00b0F (14\\u00b0C), High: 74\\u00b0F (24\\u00b0C),
-        Description: Pleasantly warm with partial sunshine\\n* Sunday, September 27:
-        Low: 59\\u00b0F (15\\u00b0C), High: 78\\u00b0F (26\\u00b0C), Description:
-        Very warm with considerable cloudiness\\n* Monday, September 28: Low: 60\\u00b0F
-        (16\\u00b0C), High: 75\\u00b0F (24\\u00b0C), Description: Occasional morning
-        rain and a thunderstorm; otherwise, mostly cloudy and very warm\\n \"\n        }\n
-        \     ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
-        true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
-        null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
-        \   \"context\": null,\n    \"effort\": null,\n    \"summary\": null\n  },\n
-        \ \"safety_identifier\": null,\n  \"service_tier\": \"auto\",\n  \"store\":
-        true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
-        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
-        {\n    \"type\": \"web_search_preview\"\n  },\n  \"tool_usage\": {\n    \"image_gen\":
-        {\n      \"input_tokens\": 0,\n      \"input_tokens_details\": {\n        \"image_tokens\":
-        0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
-        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
-        0\n    },\n    \"web_search\": {\n      \"num_requests\": 1\n    }\n  },\n
-        \ \"tools\": [\n    {\n      \"type\": \"web_search_preview\",\n      \"search_content_types\":
-        [\n        \"text\"\n      ],\n      \"search_context_size\": \"low\",\n      \"user_location\":
-        {\n        \"type\": \"approximate\",\n        \"city\": null,\n        \"country\":
-        \"US\",\n        \"region\": null,\n        \"timezone\": null\n      }\n
-        \   }\n  ],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
-        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 323,\n    \"input_tokens_details\":
-        {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 318,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 641\n  },\n  \"user\": null,\n  \"metadata\":
-        {}\n}"
+        [],\n          \"logprobs\": [],\n          \"text\": \"As of 8:57\\u202fPM
+        CEST on September 28, 2026, Paris is experiencing cloudy conditions with a
+        temperature of 73\\u00b0F (23\\u00b0C).\\n\\n## Weather for Paris, \\u00cele-de-France,
+        France:\\nCurrent Conditions: Cloudy, 73\\u00b0F (23\\u00b0C)\\n\\nDaily Forecast:\\n*
+        Monday, September 28: Low: 61\\u00b0F (16\\u00b0C), High: 75\\u00b0F (24\\u00b0C),
+        Description: Mostly cloudy and very warm\\n* Tuesday, September 29: Low: 67\\u00b0F
+        (19\\u00b0C), High: 83\\u00b0F (28\\u00b0C), Description: Partly sunny and
+        very warm\\n* Wednesday, September 30: Low: 60\\u00b0F (15\\u00b0C), High:
+        72\\u00b0F (22\\u00b0C), Description: Cloudy and not as warm; occasional rain
+        and a thunderstorm in the afternoon\\n* Thursday, October 1: Low: 51\\u00b0F
+        (11\\u00b0C), High: 72\\u00b0F (22\\u00b0C), Description: Variable cloudiness
+        with showers; warm\\n* Friday, October 2: Low: 51\\u00b0F (11\\u00b0C), High:
+        71\\u00b0F (22\\u00b0C), Description: Pleasantly warm with sunshine and a
+        few clouds\\n* Saturday, October 3: Low: 53\\u00b0F (12\\u00b0C), High: 73\\u00b0F
+        (23\\u00b0C), Description: Decreasing clouds and warm\\n* Sunday, October
+        4: Low: 53\\u00b0F (12\\u00b0C), High: 71\\u00b0F (22\\u00b0C), Description:
+        Mostly sunny, nice and warm\\n\\nSevere Weather Alerts:\\n* Paris: Yellow
+        Warning for Thunderstorms in effect until Tuesday, 12:00 AM CEST.  Source:
+        M\\u00e9t\\u00e9o-France, Moderate thunderstorm warningModerate damages may
+        occur, especially in vulnerable or in exposed areas and to people who carry
+        out weather-related activities.Be careful, keep informed of the latest weather
+        forecast., start time: Monday, September 28, 06:00:00 UTC, end time: Tuesday,
+        September 29, 00:00:00 UTC\\n \"\n        }\n      ],\n      \"role\": \"assistant\"\n
+        \   }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n
+        \ \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
+        \"in_memory\",\n  \"reasoning\": {\n    \"context\": null,\n    \"effort\":
+        null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
+        \"auto\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\":
+        {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n
+        \ \"tool_choice\": {\n    \"type\": \"web_search_preview\"\n  },\n  \"tool_usage\":
+        {\n    \"image_gen\": {\n      \"input_tokens\": 0,\n      \"input_tokens_details\":
+        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\":
+        0,\n      \"output_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
+        0\n      },\n      \"total_tokens\": 0\n    },\n    \"web_search\": {\n      \"num_requests\":
+        1\n    }\n  },\n  \"tools\": [\n    {\n      \"type\": \"web_search_preview\",\n
+        \     \"search_content_types\": [\n        \"text\"\n      ],\n      \"search_context_size\":
+        \"low\",\n      \"user_location\": {\n        \"type\": \"approximate\",\n
+        \       \"city\": null,\n        \"country\": \"US\",\n        \"region\":
+        null,\n        \"timezone\": null\n      }\n    }\n  ],\n  \"top_logprobs\":
+        0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\":
+        323,\n    \"input_tokens_details\": {\n      \"cache_write_tokens\": 0,\n
+        \     \"cached_tokens\": 0\n    },\n    \"output_tokens\": 419,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 742\n  },\n
+        \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -103,17 +108,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a3f217a07ed2f812-EWR
+      - a424f97e38b0103a-YYZ
       connection:
       - keep-alive
       content-length:
-      - '3939'
+      - '4386'
       content-type:
       - application/json
       date:
-      - Tue, 22 Sep 2026 14:45:16 GMT
+      - Mon, 28 Sep 2026 18:57:36 GMT
       openai-processing-ms:
-      - '1925'
+      - '2036'
       openai-version:
       - '2020-10-01'
       server:
@@ -125,7 +130,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-id:
-      - req_fb63ca8b9f6d46da8d7573e820d34a52
+      - req_581d4e487d0644c89ab9453798820ccb
     status:
       code: 200
       message: OK

@@ -1,0 +1,478 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      User-Agent:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://www.braintrust.dev/api/apikey/login
+  response:
+    body:
+      string: '{"org_info":[{"id":"5abfae3a-7aa7-4653-a9c8-b3efcb18f584","name":"Braintrust
+        SDKs","api_url":"https://api.braintrust.dev","git_metadata":{"collect":"some","fields":["commit","branch","tag","dirty","author_name","author_email","commit_message","commit_time"]},"is_universal_api":null,"proxy_url":"https://api.braintrust.dev","realtime_url":"wss://realtime.braintrustapi.com"}]}'
+    headers:
+      Access-Control-Allow-Credentials:
+      - 'true'
+      Access-Control-Allow-Headers:
+      - X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5,
+        Content-Type, Date, X-Api-Version
+      Access-Control-Allow-Methods:
+      - GET,OPTIONS,PATCH,DELETE,POST,PUT
+      Access-Control-Allow-Origin:
+      - '*'
+      Cache-Control:
+      - public, max-age=0, must-revalidate
+      Content-Length:
+      - '376'
+      Content-Security-Policy:
+      - 'script-src ''self'' ''unsafe-eval'' ''wasm-unsafe-eval'' ''strict-dynamic''
+        ''nonce-YjAyZDRhN2ItM2NlZi00YzZiLTkyZWEtMjNhMzRlZjZlMGI4''  *.js.stripe.com
+        js.stripe.com maps.googleapis.com ; style-src ''self'' ''unsafe-inline'' *.braintrust.dev
+        btcm6qilbbhv4yi1.public.blob.vercel-storage.com fonts.googleapis.com www.gstatic.com
+        d4tuoctqmanu0.cloudfront.net; font-src ''self'' data: fonts.gstatic.com btcm6qilbbhv4yi1.public.blob.vercel-storage.com
+        cdn.jsdelivr.net d4tuoctqmanu0.cloudfront.net fonts.googleapis.com mintlify-assets.b-cdn.net
+        fonts.cdnfonts.com; object-src ''none''; base-uri ''self''; form-action ''self''
+        https://www.facebook.com; frame-ancestors ''self''; worker-src ''self'' blob:;
+        report-uri https://o4507221741076480.ingest.us.sentry.io/api/4507221754380288/security/?sentry_key=27fa5ac907cf7c6ce4a1ab2a03f805b4&sentry_environment=production&sentry_release=16;
+        report-to csp-endpoint-0'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 28 Sep 2026 20:00:51 GMT
+      Etag:
+      - '"13vsc5ye8flag"'
+      Reporting-Endpoints:
+      - csp-endpoint-0="https://o4507221741076480.ingest.us.sentry.io/api/4507221754380288/security/?sentry_key=27fa5ac907cf7c6ce4a1ab2a03f805b4&sentry_environment=production&sentry_release=16"
+      Server:
+      - Vercel
+      Strict-Transport-Security:
+      - max-age=63072000
+      X-Clerk-Auth-Message:
+      - Invalid JWT form. A JWT consists of three parts separated by dots. (reason=token-invalid,
+        token-carrier=header)
+      X-Clerk-Auth-Reason:
+      - token-invalid
+      X-Clerk-Auth-Status:
+      - signed-out
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Matched-Path:
+      - /api/apikey/login
+      X-Nonce:
+      - YjAyZDRhN2ItM2NlZi00YzZiLTkyZWEtMjNhMzRlZjZlMGI4
+      X-Vercel-Cache:
+      - MISS
+      X-Vercel-Id:
+      - yul1::iad1::jnq2l-1790625651505-6f67644f810c
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://api.braintrust.dev/version
+  response:
+    body:
+      string: '{"version":"2.16.0","date_version":"20260925","ff_version":57,"commit":"8cd6ea86f8b1e305d81b96e71bd85fd35f402c41","deployment_mode":"local","deployment_type":"custom","use_gateway":true,"loop_runtime_enabled":true,"brainstore_default":"force","brainstore_can_contain_row_refs":true,"skip_pg_config":"all","has_realtime_wal_bucket":true,"brainstore_wal_footer_version":"v3","brainstore_wal_use_efficient_format":true,"has_logs2":true,"brainstore_export_enabled":true,"js":true,"universal":true,"code_execution":true,"control_plane_telemetry":["status","memprof","usage","logs"]}'
+    headers:
+      Access-Control-Allow-Credentials:
+      - 'true'
+      Access-Control-Expose-Headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
+      Cache-Control:
+      - no-store, no-cache, must-revalidate, proxy-revalidate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '577'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 28 Sep 2026 20:00:51 GMT
+      ETag:
+      - W/"241-ovofQ/72pWA0KQyxnehuf+iTGPk"
+      Expires:
+      - '0'
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains
+      Surrogate-Control:
+      - no-store
+      Vary:
+      - Origin
+      Via:
+      - 1.1 71eaa9eb77c2eecb57c03cdcdad1cf76.cloudfront.net (CloudFront)
+      X-Amz-Cf-Id:
+      - jrTNchfXsI37b-2bbc0VoGhlKiqCY1Z6IqvVlfRrtF6e_Ha51pWJCQ==
+      X-Amz-Cf-Pop:
+      - YTO50-P2
+      X-Cache:
+      - Miss from cloudfront
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"rows": [{"_is_merge": false, "context": {"caller_filename": "/Users/abhijeetprasad/.local/share/mise/installs/python/3.14.7/lib/python3.14/threading.py",
+      "caller_functionname": "run", "caller_lineno": 1024, "span_origin": {"instrumentation":
+      {"name": "agno-auto"}, "name": "braintrust.sdk.python", "version": "0.42.0"}},
+      "created": "2026-09-28T20:00:51.283047+00:00", "id": "b9466a76-557d-451f-9d06-339d028539d7",
+      "input": {"input": "What''s the weather in Paris?"}, "log_id": "g", "metadata":
+      {"agent_name": "Weather Agent", "component": "agent", "model": "gpt-4o-mini",
+      "run_id": "agno-cancellation-stage-test"}, "metrics": {"start": 1790625651.283044},
+      "project_id": "test-agno-app", "root_span_id": "7b0dce43a3d26ef064779fc34c3883ad",
+      "span_attributes": {"exec_counter": 1, "name": "Weather Agent.run", "type":
+      "task"}, "span_id": "6450fe0cd9e2d61e", "span_parents": null}], "api_version":
+      2}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '897'
+      User-Agent:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://api.braintrust.dev/logs3
+  response:
+    body:
+      string: '{"Code":"ForbiddenError","Message":"Missing read access to project_log
+        id test-agno-app, or the project_log does not exist [user_email=abhijeet@braintrustdata.com]
+        [user_org=Braintrust SDKs] [timestamp=1790625652.059]"}'
+    headers:
+      Access-Control-Allow-Credentials:
+      - 'true'
+      Access-Control-Expose-Headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
+      Cache-Control:
+      - no-store, no-cache, must-revalidate, proxy-revalidate
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 28 Sep 2026 20:00:52 GMT
+      ETag:
+      - W/"db-Ndug9yL2WHgCNbAiRWvuPDJlNMk"
+      Expires:
+      - '0'
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains
+      Surrogate-Control:
+      - no-store
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin, Accept-Encoding
+      Via:
+      - 1.1 d03af248468c898a111754f0666c2316.cloudfront.net (CloudFront)
+      X-Amz-Cf-Id:
+      - hbCzMX2XNvn-CiXLl04n4vykbWEGkjKvVi-a1U9mB8IbpPgehwV9Uw==
+      X-Amz-Cf-Pop:
+      - YTO50-P2
+      X-Cache:
+      - Error from cloudfront
+      content-length:
+      - '219'
+    status:
+      code: 403
+      message: Forbidden
+- request:
+    body: '{"messages":[{"role":"developer","content":"Use the get_weather tool to
+      answer questions."},{"role":"user","content":"What''s the weather in Paris?"}],"model":"gpt-4o-mini","tools":[{"type":"function","function":{"name":"get_weather","description":"Return
+      the current weather for *city*.","parameters":{"type":"object","properties":{"city":{"type":"string"}},"required":["city"]}}}]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '382'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - OpenAI/Python 2.31.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.31.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-ETBoq0AuPTGAP2ZgPHDbFgSAexrDn\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1790625652,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
+        \           \"id\": \"call_5Z4B1fdZAlgtGp0ufZR90QLE\",\n            \"type\":
+        \"function\",\n            \"function\": {\n              \"name\": \"get_weather\",\n
+        \             \"arguments\": \"{\\\"city\\\":\\\"Paris\\\"}\"\n            }\n
+        \         }\n        ],\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"tool_calls\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 61,\n    \"completion_tokens\":
+        14,\n    \"total_tokens\": 75,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_54730f6e0b\"\n}\n"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a42556352ee59113-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '1084'
+      content-type:
+      - application/json
+      date:
+      - Mon, 28 Sep 2026 20:00:52 GMT
+      openai-processing-ms:
+      - '663'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999977'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_f8a812597bf3440a8650e9c9da35888f
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"rows": [{"_is_merge": false, "context": {"caller_filename": "/Users/abhijeetprasad/.local/share/mise/installs/python/3.14.7/lib/python3.14/threading.py",
+      "caller_functionname": "run", "caller_lineno": 1024, "span_origin": {"instrumentation":
+      {"name": "agno-auto"}, "name": "braintrust.sdk.python", "version": "0.42.0"}},
+      "created": "2026-09-28T20:00:51.283047+00:00", "id": "b9466a76-557d-451f-9d06-339d028539d7",
+      "input": {"input": "What''s the weather in Paris?"}, "log_id": "g", "metadata":
+      {"agent_name": "Weather Agent", "component": "agent", "model": "gpt-4o-mini",
+      "run_id": "agno-cancellation-stage-test"}, "metrics": {"start": 1790625651.283044},
+      "project_id": "test-agno-app", "root_span_id": "7b0dce43a3d26ef064779fc34c3883ad",
+      "span_attributes": {"exec_counter": 1, "name": "Weather Agent.run", "type":
+      "task"}, "span_id": "6450fe0cd9e2d61e", "span_parents": null}], "api_version":
+      2}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '897'
+      User-Agent:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://api.braintrust.dev/logs3
+  response:
+    body:
+      string: '{"Code":"ForbiddenError","Message":"Missing read access to project_log
+        id test-agno-app, or the project_log does not exist [user_email=abhijeet@braintrustdata.com]
+        [user_org=Braintrust SDKs] [timestamp=1790625653.246]"}'
+    headers:
+      Access-Control-Allow-Credentials:
+      - 'true'
+      Access-Control-Expose-Headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
+      Cache-Control:
+      - no-store, no-cache, must-revalidate, proxy-revalidate
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 28 Sep 2026 20:00:53 GMT
+      ETag:
+      - W/"db-BkOIWtsQ+03VqRHYPT1SWmB1zeE"
+      Expires:
+      - '0'
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains
+      Surrogate-Control:
+      - no-store
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin, Accept-Encoding
+      Via:
+      - 1.1 2ffb622580a0a24837f798fa62268b12.cloudfront.net (CloudFront)
+      X-Amz-Cf-Id:
+      - g_NEX5jhxU-fFTM8ziCrDq4v29oF81guBIE8kfpbfGpGHYu6HSe9aQ==
+      X-Amz-Cf-Pop:
+      - YTO50-P2
+      X-Cache:
+      - Error from cloudfront
+      content-length:
+      - '219'
+    status:
+      code: 403
+      message: Forbidden
+- request:
+    body: '{"messages":[{"role":"developer","content":"Use the get_weather tool to
+      answer questions."},{"role":"user","content":"What''s the weather in Paris?"},{"role":"assistant","tool_calls":[{"id":"call_5Z4B1fdZAlgtGp0ufZR90QLE","function":{"arguments":"{\"city\":\"Paris\"}","name":"get_weather"},"type":"function"}],"content":""},{"role":"tool","content":"The
+      weather in Paris is 72F and sunny.","tool_call_id":"call_5Z4B1fdZAlgtGp0ufZR90QLE"}],"model":"gpt-4o-mini","tools":[{"type":"function","function":{"name":"get_weather","description":"Return
+      the current weather for *city*.","parameters":{"type":"object","properties":{"city":{"type":"string"}},"required":["city"]}}}]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '671'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - OpenAI/Python 2.31.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.31.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-ETBorIrQxZBTXiQ4XntYrbaukVugY\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1790625653,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"The weather in Paris is 72\xB0F and
+        sunny.\",\n        \"refusal\": null,\n        \"annotations\": []\n      },\n
+        \     \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n
+        \ \"usage\": {\n    \"prompt_tokens\": 94,\n    \"completion_tokens\": 12,\n
+        \   \"total_tokens\": 106,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_54730f6e0b\"\n}\n"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a425563b688e9113-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '848'
+      content-type:
+      - application/json
+      date:
+      - Mon, 28 Sep 2026 20:00:54 GMT
+      openai-processing-ms:
+      - '741'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999967'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_9980d14e6db541d99172eefcc8e64c99
+    status:
+      code: 200
+      message: OK
+version: 1

@@ -1462,6 +1462,15 @@ class TestEvaluateFilter:
         f = Filter(path=["metadata", "priority"], pattern=re.compile("^P0$"))
         assert evaluate_filter(datum, f) is True
 
+    def test_parse_filters_splits_on_first_equals(self):
+        filters = parse_filters(["metadata.name=a=b"])
+        assert filters[0].path == ["metadata", "name"]
+        assert filters[0].pattern.pattern == "a=b"
+
+    def test_parse_filters_rejects_filter_without_equals(self):
+        with pytest.raises(ValueError, match="Invalid filter metadata.name"):
+            parse_filters(["metadata.name"])
+
     def test_evaluate_filter_input_field(self):
         datum = EvalCase(input={"text": "hello world"}, metadata={"name": "foo"})
         f = Filter(path=["input", "text"], pattern=re.compile("hello"))

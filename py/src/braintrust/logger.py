@@ -28,6 +28,7 @@ from functools import partial, wraps
 from multiprocessing import cpu_count
 from types import TracebackType
 from typing import (
+    TYPE_CHECKING,
     Any,
     Generic,
     Literal,
@@ -626,27 +627,23 @@ class BraintrustState:
         self.reset_login_info()
 
         self._prompt_cache = PromptCache(
-            memory_cache=LRUCache(
-                max_size=int(os.environ.get("BRAINTRUST_PROMPT_CACHE_MEMORY_MAX_SIZE", str(1 << 10)))
-            ),
+            memory_cache=LRUCache(max_size=BraintrustEnv.PROMPT_CACHE_MEMORY_MAX_SIZE.get(1 << 10)),
             disk_cache=DiskCache(
                 cache_dir=os.environ.get(
                     "BRAINTRUST_PROMPT_CACHE_DIR", f"{os.environ.get('HOME')}/.braintrust/prompt_cache"
                 ),
-                max_size=int(os.environ.get("BRAINTRUST_PROMPT_CACHE_DISK_MAX_SIZE", str(1 << 20))),
+                max_size=BraintrustEnv.PROMPT_CACHE_DISK_MAX_SIZE.get(1 << 20),
                 serializer=lambda x: x.as_dict(),
                 deserializer=PromptSchema.from_dict_deep,
             ),
         )
         self._parameters_cache = ParametersCache(
-            memory_cache=LRUCache(
-                max_size=int(os.environ.get("BRAINTRUST_PARAMETERS_CACHE_MEMORY_MAX_SIZE", str(1 << 10)))
-            ),
+            memory_cache=LRUCache(max_size=BraintrustEnv.PARAMETERS_CACHE_MEMORY_MAX_SIZE.get(1 << 10)),
             disk_cache=DiskCache(
                 cache_dir=os.environ.get(
                     "BRAINTRUST_PARAMETERS_CACHE_DIR", f"{os.environ.get('HOME')}/.braintrust/parameters_cache"
                 ),
-                max_size=int(os.environ.get("BRAINTRUST_PARAMETERS_CACHE_DISK_MAX_SIZE", str(1 << 20))),
+                max_size=BraintrustEnv.PARAMETERS_CACHE_DISK_MAX_SIZE.get(1 << 20),
                 serializer=lambda x: x.as_dict(),
                 deserializer=RemoteEvalParameters.from_dict_deep,
             ),
@@ -999,9 +996,12 @@ def utf8_byte_length(value: str) -> int:
     return len(value.encode("utf-8"))
 
 
+_LazyLogRecord = LazyValue[dict[str, Any]] | LazyValue[dict[str, Any] | None]
+
+
 class _BackgroundLogger(ABC):
     @abstractmethod
-    def log(self, *args: LazyValue[dict[str, Any]]) -> None:
+    def log(self, *args: _LazyLogRecord) -> None:
         pass
 
     @abstractmethod
@@ -1019,7 +1019,7 @@ class _MemoryBackgroundLogger(_BackgroundLogger):
     def enforce_queue_size_limit(self, enforce: bool) -> None:
         pass
 
-    def log(self, *args: LazyValue[dict[str, Any]]) -> None:
+    def log(self, *args: _LazyLogRecord) -> None:
         with self.lock:
             self.logs.extend(args)
 
@@ -1033,8 +1033,8 @@ class _MemoryBackgroundLogger(_BackgroundLogger):
             if not self.logs:
                 return
 
-            # Unwrap lazy values and extract attachments
-            logs = [l.get() for l in self.logs]
+            # Filter dropped records before touching attachments.
+            logs = [record for item in self.logs if (record := item.get()) is not None]
 
             # Extract attachments from all logs
             attachments: list[BaseAttachment] = []
@@ -1046,7 +1046,7 @@ class _MemoryBackgroundLogger(_BackgroundLogger):
 
     def pop(self):
         with self.lock:
-            logs = [l.get() for l in self.logs]  # unwrap the LazyValues
+            logs = [record for item in self.logs if (record := item.get()) is not None]
             self.logs = []
 
             if not logs:
@@ -1057,7 +1057,11 @@ class _MemoryBackgroundLogger(_BackgroundLogger):
             batch = merge_row_batch(logs)
 
             if self._export_customizers:
-                batch = [_customize_span_export(item, self._export_customizers) for item in batch]
+                batch = [
+                    record
+                    for item in batch
+                    if (record := _customize_span_export(item, self._export_customizers)) is not None
+                ]
 
             return batch
 
@@ -1098,7 +1102,7 @@ class _HTTPBackgroundLogger:
         self.started = False
 
         self.logger = logging.getLogger("braintrust")
-        self.queue: "LogQueue[LazyValue[dict[str, Any]]]" = LogQueue(maxsize=self.queue_maxsize)
+        self.queue: "LogQueue[_LazyLogRecord]" = LogQueue(maxsize=self.queue_maxsize)
 
         # Counter for tracking overflow uploads (useful for testing)
         self._overflow_upload_count = 0
@@ -1113,7 +1117,7 @@ class _HTTPBackgroundLogger:
         """
         self.queue.enforce_queue_size_limit(enforce)
 
-    def log(self, *args: LazyValue[dict[str, Any]]) -> None:
+    def log(self, *args: _LazyLogRecord) -> None:
         self._start()
         dropped_items = []
         for event in args:
@@ -1254,16 +1258,20 @@ class _HTTPBackgroundLogger:
                 )
 
     def _unwrap_lazy_values(
-        self, wrapped_items: Sequence[LazyValue[dict[str, Any]]]
+        self, wrapped_items: Sequence[_LazyLogRecord]
     ) -> tuple[list[dict[str, Any]], list["BaseAttachment"]]:
         for i in range(self.num_tries):
             try:
-                unwrapped_items = [item.get() for item in wrapped_items]
+                unwrapped_items = [record for item in wrapped_items if (record := item.get()) is not None]
                 merged_items = merge_row_batch(unwrapped_items)
 
-                # Logger-local hooks run after instrumentation hooks and merging.
+                # Logger-local hooks run after span hooks and merging.
                 if self._export_customizers:
-                    merged_items = [_customize_span_export(item, self._export_customizers) for item in merged_items]
+                    merged_items = [
+                        record
+                        for item in merged_items
+                        if (record := _customize_span_export(item, self._export_customizers)) is not None
+                    ]
 
                 attachments: list["BaseAttachment"] = []
                 for item in merged_items:
@@ -1869,18 +1877,28 @@ def init_dataset(
     )
 
 
+if TYPE_CHECKING:
+    from .api._generated.models.projects import CreateProject
+
+    # Keep experimental fields local until they are part of the pinned OpenAPI schema.
+    class _CreateProjectRequest(CreateProject, total=False):
+        project_group_name: str
+
+
 def _compute_logger_metadata(
     project_name: str | None = None,
     project_id: str | None = None,
     state: BraintrustState | None = None,
+    project_group_name: str | None = None,
 ):
     state = state or _state
     state.login()
     org_id = state.org_id
     if project_id is None:
-        response = state.api_client().projects.post_project(
-            body={"name": project_name or GLOBAL_PROJECT, "org_name": state.org_name}
-        )
+        body: _CreateProjectRequest = {"name": project_name or GLOBAL_PROJECT, "org_name": state.org_name}
+        if project_group_name is not None:
+            body["project_group_name"] = project_group_name
+        response = state.api_client().projects.post_project(body=body)
         return OrgProjectMetadata(
             org_id=org_id,
             project=ObjectMetadata(id=response["id"], name=response["name"], full_info=dict(response)),
@@ -1908,6 +1926,7 @@ def init_logger(
     set_current: bool = True,
     state: BraintrustState | None = None,
     environment: SpanOriginEnvironment | None = None,
+    _create_in_project_group: str | None = None,
 ) -> "Logger":
     """
     Create a new logger in a specified project. If the project does not exist, it will be created.
@@ -1921,12 +1940,15 @@ def init_logger(
     :param org_name: (Optional) The name of a specific organization to connect to. This is useful if you belong to multiple.
     :param force_login: Login again, even if you have already logged in (by default, the logger will not login if you are already logged in)
     :param set_current: If true (the default), set the global current-experiment to the newly-created one.
+    :param _create_in_project_group: Experimental: the name of an existing project group to create the project in. Existing projects must already belong to the group, otherwise registration fails with a 409. Ignored when project_id is provided.
     :returns: The newly created Logger.
     """
 
     state = state or _state
     state.span_origin_environment = detect_environment(environment)
     compute_metadata_args = dict(project_name=project, project_id=project_id)
+    if project_id is None and _create_in_project_group is not None:
+        compute_metadata_args["project_group_name"] = _create_in_project_group
 
     link_args = {
         "app_url": app_url,
@@ -2489,8 +2511,8 @@ def set_masking_function(masking_function: Callable[[Any], Any] | None) -> None:
     """
     Set a global masking function that will be applied to all logged data before sending to Braintrust.
     The masking function will be applied after records are merged but before they are sent to the backend.
-    Internally, masking is a logger-local export customizer that runs after instrumentation
-    customizers and also covers manually logged records.
+    Internally, masking is a logger-local export customizer that runs after span
+    customizers and also covers non-span records such as datasets and feedback.
 
     :param masking_function: A function that takes a JSON-serializable object and returns a masked version.
                            Set to None to disable masking.
@@ -2655,10 +2677,14 @@ def _current_braintrust_parent(state: BraintrustState | None = None) -> str | No
             if components.object_id:
                 return f"project_id:{components.object_id}"
             meta = components.compute_object_metadata_args or {}
+            # A `project_name:` parent would register the project outside its group.
+            if meta.get("project_group_name"):
+                return f"project_id:{logger.id}"
             name = meta.get("project_name")
             if name:
                 return f"project_name:{name}"
-        except Exception:
+        except Exception as e:
+            logging.warning(f"Failed to resolve braintrust.parent from the current logger: {e}")
             return None
 
     return None
@@ -2951,7 +2977,7 @@ def traced(*span_args: Any, **span_kwargs: Any) -> Callable[[F], F]:
                     _try_log_input(span, f_sig, f_args, f_kwargs)
 
                 # Get max items from environment or default
-                max_items = int(os.environ.get("BRAINTRUST_MAX_GENERATOR_ITEMS", "1000"))
+                max_items = BraintrustEnv.MAX_GENERATOR_ITEMS.get(1000)
 
                 if trace_io and max_items != 0:
                     # Collect output up to limit
@@ -2992,7 +3018,7 @@ def traced(*span_args: Any, **span_kwargs: Any) -> Callable[[F], F]:
                     _try_log_input(span, f_sig, f_args, f_kwargs)
 
                 # Get max items from environment or default
-                max_items = int(os.environ.get("BRAINTRUST_MAX_GENERATOR_ITEMS", "1000"))
+                max_items = BraintrustEnv.MAX_GENERATOR_ITEMS.get(1000)
 
                 if trace_io and max_items != 0:
                     # Collect output up to limit
@@ -3983,6 +4009,7 @@ def _update_span_impl(
     )
 
     update_event = bt_safe_deep_copy(update_event)
+    customizers = _get_span_customizers()
 
     def parent_ids():
         exporter = _get_exporter()
@@ -3991,8 +4018,8 @@ def _update_span_impl(
             object_id=parent_object_id.get(),
         ).object_id_fields()
 
-    def compute_record():
-        return dict(
+    def compute_record() -> dict[str, Any] | None:
+        record = dict(
             id=id,
             **update_event,
             **parent_ids(),
@@ -4000,6 +4027,7 @@ def _update_span_impl(
                 IS_MERGE_FIELD: True,
             },
         )
+        return _customize_span_export(record, customizers) if customizers else record
 
     _state.global_bg_logger().log(LazyValue(compute_record, use_mutex=False))
 
@@ -4815,6 +4843,7 @@ class SpanImpl(Span):
             created=datetime.datetime.now(datetime.timezone.utc).isoformat(),
         )
         internal = internal or {}
+        # Integration consumers use this provenance independently of export hooks.
         self._instrumentation = internal.get("instrumentation") or "braintrust-python-logger"
         internal_data["context"] = merge_span_origin_context(
             caller_location or {},
@@ -4903,7 +4932,7 @@ class SpanImpl(Span):
 
         # Snapshot at log time so the span cache and the export agree on whether
         # (and how) this record is customized.
-        customizers = _get_span_customizers() if self._instrumentation != "braintrust-python-logger" else ()
+        customizers = _get_span_customizers()
         pending_cache_key = (
             object()
             if customizers
@@ -4933,11 +4962,11 @@ class SpanImpl(Span):
             self.state.span_cache.queue_write(self.root_span_id, self.span_id, cached_span)
 
         # Customized records are cached after export customization instead, so
-        # local scorers never see content that a customizer redacted.
+        # local scorers never see content that a customizer redacted or dropped.
         if not customizers:
             write_span_cache(serializable_partial_record)
 
-        def compute_record() -> dict[str, Any]:
+        def compute_record() -> dict[str, Any] | None:
             exporter = _get_exporter()
             record = dict(
                 **serializable_partial_record,
@@ -4948,13 +4977,15 @@ class SpanImpl(Span):
                 ).object_id_fields(),
             )
             # Resolve and customize inside the cached LazyValue: every incremental
-            # instrumentation record is transformed once, before the background
+            # span record is transformed once, before the background
             # logger merges, masks, extracts attachments, or retries delivery.
             if customizers:
-                record = _customize_span_export(record, customizers)
-                write_span_cache(record)
+                customized_record = _customize_span_export(record, customizers)
+                if customized_record is not None:
+                    write_span_cache(customized_record)
                 if pending_cache_key is not None:
                     self.state.span_cache._forget_pending_record(self.root_span_id, pending_cache_key)
+                return customized_record
             return record
 
         # Cache readers and the publisher share resolution, including the cache
@@ -5195,6 +5226,12 @@ class SpanImpl(Span):
         if parent_type == SpanObjectTypeV3.PROJECT_LOGS:
             _id = info.get("id")
             _name = info.get("name")
+            # A `project_name:` parent would register the project outside its group.
+            if not _id and (self.parent_compute_object_metadata_args or {}).get("project_group_name"):
+                try:
+                    _id = self.parent_object_id.get()
+                except Exception:
+                    return None
             if _id:
                 return f"project_id:{_id}"
             elif _name:

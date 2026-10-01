@@ -90,8 +90,22 @@ class FlowRunAsyncPatcher(CompositeFunctionWrapperPatcher):
 # ---------------------------------------------------------------------------
 
 
+class _ToolsCallerCallToolAsyncSubPatcher(FunctionWrapperPatcher):
+    """Patch ``tools._caller._call_tool_async`` (ADK >= 2.10.0).
+
+    ADK 2.10.0 moved ``llm_flows._tool_caller`` into the ``llm_flows.tools``
+    package as ``_caller``. As in 2.9.0, the call sites resolve the
+    module-global name, so the wrapper has to be installed on ``_caller``.
+    """
+
+    name = "adk.tool.call_async.tools_caller"
+    target_module = "google.adk.flows.llm_flows.tools._caller"
+    target_path = "_call_tool_async"
+    wrapper = _tool_call_async_wrapper
+
+
 class _ToolCallerCallToolAsyncSubPatcher(FunctionWrapperPatcher):
-    """Patch ``_tool_caller._call_tool_async`` (ADK >= 2.9.0).
+    """Patch ``_tool_caller._call_tool_async`` (ADK 2.9.x).
 
     ADK 2.9.0 moved tool execution out of ``llm_flows.functions`` into the
     ``llm_flows._tool_caller`` module. ``functions`` re-exports the helper, but
@@ -103,6 +117,7 @@ class _ToolCallerCallToolAsyncSubPatcher(FunctionWrapperPatcher):
     target_module = "google.adk.flows.llm_flows._tool_caller"
     target_path = "_call_tool_async"
     wrapper = _tool_call_async_wrapper
+    superseded_by = (_ToolsCallerCallToolAsyncSubPatcher,)
 
 
 class _FunctionsCallToolAsyncSubPatcher(FunctionWrapperPatcher):
@@ -114,14 +129,18 @@ class _FunctionsCallToolAsyncSubPatcher(FunctionWrapperPatcher):
     wrapper = _tool_call_async_wrapper
     # Yield to the ``_tool_caller`` target when both exist so a single tool
     # execution never produces two tool spans.
-    superseded_by = (_ToolCallerCallToolAsyncSubPatcher,)
+    superseded_by = (_ToolsCallerCallToolAsyncSubPatcher, _ToolCallerCallToolAsyncSubPatcher)
 
 
 class ToolCallAsyncPatcher(CompositeFunctionWrapperPatcher):
     """Patch ADK's central async tool execution helper for tracing."""
 
     name = "adk.tool.call_async"
-    sub_patchers = (_ToolCallerCallToolAsyncSubPatcher, _FunctionsCallToolAsyncSubPatcher)
+    sub_patchers = (
+        _ToolsCallerCallToolAsyncSubPatcher,
+        _ToolCallerCallToolAsyncSubPatcher,
+        _FunctionsCallToolAsyncSubPatcher,
+    )
 
 
 # ---------------------------------------------------------------------------
