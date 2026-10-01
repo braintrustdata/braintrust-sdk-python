@@ -1,10 +1,10 @@
 import dataclasses
 import json
 from collections.abc import Callable, Mapping, Sequence
-from typing import Any, cast, overload
+from typing import Any, overload
 
 import slugify
-from braintrust.logger import _internal_get_global_state, api_conn, login
+from braintrust.logger import _CreateProjectRequest, _internal_get_global_state, api_conn, login
 
 from .framework import _is_lazy_load, bcolors  # type: ignore
 from .generated_types import (
@@ -29,10 +29,10 @@ class ProjectIdCache:
     def get_by_name(self, project_name: str, project_group_name: str | None = None) -> str:
         if project_name not in self._name_cache:
             state = _internal_get_global_state()
-            body: dict[str, Any] = {"name": project_name, "org_name": state.org_name}
+            body: _CreateProjectRequest = {"name": project_name, "org_name": state.org_name}
             if project_group_name is not None:
                 body["project_group_name"] = project_group_name
-            project = state.api_client().projects.post_project(body=cast(Any, body))
+            project = state.api_client().projects.post_project(body=body)
             self._name_cache[project_name] = project["id"]
         return self._name_cache[project_name]
 

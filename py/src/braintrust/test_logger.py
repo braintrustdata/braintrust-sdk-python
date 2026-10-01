@@ -2784,7 +2784,7 @@ class TestExperimentGeneratedAPI(TestCase):
 
 class TestLoggerProjectGroup(TestCase):
     def setUp(self):
-        # Other logger tests install a global fake through init_test_logger.
+        # init_test_logger permanently replaces the module-level function with a fake, so restore the real one.
         metadata_patch = patch.object(logger, "_compute_logger_metadata", _compute_logger_metadata)
         metadata_patch.start()
         self.addCleanup(metadata_patch.stop)
@@ -2809,6 +2809,7 @@ class TestLoggerProjectGroup(TestCase):
                     )
                     self.projects.post_project.assert_not_called()
                     self.assertEqual(instance.id, "project-id")
+                    # Second access must not re-register.
                     self.assertEqual(instance.id, "project-id")
                     body = {"name": project or "Global", "org_name": "test-org"}
                     if group is not None:
@@ -2826,6 +2827,7 @@ class TestLoggerProjectGroup(TestCase):
                     state=self.state,
                     set_current=False,
                 )
+                self.assertNotIn("project_group_name", instance._compute_metadata_args)
                 self.assertEqual(instance.id, "project-id")
                 self.projects.post_project.assert_not_called()
                 if project is None:
@@ -2863,29 +2865,38 @@ class TestLoggerProjectGroup(TestCase):
                     body={"name": "project", "org_name": "test-org", "project_group_name": "my-group"}
                 )
 
-    def test_group_conflict_does_not_fall_back_to_unscoped_registration(self):
-        error = logger.BraintrustHTTPError(
-            method="POST",
-            url="https://api.braintrust.dev/v1/project",
-            status_code=409,
-            response_body="Project already exists outside project group my-group",
-            response_headers={},
-            attempts=1,
-            retryable=False,
-        )
-        self.projects.post_project.side_effect = error
+    def test_otel_parent_resolves_project_id_when_grouped(self):
+        for group, expected_parent in [("my-group", "project_id:project-id"), (None, "project_name:project")]:
+            with self.subTest(group=group):
+                self.projects.reset_mock()
+                # Fresh loggers so each check starts from an unresolved project id.
+                span_logger, current = (
+                    init_logger(project="project", _create_in_project_group=group, state=self.state, set_current=False)
+                    for _ in range(2)
+                )
+                self.assertEqual(span_logger.start_span(name="parent")._get_otel_parent(), expected_parent)
+                with (
+                    patch.object(logger, "current_experiment", return_value=None),
+                    patch.object(logger, "current_logger", return_value=current),
+                ):
+                    self.assertEqual(logger._current_braintrust_parent(), expected_parent)
+                expected_calls = 0 if group is None else 2
+                self.assertEqual(self.projects.post_project.call_count, expected_calls)
+
+    def test_otel_parent_tolerates_failed_group_registration(self):
+        self.projects.post_project.side_effect = Exception("409 Conflict")
         instance = init_logger(
-            project="project",
-            _create_in_project_group="my-group",
-            state=self.state,
-            set_current=False,
+            project="project", _create_in_project_group="my-group", state=self.state, set_current=False
         )
-        with self.assertRaises(logger.BraintrustHTTPError) as raised:
-            _ = instance.id
-        self.assertIs(raised.exception, error)
-        self.projects.post_project.assert_called_once_with(
-            body={"name": "project", "org_name": "test-org", "project_group_name": "my-group"}
-        )
+        # Must not fall back to a `project_name:` parent, which would register the project outside its group.
+        self.assertIsNone(instance.start_span(name="parent")._get_otel_parent())
+        with (
+            patch.object(logger, "current_experiment", return_value=None),
+            patch.object(logger, "current_logger", return_value=instance),
+            self.assertLogs(level="WARNING") as logs,
+        ):
+            self.assertIsNone(logger._current_braintrust_parent())
+        self.assertIn("409 Conflict", "\n".join(logs.output))
 
 
 class TestProjectGeneratedAPI(TestCase):

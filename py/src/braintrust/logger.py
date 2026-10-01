@@ -1878,7 +1878,7 @@ def init_dataset(
 
 
 # Keep experimental fields local until they are part of the pinned OpenAPI schema.
-class _CreateProjectInGroup(CreateProject, total=False):
+class _CreateProjectRequest(CreateProject, total=False):
     project_group_name: str
 
 
@@ -1892,7 +1892,7 @@ def _compute_logger_metadata(
     state.login()
     org_id = state.org_id
     if project_id is None:
-        body: _CreateProjectInGroup = {"name": project_name or GLOBAL_PROJECT, "org_name": state.org_name}
+        body: _CreateProjectRequest = {"name": project_name or GLOBAL_PROJECT, "org_name": state.org_name}
         if project_group_name is not None:
             body["project_group_name"] = project_group_name
         response = state.api_client().projects.post_project(body=body)
@@ -1944,7 +1944,7 @@ def init_logger(
     state = state or _state
     state.span_origin_environment = detect_environment(environment)
     compute_metadata_args = dict(project_name=project, project_id=project_id)
-    if _create_in_project_group is not None:
+    if project_id is None and _create_in_project_group is not None:
         compute_metadata_args["project_group_name"] = _create_in_project_group
 
     link_args = {
@@ -2674,10 +2674,14 @@ def _current_braintrust_parent(state: BraintrustState | None = None) -> str | No
             if components.object_id:
                 return f"project_id:{components.object_id}"
             meta = components.compute_object_metadata_args or {}
+            # A `project_name:` parent would register the project outside its group.
+            if meta.get("project_group_name"):
+                return f"project_id:{logger.id}"
             name = meta.get("project_name")
             if name:
                 return f"project_name:{name}"
-        except Exception:
+        except Exception as e:
+            logging.warning(f"Failed to resolve braintrust.parent from the current logger: {e}")
             return None
 
     return None
@@ -5219,6 +5223,12 @@ class SpanImpl(Span):
         if parent_type == SpanObjectTypeV3.PROJECT_LOGS:
             _id = info.get("id")
             _name = info.get("name")
+            # A `project_name:` parent would register the project outside its group.
+            if not _id and (self.parent_compute_object_metadata_args or {}).get("project_group_name"):
+                try:
+                    _id = self.parent_object_id.get()
+                except Exception:
+                    return None
             if _id:
                 return f"project_id:{_id}"
             elif _name:
