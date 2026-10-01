@@ -15,6 +15,7 @@ from braintrust.integrations.versioning import detect_module_version, version_sa
 from braintrust.logger import NOOP_SPAN, Attachment, SpanTypeAttribute, current_span
 from braintrust.logger import start_span as _bt_start_span
 
+from .ttfb import TTFBRouter
 from .turn_metrics import TURN_METRIC_TYPES, log_turn_metric
 
 
@@ -115,6 +116,7 @@ class BraintrustPipecatObserver(BaseObserver):
         self._llm_span: Any | None = None
         self._llm_parent: str | None = None
         self._llm_text_parts: list[str] = []
+        self._ttfb = TTFBRouter(self._log_unmatched_ttfb)
         self._llm_metrics: dict[str, Any] = {}
         self._llm_metadata: dict[str, Any] = {}
         self._llm_tool_calls: list[dict[str, Any]] = []
@@ -233,7 +235,7 @@ class BraintrustPipecatObserver(BaseObserver):
         elif frame_type == "TranscriptionFrame":
             self._log_transcription(frame)
         elif frame_type == "TTSStartedFrame":
-            self._start_tts_span(frame)
+            self._start_tts_span(frame, processor)
         elif frame_type == "TTSTextFrame":
             self._append_tts_text(frame)
         elif frame_type == "TTSAudioRawFrame":
@@ -289,6 +291,7 @@ class BraintrustPipecatObserver(BaseObserver):
     def _start_llm_span(self, processor: Any) -> None:
         self._ensure_pipeline_span(processor=processor)
         if self._llm_span is not None:
+            self._ttfb.start("llm", None, self._llm_span.log)
             return
         metadata = {**self._latest_llm_metadata, **_metadata_from_processor(processor)}
         self._llm_metadata = _filter_llm_metadata(metadata)
@@ -304,6 +307,7 @@ class BraintrustPipecatObserver(BaseObserver):
             set_current=False,
         )
         self._llm_parent = self._llm_span.export()
+        self._ttfb.start("llm", processor, self._llm_span.log)
 
     def _capture_llm_tool_calls(self, frame: Any) -> None:
         calls = getattr(frame, "function_calls", None) or []
@@ -338,6 +342,7 @@ class BraintrustPipecatObserver(BaseObserver):
         if metadata:
             event["metadata"] = metadata
         self._llm_span.log(**event)
+        self._ttfb.end("llm")
         self._llm_span.end()
         self._llm_span = None
         self._llm_parent = None
@@ -400,7 +405,7 @@ class BraintrustPipecatObserver(BaseObserver):
         )
         span.end()
 
-    def _start_tts_span(self, frame: Any) -> None:
+    def _start_tts_span(self, frame: Any, processor: Any = None) -> None:
         self._ensure_pipeline_span()
         context_id = getattr(frame, "context_id", None) or "__default__"
         span = start_span(
@@ -415,6 +420,7 @@ class BraintrustPipecatObserver(BaseObserver):
         }
         span.log(metadata={k: v for k, v in metadata.items() if v is not None})
         self._tts_spans[context_id] = span
+        self._ttfb.start(("tts", context_id), processor, span.log)
         if context_id == "__default__":
             self._tts_default_span = span
 
@@ -447,6 +453,7 @@ class BraintrustPipecatObserver(BaseObserver):
 
     def _end_tts_span(self, frame: Any) -> None:
         context_id = getattr(frame, "context_id", None) or "__default__"
+        self._ttfb.end(("tts", context_id))
         span = self._tts_spans.pop(context_id, None)
         if span is not None:
             output = self._pop_tts_audio_output(context_id)
@@ -529,6 +536,10 @@ class BraintrustPipecatObserver(BaseObserver):
         self._tts_audio.pop(context_id, None)
         self._tts_audio_metadata.pop(context_id, None)
 
+    def _log_unmatched_ttfb(self, **event):
+        self._ensure_pipeline_span()
+        self._pipeline_span.log(**event)
+
     def _capture_metrics(self, frame: Any, processor: Any) -> None:
         processor_name = _processor_name(processor)
         for metric in getattr(frame, "data", []) or []:
@@ -548,12 +559,14 @@ class BraintrustPipecatObserver(BaseObserver):
                     continue
                 self._llm_metrics.update(_llm_usage_metrics(getattr(metric, "value", None)))
                 self._llm_metadata.update(_metadata_from_metric(metric))
-            elif metric_type == "TTFBMetricsData" and self._llm_span is not None:
+                self._llm_metadata.update(_metadata_from_processor(processor))
+            elif metric_type == "TTFBMetricsData":
+                owner = self._ttfb.capture(metric, processor)
                 value = getattr(metric, "value", None)
-                if isinstance(value, (int, float)) and not isinstance(value, bool):
+                if owner == "llm" and isinstance(value, (int, float)) and not isinstance(value, bool):
                     self._llm_metrics["time_to_first_token"] = value
-                self._llm_metadata.update(_metadata_from_metric(metric))
-        self._llm_metadata.update(_metadata_from_processor(processor))
+                    self._llm_metadata.update(_metadata_from_metric(metric))
+                    self._llm_metadata.update(_metadata_from_processor(processor))
         self._llm_metadata = _filter_llm_metadata(self._llm_metadata)
 
     def _log_error_frame(self, frame: Any) -> None:
@@ -561,6 +574,7 @@ class BraintrustPipecatObserver(BaseObserver):
         error = getattr(frame, "exception", None) or getattr(frame, "error", None)
         if self._llm_span is not None:
             self._llm_span.log(error=error)
+            self._ttfb.end("llm")
             self._llm_span.end()
             self._llm_span = None
         if self._pipeline_span is not None:
@@ -597,6 +611,7 @@ class BraintrustPipecatObserver(BaseObserver):
         self._tts_default_span = None
 
     def _close_all_open_spans(self) -> None:
+        self._ttfb.clear()
         self._close_child_spans()
         if self._pipeline_span is not None:
             self._pipeline_span.end()

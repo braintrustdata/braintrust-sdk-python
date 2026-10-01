@@ -20,6 +20,7 @@ Install `braintrust[audio]` for Ogg/Opus or WAV encoding. Audio defaults off. Ex
 | Public interfaces | `setup_pipecat`, automatic integration setup, `wrap_pipeline_worker`, and an explicitly supplied `BraintrustPipecatObserver` share the same injection path. `trace_turns=False` retains the existing observer behavior. |
 | Trace | Native aggregator turns, actual STT operations, model responses, tool executions, and generated-audio lifecycles. Tool-only realtime responses can be pipeline children. |
 | Audio | Combined stereo call; segmented-STT caller clips on user turns; generated clips on TTS spans. Selections reference successfully captured samples. |
+| TTFB | Native `pipecat.ttfb` measurements follow the emitting processor and a unique active operation. STT measurements follow `run_stt` into its eventual span. Ambiguous/unmatched metrics remain on the pipeline; arrays are bounded to 32 with omission counts. |
 | Turn detection | Native analyzer predictions in `pipecat.turn_metrics` on the user turn; preserve processor, metric class, confidence, completion and reported milliseconds. Retain 32 predictions and count omissions. Unassociated observations remain on the pipeline. |
 | Input alignment | Segmented STT input provenance or successful OpenAI input writes plus server-VAD item offsets. Clears/reconnects invalidate unsupported mappings. |
 | Output alignment | Equal-rate mono PCM without a mixer. Other paths retain recordings without asserting unsupported selections. |

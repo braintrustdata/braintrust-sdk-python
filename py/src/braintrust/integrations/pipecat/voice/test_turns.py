@@ -207,3 +207,22 @@ class TurnTests(unittest.IsolatedAsyncioTestCase):
         await self.push(UserStartedSpeakingFrame())
         assert not any("pipecat.turn_metrics" in row.get("metadata", {}) for row in observer.turns.user["span"].rows)
         await observer.finish()
+
+    async def test_ttfb_routes_only_to_unambiguous_processor_operation(self):
+        from pipecat.frames.frames import MetricsFrame, TTSStoppedFrame  # pylint: disable=import-error
+        from pipecat.metrics.metrics import TTFBMetricsData  # pylint: disable=import-error
+
+        llm, tts = SimpleNamespace(name="llm"), SimpleNamespace(name="tts")
+        await self.push(LLMFullResponseStartFrame(), llm)
+        await self.push(TTSStartedFrame(context_id="a"), tts)
+        span = self.observer.tts["a"]["span"]
+        await self.push(MetricsFrame(data=[TTFBMetricsData(processor="tts", value=0.09)]), tts)
+        assert span.rows[-1]["metadata"]["pipecat.ttfb"][0]["value"] == 0.09
+        await self.push(TTSStartedFrame(context_id="b"), tts)
+        await self.push(MetricsFrame(data=[TTFBMetricsData(processor="tts", value=0.11)]), tts)
+        assert self.observer.root.rows[-1]["metadata"]["pipecat.ttfb"][0]["value"] == 0.11
+        await self.push(TTSStoppedFrame(context_id="a"), tts)
+        await self.push(TTSStoppedFrame(context_id="b"), tts)
+        await self.push(MetricsFrame(data=[TTFBMetricsData(processor="tts", value=0.13)]), tts)
+        assert self.observer.root.rows[-1]["metadata"]["pipecat.ttfb"][-1]["value"] == 0.13
+        await self.observer.finish()

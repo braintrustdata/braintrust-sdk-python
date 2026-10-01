@@ -16,6 +16,7 @@ from braintrust.audio.segments import SegmentedRecording
 from braintrust.audio.worker import RecordingBusy, encode_in_worker
 from pipecat.observers.base_observer import BaseObserver  # pylint: disable=import-error
 
+from ..ttfb import TTFBRouter
 from ..turn_metrics import TURN_METRIC_TYPES, log_turn_metric
 from .turns import Turns
 
@@ -137,6 +138,7 @@ class NativeObserver(BaseObserver):
         self.root = (
             root if root is not None else logger.start_span(name="pipecat.pipeline", type="task", set_current=False)
         )
+        self.ttfb = TTFBRouter(self.root.log)
         self.turns = Turns(self.root, self.hooks)
         self.turns.on_completed = self._turn_completed
         self.alignment = Alignment(self.root, self.call_recording)
@@ -296,6 +298,16 @@ class NativeObserver(BaseObserver):
             return
         fields = native_value(frame) if kind != "LLMContextFrame" else {}
         event_owner = self.root
+        if kind == "MetricsFrame":
+            remaining = []
+            for metric in frame.data:
+                if type(metric).__name__ == "TTFBMetricsData":
+                    self.ttfb.capture(metric, data.source)
+                else:
+                    remaining.append(native_value(metric))
+            if not remaining:
+                return
+            fields["data"] = remaining
         if kind == "MetricsFrame" and data.source is self.user_aggregator and self.turns.user:
             # The single discovered user aggregator emits its analyzer predictions
             # before stopping this turn. Other sources retain unassociated events.
@@ -305,7 +317,7 @@ class NativeObserver(BaseObserver):
                     state = self.turns.user
                     # Turns assigns role dictionaries through setattr.
                     log_turn_metric(state["span"], state, metric)  # pylint: disable=unsubscriptable-object
-                else:
+                elif type(metric).__name__ != "TTFBMetricsData":
                     remaining.append(native_value(metric))
             if not remaining:
                 return
@@ -396,6 +408,7 @@ class NativeObserver(BaseObserver):
                 set_current=False,
                 internal={"instrumentation": "pipecat-auto"},
             )
+            self.ttfb.start("llm", data.source, self.llm.log)
         elif kind == "LLMTextFrame" and self.llm:
             self.llm_text.append(frame.text)
         elif kind == "FunctionCallsStartedFrame":
@@ -466,6 +479,7 @@ class NativeObserver(BaseObserver):
                 output=[{"role": "assistant", "content": "".join(self.llm_text)}],
                 metadata={"pipecat.text": "".join(self.llm_text)},
             )
+            self.ttfb.end("llm")
             self.llm.end()
             self.llm = None
         elif kind == "TTSStartedFrame":
@@ -485,6 +499,7 @@ class NativeObserver(BaseObserver):
                 set_current=False,
                 internal={"instrumentation": "pipecat-auto"},
             )
+            self.ttfb.start(("tts", context), data.source, span.log)
             self.tts[context] = {
                 "span": span,
                 "chunks": [],
@@ -501,6 +516,7 @@ class NativeObserver(BaseObserver):
                 state["text"].append(frame.text)
                 state["span"].log(metadata={"pipecat.text": "".join(state["text"])})
         elif kind == "TTSStoppedFrame":
+            self.ttfb.end(("tts", self.frame_context(frame)))
             state = self.tts.pop(self.frame_context(frame), None)
             if state:
                 state["span"].end()
@@ -510,6 +526,8 @@ class NativeObserver(BaseObserver):
                 state["span"].log(metadata={"pipecat.end_frame": kind})
                 state["span"].end()
                 self.complete_recording(state)
+            for context in self.tts:
+                self.ttfb.end(("tts", context))
             self.tts.clear()
         elif kind in {"ErrorFrame", "FatalErrorFrame"}:
             self.root.log(error=str(frame.error))
@@ -612,6 +630,7 @@ class NativeObserver(BaseObserver):
                 self.user_capture.release()
 
     async def _finalize(self):
+        self.ttfb.clear()
         self.turns.finish()
         for span in [self.llm, self.user, *self.tools.values()]:
             if span:

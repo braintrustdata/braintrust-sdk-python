@@ -407,3 +407,43 @@ def test_turn_detection_without_audio_keeps_unassociated_measurement():
     assert observer._user_audio_span is None
     assert not observer._user_audio
     assert rows[-1]["metadata"]["pipecat.turn_metrics"][0]["is_complete"] is False
+
+
+@pytest.mark.asyncio
+async def test_ttfb_routes_by_processor_and_retains_unmatched(memory_logger):
+    observer = BraintrustPipecatObserver(trace_turns=False, capture_audio_attachments=False)
+    frames = importlib.import_module("pipecat.frames.frames")
+    metric_class = _import("pipecat.metrics.metrics.TTFBMetricsData")
+    llm, tts, stt = [SimpleNamespace(name=name) for name in ("llm", "tts", "stt")]
+    await observer._handle_frame(frames.LLMFullResponseStartFrame(), processor=llm)
+    await observer._handle_frame(frames.TTSStartedFrame(), processor=tts)
+    for processor, value in ((tts, 0.09), (stt, 0.12), (llm, 0.24)):
+        await observer._handle_frame(
+            frames.MetricsFrame(data=[metric_class(processor=processor.name, value=value)]), processor=processor
+        )
+    await observer._handle_frame(frames.TTSStoppedFrame(), processor=tts)
+    observer._close_all_open_spans()
+    logs = memory_logger.pop()
+    assert _single_span(logs, "tts_response")["metadata"]["pipecat.ttfb"][0]["value"] == 0.09
+    assert _single_span(logs, "pipecat_llm_response")["metrics"]["time_to_first_token"] == 0.24
+    assert _single_span(logs, "pipecat_pipeline")["metadata"]["pipecat.ttfb"][0]["processor"] == "stt"
+
+
+def test_ttfb_router_bounds_and_rejects_mismatched_sources():
+    from braintrust.integrations.pipecat.ttfb import TTFBRouter
+
+    metric_class = _import("pipecat.metrics.metrics.TTFBMetricsData")
+    root, operation = [], []
+    router = TTFBRouter(lambda **row: root.append(row))
+    source = SimpleNamespace(name="tts")
+    router.start("a", source, lambda **row: operation.append(row))
+    metric = metric_class(processor="tts", value=0.1)
+    router.capture(metric, SimpleNamespace(name="tts"))
+    assert not operation  # Same name is not the same processor instance.
+    for _ in range(35):
+        router.capture(metric, source)
+    assert operation[-1]["metadata"]["braintrust.ttfb.omitted"] == 3
+    router.start("a", source, lambda **row: operation.append(row))
+    assert router.capture(metric, source) is None
+    router.clear()
+    assert not router.active

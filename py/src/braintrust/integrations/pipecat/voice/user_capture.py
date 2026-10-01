@@ -120,6 +120,14 @@ class UserCapture:
                         if self.bytes + len(audio) > observer.max_audio_bytes
                         else "process_capture_byte_limit"
                     )
+            segment["ttfb_metadata"] = {}
+
+            def log_ttfb(**event):
+                segment["ttfb_metadata"].update(event["metadata"])
+                if segment["span"] is not None:
+                    segment["span"].log(**event)
+
+            observer.ttfb.start(("stt", id(segment)), stt, log_ttfb)
             try:
                 async for frame in original_run(audio):
                     try:
@@ -139,6 +147,7 @@ class UserCapture:
                 segment["error"] = type(error).__name__
                 raise
             finally:
+                observer.ttfb.end(("stt", id(segment)))
                 if segment["end"] is None:
                     segment["end"] = time.time()
 
@@ -215,6 +224,7 @@ class UserCapture:
         metadata = {
             "pipecat.transcriptions": segment["frames"],
             "pipecat.function": "run_stt",
+            **segment.get("ttfb_metadata", {}),
         }
         if turn:
             metadata.update(self.observer.turns.metadata(turn))

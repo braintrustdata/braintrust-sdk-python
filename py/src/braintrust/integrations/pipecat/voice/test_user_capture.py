@@ -6,14 +6,17 @@ from unittest.mock import patch
 
 import soundfile as sf  # pylint: disable=import-error
 from pipecat.frames.frames import (  # pylint: disable=import-error
+    MetricsFrame,
     TranscriptionFrame,
     VADUserStartedSpeakingFrame,
     VADUserStoppedSpeakingFrame,
 )
+from pipecat.metrics.metrics import TTFBMetricsData  # pylint: disable=import-error
 from pipecat.processors.aggregators.llm_context import LLMContext  # pylint: disable=import-error
 from pipecat.processors.aggregators.llm_response_universal import (  # pylint: disable=import-error
     LLMContextAggregatorPair,
 )
+from pipecat.processors.frame_processor import FrameDirection  # pylint: disable=import-error
 
 from .instrumentation import NativeObserver, encode_wav, native_value
 from .test_instrumentation import Span
@@ -48,6 +51,24 @@ class UserCaptureTests(unittest.IsolatedAsyncioTestCase):
 
         aggregator.push_context_frame = push_context
         stt = STT()
+        stt.name = "test-stt"
+        original_run = stt.run_stt
+
+        async def measured_run(audio):
+            await observer.on_push_frame(
+                SimpleNamespace(
+                    frame=MetricsFrame(data=[TTFBMetricsData(processor=stt.name, value=0.12)]),
+                    first_push=True,
+                    source=stt,
+                    destination=aggregator,
+                    direction=FrameDirection.DOWNSTREAM,
+                    timestamp=1234,
+                )
+            )
+            async for result in original_run(audio):
+                yield result
+
+        stt.run_stt = measured_run
         capture = UserCapture(observer, stt, aggregator, native_value)
         observer.user_capture = capture
         await stt._handle_user_started_speaking(VADUserStartedSpeakingFrame())
@@ -67,6 +88,9 @@ class UserCaptureTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(context.get_messages()[-1]["content"], "Where is my order?")
         self.assertEqual(capture.batches[turn["span"].span_id]["frames"][0]["id"], frame.id)
         self.assertEqual(len(capture.batches[turn["span"].span_id]["segments"][0]["boundaries"]), 2)
+        stt_span = capture.batches[turn["span"].span_id]["segments"][0]["span"]
+        metadata = {key: value for row in stt_span.rows for key, value in row.get("metadata", {}).items()}
+        self.assertEqual(metadata["pipecat.ttfb"][0]["value"], 0.12)
         return observer, capture, turn
 
     async def test_native_consumption_attributes_earlier_frame_and_clip_to_later_turn(
