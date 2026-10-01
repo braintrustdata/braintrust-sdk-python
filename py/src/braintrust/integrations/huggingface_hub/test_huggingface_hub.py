@@ -3,6 +3,7 @@
 import asyncio
 import os
 import time
+from collections import OrderedDict, UserDict
 
 import pytest
 from braintrust import logger, start_span
@@ -670,3 +671,188 @@ def test_chat_completion_async_streaming_nests_under_parent_span(memory_logger):
 class TestAutoInstrumentHuggingFaceHub:
     def test_auto_instrument_huggingface_hub(self):
         verify_autoinstrument_script("test_auto_huggingface_hub.py")
+
+
+# ---------------------------------------------------------------------------
+# Usage parsing
+# ---------------------------------------------------------------------------
+
+
+class TestParseUsageMetrics:
+    """``_parse_usage_metrics`` is called from the chat and text-generation
+    logging paths, both of which will also be shared by the generative-media
+    wrappers (``text_to_video`` returns raw ``bytes``).  A response that is not
+    mapping-like must degrade to no metrics rather than raising, so a successful
+    call is never turned into a traceback by its own instrumentation.
+    """
+
+    @pytest.mark.parametrize(
+        "value",
+        [
+            pytest.param(b"raw video bytes", id="bytes"),
+            pytest.param(b"", id="empty-bytes"),
+            pytest.param("a string", id="str"),
+            pytest.param(42, id="int"),
+            pytest.param(["a", "list"], id="list"),
+        ],
+    )
+    def test_non_mapping_response_returns_no_metrics(self, value):
+        from braintrust.integrations.huggingface_hub.tracing import (
+            _parse_usage_metrics,
+        )
+
+        assert _parse_usage_metrics(value) == {}
+
+    def test_none_returns_no_metrics(self):
+        from braintrust.integrations.huggingface_hub.tracing import (
+            _parse_usage_metrics,
+        )
+
+        assert _parse_usage_metrics(None) == {}
+
+    def test_dict_without_usage_returns_no_metrics(self):
+        from braintrust.integrations.huggingface_hub.tracing import (
+            _parse_usage_metrics,
+        )
+
+        assert _parse_usage_metrics({"choices": []}) == {}
+
+    def test_dict_with_usage_is_unchanged(self):
+        from braintrust.integrations.huggingface_hub.tracing import (
+            _parse_usage_metrics,
+        )
+
+        assert _parse_usage_metrics({"usage": {"prompt_tokens": 3, "completion_tokens": 4}}) == {
+            "prompt_tokens": 3.0,
+            "completion_tokens": 4.0,
+            "tokens": 7.0,
+        }
+
+    @pytest.mark.parametrize(
+        "factory",
+        [
+            pytest.param(dict, id="dict"),
+            pytest.param(OrderedDict, id="OrderedDict"),
+            pytest.param(UserDict, id="UserDict"),
+        ],
+    )
+    def test_mapping_subclasses_still_yield_metrics(self, factory):
+        """Any ``Mapping`` must keep working, not just ``dict`` exactly.
+
+        ``OrderedDict`` is a ``dict`` subclass while ``UserDict`` is only a
+        ``Mapping``, so a bare ``isinstance(result, dict)`` guard would accept
+        the former and silently drop token metrics for the latter.
+        """
+        from braintrust.integrations.huggingface_hub.tracing import (
+            _parse_usage_metrics,
+        )
+
+        payload = factory({"usage": {"prompt_tokens": 3, "completion_tokens": 4}})
+
+        assert _parse_usage_metrics(payload) == {
+            "prompt_tokens": 3.0,
+            "completion_tokens": 4.0,
+            "tokens": 7.0,
+        }
+
+
+class TestResponseShapingToleratesNonMapping:
+    """The chat and text-generation output/metadata shapers share the response
+    with ``_parse_usage_metrics``.  Guarding only the metric parser relocates the
+    crash instead of removing it, so every shaper on that path is covered here.
+    """
+
+    @pytest.mark.parametrize(
+        "value",
+        [
+            pytest.param(b"raw video bytes", id="bytes"),
+            pytest.param(42, id="int"),
+            pytest.param(["a", "list"], id="list"),
+            pytest.param(object(), id="object"),
+        ],
+    )
+    def test_output_and_metadata_shapers_do_not_raise(self, value):
+        from braintrust.integrations.huggingface_hub.tracing import (
+            _chat_output,
+            _extract_response_metadata,
+            _text_generation_extra_metadata,
+            _text_generation_output,
+        )
+
+        assert _chat_output(value) is None
+        assert _extract_response_metadata(value) == {}
+        assert _text_generation_extra_metadata(value) == {}
+        assert _text_generation_output(value) is None
+
+    def test_text_generation_output_still_handles_str(self):
+        from braintrust.integrations.huggingface_hub.tracing import (
+            _text_generation_output,
+        )
+
+        assert _text_generation_output("plain text") == {"generated_text": "plain text"}
+
+    def test_log_chat_result_does_not_raise_on_bytes(self, memory_logger):
+        """Drive the full non-streaming chat logging path.
+
+        ``_log_chat_result`` calls ``_parse_usage_metrics``, ``_chat_output``
+        and ``_extract_response_metadata`` in sequence, so this fails if any one
+        of them is left unguarded.
+        """
+        import time as _time
+
+        from braintrust.integrations.huggingface_hub.tracing import _log_chat_result
+
+        with start_span(name="huggingface.chat_completion") as span:
+            _log_chat_result(span, _time.time(), b"raw video bytes")
+
+        # Reaching this point without an AttributeError is the assertion; the
+        # span is expected to be logged, with output/metadata simply empty.
+        spans = memory_logger.pop()
+        assert spans
+
+    def test_log_text_generation_result_accepts_mapping_subclass(self, memory_logger):
+        """Drive the full text-generation logging path with a ``Mapping``.
+
+        ``_log_text_generation_result`` reads ``details`` behind an inline
+        ``isinstance(result, dict)`` guard.  A ``UserDict`` is a ``Mapping`` but
+        not a ``dict``, so a ``dict`` guard silently drops the ``details``
+        payload -- and with it the token metrics derived from it -- while every
+        other function on the path correctly accepts it.
+        """
+        import time as _time
+
+        from braintrust.integrations.huggingface_hub.tracing import (
+            _log_text_generation_result,
+        )
+
+        payload = UserDict(
+            {
+                "generated_text": "hello",
+                "details": {"generated_tokens": 2},
+            }
+        )
+
+        with start_span(name="huggingface.text_generation") as span:
+            _log_text_generation_result(span, _time.time(), payload)
+
+        spans = memory_logger.pop()
+        assert spans
+        # The assertion that matters: token metrics must survive the path.  With a
+        # ``dict`` guard the ``details`` payload is dropped and these are absent.
+        logged = spans[-1]
+        assert logged["metrics"].get("completion_tokens") == 2.0
+        assert logged["metrics"].get("tokens") == 2.0
+
+    def test_log_text_generation_result_does_not_raise_on_bytes(self, memory_logger):
+        """The same path must survive a non-mapping, non-``str`` response."""
+        import time as _time
+
+        from braintrust.integrations.huggingface_hub.tracing import (
+            _log_text_generation_result,
+        )
+
+        with start_span(name="huggingface.text_generation") as span:
+            _log_text_generation_result(span, _time.time(), b"raw video bytes")
+
+        spans = memory_logger.pop()
+        assert spans
