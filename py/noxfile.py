@@ -787,6 +787,13 @@ def test_pytest_plugin(session, version):
 
 
 @nox.session()
+def test_audio(session):
+    _install_test_deps(session)
+    _install_group_locked(session, "test-audio")
+    _run_tests(session, "braintrust/audio")
+
+
+@nox.session()
 def test_core(session):
     _install_test_deps(session)
     # verify we haven't installed our 3p deps.
@@ -956,6 +963,8 @@ def _run_core_tests(session):
         SRC_DIR,
         ignore_paths=[
             WRAPPER_DIR,
+            "braintrust/audio/test_recording.py",
+            "braintrust/audio/test_segments.py",
             *_integration_subdirs_to_ignore(),
             CONTRIB_DIR,
             DEVSERVER_DIR,
