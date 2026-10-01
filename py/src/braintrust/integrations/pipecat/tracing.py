@@ -1,8 +1,10 @@
 """Observer-based tracing for Pipecat pipelines."""
 
 import json
+import logging
 from typing import Any
 
+from braintrust.audio import RecordingOptions
 from braintrust.integrations.utils import (
     _is_not_given,
     _normalize_chat_messages,
@@ -78,6 +80,8 @@ class BraintrustPipecatObserver(BaseObserver):
         capture_user_audio_attachments: bool | None = None,
         capture_agent_audio_attachments: bool | None = None,
         trace_turns: bool = True,
+        audio_format: str = "ogg",
+        recording_options: RecordingOptions | None = None,
         **kwargs: Any,
     ) -> None:
         self._uses_native_frame_deduplication = _USES_NATIVE_FRAME_DEDUPLICATION
@@ -93,6 +97,11 @@ class BraintrustPipecatObserver(BaseObserver):
             capture_agent_audio_attachments=capture_agent_audio_attachments,
         )
         self.capture_audio_attachments = self.capture_user_audio_attachments or self.capture_agent_audio_attachments
+        if audio_format not in {"ogg", "wav"}:
+            raise ValueError("audio_format must be ogg or wav")
+        self.audio_format = audio_format
+        self.recording_options = recording_options
+        self._voice = None
         self.trace_turns = trace_turns
         self._parent = _current_parent_export()
         self._pipeline_span: Any | None = None
@@ -117,10 +126,44 @@ class BraintrustPipecatObserver(BaseObserver):
         self._user_audio: bytearray | None = None
         self._user_audio_metadata: dict[str, Any] = {}
 
+    def _bind_pipeline(self, pipeline: Any) -> None:
+        if self._voice is not None or not self.trace_turns:
+            return
+        import importlib.metadata
+
+        if importlib.metadata.version("pipecat-ai") != "1.12.0":
+            return
+        from .voice.discovery import discover
+        from .voice.instrumentation import NativeObserver
+
+        configuration = discover(pipeline)
+        if configuration is None:
+            return
+        root = start_span(name="pipecat.pipeline", type="task", set_current=False, parent=self._parent)
+        voice = NativeObserver(
+            root,
+            root=root,
+            capture_user_audio=self.capture_user_audio_attachments,
+            capture_agent_audio=self.capture_agent_audio_attachments,
+            audio_format=self.audio_format,
+            recording_options=self.recording_options,
+        )
+        try:
+            voice.bind(**configuration)
+        except Exception:  # noqa: BLE001 - unsupported hooks preserve the existing observer
+            voice.hooks.close()
+            root.end()
+            logging.getLogger(__name__).warning("Pipecat voice hooks unavailable; using frame tracing")
+            return
+        self._voice = voice
+
     async def on_pipeline_started(self) -> None:
-        self._ensure_pipeline_span()
+        if self._voice is None:
+            self._ensure_pipeline_span()
 
     async def on_process_frame(self, data: Any) -> None:
+        if self._voice is not None:
+            return
         frame = getattr(data, "frame", None)
         processor = getattr(data, "processor", None)
         is_terminal_at_sink = type(frame).__name__ in _TERMINAL_FRAME_TYPES and _is_pipeline_sink_processor(processor)
@@ -129,9 +172,20 @@ class BraintrustPipecatObserver(BaseObserver):
         await self._handle_frame(frame, processor=processor)
 
     async def on_push_frame(self, data: Any) -> None:
+        if self._voice is not None:
+            try:
+                await self._voice.on_push_frame(data)
+            except Exception:  # noqa: BLE001 - tracing cannot stop frame delivery
+                logging.getLogger(__name__).warning("Pipecat frame observation failed")
+            return
         await self._handle_frame(getattr(data, "frame", None), processor=getattr(data, "source", None))
 
     async def cleanup(self) -> None:
+        if self._voice is not None:
+            try:
+                await self._voice.finish()
+            except Exception:  # noqa: BLE001 - export failure cannot stop pipeline cleanup
+                logging.getLogger(__name__).warning("Pipecat voice finalization failed")
         self._close_all_open_spans()
         await super().cleanup()
 

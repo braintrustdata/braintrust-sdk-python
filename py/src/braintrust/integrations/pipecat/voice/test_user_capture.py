@@ -1,0 +1,150 @@
+import asyncio
+import io
+import unittest
+from types import SimpleNamespace
+from unittest.mock import patch
+
+import soundfile as sf  # pylint: disable=import-error
+from pipecat.frames.frames import (  # pylint: disable=import-error
+    TranscriptionFrame,
+    VADUserStartedSpeakingFrame,
+    VADUserStoppedSpeakingFrame,
+)
+from pipecat.processors.aggregators.llm_context import LLMContext  # pylint: disable=import-error
+from pipecat.processors.aggregators.llm_response_universal import (  # pylint: disable=import-error
+    LLMContextAggregatorPair,
+)
+
+from .instrumentation import NativeObserver, encode_wav, native_value
+from .test_instrumentation import Span
+from .user_capture import UserCapture
+
+
+class STT:
+    is_usable = True
+    _audio_buffer = b""
+
+    async def process_audio_frame(self, frame, direction):
+        self._audio_buffer += frame.audio
+
+    async def _handle_user_started_speaking(self, frame):
+        pass
+
+    async def _handle_user_stopped_speaking(self, frame):
+        pass
+
+    async def run_stt(self, audio):
+        yield TranscriptionFrame("Where is my order?", "user", "2026-09-30T12:00:00Z")
+
+
+class UserCaptureTests(unittest.IsolatedAsyncioTestCase):
+    async def exercise(self, enabled, max_bytes=8388608):
+        observer = NativeObserver(Span(), retain_audio=enabled, max_audio_bytes=max_bytes)
+        context = LLMContext()
+        aggregator = LLMContextAggregatorPair(context).user()
+
+        async def push_context():
+            pass
+
+        aggregator.push_context_frame = push_context
+        stt = STT()
+        capture = UserCapture(observer, stt, aggregator, native_value)
+        observer.user_capture = capture
+        await stt._handle_user_started_speaking(VADUserStartedSpeakingFrame())
+        await stt._handle_user_stopped_speaking(VADUserStoppedSpeakingFrame())
+        audio = encode_wav([b"\x10\x10" * 1600], 16000, 1)
+        async for frame in stt.run_stt(audio):
+            # The frame is consumed before the aggregator creates its turn.
+            await aggregator._handle_transcription(frame)
+        turn = observer.turns.start("user", "UserStartedSpeakingFrame")
+        observer.turns.confirm("user")
+        await aggregator._push_aggregation()
+        observer.turns.stop(
+            "user",
+            SimpleNamespace(content="Where is my order?", timestamp="t1", user_id="user"),
+        )
+        await asyncio.sleep(0)
+        self.assertEqual(context.get_messages()[-1]["content"], "Where is my order?")
+        self.assertEqual(capture.batches[turn["span"].span_id]["frames"][0]["id"], frame.id)
+        self.assertEqual(len(capture.batches[turn["span"].span_id]["segments"][0]["boundaries"]), 2)
+        return observer, capture, turn
+
+    async def test_native_consumption_attributes_earlier_frame_and_clip_to_later_turn(
+        self,
+    ):
+        observer, capture, turn = await self.exercise(True)
+        with patch("braintrust.audio.attachments.RecordingAttachment", side_effect=lambda **kwargs: kwargs):
+            await observer.finish()
+        payload = next(row["input"] for row in turn["span"].rows if isinstance(row.get("input"), list))
+        self.assertEqual(payload[0]["content"][0]["text"], "Where is my order?")
+        decoded, rate = sf.read(io.BytesIO(payload[0]["content"][1]["file"]["file_data"]["data"]))
+        self.assertAlmostEqual(len(decoded) / rate, 0.1)
+        self.assertGreater(abs(decoded).max(), 0.01)
+        self.assertEqual(capture.bytes, 0)
+
+    async def test_opt_out_keeps_metadata_without_retaining_encoding_or_attaching_audio(
+        self,
+    ):
+        observer, capture, turn = await self.exercise(False)
+        self.assertEqual(capture.bytes, 0)
+        self.assertTrue(all(s["audio"] is None for b in capture.batches.values() for s in b["segments"]))
+        with (
+            patch(
+                "braintrust.integrations.pipecat.voice.user_capture.encode_segments",
+                side_effect=AssertionError("encoded"),
+            ),
+            patch("braintrust.audio.attachments.RecordingAttachment", side_effect=AssertionError("attached")),
+        ):
+            await observer.finish()
+        self.assertEqual(
+            turn["span"].rows[-1]["metadata"]["audio.recordings"][0]["reason"],
+            "disabled",
+        )
+        self.assertTrue(any("pipecat.transcriptions" in row.get("metadata", {}) for row in turn["span"].rows))
+
+    async def test_user_audio_limit_is_explicit(self):
+        observer, capture, turn = await self.exercise(True, max_bytes=10)
+        self.assertEqual(capture.bytes, 0)
+        await observer.finish()
+        self.assertEqual(
+            turn["span"].rows[-1]["metadata"]["audio.recordings"][0]["reason"],
+            "capture_byte_limit",
+        )
+
+    async def test_opt_out_does_not_install_audio_hook_or_dispatch_encoder(self):
+        observer = NativeObserver(Span(), retain_audio=False)
+        observer.capture_transport = True
+        stt = STT()
+        original = stt.process_audio_frame
+        aggregator = LLMContextAggregatorPair(LLMContext()).user()
+        observer.user_capture = UserCapture(observer, stt, aggregator, native_value)
+        self.assertEqual(stt.process_audio_frame, original)
+        with (
+            patch.object(observer.call_recording, "capture", side_effect=AssertionError("capture")),
+            patch.object(observer.call_recording, "encode", side_effect=AssertionError("encode")),
+            patch(
+                "braintrust.audio.alignment.InputRanges.append",
+                side_effect=AssertionError("ranges"),
+            ),
+            patch(
+                "braintrust.audio.attachments.RecordingAttachment",
+                side_effect=AssertionError("attachment"),
+            ),
+        ):
+            from pipecat.frames.frames import InputAudioRawFrame  # pylint: disable=import-error
+            from pipecat.processors.frame_processor import FrameDirection  # pylint: disable=import-error
+
+            await stt.process_audio_frame(InputAudioRawFrame(b"\0\0" * 320, 16000, 1), FrameDirection.DOWNSTREAM)
+            await observer.finish()
+
+    async def test_observation_failure_does_not_drop_native_transcription(self):
+        observer = NativeObserver(Span(), retain_audio=False)
+        stt = STT()
+        aggregator = LLMContextAggregatorPair(LLMContext()).user()
+        capture = UserCapture(observer, stt, aggregator, lambda _: (_ for _ in ()).throw(ValueError("observation")))
+        observer.user_capture = capture
+        frames = [frame async for frame in stt.run_stt(b"unused")]
+        self.assertEqual(len(frames), 1)
+        self.assertEqual(frames[0].text, "Where is my order?")
+        self.assertEqual(capture.omitted, 1)
+        await observer.finish()
