@@ -15,6 +15,8 @@ from braintrust.integrations.versioning import detect_module_version, version_sa
 from braintrust.logger import NOOP_SPAN, Attachment, SpanTypeAttribute, current_span
 from braintrust.logger import start_span as _bt_start_span
 
+from .turn_metrics import TURN_METRIC_TYPES, log_turn_metric
+
 
 _INSTRUMENTATION = "pipecat-auto"
 
@@ -122,6 +124,8 @@ class BraintrustPipecatObserver(BaseObserver):
         self._tts_default_span: Any | None = None
         self._tts_audio: dict[str, bytearray] = {}
         self._tts_audio_metadata: dict[str, dict[str, Any]] = {}
+        self._turn_metric_state: dict[str, Any] = {}
+        self._unassociated_turn_metric_state: dict[str, Any] = {}
         self._user_audio_span: Any | None = None
         self._user_audio: bytearray | None = None
         self._user_audio_metadata: dict[str, Any] = {}
@@ -464,6 +468,7 @@ class BraintrustPipecatObserver(BaseObserver):
         self._ensure_pipeline_span()
         if self._user_audio_span is not None:
             return
+        self._turn_metric_state = {}
         self._user_audio = bytearray()
         self._user_audio_metadata = _audio_frame_metadata(frame) if frame is not None else {}
         self._user_audio_span = start_span(
@@ -528,7 +533,16 @@ class BraintrustPipecatObserver(BaseObserver):
         processor_name = _processor_name(processor)
         for metric in getattr(frame, "data", []) or []:
             metric_type = type(metric).__name__
-            if metric_type == "LLMUsageMetricsData":
+            if metric_type in TURN_METRIC_TYPES:
+                self._ensure_pipeline_span()
+                owner = self._user_audio_span or self._pipeline_span
+                state = (
+                    self._turn_metric_state
+                    if self._user_audio_span is not None
+                    else self._unassociated_turn_metric_state
+                )
+                log_turn_metric(owner, state, metric)
+            elif metric_type == "LLMUsageMetricsData":
                 metric_processor = getattr(metric, "processor", None)
                 if processor_name is not None and metric_processor is not None and metric_processor != processor_name:
                     continue

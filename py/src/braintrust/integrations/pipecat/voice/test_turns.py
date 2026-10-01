@@ -169,3 +169,41 @@ class TurnTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn(state, self.observer.recordings)
         self.assertEqual(state["span"].rows[-1]["metadata"]["pipecat.end_frame"], "InterruptionFrame")
         await self.observer.finish()
+
+    async def test_native_turn_metrics_ownership_and_limits(self):
+        from pipecat.frames.frames import MetricsFrame  # pylint: disable=import-error
+        from pipecat.metrics.metrics import SmartTurnMetricsData, TurnMetricsData  # pylint: disable=import-error
+
+        observer = self.observer
+        await self.push(UserStartedSpeakingFrame())
+        turn = observer.turns.user
+        for metric_class in (TurnMetricsData, SmartTurnMetricsData):
+            for index in range(20):
+                frame = MetricsFrame(
+                    data=[
+                        metric_class(
+                            processor="BaseSmartTurn",
+                            is_complete=index == 19,
+                            probability=0.97,
+                            e2e_processing_time_ms=82.4,
+                        )
+                    ]
+                )
+                await self.push(frame, self.user)
+                await self.push(frame, self.user)  # broadcast/repeated observations do not duplicate predictions
+        metadata = {key: value for row in turn["span"].rows for key, value in row.get("metadata", {}).items()}
+        assert len(metadata["pipecat.turn_metrics"]) == 32
+        assert metadata["braintrust.turn_metrics.omitted"] == 8
+        assert metadata["pipecat.turn_metrics"][0]["processor"] == "BaseSmartTurn"
+        assert metadata["pipecat.turn_metrics"][20]["type"] == "SmartTurnMetricsData"
+        before = len(turn["span"].rows)
+        await self.push(
+            MetricsFrame(
+                data=[TurnMetricsData(processor="other", is_complete=True, probability=1, e2e_processing_time_ms=3)]
+            )
+        )
+        assert len(turn["span"].rows) == before
+        observer.turns.stop("user", SimpleNamespace(content="hello", timestamp="t", user_id="u"))
+        await self.push(UserStartedSpeakingFrame())
+        assert not any("pipecat.turn_metrics" in row.get("metadata", {}) for row in observer.turns.user["span"].rows)
+        await observer.finish()

@@ -370,3 +370,40 @@ def test_setup_and_wrap_pipeline_worker_are_idempotent():
 def test_auto_instrument_pipecat_subprocess():
     pytest.importorskip("pipecat")
     verify_autoinstrument_script("test_auto_pipecat.py")
+
+
+@pytest.mark.parametrize("metric_name", ["TurnMetricsData", "SmartTurnMetricsData"])
+def test_turn_detection_metrics_on_legacy_speech_span(metric_name):
+    metric_class = _import(f"pipecat.metrics.metrics.{metric_name}")
+    metric = metric_class(processor="BaseSmartTurn", is_complete=True, probability=0.97, e2e_processing_time_ms=82.4)
+    rows = []
+    observer = BraintrustPipecatObserver(trace_turns=False)
+    observer._user_audio_span = SimpleNamespace(log=lambda **row: rows.append(row))
+    observer._capture_metrics(SimpleNamespace(data=[metric]), SimpleNamespace(name="aggregator"))
+    assert rows[-1]["metadata"]["pipecat.turn_metrics"] == [
+        dict(
+            type=metric_name,
+            processor="BaseSmartTurn",
+            is_complete=True,
+            probability=0.97,
+            e2e_processing_time_ms=82.4,
+        )
+    ]
+
+
+def test_turn_detection_without_audio_keeps_unassociated_measurement():
+    metric_class = _import("pipecat.metrics.metrics.TurnMetricsData")
+    rows = []
+    observer = BraintrustPipecatObserver(trace_turns=False, capture_audio_attachments=False)
+    observer._pipeline_span = SimpleNamespace(log=lambda **row: rows.append(row))
+    observer._capture_metrics(
+        SimpleNamespace(
+            data=[
+                metric_class(processor="KrispVivaTurn", is_complete=False, probability=0.3, e2e_processing_time_ms=120)
+            ]
+        ),
+        SimpleNamespace(name="aggregator"),
+    )
+    assert observer._user_audio_span is None
+    assert not observer._user_audio
+    assert rows[-1]["metadata"]["pipecat.turn_metrics"][0]["is_complete"] is False

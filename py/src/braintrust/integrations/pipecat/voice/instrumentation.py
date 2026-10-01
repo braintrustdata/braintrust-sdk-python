@@ -16,6 +16,7 @@ from braintrust.audio.segments import SegmentedRecording
 from braintrust.audio.worker import RecordingBusy, encode_in_worker
 from pipecat.observers.base_observer import BaseObserver  # pylint: disable=import-error
 
+from ..turn_metrics import TURN_METRIC_TYPES, log_turn_metric
 from .turns import Turns
 
 
@@ -295,6 +296,20 @@ class NativeObserver(BaseObserver):
             return
         fields = native_value(frame) if kind != "LLMContextFrame" else {}
         event_owner = self.root
+        if kind == "MetricsFrame" and data.source is self.user_aggregator and self.turns.user:
+            # The single discovered user aggregator emits its analyzer predictions
+            # before stopping this turn. Other sources retain unassociated events.
+            remaining = []
+            for metric in frame.data:
+                if type(metric).__name__ in TURN_METRIC_TYPES:
+                    state = self.turns.user
+                    # Turns assigns role dictionaries through setattr.
+                    log_turn_metric(state["span"], state, metric)  # pylint: disable=unsubscriptable-object
+                else:
+                    remaining.append(native_value(metric))
+            if not remaining:
+                return
+            fields["data"] = remaining
         if kind == "StartFrame":
             self.root.log(
                 metadata={
