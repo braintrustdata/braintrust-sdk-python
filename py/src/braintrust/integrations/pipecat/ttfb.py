@@ -19,17 +19,23 @@ class TTFBRouter:
     def clear(self):
         self.active.clear()
 
-    def capture(self, metric, source):
+    def owner(self, metric, source, *, operation=None):
         name = getattr(metric, "processor", None)
         matches = [
             (key, log, state)
             for key, (processor, log, state) in self.active.items()
-            if processor is source and name is not None and getattr(processor, "name", None) == name
+            if processor is source
+            and name is not None
+            and getattr(processor, "name", None) == name
+            and (operation is None or key == operation)
         ]
         if len(matches) == 1:
-            key, log, state = matches[0]
-        else:
-            key, log, state = None, self.fallback, self.unmatched
+            return matches[0]
+        return None, self.fallback, self.unmatched
+
+    def capture(self, metric, source):
+        key, log, state = self.owner(metric, source)
+        name = getattr(metric, "processor", None)
         values = state.setdefault("values", [])
         if len(values) >= 32:
             state["omitted"] = state.get("omitted", 0) + 1

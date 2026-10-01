@@ -39,17 +39,21 @@ async def test_recorded_tool_response_and_spoken_continuation():
             )
         )
 
+    service._setup = SimpleNamespace(enable_usage_metrics=True, enable_metrics=False)
     service.push_frame = output
     RealtimeCapture(observer, service, pair.user())
     calls = []
     for response in responses:
         span = observer.root.start_span(name="pipecat.llm_response")
         observer.llm = span
+        observer.ttfb.start("llm", service, span.log)
         event = events.ResponseDone(
             type="response.done", event_id="fixture-envelope", response=events.Response.model_validate(response)
         )
         await service._handle_evt_response_done(event)
         metadata = {key: value for row in span.rows for key, value in row.get("metadata", {}).items()}
+        standard_metrics = {key: value for row in span.rows for key, value in row.get("metrics", {}).items()}
+        assert standard_metrics["tokens"] == response["usage"]["total_tokens"]
         assert metadata["openai.response.id"] == response["id"]
         assert metadata["openai.response"]["usage"]["total_tokens"] == response["usage"]["total_tokens"]
         for row in span.rows:

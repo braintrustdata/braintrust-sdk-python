@@ -16,6 +16,7 @@ from braintrust.audio.segments import SegmentedRecording
 from braintrust.audio.worker import RecordingBusy, encode_in_worker
 from pipecat.observers.base_observer import BaseObserver  # pylint: disable=import-error
 
+from ..llm_metrics import _llm_usage_metrics, _metadata_from_metric, _metadata_from_processor
 from ..ttfb import TTFBRouter
 from ..turn_metrics import TURN_METRIC_TYPES, log_turn_metric
 from .turns import Turns
@@ -302,7 +303,21 @@ class NativeObserver(BaseObserver):
             remaining = []
             for metric in frame.data:
                 if type(metric).__name__ == "TTFBMetricsData":
-                    self.ttfb.capture(metric, data.source)
+                    owner = self.ttfb.capture(metric, data.source)
+                    if owner == "llm":
+                        self.llm.log(metrics={"time_to_first_token": metric.value})
+                elif (
+                    type(metric).__name__ == "LLMUsageMetricsData"
+                    and self.ttfb.owner(metric, data.source, operation="llm")[0] == "llm"
+                ):
+                    self.llm.log(
+                        metrics=_llm_usage_metrics(metric.value),
+                        metadata={
+                            "pipecat.usage": native_value(metric),
+                            **_metadata_from_processor(data.source),
+                            **_metadata_from_metric(metric),
+                        },
+                    )
                 else:
                     remaining.append(native_value(metric))
             if not remaining:
@@ -404,6 +419,7 @@ class NativeObserver(BaseObserver):
                 metadata={
                     **self.turns.metadata(self.llm_turn),
                     "braintrust.continuation.tool_call_ids": self.context_tool_results,
+                    **_metadata_from_processor(data.source),
                 },
                 set_current=False,
                 internal={"instrumentation": "pipecat-auto"},
