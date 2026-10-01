@@ -480,8 +480,9 @@ def _wrap_concrete_model_class(model_class: Any):
 
             output = _shape_model_response(result)
             metrics = _extract_response_metrics(result, start_time, end_time)
+            response_metadata = _extract_response_metadata(result)
 
-            span.log(output=output, metrics=metrics)
+            span.log(output=output, metadata=response_metadata, metrics=metrics)
             return result
 
     def model_request_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
@@ -774,9 +775,11 @@ class _DirectStreamWrapper(AbstractAsyncContextManager):
                         metrics = _extract_response_metrics(
                             final_response, self.start_time, end_time, self._first_token_time
                         )
+                        response_metadata = _extract_response_metadata(final_response)
                     else:
                         metrics = _wrapper_span_metrics(self.start_time, end_time, self._first_token_time)
-                    self.span_cm.log(output=output, metrics=metrics)
+                        response_metadata = None
+                    self.span_cm.log(output=output, metadata=response_metadata, metrics=metrics)
                 except Exception as e:
                     logger.debug(f"Failed to extract stream output/metrics: {e}")
 
@@ -1425,6 +1428,15 @@ def _extract_response_metrics(
                 metrics["prompt_cached_tokens"] = float(cached)
 
     return metrics if metrics else None
+
+
+def _extract_response_metadata(response: Any) -> dict[str, Any] | None:
+    usage = getattr(response, "usage", None)
+    audio_seconds = getattr(usage, "audio_seconds", None)
+    if audio_seconds is None:
+        return None
+
+    return {"pydantic_ai_usage": {"audio_seconds": float(audio_seconds)}}
 
 
 class _ContextPropagatingAsyncContextManager(AbstractAsyncContextManager):

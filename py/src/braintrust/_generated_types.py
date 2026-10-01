@@ -26,6 +26,7 @@ AclObjectType: TypeAlias = Literal[
     'org_project',
     'org_audit_logs',
     'project_group',
+    'project_group_projects',
     'ai_secret',
     'org_ai_secret',
     'org_account',
@@ -3748,10 +3749,6 @@ class OnlineScoreConfig(TypedDict):
     scope: NotRequired[SpanScope | TraceScope | GroupScope | None]
     """
     The scope at which to run the functions. Defaults to span-level execution.
-    """
-    run_once: NotRequired[bool | None]
-    """
-    Skip rerunning a completed scorer while its definition is unchanged. Failed scorers still retry. When omitted, behavior is unchanged.
     """
 
 
