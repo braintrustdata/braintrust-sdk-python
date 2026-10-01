@@ -1,10 +1,10 @@
 import dataclasses
 import json
 from collections.abc import Callable, Mapping, Sequence
-from typing import Any, overload
+from typing import TYPE_CHECKING, Any, overload
 
 import slugify
-from braintrust.logger import _CreateProjectRequest, _internal_get_global_state, api_conn, login
+from braintrust.logger import _internal_get_global_state, api_conn, login
 
 from .framework import _is_lazy_load, bcolors  # type: ignore
 from .generated_types import (
@@ -19,6 +19,10 @@ from .generated_types import (
 from .parameters import EvalParameters, get_default_data_from_parameters_schema, parameters_to_json_schema
 from .types import Metadata
 from .util import eprint
+
+
+if TYPE_CHECKING:
+    from braintrust.logger import _CreateProjectRequest
 
 
 class ProjectIdCache:

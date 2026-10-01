@@ -28,6 +28,7 @@ from functools import partial, wraps
 from multiprocessing import cpu_count
 from types import TracebackType
 from typing import (
+    TYPE_CHECKING,
     Any,
     Generic,
     Literal,
@@ -45,7 +46,6 @@ from requests import exceptions as requests_exceptions
 from requests.adapters import HTTPAdapter
 
 from . import context, id_gen
-from .api._generated.models.projects import CreateProject
 from .api._routing import normalize_proxy_url
 from .api._transport import HTTPConnection
 from .api._transport import RetryRequestExceptionsAdapter as RetryRequestExceptionsAdapter
@@ -1877,9 +1877,12 @@ def init_dataset(
     )
 
 
-# Keep experimental fields local until they are part of the pinned OpenAPI schema.
-class _CreateProjectRequest(CreateProject, total=False):
-    project_group_name: str
+if TYPE_CHECKING:
+    from .api._generated.models.projects import CreateProject
+
+    # Keep experimental fields local until they are part of the pinned OpenAPI schema.
+    class _CreateProjectRequest(CreateProject, total=False):
+        project_group_name: str
 
 
 def _compute_logger_metadata(
