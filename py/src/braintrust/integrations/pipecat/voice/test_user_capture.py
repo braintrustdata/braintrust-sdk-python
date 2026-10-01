@@ -97,11 +97,12 @@ class UserCaptureTests(unittest.IsolatedAsyncioTestCase):
         self,
     ):
         observer, capture, turn = await self.exercise(True)
-        with patch("braintrust.audio.attachments.RecordingAttachment", side_effect=lambda **kwargs: kwargs):
-            await observer.finish()
+        # Force progressive export to complete before final cleanup.
+        await asyncio.gather(*tuple(capture.tasks))
+        await observer.finish()
         payload = next(row["input"] for row in turn["span"].rows if isinstance(row.get("input"), list))
         self.assertEqual(payload[0]["content"][0]["text"], "Where is my order?")
-        decoded, rate = sf.read(io.BytesIO(payload[0]["content"][1]["file"]["file_data"]["data"]))
+        decoded, rate = sf.read(io.BytesIO(payload[0]["content"][1]["file"]["file_data"].data))
         self.assertAlmostEqual(len(decoded) / rate, 0.1)
         self.assertGreater(abs(decoded).max(), 0.01)
         self.assertEqual(capture.bytes, 0)
