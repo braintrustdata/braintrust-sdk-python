@@ -1545,23 +1545,6 @@ class OrgProjectMetadata:
     project: ObjectMetadata
 
 
-def _register_project(
-    state: "BraintrustState",
-    name: str | None,
-    project_group_name: str | None = None,
-) -> Mapping[str, Any]:
-    """Register (get-or-create) a project by name, optionally inside a project group.
-
-    `project_group_name` is omitted from the request body entirely when unset, so callers that do
-    not use project groups send exactly the same payload as before.
-    """
-
-    body: dict[str, Any] = {"name": name, "org_name": state.org_name}
-    if project_group_name is not None:
-        body["project_group_name"] = project_group_name
-    return state.api_client().projects.post_project(body=cast(Any, body))
-
-
 # Pyright produces an error for overlapping overloads
 # (reportOverlappingOverload) because of the default argument to `open`. It
 # thinks a call like `init()` with no arguments could match both overloads.
@@ -1590,7 +1573,6 @@ def init(
     base_experiment_id: str | None = ...,
     repo_info: RepoInfo | None = ...,
     state: BraintrustState | None = ...,
-    project_group_name: str | None = ...,
 ) -> "Experiment": ...
 
 
@@ -1616,7 +1598,6 @@ def init(
     base_experiment_id: str | None = ...,
     repo_info: RepoInfo | None = ...,
     state: BraintrustState | None = ...,
-    project_group_name: str | None = ...,
 ) -> "ReadonlyExperiment": ...
 
 
@@ -1641,7 +1622,6 @@ def init(
     base_experiment_id: str | None = None,
     repo_info: RepoInfo | None = None,
     state: BraintrustState | None = None,
-    project_group_name: str | None = None,
 ) -> "Experiment | ReadonlyExperiment":
     """
     Log in, and then initialize a new experiment in a specified project. If the project does not exist, it will be created.
@@ -1666,7 +1646,6 @@ def init(
     :param set_current: If true (the default), set the global current-experiment to the newly-created one.
     :param open: If the experiment already exists, open it in read-only mode. Throws an error if the experiment does not already exist.
     :param project_id: The id of the project to create the experiment in. This takes precedence over `project` if specified.
-    :param project_group_name: (Optional) Create the project inside the project group with this name, if the project does not already exist. Requires permission to create projects in that group. Ignored if `project_id` is specified.
     :param base_experiment_id: An optional experiment id to use as a base. If specified, the new experiment will be summarized and compared to this. This takes precedence over `base_experiment` if specified.
     :param repo_info: (Optional) Explicitly specify the git metadata for this experiment. This takes precedence over `git_metadata_settings` if specified.
     :param state: (Optional) A BraintrustState object to use. If not specified, will use the global state. This is for advanced use only.
@@ -1717,7 +1696,9 @@ def init(
     def compute_metadata():
         state.login(org_name=org_name, api_key=api_key, app_url=app_url)
         if project_id is None:
-            project_info = _register_project(state, project or GLOBAL_PROJECT, project_group_name=project_group_name)
+            project_info = state.api_client().projects.post_project(
+                body={"name": project or GLOBAL_PROJECT, "org_name": state.org_name}
+            )
         else:
             project_info = state.api_client().projects.get_project_id(project_id)
 
@@ -1831,7 +1812,6 @@ def init_dataset(
     state: BraintrustState | None = None,
     environment: str | None = None,
     dataset_id: str | None = None,
-    project_group_name: str | None = None,
 ) -> "Dataset":
     """
     Create or load a dataset. When creating a dataset, its project will be created if it does not exist.
@@ -1847,7 +1827,6 @@ def init_dataset(
     key is specified, will prompt the user to login.
     :param org_name: (Optional) The name of a specific organization to connect to. This is useful if you belong to multiple.
     :param project_id: The id of the project to create the dataset in. This takes precedence over `project` if specified.
-    :param project_group_name: (Optional) Create the project inside the project group with this name, if the project does not already exist. Requires permission to create projects in that group. Ignored if `project_id` is specified.
     :param metadata: (Optional) a dictionary, or an object that serializes to a dictionary (such as a Pydantic model), with additional data about the dataset. The values in `metadata` can be any
     JSON-serializable type, but its keys must be strings.
     :param use_output: (Deprecated) If True, records will be fetched from this dataset in the legacy format, with the "expected" field renamed to "output". This option will be removed in a future version of Braintrust.
@@ -1875,7 +1854,7 @@ def init_dataset(
             if project_id is not None:
                 resp_project = api_client.projects.get_project_id(project_id)
             else:
-                resp_project = _register_project(state, project, project_group_name=project_group_name)
+                resp_project = api_client.projects.post_project(body={"name": project, "org_name": state.org_name})
             body = _populate_args(
                 {"project_id": resp_project["id"], "name": name or "logs"},
                 description=description,
@@ -1900,14 +1879,15 @@ def init_dataset(
 def _compute_logger_metadata(
     project_name: str | None = None,
     project_id: str | None = None,
-    project_group_name: str | None = None,
     state: BraintrustState | None = None,
 ):
     state = state or _state
     state.login()
     org_id = state.org_id
     if project_id is None:
-        response = _register_project(state, project_name or GLOBAL_PROJECT, project_group_name=project_group_name)
+        response = state.api_client().projects.post_project(
+            body={"name": project_name or GLOBAL_PROJECT, "org_name": state.org_name}
+        )
         return OrgProjectMetadata(
             org_id=org_id,
             project=ObjectMetadata(id=response["id"], name=response["name"], full_info=dict(response)),
@@ -1935,7 +1915,6 @@ def init_logger(
     set_current: bool = True,
     state: BraintrustState | None = None,
     environment: SpanOriginEnvironment | None = None,
-    project_group_name: str | None = None,
 ) -> "Logger":
     """
     Create a new logger in a specified project. If the project does not exist, it will be created.
@@ -1949,17 +1928,12 @@ def init_logger(
     :param org_name: (Optional) The name of a specific organization to connect to. This is useful if you belong to multiple.
     :param force_login: Login again, even if you have already logged in (by default, the logger will not login if you are already logged in)
     :param set_current: If true (the default), set the global current-experiment to the newly-created one.
-    :param project_group_name: (Optional) Create the project inside the project group with this name, if the project does not already exist. Requires permission to create projects in that group. Ignored if `project_id` is specified.
     :returns: The newly created Logger.
     """
 
     state = state or _state
     state.span_origin_environment = detect_environment(environment)
-    compute_metadata_args: dict[str, Any] = dict(project_name=project, project_id=project_id)
-    if project_group_name is not None:
-        # Only present when set, so exported span components (and therefore anything that resolves
-        # them with an older SDK) are byte-for-byte unchanged for callers not using project groups.
-        compute_metadata_args["project_group_name"] = project_group_name
+    compute_metadata_args = dict(project_name=project, project_id=project_id)
 
     link_args = {
         "app_url": app_url,

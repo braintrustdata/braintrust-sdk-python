@@ -143,7 +143,6 @@ async def run_evaluator_task(evaluator, position, opts: EvaluatorOpts):
         experiment = init_experiment(
             project_name=evaluator.project_name,
             project_id=evaluator.project_id,
-            project_group_name=evaluator.project_group_name,
             experiment_name=evaluator.experiment_name,
             description=evaluator.description,
             metadata=evaluator.metadata,

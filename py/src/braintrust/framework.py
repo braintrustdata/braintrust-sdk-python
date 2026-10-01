@@ -462,13 +462,6 @@ class Evaluator(Generic[Input, Output, Expected]):
 
     parameter_values: dict[str, Any] | None = None
 
-    project_group_name: str | None = None
-    """
-    If specified, creates the project inside the project group with this name when the project does
-    not already exist. Requires permission to create projects in that group. Ignored if `project_id`
-    is specified.
-    """
-
 
 @dataclasses.dataclass
 class EvalResultWithSummary(SerializableDataClass, Generic[Input, Output, Expected]):
@@ -711,7 +704,6 @@ def _EvalCommon(
     parent: str | None = None,
     state: BraintrustState | None = None,
     enable_cache: bool = True,
-    project_group_name: str | None = None,
 ) -> Callable[[], Coroutine[Any, Any, EvalResultWithSummary[Input, Output, Expected]]]:
     """
     This helper is needed because in case of `_lazy_load`, we need to update
@@ -751,7 +743,6 @@ def _EvalCommon(
         description=description,
         summarize_scores=summarize_scores,
         parameters=parameters,
-        project_group_name=project_group_name,
     )
 
     if _lazy_load:
@@ -790,7 +781,6 @@ def _EvalCommon(
             experiment = init_experiment(
                 project_name=evaluator.project_name if evaluator.project_id is None else None,
                 project_id=evaluator.project_id,
-                project_group_name=evaluator.project_group_name,
                 experiment_name=evaluator.experiment_name,
                 description=evaluator.description,
                 metadata=evaluator.metadata,
@@ -855,7 +845,6 @@ async def EvalAsync(
     parent: str | None = None,
     state: BraintrustState | None = None,
     enable_cache: bool = True,
-    project_group_name: str | None = None,
 ) -> EvalResultWithSummary[Input, Output, Expected]:
     """
     A function you can use to define an evaluator. This is a convenience wrapper around the `Evaluator` class.
@@ -896,7 +885,6 @@ async def EvalAsync(
     :param timeout: (Optional) The duration, in seconds, after which to time out the evaluation.
     Defaults to None, in which case there is no timeout.
     :param project_id: (Optional) If specified, uses the given project ID instead of the evaluator's name to identify the project.
-    :param project_group_name: (Optional) Creates the project inside the project group with this name, if the project does not already exist. Requires permission to create projects in that group. Ignored if `project_id` is specified.
     :param base_experiment_name: An optional experiment name to use as a base. If specified, the new experiment will be
     summarized and compared to this experiment.
     :param base_experiment_id: An optional experiment id to use as a base. If specified, the new experiment will be
@@ -949,7 +937,6 @@ async def EvalAsync(
         parent=parent,
         state=state,
         enable_cache=enable_cache,
-        project_group_name=project_group_name,
     )
     return await f()
 
@@ -987,7 +974,6 @@ def Eval(
     parent: str | None = None,
     state: BraintrustState | None = None,
     enable_cache: bool = True,
-    project_group_name: str | None = None,
 ) -> EvalResultWithSummary[Input, Output, Expected]:
     """
     A function you can use to define an evaluator. This is a convenience wrapper around the `Evaluator` class.
@@ -1028,7 +1014,6 @@ def Eval(
     :param timeout: (Optional) The duration, in seconds, after which to time out the evaluation.
     Defaults to None, in which case there is no timeout.
     :param project_id: (Optional) If specified, uses the given project ID instead of the evaluator's name to identify the project.
-    :param project_group_name: (Optional) Creates the project inside the project group with this name, if the project does not already exist. Requires permission to create projects in that group. Ignored if `project_id` is specified.
     :param base_experiment_name: An optional experiment name to use as a base. If specified, the new experiment will be
     summarized and compared to this experiment.
     :param base_experiment_id: An optional experiment id to use as a base. If specified, the new experiment will be
@@ -1083,7 +1068,6 @@ def Eval(
         parent=parent,
         state=state,
         enable_cache=enable_cache,
-        project_group_name=project_group_name,
     )
     # https://stackoverflow.com/questions/55409641/asyncio-run-cannot-be-called-from-a-running-event-loop-when-using-jupyter-no
     try:
