@@ -45,6 +45,7 @@ from requests import exceptions as requests_exceptions
 from requests.adapters import HTTPAdapter
 
 from . import context, id_gen
+from .api._generated.models.projects import CreateProject
 from .api._routing import normalize_proxy_url
 from .api._transport import HTTPConnection
 from .api._transport import RetryRequestExceptionsAdapter as RetryRequestExceptionsAdapter
@@ -1876,18 +1877,25 @@ def init_dataset(
     )
 
 
+# Keep experimental fields local until they are part of the pinned OpenAPI schema.
+class _CreateProjectInGroup(CreateProject, total=False):
+    project_group_name: str
+
+
 def _compute_logger_metadata(
     project_name: str | None = None,
     project_id: str | None = None,
     state: BraintrustState | None = None,
+    project_group_name: str | None = None,
 ):
     state = state or _state
     state.login()
     org_id = state.org_id
     if project_id is None:
-        response = state.api_client().projects.post_project(
-            body={"name": project_name or GLOBAL_PROJECT, "org_name": state.org_name}
-        )
+        body: _CreateProjectInGroup = {"name": project_name or GLOBAL_PROJECT, "org_name": state.org_name}
+        if project_group_name is not None:
+            body["project_group_name"] = project_group_name
+        response = state.api_client().projects.post_project(body=body)
         return OrgProjectMetadata(
             org_id=org_id,
             project=ObjectMetadata(id=response["id"], name=response["name"], full_info=dict(response)),
@@ -1915,6 +1923,7 @@ def init_logger(
     set_current: bool = True,
     state: BraintrustState | None = None,
     environment: SpanOriginEnvironment | None = None,
+    _create_in_project_group: str | None = None,
 ) -> "Logger":
     """
     Create a new logger in a specified project. If the project does not exist, it will be created.
@@ -1928,12 +1937,15 @@ def init_logger(
     :param org_name: (Optional) The name of a specific organization to connect to. This is useful if you belong to multiple.
     :param force_login: Login again, even if you have already logged in (by default, the logger will not login if you are already logged in)
     :param set_current: If true (the default), set the global current-experiment to the newly-created one.
+    :param _create_in_project_group: Experimental: the name of an existing project group to create the project in. Existing projects must already belong to the group, otherwise registration fails with a 409. Ignored when project_id is provided.
     :returns: The newly created Logger.
     """
 
     state = state or _state
     state.span_origin_environment = detect_environment(environment)
     compute_metadata_args = dict(project_name=project, project_id=project_id)
+    if _create_in_project_group is not None:
+        compute_metadata_args["project_group_name"] = _create_in_project_group
 
     link_args = {
         "app_url": app_url,
