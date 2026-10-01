@@ -48,6 +48,7 @@ class RealtimeCapture:
                 observer.context_reply_to = turn["span"].span_id if turn else None
                 observer.llm_turn = None
                 observer.llm_text = []
+                observer.llm_tool_calls = []
                 observer.llm = observer.root.start_span(
                     name="pipecat.llm_response",
                     type="llm",
@@ -90,6 +91,15 @@ class RealtimeCapture:
                     response_span.log(metadata={"openai.response.id": response_id})
                     if getattr(evt, "response", None) is not None:
                         response_span.log(metadata={"openai.response": native_value(evt.response)})
+                        observer.llm_tool_calls = [
+                            {
+                                "id": item.call_id,
+                                "type": "function",
+                                "function": {"name": item.name, "arguments": item.arguments},
+                            }
+                            for item in evt.response.output
+                            if item.type == "function_call"
+                        ]
                 try:
                     result = await original(evt)
                     if response_span and getattr(evt, "response", None) is not None:
@@ -99,7 +109,7 @@ class RealtimeCapture:
                                 output=[
                                     {
                                         "role": "assistant",
-                                        "content": "",
+                                        "content": "".join(observer.llm_text) or None,
                                         "tool_calls": [
                                             {
                                                 "id": item.call_id,

@@ -56,9 +56,12 @@ async def test_recorded_tool_response_and_spoken_continuation():
         assert standard_metrics["tokens"] == response["usage"]["total_tokens"]
         assert metadata["openai.response.id"] == response["id"]
         assert metadata["openai.response"]["usage"]["total_tokens"] == response["usage"]["total_tokens"]
-        for row in span.rows:
-            for message in row.get("output", []):
-                calls.extend(message.get("tool_calls", []))
+        final_output = [row["output"] for row in span.rows if "output" in row][-1]
+        for message in final_output:
+            calls.extend(message.get("tool_calls", []))
+        if any(item["type"] == "function_call" for item in response["output"]):
+            assert final_output[0]["content"] is None
+            assert metadata.get("pipecat.text") != ""
     assert len(calls) == 1
     assert calls[0]["function"]["name"] == "lookup_order"
     assert "1042" in calls[0]["function"]["arguments"]

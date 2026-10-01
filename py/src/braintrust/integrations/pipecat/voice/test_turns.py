@@ -81,6 +81,10 @@ class TurnTests(unittest.IsolatedAsyncioTestCase):
         )
         tool = observer.tools["call-1"]
         await self.push(LLMFullResponseEndFrame())
+        final_output = [row["output"] for row in first_model.rows if "output" in row][-1]
+        self.assertEqual(final_output[0]["tool_calls"][0]["id"], "call-1")
+        self.assertIsNone(final_output[0]["content"])
+        self.assertFalse(any(row.get("metadata", {}).get("pipecat.text") == "" for row in first_model.rows))
         observer.turns.stop("assistant", SimpleNamespace(content="", timestamp="t2", interrupted=False))
         await self.push(UserStartedSpeakingFrame())
         await self.push(

@@ -155,6 +155,7 @@ class NativeObserver(BaseObserver):
         self.duplicate_events = 0
         self.clock_anchored = False
         self.llm = None
+        self.llm_tool_calls = []
         self.llm_text = []
         self.user = None
         self.tools = {}
@@ -407,6 +408,7 @@ class NativeObserver(BaseObserver):
                 self.context_tool_results = self.realtime.pending_tool_results[:]
                 self.realtime.pending_tool_results.clear()
                 self.result_origins.clear()
+            self.llm_tool_calls = []
             self.llm_text = []
             # A new model operation may arrive before the previous aggregator
             # callback task finishes. Keep each native response lifecycle distinct.
@@ -428,18 +430,16 @@ class NativeObserver(BaseObserver):
         elif kind == "LLMTextFrame" and self.llm:
             self.llm_text.append(frame.text)
         elif kind == "FunctionCallsStartedFrame":
+            self.llm_tool_calls = [
+                {
+                    "id": call.tool_call_id,
+                    "type": "function",
+                    "function": {"name": call.function_name, "arguments": json.dumps(native_value(call.arguments))},
+                }
+                for call in frame.function_calls
+            ]
             if self.llm_turn:
-                self.llm_turn["tool_calls"] = [
-                    {
-                        "id": call.tool_call_id,
-                        "type": "function",
-                        "function": {
-                            "name": call.function_name,
-                            "arguments": json.dumps(native_value(call.arguments)),
-                        },
-                    }
-                    for call in frame.function_calls
-                ]
+                self.llm_turn["tool_calls"] = list(self.llm_tool_calls)
                 self.turns.log_message(self.llm_turn, "")
             for call in frame.function_calls:
                 self.requests.setdefault(
@@ -491,10 +491,11 @@ class NativeObserver(BaseObserver):
                     tool.log(metadata={"pipecat.cancelled": True})
                 tool.end()
         elif kind == "LLMFullResponseEndFrame" and self.llm:
-            self.llm.log(
-                output=[{"role": "assistant", "content": "".join(self.llm_text)}],
-                metadata={"pipecat.text": "".join(self.llm_text)},
-            )
+            text = "".join(self.llm_text)
+            message = {"role": "assistant", "content": text or None}
+            if self.llm_tool_calls:
+                message["tool_calls"] = list(self.llm_tool_calls)
+            self.llm.log(output=[message], metadata={"pipecat.text": text} if text else {})
             self.ttfb.end("llm")
             self.llm.end()
             self.llm = None
