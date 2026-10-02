@@ -225,6 +225,9 @@ def assert_no_key_in_urls(plane: FakeDataPlane) -> None:
         (f"https://dp.example/ingest?ingestKey={KEY}", "https://dp.example/ingest"),
         (f"https://dp.example/deployment/base/ingest/?ingestKey={KEY}", "https://dp.example/deployment/base/ingest"),
         (f"http://localhost:8000/ingest?ingestKey={KEY}\n", "http://localhost:8000/ingest"),
+        (f"https://dp.example/base/ingest///?ingestKey={KEY}", "https://dp.example/base/ingest"),
+        (f"https://dp.example/ingest?&ingestKey={KEY}&&", "https://dp.example/ingest"),
+        (f"https://dp.example/ingest?ingest%4Bey=bt%2Dik%2D{'a' * 48}", "https://dp.example/ingest"),
     ],
 )
 def test_parse_ingestion_url(url, expected):
@@ -242,6 +245,11 @@ def test_parse_ingestion_url(url, expected):
         f"ftp://dp.example/ingest?ingestKey={KEY}",
         f"https://user:pass@dp.example/ingest?ingestKey={KEY}",
         f"https://dp.example/ingest?ingestKey={KEY}#fragment",
+        f"https://dp.example/ingest?ingestKey={KEY}#",
+        f"https://dp.example/ingest#?ingestKey={KEY}",
+        "https://dp.example/ingest?ingestKey",
+        f"https://dp.example/ingest?ingestKey={KEY}&ingestKey=",
+        f"https://dp.example/ingest?ingestKey={KEY}=x",
         f"https://dp.example/ingest/v1/logs?ingestKey={KEY}",
         f"https://dp.example/not-ingest?ingestKey={KEY}",
         f"https://dp.example/ingest?ingestKey={KEY}&ingestKey={KEY}",

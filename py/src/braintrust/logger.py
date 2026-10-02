@@ -1577,7 +1577,8 @@ def _parse_ingestion_url(value: str) -> _IngestionEndpoint:
     try:
         parsed = urlsplit(value.strip())
         parsed.port  # Raises for malformed ports.
-        query = parse_qsl(parsed.query, keep_blank_values=True, strict_parsing=True)
+        # Matches URLSearchParams: empty segments are skipped and values are percent-decoded.
+        query = parse_qsl(parsed.query, keep_blank_values=True)
         reason = None
     except ValueError:
         reason = "it is not a valid URL"
