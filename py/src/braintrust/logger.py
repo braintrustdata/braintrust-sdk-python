@@ -114,6 +114,7 @@ from .types._eval import ExperimentDatasetEvent
 from .util import (
     GLOBAL_PROJECT,
     LazyValue,
+    _reset_lazy_value_locks_after_fork,
     add_azure_blob_headers,
     bt_iscoroutinefunction,
     coalesce,
@@ -1148,7 +1149,9 @@ class BraintrustLogFlushError(RuntimeError):
     def __init__(self, pending_count: int, errors: Sequence[Exception]):
         self.pending_count = pending_count
         self.errors = tuple(errors)
-        super().__init__(f"Failed to flush {pending_count} retained log records: " + "; ".join(str(e) for e in errors))
+        super().__init__(
+            f"Log flush failed with {pending_count} records still pending: " + "; ".join(str(e) for e in errors)
+        )
 
 
 class _ExpiredOverflowUpload(RuntimeError):
@@ -1375,8 +1378,6 @@ class _HTTPBackgroundLogger:
             )
         try:
             if not _background:
-                self._delivery_errors.clear()
-            if not _background:
                 for batch in self._pending:
                     if not batch.permanent:
                         batch.attempts = 0
@@ -1416,12 +1417,14 @@ class _HTTPBackgroundLogger:
                 self._retained_count = 0
                 self._pending_service = None
                 self._pending_context.close()
-                if _background:
-                    self._delivery_errors.clear()
                 if self._delivery_errors and not _background:
                     errors = self._delivery_errors[:]
                     self._delivery_errors.clear()
                     raise BraintrustLogFlushError(self.pending_count, errors)
+            if self._delivery_errors and not _background:
+                errors = self._delivery_errors[:]
+                self._delivery_errors.clear()
+                raise BraintrustLogFlushError(self.pending_count, errors)
         except _IngestionDeferred as error:
             raise BraintrustLogFlushError(
                 self.pending_count, [TimeoutError("Log destination is cooling down")]
@@ -1784,6 +1787,7 @@ _internal_reset_global_state()
 def _reset_global_state_after_fork() -> None:
     """Replace inherited synchronization and transport state in a forked child."""
     global _state
+    _reset_lazy_value_locks_after_fork()
     _state._fork_login = (_state.app_url, _state.login_token, _state.org_name)
     if _state._global_bg_logger.has_succeeded:
         _state._global_bg_logger.value.reset_after_fork()

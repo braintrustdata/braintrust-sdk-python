@@ -3,6 +3,7 @@ import json
 import sys
 import threading
 import urllib.parse
+import weakref
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Any, Generic, Literal, TypedDict, TypeVar
@@ -175,6 +176,14 @@ class _LazyValuePendingState:
 
 _LazyValueState = _LazyValueResolvedState[T] | _LazyValuePendingState
 
+_lazy_values: weakref.WeakSet = weakref.WeakSet()
+
+
+def _reset_lazy_value_locks_after_fork() -> None:
+    """Replace locks inherited from threads that do not exist in a forked child."""
+    for lazy_value in list(_lazy_values):
+        lazy_value.reset_after_fork()
+
 
 class LazyValue(Generic[T]):
     """A simple wrapper around a callable object which computes the value
@@ -185,6 +194,11 @@ class LazyValue(Generic[T]):
         self.callable = callable
         self.mutex = threading.Lock() if use_mutex else None
         self._state: _LazyValueState[T] = _LazyValuePendingState()
+        _lazy_values.add(self)
+
+    def reset_after_fork(self) -> None:
+        if self.mutex is not None:
+            self.mutex = threading.Lock()
 
     @property
     def has_succeeded(self) -> bool:

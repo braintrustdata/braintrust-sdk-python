@@ -432,11 +432,35 @@ def test_background_permanent_failure_is_dropped_and_later_rows_continue(ingesti
         time.sleep(0.01)
     writer.log(LazyValue(lambda: {"id": "new"}, use_mutex=False))
     deadline = time.monotonic() + 3
-    while handler.request_count < 2:
+    while handler.request_count < 2 or writer.pending_count:
         assert time.monotonic() < deadline
         time.sleep(0.01)
     assert writer.pending_count == 0
     assert handler.request_count == 2
+
+
+def test_fork_reset_replaces_pending_lazy_value_lock():
+    from braintrust.util import _reset_lazy_value_locks_after_fork
+
+    lazy_value = LazyValue(lambda: {"id": "child"}, use_mutex=True)
+    lazy_value.mutex.acquire()
+    _reset_lazy_value_locks_after_fork()
+    assert lazy_value.get() == {"id": "child"}
+
+
+def test_background_permanent_failure_is_reported_by_next_explicit_flush(ingestion_writer):
+    import time
+
+    from braintrust.logger import BraintrustLogFlushError
+
+    writer, _, handler = ingestion_writer([(401, {}, b"unauthorized")])
+    writer.log(LazyValue(lambda: {"id": "failed"}, use_mutex=False))
+    deadline = time.monotonic() + 3
+    while handler.request_count < 1 or writer.pending_count:
+        assert time.monotonic() < deadline
+        time.sleep(0.01)
+    with pytest.raises(BraintrustLogFlushError, match="401"):
+        writer.flush()
 
 
 def test_background_writer_resumes_after_retry_budget_during_outage(ingestion_writer):
