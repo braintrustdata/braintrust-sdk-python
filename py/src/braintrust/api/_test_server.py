@@ -2,16 +2,19 @@
 
 import contextlib
 import http.server
+import socket
 import socketserver
 import threading
 import time
 
 
 @contextlib.contextmanager
-def scripted_server(script):
+def scripted_server(script, *, persistent=False):
     """Run a local server driven by sequential actions or a request callback."""
 
     class ScriptedHandler(http.server.BaseHTTPRequestHandler):
+        protocol_version = "HTTP/1.1" if persistent else "HTTP/1.0"
+        connections = set()
         request_count = 0
         requests = []
 
@@ -24,6 +27,9 @@ def scripted_server(script):
         def do_POST(self):
             self._handle()
 
+        def do_PUT(self):
+            self._handle()
+
         def do_PATCH(self):
             self._handle()
 
@@ -31,6 +37,7 @@ def scripted_server(script):
             self._handle()
 
         def _handle(self):
+            type(self).connections.add(self.client_address)
             request_number = type(self).request_count
             type(self).request_count += 1
             content_length = int(self.headers.get("Content-Length", "0"))
@@ -43,6 +50,8 @@ def scripted_server(script):
             )
 
             if action == "close":
+                self.close_connection = True
+                self.connection.shutdown(socket.SHUT_RDWR)
                 self.connection.close()
                 return
 

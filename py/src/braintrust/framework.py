@@ -808,9 +808,9 @@ def _EvalCommon(
                     return ret
                 finally:
                     if experiment:
-                        experiment.flush()
+                        experiment.state.flush_best_effort()
                     elif state is not None:
-                        state.flush()
+                        state.flush_best_effort()
 
         return run_to_completion
 
@@ -1709,13 +1709,15 @@ async def _run_evaluator_internal_impl(
                 async def ensure_spans_flushed():
                     # Flush native Braintrust spans
                     if experiment:
-                        await asyncio.get_event_loop().run_in_executor(None, lambda: experiment.state.flush())
+                        await asyncio.get_event_loop().run_in_executor(
+                            None, lambda: experiment.state.flush_best_effort()
+                        )
                     elif state:
-                        await asyncio.get_event_loop().run_in_executor(None, lambda: state.flush())
+                        await asyncio.get_event_loop().run_in_executor(None, lambda: state.flush_best_effort())
                     else:
-                        from braintrust.logger import flush as flush_logger
+                        from braintrust.logger import _state
 
-                        await asyncio.get_event_loop().run_in_executor(None, flush_logger)
+                        await asyncio.get_event_loop().run_in_executor(None, lambda: _state.flush_best_effort())
 
                     # Also flush OTEL spans if registered
                     if state:

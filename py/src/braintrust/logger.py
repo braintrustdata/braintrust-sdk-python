@@ -40,12 +40,13 @@ from typing import (
 from urllib.parse import quote, urlencode
 
 import chevron
-import exceptiongroup
 from braintrust.functions.stream import BraintrustStream
 from requests import exceptions as requests_exceptions
 from requests.adapters import HTTPAdapter
 
 from . import context, id_gen
+from .api._ingestion import IngestionDeferred as _IngestionDeferred
+from .api._ingestion import LogIngestionAPI as _LogIngestionAPI
 from .api._routing import normalize_proxy_url
 from .api._transport import HTTPConnection
 from .api._transport import RetryRequestExceptionsAdapter as RetryRequestExceptionsAdapter
@@ -58,6 +59,8 @@ from .api.errors import (
     BraintrustTransportError,
 )
 from .api.policies import DEFAULT_RETRYABLE_STATUSES, is_retryable_request_exception
+from .api.policies import RetryMode as _RetryMode
+from .api.policies import RetryPolicy as _RetryPolicy
 from .bt_json import bt_dumps, bt_safe_deep_copy
 from .db_fields import (
     AUDIT_METADATA_FIELD,
@@ -112,6 +115,7 @@ from .types._eval import ExperimentDatasetEvent
 from .util import (
     GLOBAL_PROJECT,
     LazyValue,
+    _reset_lazy_value_locks_after_fork,
     add_azure_blob_headers,
     bt_iscoroutinefunction,
     coalesce,
@@ -523,7 +527,7 @@ class _LoaderLoginOptions:
     cache_namespace: str
 
 
-_LoaderResource = TypeVar("_LoaderResource", bound=BraintrustClient)
+_LoaderResource = TypeVar("_LoaderResource", bound=BraintrustClient | _LogIngestionAPI)
 
 
 class _LoaderLoginEntry(Generic[_LoaderResource]):
@@ -557,6 +561,14 @@ class _LoaderLoginEntry(Generic[_LoaderResource]):
             should_close = self._evicted and self._active == 0
         if should_close:
             self._close()
+
+    @contextlib.contextmanager
+    def lease(self) -> Iterator[_LoaderResource]:
+        resource = self.acquire()
+        try:
+            yield resource
+        finally:
+            self.release()
 
     def evict(self) -> None:
         with self._lock:
@@ -601,20 +613,18 @@ class BraintrustState:
         self._context_manager = None
         self._context_manager_lock = threading.Lock()
         self._client_lock = threading.RLock()
+        self._login_operation_lock = threading.RLock()
+        self._ingestion_cache: LRUCache[str, _LoaderLoginEntry[_LogIngestionAPI]] = LRUCache(
+            max_size=1,
+            on_remove=self._evict_loader_login_entry,
+        )
 
-        def default_get_api_conn():
-            self.login()
-            return self.api_conn()
-
-        # Any time we re-log in, we directly update the api_conn inside the
-        # logger. This is preferable to replacing the whole logger, which would
-        # create the possibility of multiple loggers floating around.
+        # Keep one writer across logins. Prepared batches lease their original
+        # transport; later batches resolve current authentication and routing.
         #
         # We lazily-initialize the logger so that it does any initialization
         # (including reading env variables) upon the first actual usage.
-        self._global_bg_logger = LazyValue(
-            lambda: _HTTPBackgroundLogger(LazyValue(default_get_api_conn, use_mutex=True)), use_mutex=True
-        )
+        self._global_bg_logger = LazyValue(lambda: _HTTPBackgroundLogger(self.ingestion_service), use_mutex=True)
 
         self._id_generator = None
 
@@ -655,6 +665,7 @@ class BraintrustState:
         self._otel_flush_callback: Any | None = None
 
     def reset_login_info(self):
+        self._ingestion_cache.clear()
         self._loader_api_client_cache.clear()
 
         self.app_url: str | None = None
@@ -737,6 +748,7 @@ class BraintrustState:
     def copy_state(self, other: "BraintrustState"):
         """Copy login information from another BraintrustState instance."""
         self._loader_api_client_cache.clear()
+        self._ingestion_cache.clear()
         self.__dict__.update(
             {
                 k: v
@@ -754,7 +766,9 @@ class BraintrustState:
                     "_last_otel_setting",
                     "_context_manager_lock",
                     "_client_lock",
+                    "_login_operation_lock",
                     "_loader_api_client_cache",
+                    "_ingestion_cache",
                 )
             }
         )
@@ -766,29 +780,55 @@ class BraintrustState:
         org_name: str | None = None,
         force_login: bool = False,
     ) -> None:
-        with self._client_lock:
-            if not force_login and self.logged_in:
-                # We have already logged in. If any provided login inputs disagree
-                # with our existing settings, raise an Exception warning the user to
-                # try again with `force_login=True`.
-                def check_updated_param(varname, arg, orig):
-                    if arg is not None and orig is not None and arg != orig:
-                        raise Exception(
-                            f"Re-logging in with different {varname} ({arg}) than original ({orig}). To force re-login, pass `force_login=True`"
-                        )
+        with self._login_operation_lock:
+            with self._client_lock:
+                if not force_login and self.logged_in:
+                    # We have already logged in. If any provided login inputs disagree
+                    # with our existing settings, raise an Exception warning the user to
+                    # try again with `force_login=True`.
+                    def check_updated_param(varname, arg, orig):
+                        if arg is not None and orig is not None and arg != orig:
+                            raise Exception(
+                                f"Re-logging in with different {varname} ({arg}) than original ({orig}). To force re-login, pass `force_login=True`"
+                            )
 
-                sanitized_api_key = HTTPConnection.sanitize_token(api_key) if api_key else None
-                check_updated_param("app_url", app_url, self.app_url)
-                check_updated_param("api_key", sanitized_api_key, self.login_token)
-                check_updated_param("org_name", org_name, self.org_name)
-                return
-
+                    sanitized_api_key = HTTPConnection.sanitize_token(api_key) if api_key else None
+                    check_updated_param("app_url", app_url, self.app_url)
+                    check_updated_param("api_key", sanitized_api_key, self.login_token)
+                    check_updated_param("org_name", org_name, self.org_name)
+                    return
+            fork_login = getattr(self, "_fork_login", None) or (None, None, None)
             state = login_to_state(
-                app_url=app_url,
-                api_key=api_key,
-                org_name=org_name,
+                # Do not let records queued under the old identity be prepared
+                # after the state swap and sent with the new user's key.
+                # Seal them into a prepared batch before replacing credentials.
+                app_url=app_url or fork_login[0],
+                api_key=api_key or fork_login[1],
+                org_name=org_name or fork_login[2],
             )
-            self.copy_state(state)
+            self._copy_login_state_after_sealing(state)
+
+    def _copy_login_state_after_sealing(self, new_state: "BraintrustState") -> None:
+        if not self.logged_in or not self._global_bg_logger.has_succeeded:
+            with self._client_lock:
+                self.copy_state(new_state)
+                self._fork_login = None
+            return
+        writer = self._global_bg_logger.get()
+        while True:
+            while not writer.flush_lock.acquire(timeout=1.0):
+                pass
+            try:
+                with writer.queue._mutex:
+                    if not writer.queue._queue:
+                        with self._client_lock:
+                            self.copy_state(new_state)
+                            self._fork_login = None
+                        return
+                deadline = time.monotonic() + writer.flush_timeout
+                writer._prepare_batches(writer.default_batch_size, deadline, append=bool(writer._retained_count))
+            finally:
+                writer.flush_lock.release()
 
     def api_client(self) -> BraintrustOpenApiClient:
         """Return the lazily bootstrapped OpenAPI client."""
@@ -800,6 +840,32 @@ class BraintrustState:
         if self._client is None:
             raise RuntimeError("Braintrust API client was not initialized during login")
         return self._client.openapi
+
+    @contextlib.contextmanager
+    def ingestion_service(self) -> "Iterator[_LogIngestionAPI]":
+        """Lease a pool for the current credentials; retained batches keep their lease."""
+        self.api_client()
+        with contextlib.ExitStack() as stack:
+            with self._client_lock:
+                client = self._client
+                if client is None:
+                    raise RuntimeError("Braintrust API client was not initialized during login")
+                router = dataclasses.replace(client.router)
+                api_key = client.api_key
+                key = bt_dumps([router.api_url, hashlib.sha256(api_key.encode()).hexdigest()])
+                service = stack.enter_context(
+                    self._cached_loader_resource(
+                        self._ingestion_cache,
+                        key,
+                        lambda: _LogIngestionAPI(
+                            router,
+                            api_key,
+                            concurrency=BraintrustEnv.LOG_MAX_CONCURRENCY.get(4),
+                            adapter=_http_adapter,
+                        ),
+                    )
+                )
+            yield service
 
     def app_conn(self):
         if not self._app_conn:
@@ -852,11 +918,8 @@ class BraintrustState:
                 entry = _LoaderLoginEntry(factory)
                 cache.set(cache_key, entry)
 
-        resource = entry.acquire()
-        try:
+        with entry.lease() as resource:
             yield resource
-        finally:
-            entry.release()
 
     @contextlib.contextmanager
     def loader_api_client(self, options: "_LoaderLoginOptions") -> "Iterator[BraintrustOpenApiClient]":
@@ -883,6 +946,13 @@ class BraintrustState:
     def flush(self):
         self._global_bg_logger.get().flush()
 
+    def flush_best_effort(self) -> None:
+        """Flush during a user operation without turning telemetry failure into app failure."""
+        try:
+            self.flush()
+        except BraintrustLogFlushError as error:
+            _logger.warning("Failed to flush Braintrust logs; records remain queued: %s", error)
+
     def enforce_queue_size_limit(self, enforce: bool) -> None:
         """
         Set queue size limit enforcement for the global background logger.
@@ -907,6 +977,9 @@ def set_http_adapter(adapter: HTTPAdapter) -> None:
     Braintrust uses the `requests` library, so the adapter should be an instance of `requests.adapters.HTTPAdapter`. Alternatively, consider
     sub-classing our `RetryRequestExceptionsAdapter` to get automatic retries on network-related exceptions.
 
+    Log ingestion requires adapters with retries disabled because the writer owns
+    its retry budget. Other legacy callers retain their configured adapter policies.
+
     :param adapter: The adapter to use.
     """
 
@@ -927,6 +1000,8 @@ def set_http_adapter(adapter: HTTPAdapter) -> None:
     # adapter. Eviction closes them once any active requests release their lease;
     # subsequent loads recreate them with the new global adapter.
     _state._loader_api_client_cache.clear()
+    with _state._client_lock:
+        _state._ingestion_cache.clear()
 
 
 # Sometimes we'd like to launch network requests concurrently. We provide a
@@ -1069,24 +1144,71 @@ class _MemoryBackgroundLogger(_BackgroundLogger):
 BACKGROUND_LOGGER_BASE_SLEEP_TIME_S = 1.0
 
 
+class BraintrustLogFlushError(RuntimeError):
+    """Explicit delivery failure. Undelivered rows remain in the writer."""
+
+    def __init__(self, pending_count: int, errors: Sequence[Exception]):
+        self.pending_count = pending_count
+        self.errors = tuple(errors)
+        super().__init__(
+            f"Log flush failed with {pending_count} records still pending: " + "; ".join(str(e) for e in errors)
+        )
+
+
+class _ExpiredOverflowUpload(RuntimeError):
+    """A signed URL expired; request a fresh URL before retrying the batch."""
+
+
+@dataclasses.dataclass(eq=False)
+class _PreparedLogBatch:
+    item_count: int
+    payload: bytes
+    overflow_rows: list[dict[str, Any]] | None
+    service: _LogIngestionAPI | None = None
+    wave: int = 0
+    overflow_upload: dict[str, Any] | None = None
+    overflow_reference: bytes | None = None
+    uploaded: bool = False
+    attempts: int = 0
+    ready_at: float = 0.0
+    error: Exception | None = None
+    permanent: bool = False
+    dumped: bool = False
+
+    def exhausted(self, num_tries: int) -> bool:
+        return self.permanent or self.attempts >= num_tries
+
+
 # We should only have one instance of this object in
 # 'BraintrustState._global_bg_logger'. Be careful about spawning multiple
 # instances of this class, because concurrent _BackgroundLoggers will not log to
 # the backend in a deterministic order.
 class _HTTPBackgroundLogger:
-    def __init__(self, api_conn: LazyValue[HTTPConnection]):
-        self.api_conn = api_conn
+    def __init__(self, service_source: "Callable[[], contextlib.AbstractContextManager[_LogIngestionAPI]]"):
+        self._service_source = service_source
+        self._replaced_entry: _LoaderLoginEntry[_LogIngestionAPI] | None = None
+        self._pending: list[_PreparedLogBatch] = []
+        self._delivery_errors: list[Exception] = []
+        self._wave_counter = 0
+        self._retained_count = 0
+        self._pending_attachments: list[BaseAttachment] = []
+        self._pending_service: _LogIngestionAPI | None = None
+        self._pending_context = contextlib.ExitStack()
         self._export_customizers: tuple[SpanCustomizer, ...] = ()
         self.outfile = sys.stderr
         self.flush_lock = threading.RLock()
         self._max_request_size_override: int | None = None
         self._max_request_size_result: dict[str, Any] | None = None
-        self._max_request_size_lock = threading.Lock()
+        self._limit_service: _LogIngestionAPI | None = None
 
         self.sync_flush = BraintrustEnv.SYNC_FLUSH.get(False)
         self._max_request_size_override = BraintrustEnv.MAX_REQUEST_SIZE.get(None)
         self.default_batch_size = BraintrustEnv.DEFAULT_BATCH_SIZE.get(100)
-        self.num_tries = BraintrustEnv.NUM_RETRIES.get(2) + 1
+        self.num_tries = max(1, BraintrustEnv.NUM_RETRIES.get(2) + 1)
+        self.max_concurrency = BraintrustEnv.LOG_MAX_CONCURRENCY.get(4)
+        self.flush_timeout = BraintrustEnv.LOG_FLUSH_TIMEOUT.get(60.0)
+        if self.max_concurrency < 1 or self.flush_timeout <= 0:
+            raise ValueError("Log concurrency and flush timeout must be positive")
         queue_maxsize = BraintrustEnv.QUEUE_SIZE.get(None)
         self.queue_maxsize = DEFAULT_QUEUE_SIZE if queue_maxsize is None else queue_maxsize
         self.queue_drop_logging_period = BraintrustEnv.QUEUE_DROP_LOGGING_PERIOD.get(60.0)
@@ -1140,20 +1262,57 @@ class _HTTPBackgroundLogger:
                     self.thread.start()
                     self.started = True
 
+    def reset_after_fork(self) -> None:
+        """Start a clean child writer without replaying the parent's in-flight rows."""
+        self.flush_lock = threading.RLock()
+        self.start_thread_lock = threading.RLock()
+        self.queue.reset_after_fork()
+        self.thread = threading.Thread(target=self._publisher, daemon=True)
+        self.started = False
+        self._pending = []
+        self._retained_count = 0
+        self._pending_attachments = []
+        self._pending_service = None
+        self._pending_context = contextlib.ExitStack()
+        self._delivery_errors = []
+        self._wave_counter = 0
+        self._replaced_entry = None
+
     def _finalize(self):
         self.logger.debug("Flushing final log events...")
-        self.flush()
+        try:
+            self.flush()
+        except Exception as exc:
+            try:
+                print(str(exc), file=self.outfile)
+            except ValueError:
+                pass  # stderr may already be closed during interpreter shutdown.
+        finally:
+            if self._replaced_entry is not None:
+                self._replaced_entry.evict()
 
     def _publisher(self):
         while True:
             # Wait for some data on the queue before trying to flush.
-            self.queue.wait_for_items()
+            self.queue.wait_for_items(timeout=1.0 if self._retained_count else None)
 
             while self.sync_flush:
                 time.sleep(0.1)
 
+            service = self._pending_service
+            if service is not None and (delay := service.destination.delay()) > 0:
+                time.sleep(min(delay, 1.0))
+                continue
+
             try:
-                self.flush()
+                # Transient failures remain eligible for background retries after
+                # the per-flush attempt budget expires. A permanent response is
+                # reported and discarded by _deliver_batches so it cannot wedge
+                # later rows indefinitely.
+                for batch in self._pending:
+                    if not batch.permanent and batch.exhausted(self.num_tries):
+                        batch.attempts = 0
+                self.flush(_background=True)
             except:
                 # Print exception but don't worry if stderr is closed because the process is shutting down.
                 try:
@@ -1163,99 +1322,275 @@ class _HTTPBackgroundLogger:
                         pass
                     else:
                         raise
+                # Restored, unprepared records leave the queue event set. Back off
+                # when version admission or construction fails rather than spinning.
+                time.sleep(1.0)
 
-    def _get_max_request_size(self) -> dict[str, Any]:
+    def _get_max_request_size(self, service: _LogIngestionAPI, deadline: float) -> dict[str, Any]:
         if self._max_request_size_result is not None:
             return self._max_request_size_result
-        with self._max_request_size_lock:
-            if self._max_request_size_result is not None:
-                return self._max_request_size_result
-            server_limit: int | None = None
-            try:
-                conn = self.api_conn.get()
-                info = conn.get_json("version")
-                limit = info.get("logs3_payload_max_bytes")
-                if isinstance(limit, (int, float)) and int(limit) > 0:
-                    server_limit = int(limit)
-            except Exception as e:
-                print(f"Failed to fetch version info for payload limit: {e}", file=self.outfile)
-            valid_server_limit = server_limit if server_limit is not None and server_limit > 0 else None
-            can_use_overflow = valid_server_limit is not None
-            max_request_size = DEFAULT_MAX_REQUEST_SIZE
-            if self._max_request_size_override is not None:
-                max_request_size = (
-                    min(self._max_request_size_override, valid_server_limit)
-                    if valid_server_limit is not None
-                    else self._max_request_size_override
-                )
-            elif valid_server_limit is not None:
-                max_request_size = valid_server_limit
-            self._max_request_size_result = {
-                "max_request_size": max_request_size,
-                "can_use_overflow": can_use_overflow,
-            }
-            return self._max_request_size_result
-
-    def flush(self, batch_size: int | None = None):
-        if batch_size is None:
-            batch_size = self.default_batch_size
-
-        # We cannot have multiple threads flushing in parallel, because the
-        # order of published elements would be undefined.
-        with self.flush_lock:
-            # Drain the queue.
-            wrapped_items = self.queue.drain_all()
-
-            all_items, attachments = self._unwrap_lazy_values(wrapped_items)
-            if len(all_items) == 0:
-                return
-
-            # Construct batches of records to flush in parallel.
-            all_items_with_meta = [stringify_with_overflow_meta(item) for item in all_items]
-            max_request_size_result = self._get_max_request_size()
-            batches = batch_items(
-                items=all_items_with_meta,
-                batch_max_num_items=batch_size,
-                batch_max_num_bytes=max_request_size_result["max_request_size"] // 2,
-                get_byte_size=lambda item: len(item.str_value),
+        server_limit: int | None = None
+        try:
+            info = service.version(self._ingestion_policy(deadline))
+            limit = info.get("logs3_payload_max_bytes")
+            if isinstance(limit, (int, float)) and int(limit) > 0:
+                server_limit = int(limit)
+        except _IngestionDeferred:
+            raise
+        except Exception as e:
+            print(f"Failed to fetch version info for payload limit: {e}", file=self.outfile)
+        max_request_size = DEFAULT_MAX_REQUEST_SIZE
+        if self._max_request_size_override is not None:
+            max_request_size = (
+                min(self._max_request_size_override, server_limit)
+                if server_limit is not None
+                else self._max_request_size_override
             )
+        elif server_limit is not None:
+            max_request_size = server_limit
+        self._max_request_size_result = {
+            "max_request_size": max_request_size,
+            "can_use_overflow": server_limit is not None,
+        }
+        return self._max_request_size_result
 
-            post_promises = []
+    @staticmethod
+    def _ingestion_policy(deadline: float) -> _RetryPolicy:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError("Log flush deadline exceeded")
+        return _RetryPolicy(
+            max_attempts=1, max_elapsed_time=None, timeout=min(BraintrustEnv.HTTP_TIMEOUT.get(60.0), remaining)
+        )
+
+    @property
+    def pending_count(self) -> int:
+        return self._retained_count + self.queue.size()
+
+    def flush(self, batch_size: int | None = None, *, timeout: float | None = None, _background: bool = False):
+        """Deliver retained and queued rows or raise; cooldowns never consume worker threads."""
+        timeout = self.flush_timeout if timeout is None else timeout
+        if timeout <= 0:
+            raise ValueError("flush timeout must be positive")
+        deadline = time.monotonic() + timeout
+        if not self.flush_lock.acquire(timeout=timeout):
+            raise BraintrustLogFlushError(
+                self.pending_count, [TimeoutError("Timed out waiting for another log delivery")]
+            )
+        try:
+            if not _background:
+                for batch in self._pending:
+                    if not batch.permanent:
+                        batch.attempts = 0
+            # Flush one queued wave after any retained wave. Concurrent producers
+            # belong to subsequent publisher cycles, so a healthy flush cannot starve.
+            prepare_queued = True
+            while self._retained_count or prepare_queued:
+                if not self._retained_count and not self.queue.size():
+                    break
+                if time.monotonic() >= deadline:
+                    raise BraintrustLogFlushError(self.pending_count, [TimeoutError("Log flush deadline exceeded")])
+                if not self._retained_count:
+                    prepare_queued = False
+                    self._prepare_batches(self.default_batch_size if batch_size is None else batch_size, deadline)
+                self._deliver_batches(deadline)
+                if self._pending:
+                    if _background:
+                        return  # Keep retained work parked; only explicit flush promises delivery.
+                    errors = [batch.error for batch in self._pending if batch.error is not None]
+                    raise BraintrustLogFlushError(
+                        self.pending_count, errors or [TimeoutError("Log destination is cooling down")]
+                    )
+                # Attempt every attachment, retaining only failures for the next flush.
+                attachment_errors: list[Exception] = []
+                for attachment in list(self._pending_attachments):
+                    try:
+                        result = attachment.upload()
+                        if result["upload_status"] == "error":
+                            raise RuntimeError(result.get("error_message"))
+                    except Exception as error:
+                        attachment_errors.append(error)
+                    else:
+                        self._pending_attachments.remove(attachment)
+                if attachment_errors:
+                    raise BraintrustLogFlushError(self.pending_count, attachment_errors)
+                self.queue.release(self._retained_count)
+                self._retained_count = 0
+                self._pending_service = None
+                self._pending_context.close()
+                if self._delivery_errors and not _background:
+                    errors = self._delivery_errors[:]
+                    self._delivery_errors.clear()
+                    raise BraintrustLogFlushError(self.pending_count, errors)
+            if self._delivery_errors and not _background:
+                errors = self._delivery_errors[:]
+                self._delivery_errors.clear()
+                raise BraintrustLogFlushError(self.pending_count, errors)
+        except _IngestionDeferred as error:
+            raise BraintrustLogFlushError(
+                self.pending_count, [TimeoutError("Log destination is cooling down")]
+            ) from error
+        finally:
+            self.flush_lock.release()
+
+    def _prepare_batches(self, batch_size: int, deadline: float, *, append: bool = False) -> None:
+        wrapped_items = self.queue.drain_all(reserve=True)
+        service_context = contextlib.ExitStack()
+        try:
+            all_items, attachments = self._unwrap_lazy_values(wrapped_items)
+            if not all_items:
+                self.queue.release(len(wrapped_items))
+                service_context.close()
+                return
+            service = service_context.enter_context(self._service_source())
+            if self._limit_service is not None and service is not self._limit_service:
+                self._max_request_size_result = None
+            self._limit_service = service
             try:
-                post_promises = [
-                    HTTP_REQUEST_THREAD_POOL.submit(self._submit_logs_request, batch, max_request_size_result)
-                    for batch in batches
-                ]
-            except RuntimeError:
-                # If the thread pool has shut down, e.g. because the process
-                # is terminating, run the requests the old fashioned way.
-                for batch in batches:
-                    self._submit_logs_request(batch, max_request_size_result)
+                limit = self._get_max_request_size(service, deadline)
+            except _IngestionDeferred:
+                limit = {
+                    "max_request_size": self._max_request_size_override or DEFAULT_MAX_REQUEST_SIZE,
+                    "can_use_overflow": False,
+                }
+            items = [stringify_with_overflow_meta(item) for item in all_items]
+            batches = batch_items(
+                items,
+                batch_max_num_items=batch_size,
+                batch_max_num_bytes=limit["max_request_size"] // 2,
+                get_byte_size=lambda item: item.overflow_meta.byte_size,
+            )
+            prepared = [self._prepare_batch(batch, limit) for batch in batches]
+            for batch in prepared:
+                batch.service = service
+                batch.wave = self._wave_counter
+            self._wave_counter += 1
+            if append:
+                self._pending.extend(prepared)
+                self._pending_attachments.extend(attachments)
+            else:
+                self._pending = prepared
+                self._pending_attachments = attachments
+            self._pending_service = self._pending[0].service if self._pending else service
+            self._pending_context.callback(service_context.close)
+            self.queue.release(len(wrapped_items) - len(items))
+            self._retained_count += len(items)
+        except BaseException:
+            service_context.close()
+            self.queue.restore(wrapped_items)
+            raise
 
-            concurrent.futures.wait(post_promises)
-            # Raise any exceptions from the promises as one group.
-            post_promise_exceptions = [e for e in (f.exception() for f in post_promises) if e is not None]
-            if post_promise_exceptions:
-                raise exceptiongroup.BaseExceptionGroup(
-                    f"Encountered the following errors while logging:", post_promise_exceptions
+    def _prepare_batch(self, items: Sequence[LogItemWithMeta], limit: dict[str, Any]) -> _PreparedLogBatch:
+        payload = construct_logs3_data(items).encode("utf-8")
+        overflow_rows = None
+        if limit["can_use_overflow"] and len(payload) > limit["max_request_size"]:
+            overflow_rows = [
+                {
+                    "object_ids": item.overflow_meta.object_ids,
+                    "has_comment": item.overflow_meta.has_comment,
+                    "is_delete": item.overflow_meta.is_delete,
+                    "input_row": {"byte_size": item.overflow_meta.byte_size},
+                }
+                for item in items
+            ]
+        if self.all_publish_payloads_dir:
+            self._write_payload_to_dir(payload_dir=self.all_publish_payloads_dir, payload=payload.decode("utf-8"))
+        return _PreparedLogBatch(len(items), payload, overflow_rows)
+
+    def _deliver_batches(self, deadline: float) -> None:
+        if not self._pending:
+            return
+        active: dict[concurrent.futures.Future, _PreparedLogBatch] = {}
+        # A dedicated executor bounds submitted work and isolates ingestion from attachments/API calls.
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_concurrency) as executor:
+            while self._pending or active:
+                now = time.monotonic()
+                wave = min((batch.wave for batch in self._pending), default=None)
+                wave_batches = [batch for batch in self._pending if batch.wave == wave]
+                service = wave_batches[0].service if wave_batches else self._pending_service
+                if service is None:
+                    return
+                if now < deadline:
+                    for batch in wave_batches:
+                        if len(active) >= self.max_concurrency or service.destination.delay() > 0:
+                            break
+                        if batch in active.values() or batch.exhausted(self.num_tries) or batch.ready_at > now:
+                            continue
+                        try:
+                            future = executor.submit(self._submit_logs_request, batch, batch.service, deadline)
+                        except RuntimeError:
+                            # Python shuts down executors before atexit callbacks.
+                            # Preserve serial delivery through the same scheduler.
+                            future = concurrent.futures.Future()
+                            try:
+                                self._submit_logs_request(batch, batch.service, deadline)
+                            except Exception as error:
+                                future.set_exception(error)
+                            else:
+                                future.set_result(None)
+                        active[future] = batch
+                if not active:
+                    eligible = [batch for batch in wave_batches if not batch.exhausted(self.num_tries)]
+                    if not eligible or now >= deadline:
+                        return
+                    delay = max(service.destination.delay(), min(max(0.0, batch.ready_at - now) for batch in eligible))
+                    if delay >= deadline - now:
+                        return
+                    time.sleep(min(max(delay, 0.001), deadline - now))
+                    continue
+                done, _ = concurrent.futures.wait(
+                    active, timeout=max(0.0, deadline - now), return_when=concurrent.futures.FIRST_COMPLETED
                 )
+                if not done:
+                    # Requests have finite timeouts. Account for their results before handing off retention.
+                    done, _ = concurrent.futures.wait(active)
+                for future in done:
+                    batch = active.pop(future)
+                    error = future.exception()
+                    if isinstance(error, _IngestionDeferred):
+                        continue
+                    batch.attempts += 1
+                    if error is None:
+                        self._pending.remove(batch)
+                        self._pending_service = self._pending[0].service if self._pending else None
+                        if not self._pending_attachments:
+                            self.queue.release(batch.item_count)
+                            self._retained_count -= batch.item_count
+                        continue
+                    batch.error = error
+                    batch.permanent = not self._retryable_ingestion_error(error)
+                    batch.ready_at = time.monotonic() + BACKGROUND_LOGGER_BASE_SLEEP_TIME_S * (
+                        2 ** (batch.attempts - 1)
+                    )
+                    if batch.exhausted(self.num_tries):
+                        if self.failed_publish_payloads_dir and not batch.dumped:
+                            self._write_payload_to_dir(
+                                payload_dir=self.failed_publish_payloads_dir, payload=batch.payload.decode("utf-8")
+                            )
+                            batch.dumped = True
+                        print(f"Log batch failed after {batch.attempts} attempts: {error}", file=self.outfile)
+                    if batch.permanent:
+                        self._pending.remove(batch)
+                        self._pending_service = self._pending[0].service if self._pending else None
+                        self._delivery_errors.append(error)
+                        if not self._pending_attachments:
+                            self.queue.release(batch.item_count)
+                            self._retained_count -= batch.item_count
+                    elif batch.exhausted(self.num_tries):
+                        # Let the background publisher start a fresh bounded
+                        # retry cycle while keeping the original prepared bytes.
+                        batch.ready_at = max(batch.ready_at, time.monotonic() + 1.0)
 
-            attachment_errors: list[Exception] = []
-            for attachment in attachments:
-                try:
-                    result = attachment.upload()
-                    if result["upload_status"] == "error":
-                        raise RuntimeError(result.get("error_message"))
-                except Exception as e:
-                    attachment_errors.append(e)
-
-            if len(attachment_errors) == 1:
-                raise attachment_errors[0]
-            elif len(attachment_errors) > 1:
-                raise exceptiongroup.ExceptionGroup(
-                    "Encountered errors while uploading attachments",
-                    attachment_errors,
-                )
+    @staticmethod
+    def _retryable_ingestion_error(error: Exception) -> bool:
+        if isinstance(error, TimeoutError):
+            return True
+        if isinstance(error, BraintrustHTTPError):
+            return error.status_code in DEFAULT_RETRYABLE_STATUSES
+        if isinstance(error, _ExpiredOverflowUpload):
+            return True
+        cause = error.__cause__ if isinstance(error, BraintrustTransportError) else error
+        return isinstance(cause, requests_exceptions.RequestException) and is_retryable_request_exception(cause)
 
     def _unwrap_lazy_values(
         self, wrapped_items: Sequence[_LazyLogRecord]
@@ -1279,159 +1614,98 @@ class _HTTPBackgroundLogger:
 
                 return merged_items, attachments
             except Exception as e:
-                errmsg = "Encountered error when constructing records to flush"
-                is_retrying = i + 1 < self.num_tries
-                if is_retrying:
-                    errmsg += ". Retrying"
-
-                if not is_retrying and self.sync_flush:
-                    raise Exception(errmsg) from e
-                else:
-                    print(errmsg, file=self.outfile)
-                    traceback.print_exc(file=self.outfile)
-                    if is_retrying:
-                        sleep_time_s = BACKGROUND_LOGGER_BASE_SLEEP_TIME_S * (2**i)
-                        print(f"Sleeping for {sleep_time_s}s", file=self.outfile)
-                        time.sleep(sleep_time_s)
-
-        print(
-            f"Failed to construct log records to flush after {self.num_tries} attempts. Dropping batch",
-            file=self.outfile,
-        )
-        return [], []
-
-    def _request_logs3_overflow_upload(
-        self, conn: HTTPConnection, payload_size_bytes: int, rows: list[dict[str, Any]]
-    ) -> dict[str, Any]:
-        try:
-            resp = conn.post(
-                "/logs3/overflow",
-                json={"content_type": "application/json", "size_bytes": payload_size_bytes, "rows": rows},
-            )
-            resp.raise_for_status()
-            payload = resp.json()
-        except Exception as e:
-            raise RuntimeError(f"Failed to request logs3 overflow upload URL: {e}") from e
-
-        method = payload.get("method")
-        if method not in ("PUT", "POST"):
-            raise RuntimeError(f"Invalid response from API server (method must be PUT or POST): {payload}")
-        signed_url = payload.get("signedUrl")
-        headers = payload.get("headers")
-        fields = payload.get("fields")
-        key = payload.get("key")
-        if not isinstance(signed_url, str) or not isinstance(key, str):
-            raise RuntimeError(f"Invalid response from API server: {payload}")
-        if method == "PUT" and not isinstance(headers, dict):
-            raise RuntimeError(f"Invalid response from API server: {payload}")
-        if method == "POST" and not isinstance(fields, dict):
-            raise RuntimeError(f"Invalid response from API server: {payload}")
-
-        if method == "PUT":
-            add_azure_blob_headers(headers, signed_url)
-
-        return {
-            "method": method,
-            "signed_url": signed_url,
-            "headers": headers if isinstance(headers, dict) else {},
-            "fields": fields if isinstance(fields, dict) else {},
-            "key": key,
-        }
-
-    def _upload_logs3_overflow_payload(self, upload: dict[str, Any], payload: str) -> None:
-        obj_conn = HTTPConnection(base_url="", adapter=_http_adapter)
-        method = upload["method"]
-        if method == "POST":
-            fields = upload.get("fields")
-            if not isinstance(fields, dict):
-                raise RuntimeError("Missing logs3 overflow upload fields")
-            content_type = fields.get("Content-Type", "application/json")
-            headers = {k: v for k, v in upload.get("headers", {}).items() if k.lower() != "content-type"}
-            obj_response = obj_conn.post(
-                upload["signed_url"],
-                headers=headers,
-                data=fields,
-                files={"file": ("logs3.json", payload.encode("utf-8"), content_type)},
-            )
-        else:
-            obj_response = obj_conn.put(
-                upload["signed_url"],
-                headers=upload["headers"],
-                data=payload.encode("utf-8"),
-            )
-        obj_response.raise_for_status()
-
-    def _submit_logs_request(self, items: Sequence[LogItemWithMeta], max_request_size_result: dict[str, Any]):
-        conn = self.api_conn.get()
-        dataStr = construct_logs3_data(items)
-        payload_bytes = utf8_byte_length(dataStr)
-        max_request_size = max_request_size_result["max_request_size"]
-        can_use_overflow = max_request_size_result["can_use_overflow"]
-        use_overflow = can_use_overflow and payload_bytes > max_request_size
-        if self.all_publish_payloads_dir:
-            _HTTPBackgroundLogger._write_payload_to_dir(payload_dir=self.all_publish_payloads_dir, payload=dataStr)
-        overflow_upload: dict[str, Any] | None = None
-        overflow_rows = (
-            [
-                {
-                    "object_ids": item.overflow_meta.object_ids,
-                    "has_comment": item.overflow_meta.has_comment,
-                    "is_delete": item.overflow_meta.is_delete,
-                    "input_row": {"byte_size": item.overflow_meta.byte_size},
-                }
-                for item in items
-            ]
-            if use_overflow
-            else None
-        )
-        for i in range(self.num_tries):
-            start_time = time.time()
-            resp = None
-            error = None
-            try:
-                if overflow_rows:
-                    if overflow_upload is None:
-                        current_upload = self._request_logs3_overflow_upload(conn, payload_bytes, overflow_rows)
-                        self._upload_logs3_overflow_payload(current_upload, dataStr)
-                        overflow_upload = current_upload
-                    resp = conn.post(
-                        "/logs3",
-                        json=construct_logs3_overflow_request(overflow_upload["key"], payload_bytes),
-                    )
-                else:
-                    resp = conn.post("/logs3", data=dataStr.encode("utf-8"))
-            except Exception as e:
-                error = e
-            if error is None and resp is not None and resp.ok:
-                if overflow_rows:
-                    self._overflow_upload_count += 1
-                return
-            has_response = error is None and resp is not None
-            is_413 = has_response and resp.status_code == 413
-            resp_errmsg = f"{resp.status_code}: {resp.text}" if has_response else str(error)
-
-            should_retry = i + 1 < self.num_tries and not is_413
-
-            if not should_retry and self.failed_publish_payloads_dir:
-                _HTTPBackgroundLogger._write_payload_to_dir(
-                    payload_dir=self.failed_publish_payloads_dir, payload=dataStr
-                )
-                self._log_failed_payloads_dir()
-
-            retrying_text = " Retrying" if should_retry else ""
-            errmsg = f"log request failed. Elapsed time: {time.time() - start_time} seconds. Payload size: {payload_bytes}.{retrying_text} Error: {resp_errmsg}"
-            if not should_retry and self.sync_flush:
-                raise Exception(errmsg)
-            print(errmsg, file=self.outfile)
-
-            if is_413:
-                return
-            if should_retry:
+                if i + 1 == self.num_tries:
+                    raise Exception("Encountered error when constructing records to flush") from e
+                print("Encountered error when constructing records to flush. Retrying", file=self.outfile)
+                traceback.print_exc(file=self.outfile)
                 sleep_time_s = BACKGROUND_LOGGER_BASE_SLEEP_TIME_S * (2**i)
                 print(f"Sleeping for {sleep_time_s}s", file=self.outfile)
                 time.sleep(sleep_time_s)
 
-        print(f"log request failed after {self.num_tries} retries. Dropping batch", file=self.outfile)
+        raise AssertionError("record construction retry loop exited unexpectedly")
+
+    def _request_logs3_overflow_upload(
+        self,
+        service: _LogIngestionAPI,
+        payload_size_bytes: int,
+        rows: list[dict[str, Any]],
+        policy: _RetryPolicy,
+    ) -> dict[str, Any]:
+        payload = service.request_json(
+            "POST",
+            "/logs3/overflow",
+            json={"content_type": "application/json", "size_bytes": payload_size_bytes, "rows": rows},
+            retry_policy=policy,
+        )
+        method = payload.get("method")
+        signed_url = payload.get("signedUrl")
+        headers = payload.get("headers")
+        fields = payload.get("fields")
+        key = payload.get("key")
+        if method not in ("PUT", "POST") or not isinstance(signed_url, str) or not isinstance(key, str):
+            raise RuntimeError("Invalid logs3 overflow upload response")
+        if method == "PUT" and not isinstance(headers, dict) or method == "POST" and not isinstance(fields, dict):
+            raise RuntimeError("Missing logs3 overflow upload headers or fields")
+        if method == "PUT":
+            add_azure_blob_headers(headers, signed_url)
+        return {
+            "method": method,
+            "signed_url": signed_url,
+            "headers": headers or {},
+            "fields": fields or {},
+            "key": key,
+        }
+
+    def _upload_logs3_overflow_payload(
+        self, service: _LogIngestionAPI, upload: dict[str, Any], payload: bytes, policy: _RetryPolicy
+    ) -> None:
+        if upload["method"] == "POST":
+            fields = upload["fields"]
+            kwargs: dict[str, Any] = {
+                "headers": {k: v for k, v in upload["headers"].items() if k.lower() != "content-type"},
+                "data": fields,
+                "files": {"file": ("logs3.json", payload, fields.get("Content-Type", "application/json"))},
+            }
+        else:
+            kwargs = {"headers": upload["headers"], "data": payload}
+        service.storage.request(
+            upload["method"], upload["signed_url"], retry_mode=_RetryMode.LOG_INGESTION, retry_policy=policy, **kwargs
+        )
+
+    def _submit_logs_request(self, batch: _PreparedLogBatch, service: _LogIngestionAPI, deadline: float):
+        with service.attempt(retry_after_on_429=BACKGROUND_LOGGER_BASE_SLEEP_TIME_S * (2**batch.attempts)):
+            if batch.overflow_rows:
+                if batch.overflow_upload is None:
+                    batch.overflow_upload = self._request_logs3_overflow_upload(
+                        service, len(batch.payload), batch.overflow_rows, self._ingestion_policy(deadline)
+                    )
+                if not batch.uploaded:
+                    try:
+                        self._upload_logs3_overflow_payload(
+                            service, batch.overflow_upload, batch.payload, self._ingestion_policy(deadline)
+                        )
+                    except BraintrustHTTPError as error:
+                        if error.status_code == 403:
+                            batch.overflow_upload = None
+                            raise _ExpiredOverflowUpload(
+                                "Signed overflow upload URL was rejected; refreshing it"
+                            ) from error
+                        raise
+                    batch.uploaded = True
+                if batch.overflow_reference is None:
+                    batch.overflow_reference = bt_dumps(
+                        construct_logs3_overflow_request(batch.overflow_upload["key"], len(batch.payload))
+                    ).encode("utf-8")
+                service.request(
+                    "POST",
+                    "/logs3",
+                    data=batch.overflow_reference,
+                    headers={"Content-Type": "application/json"},
+                    retry_policy=self._ingestion_policy(deadline),
+                )
+                self._overflow_upload_count += 1
+            else:
+                service.request("POST", "/logs3", data=batch.payload, retry_policy=self._ingestion_policy(deadline))
 
     def _dump_dropped_events(self, wrapped_items):
         publish_payloads_dir = [x for x in [self.all_publish_payloads_dir, self.failed_publish_payloads_dir] if x]
@@ -1481,7 +1755,18 @@ class _HTTPBackgroundLogger:
 
     # Should only be called by BraintrustState.
     def internal_replace_api_conn(self, api_conn: HTTPConnection):
-        self.api_conn = LazyValue(lambda: api_conn, use_mutex=False)
+        # Compatibility hook for extensions; SDK ingestion uses the policy-aware service.
+        from .api._routing import EndpointRouter
+
+        router = EndpointRouter(app_url=api_conn.base_url, api_url=api_conn.base_url)
+        token, adapter = api_conn.token or "", _http_adapter
+        with self.flush_lock:
+            if self._replaced_entry is not None:
+                self._replaced_entry.evict()
+            self._replaced_entry = _LoaderLoginEntry(
+                lambda: _LogIngestionAPI(router, token, concurrency=self.max_concurrency, adapter=adapter)
+            )
+            self._service_source = self._replaced_entry.lease
 
     def set_masking_function(self, masking_function: Callable[[Any], Any] | None):
         """Set or update the masking function."""
@@ -1498,12 +1783,37 @@ def _internal_get_global_state() -> BraintrustState:
 
 
 _internal_reset_global_state()
+
+
+def _reset_global_state_after_fork() -> None:
+    """Replace inherited synchronization and transport state in a forked child."""
+    global _state
+    _reset_lazy_value_locks_after_fork()
+    _state._fork_login = (_state.app_url, _state.login_token, _state.org_name)
+    if _state._global_bg_logger.has_succeeded:
+        _state._global_bg_logger.value.reset_after_fork()
+    _state._client_lock = threading.RLock()
+    _state._login_operation_lock = threading.RLock()
+    _state._loader_api_client_cache = LRUCache(max_size=16, on_remove=_state._evict_loader_login_entry)
+    _state._ingestion_cache = LRUCache(max_size=1, on_remove=_state._evict_loader_login_entry)
+    _state._client = None
+    _state._app_conn = None
+    _state._api_conn = None
+    _state._proxy_conn = None
+    _state.logged_in = False
+    _state._context_manager_lock = threading.Lock()
+
+
+if hasattr(os, "register_at_fork"):
+    os.register_at_fork(after_in_child=_reset_global_state_after_fork)
+
+
 _logger = logging.getLogger("braintrust")
 
 
 @contextlib.contextmanager
 def _internal_with_custom_background_logger():
-    custom_logger = _HTTPBackgroundLogger(LazyValue(lambda: _state.api_conn(), use_mutex=True))
+    custom_logger = _HTTPBackgroundLogger(_state.ingestion_service)
     _state._override_bg_logger.logger = custom_logger
     try:
         yield custom_logger
@@ -2501,9 +2811,6 @@ def login_to_state(
         proxy_connection.set_token(api_key)
         proxy_connection.make_long_lived()
 
-    # Replace the global logger's api_conn with this one.
-    state.login_replace_api_conn(conn)
-
     return state
 
 
@@ -3135,7 +3442,11 @@ def start_span(
 
 
 def flush():
-    """Flush any pending rows to the server."""
+    """Deliver pending rows or raise BraintrustLogFlushError, retaining undelivered rows.
+
+    BRAINTRUST_LOG_FLUSH_TIMEOUT bounds cooldown waits (60 seconds by default).
+    A later explicit flush retries exhausted transient batches without bypassing cooldowns.
+    """
 
     _state.global_bg_logger().flush()
 
@@ -4588,7 +4899,7 @@ class Experiment(_ExperimentFetcher, Exportable):
         """
         # Flush our events to the API, and to the data warehouse, to ensure that the link we print
         # includes the new experiment.
-        self.flush()
+        self.state.flush_best_effort()
 
         state = self._get_state()
         project_url = f"{state.app_public_url}/app/{encode_uri_component(state.org_name)}/p/{encode_uri_component(self.project.name)}"
@@ -5557,7 +5868,7 @@ class Dataset(ObjectFetcher[DatasetEvent]):
         """
         # Flush our events to the API, and to the data warehouse, to ensure that the link we print
         # includes the new experiment.
-        self.flush()
+        self.state.flush_best_effort()
         state = self._get_state()
         response = state.api_client().datasets.get_dataset_id_summarize(self.id, summarize_data=summarize_data)
         raw_data_summary = response.get("data_summary")
@@ -6028,7 +6339,7 @@ class Logger(Exportable):
         self.last_start_time = span.end()
 
         if not self.async_flush:
-            self.flush()
+            self.state.flush_best_effort()
 
         return span.id
 
@@ -6127,7 +6438,7 @@ class Logger(Exportable):
         )
 
         if not self.async_flush:
-            self.flush()
+            self.state.flush_best_effort()
 
         return span.id
 

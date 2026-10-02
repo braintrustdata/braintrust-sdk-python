@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import inspect
 import json
 import logging
@@ -11,12 +12,46 @@ from unittest.mock import MagicMock
 
 import pytest
 from braintrust import Attachment, SpanCustomizer, SpanExportData, auto_instrument, logger, set_span_customizers
+from braintrust.api._ingestion import LogIngestionAPI
+from braintrust.api._routing import EndpointRouter
+from braintrust.api._test_server import scripted_server
 from braintrust.functions.stream import BraintrustJsonChunk, BraintrustStream
 from braintrust.integrations.utils import _resolved_attachment_from_bytes
 from braintrust.span_customizer import _customize_span_export
 from braintrust.test_helpers import init_test_exp, with_memory_logger  # noqa: F401 # type: ignore[reportUnusedImport]
 from braintrust.trace import LocalTrace
 from braintrust.util import LazyValue
+
+
+@pytest.fixture
+def http_ingestion(monkeypatch):
+    monkeypatch.setenv("BRAINTRUST_DISABLE_ATEXIT_FLUSH", "1")
+    with contextlib.ExitStack() as stack:
+
+        def make(retry=False):
+            payloads = []
+
+            def respond(method, path, body, headers):
+                if path == "/version":
+                    return 200, {}, b"{}"
+                payloads.append(body)
+                if retry and len(payloads) == 1:
+                    return 503, {}, b"retry transport"
+                return 200, {}, b"ok"
+
+            url, _ = stack.enter_context(scripted_server(respond))
+            service = stack.enter_context(
+                contextlib.closing(
+                    LogIngestionAPI(
+                        EndpointRouter(app_url=url, api_url=url),
+                        "test",
+                        concurrency=4,
+                    )
+                )
+            )
+            return service, payloads
+
+        yield make
 
 
 @pytest.fixture(autouse=True)
@@ -273,7 +308,7 @@ def test_interpreter_exits_propagate_from_hooks(error, caplog):
 @pytest.mark.parametrize("backend", ["memory", "http"])
 @pytest.mark.parametrize("include_healthy", [False, True], ids=["all-dropped", "mixed-batch"])
 def test_dropped_records_skip_attachments_masking_and_upload(
-    monkeypatch, with_memory_logger, test_logger, caplog, backend, include_healthy
+    monkeypatch, with_memory_logger, test_logger, caplog, backend, include_healthy, http_ingestion
 ):
     attachment = Attachment(data=b"private", filename="private.txt", content_type="text/plain")
     upload = MagicMock()
@@ -299,12 +334,11 @@ def test_dropped_records_skip_attachments_masking_and_upload(
     pending = list(with_memory_logger.logs)
     with_memory_logger.logs.clear()
     monkeypatch.setenv("BRAINTRUST_DISABLE_ATEXIT_FLUSH", "1")
-    connection = MagicMock()
-    connection.post.return_value = SimpleNamespace(ok=True)
+    connection, payloads = http_ingestion()
     background = (
         logger._MemoryBackgroundLogger()
         if backend == "memory"
-        else logger._HTTPBackgroundLogger(LazyValue(lambda: connection, use_mutex=False))
+        else logger._HTTPBackgroundLogger(lambda: contextlib.nullcontext(connection))
     )
     masked = []
 
@@ -330,10 +364,10 @@ def test_dropped_records_skip_attachments_masking_and_upload(
             rows, attachments = background._unwrap_lazy_values(pending)
             assert attachments == []
             if include_healthy:
-                sent = json.loads(connection.post.call_args.kwargs["data"])["rows"]
+                sent = json.loads(payloads[-1])["rows"]
                 assert [row["id"] for row in sent] == [healthy.id]
             else:
-                connection.post.assert_not_called()
+                assert payloads == []
 
     expected_ids = [healthy.id] if healthy else []
     assert [row["id"] for row in rows] == expected_ids
@@ -458,7 +492,7 @@ def test_update_span_customizes_each_record_before_attachments(with_memory_logge
 
 
 def test_customization_precedes_attachments_masking_and_reuses_records_on_retry(
-    monkeypatch, with_memory_logger, test_logger, caplog
+    monkeypatch, with_memory_logger, test_logger, caplog, http_ingestion
 ):
     attachment = Attachment(data=b"private", filename="private.txt", content_type="text/plain")
     rejected_attachment = Attachment(data=b"secret", filename="secret.txt", content_type="text/plain")
@@ -499,18 +533,8 @@ def test_customization_precedes_attachments_masking_and_reuses_records_on_retry(
 
     pending.append(LazyValue(resolve_later_record, use_mutex=False))
     monkeypatch.setenv("BRAINTRUST_DISABLE_ATEXIT_FLUSH", "1")
-    monkeypatch.setattr(logger.time, "sleep", lambda _: None)
-    connection = MagicMock()
-    payloads = []
-
-    def send(_path, *, data):
-        payloads.append(data)
-        if len(payloads) == 1:
-            raise ConnectionError("retry transport")
-        return SimpleNamespace(ok=True)
-
-    connection.post.side_effect = send
-    background = logger._HTTPBackgroundLogger(LazyValue(lambda: connection, use_mutex=False))
+    connection, payloads = http_ingestion(retry=True)
+    background = logger._HTTPBackgroundLogger(lambda: contextlib.nullcontext(connection))
     background.num_tries = 2
     background.sync_flush = True
     masked = []
@@ -542,20 +566,10 @@ def test_customization_precedes_attachments_masking_and_reuses_records_on_retry(
     assert "private" not in caplog.text
 
 
-def _retrying_http_logger(monkeypatch, pending):
+def _retrying_http_logger(monkeypatch, pending, http_ingestion):
     monkeypatch.setenv("BRAINTRUST_DISABLE_ATEXIT_FLUSH", "1")
-    monkeypatch.setattr(logger.time, "sleep", lambda _: None)
-    connection = MagicMock()
-    payloads = []
-
-    def send(_path, *, data):
-        payloads.append(data)
-        if len(payloads) == 1:
-            raise ConnectionError("retry transport")
-        return SimpleNamespace(ok=True)
-
-    connection.post.side_effect = send
-    background = logger._HTTPBackgroundLogger(LazyValue(lambda: connection, use_mutex=False))
+    connection, payloads = http_ingestion(retry=True)
+    background = logger._HTTPBackgroundLogger(lambda: contextlib.nullcontext(connection))
     background.num_tries = 2
     background.sync_flush = True
     background._max_request_size_result = {"max_request_size": 6_000_000, "can_use_overflow": False}
@@ -566,7 +580,7 @@ def _retrying_http_logger(monkeypatch, pending):
 
 @pytest.mark.parametrize("error", [GeneratorExit, asyncio.CancelledError])
 def test_base_exception_hook_failures_drop_only_that_record(
-    monkeypatch, with_memory_logger, test_logger, caplog, error
+    monkeypatch, with_memory_logger, test_logger, caplog, error, http_ingestion
 ):
     invocations = []
 
@@ -582,7 +596,7 @@ def test_base_exception_hook_failures_drop_only_that_record(
     healthy = test_logger.start_span(input="safe")
     pending = list(with_memory_logger.logs)
     with_memory_logger.logs.clear()
-    background, payloads = _retrying_http_logger(monkeypatch, pending)
+    background, payloads = _retrying_http_logger(monkeypatch, pending, http_ingestion)
     with caplog.at_level(logging.ERROR, logger="braintrust"):
         background.flush()
 
@@ -594,7 +608,9 @@ def test_base_exception_hook_failures_drop_only_that_record(
     assert "private" not in caplog.text
 
 
-def test_redacting_integration_attachment_prevents_upload(monkeypatch, with_memory_logger, test_logger):
+def test_redacting_integration_attachment_prevents_upload(
+    monkeypatch, with_memory_logger, test_logger, http_ingestion
+):
     # Integrations convert inline media into Attachment objects at capture time.
     attachment = _resolved_attachment_from_bytes(b"private image", "image/png", prefix="input").attachment
     upload = MagicMock()
@@ -616,7 +632,7 @@ def test_redacting_integration_attachment_prevents_upload(monkeypatch, with_memo
     )
     pending = list(with_memory_logger.logs)
     with_memory_logger.logs.clear()
-    background, payloads = _retrying_http_logger(monkeypatch, pending)
+    background, payloads = _retrying_http_logger(monkeypatch, pending, http_ingestion)
     background.flush()
 
     assert seen == [attachment]
@@ -627,7 +643,7 @@ def test_redacting_integration_attachment_prevents_upload(monkeypatch, with_memo
 
 @pytest.mark.parametrize("backend", ["memory", "http"])
 def test_masking_remains_logger_local_and_runs_on_merged_manual_records(
-    monkeypatch, with_memory_logger, test_logger, backend
+    monkeypatch, with_memory_logger, test_logger, backend, http_ingestion
 ):
     class Customize(SpanCustomizer):
         def on_span_export(self, data):
@@ -641,10 +657,11 @@ def test_masking_remains_logger_local_and_runs_on_merged_manual_records(
 
     set_span_customizers([Customize()])
     monkeypatch.setenv("BRAINTRUST_DISABLE_ATEXIT_FLUSH", "1")
+    connection, _ = http_ingestion()
     background = (
         logger._MemoryBackgroundLogger()
         if backend == "memory"
-        else logger._HTTPBackgroundLogger(LazyValue(lambda: MagicMock(), use_mutex=False))
+        else logger._HTTPBackgroundLogger(lambda: contextlib.nullcontext(connection))
     )
     other_background = logger._MemoryBackgroundLogger()
 

@@ -255,63 +255,9 @@ def test_http_background_logger_atexit_flush(monkeypatch, disable_atexit_flush, 
         monkeypatch.setenv("BRAINTRUST_DISABLE_ATEXIT_FLUSH", disable_atexit_flush)
 
     with patch("atexit.register") as mock_register:
-        _HTTPBackgroundLogger(LazyValue(MagicMock, use_mutex=False))
+        _HTTPBackgroundLogger(logger._state.ingestion_service)
 
     assert mock_register.called is registers
-
-
-class TestHTTPBackgroundLoggerLogs3(TestCase):
-    def test_submit_logs_request_413_skips_retries(self) -> None:
-        """Any 413 while publishing ``/logs3`` cannot succeed on retry with the same payload.
-
-        ``sync_flush`` controls whether the terminal failure raises instead of printing.
-        """
-        from braintrust.logger import (
-            LogItemWithMeta,
-            Logs3OverflowInputRow,
-            _HTTPBackgroundLogger,
-        )
-
-        item = LogItemWithMeta(
-            str_value="{}",
-            overflow_meta=Logs3OverflowInputRow(
-                object_ids={},
-                has_comment=False,
-                is_delete=False,
-                byte_size=2,
-            ),
-        )
-        max_result = {"max_request_size": 10**9, "can_use_overflow": True}
-
-        for response_text in ("Request Too Long", "", "Payload Too Large"):
-            for sync_flush in (False, True):
-                with self.subTest(response_text=response_text, sync_flush=sync_flush):
-                    mock_resp = MagicMock()
-                    mock_resp.ok = False
-                    mock_resp.status_code = 413
-                    mock_resp.text = response_text
-
-                    mock_conn = MagicMock()
-                    mock_conn.post.return_value = mock_resp
-
-                    bg = _HTTPBackgroundLogger(LazyValue(lambda: mock_conn, use_mutex=False))
-                    bg.num_tries = 5
-                    bg.sync_flush = sync_flush
-                    bg.failed_publish_payloads_dir = "/tmp/failed-payloads"
-
-                    with patch.object(_HTTPBackgroundLogger, "_write_payload_to_dir") as mock_write_payload:
-                        if sync_flush:
-                            with self.assertRaises(Exception) as cm:
-                                bg._submit_logs_request([item], max_result)
-                            self.assertIn("413", str(cm.exception))
-                        else:
-                            bg._submit_logs_request([item], max_result)
-
-                    self.assertEqual(mock_conn.post.call_count, 1)
-                    mock_write_payload.assert_called_once()
-                    self.assertEqual(
-                        mock_write_payload.call_args.kwargs["payload_dir"], bg.failed_publish_payloads_dir
-                    )
 
 
 def test_load_prompt_async_signature_matches_load_prompt():
