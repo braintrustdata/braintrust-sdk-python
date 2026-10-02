@@ -683,47 +683,6 @@ class TestAutoInstrumentHuggingFaceHub:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.vcr(cassette_name="test_wrap_huggingface_hub_chat_completion_sync")
-def test_wrap_huggingface_hub_chat_completion_sync_instrumentation(memory_logger):
-    """Full-path test: real chat completion through wrapper produces valid spans."""
-    assert not memory_logger.pop()
-    client = wrap_huggingface_hub(_sync_client())
-
-    response = client.chat_completion(
-        messages=[{"role": "user", "content": "Say hi in one word."}],
-        max_tokens=10,
-    )
-
-    assert response.choices
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span["span_attributes"]["name"] == "huggingface.chat_completion"
-    assert span["span_attributes"]["type"] == "llm"
-    assert span["metadata"]["provider"] == CHAT_PROVIDER
-    assert isinstance(span["metadata"]["model"], str) and span["metadata"]["model"]
-    assert span["output"]  # choices list is present
-
-
-@pytest.mark.vcr(cassette_name="test_wrap_huggingface_hub_text_generation_sync")
-def test_wrap_huggingface_hub_text_generation_sync_instrumentation(memory_logger):
-    """Full-path test: real text generation through wrapper produces valid spans."""
-    _skip_if_text_generation_unavailable()
-    assert not memory_logger.pop()
-    client = wrap_huggingface_hub(_sync_client(model=TEXT_GEN_MODEL, provider=TEXT_GEN_PROVIDER))
-
-    response = client.text_generation("Say hi in one word.", max_new_tokens=10)
-
-    assert response
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span["span_attributes"]["name"] == "huggingface.text_generation"
-    assert span["span_attributes"]["type"] == "llm"
-    assert span["metadata"]["provider"] == TEXT_GEN_PROVIDER
-    assert span["output"]  # generated_text dict is present
-
-
 # ---------------------------------------------------------------------------
 # Unit tests (non-mapping response guards)
 #
