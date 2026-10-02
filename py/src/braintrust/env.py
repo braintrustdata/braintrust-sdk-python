@@ -214,6 +214,7 @@ class _LegacyUuidIdsField:
 
 class BraintrustEnv:
     API_KEY = EnvVar("BRAINTRUST_API_KEY", EnvParser.STRING)
+    INGESTION_KEY = EnvVar("BRAINTRUST_INGESTION_KEY", EnvParser.STRING)
     API_URL = EnvVar("BRAINTRUST_API_URL", EnvParser.STRING)
     PROXY_URL = EnvVar("BRAINTRUST_PROXY_URL", EnvParser.STRING)
     HTTP_TIMEOUT = EnvVar("BRAINTRUST_HTTP_TIMEOUT", EnvParser.FLOAT)

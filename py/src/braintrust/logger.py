@@ -14,6 +14,7 @@ import io
 import json
 import logging
 import os
+import re
 import sys
 import textwrap
 import threading
@@ -37,7 +38,7 @@ from typing import (
     cast,
     overload,
 )
-from urllib.parse import quote, urlencode
+from urllib.parse import parse_qsl, quote, urlencode, urlsplit, urlunsplit
 
 import chevron
 import exceptiongroup
@@ -47,7 +48,7 @@ from requests.adapters import HTTPAdapter
 
 from . import context, id_gen
 from .api._routing import normalize_proxy_url
-from .api._transport import HTTPConnection
+from .api._transport import HTTPConnection, _parse_retry_after
 from .api._transport import RetryRequestExceptionsAdapter as RetryRequestExceptionsAdapter
 from .api.auth import LoginResult, OrganizationInfo
 from .api.client import BraintrustClient, BraintrustOpenApiClient
@@ -57,12 +58,16 @@ from .api.errors import (
     BraintrustJSONDecodeError,
     BraintrustTransportError,
 )
-from .api.policies import DEFAULT_RETRYABLE_STATUSES, is_retryable_request_exception
+from .api.policies import DEFAULT_MAX_ELAPSED_TIME, DEFAULT_RETRYABLE_STATUSES, is_retryable_request_exception
 from .bt_json import bt_dumps, bt_safe_deep_copy
 from .db_fields import (
+    ARRAY_DELETE_FIELD,
     AUDIT_METADATA_FIELD,
     AUDIT_SOURCE_FIELD,
+    CREATED_FIELD,
+    ID_FIELD,
     IS_MERGE_FIELD,
+    MERGE_PATHS_FIELD,
     OBJECT_DELETE_FIELD,
     OBJECT_ID_KEYS,
     TRANSACTION_ID_FIELD,
@@ -616,6 +621,12 @@ class BraintrustState:
             lambda: _HTTPBackgroundLogger(LazyValue(default_get_api_conn, use_mutex=True)), use_mutex=True
         )
 
+        # Ingestion key loggers publish independently of the private login,
+        # with one background logger per ingestion endpoint and key.
+        self._public_bg_loggers: dict[_IngestionEndpoint, _PublicHTTPBackgroundLogger] = {}
+        self._public_bg_loggers_lock = threading.Lock()
+        self._masking_function: Callable[[Any], Any] | None = None
+
         self._id_generator = None
 
         # For unit-testing, tests may wish to temporarily override the global
@@ -750,6 +761,9 @@ class BraintrustState:
                     "current_span",
                     "_global_bg_logger",
                     "_override_bg_logger",
+                    "_public_bg_loggers",
+                    "_public_bg_loggers_lock",
+                    "_masking_function",
                     "_context_manager",
                     "_last_otel_setting",
                     "_context_manager_lock",
@@ -876,6 +890,15 @@ class BraintrustState:
     def global_bg_logger(self) -> "_BackgroundLogger":
         return getattr(self._override_bg_logger, "logger", None) or self._global_bg_logger.get()
 
+    def public_bg_logger(self, endpoint: "_IngestionEndpoint") -> "_PublicHTTPBackgroundLogger":
+        with self._public_bg_loggers_lock:
+            bg_logger = self._public_bg_loggers.get(endpoint)
+            if bg_logger is None:
+                bg_logger = _PublicHTTPBackgroundLogger(endpoint)
+                bg_logger.set_masking_function(self._masking_function)
+                self._public_bg_loggers[endpoint] = bg_logger
+            return bg_logger
+
     # Should only be called by the login function.
     def login_replace_api_conn(self, api_conn: "HTTPConnection"):
         self._global_bg_logger.get().internal_replace_api_conn(api_conn)
@@ -891,8 +914,12 @@ class BraintrustState:
         bg_logger.enforce_queue_size_limit(enforce)
 
     def set_masking_function(self, masking_function: Callable[[Any], Any] | None) -> None:
-        """Set the masking function on the background logger."""
+        """Set the masking function on the background loggers."""
         self.global_bg_logger().set_masking_function(masking_function)
+        with self._public_bg_loggers_lock:
+            self._masking_function = masking_function
+            for bg_logger in self._public_bg_loggers.values():
+                bg_logger.set_masking_function(masking_function)
 
 
 _state: BraintrustState = None  # type: ignore
@@ -922,6 +949,10 @@ def set_http_adapter(adapter: HTTPAdapter) -> None:
         _state._api_conn._reset()
     if _state._client:
         _state._client.transport._set_adapter(adapter)
+    with _state._public_bg_loggers_lock:
+        for bg_logger in _state._public_bg_loggers.values():
+            bg_logger.api_conn.get()._set_adapter(adapter=adapter)
+            bg_logger.api_conn.get()._reset()
 
     # Per-credential loader resources may have been created with the previous
     # adapter. Eviction closes them once any active requests release their lease;
@@ -1210,35 +1241,7 @@ class _HTTPBackgroundLogger:
             if len(all_items) == 0:
                 return
 
-            # Construct batches of records to flush in parallel.
-            all_items_with_meta = [stringify_with_overflow_meta(item) for item in all_items]
-            max_request_size_result = self._get_max_request_size()
-            batches = batch_items(
-                items=all_items_with_meta,
-                batch_max_num_items=batch_size,
-                batch_max_num_bytes=max_request_size_result["max_request_size"] // 2,
-                get_byte_size=lambda item: len(item.str_value),
-            )
-
-            post_promises = []
-            try:
-                post_promises = [
-                    HTTP_REQUEST_THREAD_POOL.submit(self._submit_logs_request, batch, max_request_size_result)
-                    for batch in batches
-                ]
-            except RuntimeError:
-                # If the thread pool has shut down, e.g. because the process
-                # is terminating, run the requests the old fashioned way.
-                for batch in batches:
-                    self._submit_logs_request(batch, max_request_size_result)
-
-            concurrent.futures.wait(post_promises)
-            # Raise any exceptions from the promises as one group.
-            post_promise_exceptions = [e for e in (f.exception() for f in post_promises) if e is not None]
-            if post_promise_exceptions:
-                raise exceptiongroup.BaseExceptionGroup(
-                    f"Encountered the following errors while logging:", post_promise_exceptions
-                )
+            self._publish_items(all_items, batch_size)
 
             attachment_errors: list[Exception] = []
             for attachment in attachments:
@@ -1257,12 +1260,45 @@ class _HTTPBackgroundLogger:
                     attachment_errors,
                 )
 
+    def _publish_items(self, all_items: list[dict[str, Any]], batch_size: int) -> None:
+        # Construct batches of records to flush in parallel.
+        all_items_with_meta = [stringify_with_overflow_meta(item) for item in all_items]
+        max_request_size_result = self._get_max_request_size()
+        batches = batch_items(
+            items=all_items_with_meta,
+            batch_max_num_items=batch_size,
+            batch_max_num_bytes=max_request_size_result["max_request_size"] // 2,
+            get_byte_size=lambda item: len(item.str_value),
+        )
+
+        post_promises = []
+        try:
+            post_promises = [
+                HTTP_REQUEST_THREAD_POOL.submit(self._submit_logs_request, batch, max_request_size_result)
+                for batch in batches
+            ]
+        except RuntimeError:
+            # If the thread pool has shut down, e.g. because the process
+            # is terminating, run the requests the old fashioned way.
+            for batch in batches:
+                self._submit_logs_request(batch, max_request_size_result)
+
+        concurrent.futures.wait(post_promises)
+        # Raise any exceptions from the promises as one group.
+        post_promise_exceptions = [e for e in (f.exception() for f in post_promises) if e is not None]
+        if post_promise_exceptions:
+            raise exceptiongroup.BaseExceptionGroup(
+                f"Encountered the following errors while logging:", post_promise_exceptions
+            )
+
     def _unwrap_lazy_values(
-        self, wrapped_items: Sequence[_LazyLogRecord]
+        self, wrapped_items: Sequence[_LazyLogRecord], extract_attachments: bool = True
     ) -> tuple[list[dict[str, Any]], list["BaseAttachment"]]:
         for i in range(self.num_tries):
             try:
-                unwrapped_items = [record for item in wrapped_items if (record := item.get()) is not None]
+                unwrapped_items = [
+                    self._prepare_record(record) for item in wrapped_items if (record := item.get()) is not None
+                ]
                 merged_items = merge_row_batch(unwrapped_items)
 
                 # Logger-local hooks run after span hooks and merging.
@@ -1274,8 +1310,9 @@ class _HTTPBackgroundLogger:
                     ]
 
                 attachments: list["BaseAttachment"] = []
-                for item in merged_items:
-                    _extract_attachments(item, attachments)
+                if extract_attachments:
+                    for item in merged_items:
+                        _extract_attachments(item, attachments)
 
                 return merged_items, attachments
             except Exception as e:
@@ -1299,6 +1336,9 @@ class _HTTPBackgroundLogger:
             file=self.outfile,
         )
         return [], []
+
+    def _prepare_record(self, record: dict[str, Any]) -> dict[str, Any]:
+        return record
 
     def _request_logs3_overflow_upload(
         self, conn: HTTPConnection, payload_size_bytes: int, rows: list[dict[str, Any]]
@@ -1486,6 +1526,277 @@ class _HTTPBackgroundLogger:
     def set_masking_function(self, masking_function: Callable[[Any], Any] | None):
         """Set or update the masking function."""
         self._export_customizers = (_MaskingCustomizer(masking_function),) if masking_function is not None else ()
+
+
+INGESTION_KEY_QUERY_PARAM = "ingestKey"
+_INGESTION_KEY_PATTERN = re.compile(r"bt-ik-[A-Za-z0-9]{48}")
+# Ingestion keys may only write trace rows, so rows never carry other objects' ids or writable provenance.
+_INGESTION_ROW_FIELDS = frozenset(
+    {
+        ID_FIELD,
+        "span_id",
+        "root_span_id",
+        "span_parents",
+        CREATED_FIELD,
+        "org_id",
+        "project_id",
+        "log_id",
+        "input",
+        "output",
+        "expected",
+        "error",
+        "tags",
+        "scores",
+        "metadata",
+        "metrics",
+        "context",
+        "span_attributes",
+        IS_MERGE_FIELD,
+        MERGE_PATHS_FIELD,
+        ARRAY_DELETE_FIELD,
+        OBJECT_DELETE_FIELD,
+    }
+)
+_UPLOAD_REFERENCE_TYPES = {"attachment": "braintrust_attachment", "logs3_overflow": LOGS3_OVERFLOW_REFERENCE_TYPE}
+
+
+@dataclasses.dataclass(frozen=True)
+class _IngestionEndpoint:
+    """An ingestion key URL split into the ingestion root and the key it carries."""
+
+    url: str
+    key: str = dataclasses.field(repr=False)
+
+
+def _parse_ingestion_url(value: str) -> _IngestionEndpoint:
+    # Errors never include `value`, since it contains the key.
+    try:
+        parsed = urlsplit(value.strip())
+        parsed.port  # Raises for malformed ports.
+        query = parse_qsl(parsed.query, keep_blank_values=True, strict_parsing=True)
+        reason = None
+    except ValueError:
+        reason = "it is not a valid URL"
+    if reason is None:
+        path = parsed.path.rstrip("/")
+        if parsed.scheme not in ("http", "https") or not parsed.hostname:
+            reason = "expected an http or https URL"
+        elif parsed.username is not None or parsed.password is not None:
+            reason = "URL credentials are not allowed"
+        elif "#" in value:
+            reason = "URL fragments are not allowed"
+        elif not path.endswith("/ingest"):
+            reason = "expected the URL path to end with /ingest"
+        elif (
+            len(query) != 1
+            or query[0][0] != INGESTION_KEY_QUERY_PARAM
+            or not _INGESTION_KEY_PATTERN.fullmatch(query[0][1])
+        ):
+            reason = f"expected a single {INGESTION_KEY_QUERY_PARAM} query parameter holding a bt-ik- key"
+        else:
+            return _IngestionEndpoint(url=urlunsplit((parsed.scheme, parsed.netloc, path, "", "")), key=query[0][1])
+    raise ValueError(f"Invalid Braintrust ingestion key URL: {reason}")
+
+
+class _UploadGrantExpired(Exception):
+    pass
+
+
+class _PublicHTTPBackgroundLogger(_HTTPBackgroundLogger):
+    """Publishes rows to a data plane with an ingestion key.
+
+    The key only allows trace ingestion into a single project, so this logger
+    never logs in, discovers projects, or falls back to private credentials.
+    Attachments and oversized batches go through the data plane's chunked
+    upload API before the rows that reference them are published.
+    """
+
+    def __init__(self, endpoint: _IngestionEndpoint):
+        conn = HTTPConnection(endpoint.url, adapter=_http_adapter)
+        conn.set_token(endpoint.key)
+        super().__init__(LazyValue(lambda: conn, use_mutex=False))
+        self.endpoint = endpoint
+        self.timeout = BraintrustEnv.HTTP_TIMEOUT.get(60.0)
+        self._stripped_fields: set[str] = set()
+        self.enforce_queue_size_limit(True)
+
+    def _get_max_request_size(self) -> dict[str, Any]:
+        # Any batch can overflow through the upload API, so there is no server limit to look up.
+        max_request_size = coalesce(self._max_request_size_override, DEFAULT_MAX_REQUEST_SIZE)
+        return {"max_request_size": max_request_size, "can_use_overflow": True}
+
+    def flush(self, batch_size: int | None = None):
+        if batch_size is None:
+            batch_size = self.default_batch_size
+
+        with self.flush_lock:
+            items, _ = self._unwrap_lazy_values(self.queue.drain_all(), extract_attachments=False)
+            if not items:
+                return
+
+            # Attachment references are issued by the data plane, so attachments
+            # upload before the rows that point at them.
+            uploads: dict[int, AttachmentReference | Exception] = {}
+            rows: list[dict[str, Any]] = []
+            attachment_errors: list[Exception] = []
+            for item in items:
+                try:
+                    _extract_attachments(item, [], lambda attachment: self._upload_attachment(attachment, uploads))
+                except Exception as e:
+                    attachment_errors.append(e)
+                    print(
+                        f"Dropping row {item.get(ID_FIELD)} because an attachment failed to upload: {e}",
+                        file=self.outfile,
+                    )
+                    continue
+                rows.append(item)
+
+            if rows:
+                self._publish_items(rows, batch_size)
+
+            if len(attachment_errors) == 1:
+                raise attachment_errors[0]
+            elif len(attachment_errors) > 1:
+                raise exceptiongroup.ExceptionGroup(
+                    "Encountered errors while uploading attachments",
+                    attachment_errors,
+                )
+
+    def _upload_attachment(
+        self, attachment: "BaseAttachment", uploads: "dict[int, AttachmentReference | Exception]"
+    ) -> AttachmentReference:
+        if isinstance(attachment, ExternalAttachment):
+            return attachment.reference
+        # The same attachment object can appear in several rows of one flush.
+        if id(attachment) not in uploads:
+            reference = attachment.reference
+            assert reference["type"] == "braintrust_attachment"
+            try:
+                uploads[id(attachment)] = self._upload(
+                    "attachment", attachment.data, reference["content_type"], filename=reference["filename"]
+                )
+            except Exception as e:
+                uploads[id(attachment)] = e
+        result = uploads[id(attachment)]
+        if isinstance(result, Exception):
+            raise result
+        return result
+
+    def _prepare_record(self, record: dict[str, Any]) -> dict[str, Any]:
+        # Strip before merging, since merging groups rows by their object ids.
+        for field in [field for field in record if field not in _INGESTION_ROW_FIELDS]:
+            if field not in self._stripped_fields:
+                self._stripped_fields.add(field)
+                self.logger.warning(f"Ingestion keys cannot write the {field!r} field. Dropping it from logged rows.")
+            del record[field]
+        return record
+
+    def _submit_logs_request(self, items: Sequence[LogItemWithMeta], max_request_size_result: dict[str, Any]):
+        data_str = construct_logs3_data(items)
+        payload = data_str.encode("utf-8")
+        if self.all_publish_payloads_dir:
+            _HTTPBackgroundLogger._write_payload_to_dir(payload_dir=self.all_publish_payloads_dir, payload=data_str)
+
+        start_time = time.time()
+        try:
+            if len(payload) > max_request_size_result["max_request_size"]:
+                reference = self._upload("logs3_overflow", payload, "application/json")
+                self._request("post", "/v1/logs", json={"api_version": DATA_API_VERSION, "rows": reference})
+                self._overflow_upload_count += 1
+            else:
+                self._request("post", "/v1/logs", data=payload, headers={"Content-Type": "application/json"})
+        except Exception as e:
+            if self.failed_publish_payloads_dir:
+                _HTTPBackgroundLogger._write_payload_to_dir(
+                    payload_dir=self.failed_publish_payloads_dir, payload=data_str
+                )
+                self._log_failed_payloads_dir()
+            errmsg = f"log request failed. Elapsed time: {time.time() - start_time} seconds. Payload size: {len(payload)}. Error: {e}"
+            if self.sync_flush:
+                raise Exception(errmsg) from e
+            print(errmsg, file=self.outfile)
+            print("Dropping batch", file=self.outfile)
+
+    def _upload(self, purpose: str, data: bytes, content_type: str, filename: str | None = None) -> Any:
+        """Upload `data` in the chunks the data plane asks for and return the committed reference."""
+        sha256 = hashlib.sha256(data).hexdigest()
+        body: dict[str, Any] = {
+            "purpose": purpose,
+            "size_bytes": len(data),
+            "content_type": content_type,
+            "sha256": sha256,
+        }
+        if filename is not None:
+            body["filename"] = filename
+
+        for _ in range(self.num_tries):
+            # The grant's lifetime is relative, so measure it from before the request goes out.
+            requested_at = time.monotonic()
+            grant = self._request("post", "/v1/uploads", json=body)
+            upload_id = str(uuid.UUID(grant["upload_id"]))
+            chunk_bytes = grant["chunk_bytes"]
+            if chunk_bytes <= 0 or grant["num_chunks"] != -(-len(data) // chunk_bytes):
+                raise RuntimeError(f"Invalid upload grant from the data plane: {grant}")
+            deadline = requested_at + grant["expires_in_ms"] / 1000
+
+            try:
+                for index in range(grant["num_chunks"]):
+                    chunk = data[index * chunk_bytes : (index + 1) * chunk_bytes]
+                    ack = self._request(
+                        "put",
+                        f"/v1/uploads/{upload_id}/chunks/{index}",
+                        deadline=deadline,
+                        data=chunk,
+                        headers={"Content-Type": "application/octet-stream"},
+                    )
+                    if ack.get("index") != index or ack.get("size_bytes") != len(chunk):
+                        raise RuntimeError(f"Invalid chunk acknowledgement from the data plane: {ack}")
+                result = self._request("post", f"/v1/uploads/{upload_id}/complete", deadline=deadline, json={})
+            except _UploadGrantExpired:
+                print(f"Upload {upload_id} expired before it completed. Starting a new upload", file=self.outfile)
+                continue
+
+            reference = result.get("reference")
+            if (
+                result.get("size_bytes") != len(data)
+                or result.get("sha256") != sha256
+                or not isinstance(reference, dict)
+                or reference.get("type") != _UPLOAD_REFERENCE_TYPES[purpose]
+            ):
+                raise RuntimeError(f"Upload {upload_id} completed with unexpected content: {result}")
+            return reference
+
+        raise RuntimeError(f"Uploads kept expiring before they completed after {self.num_tries} attempts")
+
+    def _request(self, method: str, path: str, deadline: float | None = None, **kwargs: Any) -> Any:
+        """Send one request, retrying transient failures, and return its JSON body."""
+        error = ""
+        for i in range(self.num_tries):
+            if deadline is not None and time.monotonic() >= deadline:
+                raise _UploadGrantExpired()
+            retry_after = None
+            try:
+                resp = getattr(self.api_conn.get(), method)(path, timeout=self.timeout, **kwargs)
+            except requests_exceptions.RequestException as e:
+                if not is_retryable_request_exception(e):
+                    raise
+                error = str(e)
+            else:
+                if resp.ok:
+                    return resp.json()
+                error = f"{resp.status_code}: {resp.text}".replace(self.endpoint.key, "<redacted>")
+                if resp.status_code not in DEFAULT_RETRYABLE_STATUSES:
+                    raise RuntimeError(f"{method.upper()} {path} failed with {error}")
+                retry_after = _parse_retry_after(resp.headers.get("Retry-After"), time.time())
+
+            if i + 1 < self.num_tries:
+                sleep_time_s = max(
+                    BACKGROUND_LOGGER_BASE_SLEEP_TIME_S * (2**i), min(retry_after or 0, DEFAULT_MAX_ELAPSED_TIME)
+                )
+                print(f"{method.upper()} {path} failed with {error}. Retrying in {sleep_time_s}s", file=self.outfile)
+                time.sleep(sleep_time_s)
+
+        raise RuntimeError(f"{method.upper()} {path} failed after {self.num_tries} attempts with {error}")
 
 
 def _internal_reset_global_state() -> None:
@@ -1927,6 +2238,7 @@ def init_logger(
     state: BraintrustState | None = None,
     environment: SpanOriginEnvironment | None = None,
     _create_in_project_group: str | None = None,
+    ingestion_key: str | None = None,
 ) -> "Logger":
     """
     Create a new logger in a specified project. If the project does not exist, it will be created.
@@ -1941,11 +2253,24 @@ def init_logger(
     :param force_login: Login again, even if you have already logged in (by default, the logger will not login if you are already logged in)
     :param set_current: If true (the default), set the global current-experiment to the newly-created one.
     :param _create_in_project_group: Experimental: the name of an existing project group to create the project in. Existing projects must already belong to the group, otherwise registration fails with a 409. Ignored when project_id is provided.
+    :param ingestion_key: (Optional) The ingestion key URL of a project, for example `https://api.braintrust.dev/ingest?ingestKey=bt-ik-...`.
+    If the parameter is not specified and `api_key` isn't either, will try to use the `BRAINTRUST_INGESTION_KEY` environment variable.
+    Ingestion keys can only write traces to the project they were issued for, so the logger never logs in, ignores `BRAINTRUST_API_KEY`
+    and any previous login, and doesn't register or look up the project. `project` and `project_id` are optional and only used to
+    label exported spans. A `project_id` is also sent with each row, and the data plane rejects rows for a different project.
     :returns: The newly created Logger.
     """
 
     state = state or _state
     state.span_origin_environment = detect_environment(environment)
+
+    if api_key is not None and ingestion_key is not None:
+        raise ValueError("Pass either api_key or ingestion_key to init_logger, not both")
+    if api_key is None:
+        ingestion_key = ingestion_key or BraintrustEnv.INGESTION_KEY.get(None, use_dotenv=True)
+    if ingestion_key and _create_in_project_group is not None:
+        raise ValueError("Loggers using an ingestion key cannot create projects")
+
     compute_metadata_args = dict(project_name=project, project_id=project_id)
     if project_id is None and _create_in_project_group is not None:
         compute_metadata_args["project_group_name"] = _create_in_project_group
@@ -1957,20 +2282,36 @@ def init_logger(
         "project_id": project_id,
     }
 
-    def compute_metadata():
-        state.login(org_name=org_name, api_key=api_key, app_url=app_url, force_login=force_login)
-        return _compute_logger_metadata(**compute_metadata_args, state=state)
+    if ingestion_key:
+        # The data plane resolves the org and project from the key, so there is nothing to look up.
+        public_metadata = OrgProjectMetadata(
+            org_id=cast(str, None),
+            project=ObjectMetadata(id=cast(str, project_id), name=project or "", full_info={}),
+        )
+        ret = Logger(
+            lazy_metadata=LazyValue(lambda: public_metadata, use_mutex=False),
+            async_flush=async_flush,
+            compute_metadata_args=compute_metadata_args,
+            link_args=link_args,
+            state=state,
+            public_bg_logger=state.public_bg_logger(_parse_ingestion_url(ingestion_key)),
+        )
+    else:
 
-    # For loggers, enable queue size limit enforcement (bounded queue)
-    state.enforce_queue_size_limit(True)
+        def compute_metadata():
+            state.login(org_name=org_name, api_key=api_key, app_url=app_url, force_login=force_login)
+            return _compute_logger_metadata(**compute_metadata_args, state=state)
 
-    ret = Logger(
-        lazy_metadata=LazyValue(compute_metadata, use_mutex=True),
-        async_flush=async_flush,
-        compute_metadata_args=compute_metadata_args,
-        link_args=link_args,
-        state=state,
-    )
+        # For loggers, enable queue size limit enforcement (bounded queue)
+        state.enforce_queue_size_limit(True)
+
+        ret = Logger(
+            lazy_metadata=LazyValue(compute_metadata, use_mutex=True),
+            async_flush=async_flush,
+            compute_metadata_args=compute_metadata_args,
+            link_args=link_args,
+            state=state,
+        )
     if set_current:
         if _state is None:
             raise RuntimeError("_state is None in init_logger. This should never happen.")
@@ -2568,6 +2909,15 @@ def current_logger() -> "Logger | None":
     return _state._cv_logger.get() or _state._local_logger
 
 
+def _current_public_logger() -> "Logger | None":
+    """Return the current logger if it uses an ingestion key and no experiment takes precedence."""
+
+    logger = current_logger()
+    if logger is None or logger._public_bg_logger is None or current_experiment() is not None:
+        return None
+    return logger
+
+
 def current_span() -> Span:
     """Return the currently-active span for logging (set by running a span under a context manager). If there is no active span, returns a no-op span object, which supports the same interface as spans but does no logging.
 
@@ -2851,18 +3201,26 @@ def _resolve_w3c_parent(context: dict) -> "tuple[str | None, PropagatedState | N
         braintrust_parent = parse_baggage(baggage_value).get(BRAINTRUST_PARENT_KEY)
     if not braintrust_parent:
         braintrust_parent = _current_braintrust_parent()
-    if not braintrust_parent:
+    public_logger = _current_public_logger()
+    if not braintrust_parent and public_logger is not None:
+        # Ingestion key spans always go to the key's project, so the trace only needs span ids.
+        object_type, object_id, compute_args = (
+            SpanObjectTypeV3.PROJECT_LOGS,
+            None,
+            public_logger._compute_metadata_args,
+        )
+    elif not braintrust_parent:
         logging.warning(
             "Received traceparent without a braintrust.parent and no active logger/experiment; "
             "cannot route the trace. Starting a fresh local span instead."
         )
         return None, None
-
-    parsed_parent = _braintrust_parent_to_components(braintrust_parent)
-    if parsed_parent is None:
-        logging.warning(f"Invalid braintrust.parent: {braintrust_parent!r}")
-        return None, None
-    object_type, object_id, compute_args = parsed_parent
+    else:
+        parsed_parent = _braintrust_parent_to_components(braintrust_parent)
+        if parsed_parent is None:
+            logging.warning(f"Invalid braintrust.parent: {braintrust_parent!r}")
+            return None, None
+        object_type, object_id, compute_args = parsed_parent
 
     tracestate = get_header(context, TRACESTATE_HEADER) or None
 
@@ -3103,10 +3461,25 @@ def start_span(
             # No row id (object-only slug): there is no span to link to, so start
             # a fresh root, keeping the object routing from the slug.
             parent_span_ids = None
+        public_logger = _current_public_logger()
+        if public_logger is not None:
+            # Resolving the parent's object needs a private login. Ingestion key
+            # spans stay in the key's project anyway, so the parent only
+            # contributes its span ids.
+            object_args = dict(
+                parent_object_type=public_logger._parent_object_type(),
+                parent_object_id=public_logger._lazy_id,
+                parent_compute_object_metadata_args=public_logger._compute_metadata_args,
+                public_bg_logger=public_logger._public_bg_logger,
+            )
+        else:
+            object_args = dict(
+                parent_object_type=parent_obj.object_type,
+                parent_object_id=LazyValue(_span_components_to_object_id_lambda(parent_obj), use_mutex=False),
+                parent_compute_object_metadata_args=parent_obj.compute_object_metadata_args,
+            )
         return SpanImpl(
-            parent_object_type=parent_obj.object_type,
-            parent_object_id=LazyValue(_span_components_to_object_id_lambda(parent_obj), use_mutex=False),
-            parent_compute_object_metadata_args=parent_obj.compute_object_metadata_args,
+            **object_args,
             parent_span_ids=parent_span_ids,
             name=name,
             type=type,
@@ -3138,6 +3511,10 @@ def flush():
     """Flush any pending rows to the server."""
 
     _state.global_bg_logger().flush()
+    with _state._public_bg_loggers_lock:
+        public_bg_loggers = list(_state._public_bg_loggers.values())
+    for public_bg_logger in public_bg_loggers:
+        public_bg_logger.flush()
 
 
 def _internal_start_span_with_initial_merge(
@@ -3219,7 +3596,11 @@ def validate_tags(tags: Sequence[str]) -> None:
         seen.add(tag)
 
 
-def _extract_attachments(event: dict[str, Any], attachments: list["BaseAttachment"]) -> None:
+def _extract_attachments(
+    event: dict[str, Any],
+    attachments: list["BaseAttachment"],
+    get_reference: "Callable[[BaseAttachment], AttachmentReference] | None" = None,
+) -> None:
     """
     Helper function for uploading attachments. Recursively extracts `Attachment`
     and `ExternalAttachment` values and replaces them with their associated
@@ -3227,13 +3608,15 @@ def _extract_attachments(event: dict[str, Any], attachments: list["BaseAttachmen
 
     :param event: The event to filter. Will be modified in-place.
     :param attachments: Flat array of extracted attachments (output parameter).
+    :param get_reference: Returns the reference that replaces an attachment. Defaults to `attachment.reference`.
     """
 
     def _helper(v: Any) -> Any:
         # Base case: Attachment or ExternalAttachment.
         if isinstance(v, BaseAttachment):
             attachments.append(v)
-            return v.reference  # Attachment cannot be nested.
+            # Attachment cannot be nested.
+            return get_reference(v) if get_reference else v.reference
 
         # Recursive case: object.
         if isinstance(v, dict):
@@ -3909,6 +4292,13 @@ class ReadonlyAttachment:
         return f"data:{self.reference['content_type']};base64,{b64_content}"
 
 
+def _object_id_fields(object_type: SpanObjectTypeV3, object_id: str | None) -> dict[str, str]:
+    # Ingestion key loggers may not know their project. The data plane resolves it from the key.
+    if object_id is None and object_type == SpanObjectTypeV3.PROJECT_LOGS:
+        return {"log_id": "g"}
+    return _get_exporter()(object_type=object_type, object_id=object_id).object_id_fields()
+
+
 def _log_feedback_impl(
     parent_object_type: SpanObjectTypeV3,
     parent_object_id: LazyValue[str],
@@ -3919,7 +4309,12 @@ def _log_feedback_impl(
     comment: str | None = None,
     metadata: Metadata | None = None,
     source: Literal["external", "app", "api", None] = None,
+    public_bg_logger: "_PublicHTTPBackgroundLogger | None" = None,
 ):
+    if public_bg_logger is not None and (comment is not None or metadata is not None or source is not None):
+        # Comments and audit fields are writable provenance, which ingestion keys cannot write.
+        raise ValueError("Feedback logged with an ingestion key can only include scores, expected, and tags")
+
     if source is None:
         source = "external"
     elif source not in VALID_SOURCES:
@@ -3943,13 +4338,11 @@ def _log_feedback_impl(
     update_event = {k: v for k, v in update_event.items() if v is not None}
 
     update_event = bt_safe_deep_copy(update_event)
+    audit_fields = {} if public_bg_logger else {AUDIT_SOURCE_FIELD: source, AUDIT_METADATA_FIELD: metadata}
+    bg_logger = public_bg_logger or _state.global_bg_logger()
 
     def parent_ids():
-        exporter = _get_exporter()
-        return exporter(
-            object_type=parent_object_type,
-            object_id=parent_object_id.get(),
-        ).object_id_fields()
+        return _object_id_fields(parent_object_type, parent_object_id.get())
 
     if len(update_event) > 0:
 
@@ -3958,14 +4351,11 @@ def _log_feedback_impl(
                 id=id,
                 **update_event,
                 **parent_ids(),
-                **{
-                    AUDIT_SOURCE_FIELD: source,
-                    AUDIT_METADATA_FIELD: metadata,
-                    IS_MERGE_FIELD: True,
-                },
+                **audit_fields,
+                **{IS_MERGE_FIELD: True},
             )
 
-        _state.global_bg_logger().log(LazyValue(compute_update_record, use_mutex=False))
+        bg_logger.log(LazyValue(compute_update_record, use_mutex=False))
 
     if comment is not None:
         # pylint: disable=function-redefined
@@ -3985,7 +4375,7 @@ def _log_feedback_impl(
                 **{AUDIT_SOURCE_FIELD: source, AUDIT_METADATA_FIELD: metadata},
             )
 
-        _state.global_bg_logger().log(LazyValue(compute_comment_record, use_mutex=False))
+        bg_logger.log(LazyValue(compute_comment_record, use_mutex=False))
 
 
 def _update_span_impl(
@@ -3994,6 +4384,7 @@ def _update_span_impl(
     id: str,
     root_span_id: str | None,
     span_id: str | None,
+    public_bg_logger: "_PublicHTTPBackgroundLogger | None" = None,
     **event: Any,
 ):
     if (root_span_id is None) != (span_id is None):
@@ -4011,25 +4402,18 @@ def _update_span_impl(
     update_event = bt_safe_deep_copy(update_event)
     customizers = _get_span_customizers()
 
-    def parent_ids():
-        exporter = _get_exporter()
-        return exporter(
-            object_type=parent_object_type,
-            object_id=parent_object_id.get(),
-        ).object_id_fields()
-
     def compute_record() -> dict[str, Any] | None:
         record = dict(
             id=id,
             **update_event,
-            **parent_ids(),
+            **_object_id_fields(parent_object_type, parent_object_id.get()),
             **{
                 IS_MERGE_FIELD: True,
             },
         )
         return _customize_span_export(record, customizers) if customizers else record
 
-    _state.global_bg_logger().log(LazyValue(compute_record, use_mutex=False))
+    (public_bg_logger or _state.global_bg_logger()).log(LazyValue(compute_record, use_mutex=False))
 
 
 def update_span(exported: str, **event: Any) -> None:
@@ -4053,6 +4437,17 @@ def update_span(exported: str, **event: Any) -> None:
     event_without_span_ids = {**event}
     event_without_span_ids.pop("span_id", None)
     event_without_span_ids.pop("root_span_id", None)
+
+    public_logger = _current_public_logger()
+    if public_logger is not None:
+        # Resolving the slug's object needs a private login, and ingestion key
+        # rows stay in the key's project anyway.
+        return public_logger.update_span(
+            id=components.row_id,
+            root_span_id=components.root_span_id,
+            span_id=components.span_id,
+            **event_without_span_ids,
+        )
 
     return _update_span_impl(
         parent_object_type=components.object_type,
@@ -4247,6 +4642,7 @@ def _start_span_parent_args(
     parent_span_ids: ParentSpanIds | None,
     propagated_event: dict[str, Any] | None,
     propagated_state: "PropagatedState | None" = None,
+    public_bg_logger: "_PublicHTTPBackgroundLogger | None" = None,
 ) -> dict[str, Any]:
     # `parent` may be an exported slug string or an opaque W3C trace-context dict.
     parent_slug, parent_propagated_state = _normalize_parent(parent)
@@ -4257,16 +4653,22 @@ def _start_span_parent_args(
             f"Mismatch between expected span parent object type {parent_object_type} and provided type {parent_components.object_type}"
         )
 
-        parent_components_object_id_lambda = _span_components_to_object_id_lambda(parent_components)
+        if public_bg_logger is not None:
+            # Resolving the parent's object needs a private login. Ingestion key
+            # spans stay in the key's project anyway, so the parent only
+            # contributes its span ids.
+            arg_parent_object_id = parent_object_id
+        else:
+            parent_components_object_id_lambda = _span_components_to_object_id_lambda(parent_components)
 
-        def compute_parent_object_id():
-            parent_components_object_id = parent_components_object_id_lambda()
-            assert parent_object_id.get() == parent_components_object_id, (
-                f"Mismatch between expected span parent object id {parent_object_id.get()} and provided id {parent_components_object_id}"
-            )
-            return parent_object_id.get()
+            def compute_parent_object_id():
+                parent_components_object_id = parent_components_object_id_lambda()
+                assert parent_object_id.get() == parent_components_object_id, (
+                    f"Mismatch between expected span parent object id {parent_object_id.get()} and provided id {parent_components_object_id}"
+                )
+                return parent_object_id.get()
 
-        arg_parent_object_id = LazyValue(compute_parent_object_id, use_mutex=False)
+            arg_parent_object_id = LazyValue(compute_parent_object_id, use_mutex=False)
         if parent_components.row_id and _parent_span_ids_usable(
             parent_components.span_id, parent_components.root_span_id
         ):
@@ -4292,6 +4694,7 @@ def _start_span_parent_args(
         parent_span_ids=arg_parent_span_ids,
         propagated_event=arg_propagated_event,
         propagated_state=arg_propagated_state,
+        public_bg_logger=public_bg_logger,
     )
 
 
@@ -4777,6 +5180,7 @@ class SpanImpl(Span):
         state: BraintrustState | None = None,
         lookup_span_parent: bool = True,
         internal: SpanInternalOptions | None = None,
+        public_bg_logger: "_PublicHTTPBackgroundLogger | None" = None,
     ):
         if span_attributes is None:
             span_attributes = SpanAttributes()
@@ -4797,6 +5201,7 @@ class SpanImpl(Span):
         self.parent_object_type = parent_object_type
         self.parent_object_id = parent_object_id
         self.parent_compute_object_metadata_args = parent_compute_object_metadata_args
+        self.public_bg_logger = public_bg_logger
 
         # Merge propagated_event into event. The propagated_event data will get
         # propagated-and-merged into every subspan.
@@ -4967,14 +5372,10 @@ class SpanImpl(Span):
             write_span_cache(serializable_partial_record)
 
         def compute_record() -> dict[str, Any] | None:
-            exporter = _get_exporter()
             record = dict(
                 **serializable_partial_record,
                 **{k: v.get() for k, v in lazy_partial_record.items()},
-                **exporter(
-                    object_type=self.parent_object_type,
-                    object_id=self.parent_object_id.get(),
-                ).object_id_fields(),
+                **_object_id_fields(self.parent_object_type, self.parent_object_id.get()),
             )
             # Resolve and customize inside the cached LazyValue: every incremental
             # span record is transformed once, before the background
@@ -4993,13 +5394,14 @@ class SpanImpl(Span):
         lazy_record = LazyValue(compute_record, use_mutex=pending_cache_key is not None)
         if pending_cache_key is not None:
             self.state.span_cache._track_pending_record(self.root_span_id, pending_cache_key, lazy_record)
-        self.state.global_bg_logger().log(lazy_record)
+        (self.public_bg_logger or self.state.global_bg_logger()).log(lazy_record)
 
     def log_feedback(self, **event: Any) -> None:
         return _log_feedback_impl(
             parent_object_type=self.parent_object_type,
             parent_object_id=self.parent_object_id,
             id=self.id,
+            public_bg_logger=self.public_bg_logger,
             **event,
         )
 
@@ -5034,6 +5436,7 @@ class SpanImpl(Span):
                 parent_span_ids=parent_span_ids,
                 propagated_event=coalesce(propagated_event, self.propagated_event),
                 propagated_state=self.propagated_state,
+                public_bg_logger=self.public_bg_logger,
             ),
             name=name,
             type=type,
@@ -5059,10 +5462,10 @@ class SpanImpl(Span):
     def export(self) -> str:
         if self.parent_compute_object_metadata_args and not self.parent_object_id.has_succeeded:
             object_id = None
-            compute_object_metadata_args = self.parent_compute_object_metadata_args
         else:
             object_id = self.parent_object_id.get()
-            compute_object_metadata_args = None
+        # Ingestion key loggers may not know their project id.
+        compute_object_metadata_args = None if object_id else self.parent_compute_object_metadata_args
 
         # Choose SpanComponents version based on the active ID format (hex -> V4,
         # legacy UUID -> V3). Coupled via _get_exporter() so the two never desync.
@@ -5142,6 +5545,9 @@ class SpanImpl(Span):
         return NOOP_SPAN_PERMALINK
 
     def permalink(self) -> str:
+        if self.public_bg_logger is not None:
+            # Permalinks resolve the org through a private login.
+            return self.link()
         try:
             return permalink(self.export())
         except Exception as e:
@@ -5156,7 +5562,7 @@ class SpanImpl(Span):
     def flush(self) -> None:
         """Flush any pending rows to the server."""
 
-        self.state.global_bg_logger().flush()
+        (self.public_bg_logger or self.state.global_bg_logger()).flush()
 
     def set_current(self):
         if self.can_set_current:
@@ -5942,8 +6348,10 @@ class Logger(Exportable):
         compute_metadata_args: dict | None = None,
         link_args: dict | None = None,
         state: BraintrustState | None = None,
+        public_bg_logger: "_PublicHTTPBackgroundLogger | None" = None,
     ):
         self._lazy_metadata = lazy_metadata
+        self._public_bg_logger = public_bg_logger
         self.async_flush = async_flush
         self._compute_metadata_args = compute_metadata_args
         self.last_start_time = time.time()
@@ -6186,6 +6594,7 @@ class Logger(Exportable):
             comment=comment,
             metadata=metadata,
             source=source,
+            public_bg_logger=self._public_bg_logger,
         )
 
     def start_span(
@@ -6237,6 +6646,7 @@ class Logger(Exportable):
             id=id,
             root_span_id=root_span_id,
             span_id=span_id,
+            public_bg_logger=self._public_bg_logger,
             **event,
         )
 
@@ -6262,6 +6672,7 @@ class Logger(Exportable):
             parent_compute_object_metadata_args=self._compute_metadata_args,
             parent_span_ids=None,
             propagated_event=propagated_event,
+            public_bg_logger=self._public_bg_logger,
         )
         return SpanImpl(
             **parent_args,
@@ -6287,10 +6698,10 @@ class Logger(Exportable):
         # this `_lazy_id` object specifically will also be marked as computed.
         if self._compute_metadata_args and not self._lazy_id.has_succeeded:
             object_id = None
-            compute_object_metadata_args = self._compute_metadata_args
         else:
             object_id = self._lazy_id.get()
-            compute_object_metadata_args = None
+        # Ingestion key loggers may not know their project id.
+        compute_object_metadata_args = None if object_id else self._compute_metadata_args
 
         exporter = _get_exporter()
         return exporter(
@@ -6322,7 +6733,7 @@ class Logger(Exportable):
         """
         Flush any pending logs to the server.
         """
-        self.state.global_bg_logger().flush()
+        (self._public_bg_logger or self.state.global_bg_logger()).flush()
 
 
 @dataclasses.dataclass
