@@ -63,6 +63,7 @@ class Tests(unittest.IsolatedAsyncioTestCase):
         await push(frame)
         await push(TTSStoppedFrame(context_id="c1"))
         await observer.finish()
+        self.assertEqual(observer.recordings[0]["span"].rows[0]["name"], "tts")
         recording = observer.recordings[0]["span"].rows[-1]["metadata"]["audio.recordings"][0]
         self.assertEqual(recording["state"], "omitted")
         self.assertEqual(observer.audio_bytes, 0)

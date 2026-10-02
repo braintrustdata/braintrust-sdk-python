@@ -415,12 +415,12 @@ class NativeObserver(BaseObserver):
             self.turns.assistant = None
             self.llm_turn = self.turns.start("assistant", kind, self.context_reply_to)
             self.llm = self.llm_turn["span"].start_span(
-                name="pipecat.llm_response",
+                name="llm_response",
                 type="llm",
                 input=self.last_context,
                 metadata={
                     **self.turns.metadata(self.llm_turn),
-                    "braintrust.continuation.tool_call_ids": self.context_tool_results,
+                    "continuation.tool_call_ids": self.context_tool_results,
                     **_metadata_from_processor(data.source),
                 },
                 set_current=False,
@@ -447,7 +447,7 @@ class NativeObserver(BaseObserver):
                     (
                         self.llm or self.root,
                         self.turns.metadata(self.llm_turn)
-                        or ({"braintrust.turn.reply_to": self.context_reply_to} if self.context_reply_to else {}),
+                        or ({"turn.reply_to": self.context_reply_to} if self.context_reply_to else {}),
                     ),
                 )
             if self.llm:
@@ -480,7 +480,7 @@ class NativeObserver(BaseObserver):
                 if kind == "FunctionCallResultFrame":
                     request = self.requests.pop(frame.tool_call_id, None)
                     if request:
-                        self.result_origins[frame.tool_call_id] = request[1].get("braintrust.turn.reply_to")
+                        self.result_origins[frame.tool_call_id] = request[1].get("turn.reply_to")
                     tool.log(
                         output=native_value(frame.result),
                         metadata={"pipecat.result": native_value(frame.result)},
@@ -505,13 +505,14 @@ class NativeObserver(BaseObserver):
                 return
             turn = self.turns.assistant or self.turns.start("assistant", kind)
             span = turn["span"].start_span(
-                name="pipecat.tts_response",
+                name="pipecat.audio_output" if self.realtime else "tts",
                 type="task",
                 metadata={
                     **self.turns.metadata(turn),
                     "pipecat.context_id": getattr(frame, "context_id", None),
                     **({"openai.response.id": context} if self.realtime and context else {}),
                     "pipecat.append_to_context": frame.append_to_context,
+                    **_metadata_from_processor(data.source),
                 },
                 set_current=False,
                 internal={"instrumentation": "pipecat-auto"},

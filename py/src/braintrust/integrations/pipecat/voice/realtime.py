@@ -6,6 +6,7 @@ No STT operation is fabricated for asynchronous provider transcription events.
 
 from contextvars import ContextVar
 
+from ..llm_metrics import _metadata_from_processor
 from .instrumentation import native_value
 
 
@@ -50,16 +51,18 @@ class RealtimeCapture:
                 observer.llm_text = []
                 observer.llm_tool_calls = []
                 observer.llm = observer.root.start_span(
-                    name="pipecat.llm_response",
+                    name="llm_response",
                     type="llm",
                     set_current=False,
                     internal={"instrumentation": "pipecat-auto"},
                     metadata={
+                        **_metadata_from_processor(service),
                         "openai.item_id": evt.item.id,
                         "openai.call_id": evt.item.call_id,
-                        "braintrust.turn.reply_to": observer.context_reply_to,
+                        "turn.reply_to": observer.context_reply_to,
                     },
                 )
+                observer.ttfb.start("llm", service, observer.llm.log)
             return await original_item(evt)
 
         observer.hooks.set(service, "_handle_evt_conversation_item_added", item_added)

@@ -44,7 +44,7 @@ async def test_recorded_tool_response_and_spoken_continuation():
     RealtimeCapture(observer, service, pair.user())
     calls = []
     for response in responses:
-        span = observer.root.start_span(name="pipecat.llm_response")
+        span = observer.root.start_span(name="llm_response")
         observer.llm = span
         observer.ttfb.start("llm", service, span.log)
         event = events.ResponseDone(

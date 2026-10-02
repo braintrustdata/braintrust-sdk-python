@@ -18,7 +18,7 @@ Install `braintrust[audio]` for Ogg/Opus or WAV encoding. Audio defaults off. Ex
 |---|---|
 | Native voice path | Pipecat 1.12.0, one input/output transport, universal user/assistant aggregators, segmented STT or OpenAI Realtime. Other pipeline shapes/versions retain existing frame tracing. |
 | Public interfaces | `setup_pipecat`, automatic integration setup, `wrap_pipeline_worker`, and an explicitly supplied `BraintrustPipecatObserver` share the same injection path. `trace_turns=False` retains the existing observer behavior. |
-| Trace | Native aggregator turns, actual STT operations, model responses, tool executions, and generated-audio lifecycles. Tool-only realtime responses can be pipeline children. |
+| Trace | `user_turn`, `assistant_turn`, `stt`, `llm_response`, `tts`, and actual tool names retain native boundaries and metadata. Realtime audio uses `pipecat.audio_output`; tool-only model responses can be pipeline children. `turn.id` / `turn.reply_to` and `continuation.tool_call_ids` preserve observed associations. |
 | Audio | Combined stereo call; segmented-STT caller clips on user turns; generated clips on TTS spans. Selections reference successfully captured samples. |
 | TTFB | Native `pipecat.ttfb` measurements follow the emitting processor and a unique active operation. STT measurements follow `run_stt` into its eventual span. Ambiguous/unmatched metrics remain on the pipeline; arrays are bounded to 32 with omission counts. |
 | Turn detection | Native analyzer predictions in `pipecat.turn_metrics` on the user turn; preserve processor, metric class, confidence, completion and reported milliseconds. Retain 32 predictions and count omissions. Unassociated observations remain on the pipeline. |

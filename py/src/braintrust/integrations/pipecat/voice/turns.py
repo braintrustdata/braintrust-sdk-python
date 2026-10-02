@@ -24,19 +24,19 @@ class Turns:
             return current
         state = {
             "span": self.root.start_span(
-                name=f"pipecat.{role}_turn",
+                name=f"{role}_turn",
                 type="task",
                 set_current=False,
                 internal={"instrumentation": "pipecat-auto"},
-                metadata={"braintrust.turn.start_observation": trigger},
+                metadata={"pipecat.turn.start_observation": trigger},
             ),
             "role": role,
             "confirmed": False,
             "ended": False,
         }
-        state["metadata"] = {"braintrust.turn.id": state["span"].span_id}
+        state["metadata"] = {"turn.id": state["span"].span_id}
         if role == "assistant" and reply_to:
-            state["metadata"]["braintrust.turn.reply_to"] = reply_to
+            state["metadata"]["turn.reply_to"] = reply_to
         state["span"].log(metadata=state["metadata"])
         setattr(self, role, state)
         self.pending[role].append(state)
@@ -129,6 +129,6 @@ class Turns:
     def finish(self):
         for state in self.states:
             if not state["ended"]:
-                state["span"].log(metadata={"braintrust.turn.incomplete": True})
+                state["span"].log(metadata={"turn.incomplete": True})
                 state["span"].end()
                 state["ended"] = True

@@ -82,6 +82,11 @@ class TurnTests(unittest.IsolatedAsyncioTestCase):
         tool = observer.tools["call-1"]
         await self.push(LLMFullResponseEndFrame())
         final_output = [row["output"] for row in first_model.rows if "output" in row][-1]
+        self.assertEqual(first_user["span"].rows[0]["name"], "user_turn")
+        self.assertEqual(first_assistant["span"].rows[0]["name"], "assistant_turn")
+        self.assertEqual(first_model.rows[0]["name"], "llm_response")
+        self.assertIn(tool, first_model.children)
+        self.assertEqual(tool.rows[0]["metadata"]["pipecat.tool_call_id"], "call-1")
         self.assertEqual(final_output[0]["tool_calls"][0]["id"], "call-1")
         self.assertIsNone(final_output[0]["content"])
         self.assertFalse(any(row.get("metadata", {}).get("pipecat.text") == "" for row in first_model.rows))
@@ -102,16 +107,16 @@ class TurnTests(unittest.IsolatedAsyncioTestCase):
         assert continuation is not None
         self.assertIsNot(continuation, first_assistant)
         self.assertEqual(
-            continuation["metadata"]["braintrust.turn.reply_to"],
+            continuation["metadata"]["turn.reply_to"],
             first_user["span"].span_id,
         )
         self.assertIn(tool, first_model.children)
         self.assertEqual(
-            tool.rows[0]["metadata"]["braintrust.turn.id"],
+            tool.rows[0]["metadata"]["turn.id"],
             first_assistant["span"].span_id,
         )
         self.assertEqual(
-            observer.llm.rows[0]["metadata"]["braintrust.continuation.tool_call_ids"],
+            observer.llm.rows[0]["metadata"]["continuation.tool_call_ids"],
             ["call-1"],
         )
         await self.push(TTSStartedFrame(context_id="tts-1"))
@@ -157,7 +162,7 @@ class TurnTests(unittest.IsolatedAsyncioTestCase):
         self.observer.turns.confirm("assistant")
         await self.observer.finish()
         self.assertTrue(second["ended"])
-        self.assertTrue(second["span"].rows[-1]["metadata"]["braintrust.turn.incomplete"])
+        self.assertTrue(second["span"].rows[-1]["metadata"]["turn.incomplete"])
 
     async def test_interruption_ends_tts_and_transcription_does_not_guess_a_turn(self):
         await self.push(UserStartedSpeakingFrame())
@@ -165,7 +170,7 @@ class TurnTests(unittest.IsolatedAsyncioTestCase):
         await self.push(TranscriptionFrame(text="new question", user_id="", timestamp="t2"))
         transcription = self.observer.root.children[-1]
         self.assertEqual(transcription.rows[0]["name"], "pipecat.stt_transcription")
-        self.assertNotIn("braintrust.turn.id", transcription.rows[0]["metadata"])
+        self.assertNotIn("turn.id", transcription.rows[0]["metadata"])
         await self.push(TTSStartedFrame(context_id="interrupted"))
         state = self.observer.tts["interrupted"]
         await self.push(InterruptionFrame())

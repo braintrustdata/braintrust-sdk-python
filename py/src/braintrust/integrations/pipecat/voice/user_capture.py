@@ -16,6 +16,8 @@ from braintrust.audio.recording import encode_audio
 from braintrust.audio.worker import RecordingBusy, encode_in_worker
 from pipecat.frames.frames import TranscriptionFrame  # pylint: disable=import-error
 
+from ..llm_metrics import _metadata_from_processor
+
 
 def encode_segments(segments, audio_format):
     chunks = []
@@ -96,6 +98,7 @@ class UserCapture:
         async def run(audio):
             queued = self.segment_boundaries.popleft() if self.segment_boundaries else {"events": [], "ranges": []}
             segment = {
+                "service_metadata": _metadata_from_processor(stt),
                 "boundaries": queued["events"],
                 "ranges": queued["ranges"],
                 "audio": None,
@@ -224,12 +227,13 @@ class UserCapture:
         metadata = {
             "pipecat.transcriptions": segment["frames"],
             "pipecat.function": "run_stt",
+            **segment.get("service_metadata", {}),
             **segment.get("ttfb_metadata", {}),
         }
         if turn:
             metadata.update(self.observer.turns.metadata(turn))
         span = owner.start_span(
-            name="pipecat.stt",
+            name="stt",
             type="task",
             start_time=segment["start"],
             set_current=False,
