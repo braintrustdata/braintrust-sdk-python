@@ -42,20 +42,24 @@ except ImportError:
         return current_snapshot
 
 
-def _accumulate_event_accepts_json_bufs() -> bool:
-    """Return whether ``accumulate_event`` takes the ``json_bufs`` keyword.
+try:
+    from anthropic.lib.streaming._beta_messages import accumulate_event as accumulate_beta_event
+    from anthropic.types.beta import BetaRawMessageStartEvent
+except ImportError:
+    accumulate_beta_event = accumulate_event
+    BetaRawMessageStartEvent = None
 
-    anthropic>=1.5.0 buffers partial tool-input JSON per content block in a
-    caller-owned ``json_bufs`` dict and requires the keyword; older releases
-    reject it.
-    """
+
+def _accumulate_event_parameters(accumulator) -> set[str]:
+    """Discover buffer/header keywords added in newer Anthropic SDK versions."""
     try:
-        return "json_bufs" in inspect.signature(accumulate_event).parameters
+        return set(inspect.signature(accumulator).parameters)
     except (TypeError, ValueError):
-        return False
+        return set()
 
 
-_ACCUMULATE_EVENT_ACCEPTS_JSON_BUFS = _accumulate_event_accepts_json_bufs()
+_ACCUMULATE_EVENT_PARAMETERS = _accumulate_event_parameters(accumulate_event)
+_BETA_ACCUMULATE_EVENT_PARAMETERS = _accumulate_event_parameters(accumulate_beta_event)
 
 
 # Anthropic model parameters that we want to track as span metadata.
@@ -720,6 +724,8 @@ class TracedMessageStream(Wrapper):
         self.__msg_stream = msg_stream
         # Per-stream partial JSON buffers for anthropic>=1.5.0 accumulate_event.
         self.__json_bufs: dict[int, bytes] = {}
+        self.__accumulate_event = accumulate_event
+        self.__accumulate_parameters = _ACCUMULATE_EVENT_PARAMETERS
         self.__span = span
         self.__metrics = {}
         self.__snapshot = None
@@ -778,8 +784,18 @@ class TracedMessageStream(Wrapper):
         if self.__time_to_first_token is None:
             self.__time_to_first_token = time.time() - self.__request_start_time
 
-        accumulate_kwargs = {"json_bufs": self.__json_bufs} if _ACCUMULATE_EVENT_ACCEPTS_JSON_BUFS else {}
-        self.__snapshot = accumulate_event(event=m, current_snapshot=self.__snapshot, **accumulate_kwargs)
+        if BetaRawMessageStartEvent is not None and isinstance(m, BetaRawMessageStartEvent):
+            # The regular accumulator does not recognize beta MCP input deltas.
+            self.__accumulate_event = accumulate_beta_event
+            self.__accumulate_parameters = _BETA_ACCUMULATE_EVENT_PARAMETERS
+
+        accumulate_kwargs = {}
+        if "json_bufs" in self.__accumulate_parameters:
+            accumulate_kwargs["json_bufs"] = self.__json_bufs
+        if "request_headers" in self.__accumulate_parameters:
+            request = getattr(self.__msg_stream, "request", None)
+            accumulate_kwargs["request_headers"] = getattr(request, "headers", None)
+        self.__snapshot = self.__accumulate_event(event=m, current_snapshot=self.__snapshot, **accumulate_kwargs)
 
         if m.type == "message_delta":
             # Anthropic <0.122.0 drops output_tokens_details when accumulating
@@ -1336,7 +1352,7 @@ def _start_span(name, kwargs):
     return start_span(name=name, type="llm", metadata=metadata, input=_input)
 
 
-_SERVER_TOOL_USE_TYPE = "server_tool_use"
+_SERVER_TOOL_USE_TYPES = ("server_tool_use", "mcp_tool_use")
 
 
 def _is_server_tool_result_type(item_type: Any) -> bool:
@@ -1469,7 +1485,7 @@ def _log_server_tool_spans(content: Any, parent_span) -> None:
             continue
 
         item_type = item.get("type")
-        if item_type == _SERVER_TOOL_USE_TYPE:
+        if item_type in _SERVER_TOOL_USE_TYPES:
             call_id = item.get("id")
             if isinstance(call_id, str):
                 calls_by_id[call_id] = item

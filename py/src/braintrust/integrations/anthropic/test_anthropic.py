@@ -21,7 +21,7 @@ from braintrust.integrations.anthropic.tracing import (
 from braintrust.integrations.test_utils import verify_autoinstrument_script
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import find_span_by_name, find_spans_by_type, init_test_logger
-from pydantic import BaseModel
+from pydantic import BaseModel, TypeAdapter
 
 
 PROJECT_NAME = "test-anthropic-app"
@@ -346,11 +346,20 @@ def test_anthropic_beta_messages_create_captures_compaction_metadata(memory_logg
 
 
 @pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
-def test_anthropic_beta_messages_create_preserves_inline_mcp_blocks(memory_logger):
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "is_async,vcr_cassette_name",
+    [
+        (False, "test_anthropic_beta_messages_create_preserves_inline_mcp_blocks"),
+        (True, "test_anthropic_beta_messages_create_preserves_inline_mcp_blocks"),
+    ],
+    ids=["sync", "async"],
+)
+async def test_anthropic_beta_messages_create_preserves_inline_mcp_blocks(memory_logger, is_async, vcr_cassette_name):
     if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
         pytest.skip("Inline MCP tool definitions require the latest Anthropic API")
 
-    client = wrap_anthropic(_get_client())
+    client = wrap_anthropic(_get_async_client() if is_async else _get_client())
     response = client.beta.messages.create(
         model=LATEST_MODEL,
         max_tokens=512,
@@ -373,8 +382,11 @@ def test_anthropic_beta_messages_create_preserves_inline_mcp_blocks(memory_logge
         tools=[{"type": "mcp_toolset", "mcp_server_name": "braintrust-test"}],
         betas=["mcp-client-2026-09-15"],
     )
+    if is_async:
+        response = await response
 
-    span = find_span_by_name(memory_logger.pop(), "anthropic.messages.create")
+    spans = memory_logger.pop()
+    span = find_span_by_name(spans, "anthropic.messages.create")
     assert "error" not in span
     assert span["metadata"]["tools"] == [{"type": "mcp_toolset", "mcp_server_name": "braintrust-test"}]
 
@@ -397,6 +409,152 @@ def test_anthropic_beta_messages_create_preserves_inline_mcp_blocks(memory_logge
     response_tool_result = next(block for block in response.content if block.type == "mcp_tool_result")
     assert tool_result["tool_use_id"] == response_tool_result.tool_use_id
     assert tool_result["content"][0]["text"] == response_tool_result.content[0].text
+
+    tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+    assert len(tool_spans) == 1
+    tool_span = tool_spans[0]
+    assert tool_span["span_attributes"]["name"] == response_tool_use.name
+    assert tool_span["input"] == response_tool_use.input
+    assert tool_span["output"] == [block.model_dump() for block in response_tool_result.content]
+    assert tool_span["metadata"] == {
+        "tool_use_id": response_tool_use.id,
+        "tool_call_type": "mcp_tool_use",
+        "tool_result_type": "mcp_tool_result",
+    }
+    assert tool_span["span_parents"] == [span["span_id"]]
+    assert tool_span["root_span_id"] == span["root_span_id"]
+
+
+@pytest.mark.parametrize("results_first", [False, True], ids=["calls-first", "results-first"])
+def test_anthropic_mcp_tool_spans_pair_by_id(memory_logger, results_first):
+    # Supplement the recorded provider response with deterministic ordering and
+    # incomplete-pair cases that cannot be requested reliably from a live model.
+    calls = [
+        {"type": "mcp_tool_use", "id": "mcp-1", "name": "lookup", "input": {"key": "first"}, "server_name": "catalog"},
+        {
+            "type": "mcp_tool_use",
+            "id": "mcp-2",
+            "name": "lookup",
+            "input": {"key": "second"},
+            "server_name": "catalog",
+        },
+        {"type": "mcp_tool_use", "id": "mcp-pending", "name": "pending", "input": {}, "server_name": "catalog"},
+    ]
+    results = [
+        {"type": "mcp_tool_result", "tool_use_id": "mcp-2", "content": [{"type": "text", "text": "second value"}]},
+        {"type": "mcp_tool_result", "tool_use_id": "mcp-1", "content": [{"type": "text", "text": "first value"}]},
+        {
+            "type": "mcp_tool_result",
+            "tool_use_id": "mcp-orphan",
+            "content": [{"type": "text", "text": "orphan value"}],
+        },
+    ]
+    content = (results + calls if results_first else calls + results) + [
+        {"type": "tool_use", "id": "client-tool", "name": "local_lookup", "input": {}},
+        {"type": "tool_result", "tool_use_id": "client-tool", "content": "client result"},
+    ]
+    before = json.dumps(content)
+    with logger.start_span(name="MCP pairs", type="llm") as parent:
+        _log_message_to_span(SimpleNamespace(content=content), parent)
+
+    spans = memory_logger.pop()
+    llm_span = find_span_by_name(spans, "MCP pairs")
+    tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+    assert len(tool_spans) == 4
+    by_id = {span["metadata"]["tool_use_id"]: span for span in tool_spans}
+    assert set(by_id) == {"mcp-1", "mcp-2", "mcp-pending", "mcp-orphan"}
+    for call, result in zip(calls[:2], reversed(results[:2])):
+        span = by_id[call["id"]]
+        assert span["span_attributes"]["name"] == call["name"]
+        assert span["input"] == call["input"]
+        assert span["output"] == result["content"]
+        assert span["metadata"]["tool_call_type"] == "mcp_tool_use"
+        assert span["metadata"]["tool_result_type"] == "mcp_tool_result"
+    assert by_id["mcp-pending"]["span_attributes"]["name"] == "pending"
+    assert by_id["mcp-pending"]["input"] == {}
+    assert by_id["mcp-pending"].get("output") is None
+    assert by_id["mcp-orphan"]["span_attributes"]["name"] == "mcp"
+    assert by_id["mcp-orphan"].get("input") is None
+    assert by_id["mcp-orphan"]["output"] == results[2]["content"]
+    for span in tool_spans:
+        assert span["span_parents"] == [llm_span["span_id"]]
+        assert span["root_span_id"] == llm_span["root_span_id"]
+    assert llm_span["output"]["content"] == content
+    assert json.dumps(content) == before
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("is_async", [False, True], ids=["sync", "async"])
+async def test_anthropic_mcp_stream_accumulates_tool_input(memory_logger, is_async):
+    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
+        pytest.skip("MCP stream events require the latest Anthropic SDK")
+
+    # Supplemental typed-event coverage: no MCP SSE cassette is available.
+    # Split input across deltas to exercise the real SDK stream accumulator.
+    call = {
+        "type": "mcp_tool_use",
+        "id": "mcp-1",
+        "name": "lookup",
+        "input": {"key": "record"},
+        "server_name": "catalog",
+    }
+    result = {
+        "type": "mcp_tool_result",
+        "tool_use_id": "mcp-1",
+        "is_error": False,
+        "content": [{"type": "text", "text": "found"}],
+    }
+    wire_events = [
+        {
+            "type": "message_start",
+            "message": {
+                "id": "msg_mcp",
+                "type": "message",
+                "role": "assistant",
+                "model": LATEST_MODEL,
+                "content": [],
+                "usage": {"input_tokens": 1, "output_tokens": 1},
+            },
+        },
+        {"type": "content_block_start", "index": 0, "content_block": dict(call, input={})},
+        {"type": "content_block_delta", "index": 0, "delta": {"type": "input_json_delta", "partial_json": '{"key":'}},
+        {
+            "type": "content_block_delta",
+            "index": 0,
+            "delta": {"type": "input_json_delta", "partial_json": ' "record"}'},
+        },
+        {"type": "content_block_stop", "index": 0},
+        {"type": "content_block_start", "index": 1, "content_block": result},
+        {"type": "content_block_stop", "index": 1},
+        {"type": "message_stop"},
+    ]
+    adapter = TypeAdapter(anthropic.types.beta.BetaRawMessageStreamEvent)
+    events = [adapter.validate_python(event) for event in wire_events]
+    before = [event.model_dump() for event in events]
+
+    async def async_events():
+        for event in events:
+            yield event
+
+    with logger.start_span(name="MCP stream", type="llm") as parent:
+        source = async_events() if is_async else iter(events)
+        stream = TracedMessageStream(source, parent, time.time())
+        observed = [event async for event in stream] if is_async else list(stream)
+        stream._log_final_message()
+    assert observed == events
+    assert [event.model_dump() for event in events] == before
+    spans = memory_logger.pop()
+    parent = find_span_by_name(spans, "MCP stream")
+    tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+    assert len(tool_spans) == 1
+    child = tool_spans[0]
+    assert child["span_attributes"]["name"] == call["name"]
+    assert child["input"] == call["input"]
+    assert child["output"][0]["text"] == "found"
+    assert child["metadata"]["tool_use_id"] == call["id"]
+    assert child["metadata"]["tool_call_type"] == "mcp_tool_use"
+    assert child["span_parents"] == [parent["span_id"]]
+    assert parent["output"]["content"][0]["input"] == call["input"]
 
 
 @pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
