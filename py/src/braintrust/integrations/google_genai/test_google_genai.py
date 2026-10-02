@@ -8,6 +8,7 @@ import google.genai as genai
 import pytest
 from braintrust import logger
 from braintrust.integrations.google_genai import setup_genai
+from braintrust.integrations.google_genai.tracing import _aggregate_generate_content_chunks
 from braintrust.integrations.test_utils import verify_autoinstrument_script
 from braintrust.integrations.versioning import detect_module_version, version_satisfies
 from braintrust.logger import Attachment
@@ -1242,6 +1243,50 @@ def test_serialize_content_item_with_content_and_binary_part():
 GROUNDING_MODEL = (
     "gemini-2.5-flash" if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest" else "gemini-2.0-flash-001"
 )
+
+
+@pytest.mark.parametrize("include_url_metadata", [True, False])
+def test_stream_preserves_url_context_metadata(include_url_metadata):
+    url_metadata = (
+        types.UrlContextMetadata(
+            url_metadata=[
+                types.UrlMetadata(
+                    retrieved_url="https://example.com/article",
+                    url_retrieval_status="URL_RETRIEVAL_STATUS_SUCCESS",
+                ),
+                types.UrlMetadata(
+                    retrieved_url="https://example.com/unavailable",
+                    url_retrieval_status="URL_RETRIEVAL_STATUS_ERROR",
+                ),
+            ]
+        )
+        if include_url_metadata
+        else None
+    )
+    chunks = [
+        types.GenerateContentResponse(
+            candidates=[types.Candidate(content=types.Content(parts=[types.Part(text="First ")]))]
+        ),
+        types.GenerateContentResponse(
+            candidates=[
+                types.Candidate(
+                    content=types.Content(parts=[types.Part(text="second")]),
+                    url_context_metadata=url_metadata,
+                    finish_reason="STOP",
+                )
+            ]
+        ),
+    ]
+
+    output, _, _ = _aggregate_generate_content_chunks(chunks, time.time())
+
+    assert output["text"] == "First second"
+    candidate = output["candidates"][0]
+    assert candidate["content"]["parts"] == [{"text": "First second"}]
+    if include_url_metadata:
+        assert candidate["url_context_metadata"] == url_metadata
+    else:
+        assert "url_context_metadata" not in candidate
 
 
 def _assert_grounding_metadata(span_output):
