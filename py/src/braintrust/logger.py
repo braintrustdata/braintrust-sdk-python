@@ -2066,6 +2066,7 @@ def load_prompt(
     :returns: The prompt object.
     """
     effective_environment = None if version is not None else environment
+    should_fall_back_to_cache = version is None and effective_environment is None
 
     if id:
         # When loading by ID, we don't need project or slug
@@ -2102,7 +2103,7 @@ def load_prompt(
             if not _is_loader_cache_fallback_error(server_error):
                 raise
             # If environment or version was specified, don't fall back to cache
-            if effective_environment is not None or version is not None:
+            if not should_fall_back_to_cache:
                 raise ValueError(f"Prompt not found with specified parameters") from server_error
 
             eprint(f"Failed to load prompt, attempting to fall back to cache: {server_error}")
@@ -2138,6 +2139,9 @@ def load_prompt(
                 )
             resp_prompt = response["objects"][0]
         prompt = PromptSchema.from_dict_deep(resp_prompt)
+        # Selected versions/environments must not replace the default fallback entry.
+        if not should_fall_back_to_cache:
+            return prompt
         try:
             if id:
                 _state._prompt_cache.set(
@@ -2322,6 +2326,8 @@ def load_parameters(
         )
 
     parameters = RemoteEvalParameters.from_function_row(response["objects"][0])
+    if not should_fall_back_to_cache:
+        return parameters
     try:
         if id:
             _state._parameters_cache.set(parameters, id=id, cache_namespace=cache_namespace)

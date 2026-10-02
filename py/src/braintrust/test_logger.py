@@ -705,6 +705,52 @@ def test_load_prefers_version_over_environment(load, endpoint, response, lookup,
     assert endpoint_mock.call_args_list == [expected_call]
 
 
+@pytest.mark.parametrize(
+    ("load", "response_factory", "resource", "cache_name", "cache_type"),
+    [
+        (braintrust.load_prompt, _prompt_response, "prompts.get_prompt", "_prompt_cache", PromptCache),
+        (
+            braintrust.load_parameters,
+            _parameters_response,
+            "functions.get_function",
+            "_parameters_cache",
+            ParametersCache,
+        ),
+    ],
+    ids=["prompt", "parameters"],
+)
+@pytest.mark.parametrize("by_id", [False, True], ids=["by-slug", "by-id"])
+@pytest.mark.parametrize("selector", [{"environment": "staging"}, {"version": "v2"}], ids=["environment", "version"])
+def test_load_selected_values_do_not_replace_latest_cache(
+    load, response_factory, resource, cache_name, cache_type, by_id, selector
+):
+    simulate_login()
+    latest_response = response_factory("saved")
+    selected_response = copy.deepcopy(latest_response)
+    selected_response["objects"][0]["_xact_id"] = "v2"
+    lookup = {"project": "test-project", "slug": "saved"}
+    if by_id:
+        resource += "_id"
+        latest_response = latest_response["objects"][0]
+        selected_response = selected_response["objects"][0]
+        lookup = {"id": latest_response["id"]}
+
+    mock_api_client = MagicMock()
+    endpoint_mock = operator.attrgetter(resource)(mock_api_client)
+    endpoint_mock.side_effect = [latest_response, selected_response, _http_error(503)]
+    cache = cache_type(memory_cache=LRUCache(max_size=10))
+
+    with (
+        patch.object(logger._state, "api_client", return_value=mock_api_client),
+        patch.object(logger._state, cache_name, cache),
+    ):
+        assert load(**lookup).version == "v1"
+        assert load(**lookup, **selector).version == "v2"
+        assert load(**lookup).version == "v1"
+
+    assert endpoint_mock.call_count == 3
+
+
 def test_load_parameters_returns_remote_object():
     simulate_login()
     mock_api_client = MagicMock()
