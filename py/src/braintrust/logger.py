@@ -272,7 +272,7 @@ class Exportable(ABC):
         """Return a serialized representation of the object that can be used to start subspans in other places. See `Span.start_span` for more details."""
 
 
-class Span(Exportable, contextlib.AbstractContextManager, ABC):
+class Span(Exportable, contextlib.AbstractContextManager["Span"], ABC):
     """
     A Span encapsulates logged data and metrics for a unit of work. This interface is shared by all span implementations.
 
@@ -311,7 +311,7 @@ class Span(Exportable, contextlib.AbstractContextManager, ABC):
         span_attributes: SpanAttributes | Mapping[str, Any] | None = None,
         start_time: float | None = None,
         set_current: bool | None = None,
-        parent: str | dict | None = None,
+        parent: str | dict[str, str] | None = None,
         internal: SpanInternalOptions | None = None,
         **event: Any,
     ) -> "Span":
@@ -456,7 +456,7 @@ class _NoopSpan(Span):
         span_attributes: SpanAttributes | Mapping[str, Any] | None = None,
         start_time: float | None = None,
         set_current: bool | None = None,
-        parent: str | dict | None = None,
+        parent: str | dict[str, str] | None = None,
         internal: SpanInternalOptions | None = None,
         **event: Any,
     ):
@@ -1044,7 +1044,7 @@ class _MemoryBackgroundLogger(_BackgroundLogger):
             # Track upload attempts (don't actually call upload() in tests)
             self.upload_attempts.extend(attachments)
 
-    def pop(self):
+    def pop(self) -> list[dict[str, Any]]:
         with self.lock:
             logs = [record for item in self.logs if (record := item.get()) is not None]
             self.logs = []
@@ -2788,7 +2788,7 @@ def inject_trace_context(carrier: dict | None = None, span: "Span | None" = None
         return carrier
 
 
-def extract_trace_context(headers: dict) -> dict | None:
+def extract_trace_context(headers: dict) -> dict[str, str] | None:
     """Extract an opaque W3C trace-context from inbound request headers.
 
     This is the receive-side counterpart of `Span.inject` /
@@ -3075,7 +3075,7 @@ def start_span(
     span_attributes: SpanAttributes | Mapping[str, Any] | None = None,
     start_time: float | None = None,
     set_current: bool | None = None,
-    parent: str | dict | None = None,
+    parent: str | dict[str, str] | None = None,
     propagated_event: dict[str, Any] | None = None,
     state: BraintrustState | None = None,
     internal: SpanInternalOptions | None = None,
@@ -4519,7 +4519,7 @@ class Experiment(_ExperimentFetcher, Exportable):
         span_attributes: SpanAttributes | Mapping[str, Any] | None = None,
         start_time: float | None = None,
         set_current: bool | None = None,
-        parent: str | dict | None = None,
+        parent: str | dict[str, str] | None = None,
         propagated_event: dict[str, Any] | None = None,
         internal: SpanInternalOptions | None = None,
         **event: Any,
@@ -4662,7 +4662,7 @@ class Experiment(_ExperimentFetcher, Exportable):
         span_attributes: SpanAttributes | Mapping[str, Any] | None = None,
         start_time: float | None = None,
         set_current: bool | None = None,
-        parent: str | dict | None = None,
+        parent: str | dict[str, str] | None = None,
         propagated_event: dict[str, Any] | None = None,
         lookup_span_parent: bool = True,
         internal: SpanInternalOptions | None = None,
@@ -5010,7 +5010,7 @@ class SpanImpl(Span):
         span_attributes: SpanAttributes | Mapping[str, Any] | None = None,
         start_time: float | None = None,
         set_current: bool | None = None,
-        parent: str | dict | None = None,
+        parent: str | dict[str, str] | None = None,
         propagated_event: dict[str, Any] | None = None,
         internal: SpanInternalOptions | None = None,
         **event: Any,
@@ -6195,7 +6195,7 @@ class Logger(Exportable):
         span_attributes: SpanAttributes | Mapping[str, Any] | None = None,
         start_time: float | None = None,
         set_current: bool | None = None,
-        parent: str | dict | None = None,
+        parent: str | dict[str, str] | None = None,
         propagated_event: dict[str, Any] | None = None,
         span_id: str | None = None,
         root_span_id: str | None = None,
@@ -6247,7 +6247,7 @@ class Logger(Exportable):
         span_attributes: SpanAttributes | Mapping[str, Any] | None = None,
         start_time: float | None = None,
         set_current: bool | None = None,
-        parent: str | dict | None = None,
+        parent: str | dict[str, str] | None = None,
         propagated_event: dict[str, Any] | None = None,
         span_id: str | None = None,
         root_span_id: str | None = None,
