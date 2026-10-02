@@ -250,7 +250,13 @@ class Transport:
             self.session.mount("https://", adapter)
         elif pool_maxsize is not None and self._owns_session:
             pooled_adapter = HTTPAdapter(
-                pool_connections=pool_maxsize, pool_maxsize=pool_maxsize, pool_block=True, max_retries=0
+                # requests does not expose urllib3's pool_timeout. With
+                # pool_block=True a request can therefore wait forever for a
+                # slot after urllib3 clears pools during interpreter shutdown.
+                pool_connections=pool_maxsize,
+                pool_maxsize=pool_maxsize,
+                pool_block=False,
+                max_retries=0,
             )
             replaced_adapters = set(self.session.adapters.values())
             self.session.mount("http://", pooled_adapter)

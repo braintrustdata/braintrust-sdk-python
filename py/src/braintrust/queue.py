@@ -61,11 +61,7 @@ class LogQueue:
         with self._mutex:
             dropped = []
 
-            if self._reserved:
-                if len(self._queue) >= self.maxsize - self._reserved:
-                    raise BufferError("Log queue is full behind undelivered batches; flush before logging more")
-                self._queue.append(item)
-            elif not self._enforce_size_limit:
+            if not self._enforce_size_limit:
                 # For queues with enforcement disabled, deque auto-drops silently
                 self._queue.append(item)
             else:
@@ -116,6 +112,13 @@ class LogQueue:
             self._queue.extendleft(reversed(items))
             if items:
                 self._has_items_event.set()
+
+    def reset_after_fork(self) -> None:
+        """Discard inherited pending rows and replace locks owned by vanished threads."""
+        self._mutex = threading.Lock()
+        self._queue = deque(maxlen=self.maxsize)
+        self._has_items_event = threading.Event()
+        self._reserved = 0
 
     def size(self) -> int:
         """

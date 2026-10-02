@@ -11,20 +11,21 @@ from braintrust.logger import _HTTPBackgroundLogger
 from braintrust.util import LazyValue
 
 
-def test_permanent_failure_is_retained_and_explicit_flush_reports_it(monkeypatch):
+def test_permanent_failure_is_reported_and_released(monkeypatch):
     monkeypatch.setenv("BRAINTRUST_DISABLE_ATEXIT_FLUSH", "1")
     with scripted_server([(413, {}, b"Payload Too Large")]) as (url, handler):
         connection = LogIngestionAPI(EndpointRouter(app_url=url, api_url=url), "test", concurrency=4)
         writer = _HTTPBackgroundLogger(lambda: contextlib.nullcontext(connection))
         writer._max_request_size_result = {"max_request_size": 10**9, "can_use_overflow": False}
         writer.queue.put(LazyValue(lambda: {"id": "score-row", "scores": {"quality": 1}}, use_mutex=False))
-        with pytest.raises(Exception, match="413"):
+        from braintrust.logger import BraintrustLogFlushError
+
+        with pytest.raises(BraintrustLogFlushError, match="413"):
             writer.flush()
-        with pytest.raises(Exception, match="413"):
-            writer.flush()
+        writer.flush()
         assert handler.request_count == 1
         assert json.loads(handler.requests[0][2])["rows"][0]["id"] == "score-row"
-        assert writer.pending_count == 1
+        assert writer.pending_count == 0
         connection.close()
 
 
@@ -111,9 +112,8 @@ def test_retry_exhaustion_retains_payload_and_orders_later_updates(ingestion_wri
     assert len(list(tmp_path.glob("*.json"))) == 1
     prepared = writer._pending[0].payload
     enqueue(writer, {"id": "row", "_is_merge": True, "scores": {"quality": 1}})
-    # Retention plus new rows occupy the original capacity. Failed rows cannot be evicted.
-    with pytest.raises(BufferError):
-        writer.queue.put(LazyValue(lambda: {"id": "overflow"}, use_mutex=False))
+    # Producers remain non-throwing while an earlier wave is retained.
+    writer.queue.put(LazyValue(lambda: {"id": "later"}, use_mutex=False))
     writer.flush()
     assert writer.pending_count == 0
     assert handler.requests[0][2] == handler.requests[1][2] == handler.requests[2][2] == prepared
@@ -272,6 +272,7 @@ def test_relogin_and_adapter_replacement_keep_retained_batches_on_original_crede
         original = writer._pending_service
         owned_adapter = original.transport.session.get_adapter(url)
         assert len(owned_adapter.poolmanager.pools) == 1
+        assert owned_adapter._pool_block is False
         state.login(app_url=url, api_key="replacement", force_login=True)
         caller_adapter = HTTPAdapter()
         logger.set_http_adapter(caller_adapter)
@@ -371,7 +372,7 @@ def test_concurrent_explicit_flush_timeout_leaves_accounting_intact(ingestion_wr
         future = pool.submit(writer.flush)
         assert entered.wait(3)
         try:
-            with pytest.raises(BraintrustLogFlushError, match="Another flush"):
+            with pytest.raises(BraintrustLogFlushError, match="still in progress"):
                 writer.flush(timeout=0.05)
             assert writer.pending_count == 1
         finally:
@@ -381,26 +382,92 @@ def test_concurrent_explicit_flush_timeout_leaves_accounting_intact(ingestion_wr
     assert handler.request_count == 1
 
 
-def test_background_permanent_failure_stops_retrying_and_applies_backpressure(ingestion_writer):
+def test_background_permanent_failure_is_dropped_and_later_rows_continue(ingestion_writer):
     import time
 
-    from braintrust.logger import BraintrustLogFlushError
     from braintrust.queue import LogQueue
 
-    writer, _, handler = ingestion_writer([(413, {}, b"too large")])
+    writer, _, handler = ingestion_writer([(413, {}, b"too large"), (200, {}, b"ok")])
     writer.queue = LogQueue(maxsize=1)
     writer.log(LazyValue(lambda: {"id": "failed"}, use_mutex=False))
     deadline = time.monotonic() + 3
-    while not writer._pending or not writer._pending[0].permanent:
+    while handler.request_count < 1 or writer.pending_count:
         assert time.monotonic() < deadline
         time.sleep(0.01)
-    with pytest.raises(BufferError):
-        writer.log(LazyValue(lambda: {"id": "new"}, use_mutex=False))
-    with pytest.raises(BraintrustLogFlushError, match="413"):
+    writer.log(LazyValue(lambda: {"id": "new"}, use_mutex=False))
+    deadline = time.monotonic() + 3
+    while handler.request_count < 2:
+        assert time.monotonic() < deadline
+        time.sleep(0.01)
+    assert writer.pending_count == 0
+    assert handler.request_count == 2
+
+
+def test_background_writer_resumes_after_retry_budget_during_outage(ingestion_writer):
+    import time
+
+    writer, _, handler = ingestion_writer([(503, {}, b"outage")] * 3 + [(200, {}, b"ok")])
+    writer.num_tries = 2
+    writer.log(LazyValue(lambda: {"id": "survives-outage"}, use_mutex=False))
+    deadline = time.monotonic() + 8
+    while writer.pending_count or handler.request_count < 4:
+        assert time.monotonic() < deadline
+        time.sleep(0.02)
+    assert writer.pending_count == 0
+    assert handler.request_count == 4
+
+
+@pytest.mark.parametrize("status", [400, 401, 403, 413])
+def test_permanent_log_rejections_do_not_block_later_batches(ingestion_writer, status):
+    from braintrust.logger import BraintrustLogFlushError
+
+    def respond(method, path, body, headers):
+        row = json.loads(body)["rows"][0]
+        return (status, {}, b"rejected") if row["id"] == "bad" else (200, {}, b"ok")
+
+    writer, _, handler = ingestion_writer(respond, concurrency=1)
+    enqueue(writer, {"id": "bad"}, {"id": "good"})
+    with pytest.raises(BraintrustLogFlushError):
+        writer.flush(batch_size=1)
+    assert writer.pending_count == 0
+    assert handler.request_count == 2
+    assert [json.loads(request[2])["rows"][0]["id"] for request in handler.requests] == ["bad", "good"]
+
+
+def test_expired_signed_url_is_refreshed_after_403(monkeypatch):
+    monkeypatch.setenv("BRAINTRUST_DISABLE_ATEXIT_FLUSH", "1")
+    uploads = 0
+    urls = 0
+    with contextlib.ExitStack() as stack:
+
+        def storage_response(method, path, body, headers):
+            nonlocal uploads
+            uploads += 1
+            return (403, {}, b"expired") if uploads == 1 else (200, {}, b"ok")
+
+        storage_url, _ = stack.enter_context(scripted_server(storage_response, persistent=True))
+
+        def api_response(method, path, body, headers):
+            nonlocal urls
+            if path == "/version":
+                return 200, {}, b'{"logs3_payload_max_bytes": 80}'
+            if path == "/logs3/overflow":
+                urls += 1
+                return (
+                    200,
+                    {},
+                    json.dumps(
+                        {"method": "PUT", "signedUrl": storage_url, "headers": {}, "key": f"key-{urls}"}
+                    ).encode(),
+                )
+            return 200, {}, b"ok"
+
+        writer, _, handler = stack.enter_context(_writer_context(api_response))
+        enqueue(writer, {"id": "large", "input": "x" * 300})
         writer.flush()
-    assert writer.pending_count == 1
-    time.sleep(0.05)
-    assert handler.request_count == 1
+        assert urls == 2
+        assert uploads == 2
+        assert handler.request_count == 4
 
 
 def test_unprepared_records_are_retained_after_local_resolution_failure(ingestion_writer):
@@ -436,15 +503,11 @@ def test_successful_batches_release_capacity_while_failed_batches_remain(ingesti
     enqueue(writer, {"id": "failed"}, {"id": "delivered"})
     with pytest.raises(BraintrustLogFlushError) as failure:
         writer.flush(batch_size=1)
-    assert failure.value.pending_count == 1
+    assert failure.value.pending_count == 0
     enqueue(writer, {"id": "later"})
-    assert writer.pending_count == 2
-    with pytest.raises(BufferError):
-        enqueue(writer, {"id": "full"})
-    # Later records cannot overtake failed updates.
-    with pytest.raises(BraintrustLogFlushError):
-        writer.flush()
-    assert handler.request_count == 2
+    assert writer.pending_count == 1
+    writer.flush()
+    assert handler.request_count == 3
 
 
 def test_explicit_flush_finishes_its_wave_while_producers_keep_logging(ingestion_writer):
@@ -481,6 +544,7 @@ writer = _HTTPBackgroundLogger(lambda: contextlib.nullcontext(service))
 writer.sync_flush = True
 writer._max_request_size_result = {{"max_request_size": 1000000, "can_use_overflow": False}}
 writer.log(LazyValue(lambda: {{"id": "shutdown-row"}}, use_mutex=False))
+service.transport.session.get_adapter({service.router.api_url!r}).poolmanager.clear()
 """
     process = subprocess.run(
         [sys.executable, "-c", program],
@@ -492,6 +556,27 @@ writer.log(LazyValue(lambda: {{"id": "shutdown-row"}}, use_mutex=False))
     assert process.returncode == 0, process.stderr
     assert handler.request_count == 1, process.stderr
     assert json.loads(handler.requests[0][2])["rows"][0]["id"] == "shutdown-row"
+
+
+def test_forked_child_does_not_inherit_parent_pending_rows(monkeypatch):
+    import os
+
+    if not hasattr(os, "fork"):
+        pytest.skip("fork is not available")
+    from braintrust import logger
+    from braintrust.logger import BraintrustState
+
+    monkeypatch.setenv("BRAINTRUST_DISABLE_ATEXIT_FLUSH", "1")
+    state = BraintrustState()
+    monkeypatch.setattr(logger, "_state", state)
+    writer = state.global_bg_logger()
+    enqueue(writer, {"id": "parent-only"})
+    child = os.fork()
+    if child == 0:
+        os._exit(0 if state.global_bg_logger().pending_count == 0 else 3)
+    _, status = os.waitpid(child, 0)
+    assert os.waitstatus_to_exitcode(status) == 0
+    assert writer.pending_count == 1
 
 
 def test_new_background_writer_does_not_spin_during_shared_long_cooldown(ingestion_writer):

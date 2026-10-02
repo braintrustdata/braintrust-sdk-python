@@ -793,12 +793,42 @@ class BraintrustState:
                 check_updated_param("org_name", org_name, self.org_name)
                 return
 
+            if force_login:
+                self._flush_before_relogin()
+            fork_login = getattr(self, "_fork_login", None) or (None, None, None)
             state = login_to_state(
-                app_url=app_url,
-                api_key=api_key,
-                org_name=org_name,
+                # Do not let records queued under the old identity be prepared
+                # after the state swap and sent with the new user's key.
+                # Seal them into a prepared batch before replacing credentials.
+                app_url=app_url or fork_login[0],
+                api_key=api_key or fork_login[1],
+                org_name=org_name or fork_login[2],
             )
             self.copy_state(state)
+            self._fork_login = None
+
+    def _flush_before_relogin(self) -> None:
+        if not self.logged_in or not self._global_bg_logger.has_succeeded:
+            return
+        writer = self._global_bg_logger.get()
+        if writer.queue.size() and writer._retained_count:
+            try:
+                writer.flush()
+            except BraintrustLogFlushError:
+                if writer.pending_count:
+                    raise
+        if writer.queue.size() and not writer._retained_count:
+            deadline = time.monotonic() + writer.flush_timeout
+            if not writer.flush_lock.acquire(timeout=writer.flush_timeout):
+                raise BraintrustLogFlushError(
+                    writer.pending_count, [TimeoutError("Log delivery is still in progress")]
+                )
+            try:
+                writer._prepare_batches(writer.default_batch_size, deadline)
+            finally:
+                writer.flush_lock.release()
+        # Existing prepared batches keep their old credential lease. They
+        # need not complete before login changes if no unprepared rows remain.
 
     def api_client(self) -> BraintrustOpenApiClient:
         """Return the lazily bootstrapped OpenAPI client."""
@@ -915,6 +945,13 @@ class BraintrustState:
 
     def flush(self):
         self._global_bg_logger.get().flush()
+
+    def flush_best_effort(self) -> None:
+        """Flush during a user operation without turning telemetry failure into app failure."""
+        try:
+            self.flush()
+        except BraintrustLogFlushError as error:
+            _logger.warning("Failed to flush Braintrust logs; records remain queued: %s", error)
 
     def enforce_queue_size_limit(self, enforce: bool) -> None:
         """
@@ -1116,6 +1153,10 @@ class BraintrustLogFlushError(RuntimeError):
         super().__init__(f"Failed to flush {pending_count} retained log records: " + "; ".join(str(e) for e in errors))
 
 
+class _ExpiredOverflowUpload(RuntimeError):
+    """A signed URL expired; request a fresh URL before retrying the batch."""
+
+
 @dataclasses.dataclass(eq=False)
 class _PreparedLogBatch:
     item_count: int
@@ -1143,6 +1184,7 @@ class _HTTPBackgroundLogger:
         self._service_source = service_source
         self._replaced_entry: _LoaderLoginEntry[_LogIngestionAPI] | None = None
         self._pending: list[_PreparedLogBatch] = []
+        self._delivery_errors: list[Exception] = []
         self._retained_count = 0
         self._pending_attachments: list[BaseAttachment] = []
         self._pending_service: _LogIngestionAPI | None = None
@@ -1215,6 +1257,21 @@ class _HTTPBackgroundLogger:
                     self.thread.start()
                     self.started = True
 
+    def reset_after_fork(self) -> None:
+        """Start a clean child writer without replaying the parent's in-flight rows."""
+        self.flush_lock = threading.RLock()
+        self.start_thread_lock = threading.RLock()
+        self.queue.reset_after_fork()
+        self.thread = threading.Thread(target=self._publisher, daemon=True)
+        self.started = False
+        self._pending = []
+        self._retained_count = 0
+        self._pending_attachments = []
+        self._pending_service = None
+        self._pending_context = contextlib.ExitStack()
+        self._delivery_errors = []
+        self._replaced_entry = None
+
     def _finalize(self):
         self.logger.debug("Flushing final log events...")
         try:
@@ -1242,10 +1299,13 @@ class _HTTPBackgroundLogger:
                 continue
 
             try:
-                # Exhausted/permanent batches need an explicit retry or operator action.
-                if any(batch.exhausted(self.num_tries) for batch in self._pending):
-                    time.sleep(1.0)
-                    continue
+                # Transient failures remain eligible for background retries after
+                # the per-flush attempt budget expires. A permanent response is
+                # reported and discarded by _deliver_batches so it cannot wedge
+                # later rows indefinitely.
+                for batch in self._pending:
+                    if not batch.permanent and batch.exhausted(self.num_tries):
+                        batch.attempts = 0
                 self.flush(_background=True)
             except:
                 # Print exception but don't worry if stderr is closed because the process is shutting down.
@@ -1307,9 +1367,11 @@ class _HTTPBackgroundLogger:
         if timeout <= 0:
             raise ValueError("flush timeout must be positive")
         deadline = time.monotonic() + timeout
-        if not self.flush_lock.acquire(timeout=timeout):
-            raise BraintrustLogFlushError(self.pending_count, [TimeoutError("Another flush is still delivering logs")])
+        if not self.flush_lock.acquire(timeout=min(timeout, 0.1)):
+            raise BraintrustLogFlushError(self.pending_count, [TimeoutError("A log delivery is still in progress")])
         try:
+            if not _background:
+                self._delivery_errors.clear()
             if not _background:
                 for batch in self._pending:
                     if not batch.permanent:
@@ -1350,6 +1412,12 @@ class _HTTPBackgroundLogger:
                 self._retained_count = 0
                 self._pending_service = None
                 self._pending_context.close()
+                if _background:
+                    self._delivery_errors.clear()
+                if self._delivery_errors and not _background:
+                    errors = self._delivery_errors[:]
+                    self._delivery_errors.clear()
+                    raise BraintrustLogFlushError(self.pending_count, errors)
         except _IngestionDeferred as error:
             raise BraintrustLogFlushError(
                 self.pending_count, [TimeoutError("Log destination is cooling down")]
@@ -1470,7 +1538,17 @@ class _HTTPBackgroundLogger:
                                 payload_dir=self.failed_publish_payloads_dir, payload=batch.payload.decode("utf-8")
                             )
                             batch.dumped = True
-                        print(f"Log batch retained after {batch.attempts} attempts: {error}", file=self.outfile)
+                        print(f"Log batch failed after {batch.attempts} attempts: {error}", file=self.outfile)
+                    if batch.permanent:
+                        self._pending.remove(batch)
+                        self._delivery_errors.append(error)
+                        if not self._pending_attachments:
+                            self.queue.release(batch.item_count)
+                            self._retained_count -= batch.item_count
+                    elif batch.exhausted(self.num_tries):
+                        # Let the background publisher start a fresh bounded
+                        # retry cycle while keeping the original prepared bytes.
+                        batch.ready_at = max(batch.ready_at, time.monotonic() + 1.0)
 
     @staticmethod
     def _retryable_ingestion_error(error: Exception) -> bool:
@@ -1478,6 +1556,8 @@ class _HTTPBackgroundLogger:
             return True
         if isinstance(error, BraintrustHTTPError):
             return error.status_code in DEFAULT_RETRYABLE_STATUSES
+        if isinstance(error, _ExpiredOverflowUpload):
+            return True
         cause = error.__cause__ if isinstance(error, BraintrustTransportError) else error
         return isinstance(cause, requests_exceptions.RequestException) and is_retryable_request_exception(cause)
 
@@ -1569,9 +1649,17 @@ class _HTTPBackgroundLogger:
                         service, len(batch.payload), batch.overflow_rows, self._ingestion_policy(deadline)
                     )
                 if not batch.uploaded:
-                    self._upload_logs3_overflow_payload(
-                        service, batch.overflow_upload, batch.payload, self._ingestion_policy(deadline)
-                    )
+                    try:
+                        self._upload_logs3_overflow_payload(
+                            service, batch.overflow_upload, batch.payload, self._ingestion_policy(deadline)
+                        )
+                    except BraintrustHTTPError as error:
+                        if error.status_code == 403:
+                            batch.overflow_upload = None
+                            raise _ExpiredOverflowUpload(
+                                "Signed overflow upload URL was rejected; refreshing it"
+                            ) from error
+                        raise
                     batch.uploaded = True
                 if batch.overflow_reference is None:
                     batch.overflow_reference = bt_dumps(
@@ -1664,6 +1752,29 @@ def _internal_get_global_state() -> BraintrustState:
 
 
 _internal_reset_global_state()
+
+
+def _reset_global_state_after_fork() -> None:
+    """Replace inherited synchronization and transport state in a forked child."""
+    global _state
+    _state._fork_login = (_state.app_url, _state.login_token, _state.org_name)
+    if _state._global_bg_logger.has_succeeded:
+        _state._global_bg_logger.value.reset_after_fork()
+    _state._client_lock = threading.RLock()
+    _state._loader_api_client_cache = LRUCache(max_size=16, on_remove=_state._evict_loader_login_entry)
+    _state._ingestion_cache = LRUCache(max_size=1, on_remove=_state._evict_loader_login_entry)
+    _state._client = None
+    _state._app_conn = None
+    _state._api_conn = None
+    _state._proxy_conn = None
+    _state.logged_in = False
+    _state._context_manager_lock = threading.Lock()
+
+
+if hasattr(os, "register_at_fork"):
+    os.register_at_fork(after_in_child=_reset_global_state_after_fork)
+
+
 _logger = logging.getLogger("braintrust")
 
 
@@ -4737,7 +4848,7 @@ class Experiment(_ExperimentFetcher, Exportable):
         """
         # Flush our events to the API, and to the data warehouse, to ensure that the link we print
         # includes the new experiment.
-        self.flush()
+        self.state.flush_best_effort()
 
         state = self._get_state()
         project_url = f"{state.app_public_url}/app/{encode_uri_component(state.org_name)}/p/{encode_uri_component(self.project.name)}"
@@ -5700,7 +5811,7 @@ class Dataset(ObjectFetcher[DatasetEvent]):
         """
         # Flush our events to the API, and to the data warehouse, to ensure that the link we print
         # includes the new experiment.
-        self.flush()
+        self.state.flush_best_effort()
         state = self._get_state()
         response = state.api_client().datasets.get_dataset_id_summarize(self.id, summarize_data=summarize_data)
         raw_data_summary = response.get("data_summary")
@@ -6171,7 +6282,7 @@ class Logger(Exportable):
         self.last_start_time = span.end()
 
         if not self.async_flush:
-            self.flush()
+            self.state.flush_best_effort()
 
         return span.id
 
@@ -6270,7 +6381,7 @@ class Logger(Exportable):
         )
 
         if not self.async_flush:
-            self.flush()
+            self.state.flush_best_effort()
 
         return span.id
 
