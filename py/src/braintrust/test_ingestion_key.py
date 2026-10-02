@@ -41,6 +41,8 @@ class FakeDataPlane:
         self.grant_lifetimes_ms: list[int] = []
         # Fields to override in the next grants, to simulate malformed responses.
         self.grant_overrides: list[dict] = []
+        # Delay before answering upload creation, to expire short grants regardless of clock resolution.
+        self.create_delay_s = 0.0
         self.project_id: str | None = None
         self.lock = threading.Lock()
 
@@ -98,6 +100,8 @@ class FakeDataPlane:
         return 200, {}, json.dumps({"ids": [row["id"] for row in rows]}).encode()
 
     def _create(self, body: dict) -> tuple[int, dict, bytes]:
+        time.sleep(self.create_delay_s)
+        self.create_delay_s = 0.0
         upload_id = str(uuid.uuid4())
         num_chunks = -(-body["size_bytes"] // self.chunk_bytes)
         self.uploads[upload_id] = {**body, "chunks": {}, "completed": False}
@@ -456,7 +460,9 @@ def test_rows_with_failed_attachments_are_dropped(data_plane, no_private_login):
 
 
 def test_expired_upload_grant_starts_a_new_upload(data_plane, no_private_login):
-    data_plane.grant_lifetimes_ms = [1]
+    # The grant expires while its creation response is in flight.
+    data_plane.grant_lifetimes_ms = [50]
+    data_plane.create_delay_s = 0.2
     public_logger = braintrust.init_logger(ingestion_key=ingestion_url(data_plane.root))
     public_logger.log(input=Attachment(data=b"abcdef", filename="a.txt", content_type="text/plain"))
     public_logger.flush()
@@ -750,7 +756,7 @@ def test_transport_failures_never_reveal_the_key(data_plane, monkeypatch, capsys
         public_logger.log(input="x")
         errors.append(flush_error(public_logger))
 
-    assert "Connection refused" in errors[0]
+    assert "Failed to establish a new connection" in errors[0]
     assert "500" in errors[1]
     output = capsys.readouterr()
     for text in [*errors, output.out, output.err, caplog.text]:
