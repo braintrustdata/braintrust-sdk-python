@@ -497,7 +497,6 @@ def test_wrap_huggingface_hub_text_generation_details(memory_logger):
 @pytest.mark.vcr
 def test_wrap_huggingface_hub_feature_extraction_sync(memory_logger):
     pytest.importorskip("numpy")
-
     assert not memory_logger.pop()
     client = wrap_huggingface_hub(_sync_client(model=EMBED_MODEL, provider=EMBED_PROVIDER))
 
@@ -674,7 +673,66 @@ class TestAutoInstrumentHuggingFaceHub:
 
 
 # ---------------------------------------------------------------------------
-# Usage parsing
+# VCR-backed integration tests (non-mapping response guard)
+#
+# These tests exercise the full client → wrapper → patcher → HTTP path
+# with real cassettes. They verify that the instrumentation correctly
+# handles real mapping responses end-to-end. Non-mapping edge cases
+# (bytes, int, list) are covered by unit tests below — VCR cannot
+# reproduce them because the real HF API always returns JSON mappings.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.vcr(cassette_name="test_wrap_huggingface_hub_chat_completion_sync")
+def test_wrap_huggingface_hub_chat_completion_sync_instrumentation(memory_logger):
+    """Full-path test: real chat completion through wrapper produces valid spans."""
+    assert not memory_logger.pop()
+    client = wrap_huggingface_hub(_sync_client())
+
+    response = client.chat_completion(
+        messages=[{"role": "user", "content": "Say hi in one word."}],
+        max_tokens=10,
+    )
+
+    assert response.choices
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["span_attributes"]["name"] == "huggingface.chat_completion"
+    assert span["span_attributes"]["type"] == "llm"
+    assert span["metadata"]["provider"] == CHAT_PROVIDER
+    assert isinstance(span["metadata"]["model"], str) and span["metadata"]["model"]
+    assert span["output"]  # choices list is present
+
+
+@pytest.mark.vcr(cassette_name="test_wrap_huggingface_hub_text_generation_sync")
+def test_wrap_huggingface_hub_text_generation_sync_instrumentation(memory_logger):
+    """Full-path test: real text generation through wrapper produces valid spans."""
+    _skip_if_text_generation_unavailable()
+    assert not memory_logger.pop()
+    client = wrap_huggingface_hub(_sync_client(model=TEXT_GEN_MODEL, provider=TEXT_GEN_PROVIDER))
+
+    response = client.text_generation("Say hi in one word.", max_new_tokens=10)
+
+    assert response
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["span_attributes"]["name"] == "huggingface.text_generation"
+    assert span["span_attributes"]["type"] == "llm"
+    assert span["metadata"]["provider"] == TEXT_GEN_PROVIDER
+    assert span["output"]  # generated_text dict is present
+
+
+# ---------------------------------------------------------------------------
+# Unit tests (non-mapping response guards)
+#
+# These tests call internal tracing functions directly with synthetic
+# non-mapping inputs (bytes, int, list, None). They cannot use VCR because
+# VCR records real HTTP traffic, and the real HF API always returns JSON
+# mappings — there is no way to make it return b"raw video bytes" or 42
+# through a real HTTP call. These tests guard against the regression
+# where a non-mapping response crashes the instrumentation.
 # ---------------------------------------------------------------------------
 
 
