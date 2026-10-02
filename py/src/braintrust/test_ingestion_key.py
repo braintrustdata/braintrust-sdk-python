@@ -468,6 +468,15 @@ def test_expired_upload_grant_starts_a_new_upload(data_plane, no_private_login):
     public_logger.flush()
 
     [expired_id, upload_id] = list(data_plane.uploads)
+    # Nothing is sent against the expired grant, so its id never shows up in a path.
+    assert data_plane.paths() == [
+        ("POST", f"{BASE_PATH}/v1/uploads"),
+        ("POST", f"{BASE_PATH}/v1/uploads"),
+        ("PUT", f"{BASE_PATH}/v1/uploads/{upload_id}/chunks/0"),
+        ("PUT", f"{BASE_PATH}/v1/uploads/{upload_id}/chunks/1"),
+        ("POST", f"{BASE_PATH}/v1/uploads/{upload_id}/complete"),
+        ("POST", f"{BASE_PATH}/v1/logs"),
+    ]
     assert not data_plane.uploads[expired_id]["chunks"]
     assert data_plane.uploads[upload_id]["completed"]
     assert data_plane.rows[0]["input"]["key"] == upload_id
@@ -756,8 +765,10 @@ def test_transport_failures_never_reveal_the_key(data_plane, monkeypatch, capsys
         public_logger.log(input="x")
         errors.append(flush_error(public_logger))
 
-    assert "Failed to establish a new connection" in errors[0]
-    assert "500" in errors[1]
+    # The closed port fails without an HTTP response, and is retried like any transport error.
+    assert "POST /v1/logs failed after 2 attempts with " in errors[0]
+    assert re.search(r"failed after 2 attempts with \d{3}: ", errors[0]) is None
+    assert "POST /v1/logs failed after 2 attempts with 500: " in errors[1]
     output = capsys.readouterr()
     for text in [*errors, output.out, output.err, caplog.text]:
         assert KEY not in text
