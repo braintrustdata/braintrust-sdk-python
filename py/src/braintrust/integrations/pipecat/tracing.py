@@ -1,8 +1,10 @@
 """Observer-based tracing for Pipecat pipelines."""
 
 import json
+import logging
 from typing import Any
 
+from braintrust.audio import RecordingOptions
 from braintrust.integrations.utils import (
     _is_not_given,
     _normalize_chat_messages,
@@ -12,6 +14,10 @@ from braintrust.integrations.utils import (
 from braintrust.integrations.versioning import detect_module_version, version_satisfies
 from braintrust.logger import NOOP_SPAN, Attachment, SpanTypeAttribute, current_span
 from braintrust.logger import start_span as _bt_start_span
+
+from .llm_metrics import _llm_usage_metrics, _metadata_from_metric, _metadata_from_processor
+from .ttfb import TTFBRouter
+from .turn_metrics import TURN_METRIC_TYPES, log_turn_metric
 
 
 _INSTRUMENTATION = "pipecat-auto"
@@ -78,6 +84,8 @@ class BraintrustPipecatObserver(BaseObserver):
         capture_user_audio_attachments: bool | None = None,
         capture_agent_audio_attachments: bool | None = None,
         trace_turns: bool = True,
+        audio_format: str = "ogg",
+        recording_options: RecordingOptions | None = None,
         **kwargs: Any,
     ) -> None:
         self._uses_native_frame_deduplication = _USES_NATIVE_FRAME_DEDUPLICATION
@@ -93,6 +101,11 @@ class BraintrustPipecatObserver(BaseObserver):
             capture_agent_audio_attachments=capture_agent_audio_attachments,
         )
         self.capture_audio_attachments = self.capture_user_audio_attachments or self.capture_agent_audio_attachments
+        if audio_format not in {"ogg", "wav"}:
+            raise ValueError("audio_format must be ogg or wav")
+        self.audio_format = audio_format
+        self.recording_options = recording_options
+        self._voice = None
         self.trace_turns = trace_turns
         self._parent = _current_parent_export()
         self._pipeline_span: Any | None = None
@@ -104,6 +117,7 @@ class BraintrustPipecatObserver(BaseObserver):
         self._llm_span: Any | None = None
         self._llm_parent: str | None = None
         self._llm_text_parts: list[str] = []
+        self._ttfb = TTFBRouter(self._log_unmatched_ttfb)
         self._llm_metrics: dict[str, Any] = {}
         self._llm_metadata: dict[str, Any] = {}
         self._llm_tool_calls: list[dict[str, Any]] = []
@@ -113,14 +127,50 @@ class BraintrustPipecatObserver(BaseObserver):
         self._tts_default_span: Any | None = None
         self._tts_audio: dict[str, bytearray] = {}
         self._tts_audio_metadata: dict[str, dict[str, Any]] = {}
+        self._turn_metric_state: dict[str, Any] = {}
+        self._unassociated_turn_metric_state: dict[str, Any] = {}
         self._user_audio_span: Any | None = None
         self._user_audio: bytearray | None = None
         self._user_audio_metadata: dict[str, Any] = {}
 
+    def _bind_pipeline(self, pipeline: Any) -> None:
+        if self._voice is not None or not self.trace_turns:
+            return
+        import importlib.metadata
+
+        if importlib.metadata.version("pipecat-ai") != "1.12.0":
+            return
+        from .voice.discovery import discover
+        from .voice.instrumentation import NativeObserver
+
+        configuration = discover(pipeline)
+        if configuration is None:
+            return
+        root = start_span(name="pipecat.pipeline", type="task", set_current=False, parent=self._parent)
+        voice = NativeObserver(
+            root,
+            root=root,
+            capture_user_audio=self.capture_user_audio_attachments,
+            capture_agent_audio=self.capture_agent_audio_attachments,
+            audio_format=self.audio_format,
+            recording_options=self.recording_options,
+        )
+        try:
+            voice.bind(**configuration)
+        except Exception:  # noqa: BLE001 - unsupported hooks preserve the existing observer
+            voice.hooks.close()
+            root.end()
+            logging.getLogger(__name__).warning("Pipecat voice hooks unavailable; using frame tracing")
+            return
+        self._voice = voice
+
     async def on_pipeline_started(self) -> None:
-        self._ensure_pipeline_span()
+        if self._voice is None:
+            self._ensure_pipeline_span()
 
     async def on_process_frame(self, data: Any) -> None:
+        if self._voice is not None:
+            return
         frame = getattr(data, "frame", None)
         processor = getattr(data, "processor", None)
         is_terminal_at_sink = type(frame).__name__ in _TERMINAL_FRAME_TYPES and _is_pipeline_sink_processor(processor)
@@ -129,9 +179,20 @@ class BraintrustPipecatObserver(BaseObserver):
         await self._handle_frame(frame, processor=processor)
 
     async def on_push_frame(self, data: Any) -> None:
+        if self._voice is not None:
+            try:
+                await self._voice.on_push_frame(data)
+            except Exception:  # noqa: BLE001 - tracing cannot stop frame delivery
+                logging.getLogger(__name__).warning("Pipecat frame observation failed")
+            return
         await self._handle_frame(getattr(data, "frame", None), processor=getattr(data, "source", None))
 
     async def cleanup(self) -> None:
+        if self._voice is not None:
+            try:
+                await self._voice.finish()
+            except Exception:  # noqa: BLE001 - export failure cannot stop pipeline cleanup
+                logging.getLogger(__name__).warning("Pipecat voice finalization failed")
         self._close_all_open_spans()
         await super().cleanup()
 
@@ -175,7 +236,7 @@ class BraintrustPipecatObserver(BaseObserver):
         elif frame_type == "TranscriptionFrame":
             self._log_transcription(frame)
         elif frame_type == "TTSStartedFrame":
-            self._start_tts_span(frame)
+            self._start_tts_span(frame, processor)
         elif frame_type == "TTSTextFrame":
             self._append_tts_text(frame)
         elif frame_type == "TTSAudioRawFrame":
@@ -231,6 +292,7 @@ class BraintrustPipecatObserver(BaseObserver):
     def _start_llm_span(self, processor: Any) -> None:
         self._ensure_pipeline_span(processor=processor)
         if self._llm_span is not None:
+            self._ttfb.start("llm", None, self._llm_span.log)
             return
         metadata = {**self._latest_llm_metadata, **_metadata_from_processor(processor)}
         self._llm_metadata = _filter_llm_metadata(metadata)
@@ -246,6 +308,7 @@ class BraintrustPipecatObserver(BaseObserver):
             set_current=False,
         )
         self._llm_parent = self._llm_span.export()
+        self._ttfb.start("llm", processor, self._llm_span.log)
 
     def _capture_llm_tool_calls(self, frame: Any) -> None:
         calls = getattr(frame, "function_calls", None) or []
@@ -280,6 +343,7 @@ class BraintrustPipecatObserver(BaseObserver):
         if metadata:
             event["metadata"] = metadata
         self._llm_span.log(**event)
+        self._ttfb.end("llm")
         self._llm_span.end()
         self._llm_span = None
         self._llm_parent = None
@@ -342,7 +406,7 @@ class BraintrustPipecatObserver(BaseObserver):
         )
         span.end()
 
-    def _start_tts_span(self, frame: Any) -> None:
+    def _start_tts_span(self, frame: Any, processor: Any = None) -> None:
         self._ensure_pipeline_span()
         context_id = getattr(frame, "context_id", None) or "__default__"
         span = start_span(
@@ -357,6 +421,7 @@ class BraintrustPipecatObserver(BaseObserver):
         }
         span.log(metadata={k: v for k, v in metadata.items() if v is not None})
         self._tts_spans[context_id] = span
+        self._ttfb.start(("tts", context_id), processor, span.log)
         if context_id == "__default__":
             self._tts_default_span = span
 
@@ -389,6 +454,7 @@ class BraintrustPipecatObserver(BaseObserver):
 
     def _end_tts_span(self, frame: Any) -> None:
         context_id = getattr(frame, "context_id", None) or "__default__"
+        self._ttfb.end(("tts", context_id))
         span = self._tts_spans.pop(context_id, None)
         if span is not None:
             output = self._pop_tts_audio_output(context_id)
@@ -410,6 +476,7 @@ class BraintrustPipecatObserver(BaseObserver):
         self._ensure_pipeline_span()
         if self._user_audio_span is not None:
             return
+        self._turn_metric_state = {}
         self._user_audio = bytearray()
         self._user_audio_metadata = _audio_frame_metadata(frame) if frame is not None else {}
         self._user_audio_span = start_span(
@@ -470,22 +537,37 @@ class BraintrustPipecatObserver(BaseObserver):
         self._tts_audio.pop(context_id, None)
         self._tts_audio_metadata.pop(context_id, None)
 
+    def _log_unmatched_ttfb(self, **event):
+        self._ensure_pipeline_span()
+        self._pipeline_span.log(**event)
+
     def _capture_metrics(self, frame: Any, processor: Any) -> None:
         processor_name = _processor_name(processor)
         for metric in getattr(frame, "data", []) or []:
             metric_type = type(metric).__name__
-            if metric_type == "LLMUsageMetricsData":
+            if metric_type in TURN_METRIC_TYPES:
+                self._ensure_pipeline_span()
+                owner = self._user_audio_span or self._pipeline_span
+                state = (
+                    self._turn_metric_state
+                    if self._user_audio_span is not None
+                    else self._unassociated_turn_metric_state
+                )
+                log_turn_metric(owner, state, metric)
+            elif metric_type == "LLMUsageMetricsData":
                 metric_processor = getattr(metric, "processor", None)
                 if processor_name is not None and metric_processor is not None and metric_processor != processor_name:
                     continue
                 self._llm_metrics.update(_llm_usage_metrics(getattr(metric, "value", None)))
                 self._llm_metadata.update(_metadata_from_metric(metric))
-            elif metric_type == "TTFBMetricsData" and self._llm_span is not None:
+                self._llm_metadata.update(_metadata_from_processor(processor))
+            elif metric_type == "TTFBMetricsData":
+                owner = self._ttfb.capture(metric, processor)
                 value = getattr(metric, "value", None)
-                if isinstance(value, (int, float)) and not isinstance(value, bool):
+                if owner == "llm" and isinstance(value, (int, float)) and not isinstance(value, bool):
                     self._llm_metrics["time_to_first_token"] = value
-                self._llm_metadata.update(_metadata_from_metric(metric))
-        self._llm_metadata.update(_metadata_from_processor(processor))
+                    self._llm_metadata.update(_metadata_from_metric(metric))
+                    self._llm_metadata.update(_metadata_from_processor(processor))
         self._llm_metadata = _filter_llm_metadata(self._llm_metadata)
 
     def _log_error_frame(self, frame: Any) -> None:
@@ -493,6 +575,7 @@ class BraintrustPipecatObserver(BaseObserver):
         error = getattr(frame, "exception", None) or getattr(frame, "error", None)
         if self._llm_span is not None:
             self._llm_span.log(error=error)
+            self._ttfb.end("llm")
             self._llm_span.end()
             self._llm_span = None
         if self._pipeline_span is not None:
@@ -529,6 +612,7 @@ class BraintrustPipecatObserver(BaseObserver):
         self._tts_default_span = None
 
     def _close_all_open_spans(self) -> None:
+        self._ttfb.clear()
         self._close_child_spans()
         if self._pipeline_span is not None:
             self._pipeline_span.end()
@@ -661,55 +745,6 @@ def _tools_schema_to_openai_tools(tools: Any) -> list[dict[str, Any]]:
     return ret
 
 
-def _metadata_from_processor(processor: Any) -> dict[str, Any]:
-    metadata: dict[str, Any] = {}
-    settings = getattr(processor, "_settings", None)
-    model = getattr(settings, "model", None) or getattr(processor, "model", None)
-    if isinstance(model, str):
-        metadata["model"] = model
-    provider = _provider_from_processor(processor)
-    if provider:
-        metadata["provider"] = provider
-    return metadata
-
-
-def _metadata_from_metric(metric: Any) -> dict[str, Any]:
-    metadata: dict[str, Any] = {}
-    model = getattr(metric, "model", None)
-    if isinstance(model, str):
-        metadata["model"] = model
-    processor = getattr(metric, "processor", None)
-    if isinstance(processor, str):
-        provider = _provider_from_name(processor)
-        if provider:
-            metadata["provider"] = provider
-    return metadata
-
-
-def _provider_from_processor(processor: Any) -> str | None:
-    module = getattr(type(processor), "__module__", "")
-    return _provider_from_name(module)
-
-
-def _provider_from_name(name: str) -> str | None:
-    lowered = name.lower()
-    providers = {
-        "openai": "openai",
-        "anthropic": "anthropic",
-        "google": "google",
-        "gemini": "google",
-        "mistral": "mistral",
-        "cohere": "cohere",
-        "bedrock": "bedrock",
-        "aws": "bedrock",
-        "openrouter": "openrouter",
-    }
-    for needle, provider in providers.items():
-        if needle in lowered:
-            return provider
-    return None
-
-
 def _processor_name(processor: Any) -> str | None:
     name = getattr(processor, "name", None)
     if isinstance(name, str):
@@ -726,27 +761,6 @@ def _is_pipeline_sink_processor(processor: Any) -> bool:
 
 def _filter_llm_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in metadata.items() if key in _ALLOWED_LLM_METADATA_FIELDS and value is not None}
-
-
-def _llm_usage_metrics(usage: Any) -> dict[str, Any]:
-    metrics: dict[str, Any] = {}
-    prompt_tokens = getattr(usage, "prompt_tokens", None)
-    completion_tokens = getattr(usage, "completion_tokens", None)
-    total_tokens = getattr(usage, "total_tokens", None)
-    cache_read = getattr(usage, "cache_read_input_tokens", None)
-    cache_creation = getattr(usage, "cache_creation_input_tokens", None)
-    reasoning_tokens = getattr(usage, "reasoning_tokens", None)
-    for key, value in (
-        ("prompt_tokens", prompt_tokens),
-        ("completion_tokens", completion_tokens),
-        ("tokens", total_tokens),
-        ("cache_read_input_tokens", cache_read),
-        ("cache_creation_input_tokens", cache_creation),
-        ("reasoning_tokens", reasoning_tokens),
-    ):
-        if isinstance(value, (int, float)) and not isinstance(value, bool):
-            metrics[key] = value
-    return metrics
 
 
 def _tool_call_from_pipecat_call(call: Any) -> dict[str, Any] | None:

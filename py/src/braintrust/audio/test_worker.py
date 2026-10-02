@@ -1,0 +1,67 @@
+"""Local scheduler tests; no provider responses are simulated."""
+
+import asyncio
+import threading
+import unittest
+
+from .worker import RecordingBusy, encode_in_worker
+
+
+class WorkerTests(unittest.IsolatedAsyncioTestCase):
+    async def test_capacity_stays_reserved_after_waiter_cancel(self):
+        entered, release = threading.Event(), threading.Event()
+
+        def block():
+            entered.set()
+            release.wait(5)
+            return 1
+
+        first = asyncio.create_task(encode_in_worker(block))
+        try:
+            while not entered.is_set():
+                await asyncio.sleep(0.001)
+            second = asyncio.create_task(encode_in_worker(lambda: 2))
+            await asyncio.sleep(0.01)
+            first.cancel()
+            await asyncio.sleep(0)
+            self.assertFalse(first.done())
+            with self.assertRaises(RecordingBusy):
+                await encode_in_worker(lambda: 3)
+            release.set()
+            with self.assertRaises(asyncio.CancelledError):
+                await first
+            self.assertEqual(await second, 2)
+        finally:
+            release.set()
+        self.assertEqual(await encode_in_worker(lambda: 4), 4)
+
+    async def test_process_capture_budget_rejects_without_retaining_and_releases(self):
+        from unittest.mock import patch
+
+        from .budget import ByteBudget
+        from .recording import CallRecording
+
+        budget = ByteBudget(1000)
+        with patch("braintrust.audio.recording.source_budget", budget):
+            first, second = CallRecording(), CallRecording()
+            pcm = b"\0\0" * 480
+            self.assertIsNotNone(first.capture(0, pcm, 24000, 1))
+            self.assertIsNone(second.capture(0, pcm, 24000, 1))
+            self.assertEqual(second.reason, "process_capture_byte_limit")
+            self.assertEqual(second.bytes, 0)
+            first.clear()
+            self.assertEqual(budget.used, 0)
+
+
+def test_sealed_recording_rejects_late_writes_without_losing_samples():
+    from .recording import CallRecording
+
+    recording = CallRecording()
+    try:
+        recording.capture(0, b"\0\0" * 480, 24000, 1)
+        recording.seal()
+        assert recording.capture(1, b"\0\0" * 480, 24000, 1) is None
+        assert recording.bytes == 960
+        assert recording.reason is None
+    finally:
+        recording.clear()
