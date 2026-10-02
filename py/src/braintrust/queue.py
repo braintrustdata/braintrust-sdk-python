@@ -33,6 +33,7 @@ class LogQueue:
         self._queue: deque[T] = deque(maxlen=maxsize)
         self._has_items_event = threading.Event()
         self._total_dropped = 0
+        self._reserved = 0
         self._enforce_size_limit = False
 
     def enforce_queue_size_limit(self, enforce: bool) -> None:
@@ -60,7 +61,11 @@ class LogQueue:
         with self._mutex:
             dropped = []
 
-            if not self._enforce_size_limit:
+            if self._reserved:
+                if len(self._queue) >= self.maxsize - self._reserved:
+                    raise BufferError("Log queue is full behind undelivered batches; flush before logging more")
+                self._queue.append(item)
+            elif not self._enforce_size_limit:
                 # For queues with enforcement disabled, deque auto-drops silently
                 self._queue.append(item)
             else:
@@ -77,7 +82,7 @@ class LogQueue:
 
         return dropped
 
-    def drain_all(self) -> list[T]:
+    def drain_all(self, *, reserve: bool = False) -> list[T]:
         """
         Drain all items from the queue.
 
@@ -89,6 +94,8 @@ class LogQueue:
             if len(self._queue) == 0:
                 return []
 
+            if reserve:
+                self._reserved += len(self._queue)
             old_queue = self._queue
             self._queue = deque(maxlen=self.maxsize)
 
@@ -96,6 +103,19 @@ class LogQueue:
             self._has_items_event.clear()
 
         return list(old_queue) if old_queue else []
+
+    def release(self, count: int) -> None:
+        """Release capacity after retained rows have been delivered."""
+        with self._mutex:
+            self._reserved -= count
+
+    def restore(self, items: list[T]) -> None:
+        """Return unprepared records ahead of newer records without losing their capacity."""
+        with self._mutex:
+            self._reserved -= len(items)
+            self._queue.extendleft(reversed(items))
+            if items:
+                self._has_items_event.set()
 
     def size(self) -> int:
         """

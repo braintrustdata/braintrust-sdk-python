@@ -228,6 +228,7 @@ class Transport:
         enable_sdk_retries: bool | None = None,
         request_timeout: float | None = None,
         persist_cookies: bool = True,
+        pool_maxsize: int | None = None,
         sleep: Callable[[float], None] = time.sleep,
         monotonic: Callable[[], float] = time.monotonic,
         wall_clock: Callable[[], float] = time.time,
@@ -242,9 +243,20 @@ class Transport:
         if request_timeout is not None and request_timeout <= 0:
             raise ValueError("request_timeout must be positive")
         self._request_timeout = request_timeout
+        if pool_maxsize is not None and pool_maxsize < 1:
+            raise ValueError("pool_maxsize must be positive")
         if adapter is not None:
             self.session.mount("http://", adapter)
             self.session.mount("https://", adapter)
+        elif pool_maxsize is not None and self._owns_session:
+            pooled_adapter = HTTPAdapter(
+                pool_connections=pool_maxsize, pool_maxsize=pool_maxsize, pool_block=True, max_retries=0
+            )
+            replaced_adapters = set(self.session.adapters.values())
+            self.session.mount("http://", pooled_adapter)
+            self.session.mount("https://", pooled_adapter)
+            for replaced_adapter in replaced_adapters:
+                replaced_adapter.close()
         self._sleep = sleep
         self._monotonic = monotonic
         self._wall_clock = wall_clock

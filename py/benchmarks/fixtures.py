@@ -201,3 +201,11 @@ def make_bt_safe_deep_copy_cases() -> list[tuple[str, Any]]:
         ("circular", make_circular_payload()),
         ("non-string-keys", make_non_string_key_payload()),
     ]
+
+
+def ingestion_rows(count: int = 100) -> list[dict[str, Any]]:
+    """Deterministic trace-shaped rows for preparation and HTTP delivery measurements."""
+    return [
+        {"id": str(index), "project_id": "benchmark", "input": "hello" * 50, "scores": {"quality": 1}}
+        for index in range(count)
+    ]

@@ -98,6 +98,8 @@ def _normalize_vcr_request(request):
             row.pop("created", None)
             row.pop("root_span_id", None)
             row.pop("span_id", None)
+            # This counter is process-wide and depends on which tests ran first.
+            row.get("span_attributes", {}).pop("exec_counter", None)
             metrics = row.get("metrics", {})
             metrics.pop("start", None)
             metrics.pop("end", None)
