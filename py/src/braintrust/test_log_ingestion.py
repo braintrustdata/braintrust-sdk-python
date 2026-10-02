@@ -247,6 +247,7 @@ def test_relogin_and_adapter_replacement_keep_retained_batches_on_original_crede
     monkeypatch.delenv("BRAINTRUST_PROXY_URL", raising=False)
     monkeypatch.delenv("BRAINTRUST_ORG_NAME", raising=False)
     calls = 0
+    outage = True
 
     def respond(method, path, body, headers):
         nonlocal calls
@@ -256,7 +257,7 @@ def test_relogin_and_adapter_replacement_keep_retained_batches_on_original_crede
             return 200, {}, b"{}"
         if path == "/logs3":
             calls += 1
-            return (503, {}, b"later") if calls == 1 else (200, {}, b"ok")
+            return (503, {}, b"later") if outage else (200, {}, b"ok")
         return 200, {}, b'{"ok": true}'
 
     with scripted_server(respond, persistent=True) as (url, handler):
@@ -273,16 +274,23 @@ def test_relogin_and_adapter_replacement_keep_retained_batches_on_original_crede
         owned_adapter = original.transport.session.get_adapter(url)
         assert len(owned_adapter.poolmanager.pools) == 1
         assert owned_adapter._pool_block is False
+        enqueue(writer, {"id": "queued-before-relogin"})
         state.login(app_url=url, api_key="replacement", force_login=True)
         caller_adapter = HTTPAdapter()
         logger.set_http_adapter(caller_adapter)
+        outage = False
         # Evicted while leased: old pools remain usable until the retained wave is delivered.
         assert len(owned_adapter.poolmanager.pools) == 1
         enqueue(writer, {"id": "new"})
         writer.flush()
         assert len(owned_adapter.poolmanager.pools) == 0
         requests = [request for request in handler.requests if request[1] == "/logs3"]
-        assert [request[3] for request in requests] == ["Bearer original", "Bearer original", "Bearer replacement"]
+        assert [request[3] for request in requests] == [
+            "Bearer original",
+            "Bearer original",
+            "Bearer original",
+            "Bearer replacement",
+        ]
         assert requests[0][2] == requests[1][2]
         assert state.api_conn().get_json("ping") == {"ok": True}
         # Clearing owned sessions leaves the shared, caller-owned adapter open.
@@ -372,7 +380,7 @@ def test_concurrent_explicit_flush_timeout_leaves_accounting_intact(ingestion_wr
         future = pool.submit(writer.flush)
         assert entered.wait(3)
         try:
-            with pytest.raises(BraintrustLogFlushError, match="still in progress"):
+            with pytest.raises(BraintrustLogFlushError, match="waiting for another log delivery"):
                 writer.flush(timeout=0.05)
             assert writer.pending_count == 1
         finally:
@@ -380,6 +388,34 @@ def test_concurrent_explicit_flush_timeout_leaves_accounting_intact(ingestion_wr
         future.result(timeout=3)
     assert writer.pending_count == 0
     assert handler.request_count == 1
+
+
+def test_explicit_flush_waits_for_active_delivery_then_sends_queued_rows(ingestion_writer):
+    import threading
+    import time
+    from concurrent.futures import ThreadPoolExecutor
+
+    entered = threading.Event()
+    released = threading.Event()
+
+    def respond(method, path, body, headers):
+        entered.set()
+        assert released.wait(3)
+        return 200, {}, b"ok"
+
+    writer, _, handler = ingestion_writer(respond)
+    enqueue(writer, {"id": "first"})
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        first = pool.submit(writer.flush)
+        assert entered.wait(3)
+        enqueue(writer, {"id": "second"})
+        second = pool.submit(writer.flush)
+        time.sleep(0.05)
+        released.set()
+        first.result(timeout=3)
+        second.result(timeout=3)
+    assert writer.pending_count == 0
+    assert handler.request_count == 2
 
 
 def test_background_permanent_failure_is_dropped_and_later_rows_continue(ingestion_writer):

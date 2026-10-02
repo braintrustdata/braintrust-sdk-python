@@ -611,6 +611,7 @@ class BraintrustState:
         self._context_manager = None
         self._context_manager_lock = threading.Lock()
         self._client_lock = threading.RLock()
+        self._login_operation_lock = threading.RLock()
         self._ingestion_cache: LRUCache[str, _LoaderLoginEntry[_LogIngestionAPI]] = LRUCache(
             max_size=1,
             on_remove=self._evict_loader_login_entry,
@@ -763,6 +764,7 @@ class BraintrustState:
                     "_last_otel_setting",
                     "_context_manager_lock",
                     "_client_lock",
+                    "_login_operation_lock",
                     "_loader_api_client_cache",
                     "_ingestion_cache",
                 )
@@ -776,25 +778,23 @@ class BraintrustState:
         org_name: str | None = None,
         force_login: bool = False,
     ) -> None:
-        with self._client_lock:
-            if not force_login and self.logged_in:
-                # We have already logged in. If any provided login inputs disagree
-                # with our existing settings, raise an Exception warning the user to
-                # try again with `force_login=True`.
-                def check_updated_param(varname, arg, orig):
-                    if arg is not None and orig is not None and arg != orig:
-                        raise Exception(
-                            f"Re-logging in with different {varname} ({arg}) than original ({orig}). To force re-login, pass `force_login=True`"
-                        )
+        with self._login_operation_lock:
+            with self._client_lock:
+                if not force_login and self.logged_in:
+                    # We have already logged in. If any provided login inputs disagree
+                    # with our existing settings, raise an Exception warning the user to
+                    # try again with `force_login=True`.
+                    def check_updated_param(varname, arg, orig):
+                        if arg is not None and orig is not None and arg != orig:
+                            raise Exception(
+                                f"Re-logging in with different {varname} ({arg}) than original ({orig}). To force re-login, pass `force_login=True`"
+                            )
 
-                sanitized_api_key = HTTPConnection.sanitize_token(api_key) if api_key else None
-                check_updated_param("app_url", app_url, self.app_url)
-                check_updated_param("api_key", sanitized_api_key, self.login_token)
-                check_updated_param("org_name", org_name, self.org_name)
-                return
-
-            if force_login:
-                self._flush_before_relogin()
+                    sanitized_api_key = HTTPConnection.sanitize_token(api_key) if api_key else None
+                    check_updated_param("app_url", app_url, self.app_url)
+                    check_updated_param("api_key", sanitized_api_key, self.login_token)
+                    check_updated_param("org_name", org_name, self.org_name)
+                    return
             fork_login = getattr(self, "_fork_login", None) or (None, None, None)
             state = login_to_state(
                 # Do not let records queued under the old identity be prepared
@@ -804,31 +804,29 @@ class BraintrustState:
                 api_key=api_key or fork_login[1],
                 org_name=org_name or fork_login[2],
             )
-            self.copy_state(state)
-            self._fork_login = None
+            self._copy_login_state_after_sealing(state)
 
-    def _flush_before_relogin(self) -> None:
+    def _copy_login_state_after_sealing(self, new_state: "BraintrustState") -> None:
         if not self.logged_in or not self._global_bg_logger.has_succeeded:
+            with self._client_lock:
+                self.copy_state(new_state)
+                self._fork_login = None
             return
         writer = self._global_bg_logger.get()
-        if writer.queue.size() and writer._retained_count:
+        while True:
+            while not writer.flush_lock.acquire(timeout=1.0):
+                pass
             try:
-                writer.flush()
-            except BraintrustLogFlushError:
-                if writer.pending_count:
-                    raise
-        if writer.queue.size() and not writer._retained_count:
-            deadline = time.monotonic() + writer.flush_timeout
-            if not writer.flush_lock.acquire(timeout=writer.flush_timeout):
-                raise BraintrustLogFlushError(
-                    writer.pending_count, [TimeoutError("Log delivery is still in progress")]
-                )
-            try:
-                writer._prepare_batches(writer.default_batch_size, deadline)
+                with writer.queue._mutex:
+                    if not writer.queue._queue:
+                        with self._client_lock:
+                            self.copy_state(new_state)
+                            self._fork_login = None
+                        return
+                deadline = time.monotonic() + writer.flush_timeout
+                writer._prepare_batches(writer.default_batch_size, deadline, append=bool(writer._retained_count))
             finally:
                 writer.flush_lock.release()
-        # Existing prepared batches keep their old credential lease. They
-        # need not complete before login changes if no unprepared rows remain.
 
     def api_client(self) -> BraintrustOpenApiClient:
         """Return the lazily bootstrapped OpenAPI client."""
@@ -1162,6 +1160,8 @@ class _PreparedLogBatch:
     item_count: int
     payload: bytes
     overflow_rows: list[dict[str, Any]] | None
+    service: _LogIngestionAPI | None = None
+    wave: int = 0
     overflow_upload: dict[str, Any] | None = None
     overflow_reference: bytes | None = None
     uploaded: bool = False
@@ -1185,6 +1185,7 @@ class _HTTPBackgroundLogger:
         self._replaced_entry: _LoaderLoginEntry[_LogIngestionAPI] | None = None
         self._pending: list[_PreparedLogBatch] = []
         self._delivery_errors: list[Exception] = []
+        self._wave_counter = 0
         self._retained_count = 0
         self._pending_attachments: list[BaseAttachment] = []
         self._pending_service: _LogIngestionAPI | None = None
@@ -1270,6 +1271,7 @@ class _HTTPBackgroundLogger:
         self._pending_service = None
         self._pending_context = contextlib.ExitStack()
         self._delivery_errors = []
+        self._wave_counter = 0
         self._replaced_entry = None
 
     def _finalize(self):
@@ -1367,8 +1369,10 @@ class _HTTPBackgroundLogger:
         if timeout <= 0:
             raise ValueError("flush timeout must be positive")
         deadline = time.monotonic() + timeout
-        if not self.flush_lock.acquire(timeout=min(timeout, 0.1)):
-            raise BraintrustLogFlushError(self.pending_count, [TimeoutError("A log delivery is still in progress")])
+        if not self.flush_lock.acquire(timeout=timeout):
+            raise BraintrustLogFlushError(
+                self.pending_count, [TimeoutError("Timed out waiting for another log delivery")]
+            )
         try:
             if not _background:
                 self._delivery_errors.clear()
@@ -1425,18 +1429,26 @@ class _HTTPBackgroundLogger:
         finally:
             self.flush_lock.release()
 
-    def _prepare_batches(self, batch_size: int, deadline: float) -> None:
+    def _prepare_batches(self, batch_size: int, deadline: float, *, append: bool = False) -> None:
         wrapped_items = self.queue.drain_all(reserve=True)
+        service_context = contextlib.ExitStack()
         try:
             all_items, attachments = self._unwrap_lazy_values(wrapped_items)
             if not all_items:
                 self.queue.release(len(wrapped_items))
+                service_context.close()
                 return
-            service = self._pending_context.enter_context(self._service_source())
+            service = service_context.enter_context(self._service_source())
             if self._limit_service is not None and service is not self._limit_service:
                 self._max_request_size_result = None
             self._limit_service = service
-            limit = self._get_max_request_size(service, deadline)
+            try:
+                limit = self._get_max_request_size(service, deadline)
+            except _IngestionDeferred:
+                limit = {
+                    "max_request_size": self._max_request_size_override or DEFAULT_MAX_REQUEST_SIZE,
+                    "can_use_overflow": False,
+                }
             items = [stringify_with_overflow_meta(item) for item in all_items]
             batches = batch_items(
                 items,
@@ -1445,13 +1457,22 @@ class _HTTPBackgroundLogger:
                 get_byte_size=lambda item: item.overflow_meta.byte_size,
             )
             prepared = [self._prepare_batch(batch, limit) for batch in batches]
-            self._pending = prepared
+            for batch in prepared:
+                batch.service = service
+                batch.wave = self._wave_counter
+            self._wave_counter += 1
+            if append:
+                self._pending.extend(prepared)
+                self._pending_attachments.extend(attachments)
+            else:
+                self._pending = prepared
+                self._pending_attachments = attachments
+            self._pending_service = self._pending[0].service if self._pending else service
+            self._pending_context.callback(service_context.close)
             self.queue.release(len(wrapped_items) - len(items))
-            self._retained_count = len(items)
-            self._pending_attachments = attachments
-            self._pending_service = service
+            self._retained_count += len(items)
         except BaseException:
-            self._pending_context.close()
+            service_context.close()
             self.queue.restore(wrapped_items)
             raise
 
@@ -1473,35 +1494,39 @@ class _HTTPBackgroundLogger:
         return _PreparedLogBatch(len(items), payload, overflow_rows)
 
     def _deliver_batches(self, deadline: float) -> None:
-        service = self._pending_service
-        if service is None:
+        if not self._pending:
             return
         active: dict[concurrent.futures.Future, _PreparedLogBatch] = {}
         # A dedicated executor bounds submitted work and isolates ingestion from attachments/API calls.
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_concurrency) as executor:
             while self._pending or active:
                 now = time.monotonic()
+                wave = min((batch.wave for batch in self._pending), default=None)
+                wave_batches = [batch for batch in self._pending if batch.wave == wave]
+                service = wave_batches[0].service if wave_batches else self._pending_service
+                if service is None:
+                    return
                 if now < deadline:
-                    for batch in self._pending:
+                    for batch in wave_batches:
                         if len(active) >= self.max_concurrency or service.destination.delay() > 0:
                             break
                         if batch in active.values() or batch.exhausted(self.num_tries) or batch.ready_at > now:
                             continue
                         try:
-                            future = executor.submit(self._submit_logs_request, batch, service, deadline)
+                            future = executor.submit(self._submit_logs_request, batch, batch.service, deadline)
                         except RuntimeError:
                             # Python shuts down executors before atexit callbacks.
                             # Preserve serial delivery through the same scheduler.
                             future = concurrent.futures.Future()
                             try:
-                                self._submit_logs_request(batch, service, deadline)
+                                self._submit_logs_request(batch, batch.service, deadline)
                             except Exception as error:
                                 future.set_exception(error)
                             else:
                                 future.set_result(None)
                         active[future] = batch
                 if not active:
-                    eligible = [batch for batch in self._pending if not batch.exhausted(self.num_tries)]
+                    eligible = [batch for batch in wave_batches if not batch.exhausted(self.num_tries)]
                     if not eligible or now >= deadline:
                         return
                     delay = max(service.destination.delay(), min(max(0.0, batch.ready_at - now) for batch in eligible))
@@ -1523,6 +1548,7 @@ class _HTTPBackgroundLogger:
                     batch.attempts += 1
                     if error is None:
                         self._pending.remove(batch)
+                        self._pending_service = self._pending[0].service if self._pending else None
                         if not self._pending_attachments:
                             self.queue.release(batch.item_count)
                             self._retained_count -= batch.item_count
@@ -1541,6 +1567,7 @@ class _HTTPBackgroundLogger:
                         print(f"Log batch failed after {batch.attempts} attempts: {error}", file=self.outfile)
                     if batch.permanent:
                         self._pending.remove(batch)
+                        self._pending_service = self._pending[0].service if self._pending else None
                         self._delivery_errors.append(error)
                         if not self._pending_attachments:
                             self.queue.release(batch.item_count)
@@ -1761,6 +1788,7 @@ def _reset_global_state_after_fork() -> None:
     if _state._global_bg_logger.has_succeeded:
         _state._global_bg_logger.value.reset_after_fork()
     _state._client_lock = threading.RLock()
+    _state._login_operation_lock = threading.RLock()
     _state._loader_api_client_cache = LRUCache(max_size=16, on_remove=_state._evict_loader_login_entry)
     _state._ingestion_cache = LRUCache(max_size=1, on_remove=_state._evict_loader_login_entry)
     _state._client = None
