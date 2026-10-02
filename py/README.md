@@ -57,6 +57,11 @@ The logger sends rows and attachments straight to the data plane in the URL, wit
 It never logs in, so it ignores `BRAINTRUST_API_KEY` and any earlier `braintrust.login()`, and it doesn't register or look up the project.
 Passing an explicit `api_key` to `init_logger` uses that key instead of `BRAINTRUST_INGESTION_KEY`, and passing both `api_key` and `ingestion_key` is an error.
 Feedback logged with an ingestion key can only include scores, expected values, and tags.
+`Attachment` works as usual, but `ExternalAttachment` isn't supported, since its URL can point at content outside the project.
+
+Ingestion keys don't own the rows they write.
+Anyone holding the key can update any row of the project whose ID they know, including rows logged with an API key or with another ingestion key.
+Row IDs aren't secrets, so treat every row in the project as writable by whoever holds the key.
 
 To export OpenTelemetry spans with an ingestion key, point a standard OTLP exporter at the `/otel/v1/traces` path under the ingestion URL and drop the query string:
 

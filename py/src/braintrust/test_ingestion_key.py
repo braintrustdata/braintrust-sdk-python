@@ -7,8 +7,10 @@ so these tests exercise the actual logger, batcher, and upload flow.
 import hashlib
 import http.server
 import json
+import logging
 import re
 import threading
+import time
 import uuid
 from contextlib import contextmanager
 
@@ -37,6 +39,8 @@ class FakeDataPlane:
         # Responses to return before handling requests normally, keyed by (method, route).
         self.scripted: dict[tuple[str, str], list[tuple[int, dict, bytes]]] = {}
         self.grant_lifetimes_ms: list[int] = []
+        # Fields to override in the next grants, to simulate malformed responses.
+        self.grant_overrides: list[dict] = []
         self.project_id: str | None = None
         self.lock = threading.Lock()
 
@@ -87,6 +91,9 @@ class FakeDataPlane:
         for row in rows:
             if self.project_id is not None and row.get("project_id", self.project_id) != self.project_id:
                 return 403, {}, b'{"error": "row project does not match the ingestion key"}'
+            # External references can point at any object store content, so ingestion keys can't write them.
+            if '"external_attachment"' in json.dumps(row):
+                return 400, {}, b'{"error": "external_attachment references are not allowed"}'
         self.rows.extend(rows)
         return 200, {}, json.dumps({"ids": [row["id"] for row in rows]}).encode()
 
@@ -100,6 +107,7 @@ class FakeDataPlane:
             "chunk_bytes": self.chunk_bytes,
             "num_chunks": num_chunks,
             "expires_in_ms": lifetime,
+            **(self.grant_overrides.pop(0) if self.grant_overrides else {}),
         }
         return 201, {}, json.dumps(response).encode()
 
@@ -352,8 +360,14 @@ def test_attachments_upload_in_advertised_chunks_before_rows(data_plane, no_priv
     public_logger = braintrust.init_logger(ingestion_key=ingestion_url(data_plane.root))
     attachment = Attachment(data=b"hello world", filename="greeting.txt", content_type="text/plain")
     empty = Attachment(data=b"", filename="empty.txt", content_type="text/plain")
-    external = ExternalAttachment(url="s3://bucket/file.txt", filename="file.txt", content_type="text/plain")
-    public_logger.log(input={"file": attachment, "empty": empty, "external": external, "again": attachment})
+    # A reference committed earlier is plain data, so it passes through unchanged.
+    committed = {
+        "type": "braintrust_attachment",
+        "key": str(uuid.uuid4()),
+        "filename": "old.txt",
+        "content_type": "text/plain",
+    }
+    public_logger.log(input={"file": attachment, "empty": empty, "committed": committed, "again": attachment})
     public_logger.flush()
 
     [attachment_id, empty_id] = list(data_plane.uploads)
@@ -392,9 +406,32 @@ def test_attachments_upload_in_advertised_chunks_before_rows(data_plane, no_priv
             "filename": "empty.txt",
             "content_type": "text/plain",
         },
-        "external": external.reference,
+        "committed": committed,
         "again": file_reference,
     }
+
+
+def test_external_attachments_are_rejected_before_publishing(data_plane, no_private_login):
+    public_logger = braintrust.init_logger(ingestion_key=ingestion_url(data_plane.root))
+    external = ExternalAttachment(url="s3://private-bucket/file.txt", filename="file.txt", content_type="text/plain")
+    public_logger.log(input={"file": external})
+    kept_id = public_logger.log(input="no attachment")
+
+    with pytest.raises(ValueError, match="ExternalAttachment is not supported with ingestion keys"):
+        public_logger.flush()
+
+    assert data_plane.paths() == [("POST", f"{BASE_PATH}/v1/logs")]
+    assert [row["id"] for row in data_plane.rows] == [kept_id]
+    assert b"private-bucket" not in data_plane.requests[0]["body"]
+
+
+def test_raw_external_attachment_references_are_not_a_silent_success(data_plane, no_private_login):
+    # Plain dicts aren't validated client side, so the data plane's rejection must surface.
+    public_logger = braintrust.init_logger(ingestion_key=ingestion_url(data_plane.root))
+    public_logger.log(input={"type": "external_attachment", "url": "s3://private-bucket/file.txt"})
+
+    assert "400" in flush_error(public_logger)
+    assert data_plane.rows == []
 
 
 def test_rows_with_failed_attachments_are_dropped(data_plane, no_private_login):
@@ -567,3 +604,257 @@ def test_key_does_not_leak_through_repr(data_plane):
     assert KEY not in repr(public_logger)
     assert KEY not in repr(public_logger._public_bg_logger.endpoint)
     assert KEY not in public_logger.export()
+
+
+def test_explicit_empty_or_malformed_ingestion_key_never_falls_back(data_plane, monkeypatch, no_private_login):
+    monkeypatch.setenv("BRAINTRUST_API_KEY", "sk-private")
+    monkeypatch.setenv("BRAINTRUST_INGESTION_KEY", ingestion_url(data_plane.root))
+
+    for value in ["", "   ", "https://dp.example/ingest", KEY]:
+        with pytest.raises(ValueError, match="Invalid Braintrust ingestion key URL"):
+            braintrust.init_logger(ingestion_key=value)
+
+    assert braintrust.current_logger() is None
+    assert data_plane.requests == []
+
+
+def test_malformed_env_ingestion_key_never_falls_back(monkeypatch, no_private_login):
+    monkeypatch.setenv("BRAINTRUST_API_KEY", "sk-private")
+    monkeypatch.setenv("BRAINTRUST_INGESTION_KEY", "https://dp.example/ingest?ingestKey=not-a-key")
+
+    with pytest.raises(ValueError, match="Invalid Braintrust ingestion key URL"):
+        braintrust.init_logger(project="p")
+
+
+def test_default_overflow_threshold_is_512_kib(data_plane, monkeypatch, no_private_login):
+    monkeypatch.delenv("BRAINTRUST_MAX_REQUEST_SIZE", raising=False)
+    data_plane.chunk_bytes = 512 * 1024
+    public_logger = braintrust.init_logger(ingestion_key=ingestion_url(data_plane.root))
+
+    small_id = public_logger.log(input="x" * (200 * 1024))
+    public_logger.flush()
+    assert data_plane.paths() == [("POST", f"{BASE_PATH}/v1/logs")]
+    assert len(data_plane.requests[0]["body"]) < 512 * 1024
+
+    large_id = public_logger.log(input="x" * (600 * 1024))
+    public_logger.flush()
+    [upload_id] = list(data_plane.uploads)
+    assert [method for method, _ in data_plane.paths()[1:]] == ["POST", "PUT", "PUT", "POST", "POST"]
+    assert json.loads(data_plane.requests[-1]["body"]) == {
+        "api_version": 2,
+        "rows": {"type": "logs3_overflow", "key": upload_id},
+    }
+    assert [row["id"] for row in data_plane.rows] == [small_id, large_id]
+    assert not any(path.endswith("/version") for _, path in data_plane.paths())
+
+
+@pytest.mark.parametrize(
+    "override",
+    [
+        {"expires_in_ms": 0},
+        {"expires_in_ms": -1},
+        {"expires_in_ms": 300001},
+        {"expires_in_ms": "300000"},
+        {"expires_in_ms": True},
+        {"expires_in_ms": None},
+        {"num_chunks": 3},
+        {"num_chunks": 1},
+        {"chunk_bytes": 0},
+        {"chunk_bytes": 2.5},
+        {"upload_id": "../../v1/logs"},
+        {"upload_id": None},
+    ],
+)
+def test_malformed_upload_grants_are_rejected(data_plane, override, no_private_login):
+    # 6 bytes in 4 byte chunks is 2 chunks.
+    data_plane.grant_overrides = [override]
+    public_logger = braintrust.init_logger(ingestion_key=ingestion_url(data_plane.root))
+    public_logger.log(input=Attachment(data=b"abcdef", filename="a.txt", content_type="text/plain"))
+
+    with pytest.raises(RuntimeError, match="Invalid upload grant") as exc_info:
+        public_logger.flush()
+
+    assert KEY not in str(exc_info.value)
+    assert data_plane.paths() == [("POST", f"{BASE_PATH}/v1/uploads")]
+    assert data_plane.rows == []
+
+
+def test_maximum_grant_lifetime_is_accepted(data_plane, no_private_login):
+    data_plane.grant_lifetimes_ms = [300000]
+    public_logger = braintrust.init_logger(ingestion_key=ingestion_url(data_plane.root))
+    public_logger.log(input=Attachment(data=b"abcdef", filename="a.txt", content_type="text/plain"))
+    public_logger.flush()
+
+    assert len(data_plane.rows) == 1
+
+
+def test_gone_upload_grant_starts_a_new_upload(data_plane, no_private_login):
+    data_plane.script("PUT", "chunk", (410, {}, b'{"error": "upload grant expired"}'))
+    public_logger = braintrust.init_logger(ingestion_key=ingestion_url(data_plane.root))
+    public_logger.log(input=Attachment(data=b"abcdef", filename="a.txt", content_type="text/plain"))
+    public_logger.flush()
+
+    [gone_id, upload_id] = list(data_plane.uploads)
+    assert not data_plane.uploads[gone_id]["completed"]
+    assert data_plane.rows[0]["input"]["key"] == upload_id
+
+
+def test_gone_upload_grants_are_retried_a_bounded_number_of_times(data_plane, monkeypatch, no_private_login):
+    monkeypatch.setenv("BRAINTRUST_NUM_RETRIES", "1")
+    data_plane.script("PUT", "chunk", *[(410, {}, b'{"error": "upload grant expired"}')] * 5)
+    public_logger = braintrust.init_logger(ingestion_key=ingestion_url(data_plane.root))
+    public_logger.log(input=Attachment(data=b"abcdef", filename="a.txt", content_type="text/plain"))
+
+    with pytest.raises(RuntimeError, match="kept expiring"):
+        public_logger.flush()
+
+    assert len(data_plane.uploads) == 2
+    assert data_plane.rows == []
+
+
+def test_retry_waits_never_outlive_the_upload_grant(data_plane, no_private_login):
+    data_plane.grant_lifetimes_ms = [2000]
+    data_plane.script("PUT", "chunk", (503, {"Retry-After": "30"}, b'{"error": "unavailable"}'))
+    public_logger = braintrust.init_logger(ingestion_key=ingestion_url(data_plane.root))
+    public_logger.log(input=Attachment(data=b"abcdef", filename="a.txt", content_type="text/plain"))
+
+    started_at = time.monotonic()
+    public_logger.flush()
+
+    assert time.monotonic() - started_at < 5
+    [expired_id, upload_id] = list(data_plane.uploads)
+    assert not data_plane.uploads[expired_id]["completed"]
+    assert data_plane.rows[0]["input"]["key"] == upload_id
+
+
+def test_transport_failures_never_reveal_the_key(data_plane, monkeypatch, capsys, caplog, no_private_login):
+    monkeypatch.setenv("BRAINTRUST_NUM_RETRIES", "1")
+    # Reach the closed port directly, even if the environment configures a proxy.
+    monkeypatch.setenv("NO_PROXY", "127.0.0.1")
+    monkeypatch.setenv("no_proxy", "127.0.0.1")
+    caplog.set_level(logging.DEBUG)
+    with serve(FakeDataPlane()) as closed_root:
+        pass
+    errors = []
+    for root in [closed_root, data_plane.root]:
+        data_plane.script("POST", "logs", *[(500, {}, f'{{"error": "bad {KEY}"}}'.encode())] * 2)
+        public_logger = braintrust.init_logger(ingestion_key=ingestion_url(root))
+        public_logger.log(input="x")
+        errors.append(flush_error(public_logger))
+
+    assert "Connection refused" in errors[0]
+    assert "500" in errors[1]
+    output = capsys.readouterr()
+    for text in [*errors, output.out, output.err, caplog.text]:
+        assert KEY not in text
+        assert "ingestKey" not in text
+
+
+def test_redirects_are_not_followed(data_plane, no_private_login):
+    other_plane = FakeDataPlane()
+    with serve(other_plane) as other_root:
+        data_plane.script("POST", "logs", (307, {"Location": f"{other_root}/v1/logs"}, b""))
+        public_logger = braintrust.init_logger(ingestion_key=ingestion_url(data_plane.root))
+        public_logger.log(input="x")
+        error = flush_error(public_logger)
+
+    assert "307" in error
+    assert other_plane.requests == []
+
+
+def test_background_thread_publishes_without_explicit_flush(data_plane, monkeypatch, no_private_login):
+    monkeypatch.delenv("BRAINTRUST_SYNC_FLUSH")
+    public_logger = braintrust.init_logger(ingestion_key=ingestion_url(data_plane.root))
+    row_id = public_logger.log(input="x")
+
+    deadline = time.monotonic() + 10
+    while not data_plane.rows and time.monotonic() < deadline:
+        time.sleep(0.01)
+
+    assert [row["id"] for row in data_plane.rows] == [row_id]
+
+
+def test_atexit_flush_publishes_queued_rows(data_plane, monkeypatch, no_private_login):
+    monkeypatch.delenv("BRAINTRUST_DISABLE_ATEXIT_FLUSH")
+    registered = []
+    monkeypatch.setattr(logger.atexit, "register", registered.append)
+    public_logger = braintrust.init_logger(ingestion_key=ingestion_url(data_plane.root))
+    row_id = public_logger.log(input="x")
+
+    bg_logger = public_logger._public_bg_logger
+    assert registered == [bg_logger._finalize]
+    bg_logger._finalize()
+
+    assert [row["id"] for row in data_plane.rows] == [row_id]
+
+
+def test_public_and_private_spans_nest_without_crossing_loggers(data_plane, memory_logger):
+    simulate_login()
+    private_logger = braintrust.init_logger(project="private", project_id="private-project", set_current=False)
+    public_logger = braintrust.init_logger(ingestion_key=ingestion_url(data_plane.root), set_current=False)
+
+    with private_logger.start_span(name="private-root") as private_root:
+        with public_logger.start_span(name="public-child") as public_child:
+            # Global helpers follow the current span.
+            with braintrust.start_span(name="public-grandchild"):
+                pass
+            with private_logger.start_span(name="private-grandchild"):
+                pass
+    braintrust.flush()
+
+    public_rows = {row["span_attributes"]["name"]: row for row in data_plane.rows}
+    private_rows = {row["span_attributes"]["name"]: row for row in memory_logger.pop()}
+    assert set(public_rows) == {"public-child", "public-grandchild"}
+    assert set(private_rows) == {"private-root", "private-grandchild"}
+    assert public_rows["public-child"]["span_parents"] == [private_root.span_id]
+    assert public_rows["public-grandchild"]["span_parents"] == [public_child.span_id]
+    assert private_rows["private-grandchild"]["span_parents"] == [public_child.span_id]
+    assert {row["root_span_id"] for row in [*public_rows.values(), *private_rows.values()]} == {
+        private_root.root_span_id
+    }
+    assert all(row["project_id"] == "private-project" for row in private_rows.values())
+    assert all("project_id" not in row for row in public_rows.values())
+
+
+def test_public_trace_context_continues_in_a_private_service(data_plane, memory_logger):
+    public_logger = braintrust.init_logger(ingestion_key=ingestion_url(data_plane.root), set_current=False)
+    with public_logger.start_span(name="client") as client_span:
+        headers = client_span.inject()
+    public_logger.flush()
+
+    simulate_login()
+    # Resolving the id up front keeps the private logger from looking up its project by name.
+    braintrust.init_logger(project="server", project_id="server-project")._lazy_id.get()
+    with braintrust.start_span(name="handler", parent=braintrust.extract_trace_context(headers)):
+        pass
+    braintrust.flush()
+
+    [handler] = memory_logger.pop()
+    assert handler["project_id"] == "server-project"
+    assert handler["root_span_id"] == client_span.root_span_id
+    assert handler["span_parents"] == [client_span.span_id]
+    assert [row["span_attributes"]["name"] for row in data_plane.rows] == ["client"]
+
+
+def test_traced_functions_under_a_public_logger_stay_public(data_plane, memory_logger):
+    simulate_login()
+    public_logger = braintrust.init_logger(ingestion_key=ingestion_url(data_plane.root))
+
+    span_ids = []
+
+    @braintrust.traced
+    def answer(question):
+        span_ids.append(braintrust.current_span().id)
+        with braintrust.start_span(name="lookup") as lookup:
+            lookup.log(metadata={"q": question})
+        return "42"
+
+    answer("why")
+    public_logger.log_feedback(id=span_ids[0], scores={"ok": 1})
+    braintrust.flush()
+
+    rows = {row["span_attributes"]["name"]: row for row in data_plane.rows}
+    assert set(rows) == {"answer", "lookup"}
+    assert rows["answer"]["output"] == "42"
+    assert rows["answer"]["scores"] == {"ok": 1}
+    assert memory_logger.pop() == []

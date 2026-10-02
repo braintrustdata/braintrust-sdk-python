@@ -1558,6 +1558,10 @@ _INGESTION_ROW_FIELDS = frozenset(
     }
 )
 _UPLOAD_REFERENCE_TYPES = {"attachment": "braintrust_attachment", "logs3_overflow": LOGS3_OVERFLOW_REFERENCE_TYPE}
+_MAX_UPLOAD_GRANT_LIFETIME_MS = 300_000
+# Requests above this go through an overflow upload. Lambda deployments
+# base64-encode binary bodies, and data plane ingress accepts 1 MiB by default.
+DEFAULT_INGESTION_MAX_REQUEST_SIZE = 512 * 1024
 
 
 @dataclasses.dataclass(frozen=True)
@@ -1622,7 +1626,7 @@ class _PublicHTTPBackgroundLogger(_HTTPBackgroundLogger):
 
     def _get_max_request_size(self) -> dict[str, Any]:
         # Any batch can overflow through the upload API, so there is no server limit to look up.
-        max_request_size = coalesce(self._max_request_size_override, DEFAULT_MAX_REQUEST_SIZE)
+        max_request_size = coalesce(self._max_request_size_override, DEFAULT_INGESTION_MAX_REQUEST_SIZE)
         return {"max_request_size": max_request_size, "can_use_overflow": True}
 
     def flush(self, batch_size: int | None = None):
@@ -1645,7 +1649,7 @@ class _PublicHTTPBackgroundLogger(_HTTPBackgroundLogger):
                 except Exception as e:
                     attachment_errors.append(e)
                     print(
-                        f"Dropping row {item.get(ID_FIELD)} because an attachment failed to upload: {e}",
+                        f"Dropping row {item.get(ID_FIELD)} because of an attachment that can't be uploaded: {e}",
                         file=self.outfile,
                     )
                     continue
@@ -1666,7 +1670,8 @@ class _PublicHTTPBackgroundLogger(_HTTPBackgroundLogger):
         self, attachment: "BaseAttachment", uploads: "dict[int, AttachmentReference | Exception]"
     ) -> AttachmentReference:
         if isinstance(attachment, ExternalAttachment):
-            return attachment.reference
+            # The data plane rejects these, since their URL can point at any object store content.
+            raise ValueError("ExternalAttachment is not supported with ingestion keys. Use Attachment instead")
         # The same attachment object can appear in several rows of one flush.
         if id(attachment) not in uploads:
             reference = attachment.reference
@@ -1733,14 +1738,26 @@ class _PublicHTTPBackgroundLogger(_HTTPBackgroundLogger):
             # The grant's lifetime is relative, so measure it from before the request goes out.
             requested_at = time.monotonic()
             grant = self._request("post", "/v1/uploads", json=body)
-            upload_id = str(uuid.UUID(grant["upload_id"]))
-            chunk_bytes = grant["chunk_bytes"]
-            if chunk_bytes <= 0 or grant["num_chunks"] != -(-len(data) // chunk_bytes):
-                raise RuntimeError(f"Invalid upload grant from the data plane: {grant}")
-            deadline = requested_at + grant["expires_in_ms"] / 1000
+            chunk_bytes, num_chunks, expires_in_ms = (
+                grant.get(k) for k in ("chunk_bytes", "num_chunks", "expires_in_ms")
+            )
+            try:
+                # Normalizing the id keeps a malformed response from changing the request path.
+                upload_id = str(uuid.UUID(grant.get("upload_id")))
+            except (TypeError, ValueError, AttributeError):
+                upload_id = None
+            if (
+                upload_id is None
+                or not all(type(v) is int for v in (chunk_bytes, num_chunks, expires_in_ms))
+                or chunk_bytes <= 0
+                or num_chunks != -(-len(data) // chunk_bytes)
+                or not 0 < expires_in_ms <= _MAX_UPLOAD_GRANT_LIFETIME_MS
+            ):
+                raise RuntimeError(f"Invalid upload grant from the data plane: {self._redact(str(grant))}")
+            deadline = requested_at + expires_in_ms / 1000
 
             try:
-                for index in range(grant["num_chunks"]):
+                for index in range(num_chunks):
                     chunk = data[index * chunk_bytes : (index + 1) * chunk_bytes]
                     ack = self._request(
                         "put",
@@ -1750,7 +1767,9 @@ class _PublicHTTPBackgroundLogger(_HTTPBackgroundLogger):
                         headers={"Content-Type": "application/octet-stream"},
                     )
                     if ack.get("index") != index or ack.get("size_bytes") != len(chunk):
-                        raise RuntimeError(f"Invalid chunk acknowledgement from the data plane: {ack}")
+                        raise RuntimeError(
+                            f"Invalid chunk acknowledgement from the data plane: {self._redact(str(ack))}"
+                        )
                 result = self._request("post", f"/v1/uploads/{upload_id}/complete", deadline=deadline, json={})
             except _UploadGrantExpired:
                 print(f"Upload {upload_id} expired before it completed. Starting a new upload", file=self.outfile)
@@ -1763,28 +1782,42 @@ class _PublicHTTPBackgroundLogger(_HTTPBackgroundLogger):
                 or not isinstance(reference, dict)
                 or reference.get("type") != _UPLOAD_REFERENCE_TYPES[purpose]
             ):
-                raise RuntimeError(f"Upload {upload_id} completed with unexpected content: {result}")
+                raise RuntimeError(
+                    f"Upload {upload_id} completed with unexpected content: {self._redact(str(result))}"
+                )
             return reference
 
         raise RuntimeError(f"Uploads kept expiring before they completed after {self.num_tries} attempts")
 
     def _request(self, method: str, path: str, deadline: float | None = None, **kwargs: Any) -> Any:
-        """Send one request, retrying transient failures, and return its JSON body."""
+        """Send one request, retrying transient failures, and return its JSON body.
+
+        Requests against an upload grant pass its `deadline`. They never wait
+        past it, and raise `_UploadGrantExpired` once it passes or the data
+        plane reports the grant as gone.
+        """
         error = ""
         for i in range(self.num_tries):
-            if deadline is not None and time.monotonic() >= deadline:
-                raise _UploadGrantExpired()
+            timeout = self.timeout
+            if deadline is not None:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise _UploadGrantExpired()
+                timeout = min(timeout, remaining)
             retry_after = None
             try:
-                resp = getattr(self.api_conn.get(), method)(path, timeout=self.timeout, **kwargs)
+                # Redirects could forward the key somewhere else.
+                resp = getattr(self.api_conn.get(), method)(path, timeout=timeout, allow_redirects=False, **kwargs)
             except requests_exceptions.RequestException as e:
                 if not is_retryable_request_exception(e):
-                    raise
-                error = str(e)
+                    raise RuntimeError(f"{method.upper()} {path} failed with {self._redact(str(e))}") from None
+                error = self._redact(str(e))
             else:
-                if resp.ok:
+                if 200 <= resp.status_code < 300:
                     return resp.json()
-                error = f"{resp.status_code}: {resp.text}".replace(self.endpoint.key, "<redacted>")
+                if deadline is not None and resp.status_code == 410:
+                    raise _UploadGrantExpired()
+                error = self._redact(f"{resp.status_code}: {resp.text}")
                 if resp.status_code not in DEFAULT_RETRYABLE_STATUSES:
                     raise RuntimeError(f"{method.upper()} {path} failed with {error}")
                 retry_after = _parse_retry_after(resp.headers.get("Retry-After"), time.time())
@@ -1793,10 +1826,15 @@ class _PublicHTTPBackgroundLogger(_HTTPBackgroundLogger):
                 sleep_time_s = max(
                     BACKGROUND_LOGGER_BASE_SLEEP_TIME_S * (2**i), min(retry_after or 0, DEFAULT_MAX_ELAPSED_TIME)
                 )
+                if deadline is not None and time.monotonic() + sleep_time_s >= deadline:
+                    raise _UploadGrantExpired()
                 print(f"{method.upper()} {path} failed with {error}. Retrying in {sleep_time_s}s", file=self.outfile)
                 time.sleep(sleep_time_s)
 
         raise RuntimeError(f"{method.upper()} {path} failed after {self.num_tries} attempts with {error}")
+
+    def _redact(self, text: str) -> str:
+        return text.replace(self.endpoint.key, "<redacted>")
 
 
 def _internal_reset_global_state() -> None:
@@ -2253,11 +2291,13 @@ def init_logger(
     :param force_login: Login again, even if you have already logged in (by default, the logger will not login if you are already logged in)
     :param set_current: If true (the default), set the global current-experiment to the newly-created one.
     :param _create_in_project_group: Experimental: the name of an existing project group to create the project in. Existing projects must already belong to the group, otherwise registration fails with a 409. Ignored when project_id is provided.
-    :param ingestion_key: (Optional) The ingestion key URL of a project, for example `https://api.braintrust.dev/ingest?ingestKey=bt-ik-...`.
-    If the parameter is not specified and `api_key` isn't either, will try to use the `BRAINTRUST_INGESTION_KEY` environment variable.
+    :param ingestion_key: (Optional) The ingestion key URL of a project, for example `https://dp.example.com/ingest?ingestKey=bt-ik-...`.
+    If neither this nor `api_key` is specified, will try to use the `BRAINTRUST_INGESTION_KEY` environment variable.
     Ingestion keys can only write traces to the project they were issued for, so the logger never logs in, ignores `BRAINTRUST_API_KEY`
     and any previous login, and doesn't register or look up the project. `project` and `project_id` are optional and only used to
     label exported spans. A `project_id` is also sent with each row, and the data plane rejects rows for a different project.
+    Anyone holding the key can update any row of the project whose id they know, including rows logged with an API key or another
+    ingestion key. `ExternalAttachment` isn't supported, and rows containing one are dropped.
     :returns: The newly created Logger.
     """
 
@@ -2266,9 +2306,9 @@ def init_logger(
 
     if api_key is not None and ingestion_key is not None:
         raise ValueError("Pass either api_key or ingestion_key to init_logger, not both")
-    if api_key is None:
-        ingestion_key = ingestion_key or BraintrustEnv.INGESTION_KEY.get(None, use_dotenv=True)
-    if ingestion_key and _create_in_project_group is not None:
+    if api_key is None and ingestion_key is None:
+        ingestion_key = BraintrustEnv.INGESTION_KEY.get(None, use_dotenv=True)
+    if ingestion_key is not None and _create_in_project_group is not None:
         raise ValueError("Loggers using an ingestion key cannot create projects")
 
     compute_metadata_args = dict(project_name=project, project_id=project_id)
@@ -2282,7 +2322,7 @@ def init_logger(
         "project_id": project_id,
     }
 
-    if ingestion_key:
+    if ingestion_key is not None:
         # The data plane resolves the org and project from the key, so there is nothing to look up.
         public_metadata = OrgProjectMetadata(
             org_id=cast(str, None),
