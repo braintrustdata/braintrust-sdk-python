@@ -2617,7 +2617,8 @@
             "enum": [
               "env_var",
               "ai_provider",
-              "sandbox_provider"
+              "sandbox_provider",
+              "automation_integration"
             ],
             "default": "env_var",
             "description": "The category of the secret: env_var for regular environment variables, ai_provider for AI provider API keys"
@@ -5783,6 +5784,43 @@
                           "workspace_id",
                           "channel"
                         ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "pagerduty"
+                            ],
+                            "description": "The type of action to take"
+                          },
+                          "routing_key_secret_name": {
+                            "type": "string",
+                            "format": "uuid",
+                            "description": "The data-plane secret containing the PagerDuty routing key"
+                          },
+                          "severity": {
+                            "type": "string",
+                            "enum": [
+                              "critical",
+                              "error",
+                              "warning",
+                              "info"
+                            ]
+                          },
+                          "formatting_prompt": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 10000,
+                            "description": "Instructions for Loop to format content sent to this destination"
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "routing_key_secret_name",
+                          "severity"
+                        ]
                       }
                     ],
                     "description": "The action to take when the automation rule is triggered"
@@ -6127,6 +6165,43 @@
                           "type",
                           "workspace_id",
                           "channel"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "pagerduty"
+                            ],
+                            "description": "The type of action to take"
+                          },
+                          "routing_key_secret_name": {
+                            "type": "string",
+                            "format": "uuid",
+                            "description": "The data-plane secret containing the PagerDuty routing key"
+                          },
+                          "severity": {
+                            "type": "string",
+                            "enum": [
+                              "critical",
+                              "error",
+                              "warning",
+                              "info"
+                            ]
+                          },
+                          "formatting_prompt": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 10000,
+                            "description": "Instructions for Loop to format content sent to this destination"
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "routing_key_secret_name",
+                          "severity"
                         ]
                       }
                     ],
@@ -10038,14 +10113,16 @@
               "harness": {
                 "type": "string",
                 "enum": [
-                  "native",
                   "codex",
+                  "native",
                   "claude-code"
-                ]
+                ],
+                "description": "Required when saving a Loop automation. Currently only Codex is supported."
               },
               "model": {
                 "type": "string",
-                "minLength": 1
+                "minLength": 1,
+                "description": "Required when saving a Loop automation."
               },
               "endpoint_name": {
                 "type": "string",
@@ -10133,6 +10210,43 @@
                     "type",
                     "workspace_id",
                     "channel"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "pagerduty"
+                      ],
+                      "description": "The type of action to take"
+                    },
+                    "routing_key_secret_name": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "The data-plane secret containing the PagerDuty routing key"
+                    },
+                    "severity": {
+                      "type": "string",
+                      "enum": [
+                        "critical",
+                        "error",
+                        "warning",
+                        "info"
+                      ]
+                    },
+                    "formatting_prompt": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 10000,
+                      "description": "Instructions for Loop to format content sent to this destination"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "routing_key_secret_name",
+                    "severity"
                   ]
                 }
               ],

@@ -714,7 +714,9 @@ class EnvVar(TypedDict):
     """
     Optional classification for the secret (for example, the AI provider name)
     """
-    secret_category: NotRequired[Literal['env_var', 'ai_provider', 'sandbox_provider'] | None]
+    secret_category: NotRequired[
+        Literal['env_var', 'ai_provider', 'sandbox_provider', 'automation_integration']
+    ]
     """
     The category of the secret: env_var for regular environment variables, ai_provider for AI provider API keys
     """
@@ -1740,6 +1742,22 @@ class ProjectAutomationConfigAction1(TypedDict):
     """
 
 
+class ProjectAutomationConfigAction2(TypedDict):
+    type: Literal['pagerduty']
+    """
+    The type of action to take
+    """
+    routing_key_secret_name: str
+    """
+    The data-plane secret containing the PagerDuty routing key
+    """
+    severity: Literal['critical', 'error', 'warning', 'info']
+    formatting_prompt: NotRequired[str | None]
+    """
+    Instructions for Loop to format content sent to this destination
+    """
+
+
 class ProjectAutomationConfig(TypedDict):
     event_type: Literal['logs']
     """
@@ -1754,7 +1772,11 @@ class ProjectAutomationConfig(TypedDict):
     """
     Perform the triggered action at most once in this interval of seconds
     """
-    action: ProjectAutomationConfigAction | ProjectAutomationConfigAction1
+    action: (
+        ProjectAutomationConfigAction
+        | ProjectAutomationConfigAction1
+        | ProjectAutomationConfigAction2
+    )
     """
     The action to take when the automation rule is triggered
     """
@@ -1877,6 +1899,22 @@ class ProjectAutomationConfig4Action1(TypedDict):
     """
 
 
+class ProjectAutomationConfig4Action2(TypedDict):
+    type: Literal['pagerduty']
+    """
+    The type of action to take
+    """
+    routing_key_secret_name: str
+    """
+    The data-plane secret containing the PagerDuty routing key
+    """
+    severity: Literal['critical', 'error', 'warning', 'info']
+    formatting_prompt: NotRequired[str | None]
+    """
+    Instructions for Loop to format content sent to this destination
+    """
+
+
 class ProjectAutomationConfig4(TypedDict):
     event_type: Literal['environment_update']
     """
@@ -1887,7 +1925,11 @@ class ProjectAutomationConfig4(TypedDict):
     """
     Optional list of environment slugs to filter by
     """
-    action: ProjectAutomationConfig4Action | ProjectAutomationConfig4Action1
+    action: (
+        ProjectAutomationConfig4Action
+        | ProjectAutomationConfig4Action1
+        | ProjectAutomationConfig4Action2
+    )
     """
     The action to take when the automation rule is triggered
     """
@@ -3162,8 +3204,14 @@ class WindowedAutomationConfigLoop(TypedDict):
     """
     Write tools that may run without interactive approval
     """
-    harness: NotRequired[Literal['native', 'codex', 'claude-code'] | None]
+    harness: NotRequired[Literal['codex', 'native', 'claude-code'] | None]
+    """
+    Required when saving a Loop automation. Currently only Codex is supported.
+    """
     model: NotRequired[str | None]
+    """
+    Required when saving a Loop automation.
+    """
     endpoint_name: NotRequired[str | None]
     reasoning_effort: NotRequired[
         Literal['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max']
@@ -3219,6 +3267,22 @@ class WindowedAutomationConfigActions1(TypedDict):
     """
 
 
+class WindowedAutomationConfigActions2(TypedDict):
+    type: Literal['pagerduty']
+    """
+    The type of action to take
+    """
+    routing_key_secret_name: str
+    """
+    The data-plane secret containing the PagerDuty routing key
+    """
+    severity: Literal['critical', 'error', 'warning', 'info']
+    formatting_prompt: NotRequired[str | None]
+    """
+    Instructions for Loop to format content sent to this destination
+    """
+
+
 class WindowedAutomationConfig(TypedDict):
     event_type: Literal['windowed']
     """
@@ -3239,7 +3303,11 @@ class WindowedAutomationConfig(TypedDict):
     Optional Loop agent to run for each triggered window
     """
     actions: NotRequired[
-        Sequence[WindowedAutomationConfigActions | WindowedAutomationConfigActions1]
+        Sequence[
+            WindowedAutomationConfigActions
+            | WindowedAutomationConfigActions1
+            | WindowedAutomationConfigActions2
+        ]
     ]
     """
     Delivery actions exposed to Loop as tools, or run directly when Loop is not configured
