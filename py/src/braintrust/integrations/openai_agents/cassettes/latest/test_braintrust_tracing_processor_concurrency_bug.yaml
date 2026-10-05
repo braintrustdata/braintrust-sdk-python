@@ -1,7 +1,7 @@
 interactions:
 - request:
-    body: '{"include":[],"input":[{"content":"Who are you?","role":"user"}],"instructions":"You
-      are agent B. Just respond with ''B'' and nothing else.","model":"gpt-4o-mini","prompt_cache_key":"agents-sdk:run:4433d753611d4978a7a2e2bc6710afb0","tools":[]}'
+    body: '{"model":"gpt-4o-mini","include":[],"input":[{"content":"Who are you?","role":"user"}],"instructions":"You
+      are agent B. Just respond with ''B'' and nothing else.","prompt_cache_key":"agents-sdk:run:ca22e5fc698f455ea8d923e9836e6956","tools":[]}'
     headers:
       accept:
       - application/json
@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - Agents/Python 0.22.0
+      - Agents/Python 0.23.1
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.3.1
+      - 3.24.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -34,25 +34,25 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.6
+      - 3.14.7
     method: POST
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0937f04a85726e54006a8f02c48a0487d2932d24cc081025ab\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1787757252,\n  \"status\":
-        \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1787757252,\n  \"error\": null,\n
-        \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
+      string: "{\n  \"id\": \"resp_0f179865ba901369006ac3b803208887d295d16331a1fb17e0\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1791211523,\n  \"status\":
+        \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1791211523,\n  \"error\":
+        null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         \"You are agent B. Just respond with 'B' and nothing else.\",\n  \"max_output_tokens\":
         null,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
-        \ \"moderation\": null,\n  \"output\": [\n    {\n      \"id\": \"msg_0937f04a85726e54006a8f02c4da6087d2a4acdff9b44e5469\",\n
+        \ \"moderation\": null,\n  \"output\": [\n    {\n      \"id\": \"msg_0f179865ba901369006ac3b803793887d2b42bee87073f7775\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"B\"\n        }\n      ],\n
         \     \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n
         \ \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
-        \"agents-sdk:run:4433d753611d4978a7a2e2bc6710afb0\",\n  \"prompt_cache_retention\":
+        \"agents-sdk:run:ca22e5fc698f455ea8d923e9836e6956\",\n  \"prompt_cache_retention\":
         \"in_memory\",\n  \"reasoning\": {\n    \"context\": null,\n    \"effort\":
         null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
         \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n
@@ -78,17 +78,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a313c8ebde21cbfd-YYZ
+      - a45d35b2ec404b56-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2069'
+      - '2096'
       content-type:
       - application/json
       date:
-      - Wed, 26 Aug 2026 15:14:13 GMT
+      - Mon, 05 Oct 2026 14:45:23 GMT
       openai-processing-ms:
-      - '529'
+      - '497'
       openai-version:
       - '2020-10-01'
       server:
@@ -104,21 +104,21 @@ interactions:
       x-ratelimit-limit-tokens:
       - '150000000'
       x-ratelimit-remaining-requests:
-      - '29999'
+      - '29990'
       x-ratelimit-remaining-tokens:
-      - '149999952'
+      - '149998965'
       x-ratelimit-reset-requests:
-      - 2ms
+      - 20ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_ebb32b46c42b43bf9dffbcbf0197729e
+      - req_24779ab633ea4ef3a6cc7aba47ccc5bb
     status:
       code: 200
       message: OK
 - request:
-    body: '{"include":[],"input":[{"content":"What''s your name?","role":"user"}],"instructions":"You
-      are agent A. Just respond with ''A'' and nothing else.","model":"gpt-4o-mini","prompt_cache_key":"agents-sdk:run:826ac3852910478580828a260fa7ac2a","tools":[]}'
+    body: '{"model":"gpt-4o-mini","include":[],"input":[{"content":"What''s your name?","role":"user"}],"instructions":"You
+      are agent A. Just respond with ''A'' and nothing else.","prompt_cache_key":"agents-sdk:run:0af73eed866347ba9542b6338a2e48d7","tools":[]}'
     headers:
       accept:
       - application/json
@@ -133,7 +133,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - Agents/Python 0.22.0
+      - Agents/Python 0.23.1
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -143,33 +143,33 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.3.1
+      - 3.24.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
-      - '1'
+      - '0'
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.6
+      - 3.14.7
     method: POST
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0559a19f34d74d0d006a8f02c5067087d291fa823d2956fc94\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1787757253,\n  \"status\":
-        \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1787757253,\n  \"error\": null,\n
-        \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
+      string: "{\n  \"id\": \"resp_0cb264bf4818993e006ac3b803338887d2ab26de57fcf7e2eb\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1791211523,\n  \"status\":
+        \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1791211524,\n  \"error\":
+        null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         \"You are agent A. Just respond with 'A' and nothing else.\",\n  \"max_output_tokens\":
         null,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
-        \ \"moderation\": null,\n  \"output\": [\n    {\n      \"id\": \"msg_0559a19f34d74d0d006a8f02c575a487d2a460191d3049f48b\",\n
+        \ \"moderation\": null,\n  \"output\": [\n    {\n      \"id\": \"msg_0cb264bf4818993e006ac3b80413a087d29d955d2ee5287a87\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"A\"\n        }\n      ],\n
         \     \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n
         \ \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
-        \"agents-sdk:run:826ac3852910478580828a260fa7ac2a\",\n  \"prompt_cache_retention\":
+        \"agents-sdk:run:0af73eed866347ba9542b6338a2e48d7\",\n  \"prompt_cache_retention\":
         \"in_memory\",\n  \"reasoning\": {\n    \"context\": null,\n    \"effort\":
         null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
         \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n
@@ -195,17 +195,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a313c8eefa0bde74-YYZ
+      - a45d35b38e1960a9-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2069'
+      - '2096'
       content-type:
       - application/json
       date:
-      - Wed, 26 Aug 2026 15:14:13 GMT
+      - Mon, 05 Oct 2026 14:45:24 GMT
       openai-processing-ms:
-      - '704'
+      - '1065'
       openai-version:
       - '2020-10-01'
       server:
@@ -221,15 +221,15 @@ interactions:
       x-ratelimit-limit-tokens:
       - '150000000'
       x-ratelimit-remaining-requests:
-      - '29999'
+      - '29989'
       x-ratelimit-remaining-tokens:
-      - '149999950'
+      - '149998905'
       x-ratelimit-reset-requests:
-      - 2ms
+      - 22ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_eaf680155f7447d693591ca6ae31041f
+      - req_63aef2e6735540f49a1f2954c048c6ba
     status:
       code: 200
       message: OK

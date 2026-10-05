@@ -1,0 +1,130 @@
+interactions:
+- request:
+    body: '{"inputs":"What is 1+1? Reply with just the number.","stream":false,"model":"mistral-small-latest"}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '99'
+      content-type:
+      - application/json
+      host:
+      - api.mistral.ai
+      user-agent:
+      - mistral-client-python/2.10.0
+    method: POST
+    uri: https://api.mistral.ai/v1/conversations
+  response:
+    body:
+      string: '{"object":"conversation.response","conversation_id":"conv_01a0a02331387050a940dfdeaf55dff5","outputs":[{"object":"entry","type":"message.output","created_at":"2026-09-14T13:37:36.251610Z","completed_at":"2026-09-14T13:37:36.251610Z","model":"mistral-small-latest","id":"msg_01a0a02331fb73d197377b3f8951e0c1","role":"assistant","content":"2"}],"usage":{"prompt_tokens":16,"completion_tokens":2,"total_tokens":18},"guardrails":null}'
+    headers:
+      access-control-allow-origin:
+      - '*'
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a3afc9865fdbaaa4-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '430'
+      content-type:
+      - application/json
+      date:
+      - Mon, 14 Sep 2026 13:37:36 GMT
+      mistral-correlation-id:
+      - 01a0a023-303c-76ee-a580-7d613815379e
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=15552000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '273'
+      x-kong-proxy-latency:
+      - '217'
+      x-kong-request-id:
+      - 01a0a023-303c-76ee-a580-7d613815379e
+      x-kong-upstream-latency:
+      - '275'
+      x-ratelimit-limit-tokens-minute:
+      - '20000'
+      x-ratelimit-remaining-tokens-minute:
+      - '19404'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"inputs":"What is 2+3? Reply with just the number.","stream":false,"store":true,"handoff_execution":"server"}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '110'
+      content-type:
+      - application/json
+      host:
+      - api.mistral.ai
+      user-agent:
+      - mistral-client-python/2.10.0
+    method: POST
+    uri: https://api.mistral.ai/v1/conversations/conv_01a0a02331387050a940dfdeaf55dff5
+  response:
+    body:
+      string: '{"object":"conversation.response","conversation_id":"conv_01a0a02331387050a940dfdeaf55dff5","outputs":[{"object":"entry","type":"message.output","created_at":"2026-09-14T13:37:36.983434Z","completed_at":"2026-09-14T13:37:36.983434Z","model":"mistral-small-latest","id":"msg_01a0a02334d774a6abae5decb2a6f1e0","role":"assistant","content":"5"}],"usage":{"prompt_tokens":33,"completion_tokens":2,"total_tokens":35},"guardrails":null}'
+    headers:
+      access-control-allow-origin:
+      - '*'
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a3afc98bdd1bab33-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '430'
+      content-type:
+      - application/json
+      date:
+      - Mon, 14 Sep 2026 13:37:37 GMT
+      mistral-correlation-id:
+      - 01a0a023-33b7-7a5e-a385-5ede5e0a4e59
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=15552000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '320'
+      x-kong-proxy-latency:
+      - '17'
+      x-kong-request-id:
+      - 01a0a023-33b7-7a5e-a385-5ede5e0a4e59
+      x-kong-upstream-latency:
+      - '321'
+      x-ratelimit-limit-tokens-minute:
+      - '20000'
+      x-ratelimit-remaining-tokens-minute:
+      - '19369'
+    status:
+      code: 200
+      message: OK
+version: 1

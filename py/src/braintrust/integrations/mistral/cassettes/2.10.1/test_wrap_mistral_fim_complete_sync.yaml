@@ -1,0 +1,76 @@
+interactions:
+- request:
+    body: '{"model":"codestral-latest","prompt":"def add(a, b):\n    return ","max_tokens":16,"stream":false,"suffix":"\n\nprint(add(2,
+      3))"}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '130'
+      content-type:
+      - application/json
+      host:
+      - api.mistral.ai
+      user-agent:
+      - mistral-client-python/2.10.0
+    method: POST
+    uri: https://api.mistral.ai/v1/fim/completions
+  response:
+    body:
+      string: '{"id":"a5c9cfb007964051acc0fbccc23e3f50","created":1789393072,"model":"codestral-latest","usage":{"prompt_tokens":22,"total_tokens":27,"completion_tokens":5,"prompt_tokens_details":{"cached_tokens":0},"service_tier":"standard"},"object":"chat.completion","choices":[{"index":0,"finish_reason":"stop","message":{"role":"assistant","tool_calls":null,"content":"a
+        + b\n"}}]}'
+    headers:
+      access-control-allow-origin:
+      - '*'
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a3afc9ef1ebb52cf-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '371'
+      content-type:
+      - application/json
+      date:
+      - Mon, 14 Sep 2026 13:37:52 GMT
+      mistral-correlation-id:
+      - 01a0a023-71b1-7373-9c02-4ee61b66406e
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=15552000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '169'
+      x-kong-proxy-latency:
+      - '12'
+      x-kong-request-id:
+      - 01a0a023-71b1-7373-9c02-4ee61b66406e
+      x-kong-upstream-latency:
+      - '170'
+      x-max-retry-attempts-reached:
+      - 'false'
+      x-ratelimit-limit-req-minute:
+      - '125'
+      x-ratelimit-limit-tokens-minute:
+      - '625000'
+      x-ratelimit-remaining-req-minute:
+      - '124'
+      x-ratelimit-remaining-tokens-minute:
+      - '624973'
+      x-ratelimit-tokens-query-cost:
+      - '27'
+    status:
+      code: 200
+      message: OK
+version: 1

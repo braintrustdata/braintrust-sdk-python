@@ -1,5 +1,53 @@
 interactions:
 - request:
+    body: '{"run_id":"36548d0d-adfe-4219-a6a6-5ffb03e3502a","eval_type":"accuracy","data":{"agent_id":"math-agent","team_id":null,"model_id":"gpt-4o-mini","model_provider":"OpenAI","num_iterations":1},"sdk_version":"3.1.1"}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '212'
+      content-type:
+      - application/json
+      host:
+      - os-api.agno.com
+      user-agent:
+      - agno/3.1.1
+    method: POST
+    uri: https://os-api.agno.com/telemetry/evals
+  response:
+    body:
+      string: '{"message":"Eval creation acknowledged: 36548d0d-adfe-4219-a6a6-5ffb03e3502a","status":"success"}'
+    headers:
+      content-length:
+      - '97'
+      content-type:
+      - application/json
+      cross-origin-opener-policy:
+      - same-origin
+      cross-origin-resource-policy:
+      - same-origin
+      date:
+      - Mon, 05 Oct 2026 14:45:53 GMT
+      permissions-policy:
+      - camera=(), microphone=(), geolocation=()
+      referrer-policy:
+      - strict-origin-when-cross-origin
+      server:
+      - uvicorn
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      x-content-type-options:
+      - nosniff
+      x-frame-options:
+      - DENY
+    status:
+      code: 201
+      message: Created
+- request:
     body: "{\"messages\":[{\"role\":\"developer\",\"content\":\"You are an expert
       judge tasked with comparing the quality of an AI Agent\u2019s output to a user-provided
       expected output. You must assume the expected_output is correct - even if you
@@ -61,26 +109,26 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.6
+      - 3.14.7
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EIyqRnvZ6ilMFT8m9F5JynEm3NUkT\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1788192499,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EVeErx0M20iFfjkeQkHlZGEcL3JF7\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1791211553,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"{\\\"accuracy_score\\\":10,\\\"accuracy_reason\\\":\\\"The
-        agent_output '50' exactly matches the expected_output '50'. There are no discrepancies
-        or omissions in the output, and it accurately answers the multiplication question
-        posed in the agent_input. Thus, the accuracy and completeness criteria are
-        both fully satisfied.\\\"}\",\n        \"refusal\": null,\n        \"annotations\":
-        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
-        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 494,\n    \"completion_tokens\":
-        59,\n    \"total_tokens\": 553,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
-        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        agent_output is identical to the expected_output. The calculation of 10 times
+        5 is accurately reflected as 50 in both outputs. There are no differences,
+        omissions, or inaccuracies present. Therefore, it meets the criteria for high
+        accuracy and completeness, deserving a perfect score.\\\"}\",\n        \"refusal\":
+        null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
+        \     \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        494,\n    \"completion_tokens\": 66,\n    \"total_tokens\": 560,\n    \"prompt_tokens_details\":
+        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_d2f20b69d0\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_9fbc67c88f\"\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -91,17 +139,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a33d4b1238a5f80a-YYZ
+      - a45d366e5eb2a392-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1126'
+      - '1145'
       content-type:
       - application/json
       date:
-      - Mon, 31 Aug 2026 16:08:21 GMT
+      - Mon, 05 Oct 2026 14:45:54 GMT
       openai-processing-ms:
-      - '1637'
+      - '1036'
       openai-version:
       - '2020-10-01'
       server:
@@ -119,112 +167,16 @@ interactions:
       x-ratelimit-limit-tokens:
       - '150000000'
       x-ratelimit-remaining-requests:
-      - '29999'
+      - '29995'
       x-ratelimit-remaining-tokens:
-      - '149999517'
+      - '149998755'
       x-ratelimit-reset-requests:
-      - 2ms
+      - 10ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_896adcdbae2c4a9b8229992893ee7cd6
+      - req_3f89529c5c3848379df69bb539534a0d
     status:
       code: 200
       message: OK
-- request:
-    body: '{"session_id":"9904cfe3-bcfb-4bed-85f7-30f2a4c68d35","run_id":"557dff72-8985-49a6-b975-d9016f9a8209","data":{"agent_id":"solid-celsius-ecb5970b","db_type":null,"model_provider":"OpenAI","model_name":"OpenAIChat","model_id":"gpt-4o-mini","parser_model":null,"output_model":null,"has_tools":true,"has_memory":false,"has_learnings":false,"has_culture":false,"has_reasoning":false,"has_knowledge":false,"has_input_schema":false,"has_output_schema":true,"has_team":false},"sdk_version":"2.9.0","type":"agent"}'
-    headers:
-      accept:
-      - '*/*'
-      accept-encoding:
-      - gzip, deflate
-      connection:
-      - keep-alive
-      content-length:
-      - '504'
-      content-type:
-      - application/json
-      host:
-      - os-api.agno.com
-      user-agent:
-      - agno/2.9.0
-    method: POST
-    uri: https://os-api.agno.com/telemetry/runs
-  response:
-    body:
-      string: '{"message":"Run creation acknowledged: 557dff72-8985-49a6-b975-d9016f9a8209","status":"success"}'
-    headers:
-      content-length:
-      - '96'
-      content-type:
-      - application/json
-      cross-origin-opener-policy:
-      - same-origin
-      cross-origin-resource-policy:
-      - same-origin
-      date:
-      - Mon, 31 Aug 2026 16:08:21 GMT
-      permissions-policy:
-      - camera=(), microphone=(), geolocation=()
-      referrer-policy:
-      - strict-origin-when-cross-origin
-      server:
-      - uvicorn
-      strict-transport-security:
-      - max-age=31536000; includeSubDomains
-      x-content-type-options:
-      - nosniff
-      x-frame-options:
-      - DENY
-    status:
-      code: 201
-      message: Created
-- request:
-    body: '{"run_id":"b9fd9316-60dc-4739-8a77-59495892ebc9","eval_type":"accuracy","data":{"agent_id":null,"team_id":null,"model_id":"gpt-4o-mini","model_provider":"OpenAI","num_iterations":1},"sdk_version":"2.9.0"}'
-    headers:
-      accept:
-      - '*/*'
-      accept-encoding:
-      - gzip, deflate
-      connection:
-      - keep-alive
-      content-length:
-      - '204'
-      content-type:
-      - application/json
-      host:
-      - os-api.agno.com
-      user-agent:
-      - agno/2.9.0
-    method: POST
-    uri: https://os-api.agno.com/telemetry/evals
-  response:
-    body:
-      string: '{"message":"Eval creation acknowledged: b9fd9316-60dc-4739-8a77-59495892ebc9","status":"success"}'
-    headers:
-      content-length:
-      - '97'
-      content-type:
-      - application/json
-      cross-origin-opener-policy:
-      - same-origin
-      cross-origin-resource-policy:
-      - same-origin
-      date:
-      - Mon, 31 Aug 2026 16:08:21 GMT
-      permissions-policy:
-      - camera=(), microphone=(), geolocation=()
-      referrer-policy:
-      - strict-origin-when-cross-origin
-      server:
-      - uvicorn
-      strict-transport-security:
-      - max-age=31536000; includeSubDomains
-      x-content-type-options:
-      - nosniff
-      x-frame-options:
-      - DENY
-    status:
-      code: 201
-      message: Created
 version: 1

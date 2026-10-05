@@ -1,6 +1,7 @@
 interactions:
 - request:
-    body: '{"input":[{"role":"user","content":"What is 2+2? Answer with just the number."}],"max_output_tokens":50,"model":"gpt-4o-mini","stream":false}'
+    body: '{"model":"gpt-4o-mini","stream":false,"input":[{"role":"user","content":"What
+      is 2+2? Answer with just the number."}],"max_output_tokens":50}'
     headers:
       accept:
       - application/json
@@ -15,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.51.0
+      - pydantic-ai/2.54.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.20.0
+      - 3.24.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -38,14 +39,14 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_003d0f13fa00c0f3006abab8f6d37c87d299b921fc50420f10\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1790621942,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0be0d66e2bb2c948006ac3b83e17cc87d28aa5c9d5f1053902\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1791211582,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1790621943,\n  \"error\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1791211582,\n  \"error\":
         null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": 50,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_003d0f13fa00c0f3006abab8f745e887d294a06382582ed4f9\",\n
+        \     \"id\": \"msg_0be0d66e2bb2c948006ac3b83e6a8887d2b47fe7f9730edfd6\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"4\"\n        }\n      ],\n
@@ -77,7 +78,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a424fba629ae3786-YYZ
+      - a45d372368fcac4e-YYZ
       connection:
       - keep-alive
       content-length:
@@ -85,9 +86,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 28 Sep 2026 18:59:04 GMT
+      - Mon, 05 Oct 2026 14:46:23 GMT
       openai-processing-ms:
-      - '1299'
+      - '1206'
       openai-version:
       - '2020-10-01'
       server:
@@ -103,15 +104,15 @@ interactions:
       x-ratelimit-limit-tokens:
       - '150000000'
       x-ratelimit-remaining-requests:
-      - '29999'
+      - '29997'
       x-ratelimit-remaining-tokens:
-      - '149999960'
+      - '149999915'
       x-ratelimit-reset-requests:
-      - 2ms
+      - 6ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_0313366fa3a341db81f064f5b112ebe9
+      - req_d5d49736b66b42aeb5b808bdaabffad9
     status:
       code: 200
       message: OK

@@ -1,7 +1,8 @@
 interactions:
 - request:
-    body: '{"messages":[{"role":"system","content":"you are a helpful assistant"},{"role":"user","content":[{"type":"text","text":"Briefly
-      describe these attachments"},{"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="}},{"type":"file","file":{"filename":"blank.pdf","file_data":"data:application/pdf;base64,JVBERi0xLjAKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSA+PgplbmRvYmoKeHJlZgowIDQKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDA5IDAwMDAwIG4gCjAwMDAwMDAwNTggMDAwMDAgbiAKMDAwMDAwMDExNSAwMDAwMCBuIAp0cmFpbGVyCjw8IC9TaXplIDQgL1Jvb3QgMSAwIFIgPj4Kc3RhcnR4cmVmCjE5MAolJUVPRgo="}}]}],"model":"gpt-4o","temperature":0.0}'
+    body: '{"model":"gpt-4o","messages":[{"role":"system","content":"you are a helpful
+      assistant"},{"role":"user","content":[{"type":"text","text":"Briefly describe
+      these attachments"},{"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="}},{"type":"file","file":{"filename":"blank.pdf","file_data":"data:application/pdf;base64,JVBERi0xLjAKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSA+PgplbmRvYmoKeHJlZgowIDQKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDA5IDAwMDAwIG4gCjAwMDAwMDAwNTggMDAwMDAgbiAKMDAwMDAwMDExNSAwMDAwMCBuIAp0cmFpbGVyCjw8IC9TaXplIDQgL1Jvb3QgMSAwIFIgPj4Kc3RhcnR4cmVmCjE5MAolJUVPRgo="}}]}],"temperature":0.0}'
     headers:
       accept:
       - application/json
@@ -19,20 +20,19 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EQw6Ya5BeL6gOmEhsFvHeDNBQxsNC\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1790088590,\n  \"model\": \"gpt-4o-2024-08-06\",\n
+      string: "{\n  \"id\": \"chatcmpl-EVeKSCTJGQrKXJMibjIaigMZOLjeK\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1791211900,\n  \"model\": \"gpt-4o-2024-08-06\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"The first attachment is a solid red
-        square, which appears to be a plain image with no additional content or details.\\n\\nThe
-        second attachment, \\\"blank.pdf,\\\" contains no readable content or visible
-        images. It seems to be an empty document.\",\n        \"refusal\": null,\n
+        square image. The second attachment, \\\"blank.pdf,\\\" appears to be an empty
+        document with no readable content or images.\",\n        \"refusal\": null,\n
         \       \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\":
         \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 495,\n    \"completion_tokens\":
-        47,\n    \"total_tokens\": 542,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        31,\n    \"total_tokens\": 526,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
         0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_087f6ae320\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_61a9eaf3ca\"\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -41,13 +41,13 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '1043'
+      - '959'
       content-type:
       - application/json
       date:
-      - Tue, 22 Sep 2026 14:49:51 GMT
+      - Mon, 05 Oct 2026 14:51:40 GMT
       openai-processing-ms:
-      - '1139'
+      - '1006'
       openai-version:
       - '2020-10-01'
       server:

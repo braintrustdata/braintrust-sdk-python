@@ -6,7 +6,7 @@ interactions:
       accept:
       - text/event-stream
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
@@ -16,26 +16,26 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.10.0
+      - mistral-client-python/3.0.0
     method: POST
     uri: https://api.mistral.ai/v1/fim/completions#stream
   response:
     body:
-      string: 'data: {"id":"7ff9009139024e719e023e908ebac5f3","object":"chat.completion.chunk","created":1789393073,"model":"codestral-latest","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
+      string: 'data: {"id":"7a7f7371d67c458e8c0fbb0c7fde8a33","object":"chat.completion.chunk","created":1791211556,"model":"codestral-latest","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
 
 
-        data: {"id":"7ff9009139024e719e023e908ebac5f3","object":"chat.completion.chunk","created":1789393073,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"a"},"finish_reason":null}],"p":"abcdefghijklmnopqrstuvw"}
+        data: {"id":"7a7f7371d67c458e8c0fbb0c7fde8a33","object":"chat.completion.chunk","created":1791211556,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"a"},"finish_reason":null}],"p":"abcdefghijklmnopqrstuvwxyz01234"}
 
 
-        data: {"id":"7ff9009139024e719e023e908ebac5f3","object":"chat.completion.chunk","created":1789393073,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"
-        *"},"finish_reason":null}],"p":"abcdefg"}
+        data: {"id":"7a7f7371d67c458e8c0fbb0c7fde8a33","object":"chat.completion.chunk","created":1791211556,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"
+        *"},"finish_reason":null}],"p":"abcdefghijklmnopqr"}
 
 
-        data: {"id":"7ff9009139024e719e023e908ebac5f3","object":"chat.completion.chunk","created":1789393073,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"
-        b"},"finish_reason":null}],"p":"abcdefghijklmnopqrstu"}
+        data: {"id":"7a7f7371d67c458e8c0fbb0c7fde8a33","object":"chat.completion.chunk","created":1791211556,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"
+        b"},"finish_reason":null}],"p":"abcdefghijklmnopqrstuvwxyz01234"}
 
 
-        data: {"id":"7ff9009139024e719e023e908ebac5f3","object":"chat.completion.chunk","created":1789393073,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":""},"finish_reason":"stop"}],"usage":{"prompt_tokens":24,"total_tokens":28,"completion_tokens":4,"prompt_tokens_details":{"cached_tokens":0},"service_tier":"standard"},"p":"abcdefghijklmnopqrstuvwxyz01234"}
+        data: {"id":"7a7f7371d67c458e8c0fbb0c7fde8a33","object":"chat.completion.chunk","created":1791211556,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":""},"finish_reason":"stop"}],"usage":{"prompt_tokens":24,"total_tokens":28,"completion_tokens":4,"prompt_tokens_details":{"cached_tokens":0},"service_tier":"standard"},"p":"abcdefghijklmnop"}
 
 
         data: [DONE]
@@ -50,15 +50,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a3afc9f34e6c1a24-YYZ
+      - a45d3685891faeb6-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 14 Sep 2026 13:37:53 GMT
+      - Mon, 05 Oct 2026 14:45:56 GMT
       mistral-correlation-id:
-      - 01a0a023-7450-71d0-8cfa-903e9fed3a1a
+      - 01a10c87-4fb7-7ae3-8f2e-0800438ec651
       server:
       - cloudflare
       strict-transport-security:
@@ -68,13 +68,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '153'
+      - '106'
       x-kong-proxy-latency:
-      - '27'
+      - '26'
       x-kong-request-id:
-      - 01a0a023-7450-71d0-8cfa-903e9fed3a1a
+      - 01a10c87-4fb7-7ae3-8f2e-0800438ec651
       x-kong-upstream-latency:
-      - '154'
+      - '107'
       x-max-retry-attempts-reached:
       - 'false'
     status:

@@ -9,16 +9,16 @@ interactions:
       Content-Type:
       - application/json
       user-agent:
-      - google-genai-sdk/2.25.0 gl-python/3.14.7 google-adk/2.10.0 gl-python/3.14.7
+      - google-genai-sdk/2.28.0 gl-python/3.14.7 google-adk/2.11.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/2.25.0 gl-python/3.14.7 google-adk/2.10.0 gl-python/3.14.7
+      - google-genai-sdk/2.28.0 gl-python/3.14.7 google-adk/2.11.0 gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"The current population of Tokyo, Japan
-        is estimated to be 14,270,748 as of 2026.\"\n          }\n        ],\n        \"role\":
+        [\n          {\n            \"text\": \"The current projected population of
+        Tokyo, Japan, is 14,270,748 as of 2026.\"\n          }\n        ],\n        \"role\":
         \"model\"\n      },\n      \"finishReason\": \"STOP\",\n      \"index\": 0,\n
         \     \"groundingMetadata\": {\n        \"searchEntryPoint\": {\n          \"renderedContent\":
         \"\\u003cstyle\\u003e\\n.container {\\n  align-items: center;\\n  border-radius:
@@ -83,35 +83,35 @@ interactions:
         \   \\u003c/svg\\u003e\\n    \\u003cdiv class=\\\"gradient-container\\\"\\u003e\\u003cdiv
         class=\\\"gradient\\\"\\u003e\\u003c/div\\u003e\\u003c/div\\u003e\\n  \\u003c/div\\u003e\\n
         \ \\u003cdiv class=\\\"carousel\\\"\\u003e\\n    \\u003ca class=\\\"chip\\\"
-        href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQH3K_lOJLF5T-y2ZPiKJiasj35j4rRVIIq71jChr7hYjahcLOjF5rbzLUqzil0x56iX4Ns9EmNMJKTueK24SFmkgTpsHYKhfnikCNEiz5G-sorufvjNreJa7-zpv_HFZe5oEpyYZscguKh67pNMPRvHKiov1rrD3fpfJB0Ltb-ygGtYkyPajTYbeUHTv0_UceRo774f0P1g3k0unvBBKPGITbtrF3I=\\\"\\u003ecurrent
-        population of Tokyo, Japan\\u003c/a\\u003e\\n  \\u003c/div\\u003e\\n\\u003c/div\\u003e\\n\"\n
+        href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGCMZSLCe6o-n74OvBG9BkfBhlq2t44W_0g735PNwINkVEgF1xbRe-75Pmu9dMBt5HnsHnq_5WBj5dOtx3zbGNBfzeN0CY96ko3lJPdgelkujepUEUrQ0QdrZBKIeUxqUWM4eZ48-uPOtfvvkuaTdmUQA0IfQAQzLXPDUuEEVibrp7JylxvzWOw6lMSfo7thsiPiEIUdeE3NoWIzYCPLpGe5HIC2w==\\\"\\u003ecurrent
+        population of Tokyo Japan\\u003c/a\\u003e\\n  \\u003c/div\\u003e\\n\\u003c/div\\u003e\\n\"\n
         \       },\n        \"groundingChunks\": [\n          {\n            \"web\":
-        {\n              \"uri\": \"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFLAzQVN5tpGIdzUyuLRiHJ6FFRCq_w7RiorWsrf1SMyUefTHnaTERFqvj5XekuCiMcXYpoLbP7QyxwGBj78QIdsqybfbC4WL2BZgGqtdzduYt9avo2gTL_6mfacT1lz1a9gppMRpugBP2vsA8LfA==\",\n
+        {\n              \"uri\": \"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHPHg0TAUbggJybYQZEaRzEe2ql-6neGdPBRIJMvJBy2tW-iuL62CS5sSET4oNdJbnmzkIdgBCpUAbjPGT3Ardy0kt-25DQ830CxCF9aQXUHZRocz_4zvq8Vjlij3UCxeeyagM93Yle7XpAIpahxQ==\",\n
         \             \"title\": \"wikipedia.org\"\n            }\n          }\n        ],\n
         \       \"groundingSupports\": [\n          {\n            \"segment\": {\n
-        \             \"endIndex\": 80,\n              \"text\": \"The current population
-        of Tokyo, Japan is estimated to be 14,270,748 as of 2026.\"\n            },\n
+        \             \"endIndex\": 75,\n              \"text\": \"The current projected
+        population of Tokyo, Japan, is 14,270,748 as of 2026.\"\n            },\n
         \           \"groundingChunkIndices\": [\n              0\n            ]\n
         \         }\n        ],\n        \"webSearchQueries\": [\n          \"current
-        population of Tokyo, Japan\"\n        ]\n      }\n    }\n  ],\n  \"usageMetadata\":
-        {\n    \"promptTokenCount\": 48,\n    \"candidatesTokenCount\": 47,\n    \"totalTokenCount\":
-        531,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
+        population of Tokyo Japan\"\n        ]\n      }\n    }\n  ],\n  \"usageMetadata\":
+        {\n    \"promptTokenCount\": 48,\n    \"candidatesTokenCount\": 45,\n    \"totalTokenCount\":
+        721,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
         \       \"tokenCount\": 48\n      }\n    ],\n    \"toolUsePromptTokenCount\":
-        98,\n    \"toolUsePromptTokensDetails\": [\n      {\n        \"modality\":
-        \"TEXT\",\n        \"tokenCount\": 98\n      }\n    ],\n    \"thoughtsTokenCount\":
-        338,\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash\",\n
-        \ \"responseId\": \"2Li6avXUPP3J-8YP0c3P0AU\"\n}\n"
+        93,\n    \"toolUsePromptTokensDetails\": [\n      {\n        \"modality\":
+        \"TEXT\",\n        \"tokenCount\": 93\n      }\n    ],\n    \"thoughtsTokenCount\":
+        535,\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash\",\n
+        \ \"responseId\": \"D7jDaqD5FZ2G39IPub35gAk\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Mon, 28 Sep 2026 18:58:35 GMT
+      - Mon, 05 Oct 2026 14:45:39 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=2872
+      - gfet4t7; dur=3789
       Transfer-Encoding:
       - chunked
       Vary:
@@ -127,7 +127,7 @@ interactions:
       X-XSS-Protection:
       - '0'
       content-length:
-      - '6850'
+      - '6838'
     status:
       code: 200
       message: OK

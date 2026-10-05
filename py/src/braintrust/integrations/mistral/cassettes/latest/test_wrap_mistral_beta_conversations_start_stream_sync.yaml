@@ -5,7 +5,7 @@ interactions:
       accept:
       - text/event-stream
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
@@ -15,24 +15,24 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.10.0
+      - mistral-client-python/3.0.0
     method: POST
     uri: https://api.mistral.ai/v1/conversations#stream
   response:
     body:
       string: 'event: conversation.response.started
 
-        data: {"type":"conversation.response.started","created_at":"2026-09-14T13:37:38.183178Z","conversation_id":"conv_01a0a023382170dbaee42c011c3431bc"}
+        data: {"type":"conversation.response.started","created_at":"2026-10-05T14:45:47.989035Z","conversation_id":"conv_01a10c872c8977b4b33ddcc4a72791e2"}
 
 
         event: message.output.delta
 
-        data: {"type":"message.output.delta","created_at":"2026-09-14T13:37:38.185977Z","output_index":0,"id":"msg_01a0a02339897196a98d9c040663bfc4","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"7"}
+        data: {"type":"message.output.delta","created_at":"2026-10-05T14:45:47.992480Z","output_index":0,"id":"msg_01a10c872d58721cbbbcc52b2c2b3c1d","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"7"}
 
 
         event: conversation.response.done
 
-        data: {"type":"conversation.response.done","created_at":"2026-09-14T13:37:38.211808Z","usage":{"prompt_tokens":16,"completion_tokens":2,"total_tokens":18}}
+        data: {"type":"conversation.response.done","created_at":"2026-10-05T14:45:48.031164Z","usage":{"prompt_tokens":16,"completion_tokens":2,"total_tokens":18}}
 
 
         '
@@ -44,15 +44,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a3afc9913d15c109-YYZ
+      - a45d364cfd179113-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 14 Sep 2026 13:37:38 GMT
+      - Mon, 05 Oct 2026 14:45:48 GMT
       mistral-correlation-id:
-      - 01a0a023-370a-7d83-aa40-9a09f927a62d
+      - 01a10c87-2c5d-70b7-bc06-beeddd9b23b8
       server:
       - cloudflare
       strict-transport-security:
@@ -62,13 +62,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '378'
+      - '236'
       x-kong-proxy-latency:
-      - '260'
+      - '15'
       x-kong-request-id:
-      - 01a0a023-370a-7d83-aa40-9a09f927a62d
+      - 01a10c87-2c5d-70b7-bc06-beeddd9b23b8
       x-kong-upstream-latency:
-      - '380'
+      - '237'
     status:
       code: 200
       message: OK

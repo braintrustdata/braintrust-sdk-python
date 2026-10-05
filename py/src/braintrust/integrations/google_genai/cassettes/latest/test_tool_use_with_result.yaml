@@ -22,38 +22,38 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.25.0 gl-python/3.14.7
+      - google-genai-sdk/2.28.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/2.25.0 gl-python/3.14.7
+      - google-genai-sdk/2.28.0 gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
         [\n          {\n            \"functionCall\": {\n              \"name\": \"calculate\",\n
-        \             \"args\": {\n                \"b\": 49,\n                \"operation\":
-        \"multiply\",\n                \"a\": 127\n              }\n            },\n
-        \           \"thoughtSignature\": \"CpECAWkUfRNw/BmNO9VVRvQJ2mlGWjR23HIEfxVK9ZrN2r8cf5gfw/O/41s/txrHQo+3XeWhOngHfd/9gnZ4hAYPCp/0gxWBkKvYNV+FyJJZhPcuuEyucfeR04xBSBovl0UspF0AzvPVrE1txRfEeydMKFyk+hR45qq4vvpHSL7tb5uPh5QHUE/Cny2O4b0twF6gYwiGHeF7AvtgFzNGfZeOF9qZip1tQYwEcSF16AXR81R4VmVaUd8NgMoEg5SBs7e7av5UpM/YphjrFOWmj4iV/fVgclR1A2jeY9CrntMVaTxdOeWbp8+dfeSTv5Ad3NO9RG6kwnEY5ukwS9nBWeZQ3lbAF82mZwplwfYN8AMJbaJX\"\n
+        \             \"args\": {\n                \"a\": 127,\n                \"operation\":
+        \"multiply\",\n                \"b\": 49\n              }\n            },\n
+        \           \"thoughtSignature\": \"CuwCAWkUfRNRL7gVYCKyx3BEIfy3VVAkploYXmpCiju+tBdxZoZrv/dDNh/ylswUGUk8JyfeGcmN1jLtPtzXbEKmrMc6YOBzvrLWGCnkox9HoLzK/U/JqJu6LB+Jk/HP66jkVZzCoY1yQdaVBmD7BBpnRSbg6/uIKYM/JfqUxgRrQsdal6iKpNTAoS6xv1PwJ8vUmfhB3KoF/mSR+emGamsIFQd3Ptm+2U8S54UJkdsjcs2mF3CbIx2PFioeBo3Jy1CJxoG2vrDGUVO2xV2X4bJshqEgZbm0608CG2UcYPzuKhgyLnj6fejIhexcm8BdwfexRuqem1yG++T6vncX5KLva+R/YvTcd/pCGiFCHGCV+XRzsPK5LOE/D9phQJtIQ7VhfBZJmFxd5QCPBWF7y7/befkbuaHVZ7le/ST5owPfNzUwB71wHeXSrEehz8BLGS5doflnjg+w4NVN2hC8d7ZrMiGjLOHj/kd0TA/SlA==\"\n
         \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
         \"STOP\",\n      \"index\": 0,\n      \"finishMessage\": \"Model generated
         function call(s).\"\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
-        84,\n    \"candidatesTokenCount\": 26,\n    \"totalTokenCount\": 164,\n    \"promptTokensDetails\":
+        84,\n    \"candidatesTokenCount\": 26,\n    \"totalTokenCount\": 209,\n    \"promptTokensDetails\":
         [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 84\n
-        \     }\n    ],\n    \"thoughtsTokenCount\": 54,\n    \"serviceTier\": \"standard\"\n
-        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"oLi6aq6JAdfh-sAPwJq0mQk\"\n}\n"
+        \     }\n    ],\n    \"thoughtsTokenCount\": 99,\n    \"serviceTier\": \"standard\"\n
+        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"D7jDap3dNPm2sOIPw5rA0Q8\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '1225'
+      - '1349'
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Mon, 28 Sep 2026 18:57:36 GMT
+      - Mon, 05 Oct 2026 14:45:36 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=861
+      - gfet4t7; dur=934
       transfer-encoding:
       - chunked
       vary:
@@ -73,8 +73,8 @@ interactions:
       message: OK
 - request:
     body: '{"contents": [{"parts": [{"text": "What is 127 multiplied by 49?"}], "role":
-      "user"}, {"parts": [{"functionCall": {"args": {"b": 49, "operation": "multiply",
-      "a": 127}, "name": "calculate"}, "thoughtSignature": "CpECAWkUfRNw_BmNO9VVRvQJ2mlGWjR23HIEfxVK9ZrN2r8cf5gfw_O_41s_txrHQo-3XeWhOngHfd_9gnZ4hAYPCp_0gxWBkKvYNV-FyJJZhPcuuEyucfeR04xBSBovl0UspF0AzvPVrE1txRfEeydMKFyk-hR45qq4vvpHSL7tb5uPh5QHUE_Cny2O4b0twF6gYwiGHeF7AvtgFzNGfZeOF9qZip1tQYwEcSF16AXR81R4VmVaUd8NgMoEg5SBs7e7av5UpM_YphjrFOWmj4iV_fVgclR1A2jeY9CrntMVaTxdOeWbp8-dfeSTv5Ad3NO9RG6kwnEY5ukwS9nBWeZQ3lbAF82mZwplwfYN8AMJbaJX"}],
+      "user"}, {"parts": [{"functionCall": {"args": {"a": 127, "operation": "multiply",
+      "b": 49}, "name": "calculate"}, "thoughtSignature": "CuwCAWkUfRNRL7gVYCKyx3BEIfy3VVAkploYXmpCiju-tBdxZoZrv_dDNh_ylswUGUk8JyfeGcmN1jLtPtzXbEKmrMc6YOBzvrLWGCnkox9HoLzK_U_JqJu6LB-Jk_HP66jkVZzCoY1yQdaVBmD7BBpnRSbg6_uIKYM_JfqUxgRrQsdal6iKpNTAoS6xv1PwJ8vUmfhB3KoF_mSR-emGamsIFQd3Ptm-2U8S54UJkdsjcs2mF3CbIx2PFioeBo3Jy1CJxoG2vrDGUVO2xV2X4bJshqEgZbm0608CG2UcYPzuKhgyLnj6fejIhexcm8BdwfexRuqem1yG--T6vncX5KLva-R_YvTcd_pCGiFCHGCV-XRzsPK5LOE_D9phQJtIQ7VhfBZJmFxd5QCPBWF7y7_befkbuaHVZ7le_ST5owPfNzUwB71wHeXSrEehz8BLGS5doflnjg-w4NVN2hC8d7ZrMiGjLOHj_kd0TA_SlA=="}],
       "role": "model"}, {"parts": [{"functionResponse": {"name": "calculate", "response":
       {"result": 6223}}}], "role": "user"}], "tools": [{"functionDeclarations": [{"description":
       "Perform a mathematical calculation", "name": "calculate", "parameters_json_schema":
@@ -91,15 +91,15 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '1209'
+      - '1333'
       content-type:
       - application/json
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.25.0 gl-python/3.14.7
+      - google-genai-sdk/2.28.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/2.25.0 gl-python/3.14.7
+      - google-genai-sdk/2.28.0 gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
   response:
@@ -111,7 +111,7 @@ interactions:
         126,\n    \"candidatesTokenCount\": 15,\n    \"totalTokenCount\": 141,\n    \"promptTokensDetails\":
         [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 126\n
         \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
-        \"gemini-2.5-flash\",\n  \"responseId\": \"oLi6aqa3MfmtsOIP4PrL0QU\"\n}\n"
+        \"gemini-2.5-flash\",\n  \"responseId\": \"ELjDaufRMp3Z-8YPv_ermAc\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
@@ -120,11 +120,11 @@ interactions:
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Mon, 28 Sep 2026 18:57:37 GMT
+      - Mon, 05 Oct 2026 14:45:37 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=422
+      - gfet4t7; dur=303
       transfer-encoding:
       - chunked
       vary:

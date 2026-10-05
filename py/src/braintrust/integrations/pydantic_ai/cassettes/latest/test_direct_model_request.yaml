@@ -1,6 +1,7 @@
 interactions:
 - request:
-    body: '{"input":[{"role":"user","content":"What is 2+2? Answer with just the number."}],"model":"gpt-4o-mini","stream":false}'
+    body: '{"model":"gpt-4o-mini","stream":false,"input":[{"role":"user","content":"What
+      is 2+2? Answer with just the number."}]}'
     headers:
       accept:
       - application/json
@@ -15,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.51.0
+      - pydantic-ai/2.54.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.20.0
+      - 3.24.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -38,14 +39,14 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0315dc8693ecde59006abab8a5f4d487d299d9656a5456c7cc\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1790621861,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0341446ab904420b006ac3b80d16e087d28f906cf01f5e43f7\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1791211533,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1790621862,\n  \"error\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1791211533,\n  \"error\":
         null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_0315dc8693ecde59006abab8a677d087d299da87c11a28f0ed\",\n
+        \     \"id\": \"msg_0341446ab904420b006ac3b80d717c87d297144ee6a06fb55e\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"4\"\n        }\n      ],\n
@@ -77,7 +78,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a424f9ac9871aaba-YYZ
+      - a45d35f0ec7ede44-YYZ
       connection:
       - keep-alive
       content-length:
@@ -85,9 +86,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 28 Sep 2026 18:57:43 GMT
+      - Mon, 05 Oct 2026 14:45:33 GMT
       openai-processing-ms:
-      - '1535'
+      - '591'
       openai-version:
       - '2020-10-01'
       server:
@@ -111,7 +112,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_06d00979934e48d7b88c96002dbf4a00
+      - req_d2fbfa6ff71a437fb01c035e400bde59
     status:
       code: 200
       message: OK

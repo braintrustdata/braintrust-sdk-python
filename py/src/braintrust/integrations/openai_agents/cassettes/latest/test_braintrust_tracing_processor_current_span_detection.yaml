@@ -1,7 +1,8 @@
 interactions:
 - request:
-    body: '{"include":[],"input":[{"content":"What is 2+2? Just the number.","role":"user"}],"instructions":"You
-      are a helpful assistant. Be very concise.","model":"gpt-4o-mini","prompt_cache_key":"agents-sdk:run:6d202328a20a4a17860e44fb7201997f","tools":[]}'
+    body: '{"model":"gpt-4o-mini","include":[],"input":[{"content":"What is 2+2? Just
+      the number.","role":"user"}],"instructions":"You are a helpful assistant. Be
+      very concise.","prompt_cache_key":"agents-sdk:run:d6a9b1fd73e04f38ba9e26d31fddefe4","tools":[]}'
     headers:
       accept:
       - application/json
@@ -16,7 +17,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - Agents/Python 0.22.0
+      - Agents/Python 0.23.1
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,33 +27,33 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.3.1
+      - 3.24.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
-      - '1'
+      - '0'
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.6
+      - 3.14.7
     method: POST
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0f8bee043bd0818a006a8f02c38cb487d28e159ef4578e8791\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1787757251,\n  \"status\":
-        \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1787757252,\n  \"error\": null,\n
-        \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
+      string: "{\n  \"id\": \"resp_0b1adbdda5e2b70c006ac3b8e8731487d2ac173392cd49d934\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1791211752,\n  \"status\":
+        \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1791211752,\n  \"error\":
+        null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         \"You are a helpful assistant. Be very concise.\",\n  \"max_output_tokens\":
         null,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
-        \ \"moderation\": null,\n  \"output\": [\n    {\n      \"id\": \"msg_0f8bee043bd0818a006a8f02c418a487d2a4df12b9975e233b\",\n
+        \ \"moderation\": null,\n  \"output\": [\n    {\n      \"id\": \"msg_0b1adbdda5e2b70c006ac3b8e8d53487d298b5b93f7d3ec56e\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"4\"\n        }\n      ],\n
         \     \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n
         \ \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
-        \"agents-sdk:run:6d202328a20a4a17860e44fb7201997f\",\n  \"prompt_cache_retention\":
+        \"agents-sdk:run:d6a9b1fd73e04f38ba9e26d31fddefe4\",\n  \"prompt_cache_retention\":
         \"in_memory\",\n  \"reasoning\": {\n    \"context\": null,\n    \"effort\":
         null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
         \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n
@@ -78,17 +79,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a313c8e55b519dab-YYZ
+      - a45d3b4b8b94ab7b-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2058'
+      - '2085'
       content-type:
       - application/json
       date:
-      - Wed, 26 Aug 2026 15:14:12 GMT
+      - Mon, 05 Oct 2026 14:49:14 GMT
       openai-processing-ms:
-      - '792'
+      - '1566'
       openai-version:
       - '2020-10-01'
       server:
@@ -106,13 +107,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999947'
+      - '149999950'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_c4a2563e5c4345ee93bde62714594182
+      - req_7e20e6e36d5340f4bb16f023792418bd
     status:
       code: 200
       message: OK

@@ -1,0 +1,68 @@
+interactions:
+- request:
+    body: '{"model":"mistral-ocr-latest","document":{"document_url":"data:application/pdf;base64,JVBERi0xLjAKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI+PmVuZG9iagoyIDAgb2JqCjw8L1R5cGUvUGFnZXMvS2lkc1szIDAgUl0vQ291bnQgMT4+ZW5kb2JqCjMgMCBvYmoKPDwvVHlwZS9QYWdlL01lZGlhQm94WzAgMCA2MTIgNzkyXT4+ZW5kb2JqCnhyZWYKMCA0CjAwMDAwMDAwMDAgNjU1MzUgZg0KMDAwMDAwMDAxMCAwMDAwMCBuDQowMDAwMDAwMDUzIDAwMDAwIG4NCjAwMDAwMDAxMDIgMDAwMDAgbg0KdHJhaWxlcgo8PC9TaXplIDQvUm9vdCAxIDAgUj4+CnN0YXJ0eHJlZgoxNDkKJUVPRg==","type":"document_url","document_name":"test.pdf"},"include_blocks":true}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '552'
+      content-type:
+      - application/json
+      host:
+      - api.mistral.ai
+      user-agent:
+      - mistral-client-python/2.10.0
+    method: POST
+    uri: https://api.mistral.ai/v1/ocr
+  response:
+    body:
+      string: '{"pages":[{"index":0,"markdown":"","images":[],"tables":[],"hyperlinks":[],"header":null,"footer":null,"dimensions":{"dpi":93,"height":1023,"width":791},"confidence_scores":null,"blocks":[]}],"model":"mistral-ocr-latest","document_annotation":null,"usage_info":{"pages_processed":1,"doc_size_bytes":292}}'
+    headers:
+      access-control-allow-origin:
+      - '*'
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a3afc9e1586ba1de-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '304'
+      content-type:
+      - application/json
+      date:
+      - Mon, 14 Sep 2026 13:37:50 GMT
+      mistral-correlation-id:
+      - 01a0a023-6945-7fcb-9666-f45af82569d7
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=15552000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '112'
+      x-kong-proxy-latency:
+      - '35'
+      x-kong-request-id:
+      - 01a0a023-6945-7fcb-9666-f45af82569d7
+      x-kong-upstream-latency:
+      - '113'
+      x-ratelimit-limit-ocr-pages-minute:
+      - '60'
+      x-ratelimit-ocr-pages-query-cost:
+      - '1'
+      x-ratelimit-remaining-ocr-pages-minute:
+      - '59'
+    status:
+      code: 200
+      message: OK
+version: 1

@@ -1,7 +1,8 @@
 interactions:
 - request:
-    body: '{"input":[{"role":"user","content":"Write a haiku about coding."},{"role":"assistant","content":"Here
-      is a haiku:"},{"role":"user","content":"Write a haiku about coding."}],"max_output_tokens":200,"model":"gpt-4o-mini","stream":false}'
+    body: '{"model":"gpt-4o-mini","stream":false,"input":[{"role":"user","content":"Write
+      a haiku about coding."},{"role":"assistant","content":"Here is a haiku:"},{"role":"user","content":"Write
+      a haiku about coding."}],"max_output_tokens":200}'
     headers:
       accept:
       - application/json
@@ -16,7 +17,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.51.0
+      - pydantic-ai/2.54.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +27,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.20.0
+      - 3.24.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,18 +40,18 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_082400ead0647650006abab8ec91dc87d280a09df92ac496c7\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1790621932,\n  \"status\":
+      string: "{\n  \"id\": \"resp_02703e82dd012d83006ac3b834217487d2b5627ef6d7977d67\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1791211572,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1790621933,\n  \"error\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1791211573,\n  \"error\":
         null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": 200,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_082400ead0647650006abab8ed31ec87d28eb4979b8a22d335\",\n
+        \     \"id\": \"msg_02703e82dd012d83006ac3b835734887d2b948c17f042442c1\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"Lines of logic flow,
-        \ \\nFingers dance on keys, creating\\u2014  \\nWorlds from silent code.\"\n
+        \ \\nFingers dance on keys like streams,  \\nIn silence, worlds grow.\"\n
         \       }\n      ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
         true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
         null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
@@ -79,17 +80,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a424fb64aa7cec6f-YYZ
+      - a45d36e50d40fcd9-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2085'
+      - '2083'
       content-type:
       - application/json
       date:
-      - Mon, 28 Sep 2026 18:58:53 GMT
+      - Mon, 05 Oct 2026 14:46:13 GMT
       openai-processing-ms:
-      - '1364'
+      - '1750'
       openai-version:
       - '2020-10-01'
       server:
@@ -107,13 +108,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999945'
+      - '149999947'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_872efaa977a94dd5a31866feaf23d2f8
+      - req_b47e720881e94f73b890a5789527cdfb
     status:
       code: 200
       message: OK
