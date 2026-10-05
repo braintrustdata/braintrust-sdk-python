@@ -655,16 +655,28 @@ def test_anthropic_messages_create_prompt_cache_diagnostics(memory_logger):
         ],
     }
     second_response = client.messages.create(**second_request, diagnostics={"previous_message_id": first_response.id})
+    with client.messages.stream(
+        **request,
+        diagnostics={"previous_message_id": second_response.id},
+    ) as stream:
+        stream_events = list(stream)
 
     spans = memory_logger.pop()
-    message_spans = [span for span in spans if span["span_attributes"]["name"] == "anthropic.messages.create"]
-    assert len(message_spans) == 2
-    second_span = message_spans[1]
+    create_spans = [span for span in spans if span["span_attributes"]["name"] == "anthropic.messages.create"]
+    stream_span = next(span for span in spans if span["span_attributes"]["name"] == "anthropic.messages.stream")
+    assert len(create_spans) == 2
+    second_span = create_spans[1]
     assert second_span["metadata"]["diagnostics"] == {"previous_message_id": first_response.id}
     cache_miss_reason = second_response.diagnostics.cache_miss_reason
     assert cache_miss_reason.type == "system_changed"
     assert second_span["metadata"]["cache_miss_reason"] == cache_miss_reason.type
     assert second_span["metadata"]["cache_missed_input_tokens"] == cache_miss_reason.cache_missed_input_tokens
+
+    message_start = stream_events[0]
+    stream_cache_miss_reason = message_start.message.diagnostics.cache_miss_reason
+    assert stream_cache_miss_reason.type == "system_changed"
+    assert stream_span["metadata"]["cache_miss_reason"] == stream_cache_miss_reason.type
+    assert stream_span["metadata"]["cache_missed_input_tokens"] == stream_cache_miss_reason.cache_missed_input_tokens
 
 
 @pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
