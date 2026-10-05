@@ -3,10 +3,16 @@ import logging
 import os
 import threading
 import warnings
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 from urllib.parse import urljoin
 
 from braintrust.env import BraintrustEnv
 from braintrust.span_origin import SpanOriginEnvironment, detect_environment, merge_span_origin_context
+
+
+if TYPE_CHECKING:
+    from opentelemetry.sdk.trace import ReadableSpan, TracerProvider
 
 
 INSTALL_ERR_MSG = (
@@ -310,15 +316,15 @@ class OtelExporter(OTLPSpanExporter):
 
 
 def add_braintrust_span_processor(
-    tracer_provider,
+    tracer_provider: "TracerProvider",
     api_key: str | None = None,
     parent: str | None = None,
     api_url: str | None = None,
     filter_ai_spans: bool = False,
-    custom_filter=None,
+    custom_filter: "Callable[[ReadableSpan], bool | None] | None" = None,
     headers: dict[str, str] | None = None,
     environment: SpanOriginEnvironment | None = None,
-):
+) -> None:
     processor = BraintrustSpanProcessor(
         api_key=api_key,
         parent=parent,
