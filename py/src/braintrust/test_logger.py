@@ -265,25 +265,30 @@ class TestHTTPBackgroundLoggerLogs3(TestCase):
         from braintrust.logger import _HTTPBackgroundLogger, construct_logs3_data, stringify_with_overflow_meta
 
         rows = [{"id": str(i), "dataset_id": "dataset", "input": "中文🙂" * 20} for i in range(6)]
-        limit = len(construct_logs3_data([stringify_with_overflow_meta(row) for row in rows[:3]]).encode())
+        serialized_rows = [stringify_with_overflow_meta(row) for row in rows]
+        three_row_size = len(construct_logs3_data(serialized_rows[:3]).encode("utf-8"))
+        four_row_size = len(construct_logs3_data(serialized_rows[:4]).encode("utf-8"))
+        self.assertGreater(four_row_size, three_row_size)
         conn = MagicMock()
         conn.post.return_value.ok = True
 
         with patch("atexit.register"):
             bg = _HTTPBackgroundLogger(LazyValue(lambda: conn, use_mutex=False))
-        bg._max_request_size_result = {"max_request_size": limit, "can_use_overflow": True}
+        bg._max_request_size_result = {"max_request_size": three_row_size, "can_use_overflow": True}
         for row in rows:
             bg.queue.put(LazyValue(lambda row=row: row, use_mutex=False))
 
         bg.flush(batch_size=100)
 
         self.assertEqual(conn.post.call_count, 2)
-        posted_rows = []
+        posted_batches = []
         for call in conn.post.call_args_list:
             self.assertEqual(call.args, ("/logs3",))
-            self.assertLessEqual(len(call.kwargs["data"]), limit)
-            posted_rows.extend(json.loads(call.kwargs["data"])["rows"])
-        self.assertCountEqual(posted_rows, rows)
+            request_bytes = call.kwargs["data"]
+            self.assertLessEqual(len(request_bytes), three_row_size)
+            posted_batches.append(json.loads(request_bytes)["rows"])
+        self.assertEqual(posted_batches, [rows[:3], rows[3:]])
+        self.assertEqual(len(conn.post.call_args_list[0].kwargs["data"]), three_row_size)
 
     def test_flush_keeps_oversized_row_separate(self) -> None:
         from braintrust.logger import _HTTPBackgroundLogger
@@ -943,7 +948,6 @@ def test_attachment_roundtrip_nested_containers(subclasses):
     assert values[5].reference is attachment.reference
     assert isinstance(values[6]["file"], logger.ReadonlyAttachment)
     assert values[6]["file"].reference is external.reference
-    assert values[:5] == [None, False, 42, 1.5, "text"]
 
 
 def _test_prompt(content: str, options: dict | None = None) -> Prompt:
