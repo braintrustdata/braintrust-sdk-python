@@ -1312,9 +1312,11 @@ async def _stream_messages_with_tracing(
         # (e.g., anyio internal cleanup when subagents complete) rather
         # than a genuine external cancellation. Suppress only the transport
         # case; asyncio tracks genuine cancellation requests on the current
-        # task, including cancellations injected by wait_for().
+        # task, including cancellations injected by wait_for(). Python 3.10
+        # has no cancellation counter, so preserve the exception there rather
+        # than risk hiding a genuine task cancellation.
         task = asyncio.current_task()
-        if task is not None and task.cancelling():
+        if task is not None and (not hasattr(task, "cancelling") or task.cancelling()):
             finish_request_tracker(log_output=True)
             raise
         finish_request_tracker(log_output=True)

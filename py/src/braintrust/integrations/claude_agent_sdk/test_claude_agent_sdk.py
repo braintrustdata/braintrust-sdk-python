@@ -1903,7 +1903,7 @@ async def _assert_stream_cancellation(response_stream: Any, transport: Any, canc
     assert not read_task.done(), "the replayed SDK message should keep the response read blocked"
 
     if cancellation == "timeout":
-        with pytest.raises(TimeoutError):
+        with pytest.raises(asyncio.TimeoutError):
             await asyncio.wait_for(read_task, timeout=0.01)
     else:
         read_task.cancel()
