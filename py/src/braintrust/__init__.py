@@ -85,6 +85,7 @@ from .span_customizer import SpanExportData as SpanExportData
 from .span_customizer import set_span_customizers as set_span_customizers
 from .util import BT_IS_ASYNC_ATTRIBUTE as BT_IS_ASYNC_ATTRIBUTE
 from .util import MarkAsyncWrapper as MarkAsyncWrapper
+from .workflow_eval import *
 
 
 def wrap_anthropic(client: _Any) -> _Any:
