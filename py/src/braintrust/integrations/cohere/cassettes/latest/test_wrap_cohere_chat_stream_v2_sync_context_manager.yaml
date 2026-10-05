@@ -16,24 +16,24 @@ interactions:
       host:
       - api.cohere.com
       user-agent:
-      - cohere/7.1.0
+      - cohere/7.2.0
       x-fern-language:
       - Python
       x-fern-platform:
       - darwin/25.6.0
       x-fern-runtime:
-      - python/3.14.3
+      - python/3.14.7
       x-fern-sdk-name:
       - cohere
       x-fern-sdk-version:
-      - 7.1.0
+      - 7.2.0
     method: POST
     uri: https://api.cohere.com/v2/chat
   response:
     body:
       string: 'event: message-start
 
-        data: {"id":"26dddd39-2c32-4129-b3f4-94138fb80c59","type":"message-start","delta":{"message":{"role":"assistant","content":[],"tool_plan":"","tool_calls":[],"citations":[]}}}
+        data: {"id":"22b2f507-fa1f-4fc9-bb73-e318f0c4a4ee","type":"message-start","delta":{"message":{"role":"assistant","content":[],"tool_plan":"","tool_calls":[],"citations":[]}}}
 
 
         event: content-start
@@ -58,7 +58,7 @@ interactions:
 
         event: message-end
 
-        data: {"type":"message-end","delta":{"finish_reason":"COMPLETE","usage":{"billed_units":{"input_tokens":6,"output_tokens":2},"tokens":{"input_tokens":501,"output_tokens":5},"cached_tokens":464}}}
+        data: {"type":"message-end","delta":{"finish_reason":"COMPLETE","usage":{"billed_units":{"input_tokens":6,"output_tokens":2},"tokens":{"input_tokens":501,"output_tokens":5},"cached_tokens":448}}}
 
 
         data: [DONE]
@@ -75,7 +75,7 @@ interactions:
       content-type:
       - text/event-stream
       date:
-      - Mon, 31 Aug 2026 15:26:13 GMT
+      - Mon, 05 Oct 2026 14:45:28 GMT
       expires:
       - Thu, 01 Jan 1970 00:00:00 GMT
       pragma:
@@ -91,11 +91,11 @@ interactions:
       x-accel-expires:
       - '0'
       x-debug-trace-id:
-      - 637b54962b2a9b80d228c21e717afa15
+      - 208c6b07aa25b9178f1da36b0afbc610
       x-endpoint-monthly-call-limit:
       - '1000'
       x-envoy-upstream-service-time:
-      - '115'
+      - '157'
       x-trial-endpoint-call-limit:
       - '20'
       x-trial-endpoint-call-remaining:

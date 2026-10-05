@@ -1,8 +1,9 @@
 interactions:
 - request:
-    body: '{"input":[{"role":"system","content":"The user is currently taking a math
-      quiz."},{"role":"user","content":"What is 2+2? Answer with just the number."}],"instructions":"Answer
-      with only the number requested by the user.","max_output_tokens":100,"model":"gpt-4o-mini","stream":false}'
+    body: '{"model":"gpt-4o-mini","stream":false,"input":[{"role":"system","content":"The
+      user is currently taking a math quiz."},{"role":"user","content":"What is 2+2?
+      Answer with just the number."}],"instructions":"Answer with only the number
+      requested by the user.","max_output_tokens":100}'
     headers:
       accept:
       - application/json
@@ -17,7 +18,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.51.0
+      - pydantic-ai/2.54.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -27,7 +28,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.20.0
+      - 3.24.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -40,14 +41,14 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_03107fba301ddb77006abab8bb9ee087d28e666afdcf82dd89\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1790621883,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0d970189aadce320006ac3b817b1c887d2b0178dd8f3d27a71\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1791211543,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1790621884,\n  \"error\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1791211544,\n  \"error\":
         null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         \"Answer with only the number requested by the user.\",\n  \"max_output_tokens\":
         100,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
-        \ \"moderation\": null,\n  \"output\": [\n    {\n      \"id\": \"msg_03107fba301ddb77006abab8bc080c87d29d54f7484f74e8fc\",\n
+        \ \"moderation\": null,\n  \"output\": [\n    {\n      \"id\": \"msg_0d970189aadce320006ac3b818175887d2be2d7bb042502887\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"4\"\n        }\n      ],\n
@@ -79,7 +80,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a424fa34181844b0-YYZ
+      - a45d363368b5ab5a-YYZ
       connection:
       - keep-alive
       content-length:
@@ -87,9 +88,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 28 Sep 2026 18:58:04 GMT
+      - Mon, 05 Oct 2026 14:45:44 GMT
       openai-processing-ms:
-      - '553'
+      - '556'
       openai-version:
       - '2020-10-01'
       server:
@@ -105,15 +106,15 @@ interactions:
       x-ratelimit-limit-tokens:
       - '150000000'
       x-ratelimit-remaining-requests:
-      - '29999'
+      - '29996'
       x-ratelimit-remaining-tokens:
-      - '149999935'
+      - '149999665'
       x-ratelimit-reset-requests:
-      - 2ms
+      - 8ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_fec6576888be4dc4aa377438939f5f0d
+      - req_5072f60d38244a61be545512395a134e
     status:
       code: 200
       message: OK

@@ -5,7 +5,7 @@ interactions:
       accept:
       - application/json
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
@@ -15,12 +15,12 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.10.0
+      - mistral-client-python/3.0.0
     method: POST
     uri: https://api.mistral.ai/v1/conversations
   response:
     body:
-      string: '{"object":"conversation.response","conversation_id":"conv_01a0a023175f7768a336ec9ff2f1e0b3","outputs":[{"object":"entry","type":"message.output","created_at":"2026-09-14T13:37:29.604745Z","completed_at":"2026-09-14T13:37:29.604745Z","model":"mistral-small-latest","id":"msg_01a0a02318047452a1d3d99a0604eef4","role":"assistant","content":"4"}],"usage":{"prompt_tokens":16,"completion_tokens":2,"total_tokens":18},"guardrails":null}'
+      string: '{"object":"conversation.response","conversation_id":"conv_01a10c8710df7225a65f98abe10d6608","outputs":[{"object":"entry","type":"message.output","created_at":"2026-10-05T14:45:40.883492Z","completed_at":"2026-10-05T14:45:40.883492Z","model":"mistral-small-latest","id":"msg_01a10c87119373c59cc13d19ffcacd06","role":"assistant","content":"4"}],"usage":{"prompt_tokens":16,"completion_tokens":2,"total_tokens":18},"guardrails":null}'
     headers:
       access-control-allow-origin:
       - '*'
@@ -29,7 +29,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a3afc95e1f8d5413-YYZ
+      - a45d36208ffbab78-YYZ
       connection:
       - keep-alive
       content-length:
@@ -37,9 +37,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 14 Sep 2026 13:37:29 GMT
+      - Mon, 05 Oct 2026 14:45:40 GMT
       mistral-correlation-id:
-      - 01a0a023-171e-736d-9e84-eaf575524db3
+      - 01a10c87-10b4-7526-9e3a-439be99733c3
       server:
       - cloudflare
       strict-transport-security:
@@ -49,13 +49,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '249'
+      - '244'
       x-kong-proxy-latency:
-      - '22'
+      - '19'
       x-kong-request-id:
-      - 01a0a023-171e-736d-9e84-eaf575524db3
+      - 01a10c87-10b4-7526-9e3a-439be99733c3
       x-kong-upstream-latency:
-      - '251'
+      - '250'
       x-ratelimit-limit-tokens-minute:
       - '20000'
       x-ratelimit-remaining-tokens-minute:

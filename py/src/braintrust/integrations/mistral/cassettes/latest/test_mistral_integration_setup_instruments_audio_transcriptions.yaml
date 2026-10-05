@@ -1,12 +1,12 @@
 interactions:
 - request:
     body: !!binary |
-      LS1kYjFmMTk2NjNkODk2ZDBhZjI1ZjhkMTVkYzhiMGI3Zg0KQ29udGVudC1EaXNwb3NpdGlvbjog
-      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0Kdm94dHJhbC1taW5pLTI1MDcNCi0tZGIxZjE5NjYz
-      ZDg5NmQwYWYyNWY4ZDE1ZGM4YjBiN2YNCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
-      bmFtZT0ic3RyZWFtIg0KDQpmYWxzZQ0KLS1kYjFmMTk2NjNkODk2ZDBhZjI1ZjhkMTVkYzhiMGI3
-      Zg0KQ29udGVudC1EaXNwb3NpdGlvbjogZm9ybS1kYXRhOyBuYW1lPSJkaWFyaXplIg0KDQpmYWxz
-      ZQ0KLS1kYjFmMTk2NjNkODk2ZDBhZjI1ZjhkMTVkYzhiMGI3Zg0KQ29udGVudC1EaXNwb3NpdGlv
+      LS0zNDg1MTIzYmUzNjMwMjBmZDdjOWVmMzI3OTIwNjU5Ng0KQ29udGVudC1EaXNwb3NpdGlvbjog
+      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0Kdm94dHJhbC1taW5pLTI1MDcNCi0tMzQ4NTEyM2Jl
+      MzYzMDIwZmQ3YzllZjMyNzkyMDY1OTYNCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
+      bmFtZT0ic3RyZWFtIg0KDQpmYWxzZQ0KLS0zNDg1MTIzYmUzNjMwMjBmZDdjOWVmMzI3OTIwNjU5
+      Ng0KQ29udGVudC1EaXNwb3NpdGlvbjogZm9ybS1kYXRhOyBuYW1lPSJkaWFyaXplIg0KDQpmYWxz
+      ZQ0KLS0zNDg1MTIzYmUzNjMwMjBmZDdjOWVmMzI3OTIwNjU5Ng0KQ29udGVudC1EaXNwb3NpdGlv
       bjogZm9ybS1kYXRhOyBuYW1lPSJmaWxlIjsgZmlsZW5hbWU9InRlc3RfYXVkaW8ud2F2Ig0KQ29u
       dGVudC1UeXBlOiBhdWRpby93YXYNCg0KUklGRiR9AABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAAC
       ABAAZGF0YQB9AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -570,28 +570,28 @@ interactions:
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-      AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA0KLS1kYjFmMTk2NjNkODk2ZDBhZjI1
-      ZjhkMTVkYzhiMGI3Zi0tDQo=
+      AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA0KLS0zNDg1MTIzYmUzNjMwMjBmZDdj
+      OWVmMzI3OTIwNjU5Ni0tDQo=
     headers:
       accept:
       - application/json
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
       - '32507'
       content-type:
-      - multipart/form-data; boundary=db1f19663d896d0af25f8d15dc8b0b7f
+      - multipart/form-data; boundary=3485123be363020fd7c9ef3279206596
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.10.0
+      - mistral-client-python/3.0.0
     method: POST
     uri: https://api.mistral.ai/v1/audio/transcriptions
   response:
     body:
-      string: '{"model":"voxtral-mini-latest","text":"","language":null,"segments":[],"usage":{"prompt_audio_seconds":1,"prompt_tokens":3,"total_tokens":379,"completion_tokens":1,"prompt_tokens_details":{"cached_tokens":1,"audio_tokens":375},"service_tier":"standard"},"finish_reason":null}'
+      string: '{"model":"voxtral-mini-latest","text":"","language":null,"segments":[],"usage":{"prompt_audio_seconds":1,"prompt_tokens":3,"total_tokens":379,"completion_tokens":1,"prompt_tokens_details":{"cached_tokens":0,"audio_tokens":375},"service_tier":"standard"},"finish_reason":null}'
     headers:
       access-control-allow-origin:
       - '*'
@@ -600,7 +600,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a3afca179b16f8ac-YYZ
+      - a45d36a308b124ee-YYZ
       connection:
       - keep-alive
       content-length:
@@ -608,9 +608,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 14 Sep 2026 13:37:59 GMT
+      - Mon, 05 Oct 2026 14:46:01 GMT
       mistral-correlation-id:
-      - 01a0a023-8b18-7b7f-b24d-1b72e3b9627a
+      - 01a10c87-6245-7075-b23e-e92197a2ead8
       server:
       - cloudflare
       strict-transport-security:
@@ -620,13 +620,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '90'
+      - '120'
       x-kong-proxy-latency:
-      - '204'
+      - '43'
       x-kong-request-id:
-      - 01a0a023-8b18-7b7f-b24d-1b72e3b9627a
+      - 01a10c87-6245-7075-b23e-e92197a2ead8
       x-kong-upstream-latency:
-      - '91'
+      - '121'
       x-max-retry-attempts-reached:
       - 'false'
       x-ratelimit-audio-seconds-query-cost:
@@ -638,7 +638,7 @@ interactions:
       x-ratelimit-remaining-audio-seconds-minute:
       - '3596'
       x-ratelimit-remaining-req-minute:
-      - '51'
+      - '58'
     status:
       code: 200
       message: OK

@@ -67,8 +67,8 @@ def test_dspy_callback(memory_logger):
     # recorded response predates usage being included.
     if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest":
         assert lm_span["metrics"]["prompt_tokens"] == 170
-        assert lm_span["metrics"]["completion_tokens"] == 53
-        assert lm_span["metrics"]["tokens"] == 223
+        assert lm_span["metrics"]["completion_tokens"] == 51
+        assert lm_span["metrics"]["tokens"] == 221
 
     format_span = spans_by_name["dspy.adapter.format"]
     assert format_span["span_attributes"]["type"] == "task"

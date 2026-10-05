@@ -1,6 +1,7 @@
 interactions:
 - request:
-    body: '{"input":"Use the get_weather tool with location Paris. Do not answer directly.","model":"gpt-4.1-mini","tool_choice":{"type":"function","name":"get_weather"},"tools":[{"type":"function","name":"get_weather","description":"Get
+    body: '{"model":"gpt-4.1-mini","input":"Use the get_weather tool with location
+      Paris. Do not answer directly.","tool_choice":{"type":"function","name":"get_weather"},"tools":[{"type":"function","name":"get_weather","description":"Get
       the weather for a location.","parameters":{"type":"object","properties":{"location":{"type":"string"}},"required":["location"]}}]}'
     headers:
       accept:
@@ -16,7 +17,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 3.19.2
+      - OpenAI/Python 3.24.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +27,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.19.2
+      - 3.24.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,16 +40,16 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_09e81b9b6e84a88c006abab89d622887d2b8341459bdf92515\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1790621853,\n  \"status\":
+      string: "{\n  \"id\": \"resp_007ba8f45aa50e61006ac3b8092c1487d28e563c0a975d5ab0\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1791211529,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1790621854,\n  \"error\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1791211530,\n  \"error\":
         null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4.1-mini-2025-04-14\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"fc_09e81b9b6e84a88c006abab89e242887d28f41da81751f7df6\",\n
+        \     \"id\": \"fc_007ba8f45aa50e61006ac3b809f18c87d29f6523d1913a6d9f\",\n
         \     \"type\": \"function_call\",\n      \"status\": \"completed\",\n      \"arguments\":
-        \"{\\\"location\\\":\\\"Paris\\\"}\",\n      \"call_id\": \"call_okh6E9SoqYyHhiRChmNLOLfo\",\n
+        \"{\\\"location\\\":\\\"Paris\\\"}\",\n      \"call_id\": \"call_qbFtlbIa0RkzZc2G87i13eYH\",\n
         \     \"name\": \"get_weather\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n
         \ \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
         null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
@@ -83,7 +84,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a424f9770824ae18-YYZ
+      - a45d35d8af7636fe-YYZ
       connection:
       - keep-alive
       content-length:
@@ -91,9 +92,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 28 Sep 2026 18:57:34 GMT
+      - Mon, 05 Oct 2026 14:45:30 GMT
       openai-processing-ms:
-      - '951'
+      - '981'
       openai-version:
       - '2020-10-01'
       server:
@@ -117,7 +118,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_fd88f427874742079fe05e0e6e55d1bd
+      - req_67f9fed7cdc1446db314a41f09708185
     status:
       code: 200
       message: OK

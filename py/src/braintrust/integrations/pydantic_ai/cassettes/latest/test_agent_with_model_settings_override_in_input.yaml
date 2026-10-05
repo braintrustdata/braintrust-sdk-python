@@ -1,6 +1,7 @@
 interactions:
 - request:
-    body: '{"input":[{"role":"user","content":"Tell me a story"}],"max_output_tokens":200,"model":"gpt-4o-mini","stream":false,"temperature":0.9}'
+    body: '{"model":"gpt-4o-mini","stream":false,"input":[{"role":"user","content":"Tell
+      me a story"}],"max_output_tokens":200,"temperature":0.9}'
     headers:
       accept:
       - application/json
@@ -15,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.51.0
+      - pydantic-ai/2.54.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.20.0
+      - 3.24.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -38,30 +39,30 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_08853b9201dc80d3006abab8b4df6487d2b7e9aa145f669b60\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1790621876,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0630362b955c4ec2006ac3b813778887d2aaf60b90fe18bfff\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1791211539,\n  \"status\":
         \"incomplete\",\n  \"access_programs\": null,\n  \"background\": false,\n
         \ \"billing\": {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\":
         null,\n  \"error\": null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\":
         {\n    \"reason\": \"max_output_tokens\"\n  },\n  \"instructions\": null,\n
         \ \"max_output_tokens\": 200,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
-        \ \"moderation\": null,\n  \"output\": [\n    {\n      \"id\": \"msg_08853b9201dc80d3006abab8b53f1887d2a5a88557f84eb800\",\n
+        \ \"moderation\": null,\n  \"output\": [\n    {\n      \"id\": \"msg_0630362b955c4ec2006ac3b814214087d29ffdbe0df68f4c8f\",\n
         \     \"type\": \"message\",\n      \"status\": \"incomplete\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"Once upon a time in
-        a quaint little village nestled between emerald hills and a shimmering river,
-        there lived a young girl named Elara. Elara was known for her adventurous
-        spirit and her insatiable curiosity about the world beyond her village.\\n\\nOne
-        sunny morning, while exploring the forest that bordered her home, Elara stumbled
-        upon a hidden glade. In the center of the glade stood a majestic tree, its
-        trunk wide and gnarled, with branches that seemed to touch the sky. What caught
-        her eye most was a small, intricately carved door at the base of the tree.\\n\\nWith
-        her heart racing, Elara approached the door. She knelt down and gently pushed
-        it open. To her surprise, it revealed a spiral staircase that wound down into
-        the earth. Gripped by excitement, she decided to venture inside.\\n\\nAs she
-        descended, she entered a magical underground world filled with glowing mushrooms,
-        sparkling streams, and creatures she had only ever read about in books. Fairies
-        flitted\"\n        }\n      ],\n      \"role\": \"assistant\"\n    }\n  ],\n
+        [],\n          \"logprobs\": [],\n          \"text\": \"Once upon a time,
+        in a small village nestled between two towering mountains, there lived a young
+        girl named Lila. Lila had an insatiable curiosity and a wild imagination.
+        While other children played in the fields, she often wandered into the woods,
+        dreaming of adventures beyond her village.\\n\\nOne day, while exploring a
+        hidden path, Lila stumbled upon a shimmering pond. It was unlike anything
+        she had ever seen. The water glowed with an ethereal light, and colorful fish
+        darted beneath the surface. As she approached, she noticed a small, silver
+        key floating on the water. Intrigued, she reached out and grasped the key,
+        feeling a warm energy pulse through her fingertips.\\n\\nSuddenly, the air
+        around her shimmered, and a gentle voice echoed from the pond. \\\"You have
+        found the Key of Wonders, dear Lila. Use it wisely, for it can unlock hidden
+        realms and reveal secrets long forgotten.\\\"\\n\\nWith wide eyes, Lila realized
+        she had a\"\n        }\n      ],\n      \"role\": \"assistant\"\n    }\n  ],\n
         \ \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\":
         null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\": \"in_memory\",\n
         \ \"reasoning\": {\n    \"context\": null,\n    \"effort\": null,\n    \"summary\":
@@ -89,17 +90,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a424fa09cf501486-YYZ
+      - a45d36188fbfb405-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2999'
+      - '2963'
       content-type:
       - application/json
       date:
-      - Mon, 28 Sep 2026 18:58:01 GMT
+      - Mon, 05 Oct 2026 14:45:42 GMT
       openai-processing-ms:
-      - '4165'
+      - '2743'
       openai-version:
       - '2020-10-01'
       server:
@@ -115,15 +116,15 @@ interactions:
       x-ratelimit-limit-tokens:
       - '150000000'
       x-ratelimit-remaining-requests:
-      - '29999'
+      - '29998'
       x-ratelimit-remaining-tokens:
-      - '149999970'
+      - '149999880'
       x-ratelimit-reset-requests:
-      - 2ms
+      - 4ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_c0862427e172477dbb2b97ac44a3fa82
+      - req_ce48d3fce9124d96ab7b0cf11dc9708f
     status:
       code: 200
       message: OK

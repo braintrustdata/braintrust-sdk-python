@@ -16,24 +16,24 @@ interactions:
       host:
       - api.cohere.com
       user-agent:
-      - cohere/7.1.0
+      - cohere/7.2.0
       x-fern-language:
       - Python
       x-fern-platform:
       - darwin/25.6.0
       x-fern-runtime:
-      - python/3.14.3
+      - python/3.14.7
       x-fern-sdk-name:
       - cohere
       x-fern-sdk-version:
-      - 7.1.0
+      - 7.2.0
     method: POST
     uri: https://api.cohere.com/v2/chat
   response:
     body:
       string: 'event: message-start
 
-        data: {"id":"663eb335-34f1-42b6-9c8d-f7a856681b94","type":"message-start","delta":{"message":{"role":"assistant","content":[],"tool_plan":"","tool_calls":[],"citations":[]}}}
+        data: {"id":"7c28afa6-4b09-4fb4-a9c6-1bb9b7ba8b77","type":"message-start","delta":{"message":{"role":"assistant","content":[],"tool_plan":"","tool_calls":[],"citations":[]}}}
 
 
         event: content-start
@@ -58,7 +58,7 @@ interactions:
 
         event: message-end
 
-        data: {"type":"message-end","delta":{"finish_reason":"COMPLETE","usage":{"billed_units":{"input_tokens":6,"output_tokens":2},"tokens":{"input_tokens":501,"output_tokens":5},"cached_tokens":448}}}
+        data: {"type":"message-end","delta":{"finish_reason":"COMPLETE","usage":{"billed_units":{"input_tokens":6,"output_tokens":2},"tokens":{"input_tokens":501,"output_tokens":5},"cached_tokens":464}}}
 
 
         data: [DONE]
@@ -69,13 +69,13 @@ interactions:
       access-control-expose-headers:
       - X-Debug-Trace-ID
       alt-svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      - h3=":443"; ma=2592000
       cache-control:
       - no-cache, no-store, no-transform, must-revalidate, private, max-age=0
       content-type:
       - text/event-stream
       date:
-      - Mon, 31 Aug 2026 15:26:13 GMT
+      - Mon, 05 Oct 2026 14:45:27 GMT
       expires:
       - Thu, 01 Jan 1970 00:00:00 GMT
       pragma:
@@ -91,11 +91,11 @@ interactions:
       x-accel-expires:
       - '0'
       x-debug-trace-id:
-      - c9987afe053cc963652726f676c15f86
+      - ffaee927e000d09459e5c28761a58ce8
       x-endpoint-monthly-call-limit:
       - '1000'
       x-envoy-upstream-service-time:
-      - '118'
+      - '179'
       x-trial-endpoint-call-limit:
       - '20'
       x-trial-endpoint-call-remaining:

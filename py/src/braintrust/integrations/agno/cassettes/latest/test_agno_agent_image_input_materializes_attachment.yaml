@@ -34,13 +34,13 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.6
+      - 3.14.7
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EDuMgqK4722KoPNvQ6pkNGXntLJEt\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1786983638,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EVeEkc4ycTuRw1HsXf5JfiXvxf8Ms\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1791211546,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"Red.\",\n        \"refusal\": null,\n
         \       \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\":
@@ -49,7 +49,7 @@ interactions:
         0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_e7eb9f2bc2\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_05c1c400b7\"\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -60,7 +60,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a2ca01dbabe40c69-YYZ
+      - a45d3645d95eac9a-YYZ
       connection:
       - keep-alive
       content-length:
@@ -68,9 +68,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 17 Aug 2026 16:20:38 GMT
+      - Mon, 05 Oct 2026 14:45:47 GMT
       openai-processing-ms:
-      - '506'
+      - '648'
       openai-version:
       - '2020-10-01'
       server:
@@ -92,66 +92,18 @@ interactions:
       x-ratelimit-remaining-input-images:
       - '49999'
       x-ratelimit-remaining-requests:
-      - '29999'
+      - '29996'
       x-ratelimit-remaining-tokens:
-      - '149999217'
+      - '149998962'
       x-ratelimit-reset-input-images:
       - 1ms
       x-ratelimit-reset-requests:
-      - 2ms
+      - 8ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_69f56cefcbfd49c2ae778042ad2cf3a0
+      - req_460660b2eebe4347bec3c5195b8b6f05
     status:
       code: 200
       message: OK
-- request:
-    body: '{"session_id":"293a1fa3-8255-4ede-a2c1-fb70c913e1b1","run_id":"53ea41ef-0399-474b-8475-ec808cf1ff98","data":{"agent_id":"vision-agent","db_type":null,"model_provider":"OpenAI","model_name":"OpenAIChat","model_id":"gpt-4o-mini","parser_model":null,"output_model":null,"has_tools":true,"has_memory":false,"has_learnings":false,"has_culture":false,"has_reasoning":false,"has_knowledge":false,"has_input_schema":false,"has_output_schema":false,"has_team":false},"sdk_version":"2.9.0","type":"agent"}'
-    headers:
-      accept:
-      - '*/*'
-      accept-encoding:
-      - gzip, deflate
-      connection:
-      - keep-alive
-      content-length:
-      - '495'
-      content-type:
-      - application/json
-      host:
-      - os-api.agno.com
-      user-agent:
-      - agno/2.9.0
-    method: POST
-    uri: https://os-api.agno.com/telemetry/runs
-  response:
-    body:
-      string: '{"message":"Run creation acknowledged: 53ea41ef-0399-474b-8475-ec808cf1ff98","status":"success"}'
-    headers:
-      content-length:
-      - '96'
-      content-type:
-      - application/json
-      cross-origin-opener-policy:
-      - same-origin
-      cross-origin-resource-policy:
-      - same-origin
-      date:
-      - Mon, 17 Aug 2026 16:20:39 GMT
-      permissions-policy:
-      - camera=(), microphone=(), geolocation=()
-      referrer-policy:
-      - strict-origin-when-cross-origin
-      server:
-      - uvicorn
-      strict-transport-security:
-      - max-age=31536000; includeSubDomains
-      x-content-type-options:
-      - nosniff
-      x-frame-options:
-      - DENY
-    status:
-      code: 201
-      message: Created
 version: 1

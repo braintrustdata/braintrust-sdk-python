@@ -1,0 +1,68 @@
+interactions:
+- request:
+    body: '{"model":"mistral-ocr-latest","document":{"image_url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==","type":"image_url"},"include_blocks":true}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '217'
+      content-type:
+      - application/json
+      host:
+      - api.mistral.ai
+      user-agent:
+      - mistral-client-python/2.10.0
+    method: POST
+    uri: https://api.mistral.ai/v1/ocr
+  response:
+    body:
+      string: '{"pages":[{"index":0,"markdown":"","images":[],"tables":[],"hyperlinks":[],"header":null,"footer":null,"dimensions":{"dpi":200,"height":1,"width":1},"confidence_scores":null,"blocks":[]}],"model":"mistral-ocr-latest","document_annotation":null,"usage_info":{"pages_processed":1,"doc_size_bytes":70}}'
+    headers:
+      access-control-allow-origin:
+      - '*'
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a3afc9e61b94ac4c-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '299'
+      content-type:
+      - application/json
+      date:
+      - Mon, 14 Sep 2026 13:37:51 GMT
+      mistral-correlation-id:
+      - 01a0a023-6c22-79b0-838e-ef1b0a4285ed
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=15552000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '161'
+      x-kong-proxy-latency:
+      - '275'
+      x-kong-request-id:
+      - 01a0a023-6c22-79b0-838e-ef1b0a4285ed
+      x-kong-upstream-latency:
+      - '163'
+      x-ratelimit-limit-ocr-pages-minute:
+      - '60'
+      x-ratelimit-ocr-pages-query-cost:
+      - '1'
+      x-ratelimit-remaining-ocr-pages-minute:
+      - '58'
+    status:
+      code: 200
+      message: OK
+version: 1

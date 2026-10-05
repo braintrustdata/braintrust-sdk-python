@@ -17,30 +17,30 @@ interactions:
       host:
       - api.cohere.com
       user-agent:
-      - cohere/7.1.0
+      - cohere/7.2.0
       x-fern-language:
       - Python
       x-fern-platform:
       - darwin/25.6.0
       x-fern-runtime:
-      - python/3.14.3
+      - python/3.14.7
       x-fern-sdk-name:
       - cohere
       x-fern-sdk-version:
-      - 7.1.0
+      - 7.2.0
     method: POST
     uri: https://api.cohere.com/v1/chat
   response:
     body:
-      string: '{"response_id":"a049f501-aedd-4d19-9328-c67a6d6351a2","text":"I will
-        use one or more of the available tools to find the answer","generation_id":"3ff5d3b2-1148-4e82-85ff-b7a58e224040","chat_history":[{"role":"USER","message":"Use
+      string: '{"response_id":"271b3e8a-ddf3-43ee-995b-2eba907fd905","text":"I will
+        use one or more of the available tools to find the answer","generation_id":"b118119b-afc7-49c7-8f56-396ff1a8fce3","chat_history":[{"role":"USER","message":"Use
         the get_weather tool for Paris."},{"role":"CHATBOT","message":"I will use
         one or more of the available tools to find the answer","tool_calls":[{"name":"get_weather","parameters":{"city":"Paris"}}]}],"finish_reason":"COMPLETE","meta":{"api_version":{"version":"1"},"billed_units":{"input_tokens":42,"output_tokens":22},"tokens":{"input_tokens":1462,"output_tokens":34},"cached_tokens":992},"tool_calls":[{"name":"get_weather","parameters":{"city":"Paris"}}]}'
     headers:
       access-control-expose-headers:
       - X-Debug-Trace-ID
       alt-svc:
-      - h3=":443"; ma=2592000
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       cache-control:
       - no-cache, no-store, no-transform, must-revalidate, private, max-age=0
       content-length:
@@ -48,7 +48,7 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 31 Aug 2026 15:26:09 GMT
+      - Mon, 05 Oct 2026 14:45:26 GMT
       expires:
       - Thu, 01 Jan 1970 00:00:00 GMT
       num_chars:
@@ -68,11 +68,11 @@ interactions:
       x-accel-expires:
       - '0'
       x-debug-trace-id:
-      - dbde5676e9b9db1a30f1c54019377cc0
+      - fa09261d90ca4dad8b4c2ee3f8caf44c
       x-endpoint-monthly-call-limit:
       - '1000'
       x-envoy-upstream-service-time:
-      - '327'
+      - '516'
       x-trial-endpoint-call-limit:
       - '20'
       x-trial-endpoint-call-remaining:

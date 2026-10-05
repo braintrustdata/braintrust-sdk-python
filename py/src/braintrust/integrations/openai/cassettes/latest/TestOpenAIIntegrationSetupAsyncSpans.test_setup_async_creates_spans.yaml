@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"messages":[{"role":"user","content":"Say hi async"}],"model":"gpt-4o-mini"}'
+    body: '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"Say hi async"}]}'
     headers:
       accept:
       - application/json
@@ -15,7 +15,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - AsyncOpenAI/Python 3.19.2
+      - AsyncOpenAI/Python 3.24.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +25,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.19.2
+      - 3.24.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -38,17 +38,17 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-ETAsVDIZygOkp4wJyapEHT5GWQFDY\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1790622035,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EVeK6UPmHgmWWkI9wrM3P6p8IXK5r\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1791211878,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"Hello! How can I assist you today?\",\n
+        \"assistant\",\n        \"content\": \"Hi! How can I assist you today?\",\n
         \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
         null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
         10,\n    \"completion_tokens\": 9,\n    \"total_tokens\": 19,\n    \"prompt_tokens_details\":
         {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_c77bee8c7a\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_0f833288d6\"\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -59,17 +59,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a424fde71bbfaeb6-YYZ
+      - a45d3e5dff02ebc0-YYZ
       connection:
       - keep-alive
       content-length:
-      - '840'
+      - '837'
       content-type:
       - application/json
       date:
-      - Mon, 28 Sep 2026 19:00:35 GMT
+      - Mon, 05 Oct 2026 14:51:18 GMT
       openai-processing-ms:
-      - '335'
+      - '478'
       openai-version:
       - '2020-10-01'
       server:
@@ -95,7 +95,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_868d4822988842c288cfe68c56e5a1a4
+      - req_ce0963abde9640d8a8080919f025d185
     status:
       code: 200
       message: OK

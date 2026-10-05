@@ -17,28 +17,28 @@ interactions:
       host:
       - api.cohere.com
       user-agent:
-      - cohere/7.1.0
+      - cohere/7.2.0
       x-fern-language:
       - Python
       x-fern-platform:
       - darwin/25.6.0
       x-fern-runtime:
-      - python/3.14.3
+      - python/3.14.7
       x-fern-sdk-name:
       - cohere
       x-fern-sdk-version:
-      - 7.1.0
+      - 7.2.0
     method: POST
     uri: https://api.cohere.com/v2/chat
   response:
     body:
-      string: '{"id":"e82301a8-b017-4989-ae2d-2c975d420309","message":{"role":"assistant","tool_plan":"I
-        will use one or more of the available tools to find the answer","tool_calls":[{"id":"get_weather_4dbc2gg5v7x1","type":"function","function":{"name":"get_weather","arguments":"{\"city\":\"Paris\"}"}}]},"finish_reason":"TOOL_CALL","usage":{"billed_units":{"input_tokens":37,"output_tokens":22},"tokens":{"input_tokens":1455,"output_tokens":34},"cached_tokens":112}}'
+      string: '{"id":"503e5957-64a6-4147-a9de-02117ba46b95","message":{"role":"assistant","tool_plan":"I
+        will use one or more of the available tools to find the answer","tool_calls":[{"id":"get_weather_62tz5crj5aze","type":"function","function":{"name":"get_weather","arguments":"{\"city\":\"Paris\"}"}}]},"finish_reason":"TOOL_CALL","usage":{"billed_units":{"input_tokens":37,"output_tokens":22},"tokens":{"input_tokens":1455,"output_tokens":34},"cached_tokens":992}}'
     headers:
       access-control-expose-headers:
       - X-Debug-Trace-ID
       alt-svc:
-      - h3=":443"; ma=2592000
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       cache-control:
       - no-cache, no-store, no-transform, must-revalidate, private, max-age=0
       content-length:
@@ -46,7 +46,7 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 31 Aug 2026 15:26:09 GMT
+      - Mon, 05 Oct 2026 14:45:25 GMT
       expires:
       - Thu, 01 Jan 1970 00:00:00 GMT
       num_chars:
@@ -66,11 +66,11 @@ interactions:
       x-accel-expires:
       - '0'
       x-debug-trace-id:
-      - 56655735890923efc665d15da6c1ca1a
+      - df9b6a378267ae1cf1748a15bb30bd45
       x-endpoint-monthly-call-limit:
       - '1000'
       x-envoy-upstream-service-time:
-      - '485'
+      - '440'
       x-trial-endpoint-call-limit:
       - '20'
       x-trial-endpoint-call-remaining:

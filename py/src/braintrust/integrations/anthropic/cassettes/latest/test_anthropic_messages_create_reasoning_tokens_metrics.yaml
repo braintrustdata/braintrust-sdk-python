@@ -18,7 +18,7 @@ interactions:
       host:
       - api.anthropic.com
       user-agent:
-      - Anthropic/Python 1.8.0
+      - Anthropic/Python 1.11.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -28,7 +28,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 1.8.0
+      - 1.11.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -43,14 +43,14 @@ interactions:
     uri: https://api.anthropic.com/v1/messages
   response:
     body:
-      string: "{\"model\":\"claude-haiku-4-5-20251001\",\"id\":\"msg_011CfWMFFDyTF1djE6aPEL8Y\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"thinking\",\"thinking\":\"Let
+      string: "{\"model\":\"claude-haiku-4-5-20251001\",\"id\":\"msg_011CfjGxJSYyqTisGV2VHMJP\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"thinking\",\"thinking\":\"Let
         me calculate 17 * 23.\\n\\nI can break this down:\\n17 * 23 = 17 * (20 + 3)\\n=
-        17 * 20 + 17 * 3\\n= 340 + 51\\n= 391\\n\\nLet me verify this another way:\\n17
-        * 23 = (20 - 3) * 23\\n= 20 * 23 - 3 * 23\\n= 460 - 69\\n= 391\\n\\nYes, that's
-        correct.\",\"signature\":\"Et4DCpoBCBIYAipAjRXpS/Xogu4z9JT1WNaqulh8un2XjgYshUyW62VC4OrbP71M+2O94HdPIAHCHwaXBSIIoaIEwjI7fFwhxbcdezIZY2xhdWRlLWhhaWt1LTQtNS0yMDI1MTAwMTgAQgh0aGlua2luZ1okMjc3OTY2NjgtNzM1MS00MGFjLWFjYzQtMDI0YWVlODk5NWE1qAHB8erVBhIMzHVpRYr1xqEmtLyTGgzqRNfPff+M34IUdn8iMD8zi45K5qjqOxDphdtxn3j/JpWEZI3Fu8+pcH/dcRvvBGDhQDO/sKzmyBarDaQlcSrwAfYsp3YkTHSt0zZlJJraWAqKE+HVZIlr6n9QWpezjD+MHMbN4pYVWWIj+oYznSwGRNWAa+K68/mtWl+g9U/NLhPH+KEiAxmvonil3oSXKzlKyn951dj6WeY7BCN3hI0GTqg6aUsTf6/u1vS6KlVweoqXMLIEWPCktwgCT09UVVMN8ylsIfIVKhrdp4lYtE4LW7HfxJNqeBxJYMzuwNUwFVXQVqMQP1LOc3bXa/U8z+S16tNM+O86prmWJHjdmJYqE8SV+0gCgfyIhwh/+f81QmbUWfkmb4p1zFgnjIw9LITIfkRZaHzoejfgelFnhRdFpBgB\"},{\"type\":\"text\",\"text\":\"#
+        17 * 20 + 17 * 3\\n= 340 + 51\\n= 391\\n\\nLet me verify this another way:\\n23
+        * 17 = 23 * (10 + 7)\\n= 23 * 10 + 23 * 7\\n= 230 + 161\\n= 391\\n\\nYes,
+        that's correct.\",\"signature\":\"Ev0DCrgBCBIYAipATksxFYodR85SV8q286yPIPfhMInoSXMbGg7rzoFWe9xeLp1z5q5YBF9J7FQjiD0yGKUhDTaikMnR64BqSEah0DIZY2xhdWRlLWhhaWt1LTQtNS0yMDI1MTAwMTgAQgh0aGlua2luZ1okMjc3OTY2NjgtNzM1MS00MGFjLWFjYzQtMDI0YWVlODk5NWE1mgEbChljbGF1ZGUtaGFpa3UtNC01LTIwMjUxMDAxqAGA8o7WBhIMbvptrTZTIkZUkhadGgxQOkLKhMG0bPsPa4wiMCP50ErHalpg7CP2Ue+vgYvSH+J5cJdwykv2UpPoZnyf7tKTK3zAlV9i4r34seAj2irxARpYY48LGme7CBit8ggMKahHmDdygPeZbQIUWAxO6hzKgFcongPcYiqub7aZzHfecfB0dfPp8bWhnq2S2JlpP5HSVU9oizIgp9CBDPM2z/+60gcbcAjBmmQayviOKQzhqnk9e9J+q0smMAmyYHmJBh6N2aoCjYOHQjp86029ZVWEvBCx5W3tvIuFMRxC60zOZtXOJ38A99w4jOb6bgWLgTEeiGgt03GiSLbj8eFdLXAnSa8hJ6vVmeXjAr6UTScnxc1A+OMoGwNfWQxT2b66xZMhSS91Lwm/O4SwJRAQFbD6dzCR2qf43ZfiEJSk69sgkBUYAQ==\"},{\"type\":\"text\",\"text\":\"#
         Calculating 17 \xD7 23\\n\\nLet me break this down:\\n- 17 \xD7 23 = 17 \xD7
         (20 + 3)\\n- = (17 \xD7 20) + (17 \xD7 3)\\n- = 340 + 51\\n- = **391**\\n\\nThe
-        answer is **391**.\"}],\"container\":null,\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":54,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"output_tokens\":213,\"output_tokens_details\":{\"thinking_tokens\":130},\"service_tier\":\"standard\",\"inference_geo\":\"not_available\"},\"diagnostics\":null}"
+        answer is **391**.\"}],\"container\":null,\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":54,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"output_tokens\":214,\"output_tokens_details\":{\"thinking_tokens\":131},\"service_tier\":\"standard\",\"inference_geo\":\"not_available\"},\"diagnostics\":null}"
     headers:
       anthropic-organization-id:
       - 27796668-7351-40ac-acc4-024aee8995a5
@@ -59,49 +59,49 @@ interactions:
       anthropic-ratelimit-input-tokens-remaining:
       - '10000000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-09-28T18:58:09Z'
+      - '2026-10-05T14:49:35Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-09-28T18:58:10Z'
+      - '2026-10-05T14:49:36Z'
       anthropic-ratelimit-requests-limit:
       - '20000'
       anthropic-ratelimit-requests-remaining:
       - '19999'
       anthropic-ratelimit-requests-reset:
-      - '2026-09-28T18:58:08Z'
+      - '2026-10-05T14:49:35Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
       - '12000000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-09-28T18:58:09Z'
+      - '2026-10-05T14:49:35Z'
       anthropic-workspace-id:
       - wrkspc_018bFG1FgNVWqx5pthtdGTzS
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a424fa54bd53aabf-YYZ
+      - a45d3bda0d4ee403-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1632'
+      - '1677'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - application/json
       date:
-      - Mon, 28 Sep 2026 18:58:10 GMT
+      - Mon, 05 Oct 2026 14:49:36 GMT
       request-id:
-      - req_011CfWMFEssoZBTX3YhLD922
+      - req_011CfjGxJE9X83deu8ZXaKta
       server:
       - cloudflare
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-7559eb4806867cd0349cedaeb4048fa6-f71641e3733abfdd-01
+      - 00-1a0f46257c67ec54c155b9eff33ef0e6-f20827a018a2f4ce-01
       transfer-encoding:
       - chunked
       vary:
