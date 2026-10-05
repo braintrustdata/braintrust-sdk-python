@@ -887,6 +887,19 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
         submissions = await self._submission_records(run)
 
         async def poll_submission(submission: dict[str, Any], processor: Any) -> None:
+            if submission["status"] == "external_id_pending":
+                completion = processor.completion
+                assert isinstance(completion, WorkflowSubmissionCompletionWebhook)
+                context = WorkflowSubmissionContext(run_id=run_id, submission_id=submission["id"])
+                external_id = await self._call(completion.get_external_id, submission["submission_data"], context)
+                if not isinstance(external_id, str) or not external_id.strip():
+                    raise ValueError("Submission webhook get_external_id must return a non-empty string")
+                submission["external_id"] = external_id
+                submission["status"] = "submitted"
+                await self._write(run_id, "submission", submission, submission["id"])
+                await self._record_external_locator(run_id, submission["id"], external_id)
+                await self._persist_submission_progress(run_id, submission)
+                return
             if submission["status"] == "failed":
                 if not submission.get("batch"):
                     return
@@ -934,6 +947,7 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
                 poll_submission(submission, processor)
                 for submission, processor in submissions
                 if submission["status"] == "failed"
+                or submission["status"] == "external_id_pending"
                 or (submission["status"] == "submitted" and submission["mode"] == "poll")
             ),
             return_exceptions=True,
@@ -1148,13 +1162,16 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
             )
             if completed_tasks == len(run["case_ids"]):
                 submit_partial = True
-            elif processor.batching.max_wait_ms is not None and len(candidates) < max_size:
-                window_key = f"{stage}/{candidates[0]}"
-                first_wait = await self.store.get_or_set(
-                    self._key(run_id, "batch-wait", window_key), str(time.time()).encode()
-                )
-                started = float(first_wait.value.decode())
-                submit_partial = time.time() - started >= processor.batching.max_wait_ms / 1000
+            elif processor.batching.max_wait_ms is not None:
+                full_item_count = (len(candidates) // max_size) * max_size
+                remainder = candidates[full_item_count:]
+                if remainder:
+                    window_key = f"{stage}/{remainder[0]}"
+                    first_wait = await self.store.get_or_set(
+                        self._key(run_id, "batch-wait", window_key), str(time.time()).encode()
+                    )
+                    started = float(first_wait.value.decode())
+                    submit_partial = time.time() - started >= processor.batching.max_wait_ms / 1000
             if len(candidates) < max_size and not submit_partial:
                 return
 
@@ -1198,19 +1215,25 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
                 await self._write(run_id, "submission", submission, submission_id)
                 await self._persist_submission_progress(run_id, submission)
                 raise
+            submission = {
+                **spec,
+                "submission_data": submission_data,
+                "external_id": None,
+                "mode": completion.mode,
+                "status": "external_id_pending"
+                if isinstance(completion, WorkflowSubmissionCompletionWebhook)
+                else "submitted",
+            }
+            await self._write(run_id, "submission", submission, submission_id)
+            await self._persist_submission_progress(run_id, submission)
             external_id = None
             if isinstance(completion, WorkflowSubmissionCompletionWebhook):
                 external_id = await self._call(completion.get_external_id, submission_data, context)
                 if not isinstance(external_id, str) or not external_id.strip():
                     raise ValueError("Submission webhook get_external_id must return a non-empty string")
-            submission = {
-                **spec,
-                "submission_data": submission_data,
-                "external_id": external_id,
-                "mode": completion.mode,
-                "status": "submitted",
-            }
-            await self._write(run_id, "submission", submission, submission_id)
+                submission["external_id"] = external_id
+                submission["status"] = "submitted"
+                await self._write(run_id, "submission", submission, submission_id)
             await self._record_external_locator(run_id, submission_id, external_id)
             await self._persist_submission_progress(run_id, submission)
             return True
