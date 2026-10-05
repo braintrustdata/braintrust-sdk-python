@@ -449,7 +449,7 @@ def test_openai_agents_session_stream(memory_logger, is_async):
                 assert stream.response
                 async with stream:
                     if Version(openai.__version__) >= Version("3.23.0"):
-                        result = await stream.with_result_collection().get_final_result()
+                        result = await stream.get_final_result()
                         return None, result
                     return [event async for event in stream], None
 
@@ -460,7 +460,7 @@ def test_openai_agents_session_stream(memory_logger, is_async):
         with raw_response.parse() as stream:
             assert stream.response
             if Version(openai.__version__) >= Version("3.23.0"):
-                result = stream.with_result_collection().get_final_result()
+                result = stream.get_final_result()
                 events = None
             else:
                 events = list(stream)

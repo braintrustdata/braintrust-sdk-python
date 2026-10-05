@@ -1004,6 +1004,7 @@ class _TracedAgentSessionStream(_TracedStream):
         return self
 
     def get_final_result(self) -> Any:
+        self._wrapped.with_result_collection()
         for _ in self:
             pass
         return self._wrapped.get_final_result()
@@ -1017,6 +1018,7 @@ class _AsyncTracedAgentSessionStream(_AsyncTracedStream):
         return self
 
     async def get_final_result(self) -> Any:
+        self._wrapped.with_result_collection()
         async for _ in self:
             pass
         result = self._wrapped.get_final_result()
