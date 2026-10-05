@@ -59,6 +59,7 @@ class LogQueue:
         """
         with self._mutex:
             dropped = []
+            was_empty = not self._queue
 
             if not self._enforce_size_limit:
                 # For queues with enforcement disabled, deque auto-drops silently
@@ -72,7 +73,7 @@ class LogQueue:
                 self._queue.append(item)
 
             # Signal that items are available if queue was not empty before or item was added
-            if len(self._queue) > 0:
+            if was_empty:
                 self._has_items_event.set()
 
         return dropped

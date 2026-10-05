@@ -993,7 +993,7 @@ def stringify_with_overflow_meta(item: dict[str, Any]) -> LogItemWithMeta:
 
 
 def utf8_byte_length(value: str) -> int:
-    return len(value.encode("utf-8"))
+    return len(value) if value.isascii() else len(value.encode("utf-8"))
 
 
 _LazyLogRecord = LazyValue[dict[str, Any]] | LazyValue[dict[str, Any] | None]
@@ -1216,8 +1216,10 @@ class _HTTPBackgroundLogger:
             batches = batch_items(
                 items=all_items_with_meta,
                 batch_max_num_items=batch_size,
-                batch_max_num_bytes=max_request_size_result["max_request_size"] // 2,
-                get_byte_size=lambda item: len(item.str_value),
+                batch_max_num_bytes=max(
+                    0, max_request_size_result["max_request_size"] - utf8_byte_length(construct_logs3_data([])) + 1
+                ),
+                get_byte_size=lambda item: item.overflow_meta.byte_size + 1,
             )
 
             post_promises = []
@@ -1338,7 +1340,7 @@ class _HTTPBackgroundLogger:
             "key": key,
         }
 
-    def _upload_logs3_overflow_payload(self, upload: dict[str, Any], payload: str) -> None:
+    def _upload_logs3_overflow_payload(self, upload: dict[str, Any], payload: bytes) -> None:
         obj_conn = HTTPConnection(base_url="", adapter=_http_adapter)
         method = upload["method"]
         if method == "POST":
@@ -1351,20 +1353,21 @@ class _HTTPBackgroundLogger:
                 upload["signed_url"],
                 headers=headers,
                 data=fields,
-                files={"file": ("logs3.json", payload.encode("utf-8"), content_type)},
+                files={"file": ("logs3.json", payload, content_type)},
             )
         else:
             obj_response = obj_conn.put(
                 upload["signed_url"],
                 headers=upload["headers"],
-                data=payload.encode("utf-8"),
+                data=payload,
             )
         obj_response.raise_for_status()
 
     def _submit_logs_request(self, items: Sequence[LogItemWithMeta], max_request_size_result: dict[str, Any]):
         conn = self.api_conn.get()
         dataStr = construct_logs3_data(items)
-        payload_bytes = utf8_byte_length(dataStr)
+        data_bytes = dataStr.encode("utf-8")
+        payload_bytes = len(data_bytes)
         max_request_size = max_request_size_result["max_request_size"]
         can_use_overflow = max_request_size_result["can_use_overflow"]
         use_overflow = can_use_overflow and payload_bytes > max_request_size
@@ -1392,14 +1395,14 @@ class _HTTPBackgroundLogger:
                 if overflow_rows:
                     if overflow_upload is None:
                         current_upload = self._request_logs3_overflow_upload(conn, payload_bytes, overflow_rows)
-                        self._upload_logs3_overflow_payload(current_upload, dataStr)
+                        self._upload_logs3_overflow_payload(current_upload, data_bytes)
                         overflow_upload = current_upload
                     resp = conn.post(
                         "/logs3",
                         json=construct_logs3_overflow_request(overflow_upload["key"], payload_bytes),
                     )
                 else:
-                    resp = conn.post("/logs3", data=dataStr.encode("utf-8"))
+                    resp = conn.post("/logs3", data=data_bytes)
             except Exception as e:
                 error = e
             if error is None and resp is not None and resp.ok:
@@ -3229,29 +3232,36 @@ def _extract_attachments(event: dict[str, Any], attachments: list["BaseAttachmen
     :param attachments: Flat array of extracted attachments (output parameter).
     """
 
-    def _helper(v: Any) -> Any:
-        # Base case: Attachment or ExternalAttachment.
-        if isinstance(v, BaseAttachment):
-            attachments.append(v)
-            return v.reference  # Attachment cannot be nested.
+    def _helper(v: Any, items: Any) -> None:
+        for k, v2 in items:
+            tv = type(v2)
+            if tv is dict:
+                _helper(v2, v2.items())
+                continue
+            if tv is list:
+                _helper(v2, ((i, v2[i]) for i in range(len(v2))))
+                continue
+            if tv is str or tv is int or tv is float or v2 is None or v2 is True or v2 is False:
+                continue
 
-        # Recursive case: object.
-        if isinstance(v, dict):
-            for k, v2 in v.items():
-                v[k] = _helper(v2)
-            return v
+            # Base case: Attachment or ExternalAttachment.
+            if isinstance(v2, BaseAttachment):
+                attachments.append(v2)
+                v[k] = v2.reference  # Attachment cannot be nested.
 
-        # Recursive case: array.
-        if isinstance(v, list):
-            for i in range(len(v)):
-                v[i] = _helper(v[i])
-            return v
+            # Recursive case: object.
+            elif isinstance(v2, dict):
+                _helper(v2, v2.items())
 
-        # Base case: non object.
-        return v  # Nothing to explore recursively.
+            # Recursive case: array.
+            elif isinstance(v2, list):
+                _helper(v2, ((i, v2[i]) for i in range(len(v2))))
 
-    for k, v in event.items():
-        event[k] = _helper(v)
+            # Base case: non object.
+            else:
+                continue  # Nothing to explore recursively.
+
+    _helper(event, event.items())
 
 
 def _enrich_attachments(event: TMutableMapping) -> TMutableMapping:
@@ -3261,6 +3271,8 @@ def _enrich_attachments(event: TMutableMapping) -> TMutableMapping:
     :returns: The same event instance as the input.
     """
 
+    traversable = (dict, list)
+
     def _helper(v: Any) -> Any:
         if isinstance(v, dict):
             # Base case: AttachmentReference.
@@ -3269,20 +3281,24 @@ def _enrich_attachments(event: TMutableMapping) -> TMutableMapping:
             else:
                 # Recursive case: object.
                 for k, v2 in v.items():
-                    v[k] = _helper(v2)
+                    if isinstance(v2, traversable):
+                        v[k] = _helper(v2)
                 return v
 
         # Recursive case: array.
         if isinstance(v, list):
             for i in range(len(v)):
-                v[i] = _helper(v[i])
+                v2 = v[i]
+                if isinstance(v2, traversable):
+                    v[i] = _helper(v2)
             return v
 
         # Base case: non object.
         return v  # Nothing to explore recursively.
 
     for k, v in event.items():
-        event[k] = _helper(v)
+        if isinstance(v, traversable):
+            event[k] = _helper(v)
 
     return event
 

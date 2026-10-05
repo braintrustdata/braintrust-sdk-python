@@ -159,11 +159,6 @@ def batch_items(
     batch: list[T] = []
     batch_len = 0
 
-    def add_to_batch(item: T) -> None:
-        nonlocal batch_len
-        batch.append(item)
-        batch_len += get_byte_size(item)
-
     def flush_batch() -> None:
         nonlocal batch, batch_len
         output.append(batch)
@@ -173,11 +168,12 @@ def batch_items(
     for item in items:
         item_size = get_byte_size(item)
         if len(batch) > 0 and not (
-            (batch_max_num_bytes is None or item_size + batch_len < batch_max_num_bytes)
+            (batch_max_num_bytes is None or item_size + batch_len <= batch_max_num_bytes)
             and (batch_max_num_items is None or len(batch) < batch_max_num_items)
         ):
             flush_batch()
-        add_to_batch(item)
+        batch.append(item)
+        batch_len += item_size
 
     if len(batch) > 0:
         flush_batch()

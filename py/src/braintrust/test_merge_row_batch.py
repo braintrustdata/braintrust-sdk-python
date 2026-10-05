@@ -133,6 +133,9 @@ class MergeRowBatchTest(unittest.TestCase):
 
 
 class BatchItemsTest(unittest.TestCase):
+    def test_exact_byte_limit(self):
+        self.assertEqual(batch_items(["aa", "bb", "c"], batch_max_num_bytes=4), [["aa", "bb"], ["c"]])
+
     def test_basic(self):
         a = "x" * 1
         b = "x" * 2

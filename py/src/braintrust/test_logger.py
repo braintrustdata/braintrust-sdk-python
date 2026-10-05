@@ -261,6 +261,47 @@ def test_http_background_logger_atexit_flush(monkeypatch, disable_atexit_flush, 
 
 
 class TestHTTPBackgroundLoggerLogs3(TestCase):
+    def test_flush_uses_request_byte_budget(self) -> None:
+        from braintrust.logger import _HTTPBackgroundLogger, construct_logs3_data, stringify_with_overflow_meta
+
+        rows = [{"id": str(i), "dataset_id": "dataset", "input": "中文🙂" * 20} for i in range(6)]
+        limit = len(construct_logs3_data([stringify_with_overflow_meta(row) for row in rows[:3]]).encode())
+        conn = MagicMock()
+        conn.post.return_value.ok = True
+
+        with patch("atexit.register"):
+            bg = _HTTPBackgroundLogger(LazyValue(lambda: conn, use_mutex=False))
+        bg._max_request_size_result = {"max_request_size": limit, "can_use_overflow": True}
+        for row in rows:
+            bg.queue.put(LazyValue(lambda row=row: row, use_mutex=False))
+
+        bg.flush(batch_size=100)
+
+        self.assertEqual(conn.post.call_count, 2)
+        posted_rows = []
+        for call in conn.post.call_args_list:
+            self.assertEqual(call.args, ("/logs3",))
+            self.assertLessEqual(len(call.kwargs["data"]), limit)
+            posted_rows.extend(json.loads(call.kwargs["data"])["rows"])
+        self.assertCountEqual(posted_rows, rows)
+
+    def test_flush_keeps_oversized_row_separate(self) -> None:
+        from braintrust.logger import _HTTPBackgroundLogger
+
+        rows = [{"id": str(i), "dataset_id": "dataset", "input": "x" * size} for i, size in enumerate((10, 2000, 10))]
+        conn = MagicMock()
+        conn.post.return_value.ok = True
+        with patch("atexit.register"):
+            bg = _HTTPBackgroundLogger(LazyValue(lambda: conn, use_mutex=False))
+        bg._max_request_size_result = {"max_request_size": 500, "can_use_overflow": False}
+        for row in rows:
+            bg.queue.put(LazyValue(lambda row=row: row, use_mutex=False))
+
+        bg.flush(batch_size=100)
+
+        posted = [json.loads(call.kwargs["data"])["rows"] for call in conn.post.call_args_list]
+        self.assertCountEqual(posted, [[row] for row in rows])
+
     def test_submit_logs_request_413_skips_retries(self) -> None:
         """Any 413 while publishing ``/logs3`` cannot succeed on retry with the same payload.
 
@@ -312,6 +353,40 @@ class TestHTTPBackgroundLoggerLogs3(TestCase):
                     self.assertEqual(
                         mock_write_payload.call_args.kwargs["payload_dir"], bg.failed_publish_payloads_dir
                     )
+
+    def test_submit_logs_request_preserves_overflow_payload(self) -> None:
+        from braintrust.logger import _HTTPBackgroundLogger, construct_logs3_data, stringify_with_overflow_meta
+
+        item = stringify_with_overflow_meta({"id": "row", "dataset_id": "dataset", "input": "中文🙂" * 100})
+        expected = construct_logs3_data([item]).encode("utf-8")
+        for method in ("PUT", "POST"):
+            with self.subTest(method=method):
+                conn, object_conn = MagicMock(), MagicMock()
+                conn.post.return_value.ok = True
+                upload = {
+                    "method": method,
+                    "signed_url": "https://example.com/upload",
+                    "headers": {},
+                    "fields": {"Content-Type": "application/json"},
+                    "key": "overflow-key",
+                }
+                with patch("atexit.register"):
+                    bg = _HTTPBackgroundLogger(LazyValue(lambda: conn, use_mutex=False))
+                with (
+                    patch.object(bg, "_request_logs3_overflow_upload", return_value=upload) as request_upload,
+                    patch.object(logger, "HTTPConnection", return_value=object_conn),
+                ):
+                    bg._submit_logs_request([item], {"max_request_size": 100, "can_use_overflow": True})
+
+                assert request_upload.call_args.args[1] == len(expected)
+                assert request_upload.call_args.args[2][0]["input_row"]["byte_size"] == item.overflow_meta.byte_size
+                if method == "PUT":
+                    assert object_conn.put.call_args.kwargs["data"] == expected
+                else:
+                    assert object_conn.post.call_args.kwargs["files"]["file"][1] == expected
+                assert conn.post.call_args.kwargs["json"]["rows"]["key"] == "overflow-key"
+                assert conn.post.call_args.kwargs["json"]["rows"]["size_bytes"] == len(expected)
+                assert bg._overflow_upload_count == 1
 
 
 def test_load_prompt_async_signature_matches_load_prompt():
@@ -833,6 +908,42 @@ def test_extract_attachments_with_attachments():
         "f": "Math.max",
         "empty": {},
     }
+
+
+@pytest.mark.parametrize("subclasses", [False, True])
+def test_attachment_roundtrip_nested_containers(subclasses):
+    from collections import UserDict
+
+    class Dict(dict):
+        pass
+
+    class List(list):
+        def __iter__(self):
+            return iter(())
+
+    dict_type, list_type = (Dict, List) if subclasses else (dict, list)
+    attachment = Attachment(data=b"data", filename="file", content_type="text/plain")
+    external = ExternalAttachment(url="s3://bucket/file", filename="file", content_type="text/plain")
+    values = list_type([None, False, 42, 1.5, "text", attachment, dict_type(file=external)])
+    event = dict_type(input=dict_type(values=values))
+    if subclasses:
+        event = UserDict(event)
+    attachments = []
+
+    _extract_attachments(event, attachments)
+
+    assert attachments == [attachment, external]
+    assert values[:5] == [None, False, 42, 1.5, "text"]
+    assert values[5] is attachment.reference
+    assert values[6]["file"] is external.reference
+
+    assert logger._enrich_attachments(event) is event
+    assert event["input"]["values"] is values
+    assert isinstance(values[5], logger.ReadonlyAttachment)
+    assert values[5].reference is attachment.reference
+    assert isinstance(values[6]["file"], logger.ReadonlyAttachment)
+    assert values[6]["file"].reference is external.reference
+    assert values[:5] == [None, False, 42, 1.5, "text"]
 
 
 def _test_prompt(content: str, options: dict | None = None) -> Prompt:
