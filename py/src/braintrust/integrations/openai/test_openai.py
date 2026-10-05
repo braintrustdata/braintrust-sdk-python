@@ -448,18 +448,32 @@ def test_openai_agents_session_stream(memory_logger, is_async):
                 stream = await parse_result
                 assert stream.response
                 async with stream:
-                    return [event async for event in stream]
+                    if Version(openai.__version__) >= Version("3.23.0"):
+                        result = await stream.get_final_result()
+                        return None, result
+                    return [event async for event in stream], None
 
-        events = asyncio.run(collect_events())
+        events, result = asyncio.run(collect_events())
     else:
         raw_response = sessions.with_raw_response.create(**params)
         assert raw_response.headers
         with raw_response.parse() as stream:
             assert stream.response
-            events = list(stream)
+            if Version(openai.__version__) >= Version("3.23.0"):
+                result = stream.get_final_result()
+                events = None
+            else:
+                events = list(stream)
+                result = None
 
-    completed = next(
-        event for event in events if event.type == "agent.session.turn.completed" and event.turn.subagent_id is None
+    completed = (
+        next(
+            event
+            for event in events
+            if event.type == "agent.session.turn.completed" and event.turn.subagent_id is None
+        )
+        if events is not None
+        else None
     )
 
     spans = memory_logger.pop()
@@ -471,11 +485,18 @@ def test_openai_agents_session_stream(memory_logger, is_async):
     assert task_span["span_attributes"]["name"] == "openai.agents.sessions.create"
     assert task_span["input"] == input_text
     assert expected_text in task_span["output"]
+    if result is not None:
+        assert expected_text in result.output_text
+        expected_session_id = result.session_id
+        expected_turn_id = result.turn_id
+    else:
+        expected_session_id = completed.session_id
+        expected_turn_id = completed.turn_id
     assert task_span["metadata"]["provider"] == "openai"
     assert task_span["metadata"]["model"] == "gpt-6-astra"
     assert task_span["metadata"]["environment_type"] == environment_type
-    assert task_span["metadata"]["session_id"] == completed.session_id
-    assert task_span["metadata"]["turn_id"] == completed.turn_id
+    assert task_span["metadata"]["session_id"] == expected_session_id
+    assert task_span["metadata"]["turn_id"] == expected_turn_id
     assert task_span["metadata"]["status"] == "completed"
     assert task_span["context"]["span_origin"]["instrumentation"]["name"] == "openai-auto"
     assert task_span["metrics"]["time_to_first_token"] >= 0

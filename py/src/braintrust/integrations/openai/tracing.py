@@ -996,6 +996,37 @@ class _AsyncTracedStream(NamedWrapper):
         return result
 
 
+class _TracedAgentSessionStream(_TracedStream):
+    """Agent session stream methods must drain through the traced iterator."""
+
+    def with_result_collection(self) -> Any:
+        self._wrapped.with_result_collection()
+        return self
+
+    def get_final_result(self) -> Any:
+        self._wrapped.with_result_collection()
+        for _ in self:
+            pass
+        return self._wrapped.get_final_result()
+
+
+class _AsyncTracedAgentSessionStream(_AsyncTracedStream):
+    """Async agent session stream methods must drain through the traced iterator."""
+
+    def with_result_collection(self) -> Any:
+        self._wrapped.with_result_collection()
+        return self
+
+    async def get_final_result(self) -> Any:
+        self._wrapped.with_result_collection()
+        async for _ in self:
+            pass
+        result = self._wrapped.get_final_result()
+        if inspect.isawaitable(result):
+            return await result
+        return result
+
+
 class _RawResponseWithTracedStream(NamedWrapper):
     """Proxy for LegacyAPIResponse that replaces parse() with a traced stream,
     so that with_raw_response + stream=True preserves both headers and tracing."""
@@ -1420,7 +1451,7 @@ class AgentSessionWrapper:
             finally:
                 trace.finish()
 
-        traced_stream = _TracedStream(stream, gen(), trace.finish)
+        traced_stream = _TracedAgentSessionStream(stream, gen(), trace.finish)
         if raw_requested:
             return _RawResponseWithTracedStream(create_response, traced_stream)
         return traced_stream
@@ -1463,7 +1494,7 @@ class AgentSessionWrapper:
             finally:
                 trace.finish()
 
-        traced_stream = _AsyncTracedStream(stream, gen(), trace.finish)
+        traced_stream = _AsyncTracedAgentSessionStream(stream, gen(), trace.finish)
         if raw_requested:
             return _RawResponseWithTracedStream(
                 create_response,
