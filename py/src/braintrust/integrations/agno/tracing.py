@@ -609,7 +609,7 @@ def _aggregate_workflow_chunks(chunks: list[Any], workflow_run_response: Any | N
         if hasattr(chunk, "content") and chunk.content:
             if event == "WorkflowCompleted":
                 final_workflow_content = str(chunk.content)
-            elif final_workflow_content is None:
+            elif event != "StepProgress" and final_workflow_content is None:
                 aggregated["content"] += str(chunk.content)
 
         if hasattr(chunk, "status") and chunk.status:

@@ -62,6 +62,7 @@ def make_fake_workflow(name: str):
         def _execute_stream(self, session, execution_input, workflow_run_response, run_context=None):
             yield FakeEvent("WorkflowStarted", content=None)
             yield FakeEvent("StepStarted", content=None)
+            yield FakeEvent("StepProgress", content="fetched 3/10", data={"completed": 3, "total": 10})
             yield FakeEvent("StepCompleted", content="hello ")
             yield FakeEvent("WorkflowCompleted", content="world", metrics=FakeMetrics(), status="COMPLETED")
 

@@ -146,7 +146,7 @@ def test_agno_workflow_stream_aggregates_workflow_events(memory_logger):
     run_response = FakeWorkflowRunResponse(input="hello world")
 
     chunks = list(workflow._execute_stream("session-1", execution_input, run_response))
-    assert len(chunks) == 4
+    assert len(chunks) == 5
 
     spans = memory_logger.pop()
     assert len(spans) == 1
