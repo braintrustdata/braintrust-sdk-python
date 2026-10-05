@@ -10,10 +10,11 @@ Run as pytest:
     pytest src/braintrust/type_tests/test_eval_generics.py
 """
 
+import threading
 from typing import TypedDict
 
 import pytest
-from braintrust.framework import EvalAsync, EvalCase, EvalResultWithSummary
+from braintrust.framework import EvalAsync, EvalCase, EvalHooks, EvalResultWithSummary
 from braintrust.generated_types import ObjectReference
 from braintrust.score import Score
 from braintrust.types._eval import EvalCaseDict, EvalCaseDictNoOutput
@@ -103,6 +104,26 @@ async def test_eval_same_type_output_and_expected():
     assert len(result.results) == 1
     assert result.results[0].output == "model answer"
     assert result.results[0].expected == "golden answer"
+
+
+@pytest.mark.asyncio
+async def test_eval_cancel_event_types():
+    cancel_event = threading.Event()
+
+    async def task(input: str, hooks: EvalHooks[str]) -> str:
+        assert hooks.cancel_event is cancel_event
+        return input
+
+    result = await EvalAsync(
+        "test-cancel-event-types",
+        data=[EvalCase(input="hello", expected="hello")],
+        task=task,
+        scores=[],
+        cancel_event=cancel_event,
+        no_send_logs=True,
+    )
+    assert result.results[0].output == "hello"
+    assert not cancel_event.is_set()
 
 
 @pytest.mark.asyncio

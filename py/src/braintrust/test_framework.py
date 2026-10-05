@@ -1,6 +1,9 @@
+import asyncio
 import importlib.util
 import re
 import sys
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -9,16 +12,19 @@ from braintrust.util import LazyValue
 
 from .framework import (
     Eval,
+    EvalAsync,
     EvalCase,
     EvalHooks,
     EvalResultWithSummary,
     Evaluator,
     Filter,
     _call_user_fn_args,
+    await_or_run,
     evaluate_filter,
     parse_filters,
     run_evaluator,
 )
+from .resource_manager import ResourceManager
 from .score import Classification, Score, Scorer
 from .test_helpers import init_test_exp, with_memory_logger, with_simulate_login  # noqa: F401
 
@@ -277,6 +283,254 @@ async def test_run_evaluator_basic():
     assert result.summary.project_name == "test-project"
     assert "exact_match" in result.summary.scores
     assert result.summary.scores["exact_match"].score == 1.0
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("trigger", ["event", "caller"])
+async def test_eval_async_cancellation_stops_queued_trials_and_drains_running_task(trigger):
+    cancel_event = threading.Event()
+    started = asyncio.Event()
+    cleaned_up = asyncio.Event()
+    started_inputs = []
+
+    async def task(input_value, hooks):
+        started_inputs.append(input_value)
+        assert hooks.cancel_event is cancel_event
+        started.set()
+        try:
+            await asyncio.Event().wait()
+        finally:
+            await asyncio.sleep(0.01)
+            cleaned_up.set()
+
+    evaluation = asyncio.create_task(
+        EvalAsync(
+            "test-cancel-event",
+            data=[EvalCase(input=1), EvalCase(input=2)],
+            task=task,
+            scores=[],
+            max_concurrency=1,
+            cancel_event=cancel_event,
+            no_send_logs=True,
+        )
+    )
+    try:
+        await asyncio.wait_for(started.wait(), 2)
+        if trigger == "event":
+            cancel_event.set()
+        else:
+            evaluation.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await asyncio.wait_for(evaluation, 2)
+        assert cancel_event.is_set()
+        assert cleaned_up.is_set()
+        assert started_inputs == [1]
+    finally:
+        cancel_event.set()
+        evaluation.cancel()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("already_set", "timeout", "error"),
+    [(True, None, asyncio.CancelledError), (False, 0, TimeoutError)],
+    ids=["pre-set-event", "zero-timeout"],
+)
+async def test_eval_async_cancelled_before_tasks_start(already_set, timeout, error):
+    cancel_event = threading.Event()
+    if already_set:
+        cancel_event.set()
+    started = []
+
+    with pytest.raises(error):
+        await EvalAsync(
+            "test-cancelled-before-start",
+            data=[EvalCase(input=1)],
+            task=lambda input_value: started.append(input_value),
+            scores=[],
+            timeout=timeout,
+            cancel_event=cancel_event,
+            no_send_logs=True,
+        )
+    assert cancel_event.is_set()
+    assert started == []
+
+
+@pytest.mark.asyncio
+async def test_eval_sync_cancel_event_reaches_running_thread_and_skips_queue():
+    cancel_event = threading.Event()
+    started = threading.Event()
+    release = threading.Event()
+    finished = threading.Event()
+    started_inputs = []
+    scored_inputs = []
+
+    def task(input_value, hooks):
+        started_inputs.append(input_value)
+        assert hooks.cancel_event is cancel_event
+        started.set()
+        assert cancel_event.wait(2)
+        assert release.wait(2)
+        finished.set()
+        return input_value
+
+    evaluation = asyncio.create_task(
+        asyncio.to_thread(
+            Eval,
+            "test-sync-cancel",
+            data=[EvalCase(input=1), EvalCase(input=2)],
+            task=task,
+            scores=[lambda input_value, output, expected: scored_inputs.append(input_value)],
+            max_concurrency=1,
+            cancel_event=cancel_event,
+            no_send_logs=True,
+        )
+    )
+    try:
+        assert await asyncio.to_thread(started.wait, 2)
+        cancel_event.set()
+        await asyncio.sleep(0.05)
+        assert not evaluation.done()
+        release.set()
+        with pytest.raises(asyncio.CancelledError):
+            await asyncio.wait_for(evaluation, 2)
+        assert finished.is_set()
+        assert started_inputs == [1]
+        assert scored_inputs == []
+    finally:
+        release.set()
+        cancel_event.set()
+
+
+@pytest.mark.asyncio
+async def test_eval_async_timeout_waits_for_scorer_cleanup():
+    cancel_event = threading.Event()
+    scorer_started = asyncio.Event()
+    scorer_cleaned_up = asyncio.Event()
+
+    async def scorer(input_value, output, expected):
+        scorer_started.set()
+        try:
+            await asyncio.Event().wait()
+        finally:
+            await asyncio.sleep(0.01)
+            scorer_cleaned_up.set()
+
+    evaluation = asyncio.create_task(
+        EvalAsync(
+            "test-timeout-scorer",
+            data=[EvalCase(input=1)],
+            task=lambda input_value: input_value,
+            scores=[scorer],
+            timeout=0.5,
+            cancel_event=cancel_event,
+            no_send_logs=True,
+        )
+    )
+    try:
+        await asyncio.wait_for(scorer_started.wait(), 2)
+        with pytest.raises(TimeoutError):
+            await asyncio.wait_for(evaluation, 2)
+        assert cancel_event.is_set()
+        assert scorer_cleaned_up.is_set()
+    finally:
+        evaluation.cancel()
+
+
+@pytest.mark.asyncio
+async def test_eval_async_cancel_event_closes_pending_data_iterator():
+    cancel_event = threading.Event()
+    reading_next_row = asyncio.Event()
+    iterator_closed = asyncio.Event()
+
+    async def data():
+        try:
+            yield EvalCase(input=1)
+            reading_next_row.set()
+            await asyncio.Event().wait()
+            yield EvalCase(input=2)
+        finally:
+            iterator_closed.set()
+
+    evaluation = asyncio.create_task(
+        EvalAsync(
+            "test-cancel-data-iterator",
+            data=data(),
+            task=lambda input_value: input_value,
+            scores=[],
+            cancel_event=cancel_event,
+            no_send_logs=True,
+        )
+    )
+    try:
+        await asyncio.wait_for(reading_next_row.wait(), 2)
+        cancel_event.set()
+        with pytest.raises(asyncio.CancelledError):
+            await asyncio.wait_for(evaluation, 2)
+        assert iterator_closed.is_set()
+    finally:
+        cancel_event.set()
+        evaluation.cancel()
+
+
+@pytest.mark.asyncio
+async def test_eval_async_cancel_event_preserves_data_iterator_error():
+    cancel_event = threading.Event()
+
+    async def data():
+        cancel_event.set()
+        raise ValueError("iterator failed during cancellation")
+        yield EvalCase(input=1)
+
+    with pytest.raises(asyncio.CancelledError) as exc_info:
+        await EvalAsync(
+            "test-cancel-iterator-error",
+            data=data(),
+            task=lambda input_value: input_value,
+            scores=[],
+            cancel_event=cancel_event,
+            no_send_logs=True,
+        )
+    assert isinstance(exc_info.value.__cause__, ValueError)
+
+
+@pytest.mark.asyncio
+async def test_cancelled_sync_task_does_not_start_while_queued_in_thread_pool():
+    started = threading.Event()
+    release = threading.Event()
+    queued_started = threading.Event()
+
+    class Pool:
+        def __init__(self, executor):
+            self.executor = executor
+
+        def thread_pool(self):
+            return self.executor
+
+    def blocking():
+        started.set()
+        assert release.wait(2)
+
+    def queued():
+        queued_started.set()
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        with patch("braintrust.framework._THREAD_POOL_SINGLETON", ResourceManager(Pool(executor))):
+            loop = asyncio.get_running_loop()
+            first = asyncio.create_task(await_or_run(loop, blocking))
+            try:
+                assert await asyncio.to_thread(started.wait, 2)
+                second = asyncio.create_task(await_or_run(loop, queued))
+                await asyncio.sleep(0)
+                second.cancel()
+                await asyncio.sleep(0)
+                release.set()
+                with pytest.raises(asyncio.CancelledError):
+                    await asyncio.wait_for(second, 2)
+                await asyncio.wait_for(first, 2)
+                assert not queued_started.is_set()
+            finally:
+                release.set()
 
 
 @pytest.mark.asyncio

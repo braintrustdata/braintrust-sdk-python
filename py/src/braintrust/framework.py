@@ -6,6 +6,7 @@ import inspect
 import json
 import re
 import sys
+import threading
 import traceback
 import uuid
 import warnings
@@ -160,6 +161,13 @@ class EvalHooks(abc.ABC, Generic[Expected]):
     """
     An object that can be used to add metadata to an evaluation. This is passed to the `task` function.
     """
+
+    @property
+    def cancel_event(self) -> threading.Event:
+        """Set when the evaluation is cancelled or times out."""
+        if not hasattr(self, "_cancel_event"):
+            self._cancel_event = threading.Event()
+        return self._cancel_event
 
     @property
     @abc.abstractmethod
@@ -462,6 +470,9 @@ class Evaluator(Generic[Input, Output, Expected]):
 
     parameter_values: dict[str, Any] | None = None
 
+    cancel_event: threading.Event | None = None
+    """Optional event that cancels the evaluation when set. Also set on timeout."""
+
 
 @dataclasses.dataclass
 class EvalResultWithSummary(SerializableDataClass, Generic[Input, Output, Expected]):
@@ -489,9 +500,18 @@ async def await_or_run(event_loop, f, *args, **kwargs):
                     var.reset(tok)
 
         with _THREAD_POOL_SINGLETON.get() as thread_pool:
-            return await event_loop.run_in_executor(
-                thread_pool.thread_pool(), run_f, args, kwargs, contextvars.copy_context()
-            )
+            submitted = thread_pool.thread_pool().submit(run_f, args, kwargs, contextvars.copy_context())
+            future = asyncio.wrap_future(submitted, loop=event_loop)
+            try:
+                return await asyncio.shield(future)
+            except asyncio.CancelledError:
+                # Skip jobs still in the pool; running threads must finish before their eval state is disposed.
+                if submitted.cancel():
+                    raise
+                try:
+                    await future
+                finally:
+                    raise
 
 
 def _call_user_fn_args(fn, kwargs):
@@ -688,6 +708,7 @@ def _EvalCommon(
     update: bool,
     reporter: ReporterDef[Input, Output, Expected, EvalReport] | None,
     timeout: float | None,
+    cancel_event: threading.Event | None,
     max_concurrency: int | None,
     project_id: str | None,
     base_experiment_name: str | None,
@@ -733,6 +754,7 @@ def _EvalCommon(
         is_public=is_public,
         update=update,
         timeout=timeout,
+        cancel_event=cancel_event,
         max_concurrency=max_concurrency,
         project_id=project_id,
         base_experiment_name=base_experiment_name,
@@ -845,6 +867,7 @@ async def EvalAsync(
     parent: str | None = None,
     state: BraintrustState | None = None,
     enable_cache: bool = True,
+    cancel_event: threading.Event | None = None,
 ) -> EvalResultWithSummary[Input, Output, Expected]:
     """
     A function you can use to define an evaluator. This is a convenience wrapper around the `Evaluator` class.
@@ -884,6 +907,8 @@ async def EvalAsync(
     :param reporter: (Optional) A reporter that takes an evaluator and its result and returns a report.
     :param timeout: (Optional) The duration, in seconds, after which to time out the evaluation.
     Defaults to None, in which case there is no timeout.
+    :param cancel_event: Optional threading.Event. Setting it stops the evaluation and cancels running async tasks.
+    A timeout also sets this event. Running synchronous tasks must cooperate or finish before the eval returns.
     :param project_id: (Optional) If specified, uses the given project ID instead of the evaluator's name to identify the project.
     :param base_experiment_name: An optional experiment name to use as a base. If specified, the new experiment will be
     summarized and compared to this experiment.
@@ -922,6 +947,7 @@ async def EvalAsync(
         update=update,
         reporter=reporter,
         timeout=timeout,
+        cancel_event=cancel_event,
         max_concurrency=max_concurrency,
         project_id=project_id,
         base_experiment_name=base_experiment_name,
@@ -974,6 +1000,7 @@ def Eval(
     parent: str | None = None,
     state: BraintrustState | None = None,
     enable_cache: bool = True,
+    cancel_event: threading.Event | None = None,
 ) -> EvalResultWithSummary[Input, Output, Expected]:
     """
     A function you can use to define an evaluator. This is a convenience wrapper around the `Evaluator` class.
@@ -1013,6 +1040,8 @@ def Eval(
     :param reporter: (Optional) A reporter that takes an evaluator and its result and returns a report.
     :param timeout: (Optional) The duration, in seconds, after which to time out the evaluation.
     Defaults to None, in which case there is no timeout.
+    :param cancel_event: Optional threading.Event. Setting it stops the evaluation and cancels running async tasks.
+    A timeout also sets this event. Running synchronous tasks must cooperate or finish before the eval returns.
     :param project_id: (Optional) If specified, uses the given project ID instead of the evaluator's name to identify the project.
     :param base_experiment_name: An optional experiment name to use as a base. If specified, the new experiment will be
     summarized and compared to this experiment.
@@ -1052,6 +1081,7 @@ def Eval(
         update=update,
         reporter=reporter,
         timeout=timeout,
+        cancel_event=cancel_event,
         max_concurrency=max_concurrency,
         project_id=project_id,
         base_experiment_name=base_experiment_name,
@@ -1195,6 +1225,7 @@ class DictEvalHooks(dict[str, Any]):
         tags: Sequence[str] | None = None,
         report_progress: Callable[[TaskProgressEvent], None] = None,
         parameters: ValidatedParameters | None = None,
+        cancel_event: threading.Event | None = None,
     ):
         if metadata is not None:
             self.update({"metadata": metadata})
@@ -1209,6 +1240,11 @@ class DictEvalHooks(dict[str, Any]):
 
         self._report_progress = report_progress
         self._parameters = parameters
+        self._cancel_event = cancel_event if cancel_event is not None else threading.Event()
+
+    @property
+    def cancel_event(self) -> threading.Event:
+        return self._cancel_event
 
     @property
     def metadata(self) -> Metadata | None:
@@ -1441,11 +1477,59 @@ async def run_evaluator(
     state: BraintrustState | None = None,
     enable_cache: bool = True,
 ) -> EvalResultWithSummary[Input, Output, Expected]:
-    """Wrapper on _run_evaluator_internal that times out execution after evaluator.timeout."""
-    results = await asyncio.wait_for(
-        _run_evaluator_internal(experiment, evaluator, position, filters, stream, state, enable_cache),
-        evaluator.timeout,
+    """Run an evaluator, cancelling its work on timeout or when cancel_event is set."""
+    cancel_event = evaluator.cancel_event if evaluator.cancel_event is not None else threading.Event()
+    if cancel_event.is_set():
+        raise asyncio.CancelledError("Evaluator cancelled")
+    if evaluator.timeout is not None and evaluator.timeout <= 0:
+        cancel_event.set()
+        raise TimeoutError("Evaluator timed out")
+
+    loop = asyncio.get_running_loop()
+    cancelled = loop.create_future()
+    timed_out = False
+
+    def on_timeout():
+        nonlocal timed_out
+        if not cancel_event.is_set():
+            timed_out = True
+            cancel_event.set()
+            if not cancelled.done():
+                cancelled.set_result(None)
+
+    async def watch_cancel_event():
+        while not cancel_event.is_set():
+            await asyncio.sleep(0.01)
+        if not cancelled.done():
+            cancelled.set_result(None)
+
+    timeout_handle = loop.call_later(evaluator.timeout, on_timeout) if evaluator.timeout is not None else None
+    watcher = asyncio.create_task(watch_cancel_event()) if evaluator.cancel_event is not None else None
+    worker = asyncio.create_task(
+        _run_evaluator_internal(experiment, evaluator, position, filters, stream, state, enable_cache, cancel_event)
     )
+    try:
+        if watcher is not None or timeout_handle is not None:
+            await asyncio.wait((worker, cancelled), return_when=asyncio.FIRST_COMPLETED)
+        if cancel_event.is_set():
+            worker.cancel()
+            (worker_result,) = await asyncio.gather(worker, return_exceptions=True)
+            worker_error = worker_result if isinstance(worker_result, Exception) else None
+            if timed_out:
+                raise TimeoutError("Evaluator timed out") from worker_error
+            raise asyncio.CancelledError("Evaluator cancelled") from worker_error
+        results = await worker
+    except asyncio.CancelledError:
+        cancel_event.set()
+        worker.cancel()
+        await asyncio.gather(worker, return_exceptions=True)
+        raise
+    finally:
+        if timeout_handle is not None:
+            timeout_handle.cancel()
+        if watcher is not None:
+            watcher.cancel()
+            await asyncio.gather(watcher, return_exceptions=True)
 
     if experiment:
         comparison_experiment_id = evaluator.base_experiment_id
@@ -1479,6 +1563,7 @@ async def _run_evaluator_internal(
     stream: Callable[[SSEProgressEvent], None] | None = None,
     state: BraintrustState | None = None,
     enable_cache: bool = True,
+    cancel_event: threading.Event | None = None,
 ):
     # Start span cache for this eval (it's disabled by default to avoid temp files outside of evals)
     if state is None:
@@ -1489,7 +1574,9 @@ async def _run_evaluator_internal(
     if enable_cache:
         state.span_cache.start()
     try:
-        return await _run_evaluator_internal_impl(experiment, evaluator, position, filters, stream, state)
+        return await _run_evaluator_internal_impl(
+            experiment, evaluator, position, filters, stream, state, cancel_event
+        )
     finally:
         # Clean up disk-based span cache after eval completes and stop caching
         if enable_cache:
@@ -1504,8 +1591,11 @@ async def _run_evaluator_internal_impl(
     filters: list[Filter],
     stream: Callable[[SSEProgressEvent], None] | None = None,
     state: BraintrustState | None = None,
+    cancel_event: threading.Event | None = None,
 ):
     event_loop = asyncio.get_event_loop()
+    if cancel_event is None:
+        cancel_event = threading.Event()
 
     async def await_or_run_scorer(root_span, scorer, name, **kwargs):
         # Merge purpose into parent's propagated_event rather than replacing it
@@ -1686,6 +1776,7 @@ async def _run_evaluator_internal_impl(
                     tags=tags,
                     report_progress=report_progress,
                     parameters=resolved_evaluator_parameters,
+                    cancel_event=cancel_event,
                 )
 
                 # Check if the task takes a hooks argument
@@ -1698,8 +1789,12 @@ async def _run_evaluator_internal_impl(
 
                 with root_span.start_span("task", span_attributes={"type": SpanTypeAttribute.TASK}) as span:
                     hooks.set_span(span)
+                    if cancel_event.is_set():
+                        raise asyncio.CancelledError
                     output = await await_or_run(event_loop, evaluator.task, *task_args)
                     span.log(input=task_args[0], output=output)
+                if cancel_event.is_set():
+                    raise asyncio.CancelledError
                 tags = hooks.tags if hooks.tags else None
                 root_span.log(output=output, metadata=metadata, tags=tags)
 
@@ -1781,6 +1876,8 @@ async def _run_evaluator_internal_impl(
                     "id": datum.id,
                     "tags": tags,
                 }
+                if cancel_event.is_set():
+                    raise asyncio.CancelledError
                 score_promises = [
                     asyncio.create_task(await_or_run_scorer(root_span, score, name, **scorer_kwargs))
                     for score, name in zip(scorers, scorer_names)
@@ -1789,29 +1886,35 @@ async def _run_evaluator_internal_impl(
                     asyncio.create_task(await_or_run_classifier(root_span, classifier, name, **scorer_kwargs))
                     for classifier, name in zip(classifiers, classifier_names)
                 ]
+                try:
+                    failing_scorers_and_exceptions = []
+                    for name, p in zip(scorer_names, score_promises):
+                        try:
+                            score_results = await p
+                            for score in score_results:
+                                scores[score.name] = score.score
+                        except Exception as e:
+                            failing_scorers_and_exceptions.append((name, e, traceback.format_exc()))
 
-                failing_scorers_and_exceptions = []
-                for name, p in zip(scorer_names, score_promises):
-                    try:
-                        score_results = await p
-                        for score in score_results:
-                            scores[score.name] = score.score
-                    except Exception as e:
-                        failing_scorers_and_exceptions.append((name, e, traceback.format_exc()))
-
-                failing_classifiers_and_exceptions = []
-                for name, p in zip(classifier_names, classifier_promises):
-                    try:
-                        classifier_results = await p
-                        if classifier_results is None:
-                            continue
-                        for classification in classifier_results:
-                            item = classification.as_item()
-                            if classification.name not in classifications:
-                                classifications[classification.name] = []
-                            classifications[classification.name].append(item)
-                    except Exception as e:
-                        failing_classifiers_and_exceptions.append((name, e, traceback.format_exc()))
+                    failing_classifiers_and_exceptions = []
+                    for name, p in zip(classifier_names, classifier_promises):
+                        try:
+                            classifier_results = await p
+                            if classifier_results is None:
+                                continue
+                            for classification in classifier_results:
+                                item = classification.as_item()
+                                if classification.name not in classifications:
+                                    classifications[classification.name] = []
+                                classifications[classification.name].append(item)
+                        except Exception as e:
+                            failing_classifiers_and_exceptions.append((name, e, traceback.format_exc()))
+                finally:
+                    # Scorers run in separate tasks and must finish before their root span closes.
+                    for promise in (*score_promises, *classifier_promises):
+                        if not promise.done():
+                            promise.cancel()
+                    await asyncio.gather(*score_promises, *classifier_promises, return_exceptions=True)
 
                 if classifications:
                     root_span.log(classifications=classifications)
@@ -1915,38 +2018,57 @@ async def _run_evaluator_internal_impl(
         asyncio.Semaphore(evaluator.max_concurrency) if evaluator.max_concurrency is not None else None
     )
 
-    async def with_max_concurrency(coro):
+    async def with_max_concurrency(datum, trial_index):
         if max_concurrency_semaphore:
             async with max_concurrency_semaphore:
-                return await coro
+                if cancel_event.is_set():
+                    return None
+                return await run_evaluator_task(datum, trial_index)
         else:
-            return await coro
+            if cancel_event.is_set():
+                return None
+            return await run_evaluator_task(datum, trial_index)
 
     tasks = []
-    with async_tqdm(
-        filtered_iterator(data_iterator),
-        desc=f"{evaluator.eval_name} (data)",
-        position=position,
-        disable=position is None,
-    ) as pbar:
-        async for datum in pbar:
-            if isinstance(datum, dict):
-                datum_trial_count = datum.get("trial_count")
-            else:
-                datum_trial_count = getattr(datum, "trial_count", None)
-            trial_count = datum_trial_count if datum_trial_count is not None else evaluator.trial_count
-            for trial_index in range(trial_count):
-                tasks.append(asyncio.create_task(with_max_concurrency(run_evaluator_task(datum, trial_index))))
+    try:
+        with async_tqdm(
+            filtered_iterator(data_iterator),
+            desc=f"{evaluator.eval_name} (data)",
+            position=position,
+            disable=position is None,
+        ) as pbar:
+            async for datum in pbar:
+                if cancel_event.is_set():
+                    break
+                if isinstance(datum, dict):
+                    datum_trial_count = datum.get("trial_count")
+                else:
+                    datum_trial_count = getattr(datum, "trial_count", None)
+                trial_count = datum_trial_count if datum_trial_count is not None else evaluator.trial_count
+                for trial_index in range(trial_count):
+                    if cancel_event.is_set():
+                        break
+                    tasks.append(asyncio.create_task(with_max_concurrency(datum, trial_index)))
 
-    if not tasks:
-        eprint(
-            f"{bcolors.WARNING}Warning: no data rows found for evaluator '{evaluator.eval_name}'. The experiment will be empty.{bcolors.ENDC}"
-        )
+        if not tasks and not cancel_event.is_set():
+            eprint(
+                f"{bcolors.WARNING}Warning: no data rows found for evaluator '{evaluator.eval_name}'. The experiment will be empty.{bcolors.ENDC}"
+            )
 
-    results = []
-    for task in std_tqdm(tasks, desc=f"{evaluator.eval_name} (tasks)", position=position, disable=position is None):
-        results.append(await task)
-    return results
+        results = []
+        for task in std_tqdm(
+            tasks, desc=f"{evaluator.eval_name} (tasks)", position=position, disable=position is None
+        ):
+            result = await task
+            if result is not None:
+                results.append(result)
+        return results
+    finally:
+        for task in tasks:
+            if not task.done():
+                task.cancel()
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
 
 
 def build_local_summary(
