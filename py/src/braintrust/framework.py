@@ -1483,7 +1483,7 @@ async def run_evaluator(
         raise asyncio.CancelledError("Evaluator cancelled")
     if evaluator.timeout is not None and evaluator.timeout <= 0:
         cancel_event.set()
-        raise TimeoutError("Evaluator timed out")
+        raise asyncio.TimeoutError("Evaluator timed out")
 
     loop = asyncio.get_running_loop()
     cancelled = loop.create_future()
@@ -1516,7 +1516,7 @@ async def run_evaluator(
             (worker_result,) = await asyncio.gather(worker, return_exceptions=True)
             worker_error = worker_result if isinstance(worker_result, Exception) else None
             if timed_out:
-                raise TimeoutError("Evaluator timed out") from worker_error
+                raise asyncio.TimeoutError("Evaluator timed out") from worker_error
             raise asyncio.CancelledError("Evaluator cancelled") from worker_error
         results = await worker
     except asyncio.CancelledError:

@@ -333,7 +333,7 @@ async def test_eval_async_cancellation_stops_queued_trials_and_drains_running_ta
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("already_set", "timeout", "error"),
-    [(True, None, asyncio.CancelledError), (False, 0, TimeoutError)],
+    [(True, None, asyncio.CancelledError), (False, 0, asyncio.TimeoutError)],
     ids=["pre-set-event", "zero-timeout"],
 )
 async def test_eval_async_cancelled_before_tasks_start(already_set, timeout, error):
@@ -429,7 +429,7 @@ async def test_eval_async_timeout_waits_for_scorer_cleanup():
     )
     try:
         await asyncio.wait_for(scorer_started.wait(), 2)
-        with pytest.raises(TimeoutError):
+        with pytest.raises(asyncio.TimeoutError):
             await asyncio.wait_for(evaluation, 2)
         assert cancel_event.is_set()
         assert scorer_cleaned_up.is_set()
