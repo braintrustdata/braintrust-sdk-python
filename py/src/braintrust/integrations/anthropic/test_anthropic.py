@@ -190,9 +190,6 @@ def test_log_message_to_span_includes_stop_reason_and_stop_sequence():
         stop_reason="stop_sequence",
         stop_sequence="DONE",
         stop_details=None,
-        diagnostics=SimpleNamespace(
-            cache_miss_reason=SimpleNamespace(type="messages_changed", cache_missed_input_tokens=9)
-        ),
         usage={
             "input_tokens": 11,
             "output_tokens": 7,
@@ -224,9 +221,8 @@ def test_log_message_to_span_includes_stop_reason_and_stop_sequence():
             "server_tool_use_web_fetch_requests": 1.0,
             "tokens": 18.0,
             "time_to_first_token": 0.123,
-            "prompt_cache_missed_tokens": 9.0,
         },
-        metadata={"cache_miss_reason": "messages_changed"},
+        metadata={},
     )
 
 
