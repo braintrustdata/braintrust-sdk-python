@@ -1,0 +1,214 @@
+interactions:
+- request:
+    body: '{"max_tokens":16,"messages":[{"role":"user","content":"What is the capital
+      of France?"}],"model":"claude-haiku-4-5-20251001"}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate, zstd
+      anthropic-version:
+      - '2023-06-01'
+      connection:
+      - keep-alive
+      content-length:
+      - '125'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 1.11.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.11.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+      x-stainless-timeout:
+      - '600'
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: '{"model":"claude-haiku-4-5-20251001","id":"msg_011CfjQCSSy4c26N4NkgDe8Q","type":"message","role":"assistant","content":[{"type":"text","text":"The
+        capital of France is Paris."}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":14,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":10,"service_tier":"standard","inference_geo":"not_available"},"diagnostics":null}'
+    headers:
+      anthropic-organization-id:
+      - 27796668-7351-40ac-acc4-024aee8995a5
+      anthropic-ratelimit-input-tokens-limit:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2026-10-05T16:24:35Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2026-10-05T16:24:35Z'
+      anthropic-ratelimit-requests-limit:
+      - '20000'
+      anthropic-ratelimit-requests-remaining:
+      - '19999'
+      anthropic-ratelimit-requests-reset:
+      - '2026-10-05T16:24:34Z'
+      anthropic-ratelimit-tokens-limit:
+      - '12000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '12000000'
+      anthropic-ratelimit-tokens-reset:
+      - '2026-10-05T16:24:35Z'
+      anthropic-workspace-id:
+      - wrkspc_018bFG1FgNVWqx5pthtdGTzS
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a45dc70009cbab63-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '524'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Mon, 05 Oct 2026 16:24:35 GMT
+      request-id:
+      - req_011CfjQCSDKpHQFdYa6XaXut
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      traceresponse:
+      - 00-79ff2c64f499313f7ebbfbf1c496bc7c-2686ad04e69d12bf-01
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"max_tokens":16,"messages":[{"role":"user","content":"What is the capital
+      of Spain?"}],"model":"claude-haiku-4-5-20251001","diagnostics":{"previous_message_id":"msg_011CfjQCSSy4c26N4NkgDe8Q"}}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate, zstd
+      anthropic-version:
+      - '2023-06-01'
+      connection:
+      - keep-alive
+      content-length:
+      - '193'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 1.11.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.11.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+      x-stainless-timeout:
+      - '600'
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: '{"model":"claude-haiku-4-5-20251001","id":"msg_011CfjQCVSJn3HCxe9Xi4HdM","type":"message","role":"assistant","content":[{"type":"text","text":"The
+        capital of Spain is Madrid."}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":14,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":10,"service_tier":"standard","inference_geo":"not_available"},"diagnostics":{"cache_miss_reason":{"type":"previous_message_not_found"}}}'
+    headers:
+      anthropic-organization-id:
+      - 27796668-7351-40ac-acc4-024aee8995a5
+      anthropic-ratelimit-input-tokens-limit:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2026-10-05T16:24:35Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2026-10-05T16:24:35Z'
+      anthropic-ratelimit-requests-limit:
+      - '20000'
+      anthropic-ratelimit-requests-remaining:
+      - '19999'
+      anthropic-ratelimit-requests-reset:
+      - '2026-10-05T16:24:35Z'
+      anthropic-ratelimit-tokens-limit:
+      - '12000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '12000000'
+      anthropic-ratelimit-tokens-reset:
+      - '2026-10-05T16:24:35Z'
+      anthropic-workspace-id:
+      - wrkspc_018bFG1FgNVWqx5pthtdGTzS
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a45dc7048ebfab63-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '579'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Mon, 05 Oct 2026 16:24:35 GMT
+      request-id:
+      - req_011CfjQCVBRnnbvwydPFZzxr
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      traceresponse:
+      - 00-bfb77651723fcc7aace4c3503d96644d-c55222761107889a-01
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+version: 1

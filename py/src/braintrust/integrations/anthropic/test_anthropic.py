@@ -190,6 +190,9 @@ def test_log_message_to_span_includes_stop_reason_and_stop_sequence():
         stop_reason="stop_sequence",
         stop_sequence="DONE",
         stop_details=None,
+        diagnostics=SimpleNamespace(
+            cache_miss_reason=SimpleNamespace(type="messages_changed", cache_missed_input_tokens=9)
+        ),
         usage={
             "input_tokens": 11,
             "output_tokens": 7,
@@ -221,8 +224,9 @@ def test_log_message_to_span_includes_stop_reason_and_stop_sequence():
             "server_tool_use_web_fetch_requests": 1.0,
             "tokens": 18.0,
             "time_to_first_token": 0.123,
+            "prompt_cache_missed_tokens": 9.0,
         },
-        metadata={},
+        metadata={"cache_miss_reason": "messages_changed"},
     )
 
 
@@ -622,6 +626,30 @@ def test_anthropic_messages_create_prompt_cache_metrics(memory_logger, ttl, vcr_
     assert (
         span["metrics"]["prompt_cache_creation_1h_tokens"] == response.usage.cache_creation.ephemeral_1h_input_tokens
     )
+
+
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
+def test_anthropic_messages_create_prompt_cache_diagnostics(memory_logger):
+    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
+        pytest.skip("Prompt cache diagnostics require the latest Anthropic SDK cassette")
+
+    client = wrap_anthropic(_get_client())
+    request = {
+        "model": LATEST_MODEL,
+        "max_tokens": 16,
+        "messages": [{"role": "user", "content": "What is the capital of France?"}],
+    }
+    first_response = client.messages.create(**request)
+    second_request = {**request, "messages": [{"role": "user", "content": "What is the capital of Spain?"}]}
+    second_response = client.messages.create(**second_request, diagnostics={"previous_message_id": first_response.id})
+
+    spans = memory_logger.pop()
+    message_spans = [span for span in spans if span["span_attributes"]["name"] == "anthropic.messages.create"]
+    assert len(message_spans) == 2
+    second_span = message_spans[1]
+    assert second_span["metadata"]["diagnostics"] == {"previous_message_id": first_response.id}
+    cache_miss_reason = second_response.diagnostics.cache_miss_reason
+    assert second_span["metadata"]["cache_miss_reason"] == cache_miss_reason.type
 
 
 @pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
