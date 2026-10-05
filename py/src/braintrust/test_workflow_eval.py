@@ -10,6 +10,10 @@ from .logger import BraintrustState, Dataset, ObjectMetadata, ProjectDatasetMeta
 from .test_helpers import init_test_exp, with_memory_logger, with_simulate_login  # noqa: F401
 from .util import LazyValue
 from .workflow_eval import (
+    WorkflowBatchingOptions,
+    WorkflowBatchItemResult,
+    WorkflowBatchScorer,
+    WorkflowBatchTask,
     WorkflowEvalCompletedResult,
     WorkflowEvalMemoryStore,
     WorkflowEvalRedisStore,
@@ -45,6 +49,44 @@ async def test_memory_store_is_atomic_and_copies_values():
     assert await store.read("key") == b"first"
 
 
+@pytest.mark.asyncio
+async def test_memory_store_reserve_batch_is_atomic_for_overlapping_batches():
+    store = WorkflowEvalMemoryStore()
+
+    claims = await asyncio.gather(
+        store.reserve_batch(
+            ["workflow/{run-1}/links/a", "workflow/{run-1}/links/b"],
+            b"batch-1",
+            "workflow/{run-1}/submissions/batch-1",
+            b"record-1",
+            "workflow/{run-1}/leases/batch-1",
+            b"lease-1",
+            1000,
+        ),
+        store.reserve_batch(
+            ["workflow/{run-1}/links/b", "workflow/{run-1}/links/c"],
+            b"batch-2",
+            "workflow/{run-1}/submissions/batch-2",
+            b"record-2",
+            "workflow/{run-1}/leases/batch-2",
+            b"lease-2",
+            1000,
+        ),
+    )
+
+    assert sum(claims) == 1
+    if claims[0]:
+        assert await store.read("workflow/{run-1}/links/a") == b"batch-1"
+        assert await store.read("workflow/{run-1}/links/b") == b"batch-1"
+        assert await store.read("workflow/{run-1}/links/c") is None
+        assert await store.read("workflow/{run-1}/submissions/batch-1") == b"record-1"
+    else:
+        assert await store.read("workflow/{run-1}/links/a") is None
+        assert await store.read("workflow/{run-1}/links/b") == b"batch-2"
+        assert await store.read("workflow/{run-1}/links/c") == b"batch-2"
+        assert await store.read("workflow/{run-1}/submissions/batch-2") == b"record-2"
+
+
 class _SyncRedis:
     def __init__(self):
         self.values = {}
@@ -52,11 +94,42 @@ class _SyncRedis:
         self.sets = {}
         self.expirations = {}
 
-    def eval(self, script, numkeys, key, member, ttl_ms):
-        assert "SADD" in script and "PEXPIRE" in script
-        assert numkeys == 1
-        self.sets.setdefault(key, set()).add(member)
-        self.expirations[key] = ttl_ms
+    def eval(self, script, numkeys, *args):
+        if "SADD" in script and "PEXPIRE" in script:
+            assert numkeys == 1
+            key, member, ttl_ms = args
+            self.sets.setdefault(key, set()).add(member)
+            self.expirations[key] = ttl_ms
+            return 1
+        if "KEYS[#KEYS - 1]" in script:
+            keys = args[:numkeys]
+            hash_tags = {key.split("{", 1)[1].split("}", 1)[0] for key in keys}
+            assert len(hash_tags) == 1
+            claim_value, submission_value, lease_value, ttl_ms, lease_ttl_ms = args[numkeys:]
+            if any(key in self.values for key in keys):
+                return 0
+            for key in keys[:-2]:
+                self.values[key] = claim_value
+                self.expirations[key] = ttl_ms
+            self.values[keys[-2]] = submission_value
+            self.expirations[keys[-2]] = ttl_ms
+            self.values[keys[-1]] = lease_value
+            self.expirations[keys[-1]] = lease_ttl_ms
+            return 1
+        if "redis.call('GET', KEYS[1]) == ARGV[1]" in script:
+            key, expected = args[:2]
+            if self.values.get(key) == expected:
+                self.values.pop(key, None)
+                self.expirations.pop(key, None)
+                return 1
+            return 0
+        assert "EXISTS" in script and numkeys == len(args) - 2
+        keys, member, ttl_ms = args[:numkeys], args[-2], args[-1]
+        if any(key in self.values for key in keys):
+            return 0
+        for key in keys:
+            self.values[key] = member
+            self.expirations[key] = ttl_ms
         return 1
 
     def scard(self, key):
@@ -110,6 +183,29 @@ async def test_redis_store_supports_sync_and_async_redis_py(client_type):
     assert await store.get_set_size("progress") == 2
     assert client.sets == {"test:progress": {"a", "b"}}
     assert client.expirations == {"test:progress": 1234}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("client_type", [_SyncRedis, _AsyncRedis])
+async def test_redis_store_atomically_reserves_batch_in_one_cluster_slot(client_type):
+    client = client_type()
+    store = WorkflowEvalRedisStore(client, key_prefix="test:", ttl_ms=1234)
+
+    reserved = await store.reserve_batch(
+        ["workflow/{run-1}/links/a", "workflow/{run-1}/links/b"],
+        b"submission-1",
+        "workflow/{run-1}/submissions/submission-1",
+        b'{"status":"failed"}',
+        "workflow/{run-1}/leases/submission-1",
+        b"lease-1",
+        5000,
+    )
+
+    assert reserved is True
+    assert await store.read("workflow/{run-1}/submissions/submission-1") == b'{"status":"failed"}'
+    assert await store.acquire_lease("workflow/{run-1}/leases/submission-1", b"lease-2", 5000) is False
+    await store.release_lease("workflow/{run-1}/leases/submission-1", b"lease-1")
+    assert await store.acquire_lease("workflow/{run-1}/leases/submission-1", b"lease-2", 5000) is True
 
 
 @pytest.mark.asyncio
@@ -289,12 +385,425 @@ async def test_webhook_result_can_be_matched_by_external_id():
     started = await workflow_eval.start(no_send_logs=True)
     submission_id = next(iter(submitted))
 
-    completed = await workflow_eval.process_submission_result(started.run_id, external_id=f"external-{submission_id}")
+    completed = await workflow_eval.process_submission_result(external_id=f"external-{submission_id}")
 
     assert isinstance(completed, WorkflowEvalCompletedResult)
     assert (
         await workflow_eval.process_submission_result(started.run_id, submission_id=submission_id)
     ).status == "completed"
+
+
+@pytest.mark.asyncio
+async def test_batch_tasks_and_scorers_submit_and_collect_multiple_items():
+    task_batch_sizes = []
+    score_batch_sizes = []
+
+    async def submit_task(items, _context):
+        task_batch_sizes.append(len(items))
+        return {"inputs": [item.input for item in items]}
+
+    async def collect_task(submission, _context):
+        return [
+            WorkflowBatchItemResult(custom_id=f"item-{index}", result=WorkflowTaskResult(output=value * 2))
+            for index, value in enumerate(submission["inputs"])
+        ]
+
+    async def submit_score(items, _context):
+        score_batch_sizes.append(len(items))
+        return {"values": [(item.output, item.expected) for item in items]}
+
+    async def collect_score(submission, _context):
+        for index, (output, expected) in enumerate(submission["values"]):
+            yield WorkflowBatchItemResult(
+                custom_id=f"item-{index}", result=WorkflowScorerResult(score=output == expected)
+            )
+
+    completion = WorkflowSubmissionCompletionPoll(lambda _submission, _context: WorkflowSubmissionPoll("complete"))
+    workflow = define_workflow_eval(
+        "project",
+        store=WorkflowEvalMemoryStore(),
+        data=[{"id": str(value), "input": value, "expected": value * 2} for value in range(3)],
+        task=WorkflowBatchTask(
+            batching=WorkflowBatchingOptions(max_size=2),
+            submit=submit_task,
+            completion=completion,
+            collect=collect_task,
+        ),
+        scores=[
+            WorkflowBatchScorer(
+                name="batch-score",
+                batching=WorkflowBatchingOptions(max_size=2),
+                submit=submit_score,
+                completion=completion,
+                collect=collect_score,
+            )
+        ],
+    )
+
+    started = await workflow.start(no_send_logs=True)
+    after_tasks = await workflow.poll(started.run_id)
+    completed = await workflow.poll(started.run_id)
+
+    assert isinstance(after_tasks, WorkflowEvalWaitingResult)
+    assert after_tasks.pending.poll == 2
+    assert isinstance(completed, WorkflowEvalCompletedResult)
+    assert completed.summary.scores["batch-score"].score == 1
+    assert task_batch_sizes == [2, 1]
+    assert score_batch_sizes == [2, 1]
+
+
+@pytest.mark.asyncio
+async def test_batch_item_failures_skip_scoring():
+    score_inputs = []
+
+    async def submit(items, _context):
+        return {"inputs": [item.input for item in items]}
+
+    async def collect(submission, _context):
+        return [
+            WorkflowBatchItemResult(custom_id="item-0", result=WorkflowTaskResult(output="good")),
+            WorkflowBatchItemResult(custom_id="item-1", error=ValueError("provider rejected item")),
+            # item-2 is intentionally missing and should also fail.
+        ]
+
+    def score(output):
+        score_inputs.append(output)
+        return 1
+
+    workflow = define_workflow_eval(
+        "project",
+        store=WorkflowEvalMemoryStore(),
+        data=[{"id": str(value), "input": value} for value in range(3)],
+        task=WorkflowBatchTask(
+            batching=WorkflowBatchingOptions(max_size=3),
+            submit=submit,
+            completion=WorkflowSubmissionCompletionPoll(
+                lambda _submission, _context: WorkflowSubmissionPoll("complete")
+            ),
+            collect=collect,
+        ),
+        scores=[score],
+    )
+
+    started = await workflow.start(no_send_logs=True)
+    completed = await workflow.poll(started.run_id)
+
+    assert isinstance(started, WorkflowEvalWaitingResult)
+    assert isinstance(completed, WorkflowEvalCompletedResult)
+    assert score_inputs == ["good"]
+
+
+@pytest.mark.asyncio
+async def test_batch_scorer_wait_window_uses_persisted_wall_clock(monkeypatch):
+    now = [1_000.0]
+    monkeypatch.setattr(workflow_eval_module.time, "time", lambda: now[0])
+    ready = {"a"}
+    score_batches = []
+
+    async def task_submit(item, _context):
+        return {"input": item.input}
+
+    async def task_collect(submission, _context):
+        return WorkflowTaskResult(output=submission["input"])
+
+    def task_poll(submission, _context):
+        return WorkflowSubmissionPoll("complete" if submission["input"] in ready else "pending")
+
+    async def score_submit(items, _context):
+        score_batches.append([item.output for item in items])
+        return {"size": len(items)}
+
+    async def score_collect(submission, _context):
+        return [
+            WorkflowBatchItemResult(custom_id=f"item-{index}", result=WorkflowScorerResult(score=1))
+            for index in range(submission["size"])
+        ]
+
+    workflow = define_workflow_eval(
+        "project",
+        store=WorkflowEvalMemoryStore(),
+        data=[{"id": value, "input": value} for value in ("a", "b")],
+        task=WorkflowTask(
+            submit=task_submit,
+            completion=WorkflowSubmissionCompletionPoll(task_poll),
+            collect=task_collect,
+        ),
+        scores=[
+            WorkflowBatchScorer(
+                name="batch-score",
+                batching=WorkflowBatchingOptions(max_size=2, max_wait_ms=100),
+                submit=score_submit,
+                completion=WorkflowSubmissionCompletionPoll(
+                    lambda _submission, _context: WorkflowSubmissionPoll("pending")
+                ),
+                collect=score_collect,
+            )
+        ],
+    )
+
+    started = await workflow.start(no_send_logs=True)
+    await workflow.poll(started.run_id)
+    assert score_batches == []
+
+    now[0] += 0.101
+    await workflow.poll(started.run_id)
+
+    assert score_batches == [["a"]]
+
+
+@pytest.mark.asyncio
+async def test_batch_scorer_wait_window_starts_for_remainder_while_full_batches_submit(monkeypatch):
+    now = [1_000.0]
+    monkeypatch.setattr(workflow_eval_module.time, "time", lambda: now[0])
+    ready = {"a", "b", "c"}
+    score_batches = []
+
+    async def task_submit(item, _context):
+        return {"input": item.input}
+
+    async def task_collect(submission, _context):
+        return WorkflowTaskResult(output=submission["input"])
+
+    def task_poll(submission, _context):
+        return WorkflowSubmissionPoll("complete" if submission["input"] in ready else "pending")
+
+    async def score_submit(items, _context):
+        score_batches.append([item.output for item in items])
+        return {"size": len(items)}
+
+    async def score_collect(submission, _context):
+        return [
+            WorkflowBatchItemResult(custom_id=f"item-{index}", result=WorkflowScorerResult(score=1))
+            for index in range(submission["size"])
+        ]
+
+    workflow = define_workflow_eval(
+        "project",
+        store=WorkflowEvalMemoryStore(),
+        data=[{"id": value, "input": value} for value in ("a", "b", "c", "d")],
+        task=WorkflowTask(
+            submit=task_submit,
+            completion=WorkflowSubmissionCompletionPoll(task_poll),
+            collect=task_collect,
+        ),
+        scores=[
+            WorkflowBatchScorer(
+                name="batch-score",
+                batching=WorkflowBatchingOptions(max_size=2, max_wait_ms=100),
+                submit=score_submit,
+                completion=WorkflowSubmissionCompletionPoll(
+                    lambda _submission, _context: WorkflowSubmissionPoll("pending")
+                ),
+                collect=score_collect,
+            )
+        ],
+    )
+
+    started = await workflow.start(no_send_logs=True)
+    await workflow.poll(started.run_id)
+    assert score_batches == [["a", "b"]]
+
+    now[0] += 0.101
+    await workflow.poll(started.run_id)
+
+    assert score_batches == [["a", "b"], ["c"]]
+
+
+@pytest.mark.asyncio
+async def test_batch_webhook_id_failure_keeps_submission_recoverable():
+    get_id_calls = 0
+    score_submit_calls = 0
+
+    async def task_submit(items, _context):
+        return {"inputs": [item.input for item in items]}
+
+    async def task_collect(submission, _context):
+        return [WorkflowBatchItemResult(custom_id="item-0", result=WorkflowTaskResult(output=submission["inputs"][0]))]
+
+    async def score_submit(items, _context):
+        nonlocal score_submit_calls
+        score_submit_calls += 1
+        return {"external_id": "score-batch"}
+
+    def get_score_external_id(submission, _context):
+        nonlocal get_id_calls
+        get_id_calls += 1
+        if get_id_calls == 1:
+            raise RuntimeError("temporary id lookup failure")
+        return submission["external_id"]
+
+    async def score_collect(_submission, _context):
+        return [WorkflowBatchItemResult(custom_id="item-0", result=WorkflowScorerResult(score=1))]
+
+    workflow = define_workflow_eval(
+        "project",
+        store=WorkflowEvalMemoryStore(),
+        data=[{"id": "case", "input": "value"}],
+        task=WorkflowBatchTask(
+            batching=WorkflowBatchingOptions(max_size=1),
+            submit=task_submit,
+            completion=WorkflowSubmissionCompletionPoll(
+                lambda _submission, _context: WorkflowSubmissionPoll("complete")
+            ),
+            collect=task_collect,
+        ),
+        scores=[
+            WorkflowBatchScorer(
+                name="batch-score",
+                batching=WorkflowBatchingOptions(max_size=1),
+                submit=score_submit,
+                completion=WorkflowSubmissionCompletionWebhook(get_score_external_id),
+                collect=score_collect,
+            )
+        ],
+    )
+
+    started = await workflow.start(no_send_logs=True)
+    with pytest.raises(RuntimeError, match="temporary id lookup failure"):
+        await workflow.poll(started.run_id)
+
+    waiting = await workflow.poll(started.run_id)
+    assert isinstance(waiting, WorkflowEvalWaitingResult)
+    assert waiting.pending.webhook == 1
+    assert score_submit_calls == 1
+    assert get_id_calls == 2
+
+    completed = await workflow.process_submission_result(external_id="score-batch")
+    assert isinstance(completed, WorkflowEvalCompletedResult)
+
+
+@pytest.mark.asyncio
+async def test_failed_batch_retry_is_leased_and_webhook_lookup_is_recoverable():
+    score_submit_calls = 0
+    external_id_calls = 0
+    retry_started = asyncio.Event()
+    allow_retry_to_finish = asyncio.Event()
+
+    async def task_submit(items, _context):
+        return {"inputs": [item.input for item in items]}
+
+    async def task_collect(submission, _context):
+        return [WorkflowBatchItemResult(custom_id="item-0", result=WorkflowTaskResult(output=submission["inputs"][0]))]
+
+    async def score_submit(_items, _context):
+        nonlocal score_submit_calls
+        score_submit_calls += 1
+        if score_submit_calls == 1:
+            raise RuntimeError("initial provider submit failed")
+        retry_started.set()
+        await allow_retry_to_finish.wait()
+        return {"external_id": "retried-score-job"}
+
+    def get_external_id(submission, _context):
+        nonlocal external_id_calls
+        external_id_calls += 1
+        if external_id_calls == 1:
+            raise RuntimeError("temporary webhook ID lookup failure")
+        return submission["external_id"]
+
+    async def score_collect(_submission, _context):
+        return [WorkflowBatchItemResult(custom_id="item-0", result=WorkflowScorerResult(score=1))]
+
+    workflow = define_workflow_eval(
+        "project",
+        store=WorkflowEvalMemoryStore(),
+        data=[{"id": "case", "input": "value"}],
+        task=WorkflowBatchTask(
+            batching=WorkflowBatchingOptions(max_size=1),
+            submit=task_submit,
+            completion=WorkflowSubmissionCompletionPoll(
+                lambda _submission, _context: WorkflowSubmissionPoll("complete")
+            ),
+            collect=task_collect,
+        ),
+        scores=[
+            WorkflowBatchScorer(
+                name="batch-score",
+                batching=WorkflowBatchingOptions(max_size=1),
+                submit=score_submit,
+                completion=WorkflowSubmissionCompletionWebhook(get_external_id),
+                collect=score_collect,
+            )
+        ],
+    )
+
+    started = await workflow.start(no_send_logs=True)
+    with pytest.raises(RuntimeError, match="initial provider submit failed"):
+        await workflow.poll(started.run_id)
+
+    retry = asyncio.create_task(workflow.poll(started.run_id))
+    await retry_started.wait()
+    concurrent = await workflow.poll(started.run_id)
+    assert isinstance(concurrent, WorkflowEvalWaitingResult)
+    allow_retry_to_finish.set()
+    with pytest.raises(RuntimeError, match="temporary webhook ID lookup failure"):
+        await retry
+
+    waiting = await workflow.poll(started.run_id)
+    assert isinstance(waiting, WorkflowEvalWaitingResult)
+    assert waiting.pending.webhook == 1
+    assert score_submit_calls == 2
+    assert external_id_calls == 2
+    completed = await workflow.process_submission_result(external_id="retried-score-job")
+    assert isinstance(completed, WorkflowEvalCompletedResult)
+
+
+@pytest.mark.asyncio
+async def test_batch_reservation_placeholder_recovers_after_pre_submit_store_failure():
+    class _FailOnceStore(WorkflowEvalMemoryStore):
+        def __init__(self):
+            super().__init__()
+            self.fail_case_read = False
+            self.run_id = None
+
+        async def reserve_batch(self, keys, value, submission_key, submission_value, lease_key, lease_value, ttl_ms):
+            self.run_id = keys[0].split("{")[1].split("}")[0]
+            self.fail_case_read = True
+            return await super().reserve_batch(
+                keys, value, submission_key, submission_value, lease_key, lease_value, ttl_ms
+            )
+
+        async def read(self, key):
+            if self.fail_case_read and "/case/" in key:
+                self.fail_case_read = False
+                raise RuntimeError("transient case read failure")
+            return await super().read(key)
+
+    store = _FailOnceStore()
+    submit_calls = 0
+
+    async def submit(items, _context):
+        nonlocal submit_calls
+        submit_calls += 1
+        return {"inputs": [item.input for item in items]}
+
+    async def collect(submission, _context):
+        return [WorkflowBatchItemResult(custom_id="item-0", result=WorkflowTaskResult(output=submission["inputs"][0]))]
+
+    workflow = define_workflow_eval(
+        "project",
+        store=store,
+        data=[{"id": "case", "input": "value"}],
+        task=WorkflowBatchTask(
+            batching=WorkflowBatchingOptions(max_size=1),
+            submit=submit,
+            completion=WorkflowSubmissionCompletionPoll(
+                lambda _submission, _context: WorkflowSubmissionPoll("complete")
+            ),
+            collect=collect,
+        ),
+    )
+
+    with pytest.raises(RuntimeError, match="transient case read failure"):
+        await workflow.start(no_send_logs=True)
+    assert store.run_id is not None
+    stored_submissions = [value for key, value in store._values.items() if "/submission/" in key]
+    assert len(stored_submissions) == 1
+
+    await workflow.poll(store.run_id)
+    completed = await workflow.poll(store.run_id)
+    assert isinstance(completed, WorkflowEvalCompletedResult)
+    assert submit_calls == 1
 
 
 @pytest.mark.asyncio

@@ -1,4 +1,4 @@
-"""Experimental workflow evaluations with one asynchronous provider submission per case/trial."""
+"""Experimental workflow evaluations with asynchronous provider submissions."""
 
 import asyncio
 import base64
@@ -7,6 +7,7 @@ import functools
 import hashlib
 import inspect
 import threading
+import time
 import uuid
 from collections.abc import AsyncIterable, Awaitable, Callable, Iterable, Mapping, Sequence
 from typing import Any, Generic, Literal, Protocol, TypeVar, cast
@@ -69,6 +70,7 @@ SubmissionData = TypeVar("SubmissionData")
 
 DEFAULT_MAX_CONCURRENCY = 10
 DEFAULT_REDIS_TTL_MS = 1_000 * 60 * 60 * 24 * 7
+_BATCH_LEASE_TTL_MS = 5 * 60 * 1000
 _SCHEMA_PREFIX = "workflow-eval/python/v1"
 
 
@@ -134,6 +136,45 @@ class WorkflowTaskResult(Generic[Output]):
 
 
 @dataclasses.dataclass(frozen=True)
+class WorkflowBatchingOptions:
+    """Controls how workflow items are grouped into provider batches."""
+
+    max_size: int
+    max_wait_ms: int | float | None = None
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.max_size, int) or isinstance(self.max_size, bool) or self.max_size < 1:
+            raise ValueError("batching.max_size must be a positive integer")
+        if self.max_wait_ms is not None and (
+            isinstance(self.max_wait_ms, bool)
+            or not isinstance(self.max_wait_ms, (int, float))
+            or not self.max_wait_ms >= 0
+        ):
+            raise ValueError("batching.max_wait_ms must be a non-negative number")
+
+
+@dataclasses.dataclass(frozen=True)
+class WorkflowBatchItem(Generic[Input]):
+    """One provider-safe item in a batch. Return its custom_id from collect."""
+
+    custom_id: str
+    item: Input
+
+    def __getattr__(self, name: str) -> Any:
+        # Expose the task/scorer item fields directly alongside custom_id.
+        return getattr(self.item, name)
+
+
+@dataclasses.dataclass(frozen=True)
+class WorkflowBatchItemResult(Generic[Output]):
+    """A result or failure for one item returned by a batch collector."""
+
+    custom_id: str
+    result: Output | None = None
+    error: Any = None
+
+
+@dataclasses.dataclass(frozen=True)
 class WorkflowScorerItem(Generic[Input, Output, Expected]):
     """One completed case/trial passed to a workflow scorer submission callback."""
 
@@ -151,6 +192,53 @@ class WorkflowScorerResult:
     """A collected score for one scorer item."""
 
     score: OneOrMoreScores
+
+
+@dataclasses.dataclass(frozen=True)
+class WorkflowBatchTask(Generic[Input, Output, Expected, SubmissionData]):
+    """Submits multiple cases/trials in one asynchronous provider operation."""
+
+    batching: WorkflowBatchingOptions
+    submit: Callable[
+        [Sequence[WorkflowBatchItem[WorkflowTaskItem[Input, Expected]]], WorkflowSubmissionContext],
+        SubmissionData | Awaitable[SubmissionData],
+    ]
+    completion: WorkflowSubmissionCompletion[SubmissionData]
+    collect: Callable[
+        [SubmissionData, WorkflowSubmissionContext],
+        Iterable[WorkflowBatchItemResult[WorkflowTaskResult[Output]]]
+        | AsyncIterable[WorkflowBatchItemResult[WorkflowTaskResult[Output]]]
+        | Awaitable[
+            Iterable[WorkflowBatchItemResult[WorkflowTaskResult[Output]]]
+            | AsyncIterable[WorkflowBatchItemResult[WorkflowTaskResult[Output]]]
+        ],
+    ]
+
+
+@dataclasses.dataclass(frozen=True)
+class WorkflowBatchScorer(Generic[Input, Output, Expected, SubmissionData]):
+    """Submits multiple completed cases/trials in one asynchronous scorer operation."""
+
+    name: str
+    batching: WorkflowBatchingOptions
+    submit: Callable[
+        [Sequence[WorkflowBatchItem[WorkflowScorerItem[Input, Output, Expected]]], WorkflowSubmissionContext],
+        SubmissionData | Awaitable[SubmissionData],
+    ]
+    completion: WorkflowSubmissionCompletion[SubmissionData]
+    collect: Callable[
+        [SubmissionData, WorkflowSubmissionContext],
+        Iterable[WorkflowBatchItemResult[WorkflowScorerResult]]
+        | AsyncIterable[WorkflowBatchItemResult[WorkflowScorerResult]]
+        | Awaitable[
+            Iterable[WorkflowBatchItemResult[WorkflowScorerResult]]
+            | AsyncIterable[WorkflowBatchItemResult[WorkflowScorerResult]]
+        ],
+    ]
+
+    def __post_init__(self) -> None:
+        if not self.name:
+            raise ValueError("WorkflowBatchScorer name must be a non-empty string")
 
 
 @dataclasses.dataclass(frozen=True)
@@ -202,6 +290,21 @@ class WorkflowEvalStore(Protocol):
 
     async def get_or_set(self, key: str, value: bytes) -> WorkflowEvalStoreEntry: ...
 
+    async def reserve_batch(
+        self,
+        keys: Sequence[str],
+        value: bytes,
+        submission_key: str,
+        submission_value: bytes,
+        lease_key: str,
+        lease_value: bytes,
+        lease_ttl_ms: int,
+    ) -> bool: ...
+
+    async def acquire_lease(self, key: str, value: bytes, ttl_ms: int) -> bool: ...
+
+    async def release_lease(self, key: str, value: bytes) -> None: ...
+
     async def add_to_set(self, key: str, member: str) -> None:
         """Atomically add a unique member; retain sets as long as run records."""
         ...
@@ -215,24 +318,73 @@ class WorkflowEvalMemoryStore:
     def __init__(self) -> None:
         self._values: dict[str, bytes] = {}
         self._sets: dict[str, set[str]] = {}
+        self._expirations: dict[str, float] = {}
         self._lock = threading.Lock()
+
+    def _expire(self, key: str) -> None:
+        expires_at = self._expirations.get(key)
+        if expires_at is not None and expires_at <= time.monotonic():
+            self._values.pop(key, None)
+            self._expirations.pop(key, None)
 
     async def read(self, key: str) -> bytes | None:
         with self._lock:
+            self._expire(key)
             value = self._values.get(key)
             return bytes(value) if value is not None else None
 
     async def write(self, key: str, value: bytes) -> None:
         with self._lock:
             self._values[key] = bytes(value)
+            self._expirations.pop(key, None)
 
     async def get_or_set(self, key: str, value: bytes) -> WorkflowEvalStoreEntry:
         with self._lock:
+            self._expire(key)
             existing = self._values.get(key)
             if existing is not None:
                 return WorkflowEvalStoreEntry(value=bytes(existing), created=False)
             self._values[key] = bytes(value)
             return WorkflowEvalStoreEntry(value=bytes(value), created=True)
+
+    async def reserve_batch(
+        self,
+        keys: Sequence[str],
+        value: bytes,
+        submission_key: str,
+        submission_value: bytes,
+        lease_key: str,
+        lease_value: bytes,
+        lease_ttl_ms: int,
+    ) -> bool:
+        with self._lock:
+            check_keys = [*keys, submission_key, lease_key]
+            for key in check_keys:
+                self._expire(key)
+            if any(key in self._values for key in check_keys):
+                return False
+            for key in keys:
+                self._values[key] = bytes(value)
+            self._values[submission_key] = bytes(submission_value)
+            self._values[lease_key] = bytes(lease_value)
+            self._expirations[lease_key] = time.monotonic() + lease_ttl_ms / 1000
+            return True
+
+    async def acquire_lease(self, key: str, value: bytes, ttl_ms: int) -> bool:
+        with self._lock:
+            self._expire(key)
+            if key in self._values:
+                return False
+            self._values[key] = bytes(value)
+            self._expirations[key] = time.monotonic() + ttl_ms / 1000
+            return True
+
+    async def release_lease(self, key: str, value: bytes) -> None:
+        with self._lock:
+            self._expire(key)
+            if self._values.get(key) == value:
+                self._values.pop(key, None)
+                self._expirations.pop(key, None)
 
     async def add_to_set(self, key: str, member: str) -> None:
         with self._lock:
@@ -293,6 +445,60 @@ class WorkflowEvalRedisStore:
             raise TypeError("WorkflowEvalRedisStore expected atomic SET to return str, bytes, or None")
         return WorkflowEvalStoreEntry(value=base64.b64decode(existing), created=False)
 
+    async def reserve_batch(
+        self,
+        keys: Sequence[str],
+        value: bytes,
+        submission_key: str,
+        submission_value: bytes,
+        lease_key: str,
+        lease_value: bytes,
+        lease_ttl_ms: int,
+    ) -> bool:
+        redis_keys = [f"{self.key_prefix}{key}" for key in [*keys, submission_key, lease_key]]
+        encoded_claim = base64.b64encode(value).decode("ascii")
+        encoded_submission = base64.b64encode(submission_value).decode("ascii")
+        script = """
+        for i = 1, #KEYS do
+            if redis.call('EXISTS', KEYS[i]) == 1 then return 0 end
+        end
+        for i = 1, #KEYS - 2 do
+            redis.call('SET', KEYS[i], ARGV[1], 'PX', ARGV[4])
+        end
+        redis.call('SET', KEYS[#KEYS - 1], ARGV[2], 'PX', ARGV[4])
+        redis.call('SET', KEYS[#KEYS], ARGV[3], 'PX', ARGV[5])
+        return 1
+        """
+        claimed = await self._call(
+            self.client.eval,
+            script,
+            len(redis_keys),
+            *redis_keys,
+            encoded_claim,
+            encoded_submission,
+            base64.b64encode(lease_value).decode("ascii"),
+            self.ttl_ms,
+            lease_ttl_ms,
+        )
+        if claimed not in (0, 1, b"0", b"1"):
+            raise TypeError("WorkflowEvalRedisStore expected atomic batch reservation to return 0 or 1")
+        return claimed in (1, b"1")
+
+    async def acquire_lease(self, key: str, value: bytes, ttl_ms: int) -> bool:
+        result = await self._call(
+            self.client.set, f"{self.key_prefix}{key}", base64.b64encode(value).decode("ascii"), px=ttl_ms, nx=True
+        )
+        return result is True or result == b"OK" or result == "OK"
+
+    async def release_lease(self, key: str, value: bytes) -> None:
+        await self._call(
+            self.client.eval,
+            "if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) else return 0 end",
+            1,
+            f"{self.key_prefix}{key}",
+            base64.b64encode(value).decode("ascii"),
+        )
+
     async def add_to_set(self, key: str, member: str) -> None:
         await self._call(
             self.client.eval,
@@ -338,8 +544,16 @@ class _WorkflowEvalConfig(Generic[Input, Output, Expected]):
     project_name: str
     store: WorkflowEvalStore
     data: EvalData[Input, Expected]
-    task: EvalTask[Input, Output, Expected] | WorkflowTask[Input, Output, Expected, Any]
-    scores: Sequence[EvalScorer[Input, Output, Expected] | WorkflowScorer[Input, Output, Expected, Any]]
+    task: (
+        EvalTask[Input, Output, Expected]
+        | WorkflowTask[Input, Output, Expected, Any]
+        | WorkflowBatchTask[Input, Output, Expected, Any]
+    )
+    scores: Sequence[
+        EvalScorer[Input, Output, Expected]
+        | WorkflowScorer[Input, Output, Expected, Any]
+        | WorkflowBatchScorer[Input, Output, Expected, Any]
+    ]
     classifiers: Sequence[EvalClassifier[Input, Output, Expected]]
     case_id: Callable[[EvalCase[Input, Expected]], str | Awaitable[str]] | None
     experiment_name: str | None
@@ -377,7 +591,7 @@ class WorkflowEval(Generic[Input, Output, Expected]):
         return await _WorkflowEvalRunner(self._config).poll(run_id)
 
     async def process_submission_result(
-        self, run_id: str, *, submission_id: str | None = None, external_id: str | None = None
+        self, run_id: str | None = None, *, submission_id: str | None = None, external_id: str | None = None
     ) -> WorkflowEvalResult:
         return await _WorkflowEvalRunner(self._config).process_submission_result(
             run_id, submission_id=submission_id, external_id=external_id
@@ -389,8 +603,15 @@ def define_workflow_eval(
     *,
     store: WorkflowEvalStore,
     data: EvalData[Input, Expected],
-    task: EvalTask[Input, Output, Expected] | WorkflowTask[Input, Output, Expected, Any],
-    scores: Sequence[EvalScorer[Input, Output, Expected] | WorkflowScorer[Input, Output, Expected, Any]] | None = None,
+    task: EvalTask[Input, Output, Expected]
+    | WorkflowTask[Input, Output, Expected, Any]
+    | WorkflowBatchTask[Input, Output, Expected, Any],
+    scores: Sequence[
+        EvalScorer[Input, Output, Expected]
+        | WorkflowScorer[Input, Output, Expected, Any]
+        | WorkflowBatchScorer[Input, Output, Expected, Any]
+    ]
+    | None = None,
     classifiers: Sequence[EvalClassifier[Input, Output, Expected]] | None = None,
     case_id: Callable[[EvalCase[Input, Expected]], str | Awaitable[str]] | None = None,
     experiment_name: str | None = None,
@@ -411,7 +632,8 @@ def define_workflow_eval(
 ) -> WorkflowEval[Input, Output, Expected]:
     """Define an experimental evaluation that can pause across provider submissions.
 
-    WorkflowTask and WorkflowScorer submit one case/trial and collect one result.
+    WorkflowTask and WorkflowScorer submit one case/trial; WorkflowBatchTask and
+    WorkflowBatchScorer submit multiple cases/trials in one provider operation.
     Submission data and collected values must be JSON serializable.
     Scorers and classifiers start once their case's task is persisted and logged.
 
@@ -515,6 +737,31 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
         suffix = f"/{identifier}" if identifier is not None else ""
         return f"{_SCHEMA_PREFIX}/{self.definition_key}/{run_id}/{kind}{suffix}"
 
+    def _batch_key(self, run_id: str, kind: str, identifier: str) -> str:
+        # Batch reservation scripts touch several keys, which must share a Redis Cluster slot.
+        return f"{_SCHEMA_PREFIX}/{self.definition_key}/{{{run_id}}}/{kind}/{identifier}"
+
+    async def _read_submission(self, run_id: str, submission_id: str) -> Any | None:
+        batch_record = await self.store.read(self._batch_key(run_id, "submission", submission_id))
+        if batch_record is not None:
+            return _decode(batch_record)
+        return await self._read(run_id, "submission", submission_id)
+
+    async def _read_batch_link(self, run_id: str, stage: str, item_id: str) -> str | None:
+        value = await self.store.read(self._batch_key(run_id, "batch-link", f"{stage}/{item_id}"))
+        if value is None:
+            value = await self.store.read(self._key(run_id, "batch-link", f"{stage}/{item_id}"))
+        return _decode(value) if value is not None else None
+
+    async def _write_submission(self, run_id: str, submission: Mapping[str, Any]) -> None:
+        if submission.get("batch"):
+            await self.store.write(self._batch_key(run_id, "submission", submission["id"]), _json_bytes(submission))
+        else:
+            await self._write(run_id, "submission", submission, submission["id"])
+
+    def _external_key(self, external_id: str) -> str:
+        return f"{_SCHEMA_PREFIX}/{self.definition_key}/external/{_stable_hex(external_id, length=32)}"
+
     async def _read(self, run_id: str, kind: str, identifier: str | None = None) -> Any | None:
         value = await self.store.read(self._key(run_id, kind, identifier))
         return _decode(value) if value is not None else None
@@ -528,6 +775,17 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
 
     async def _write(self, run_id: str, kind: str, value: Any, identifier: str | None = None) -> None:
         await self.store.write(self._key(run_id, kind, identifier), _json_bytes(value))
+
+    async def _record_external_locator(self, run_id: str, submission_id: str, external_id: str | None) -> None:
+        if external_id is not None:
+            key = self._external_key(external_id)
+            locator = {"run_id": run_id, "submission_id": submission_id}
+            entry = await self.store.get_or_set(key, _json_bytes(locator))
+            if not entry.created:
+                existing = _decode(entry.value)
+                if existing is not None and existing != locator:
+                    # Ambiguous provider IDs require the caller to supply run_id.
+                    await self.store.write(key, _json_bytes(None))
 
     async def _claim(self, run_id: str, action: str) -> bool:
         result = await self.store.get_or_set(self._key(run_id, "claim", action), b"1")
@@ -610,8 +868,8 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
         return [value if isinstance(value, EvalCase) else EvalCase.from_dict(value) for value in values]
 
     def _uses_submission_processor(self) -> bool:
-        return isinstance(self.config.task, WorkflowTask) or any(
-            isinstance(score, WorkflowScorer) for score in self.config.scores
+        return isinstance(self.config.task, (WorkflowTask, WorkflowBatchTask)) or any(
+            isinstance(score, (WorkflowScorer, WorkflowBatchScorer)) for score in self.config.scores
         )
 
     async def _save_completed(self, run: Mapping[str, Any], summary: ExperimentSummary) -> WorkflowEvalCompletedResult:
@@ -739,6 +997,69 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
         submissions = await self._submission_records(run)
 
         async def poll_submission(submission: dict[str, Any], processor: Any) -> None:
+            if submission["status"] == "external_id_pending":
+                completion = processor.completion
+                assert isinstance(completion, WorkflowSubmissionCompletionWebhook)
+                context = WorkflowSubmissionContext(run_id=run_id, submission_id=submission["id"])
+                external_id = await self._call(completion.get_external_id, submission["submission_data"], context)
+                if not isinstance(external_id, str) or not external_id.strip():
+                    raise ValueError("Submission webhook get_external_id must return a non-empty string")
+                submission["external_id"] = external_id
+                submission["status"] = "submitted"
+                await self._write_submission(run_id, submission)
+                await self._record_external_locator(run_id, submission["id"], external_id)
+                await self._persist_submission_progress(run_id, submission)
+                return
+            if submission["status"] == "failed":
+                if not submission.get("batch"):
+                    return
+                lease_key = self._batch_key(run_id, "retry-lease", submission["id"])
+                lease_value = uuid.uuid4().hex.encode()
+                if not await self.store.acquire_lease(lease_key, lease_value, _BATCH_LEASE_TTL_MS):
+                    return
+                try:
+                    current = await self._read_submission(run_id, submission["id"])
+                    if current is None or current["status"] != "failed":
+                        return
+                    submission = current
+                    context = WorkflowSubmissionContext(run_id=run_id, submission_id=submission["id"])
+                    if submission["kind"] == "task":
+                        values = [
+                            await self._task_item(run, item_id, self._parameters(run))
+                            for item_id in submission["item_ids"]
+                        ]
+                    else:
+                        values = [await self._scorer_item(run, item_id) for item_id in submission["item_ids"]]
+                    items = [WorkflowBatchItem(f"item-{index}", value) for index, value in enumerate(values)]
+                    completion = processor.completion
+                    try:
+                        submission_data = _json_value(await self._call(processor.submit, items, context))
+                    except Exception:
+                        submission["attempts"] = submission.get("attempts", 0) + 1
+                        await self._write_submission(run_id, submission)
+                        raise
+                    submission.update(
+                        submission_data=submission_data,
+                        external_id=None,
+                        mode=completion.mode,
+                        status="external_id_pending"
+                        if isinstance(completion, WorkflowSubmissionCompletionWebhook)
+                        else "submitted",
+                    )
+                    await self._write_submission(run_id, submission)
+                    await self._persist_submission_progress(run_id, submission)
+                    if isinstance(completion, WorkflowSubmissionCompletionWebhook):
+                        external_id = await self._call(completion.get_external_id, submission_data, context)
+                        if not isinstance(external_id, str) or not external_id.strip():
+                            raise ValueError("Submission webhook get_external_id must return a non-empty string")
+                        submission["external_id"] = external_id
+                        submission["status"] = "submitted"
+                        await self._write_submission(run_id, submission)
+                        await self._record_external_locator(run_id, submission["id"], external_id)
+                        await self._persist_submission_progress(run_id, submission)
+                    return
+                finally:
+                    await self.store.release_lease(lease_key, lease_value)
             completion = processor.completion
             assert isinstance(completion, WorkflowSubmissionCompletionPoll)
             context = WorkflowSubmissionContext(run_id=run_id, submission_id=submission["id"])
@@ -760,7 +1081,9 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
             *(
                 poll_submission(submission, processor)
                 for submission, processor in submissions
-                if submission["status"] == "submitted" and submission["mode"] == "poll"
+                if submission["status"] == "failed"
+                or submission["status"] == "external_id_pending"
+                or (submission["status"] == "submitted" and submission["mode"] == "poll")
             ),
             return_exceptions=True,
         )
@@ -775,16 +1098,25 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
         return status
 
     async def process_submission_result(
-        self, run_id: str, *, submission_id: str | None, external_id: str | None
+        self, run_id: str | None, *, submission_id: str | None, external_id: str | None
     ) -> WorkflowEvalResult:
         if not submission_id and not external_id:
             raise ValueError("process_submission_result requires submission_id or external_id")
+        if run_id is None:
+            if external_id is None:
+                raise ValueError("run_id is required when submission_id is used")
+            locator = await self.store.read(self._external_key(external_id))
+            resolved = _decode(locator) if locator is not None else None
+            if not isinstance(resolved, Mapping):
+                raise ValueError("No submission matches this external_id")
+            run_id = resolved["run_id"]
+            submission_id = submission_id or resolved["submission_id"]
         run = await self._required(run_id, "run")
         external_submission_id = await self._read(run_id, "external", external_id) if external_id is not None else None
         if submission_id and external_submission_id and submission_id != external_submission_id:
             raise ValueError("submission_id and external_id identify different submissions")
         submission_id = submission_id or external_submission_id
-        submission = await self._read(run_id, "submission", submission_id) if submission_id else None
+        submission = await self._read_submission(run_id, submission_id) if submission_id else None
         if submission is None:
             raise ValueError("No submission matches this result")
         if external_id is not None and submission.get("external_id") != external_id:
@@ -797,12 +1129,12 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
             else next(
                 score
                 for score in self.config.scores
-                if isinstance(score, WorkflowScorer) and score.name == submission["scorer_name"]
+                if isinstance(score, (WorkflowScorer, WorkflowBatchScorer)) and score.name == submission["scorer_name"]
             )
         )
         await self._collect_submission(run, submission, processor)
         # Only the completed case needs advancing; other cases can still be pending.
-        return await self._advance(run, item_ids=[submission["item_id"]])
+        return await self._advance(run, item_ids=submission.get("item_ids", [submission.get("item_id")]))
 
     def _submission_specs(self, run: Mapping[str, Any]) -> list[tuple[dict[str, Any], Any]]:
         specs: list[tuple[dict[str, Any], Any]] = []
@@ -835,11 +1167,29 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
 
     async def _submission_records(self, run: Mapping[str, Any]) -> list[tuple[dict[str, Any], Any]]:
         records: list[tuple[dict[str, Any], Any]] = []
+        seen: set[str] = set()
         for spec, processor in self._submission_specs(run):
-            record = await self._read(run["run_id"], "submission", spec["id"])
+            record = await self._read_submission(run["run_id"], spec["id"])
             if record is not None:
                 await self._persist_submission_progress(run["run_id"], record)
                 records.append((record, processor))
+                seen.add(record["id"])
+        batch_processors: dict[str, Any] = {}
+        if isinstance(self.config.task, WorkflowBatchTask):
+            batch_processors["task"] = self.config.task
+        for scorer in self.config.scores:
+            if isinstance(scorer, WorkflowBatchScorer):
+                batch_processors[f"score:{scorer.name}"] = scorer
+        for item_id in run["case_ids"]:
+            for stage, processor in batch_processors.items():
+                submission_id = await self._read_batch_link(run["run_id"], stage, item_id)
+                if not submission_id or submission_id in seen:
+                    continue
+                record = await self._read_submission(run["run_id"], submission_id)
+                if record is not None:
+                    await self._persist_submission_progress(run["run_id"], record)
+                    records.append((record, processor))
+                    seen.add(submission_id)
         return records
 
     async def _case(self, run_id: str, item_id: str) -> dict[str, Any]:
@@ -904,7 +1254,147 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
             "status": "submitted",
         }
         await self._write(run_id, "submission", submission, spec["id"])
+        await self._record_external_locator(run_id, spec["id"], external_id)
         await self._persist_submission_progress(run_id, submission)
+
+    async def _schedule_batch_stage(
+        self,
+        run: Mapping[str, Any],
+        processor: WorkflowBatchTask[Any, Any, Any, Any] | WorkflowBatchScorer[Any, Any, Any, Any],
+        *,
+        kind: Literal["task", "score"],
+    ) -> None:
+        run_id = run["run_id"]
+        scorer_name = processor.name if kind == "score" else None
+        stage = f"score:{scorer_name}" if scorer_name else "task"
+
+        async def find_candidates() -> list[str]:
+            result: list[str] = []
+            for item_id in run["case_ids"]:
+                if await self._read_batch_link(run_id, stage, item_id) is not None:
+                    continue
+                if kind == "task":
+                    if await self._read(run_id, "task-result", item_id) is None:
+                        result.append(item_id)
+                else:
+                    task_result = await self._read(run_id, "task-result", item_id)
+                    score_result = await self._read(
+                        run_id, _stage_kind("score-result", cast(str, scorer_name)), item_id
+                    )
+                    if task_result is not None and task_result.get("error") is None and score_result is None:
+                        result.append(item_id)
+            return result
+
+        candidates = await find_candidates()
+        if not candidates:
+            return
+
+        max_size = processor.batching.max_size
+        submit_partial = kind == "task"
+        if kind == "score":
+            completed_tasks = sum(
+                [await self._read(run_id, "task-result", item_id) is not None for item_id in run["case_ids"]]
+            )
+            if completed_tasks == len(run["case_ids"]):
+                submit_partial = True
+            elif processor.batching.max_wait_ms is not None:
+                full_item_count = (len(candidates) // max_size) * max_size
+                remainder = candidates[full_item_count:]
+                if remainder:
+                    window_key = f"{stage}/{remainder[0]}"
+                    first_wait = await self.store.get_or_set(
+                        self._key(run_id, "batch-wait", window_key), str(time.time()).encode()
+                    )
+                    started = float(first_wait.value.decode())
+                    submit_partial = time.time() - started >= processor.batching.max_wait_ms / 1000
+            if len(candidates) < max_size and not submit_partial:
+                return
+
+        def make_batches(item_ids: list[str]) -> list[list[str]]:
+            batches = [item_ids[index : index + max_size] for index in range(0, len(item_ids), max_size)]
+            if not submit_partial and batches and len(batches[-1]) < max_size:
+                batches.pop()
+            return batches
+
+        async def submit_batch(item_ids: list[str]) -> bool:
+            submission_id = f"submission-{_stable_hex(run_id, stage, *item_ids, length=32)}"
+            spec: dict[str, Any] = {
+                "id": submission_id,
+                "kind": kind,
+                "item_ids": item_ids,
+                "batch": True,
+            }
+            if scorer_name is not None:
+                spec["scorer_name"] = scorer_name
+            claim_keys = [self._batch_key(run_id, "batch-link", f"{stage}/{item_id}") for item_id in item_ids]
+            submission_key = self._batch_key(run_id, "submission", submission_id)
+            lease_key = self._batch_key(run_id, "retry-lease", submission_id)
+            lease_value = uuid.uuid4().hex.encode()
+            completion = processor.completion
+            reservation = {
+                **spec,
+                "submission_data": None,
+                "external_id": None,
+                "mode": completion.mode,
+                "status": "failed",
+                "attempts": 0,
+            }
+            if not await self.store.reserve_batch(
+                claim_keys,
+                _json_bytes(submission_id),
+                submission_key,
+                _json_bytes(reservation),
+                lease_key,
+                lease_value,
+                _BATCH_LEASE_TTL_MS,
+            ):
+                return False
+            try:
+                context = WorkflowSubmissionContext(run_id=run_id, submission_id=submission_id)
+                if kind == "task":
+                    values = [await self._task_item(run, item_id, self._parameters(run)) for item_id in item_ids]
+                else:
+                    values = [await self._scorer_item(run, item_id) for item_id in item_ids]
+                submitted_items = [WorkflowBatchItem(f"item-{index}", value) for index, value in enumerate(values)]
+                try:
+                    submission_data = _json_value(await self._call(processor.submit, submitted_items, context))
+                except Exception:
+                    reservation["attempts"] = 1
+                    await self._write_submission(run_id, reservation)
+                    await self._persist_submission_progress(run_id, reservation)
+                    raise
+                reservation.update(
+                    submission_data=submission_data,
+                    status="external_id_pending"
+                    if isinstance(completion, WorkflowSubmissionCompletionWebhook)
+                    else "submitted",
+                )
+                await self._write_submission(run_id, reservation)
+                await self._persist_submission_progress(run_id, reservation)
+                external_id = None
+                if isinstance(completion, WorkflowSubmissionCompletionWebhook):
+                    external_id = await self._call(completion.get_external_id, submission_data, context)
+                    if not isinstance(external_id, str) or not external_id.strip():
+                        raise ValueError("Submission webhook get_external_id must return a non-empty string")
+                    reservation["external_id"] = external_id
+                    reservation["status"] = "submitted"
+                    await self._write_submission(run_id, reservation)
+                await self._record_external_locator(run_id, submission_id, external_id)
+                await self._persist_submission_progress(run_id, reservation)
+                return True
+            finally:
+                await self.store.release_lease(lease_key, lease_value)
+
+        batches = make_batches(candidates)
+        while batches:
+            results = await asyncio.gather(*(submit_batch(item_ids) for item_ids in batches), return_exceptions=True)
+            errors = [result for result in results if isinstance(result, BaseException)]
+            if errors:
+                _raise_callback_errors(errors)
+            if all(result is True for result in results):
+                break
+            candidates = await find_candidates()
+            batches = make_batches(candidates)
 
     async def _persist_submission_progress(self, run_id: str, submission: Mapping[str, Any]) -> None:
         if submission.get("external_id") is not None:
@@ -919,6 +1409,12 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
         run_id = run["run_id"]
         if submission["status"] != "complete":
             context = WorkflowSubmissionContext(run_id=run_id, submission_id=submission["id"])
+            if submission.get("batch"):
+                await self._collect_batch_submission(run, submission, processor, context)
+                submission["status"] = "complete"
+                await self._write_submission(run_id, submission)
+                await self._persist_submission_progress(run_id, submission)
+                return
             result = await self._call(processor.collect, submission["submission_data"], context)
             result_type = WorkflowTaskResult if submission["kind"] == "task" else WorkflowScorerResult
             if isinstance(result, Mapping):
@@ -945,9 +1441,90 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
                     run_id, _stage_kind("score-result", submission["scorer_name"]), _json_value(result.score), item_id
                 )
             submission["status"] = "complete"
-            await self._write(run_id, "submission", submission, submission["id"])
+            await self._write_submission(run_id, submission)
         # Replay repairs an interrupted progress update without collecting again.
         await self._persist_submission_progress(run_id, submission)
+
+    async def _collect_batch_submission(
+        self,
+        run: Mapping[str, Any],
+        submission: dict[str, Any],
+        processor: WorkflowBatchTask[Any, Any, Any, Any] | WorkflowBatchScorer[Any, Any, Any, Any],
+        context: WorkflowSubmissionContext,
+    ) -> None:
+        run_id = run["run_id"]
+        async with self._callback_semaphore:
+            if inspect.isasyncgenfunction(processor.collect):
+                collected = processor.collect(submission["submission_data"], context)
+            else:
+                collected = await await_or_run(
+                    asyncio.get_running_loop(), processor.collect, submission["submission_data"], context
+                )
+            if inspect.isawaitable(collected):
+                collected = await collected
+            if isinstance(collected, AsyncIterable):
+                entries = [entry async for entry in collected]
+            else:
+                entries = list(collected)
+        item_ids = submission["item_ids"]
+        expected = {f"item-{index}": item_id for index, item_id in enumerate(item_ids)}
+        outcomes: dict[str, WorkflowBatchItemResult[Any]] = {}
+        for entry in entries:
+            if isinstance(entry, Mapping):
+                entry = WorkflowBatchItemResult(**entry)
+            if not isinstance(entry, WorkflowBatchItemResult):
+                raise TypeError("Batch collect callback entries must be WorkflowBatchItemResult values")
+            if entry.custom_id not in expected:
+                raise ValueError(f"Batch collect returned unknown custom_id {entry.custom_id!r}")
+            if entry.custom_id in outcomes:
+                raise ValueError(f"Batch collect returned custom_id {entry.custom_id!r} more than once")
+            outcomes[entry.custom_id] = entry
+        for custom_id, item_id in expected.items():
+            entry = outcomes.get(custom_id)
+            if entry is None:
+                error = f"Batch submission {submission['id']} returned no result for {custom_id}"
+                result = None
+            elif entry.error is not None:
+                error = str(entry.error)
+                result = None
+            else:
+                error = None
+                result = entry.result
+            if submission["kind"] == "task":
+                if error is None:
+                    if isinstance(result, Mapping):
+                        result = WorkflowTaskResult(**result)
+                    if not isinstance(result, WorkflowTaskResult):
+                        raise TypeError("Batch task result must be a WorkflowTaskResult")
+                    case = await self._case(run_id, item_id)
+                    metadata = {**case["metadata"], **(result.metadata or {})}
+                    tags = result.tags if result.tags is not None else case.get("tags")
+                    await self._write(
+                        run_id,
+                        "task-result",
+                        {"output": _json_value(result.output), "metadata": metadata, "tags": tags},
+                        item_id,
+                    )
+                else:
+                    await self._write(
+                        run_id,
+                        "task-result",
+                        {"output": None, "metadata": {}, "tags": None, "error": error},
+                        item_id,
+                    )
+            elif error is None:
+                if isinstance(result, Mapping):
+                    result = WorkflowScorerResult(**result)
+                if not isinstance(result, WorkflowScorerResult):
+                    raise TypeError("Batch scorer result must be a WorkflowScorerResult")
+                await self._write(
+                    run_id,
+                    _stage_kind("score-result", submission["scorer_name"]),
+                    _json_value(result.score),
+                    item_id,
+                )
+            else:
+                await self._write(run_id, _stage_kind("score-error", submission["scorer_name"]), error, item_id)
 
     async def _waiting_status(self, run: Mapping[str, Any]) -> WorkflowEvalWaitingResult:
         pending = {}
@@ -1113,8 +1690,14 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
                 SpanTypeAttribute.TASK,
                 input=case["datum"]["input"],
             ) as span:
-                span.log(output=task_result["output"])
-            root.log(output=task_result["output"], metadata=task_result["metadata"], tags=task_result.get("tags"))
+                if task_result.get("error") is not None:
+                    span.log(error=task_result["error"])
+                else:
+                    span.log(output=task_result["output"])
+            if task_result.get("error") is not None:
+                root.log(error=task_result["error"])
+            else:
+                root.log(output=task_result["output"], metadata=task_result["metadata"], tags=task_result.get("tags"))
         if root is not NOOP_SPAN:
             await self._flush_logs()
         await self._write(
@@ -1216,6 +1799,31 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
             await self._flush_logs()
         await self._write(run_id, log_kind, True, item_id)
 
+    async def _log_score_error(self, run: Mapping[str, Any], case: dict[str, Any], name: str, error: str) -> None:
+        run_id = run["run_id"]
+        item_id = case["id"]
+        log_kind = _stage_kind("score-log", name)
+        if await self._read(run_id, log_kind, item_id) is not None:
+            return
+        task_result = await self._required(run_id, "task-result", item_id)
+        root = await self._root_for_case(run, item_id)
+        propagated = merge_dicts({**(root.propagated_event or {})}, {"span_attributes": {"purpose": "scorer"}})
+        with root:
+            with self._start_child(
+                root,
+                run_id,
+                item_id,
+                f"score:{name}",
+                name,
+                SpanTypeAttribute.SCORE,
+                input=_scorer_args(case, task_result),
+                propagated_event=propagated,
+            ) as span:
+                span.log(error=error)
+        if root is not NOOP_SPAN:
+            await self._flush_logs()
+        await self._write(run_id, log_kind, True, item_id)
+
     async def _run_classifier(self, run: Mapping[str, Any], case: dict[str, Any], classifier: Any, name: str) -> None:
         run_id = run["run_id"]
         item_id = case["id"]
@@ -1296,9 +1904,18 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
                 return False
             await self._log_task(run, case, experiment)
         else:
-            await self._run_ordinary_task(run, case, experiment, self._parameters(run))
+            if not isinstance(self.config.task, WorkflowBatchTask):
+                await self._run_ordinary_task(run, case, experiment, self._parameters(run))
+            elif await self._read(run_id, "task-result", item_id) is None:
+                return False
+            else:
+                await self._log_task(run, case, experiment)
         if await self._read(run_id, "task-log", item_id) is None:
             return False
+        task_result = await self._required(run_id, "task-result", item_id)
+        if task_result.get("error") is not None:
+            await self.store.add_to_set(self._key(run_id, "progress", "cases"), item_id)
+            return True
 
         for spec, processor in self._submission_specs(case_run):
             if spec["kind"] == "score":
@@ -1310,6 +1927,15 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
                     complete = False
                     continue
                 await self._log_score(run, case, name)
+            elif isinstance(scorer, WorkflowBatchScorer):
+                if await self._read(run_id, _stage_kind("score-result", name), item_id) is None:
+                    error = await self._read(run_id, _stage_kind("score-error", name), item_id)
+                    if error is None:
+                        complete = False
+                        continue
+                    await self._log_score_error(run, case, name, error)
+                else:
+                    await self._log_score(run, case, name)
             else:
                 await self._run_ordinary_score(run, case, scorer, name)
             if await self._read(run_id, _stage_kind("score-log", name), item_id) is None:
@@ -1335,7 +1961,7 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
             score() if inspect.isclass(score) and is_scorer(score) else score for score in self.config.scores
         ]
         scorer_names = [
-            score.name if isinstance(score, WorkflowScorer) else _scorer_name(score, index)
+            score.name if isinstance(score, (WorkflowScorer, WorkflowBatchScorer)) else _scorer_name(score, index)
             for index, score in enumerate(resolved_scores)
         ]
         if len(scorer_names) != len(set(scorer_names)):
@@ -1346,14 +1972,28 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
         if len(classifier_names) != len(set(classifier_names)):
             raise ValueError("Workflow evaluation classifier names must be unique")
 
-        results = await asyncio.gather(
-            *(
-                self._advance_case(run, item_id, experiment, resolved_scores, scorer_names, classifier_names)
-                for item_id in (item_ids if item_ids is not None else run["case_ids"])
-            ),
-            return_exceptions=True,
-        )
-        errors = [result for result in results if isinstance(result, BaseException)]
+        if isinstance(self.config.task, WorkflowBatchTask):
+            await self._schedule_batch_stage(run, self.config.task, kind="task")
+
+        async def advance_cases() -> list[BaseException]:
+            results = await asyncio.gather(
+                *(
+                    self._advance_case(run, item_id, experiment, resolved_scores, scorer_names, classifier_names)
+                    for item_id in (item_ids if item_ids is not None else run["case_ids"])
+                ),
+                return_exceptions=True,
+            )
+            return [result for result in results if isinstance(result, BaseException)]
+
+        errors = await advance_cases()
+        if errors:
+            _raise_callback_errors(errors)
+        for scorer in self.config.scores:
+            if isinstance(scorer, WorkflowBatchScorer):
+                await self._schedule_batch_stage(run, scorer, kind="score")
+        # Newly submitted batch scorer work is now represented in the waiting
+        # count; this pass also logs results collected by webhook/poll calls.
+        errors = await advance_cases()
         if errors:
             _raise_callback_errors(errors)
         if await self.store.get_set_size(self._key(run_id, "progress", "cases")) != len(run["case_ids"]):
@@ -1385,11 +2025,15 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
             task_result = await self._required(run["run_id"], "task-result", item_id)
             scores: dict[str, float | None] = {}
             for name in scorer_names:
-                raw = await self._required(run["run_id"], _stage_kind("score-result", name), item_id)
+                raw = await self._read(run["run_id"], _stage_kind("score-result", name), item_id)
+                if raw is None:
+                    continue
                 for score in self._prepare_scores(raw, name):
                     scores[score.name] = score.score
             classifications: dict[str, list[Any]] = {}
             for name in classifier_names:
+                if task_result.get("error") is not None:
+                    continue
                 raw = await self._required(run["run_id"], _stage_kind("classification-result", name), item_id)
                 for value in raw:
                     classification = Classification.from_dict(value)
@@ -1404,6 +2048,7 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
                     expected=datum.get("expected"),
                     metadata=task_result["metadata"],
                     tags=task_result.get("tags"),
+                    error=RuntimeError(task_result["error"]) if task_result.get("error") is not None else None,
                 )
             )
         evaluator = Evaluator(
@@ -1419,6 +2064,11 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
 
 
 __all__ = [
+    "WorkflowBatchItem",
+    "WorkflowBatchItemResult",
+    "WorkflowBatchScorer",
+    "WorkflowBatchTask",
+    "WorkflowBatchingOptions",
     "WorkflowSubmissionCompletionPoll",
     "WorkflowSubmissionCompletionWebhook",
     "WorkflowSubmissionContext",
