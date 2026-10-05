@@ -18,7 +18,7 @@ from braintrust.test_helpers import assert_dict_matches, init_test_logger
 TEST_ORG_ID = "test-org-litellm-py-tracing"
 PROJECT_NAME = "test-project-litellm-py-tracing"
 TEST_MODEL = "gpt-4o-mini"  # cheapest model for tests
-TEST_TEXT_MODEL = "gpt-3.5-turbo-instruct"
+TEST_TEXT_MODEL = "anthropic/claude-haiku-4-5-20251001"
 TEST_PROMPT = "What's 12 + 12?"
 TEST_SYSTEM_PROMPT = "You are a helpful assistant that only responds with numbers."
 TEST_CACHE_MODEL = "anthropic/claude-haiku-4-5-20251001"
@@ -228,7 +228,7 @@ def test_litellm_text_completion_metrics(memory_logger, is_async) -> None:
     metrics = span["metrics"]
     assert_metrics_are_valid(metrics, start, end)
     assert span["metadata"]["model"] == TEST_TEXT_MODEL
-    assert span["metadata"]["provider"] == "openai"
+    assert span["metadata"]["provider"] == "anthropic"
     assert TEST_PROMPT in str(span["input"])
     assert "text" in span["output"][0]
 

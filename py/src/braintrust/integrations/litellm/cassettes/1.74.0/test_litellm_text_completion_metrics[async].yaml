@@ -1,114 +1,87 @@
 interactions:
 - request:
-    body: '{"model":"gpt-3.5-turbo-instruct","prompt":"What''s 12 + 12?"}'
+    body: '{"model":"claude-haiku-4-5-20251001","messages":[{"role":"user","content":[{"type":"text","text":"What''s
+      12 + 12?"}]}],"max_tokens":4096}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      anthropic-version:
+      - '2023-06-01'
+      connection:
       - keep-alive
-      Content-Length:
-      - '61'
-      Content-Type:
+      content-length:
+      - '137'
+      content-type:
       - application/json
-      Host:
-      - api.openai.com
-      User-Agent:
-      - AsyncOpenAI/Python 1.99.9
-      X-Stainless-Arch:
-      - arm64
-      X-Stainless-Async:
-      - async:asyncio
-      X-Stainless-Lang:
-      - python
-      X-Stainless-OS:
-      - MacOS
-      X-Stainless-Package-Version:
-      - 1.99.9
-      X-Stainless-Raw-Response:
-      - 'true'
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.12.12
-      x-stainless-read-timeout:
-      - '600.0'
-      x-stainless-retry-count:
-      - '0'
+      host:
+      - api.anthropic.com
+      user-agent:
+      - litellm/1.74.0
     method: POST
-    uri: https://api.openai.com/v1/completions
+    uri: https://api.anthropic.com/v1/messages
   response:
     body:
-      string: "{\n  \"id\": \"cmpl-DdJ9HtCsgRTbqBUitaYeCb6F03nAP\",\n  \"object\":
-        \"text_completion\",\n  \"created\": 1778260771,\n  \"model\": \"gpt-3.5-turbo-instruct:20230824-v2\",\n
-        \ \"choices\": [\n    {\n      \"text\": \"\\n12 + 12 = 24\",\n      \"index\":
-        0,\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n    }\n
-        \ ],\n  \"usage\": {\n    \"prompt_tokens\": 8,\n    \"completion_tokens\":
-        8,\n    \"total_tokens\": 16\n  }\n}\n"
+      string: '{"model":"claude-haiku-4-5-20251001","id":"msg_011CfjKty5VdNab2MB7YKbV5","type":"message","role":"assistant","content":[{"type":"text","text":"12
+        + 12 = 24"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":16,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":13,"service_tier":"standard","inference_geo":"not_available"},"diagnostics":null}'
     headers:
-      Access-Control-Allow-Origin:
-      - '*'
-      CF-Cache-Status:
-      - DYNAMIC
-      CF-Ray:
-      - 9f8a213fcfa034bd-SJC
-      Cache-Control:
-      - no-cache, must-revalidate
+      CF-RAY:
+      - a45d74605ac9df5a-YYZ
       Connection:
       - keep-alive
+      Content-Security-Policy:
+      - default-src 'none'; frame-ancestors 'none'
       Content-Type:
       - application/json
       Date:
-      - Fri, 08 May 2026 17:19:32 GMT
+      - Mon, 05 Oct 2026 15:28:10 GMT
       Server:
       - cloudflare
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubDomains; preload
       Transfer-Encoding:
       - chunked
-      Via:
-      - envoy-router-6bb47b9fb6-dlvwm
-      X-Content-Type-Options:
-      - nosniff
-      access-control-expose-headers:
-      - X-Request-ID
-      alt-svc:
-      - h3=":443"; ma=86400
+      Vary:
+      - Accept-Encoding
+      X-Robots-Tag:
+      - none
+      anthropic-organization-id:
+      - 27796668-7351-40ac-acc4-024aee8995a5
+      anthropic-ratelimit-input-tokens-limit:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2026-10-05T15:28:10Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2026-10-05T15:28:10Z'
+      anthropic-ratelimit-requests-limit:
+      - '20000'
+      anthropic-ratelimit-requests-remaining:
+      - '19999'
+      anthropic-ratelimit-requests-reset:
+      - '2026-10-05T15:28:10Z'
+      anthropic-ratelimit-tokens-limit:
+      - '12000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '12000000'
+      anthropic-ratelimit-tokens-reset:
+      - '2026-10-05T15:28:10Z'
+      anthropic-workspace-id:
+      - wrkspc_018bFG1FgNVWqx5pthtdGTzS
+      cf-cache-status:
+      - DYNAMIC
       content-length:
-      - '383'
-      openai-model:
-      - gpt-3.5-turbo-instruct:20230824-v2
-      openai-organization:
-      - braintrust-data
-      openai-processing-ms:
-      - '183'
-      openai-project:
-      - proj_vsCSXafhhByzWOThMrJcZiw9
-      openai-version:
-      - '2020-10-01'
-      set-cookie:
-      - __cf_bm=J7BwJkU4m3tydxu1TkSveYALVcfIWtQLIywG_Z3ocQk-1778260771.8019595-1.0.1.1-58SjNkFWP1Gv_WcjPlzrr_En2YMwTJG.KPMIrIwd3zcJe9Di0qBgjsHtErhXq_sKTthex4_ynaF99wvwmCV3gaDS.LnE5NkagenL9n2DEQW3BCP13HK5FbW4LoU1u1sF;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Fri, 08 May 2026
-        17:49:32 GMT
-      x-engine-geography:
-      - US
-      x-openai-proxy-wasm:
-      - v0.1
-      x-ratelimit-limit-requests:
-      - '3500'
-      x-ratelimit-limit-tokens:
-      - '90000'
-      x-ratelimit-remaining-requests:
-      - '3498'
-      x-ratelimit-remaining-tokens:
-      - '89995'
-      x-ratelimit-reset-requests:
-      - 17ms
-      x-ratelimit-reset-tokens:
-      - 2ms
-      x-request-id:
-      - req_9df32c1fe39a4e36b70eb5a753424340
+      - '505'
+      request-id:
+      - req_011CfjKtxqcB34mjyVcGfyb1
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      traceresponse:
+      - 00-6a95ef5c791ed7efd537c7ce7db18b8e-7296b20215cb2017-01
     status:
       code: 200
       message: OK
