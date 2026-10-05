@@ -625,6 +625,8 @@ def test_anthropic_messages_create_prompt_cache_metrics(memory_logger, ttl, vcr_
 
 
 @pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
+# The SDK's generated method signature omits the runtime-supported diagnostics parameter.
+# pylint: disable=unexpected-keyword-arg
 def test_anthropic_messages_create_prompt_cache_diagnostics(memory_logger):
     if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
         pytest.skip("Prompt cache diagnostics require the latest Anthropic SDK cassette")
@@ -642,7 +644,8 @@ def test_anthropic_messages_create_prompt_cache_diagnostics(memory_logger):
         ],
         "messages": [{"role": "user", "content": "Summarize section 1."}],
     }
-    first_response = client.messages.create(**request, diagnostics={"previous_message_id": None})
+    first_request = {**request, "diagnostics": {"previous_message_id": None}}
+    first_response = client.messages.create(**first_request)
     second_request = {
         **request,
         "system": [
@@ -653,12 +656,11 @@ def test_anthropic_messages_create_prompt_cache_diagnostics(memory_logger):
                 ),
             }
         ],
+        "diagnostics": {"previous_message_id": first_response.id},
     }
-    second_response = client.messages.create(**second_request, diagnostics={"previous_message_id": first_response.id})
-    with client.messages.stream(
-        **request,
-        diagnostics={"previous_message_id": second_response.id},
-    ) as stream:
+    second_response = client.messages.create(**second_request)
+    stream_request = {**request, "diagnostics": {"previous_message_id": second_response.id}}
+    with client.messages.stream(**stream_request) as stream:
         stream_events = list(stream)
 
     spans = memory_logger.pop()
