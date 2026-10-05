@@ -30,6 +30,24 @@ def test_log_queue_basic_operations():
     assert queue.size() == 0
 
 
+@pytest.mark.parametrize("enforce", [False, True])
+def test_log_queue_signals_once_until_drained(enforce):
+    from unittest.mock import patch
+
+    queue = LogQueue(maxsize=2)
+    queue.enforce_queue_size_limit(enforce)
+    with patch.object(queue._has_items_event, "set", wraps=queue._has_items_event.set) as signal:
+        for item in range(5):
+            queue.put(item)
+        assert signal.call_count == 1
+        assert queue.wait_for_items(timeout=0)
+        assert queue.drain_all() == [3, 4]
+        assert not queue.wait_for_items(timeout=0)
+        queue.put(5)
+        assert signal.call_count == 2
+        assert queue.wait_for_items(timeout=0)
+
+
 def test_log_queue_drop_behavior():
     """Test queue drops oldest items when full, including single and multiple drops"""
     # Test basic drop behavior with size 2
