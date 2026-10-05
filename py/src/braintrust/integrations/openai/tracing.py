@@ -1187,7 +1187,7 @@ _AGENT_TOOL_ITEM_INPUT_KEYS = {
     "web_search_call": ("action",),
     "computer_use_call": ("title",),
     "browser_authentication_request": ("request_id",),
-    "computer_use_approval_request": ("request_id",),
+    "computer_use_approval_request": ("request_id", "request"),
     "computer_use_approval_request_result": ("request_id",),
     "create_subagent_call": ("content", "model", "reasoning_effort"),
     "send_subagent_input_call": ("content", "recipient_agent_id"),
@@ -1200,6 +1200,7 @@ _AGENT_TOOL_ITEM_INPUT_KEYS = {
 _AGENT_TOOL_ITEM_OUTPUT_KEYS = {
     "command_execution": ("output", "exit_code", "duration_ms"),
     "mcp_call": ("output",),
+    "computer_use_approval_request_result": ("response",),
 }
 
 _AGENT_TURN_EVENTS = {
@@ -1278,7 +1279,13 @@ def _agent_tool_span_name(item: Any) -> str:
 
 
 def _agent_tool_span_data(item: Any, keys: tuple[str, ...]) -> Any:
-    values = clean_nones({key: getattr(item, key, None) for key in keys})
+    values = clean_nones(
+        {
+            key: _try_to_dict(value) if key in {"request", "response"} else value
+            for key in keys
+            if (value := getattr(item, key, None)) is not None
+        }
+    )
     if not values:
         return None
     if keys == ("arguments",):
