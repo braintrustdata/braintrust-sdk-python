@@ -1,0 +1,1098 @@
+interactions:
+- request:
+    body: '{"max_tokens":1024,"messages":[{"role":"user","content":"Use ask_wiki_question
+      for repository braintrustdata/braintrust-sdk-python. Ask this exact question:
+      Give a detailed explanation of the SDK''s primary implementation language, the
+      package and source directory where it lives, and how a contributor would run
+      its focused tests. Include enough detail to fully answer each part, and then
+      briefly summarize the result."}],"model":"claude-haiku-4-5-20251001","mcp_servers":[{"type":"url","name":"braintrust-test","url":"https://mcp.deepwiki.com/mcp"}],"tools":[{"type":"mcp_toolset","mcp_server_name":"braintrust-test"}],"stream":true}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate, zstd
+      anthropic-beta:
+      - mcp-client-2026-09-15
+      anthropic-version:
+      - '2023-06-01'
+      connection:
+      - keep-alive
+      content-length:
+      - '634'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 1.8.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-helper-method:
+      - stream
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.8.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+      x-stainless-stream-helper:
+      - beta.messages
+      x-stainless-timeout:
+      - NOT_GIVEN
+    method: POST
+    uri: https://api.anthropic.com/v1/messages?beta=true
+  response:
+    body:
+      string: 'event: message_start
+
+        data: {"type":"message_start","message":{"model":"claude-haiku-4-5-20251001","id":"msg_011CfjGog73Qnh8HtBuW9oKn","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":918,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":30,"service_tier":"standard","inference_geo":"not_available"},"diagnostics":null}            }
+
+
+        event: content_block_start
+
+        data: {"type":"content_block_start","index":0,"content_block":{"type":"mcp_tool_listing","mcp_server_name":"braintrust-test","tools":[{"name":"ask_wiki_question","description":"Ask
+        any question about a GitHub repository''s codebase and get an AI-powered answer\ngrounded
+        in its DeepWiki.","input_schema":{"properties":{"repoName":{"anyOf":[{"type":"string"},{"items":{"type":"string"},"type":"array"}],"description":"GitHub
+        repository or list of repositories (max 10) in owner/repo format."},"question":{"description":"The
+        question to ask about the repository.","type":"string"}},"required":["repoName","question"],"type":"object"}},{"name":"read_wiki_contents","description":"View
+        documentation about a GitHub repository.","input_schema":{"properties":{"repoName":{"description":"GitHub
+        repository in owner/repo format (e.g. \"facebook/react\").","type":"string"}},"required":["repoName"],"type":"object"}},{"name":"read_wiki_structure","description":"Get
+        a list of documentation topics for a GitHub repository.","input_schema":{"properties":{"repoName":{"description":"GitHub
+        repository in owner/repo format (e.g. \"facebook/react\").","type":"string"}},"required":["repoName"],"type":"object"}}]}      }
+
+
+        event: content_block_stop
+
+        data: {"type":"content_block_stop","index":0   }
+
+
+        event: content_block_start
+
+        data: {"type":"content_block_start","index":1,"content_block":{"type":"mcp_tool_use","id":"mcptoolu_01RUkrJ2vptxWjW6MkXdfWnn","name":"ask_wiki_question","input":{},"server_name":"braintrust-test"}          }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":""}}
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"{\"repoN"}       }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"ame\":
+        \""}             }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"braintr"}
+        }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"ustdata"}             }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"/braint"}              }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"rust-sd"}   }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"k-pytho"}             }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"n\""}    }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":",
+        \"ques"}        }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"tion\":
+        "}             }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"\"Give
+        a"}      }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"
+        detail"}  }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"ed
+        expl"}     }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"anation"}        }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"
+        of the"}     }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"
+        SDK''s "}           }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"primary"}            }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"
+        implem"}          }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"entatio"}    }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"n
+        langu"}          }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"age,
+        th"}            }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"e
+        packa"}       }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"ge
+        and "}  }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"source
+        "}      }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"directo"}       }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"ry
+        wher"}          }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"e
+        it li"}          }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"ves,
+        an"}  }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"d
+        how a"}            }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"
+        contri"}              }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"butor
+        w"}      }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"ould
+        ru"}       }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"n
+        its f"}            }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"ocused
+        "}         }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"tests.
+        "}           }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"Include"}   }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"
+        enough"}      }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"
+        detail"}       }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"
+        to ful"}    }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"ly
+        answ"} }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"er
+        each"}  }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"
+        part, "}    }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"and
+        the"}        }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"n
+        brief"}           }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"ly
+        summ"}          }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"arize
+        t"}     }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"he
+        resu"}          }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"lt.\"}"}     }
+
+
+        event: content_block_stop
+
+        data: {"type":"content_block_stop","index":1 }
+
+
+        event: content_block_start
+
+        data: {"type":"content_block_start","index":2,"content_block":{"type":"mcp_tool_result","tool_use_id":"mcptoolu_01RUkrJ2vptxWjW6MkXdfWnn","is_error":false,"content":[{"type":"text","text":"The
+        Braintrust SDK''s primary implementation language is Python. The Python package
+        is located in the `py/` directory, with its source code residing in `py/src/braintrust/`  .
+        Contributors can run focused tests using `nox` sessions, which are defined
+        in `py/noxfile.py` .\n\n## Implementation Language and Directory Structure\n\nThe
+        Braintrust SDK is implemented in Python . The main Python package is found
+        within the `py/` directory of the repository . The importable source code
+        for the `braintrust` package is specifically located at `py/src/braintrust/`
+        .\n\n## Running Focused Tests\n\nTests for the SDK are managed using `nox`
+        . The `noxfile.py`  in the `py/` directory defines various test sessions .\n\nTo
+        run all `nox` sessions, you can navigate to the `py/` directory and execute
+        `make test` . This is equivalent to running `nox -x` .\n\nTo run a specific
+        test session, you can use the `nox -s <session_name>` command . For example:\n*   `nox
+        -s test_core` runs all tests that do not require optional third-party dependencies  .\n*   `nox
+        -s \"test_openai(latest)\"` runs tests specifically for the OpenAI wrapper
+        using the latest version .\n*   `nox -s \"test_anthropic(latest)\"` runs tests
+        for the Anthropic wrapper using the latest version .\n\nYou can list all available
+        `nox` sessions by running `nox -l` .\n\nMany integration tests utilize `pytest-vcr`
+        to replay recorded HTTP responses . To disable VCR and make live HTTP calls,
+        you can append `--disable-vcr` to your `nox` command, for example: `nox -s
+        \"test_openai(latest)\" -- --disable-vcr` .\n\n## Summary\n\nThe Braintrust
+        SDK is a Python-based library with its source code located in `py/src/braintrust/`
+        . Contributors can run focused tests using `nox` sessions defined in `py/noxfile.py`
+        . Specific sessions can be targeted with `nox -s <session_name>`, and VCR
+        can be disabled for live API calls using `--disable-vcr` .\n\n## Notes\n\nThe
+        `Makefile` in the root directory  and the `py/Makefile`  provide convenient
+        `make` targets that wrap `nox` commands for common testing and development
+        workflows. For instance, `make test` from the `py/` directory executes `nox
+        -x` .\n\nWiki pages you might want to explore:\n- [Overview (braintrustdata/braintrust-sdk-python)](/wiki/braintrustdata/braintrust-sdk-python#1)\n-
+        [Development Guide (braintrustdata/braintrust-sdk-python)](/wiki/braintrustdata/braintrust-sdk-python#9)\n\nView
+        this search on DeepWiki: https://deepwiki.com/search/give-a-detailed-explanation-of_e7d70861-6c6b-4f8c-89dd-9955ed2f82a2\n"}]}           }
+
+
+        event: content_block_stop
+
+        data: {"type":"content_block_stop","index":2               }
+
+
+        event: content_block_start
+
+        data: {"type":"content_block_start","index":3,"content_block":{"type":"text","text":""}        }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"##"}             }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        Summary\n\nThe"}    }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        Braintrust SDK"}}
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        for"} }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        Python is implemented entirely"}     }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        in **"}           }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"Python**"}     }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":".
+        The package"}        }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        source"}      }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        code is located in"}    }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        the `py/"}        }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"src/braint"}      }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"rust/`
+        directory"}    }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        within"}    }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        the repository. "}     }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"\n\nContributors
+        can run"} }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        focused tests using the"} }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        **"}          }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"`"}       }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"nox`**"}          }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        testing framework, which"}            }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        is configured"}              }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        in `"}            }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"py/nox"}}
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"file.py`."}        }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        They"}     }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        have"}}
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        several"}    }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        options:"}       }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"\n\n1"}    }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":".
+        **Run all"}}
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        tests**: Navigate"}   }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        to the `py"}             }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"/`
+        directory and"}        }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        execute `make test"}           }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"`"}            }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        ("}        }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"equivalent
+        to `n"}             }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"ox
+        -x`)"}     }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"\n2.
+        **"}           }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"Run
+        specific test sessions"}     }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"**:
+        Use `n"}         }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"ox
+        -s "}    }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"<session_name>"}       }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"`
+        commands"}}
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":","}  }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        such"}    }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        as:"}               }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"\n   -
+        `"} }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"nox
+        -s"}              }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        test_core`"}   }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        for"}    }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        core"}       }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        tests"}              }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        without"}              }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        optional dependencies\n   "}            }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"-
+        `nox"}     }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        -s \"test"}  }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"_openai("}       }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"latest)\"`
+        for"}         }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        OpenAI wrapper"}            }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        tests"}       }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"\n   -
+        `n"}           }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"ox
+        -s \""}           }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"test_anthropic"}           }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"(latest)\"`"}              }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        for Anthropic"}              }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        wrapper tests"}          }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"\n3.
+        **List"}             }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        available sessions**: Run"}   }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        `nox -"}   }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"l`"}         }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"\n4.
+        **"}           }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"Make"}        }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        live API"}              }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        calls**: Append"}       }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        `--disable-"}               }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"vcr`
+        to"}   }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        bypass"}      }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        recorded"}  }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        HTTP"}          }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        responses ("}  }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"the"}               }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        tests"}    }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        use `"}      }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"pytest-vcr"}   }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"`"}       }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        by"}    }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        default)\n\nThe"}      }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        repository"}       }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        also"}     }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        provides"}}
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        convenient"}              }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        `"}           }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"Makefile`"}}
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        targets in"}  }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        both"}            }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        the root and"}         }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        `py/`"}  }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        directories that wrap `"}   }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"nox`
+        commands"}  }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        for stream"}             }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"lined
+        development"}        }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":3,"delta":{"type":"text_delta","text":"
+        workflows."}   }
+
+
+        event: content_block_stop
+
+        data: {"type":"content_block_stop","index":3               }
+
+
+        event: message_delta
+
+        data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":2711,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":427,"server_tool_use":{"web_search_requests":0,"web_fetch_requests":0}}
+        }
+
+
+        event: message_stop
+
+        data: {"type":"message_stop" }
+
+
+        '
+    headers:
+      anthropic-organization-id:
+      - 27796668-7351-40ac-acc4-024aee8995a5
+      anthropic-ratelimit-input-tokens-limit:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2026-10-05T14:47:39Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2026-10-05T14:47:39Z'
+      anthropic-ratelimit-requests-limit:
+      - '20000'
+      anthropic-ratelimit-requests-remaining:
+      - '19999'
+      anthropic-ratelimit-requests-reset:
+      - '2026-10-05T14:47:39Z'
+      anthropic-ratelimit-tokens-limit:
+      - '12000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '12000000'
+      anthropic-ratelimit-tokens-reset:
+      - '2026-10-05T14:47:39Z'
+      anthropic-workspace-id:
+      - wrkspc_018bFG1FgNVWqx5pthtdGTzS
+      cache-control:
+      - no-cache
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a45d38fdabba39f7-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '26368'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - text/event-stream; charset=utf-8
+      date:
+      - Mon, 05 Oct 2026 14:47:39 GMT
+      request-id:
+      - req_011CfjGofCiEvLDpW2xDmmcx
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      traceresponse:
+      - 00-4ea0f09d06f3a84e8e9ecc60dc0caebd-b63c0fea707c374f-01
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+version: 1
