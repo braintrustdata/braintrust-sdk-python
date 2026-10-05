@@ -633,10 +633,27 @@ def test_anthropic_messages_create_prompt_cache_diagnostics(memory_logger):
     request = {
         "model": LATEST_MODEL,
         "max_tokens": 16,
-        "messages": [{"role": "user", "content": "What is the capital of France?"}],
+        "system": [
+            {
+                "type": "text",
+                "text": PROMPT_CACHE_TEST_TEXT,
+                "cache_control": {"type": "ephemeral"},
+            }
+        ],
+        "messages": [{"role": "user", "content": "Summarize section 1."}],
     }
-    first_response = client.messages.create(**request)
-    second_request = {**request, "messages": [{"role": "user", "content": "What is the capital of Spain?"}]}
+    first_response = client.messages.create(**request, diagnostics={"previous_message_id": None})
+    second_request = {
+        **request,
+        "system": [
+            {
+                **request["system"][0],
+                "text": request["system"][0]["text"].replace(
+                    "Cached geography fact 0:", "Changed geography fact 0:", 1
+                ),
+            }
+        ],
+    }
     second_response = client.messages.create(**second_request, diagnostics={"previous_message_id": first_response.id})
 
     spans = memory_logger.pop()
@@ -645,7 +662,9 @@ def test_anthropic_messages_create_prompt_cache_diagnostics(memory_logger):
     second_span = message_spans[1]
     assert second_span["metadata"]["diagnostics"] == {"previous_message_id": first_response.id}
     cache_miss_reason = second_response.diagnostics.cache_miss_reason
+    assert cache_miss_reason.type == "system_changed"
     assert second_span["metadata"]["cache_miss_reason"] == cache_miss_reason.type
+    assert second_span["metadata"]["cache_missed_input_tokens"] == cache_miss_reason.cache_missed_input_tokens
 
 
 @pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])

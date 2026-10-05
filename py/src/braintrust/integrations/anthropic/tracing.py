@@ -1565,7 +1565,7 @@ def _log_message_to_span(
         metadata["cache_miss_reason"] = reason_type
     cache_missed_input_tokens = getattr(cache_miss_reason, "cache_missed_input_tokens", None)
     if is_numeric(cache_missed_input_tokens):
-        metrics["prompt_cache_missed_tokens"] = float(cache_missed_input_tokens)
+        metadata["cache_missed_input_tokens"] = cache_missed_input_tokens
 
     span.log(output=output, metrics=metrics, metadata=metadata)
     _log_server_tool_spans(content, span)
