@@ -282,13 +282,16 @@ class TestHTTPBackgroundLoggerLogs3(TestCase):
 
         self.assertEqual(conn.post.call_count, 2)
         posted_batches = []
+        request_sizes = []
         for call in conn.post.call_args_list:
             self.assertEqual(call.args, ("/logs3",))
             request_bytes = call.kwargs["data"]
             self.assertLessEqual(len(request_bytes), three_row_size)
+            request_sizes.append(len(request_bytes))
             posted_batches.append(json.loads(request_bytes)["rows"])
+        posted_batches.sort(key=lambda batch: batch[0]["id"])
         self.assertEqual(posted_batches, [rows[:3], rows[3:]])
-        self.assertEqual(len(conn.post.call_args_list[0].kwargs["data"]), three_row_size)
+        self.assertEqual(request_sizes, [three_row_size, three_row_size])
 
     def test_flush_keeps_oversized_row_separate(self) -> None:
         from braintrust.logger import _HTTPBackgroundLogger
