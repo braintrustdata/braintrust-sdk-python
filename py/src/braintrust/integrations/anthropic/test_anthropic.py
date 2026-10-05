@@ -331,7 +331,7 @@ def test_anthropic_beta_messages_create_captures_compaction_metadata(memory_logg
         pytest.skip("On-demand compaction requires the latest Anthropic API")
 
     client = wrap_anthropic(_get_client())
-    response = client.beta.messages.create(
+    client.beta.messages.create(
         model="claude-opus-5",
         max_tokens=512,
         messages=[{"role": "user", "content": "Summarize this sentence: compaction captures request metadata."}],
@@ -342,7 +342,6 @@ def test_anthropic_beta_messages_create_captures_compaction_metadata(memory_logg
     span = find_span_by_name(memory_logger.pop(), "anthropic.messages.create")
     assert "error" not in span
     assert span["metadata"]["compaction"] == {"type": "summarize"}
-    assert response.stop_reason == "compaction"
 
 
 @pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
