@@ -49,6 +49,26 @@ async def test_memory_store_is_atomic_and_copies_values():
     assert await store.read("key") == b"first"
 
 
+@pytest.mark.asyncio
+async def test_memory_store_claim_many_is_atomic_for_overlapping_batches():
+    store = WorkflowEvalMemoryStore()
+
+    claims = await asyncio.gather(
+        store.claim_many(["batch/a", "batch/b"], b"batch-1"),
+        store.claim_many(["batch/b", "batch/c"], b"batch-2"),
+    )
+
+    assert sum(claims) == 1
+    if claims[0]:
+        assert await store.read("batch/a") == b"batch-1"
+        assert await store.read("batch/b") == b"batch-1"
+        assert await store.read("batch/c") is None
+    else:
+        assert await store.read("batch/a") is None
+        assert await store.read("batch/b") == b"batch-2"
+        assert await store.read("batch/c") == b"batch-2"
+
+
 class _SyncRedis:
     def __init__(self):
         self.values = {}
@@ -56,11 +76,20 @@ class _SyncRedis:
         self.sets = {}
         self.expirations = {}
 
-    def eval(self, script, numkeys, key, member, ttl_ms):
-        assert "SADD" in script and "PEXPIRE" in script
-        assert numkeys == 1
-        self.sets.setdefault(key, set()).add(member)
-        self.expirations[key] = ttl_ms
+    def eval(self, script, numkeys, *args):
+        if "SADD" in script and "PEXPIRE" in script:
+            assert numkeys == 1
+            key, member, ttl_ms = args
+            self.sets.setdefault(key, set()).add(member)
+            self.expirations[key] = ttl_ms
+            return 1
+        assert "EXISTS" in script and numkeys == len(args) - 2
+        keys, member, ttl_ms = args[:numkeys], args[-2], args[-1]
+        if any(key in self.values for key in keys):
+            return 0
+        for key in keys:
+            self.values[key] = member
+            self.expirations[key] = ttl_ms
         return 1
 
     def scard(self, key):
@@ -107,13 +136,18 @@ async def test_redis_store_supports_sync_and_async_redis_py(client_type):
     assert existing.value == b"first"
     assert all(key.startswith("test:") for key, _ in client.calls)
     assert all(options["px"] == 1234 for _, options in client.calls)
+    assert await store.claim_many(["batch/a", "batch/b"], b"batch-1") is True
+    assert await store.claim_many(["batch/b", "batch/c"], b"batch-2") is False
+    assert await store.read("batch/a") == b"batch-1"
+    assert await store.read("batch/b") == b"batch-1"
+    assert await store.read("batch/c") is None
     assert await store.get_set_size("progress") == 0
     await store.add_to_set("progress", "a")
     await store.add_to_set("progress", "a")
     await store.add_to_set("progress", "b")
     assert await store.get_set_size("progress") == 2
     assert client.sets == {"test:progress": {"a", "b"}}
-    assert client.expirations == {"test:progress": 1234}
+    assert client.expirations == {"test:batch/a": 1234, "test:batch/b": 1234, "test:progress": 1234}
 
 
 @pytest.mark.asyncio
@@ -399,6 +433,64 @@ async def test_batch_item_failures_skip_scoring():
     assert isinstance(started, WorkflowEvalWaitingResult)
     assert isinstance(completed, WorkflowEvalCompletedResult)
     assert score_inputs == ["good"]
+
+
+@pytest.mark.asyncio
+async def test_batch_scorer_wait_window_uses_persisted_wall_clock(monkeypatch):
+    now = [1_000.0]
+    monkeypatch.setattr(workflow_eval_module.time, "time", lambda: now[0])
+    ready = {"a"}
+    score_batches = []
+
+    async def task_submit(item, _context):
+        return {"input": item.input}
+
+    async def task_collect(submission, _context):
+        return WorkflowTaskResult(output=submission["input"])
+
+    def task_poll(submission, _context):
+        return WorkflowSubmissionPoll("complete" if submission["input"] in ready else "pending")
+
+    async def score_submit(items, _context):
+        score_batches.append([item.output for item in items])
+        return {"size": len(items)}
+
+    async def score_collect(submission, _context):
+        return [
+            WorkflowBatchItemResult(custom_id=f"item-{index}", result=WorkflowScorerResult(score=1))
+            for index in range(submission["size"])
+        ]
+
+    workflow = define_workflow_eval(
+        "project",
+        store=WorkflowEvalMemoryStore(),
+        data=[{"id": value, "input": value} for value in ("a", "b")],
+        task=WorkflowTask(
+            submit=task_submit,
+            completion=WorkflowSubmissionCompletionPoll(task_poll),
+            collect=task_collect,
+        ),
+        scores=[
+            WorkflowBatchScorer(
+                name="batch-score",
+                batching=WorkflowBatchingOptions(max_size=2, max_wait_ms=100),
+                submit=score_submit,
+                completion=WorkflowSubmissionCompletionPoll(
+                    lambda _submission, _context: WorkflowSubmissionPoll("pending")
+                ),
+                collect=score_collect,
+            )
+        ],
+    )
+
+    started = await workflow.start(no_send_logs=True)
+    await workflow.poll(started.run_id)
+    assert score_batches == []
+
+    now[0] += 0.101
+    await workflow.poll(started.run_id)
+
+    assert score_batches == [["a"]]
 
 
 @pytest.mark.asyncio

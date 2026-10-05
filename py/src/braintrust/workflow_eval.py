@@ -7,6 +7,7 @@ import functools
 import hashlib
 import inspect
 import threading
+import time
 import uuid
 from collections.abc import AsyncIterable, Awaitable, Callable, Iterable, Mapping, Sequence
 from typing import Any, Generic, Literal, Protocol, TypeVar, cast
@@ -288,6 +289,10 @@ class WorkflowEvalStore(Protocol):
 
     async def get_or_set(self, key: str, value: bytes) -> WorkflowEvalStoreEntry: ...
 
+    async def claim_many(self, keys: Sequence[str], value: bytes) -> bool:
+        """Atomically store value for all keys iff none of them exists."""
+        ...
+
     async def add_to_set(self, key: str, member: str) -> None:
         """Atomically add a unique member; retain sets as long as run records."""
         ...
@@ -319,6 +324,14 @@ class WorkflowEvalMemoryStore:
                 return WorkflowEvalStoreEntry(value=bytes(existing), created=False)
             self._values[key] = bytes(value)
             return WorkflowEvalStoreEntry(value=bytes(value), created=True)
+
+    async def claim_many(self, keys: Sequence[str], value: bytes) -> bool:
+        with self._lock:
+            if any(key in self._values for key in keys):
+                return False
+            for key in keys:
+                self._values[key] = bytes(value)
+            return True
 
     async def add_to_set(self, key: str, member: str) -> None:
         with self._lock:
@@ -378,6 +391,25 @@ class WorkflowEvalRedisStore:
         if not isinstance(existing, str):
             raise TypeError("WorkflowEvalRedisStore expected atomic SET to return str, bytes, or None")
         return WorkflowEvalStoreEntry(value=base64.b64decode(existing), created=False)
+
+    async def claim_many(self, keys: Sequence[str], value: bytes) -> bool:
+        if not keys:
+            return True
+        redis_keys = [f"{self.key_prefix}{key}" for key in keys]
+        encoded = base64.b64encode(value).decode("ascii")
+        script = """
+        for i = 1, #KEYS do
+            if redis.call('EXISTS', KEYS[i]) == 1 then return 0 end
+        end
+        for i = 1, #KEYS do
+            redis.call('SET', KEYS[i], ARGV[1], 'PX', ARGV[2])
+        end
+        return 1
+        """
+        claimed = await self._call(self.client.eval, script, len(redis_keys), *redis_keys, encoded, self.ttl_ms)
+        if claimed not in (0, 1, b"0", b"1"):
+            raise TypeError("WorkflowEvalRedisStore expected atomic batch claim to return 0 or 1")
+        return claimed in (1, b"1")
 
     async def add_to_set(self, key: str, member: str) -> None:
         await self._call(
@@ -1086,18 +1118,25 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
         run_id = run["run_id"]
         scorer_name = processor.name if kind == "score" else None
         stage = f"score:{scorer_name}" if scorer_name else "task"
-        candidates: list[str] = []
-        for item_id in run["case_ids"]:
-            if await self._read(run_id, "batch-link", f"{stage}/{item_id}") is not None:
-                continue
-            if kind == "task":
-                if await self._read(run_id, "task-result", item_id) is None:
-                    candidates.append(item_id)
-            else:
-                task_result = await self._read(run_id, "task-result", item_id)
-                score_result = await self._read(run_id, _stage_kind("score-result", cast(str, scorer_name)), item_id)
-                if task_result is not None and task_result.get("error") is None and score_result is None:
-                    candidates.append(item_id)
+
+        async def find_candidates() -> list[str]:
+            result: list[str] = []
+            for item_id in run["case_ids"]:
+                if await self._read(run_id, "batch-link", f"{stage}/{item_id}") is not None:
+                    continue
+                if kind == "task":
+                    if await self._read(run_id, "task-result", item_id) is None:
+                        result.append(item_id)
+                else:
+                    task_result = await self._read(run_id, "task-result", item_id)
+                    score_result = await self._read(
+                        run_id, _stage_kind("score-result", cast(str, scorer_name)), item_id
+                    )
+                    if task_result is not None and task_result.get("error") is None and score_result is None:
+                        result.append(item_id)
+            return result
+
+        candidates = await find_candidates()
         if not candidates:
             return
 
@@ -1112,17 +1151,20 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
             elif processor.batching.max_wait_ms is not None and len(candidates) < max_size:
                 window_key = f"{stage}/{candidates[0]}"
                 first_wait = await self.store.get_or_set(
-                    self._key(run_id, "batch-wait", window_key), str(asyncio.get_running_loop().time()).encode()
+                    self._key(run_id, "batch-wait", window_key), str(time.time()).encode()
                 )
                 started = float(first_wait.value.decode())
-                submit_partial = asyncio.get_running_loop().time() - started >= processor.batching.max_wait_ms / 1000
+                submit_partial = time.time() - started >= processor.batching.max_wait_ms / 1000
             if len(candidates) < max_size and not submit_partial:
                 return
-        batches = [candidates[index : index + max_size] for index in range(0, len(candidates), max_size)]
-        if not submit_partial and batches and len(batches[-1]) < max_size:
-            batches.pop()
 
-        async def submit_batch(item_ids: list[str]) -> None:
+        def make_batches(item_ids: list[str]) -> list[list[str]]:
+            batches = [item_ids[index : index + max_size] for index in range(0, len(item_ids), max_size)]
+            if not submit_partial and batches and len(batches[-1]) < max_size:
+                batches.pop()
+            return batches
+
+        async def submit_batch(item_ids: list[str]) -> bool:
             submission_id = f"submission-{_stable_hex(run_id, stage, *item_ids, length=32)}"
             spec: dict[str, Any] = {
                 "id": submission_id,
@@ -1132,10 +1174,9 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
             }
             if scorer_name is not None:
                 spec["scorer_name"] = scorer_name
-            if not await self._claim(run_id, f"submit:{submission_id}"):
-                return
-            for item_id in item_ids:
-                await self._write(run_id, "batch-link", submission_id, f"{stage}/{item_id}")
+            claim_keys = [self._key(run_id, "batch-link", f"{stage}/{item_id}") for item_id in item_ids]
+            if not await self.store.claim_many(claim_keys, _json_bytes(submission_id)):
+                return False
             context = WorkflowSubmissionContext(run_id=run_id, submission_id=submission_id)
             if kind == "task":
                 values = [await self._task_item(run, item_id, self._parameters(run)) for item_id in item_ids]
@@ -1172,11 +1213,18 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
             await self._write(run_id, "submission", submission, submission_id)
             await self._record_external_locator(run_id, submission_id, external_id)
             await self._persist_submission_progress(run_id, submission)
+            return True
 
-        results = await asyncio.gather(*(submit_batch(item_ids) for item_ids in batches), return_exceptions=True)
-        errors = [result for result in results if isinstance(result, BaseException)]
-        if errors:
-            _raise_callback_errors(errors)
+        batches = make_batches(candidates)
+        while batches:
+            results = await asyncio.gather(*(submit_batch(item_ids) for item_ids in batches), return_exceptions=True)
+            errors = [result for result in results if isinstance(result, BaseException)]
+            if errors:
+                _raise_callback_errors(errors)
+            if all(result is True for result in results):
+                break
+            candidates = await find_candidates()
+            batches = make_batches(candidates)
 
     async def _persist_submission_progress(self, run_id: str, submission: Mapping[str, Any]) -> None:
         if submission.get("external_id") is not None:
