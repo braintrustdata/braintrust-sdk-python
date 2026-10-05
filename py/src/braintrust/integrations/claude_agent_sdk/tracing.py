@@ -1310,10 +1310,13 @@ async def _stream_messages_with_tracing(
     except asyncio.CancelledError:
         # The CancelledError may come from the subprocess transport
         # (e.g., anyio internal cleanup when subagents complete) rather
-        # than a genuine external cancellation. We suppress it here so
-        # the response stream ends cleanly. If the caller genuinely
-        # cancelled the task, they still have pending cancellation
-        # requests that will fire at their next await point.
+        # than a genuine external cancellation. Suppress only the transport
+        # case; asyncio tracks genuine cancellation requests on the current
+        # task, including cancellations injected by wait_for().
+        task = asyncio.current_task()
+        if task is not None and task.cancelling():
+            finish_request_tracker(log_output=True)
+            raise
         finish_request_tracker(log_output=True)
     else:
         finish_request_tracker(log_output=True)

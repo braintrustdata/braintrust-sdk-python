@@ -1831,21 +1831,6 @@ class FakeClaudeSDKClient:
         return None
 
 
-class FakeCancelledClaudeSDKClient(FakeClaudeSDKClient):
-    """Simulates the real error: messages are yielded, then CancelledError on stream close.
-
-    The real error comes from anyio's MemoryObjectReceiveStream when the Claude
-    subprocess connection closes — the internal ``await receive_event.wait()``
-    raises ``asyncio.CancelledError`` even though the asyncio Task itself is
-    *not* being cancelled.
-    """
-
-    async def receive_response(self):
-        for message in self.messages:
-            yield message
-        raise asyncio.CancelledError
-
-
 def _make_fake_sdk_mcp_tool_class():
     class FakeSdkMcpTool:
         def __init__(self, name, description, input_schema, handler, **kwargs):
@@ -1863,85 +1848,69 @@ def _clear_tool_span_tracker() -> None:
         delattr(_thread_local, "tool_span_tracker")
 
 
+@pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "messages",
+    "entrypoint",
     [
-        # No messages: CancelledError fires immediately on iteration.
-        pytest.param([], id="empty_stream"),
-        # CancelledError at stream close after a complete response.
+        "receive_response",
         pytest.param(
-            [AssistantMessage(content=[TextBlock("The answer is 42.")]), ResultMessage()], id="after_messages"
+            "query",
+            marks=pytest.mark.skipif(
+                getattr(claude_agent_sdk, "__version__", None) == "0.1.10",
+                reason="the 0.1.10 query cassette covers the client protocol, not one-shot query()",
+            ),
         ),
-        # CancelledError between messages, before the ResultMessage arrives.
-        pytest.param([AssistantMessage(content=[TextBlock("Partial answer.")])], id="mid_stream"),
     ],
 )
-async def test_receive_response_suppresses_unexpected_cancelled_error(memory_logger, messages):
-    """CancelledError from the transport is suppressed; messages yielded before it are kept and logged."""
+@pytest.mark.parametrize("cancellation", ["timeout", "task_cancel"])
+async def test_stream_propagates_genuine_cancellation(memory_logger, entrypoint, cancellation):
+    """Both public stream entrypoints propagate cancellation from a blocked real SDK read."""
     assert not memory_logger.pop()
 
-    wrapped_client_class = _create_client_wrapper_class(FakeCancelledClaudeSDKClient)
-    client = wrapped_client_class()
-    client._WrappedClaudeSDKClient__client.messages = messages  # type: ignore[attr-defined]
+    options = claude_agent_sdk.ClaudeAgentOptions(
+        model=TEST_MODEL,
+        permission_mode="bypassPermissions",
+    )
+    transport = make_cassette_transport(
+        cassette_name="test_auto_claude_agent_sdk",
+        prompt="",
+        options=options,
+        pause_before_sdk_messages=True,
+    )
 
-    await client.query("Delegate this task.")
-    received = []
-    async for message in client.receive_response():
-        received.append(message)
+    if entrypoint == "query":
+        response_stream = _create_query_wrapper_function(claude_agent_sdk.query)(
+            prompt="Say hi",
+            options=options,
+            transport=transport,
+        )
+    else:
+        with _patched_claude_sdk(wrap_client=True):
+            async with claude_agent_sdk.ClaudeSDKClient(options=options, transport=transport) as client:
+                await client.query("Say hi")
+                response_stream = client.receive_response()
+                await _assert_stream_cancellation(response_stream, transport, cancellation)
+                return
 
-    # All messages yielded before the CancelledError should be received.
-    assert received == messages
-
-    spans = memory_logger.pop()
-    task_spans = find_spans_by_type(spans, SpanTypeAttribute.TASK)
-    assert len(task_spans) == 1
-    task_span = task_spans[0]
-    assert task_span["span_attributes"]["name"] == "Claude Agent"
-    assert task_span.get("error") is None
-    if messages:
-        # Output should still be logged despite the CancelledError.
-        assert task_span["output"]["role"] == "assistant"
-        assert len(find_spans_by_type(spans, SpanTypeAttribute.LLM)) == 1
+    await _assert_stream_cancellation(response_stream, transport, cancellation)
 
 
-@pytest.mark.asyncio
-async def test_genuine_task_cancel_propagates_after_receive_response(memory_logger):
-    """When the asyncio Task is genuinely cancelled, CancelledError propagates
-    at the caller's next await — not swallowed forever.
-
-    This verifies that suppressing CancelledError inside the generator does not
-    permanently disarm a real ``task.cancel()`` on Python 3.12+ (where the
-    cancellation counter is decremented when the exception is caught).  On
-    Python < 3.12 the behaviour is the same because the task cancel flag is
-    sticky until the CancelledError propagates.
-    """
-    assert not memory_logger.pop()
-
-    wrapped_client_class = _create_client_wrapper_class(FakeCancelledClaudeSDKClient)
-    client = wrapped_client_class()
-    client._WrappedClaudeSDKClient__client.messages = [  # type: ignore[attr-defined]
-        AssistantMessage(content=[TextBlock("Hello.")]),
-        ResultMessage(),
-    ]
-
-    await client.query("Hi")
-
-    async def _drain_and_sleep():
-        """Consume the stream, then await something else."""
-        async for _ in client.receive_response():
-            pass
-        # This is the "next await" after the generator ends.
-        await asyncio.sleep(0)
-
-    task = asyncio.ensure_future(_drain_and_sleep())
-    # Let the task start and begin iterating.
+async def _assert_stream_cancellation(response_stream: Any, transport: Any, cancellation: str) -> None:
+    read_task = asyncio.create_task(anext(response_stream))
+    await asyncio.wait_for(transport.wait_until_sdk_message_blocked(), timeout=1)
     await asyncio.sleep(0)
-    # Genuinely cancel the task from outside.
-    task.cancel()
+    assert not read_task.done(), "the replayed SDK message should keep the response read blocked"
 
-    with pytest.raises(asyncio.CancelledError):
-        await task
+    if cancellation == "timeout":
+        with pytest.raises(TimeoutError):
+            await asyncio.wait_for(read_task, timeout=0.01)
+    else:
+        read_task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await read_task
+
+    await response_stream.aclose()
 
 
 @pytest.mark.parametrize(
