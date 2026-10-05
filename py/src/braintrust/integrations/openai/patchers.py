@@ -82,6 +82,8 @@ def _make_method_patchers(
             "name": wrap_name,
             "target_path": method,
             "wrapper": wrapper,
+            # The instance marker differs from the class-level setup markers.
+            "setup_patchers": (sync_patcher, async_patcher),
         },
     )
     return sync_patcher, async_patcher, instance_patcher
@@ -479,7 +481,7 @@ def _is_class_method_wrapped(
     ``wrap_openai()`` skip instance-level instrumentation.
     """
     cls_attr = inspect.getattr_static(type(resource), method_name, None)
-    return patcher.has_patch_marker(cls_attr)
+    return any(setup_patcher.has_patch_marker(cls_attr) for setup_patcher in patcher.setup_patchers)
 
 
 def _delegates_to_wrapped_method(resource: Any, method_name: str) -> bool:

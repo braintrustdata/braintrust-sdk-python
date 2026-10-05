@@ -3,6 +3,7 @@
 import inspect
 
 import openai
+from braintrust import wrap_openai
 from braintrust.auto import auto_instrument
 from braintrust.integrations.test_utils import autoinstrument_test_context
 from wrapt import FunctionWrapper
@@ -48,5 +49,21 @@ with autoinstrument_test_context("test_auto_openai", integration="openai") as me
     span = spans[0]
     assert span["metadata"]["provider"] == "openai"
     assert "gpt-4o-mini" in span["metadata"]["model"]
+
+# 5. Manual wrapping after auto-instrumentation must not duplicate the span or tokens.
+with autoinstrument_test_context("test_openai_responses_metrics", integration="openai") as memory_logger:
+    client = wrap_openai(openai.OpenAI())
+    response = client.responses.create(
+        model="gpt-4o-mini",
+        input="What's 12 + 12?",
+        instructions="Just the number please",
+    )
+    assert response.output
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1, f"Expected 1 Responses span, got {len(spans)}"
+    assert spans[0]["span_attributes"]["name"] == "openai.responses.create"
+    assert spans[0]["metrics"]["prompt_tokens"] == response.usage.input_tokens
+    assert spans[0]["metrics"]["completion_tokens"] == response.usage.output_tokens
 
 print("SUCCESS")
