@@ -13,16 +13,19 @@ from braintrust.audio.alignment import InputRanges
 from braintrust.audio.attachments import prepare_recording
 from braintrust.audio.budget import source_budget
 from braintrust.audio.recording import encode_audio
+from braintrust.audio.timeline import ClipTimeline
 from braintrust.audio.worker import RecordingBusy, encode_in_worker
 from pipecat.frames.frames import TranscriptionFrame  # pylint: disable=import-error
 
 from ..llm_metrics import _metadata_from_processor
 
 
-def encode_segments(segments, audio_format):
+def encode_segments(segments, audio_format, mappings=None):
     chunks = []
     rate = channels = None
-    for segment in segments:
+    timeline = ClipTimeline()
+    position_ms = 0
+    for index, segment in enumerate(segments):
         with wave.open(io.BytesIO(segment), "rb") as source:
             if source.getsampwidth() != 2:
                 raise ValueError("Expected PCM16 STT input")
@@ -31,7 +34,17 @@ def encode_segments(segments, audio_format):
                 raise ValueError("Mixed STT input formats")
             rate, channels = current
             chunks.append(source.readframes(source.getnframes()))
-    return encode_audio(chunks, rate, channels, audio_format)
+            for start, end, call_start, call_end in mappings[index] if mappings else []:
+                timeline.add(
+                    position_ms + start / (2 * channels * rate) * 1000,
+                    position_ms + end / (2 * channels * rate) * 1000,
+                    call_start / 24,
+                    call_end / 24,
+                )
+            position_ms += source.getnframes() / rate * 1000
+    encoded = encode_audio(chunks, rate, channels, audio_format)
+    encoded["clip_timeline"] = timeline
+    return encoded
 
 
 class UserCapture:
@@ -78,9 +91,11 @@ class UserCapture:
 
         async def speech_stop(frame):
             if stt.is_usable:
+                pieces = self.input_ranges.drain_mapped() if self.input_ranges else []
                 self.segment_boundaries.append(
                     {
-                        "ranges": self.input_ranges.drain() if self.input_ranges else [],
+                        "ranges": [[a, b] for _, _, a, b in pieces],
+                        "clip_ranges": pieces,
                         "events": [
                             *self.boundaries,
                             {
@@ -101,6 +116,7 @@ class UserCapture:
                 "service_metadata": _metadata_from_processor(stt),
                 "boundaries": queued["events"],
                 "ranges": queued["ranges"],
+                "clip_ranges": queued.get("clip_ranges", []),
                 "audio": None,
                 "reason": "disabled",
                 "start": time.time(),
@@ -285,6 +301,14 @@ class UserCapture:
         if not batch or batch.get("queued") or (not force and not turn.get("ended")):
             return
         batch["queued"] = True
+        if any(s["audio"] is not None for s in batch["segments"]):
+            turn["span"].log(
+                metadata={
+                    "audio.recordings": [
+                        {"id": "user-clip", "state": "pending", "sources": [{"boundary": "stt_input"}]}
+                    ]
+                }
+            )
         if not hasattr(self, "tasks"):
             self.tasks = set()
         task = asyncio.create_task(self._publish_batch(batch))
@@ -301,7 +325,12 @@ class UserCapture:
         else:
             try:
                 encoded = await encode_in_worker(
-                    prepare_recording, "user-clip", encode_segments, audio, self.observer.audio_format
+                    prepare_recording,
+                    "user-clip",
+                    encode_segments,
+                    audio,
+                    self.observer.audio_format,
+                    [s["clip_ranges"] for s in segments if s["audio"] is not None],
                 )
                 descriptor.update(
                     state="ready",
@@ -313,6 +342,9 @@ class UserCapture:
                     duration_ms=encoded["duration_ms"],
                     channel_count=encoded["channel_count"],
                 )
+                origin = self.observer.call_recording.origin_unix_ms
+                if origin is not None:
+                    descriptor["timeline"] = encoded["clip_timeline"].descriptor(origin)
                 attachment = encoded["attachment"]
                 turn["span"].log(
                     input=[

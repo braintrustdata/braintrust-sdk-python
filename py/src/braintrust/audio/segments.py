@@ -1,6 +1,7 @@
 """Progressively export independently decodable segments on one sample timeline."""
 
 import asyncio
+import logging
 
 from .attachments import prepare_recording
 from .budget import source_budget
@@ -16,7 +17,7 @@ class SegmentedRecording(CallRecording):
     exported. One second of headroom permits in-flight output and packet skew.
     """
 
-    def __init__(self, *, options=None, on_segment=None, audio_format="ogg", enabled=True):
+    def __init__(self, *, options=None, on_segment=None, on_pending=None, audio_format="ogg", enabled=True):
         self.options = options or RecordingOptions()
         super().__init__(
             enabled=enabled,
@@ -25,6 +26,7 @@ class SegmentedRecording(CallRecording):
             max_packets=100000,
         )
         self.on_segment = on_segment
+        self.on_pending = on_pending
         self.audio_format = audio_format
         self.start_ms = 0.0
         self.sequence = 0
@@ -108,6 +110,8 @@ class SegmentedRecording(CallRecording):
         self.start_ms = cut
         self.sequence += 1
         self.inflight.append(segment)
+        if self.on_pending:
+            self.on_pending(segment)
         task = asyncio.create_task(self._export(segment))
         self.pending.add(task)
 
@@ -145,6 +149,11 @@ class SegmentedRecording(CallRecording):
             if descriptor not in self.completed:
                 self.completed.append(descriptor)
             self.omit("segment_export_failed")
+            if self.on_segment:
+                try:
+                    await self.on_segment(segment, None)
+                except Exception:  # noqa: BLE001 - failure reporting must not break the call
+                    logging.getLogger(__name__).warning("Failed to publish recording omission", exc_info=True)
         finally:
             # encode_in_worker drains native work before propagating cancellation.
             segment.clear()

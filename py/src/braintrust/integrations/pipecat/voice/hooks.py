@@ -101,6 +101,20 @@ class Hooks:
         setattr(target, name, replacement)
         self.methods.append((target, name, replacement, original, present))
 
+    def remove(self, target, name):
+        """Restore a replaced object's method without retaining it until shutdown."""
+        for index in range(len(self.methods) - 1, -1, -1):
+            entry = self.methods[index]
+            if entry[0] is target and entry[1] == name:
+                _, _, replacement, original, present = self.methods.pop(index)
+                if target.__dict__.get(name) is replacement:
+                    if present:
+                        setattr(target, name, original)
+                    else:
+                        delattr(target, name)
+                self.invocations.pop((id(target), name), None)
+                return
+
     def event(self, target, name, handler):
         target.add_event_handler(name, handler)
         self.handlers.append((target, name, handler))

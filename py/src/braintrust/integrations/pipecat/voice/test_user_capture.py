@@ -190,3 +190,18 @@ class UserCaptureTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(capture.bytes, 0)
         finally:
             await observer.finish()
+
+    def test_joined_clip_positions_include_padding_but_do_not_map_it(self):
+        from .user_capture import encode_segments
+
+        first = encode_wav([b"\1\0" * 480 + b"\0\0" * 240], 24000, 1)
+        second = encode_wav([b"\2\0" * 480], 24000, 1)
+        encoded = encode_segments([first, second], "wav", [[(0, 960, 24000, 24480)], [(0, 960, 240000, 240480)]])
+        self.assertEqual(encoded["duration_ms"], 50)
+        self.assertEqual(
+            encoded["clip_timeline"].ranges,
+            [
+                dict(recording_start_ms=0, recording_end_ms=20, timeline_start_ms=1000, timeline_end_ms=1020),
+                dict(recording_start_ms=30, recording_end_ms=50, timeline_start_ms=10000, timeline_end_ms=10020),
+            ],
+        )

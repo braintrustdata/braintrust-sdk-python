@@ -14,7 +14,8 @@ def instrument_output(output, alignment, frame_context=None, hooks=None):
     hooks = hooks or Hooks()
     original_start = hooks.original(output, "start")
     original_write = hooks.original(output, "write_audio_frame")
-    frame_parts = {}
+    token = object()
+    source_offsets = {}
     active = ContextVar("pipecat_output_context", default=None)
 
     async def start(frame):
@@ -25,7 +26,6 @@ def instrument_output(output, alignment, frame_context=None, hooks=None):
 
     def install_sender(sender):
         runs, pending = deque(), deque()
-        supported = [True]
         handle_audio = hooks.original(sender, "handle_audio_frame")
         handle_stop = hooks.original(sender, "handle_tts_stopped")
         buffer_audio = hooks.original(sender, "_buffer_audio")
@@ -37,34 +37,41 @@ def instrument_output(output, alignment, frame_context=None, hooks=None):
             context = frame_context(frame) if frame_context else getattr(frame, "context_id", None)
             if frame.sample_rate != sender._sample_rate or frame.num_channels != 1 or sender._mixer:
                 context = None
-                supported[0] = False
-            token = active.set(context)
+            start = source_offsets.get(context, 0)
+            if context is not None:
+                source_offsets[context] = start + len(frame.audio)
+            owners = alignment.contexts.get(context, [])
+            current = active.set((owners, start))
             try:
                 return await handle_audio(frame)
             finally:
-                active.reset(token)
+                active.reset(current)
 
         async def stop(frame):
             context = frame_context(frame) if frame_context else frame.context_id
-            token = active.set(context if supported[0] else None)
+            current = active.set(None)  # Native stop padding is not generated clip audio.
             try:
                 return await handle_stop(frame)
             finally:
-                active.reset(token)
+                active.reset(current)
+                source_offsets.pop(context, None)
+                alignment.contexts.pop(context, None)
 
         def buffer(audio, *, uninterruptible):
             result = buffer_audio(audio, uninterruptible=uninterruptible)
             if audio:
-                runs.append([len(audio), active.get()])
+                owners, start = active.get() or ([], 0)
+                runs.append([len(audio), owners, start])
             return result
 
         def take():
             audio, uninterruptible = take_chunk()
             left, offset, parts = len(audio), 0, []
             while left and runs:
-                count, context = runs[0]
+                count, owners, start = runs[0]
                 amount = min(count, left)
-                parts.append((offset, amount, context))
+                parts.append((offset, amount, owners, start))
+                runs[0][2] += amount
                 runs[0][0] -= amount
                 if not runs[0][0]:
                     runs.popleft()
@@ -78,16 +85,15 @@ def instrument_output(output, alignment, frame_context=None, hooks=None):
         def bind_queue():
             if bound_queue[0] is sender._audio_queue:
                 return
+            if bound_queue[0] is not None:
+                hooks.remove(bound_queue[0], "put")
             bound_queue[0] = sender._audio_queue
             queue_put = hooks.original(sender._audio_queue, "put")
 
             async def put(frame):
                 if hasattr(frame, "audio") and pending:
                     parts = pending.popleft()
-                    if len(frame_parts) < 16000:
-                        frame_parts[frame.id] = parts
-                    else:
-                        alignment.omitted += len(parts)
+                    frame._braintrust_output_parts = (token, parts)
                 return await queue_put(frame)
 
             hooks.set(sender._audio_queue, "put", put)
@@ -100,7 +106,6 @@ def instrument_output(output, alignment, frame_context=None, hooks=None):
         def clear():
             runs.clear()
             pending.clear()
-            supported[0] = True
             return clear_buffer()
 
         hooks.set(sender, "handle_audio_frame", handle)
@@ -115,7 +120,10 @@ def instrument_output(output, alignment, frame_context=None, hooks=None):
         import time
 
         observed = time.monotonic_ns()
-        parts = frame_parts.pop(frame.id, [])
+        identity = getattr(frame, "_braintrust_output_parts", None)
+        parts = identity[1] if identity and identity[0] is token else []
+        if identity and identity[0] is token:
+            del frame._braintrust_output_parts
         result = await original_write(frame)
         if result:
             try:
@@ -126,7 +134,7 @@ def instrument_output(output, alignment, frame_context=None, hooks=None):
                 alignment.recording.omit("capture_error")
                 interval = None
             if interval:
-                for offset, size, context in parts:
+                for offset, size, owners, start in parts:
                     # This hook supports only the demo's mono, 24 kHz output.
                     if frame.sample_rate == 24000 and frame.num_channels == 1:
                         ranges = [
@@ -135,7 +143,11 @@ def instrument_output(output, alignment, frame_context=None, hooks=None):
                                 interval["start"] + (offset + size) // 2,
                             ]
                         ]
-                        for owner in alignment.contexts.get(context, []):
+                        if owners:
+                            clip = alignment.clips.get(owners[0].span_id)
+                            if clip is not None:
+                                clip.add(start / 48, (start + size) / 48, ranges[0][0] / 24, ranges[0][1] / 24)
+                        for owner in owners:
                             alignment.add(owner, ranges, 1)
         return result
 

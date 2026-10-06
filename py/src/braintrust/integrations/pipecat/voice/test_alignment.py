@@ -104,7 +104,10 @@ class AlignmentTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_discarded_output_and_failed_write_do_not_get_selections(self):
         output, sender, alignment = await self.make_output()
+        from braintrust.audio.timeline import ClipTimeline
+
         owner = Span()
+        alignment.clips[owner.span_id] = ClipTimeline()
         alignment.contexts["a"] = [owner]
 
         def audio(samples):
@@ -123,12 +126,27 @@ class AlignmentTests(unittest.IsolatedAsyncioTestCase):
         await output.write_audio_frame(frame)
         self.assertEqual(alignment.owners, {})
         self.assertEqual(alignment.recording.bytes, 0)
+        await sender.handle_audio_frame(audio([7, 8, 9, 10]))
+        output.success = True
+        await output.write_audio_frame(sender._audio_queue.get_nowait())
+        mapping = alignment.clips[owner.span_id].ranges
+        self.assertEqual(len(mapping), 1)
+        self.assertEqual(mapping[0]["recording_start_ms"], 6 / 24)
+        self.assertEqual(mapping[0]["recording_end_ms"], 10 / 24)
+        self.assertEqual(mapping[0]["timeline_start_ms"], 0)
 
     async def test_queue_recreation_keeps_context_mapping(self):
         output, sender, alignment = await self.make_output()
         owner = Span()
         alignment.contexts["after-interruption"] = [owner]
+        import gc
+        import weakref
+
+        old_queue = weakref.ref(sender._audio_queue)
+        await sender._audio_queue.put(TTSAudioRawFrame(b"\1\0" * 480, 24000, 1))
         sender._create_audio_task()  # Pipecat replaces the queue after interruption.
+        gc.collect()
+        self.assertIsNone(old_queue(), "discarded queue and its audio must be released before shutdown")
         frame = TTSAudioRawFrame(
             audio=b"\x01\x00" * 4,
             sample_rate=24000,

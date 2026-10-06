@@ -153,6 +153,7 @@ class NativeObserver(BaseObserver):
             options=recording_options,
             audio_format=audio_format,
             on_segment=self._publish_call_segment,
+            on_pending=self._pending_call_segment,
         )
         self.call_descriptors = {}
         self.clip_tasks = set()
@@ -557,15 +558,19 @@ class NativeObserver(BaseObserver):
                 "omitted": False,
                 "text": [],
             }
-            if len(self.alignment.contexts) < 16000:
+            if self.capture_agent_audio and len(self.alignment.contexts) < 16000:
+                from braintrust.audio.timeline import ClipTimeline
+
+                self.alignment.clips[span.span_id] = ClipTimeline()
                 self.alignment.contexts[context] = [span, turn["span"]]
-            else:
+            elif self.capture_agent_audio:
                 self.alignment.omitted += 1
         elif kind == "TTSTextFrame":
             state = self.tts.get(self.frame_context(frame))
             if state:
                 state["text"].append(frame.text)
-                state["span"].log(metadata={"contrib.pipecat.text": "".join(state["text"])})
+                text = "".join(state["text"])
+                state["span"].log(input={"text": text}, metadata={"contrib.pipecat.text": text})
         elif kind == "TTSStoppedFrame":
             self.ttfb.end(("tts", self.frame_context(frame)))
             state = self.tts.pop(self.frame_context(frame), None)
@@ -653,9 +658,27 @@ class NativeObserver(BaseObserver):
             state["span"].log(metadata={"contrib.pipecat.frame.pts": state["last_pts"]})
         if len(self.recordings) < 256:
             self.recordings.append(state)
+            if state["chunks"] and not state["omitted"]:
+                state["span"].log(
+                    metadata={
+                        "audio.recordings": [
+                            {"id": "tts-clip", "state": "pending", "sources": [{"boundary": "tts_output"}]}
+                        ]
+                    }
+                )
             task = asyncio.create_task(self._publish_tts_clip(state))
             self.clip_tasks.add(task)
-            task.add_done_callback(self.clip_tasks.discard)
+
+            def completed(task):
+                # A failed exporter must release its source lease too.
+                size = sum(map(len, state["chunks"]))
+                state["chunks"].clear()
+                source_budget.release(size)
+                self.audio_bytes -= size
+                self.clip_tasks.discard(task)
+                self.recordings = [pending for pending in self.recordings if pending is not state]
+
+            task.add_done_callback(completed)
             return
         self.recordings_omitted += 1
         state["span"].log(
@@ -804,6 +827,8 @@ class NativeObserver(BaseObserver):
                 reason=state.get("reason", "no_audio_observed") if self.capture_agent_audio else "disabled",
             )
         span.log(metadata={"audio.recordings": [recording]})
+        if recording["state"] == "ready":
+            self.alignment.publish_clip(span, recording)
         source_budget.release(sum(map(len, state["chunks"])))
         self.audio_bytes -= sum(map(len, state["chunks"]))
         state["chunks"].clear()
@@ -820,8 +845,23 @@ class NativeObserver(BaseObserver):
             *([{"boundary": "transport_output", "channel_index": 1}] if self.capture_agent_audio else []),
         ]
 
+    def _pending_call_segment(self, segment):
+        self.call_descriptors[segment.segment_id] = {
+            "id": segment.segment_id,
+            "recording_group_id": "call",
+            "state": "pending",
+            "sources": self._call_sources(),
+            "timeline": {
+                "origin_unix_ms": segment.origin_unix_ms,
+                "recording_start_offset_ms": segment.start_ms,
+                "basis": "input_sample_clock_and_output_write_observation",
+            },
+        }
+        self._publish_call_manifest()
+
     async def _publish_call_segment(self, segment, encoded):
         if encoded is None:
+            self._publish_call_manifest()
             return
         recording_id = segment.segment_id
         self.call_descriptors[recording_id] = {

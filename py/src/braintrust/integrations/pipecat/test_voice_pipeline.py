@@ -158,6 +158,19 @@ def _assert_selections(owner, root, recordings, channel):
         clip, clip_rate = recordings[(owner["span_id"], clips[0]["id"])]
         assert clip_rate == rate
         np.testing.assert_array_equal(selected, clip[:, 0])
+    if not owner["metadata"].get("audio.recordings"):
+        return
+    descriptor = owner["metadata"]["audio.recordings"][0]
+    timeline = descriptor["timeline"]
+    assert timeline["origin_unix_ms"] == root["metadata"]["audio.recordings"][0]["timeline"]["origin_unix_ms"]
+    clip, clip_rate = recordings[(owner["span_id"], descriptor["id"])]
+    assert timeline["ranges"]
+    for interval in timeline["ranges"]:
+        a, b = interval["recording_start_ms"], interval["recording_end_ms"]
+        assert 0 <= a < b <= len(clip) / clip_rate * 1000 + 0.001
+        assert abs((b - a) - (interval["timeline_end_ms"] - interval["timeline_start_ms"])) <= 1000 / rate
+    if channel == 0:
+        assert timeline["ranges"][-1]["recording_end_ms"] < len(clip) / clip_rate * 1000  # STT padding
 
 
 def _assert_shutdown_audio(output, root, recordings):
@@ -270,6 +283,7 @@ async def test_cascade_voice_conversation(memory_logger, request, monkeypatch, e
     recognition = _single_span(rows, "stt")
     tool = _single_span(rows, "lookup_order")
     synthesis = _single_span(rows, "tts")
+    assert synthesis["input"]["text"]
     # Request identity must survive early metrics, without root duplicates.
     tts_measurements = [
         (row, measurement)

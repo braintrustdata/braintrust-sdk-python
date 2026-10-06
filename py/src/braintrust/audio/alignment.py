@@ -21,8 +21,12 @@ class Alignment:
         self.recording = recording
         self.owners = {}
         self.contexts = {}
+        self.clips = {}
+        self.clip_descriptors = {}
         self.count = 0
         self.omitted = 0
+        self.published = {}
+        self.pending_owners = set()
 
     def add(self, owner, ranges, channel):
         if self.recording.reason:
@@ -38,7 +42,27 @@ class Alignment:
             item[2].append(list(interval))
             self.count += 1
 
+        if item[2]:
+            self.pending_owners.add(owner.span_id)
+
+    def publish_clip(self, owner, descriptor):
+        self.clip_descriptors[owner.span_id] = (owner, descriptor)
+        self.publish_clips()
+
+    def publish_clips(self):
+        origin = getattr(self.recording, "origin_unix_ms", None)
+        if origin is None:
+            return
+        for span_id, (owner, descriptor) in self.clip_descriptors.items():
+            clip = self.clips.get(span_id)
+            if clip is not None:
+                timeline = clip.descriptor(origin)
+                if timeline != descriptor.get("timeline"):
+                    descriptor["timeline"] = timeline
+                    owner.log(metadata={"audio.recordings": [dict(descriptor)]})
+
     def publish(self):
+        self.publish_clips()
         segments = getattr(self.recording, "completed", None)
         if segments is None:
             segments = (
@@ -46,8 +70,10 @@ class Alignment:
                 if not self.recording.reason and self.recording.packets
                 else []
             )
-        for owner, channel, ranges in self.owners.values():
-            selections = []
+        for span_id in tuple(self.pending_owners):
+            owner, channel, ranges = self.owners[span_id]
+            selections = list(self.published.get(owner.span_id, []))
+            pending = []
             for segment in segments:
                 if segment["state"] != "ready":
                     continue
@@ -64,7 +90,29 @@ class Alignment:
                                 "channel_index": channel,
                             }
                         )
-            if selections:
+            resolved = merge_ranges(
+                [
+                    [round(s["start_ms"] * 24), round(s["end_ms"] * 24)]
+                    for s in segments
+                    if s["state"] in {"ready", "omitted"}
+                ]
+            )
+            for start, end in ranges:
+                for lower, upper in resolved:
+                    if lower > start:
+                        pending.append([start, min(lower, end)])
+                    start = max(start, upper) if lower < end else end
+                    if start >= end:
+                        break
+                if start < end:
+                    pending.append([start, end])
+            self.count -= len(ranges) - len(pending)
+            ranges[:] = pending
+            selections = [dict(items) for items in dict.fromkeys(tuple(s.items()) for s in selections)]
+            if not pending:
+                self.pending_owners.discard(span_id)
+            if selections and selections != self.published.get(span_id):
+                self.published[span_id] = selections
                 owner.log(
                     metadata={
                         "audio.selections": selections,
@@ -93,17 +141,24 @@ class InputRanges:
             if not run[0]:
                 self.runs.popleft()
 
-    def drain(self):
-        ranges = []
+    def drain_mapped(self):
+        pieces = []
+        position = 0
         for count, interval, original, offset in self.runs:
             if interval:
                 length = interval["end"] - interval["start"]
-                ranges.append(
-                    [
+                pieces.append(
+                    (
+                        position,
+                        position + count,
                         interval["start"] + round(offset * length / original),
                         interval["start"] + round((offset + count) * length / original),
-                    ]
+                    )
                 )
+            position += count
         self.runs.clear()
         self.size = 0
-        return merge_ranges(ranges)
+        return pieces
+
+    def drain(self):
+        return merge_ranges([[a, b] for _, _, a, b in self.drain_mapped()])

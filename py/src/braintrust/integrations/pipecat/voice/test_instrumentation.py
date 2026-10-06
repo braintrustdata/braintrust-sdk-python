@@ -68,12 +68,14 @@ class Tests(unittest.IsolatedAsyncioTestCase):
         await push(TTSStartedFrame(context_id="c1"))
         frame = TTSAudioRawFrame(audio=b"\x01\x00" * 480, sample_rate=24000, num_channels=1, context_id="c1")
         await push(frame)
+        span = observer.tts["c1"]["span"]
         await push(TTSStoppedFrame(context_id="c1"))
         await observer.finish()
-        self.assertEqual(observer.recordings[0]["span"].rows[0]["name"], "tts")
-        recording = observer.recordings[0]["span"].rows[-1]["metadata"]["audio.recordings"][0]
+        self.assertEqual(span.rows[0]["name"], "tts")
+        recording = span.rows[-1]["metadata"]["audio.recordings"][0]
         self.assertEqual(recording["state"], "omitted")
         self.assertEqual(observer.audio_bytes, 0)
+        self.assertEqual(observer.recordings, [])
         self.assertNotIn("audio", native_value(frame))
         self.assertEqual(len(observer.events), 2)  # Changed metadata and an explicit settings update.
         event = observer.events[0]
@@ -247,3 +249,54 @@ class FormatTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(seen, [960, 960])
         self.assertEqual(observer.call_recording.retained_bytes, 0)
         self.assertEqual(len(observer.call_descriptors), 2)
+
+    async def test_generated_clip_capacity_is_reused_after_publication(self):
+        import asyncio
+
+        observer = NativeObserver(Span(), retain_audio=True, audio_format="wav")
+        for _ in range(270):
+            span = Span()
+            state = {
+                "span": span,
+                "chunks": [b"\1\0" * 24],
+                "rate": 24000,
+                "channels": 1,
+                "text": ["hello"],
+                "omitted": False,
+            }
+            from braintrust.audio.budget import source_budget
+
+            self.assertTrue(source_budget.reserve(48))
+            observer.audio_bytes += 48
+            observer.complete_recording(state)
+            self.assertEqual(span.rows[-1]["metadata"]["audio.recordings"][0]["state"], "pending")
+            await asyncio.gather(*tuple(observer.clip_tasks))
+            self.assertEqual(span.rows[-1]["metadata"]["audio.recordings"][0]["state"], "ready")
+            self.assertFalse(observer.recordings)
+            self.assertEqual(observer.audio_bytes, 0)
+        self.assertEqual(observer.recordings_omitted, 0)
+        await observer.finish()
+
+    async def test_failed_segment_publishes_omission_before_shutdown(self):
+        import asyncio
+
+        from braintrust.audio import RecordingOptions, worker
+
+        observer = NativeObserver(
+            Span(), retain_audio=True, recording_options=RecordingOptions(segment_duration_seconds=0.1)
+        )
+        observer.capture_transport = True
+        self.assertTrue(worker._slots.acquire(blocking=False))
+        self.assertTrue(worker._slots.acquire(blocking=False))
+        try:
+            for index in range(60):
+                observer.call_recording.capture(0, b"\0\0" * 480, 24000, 1, observed_ns=index * 20_000_000)
+            self.assertEqual(observer.call_descriptors["call-0000"]["state"], "pending")
+            await asyncio.gather(*tuple(observer.call_recording.pending))
+            descriptor = observer.call_descriptors["call-0000"]
+            self.assertEqual(descriptor["state"], "omitted")
+            self.assertEqual(descriptor["reason"], "RecordingBusy")
+        finally:
+            worker._slots.release()
+            worker._slots.release()
+            await observer.finish()

@@ -13,13 +13,17 @@ from .segments import RecordingOptions, SegmentedRecording
 class SegmentTests(unittest.IsolatedAsyncioTestCase):
     async def test_rotates_during_capture_and_preserves_cross_boundary_samples(self):
         files = []
+        pending = set()
 
         async def publish(segment, encoded):
+            self.assertIn(segment.segment_id, pending)
+            pending.remove(segment.segment_id)
             files.append((segment.start_ms, encoded))
 
         recorder = SegmentedRecording(
             options=RecordingOptions(segment_duration_seconds=0.1),
             on_segment=publish,
+            on_pending=lambda segment: pending.add(segment.segment_id),
             audio_format="wav",
         )
         pcm = np.full(480, 1000, dtype="<i2").tobytes()
@@ -197,3 +201,28 @@ class SegmentTests(unittest.IsolatedAsyncioTestCase):
             await recorder.finish()
         self.assertEqual(seen, [960])
         self.assertEqual(recorder.retained_bytes, 0)
+
+    def test_out_of_order_export_releases_only_resolved_ranges(self):
+        from types import SimpleNamespace
+
+        from .alignment import Alignment
+
+        rows = []
+        owner = SimpleNamespace(span_id="turn", log=lambda **row: rows.append(row))
+        recording = SimpleNamespace(
+            reason=None, completed=[{"id": "later", "start_ms": 1000, "end_ms": 2000, "state": "ready"}]
+        )
+        alignment = Alignment(SimpleNamespace(span_id="root", log=lambda **_: None), recording)
+        alignment.add(owner, [[0, 48000]], 0)
+        alignment.publish()
+        self.assertEqual(alignment.owners["turn"][2], [[0, 24000]])
+        recording.completed.append({"id": "earlier", "start_ms": 0, "end_ms": 1000, "state": "ready"})
+        alignment.publish()
+        self.assertEqual(alignment.count, 0)
+        self.assertEqual({s["recording_id"] for s in rows[-1]["metadata"]["audio.selections"]}, {"earlier", "later"})
+        # The admission budget is available again, even after many completed ranges.
+        for _ in range(33000):
+            alignment.add(owner, [[0, 1]], 0)
+            alignment.publish()
+        self.assertEqual(alignment.omitted, 0)
+        self.assertEqual(len(rows), 3, "unchanged historical selections must not be exported again")
