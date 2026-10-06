@@ -69,6 +69,30 @@ OPERATION_TYPES = {
 }
 
 
+CONFIG_TYPES = {
+    "SpeechControlParamsFrame",
+    "STTMetadataFrame",
+    "LLMServiceMetadataFrame",
+    "LLMUpdateSettingsFrame",
+    "TTSUpdateSettingsFrame",
+    "STTUpdateSettingsFrame",
+    "VADParamsUpdateFrame",
+}
+
+
+def compact_frame(fields):
+    """Keep event content; omit transport bookkeeping and empty fields."""
+    return {
+        key: value
+        for key, value in fields.items()
+        if key
+        not in {"id", "name", "broadcast_sibling_id", "interruptible", "transport_destination", "transport_source"}
+        and value is not None
+        and value != {}
+        and value != []
+    }
+
+
 def native_value(value):
     if isinstance(value, bytes):
         return None
@@ -151,6 +175,7 @@ class NativeObserver(BaseObserver):
         self.context_tool_results = []
         self.result_origins = {}
         self.event_groups = {}
+        self.configuration = {}
         self.filtered_events = Counter()
         self.duplicate_events = 0
         self.clock_anchored = False
@@ -253,9 +278,9 @@ class NativeObserver(BaseObserver):
                     state["observed_format"] = audio_format
                     state["span"].log(
                         metadata={
-                            "pipecat.sample_rate": frame.sample_rate,
-                            "pipecat.num_channels": frame.num_channels,
-                            "pipecat.frame.pts": frame.pts,
+                            "contrib.pipecat.sample_rate": frame.sample_rate,
+                            "contrib.pipecat.num_channels": frame.num_channels,
+                            "contrib.pipecat.frame.pts": frame.pts,
                         }
                     )
                 if state["chunks"] and (state["rate"], state["channels"]) != audio_format:
@@ -301,47 +326,42 @@ class NativeObserver(BaseObserver):
         fields = native_value(frame) if kind != "LLMContextFrame" else {}
         event_owner = self.root
         if kind == "MetricsFrame":
-            remaining = []
+            # Pipeline startup broadcasts zero placeholders for every service.
+            if frame.data and all(
+                getattr(metric, "value", None) == 0
+                and getattr(metric, "model", None) is None
+                and getattr(metric, "processor", None) != data.source.name
+                for metric in frame.data
+            ):
+                return
             for metric in frame.data:
-                if type(metric).__name__ == "TTFBMetricsData":
+                metric_type = type(metric).__name__
+                if metric_type in TURN_METRIC_TYPES and data.source is self.user_aggregator and self.turns.user:
+                    state = self.turns.user
+                    log_turn_metric(state["span"], state, metric)  # pylint: disable=unsubscriptable-object
+                elif metric_type == "TTFBMetricsData":
                     owner = self.ttfb.capture(metric, data.source)
                     if owner == "llm":
                         self.llm.log(metrics={"time_to_first_token": metric.value})
                 elif (
-                    type(metric).__name__ == "LLMUsageMetricsData"
+                    metric_type == "LLMUsageMetricsData"
                     and self.ttfb.owner(metric, data.source, operation="llm")[0] == "llm"
                 ):
                     self.llm.log(
                         metrics=_llm_usage_metrics(metric.value),
                         metadata={
-                            "pipecat.usage": native_value(metric),
+                            "contrib.pipecat.usage": native_value(metric),
                             **_metadata_from_processor(data.source),
                             **_metadata_from_metric(metric),
                         },
                     )
                 else:
-                    remaining.append(native_value(metric))
-            if not remaining:
-                return
-            fields["data"] = remaining
-        if kind == "MetricsFrame" and data.source is self.user_aggregator and self.turns.user:
-            # The single discovered user aggregator emits its analyzer predictions
-            # before stopping this turn. Other sources retain unassociated events.
-            remaining = []
-            for metric in frame.data:
-                if type(metric).__name__ in TURN_METRIC_TYPES:
-                    state = self.turns.user
-                    # Turns assigns role dictionaries through setattr.
-                    log_turn_metric(state["span"], state, metric)  # pylint: disable=unsubscriptable-object
-                elif type(metric).__name__ != "TTFBMetricsData":
-                    remaining.append(native_value(metric))
-            if not remaining:
-                return
-            fields["data"] = remaining
+                    self.ttfb.capture_measurement(metric, data.source)
+            return
         if kind == "StartFrame":
             self.root.log(
                 metadata={
-                    f"pipecat.{name}": getattr(frame, name)
+                    f"contrib.pipecat.{name}": getattr(frame, name)
                     for name in (
                         "audio_in_sample_rate",
                         "audio_out_sample_rate",
@@ -375,13 +395,13 @@ class NativeObserver(BaseObserver):
                     type="task",
                     set_current=False,
                     internal={"instrumentation": "pipecat-auto"},
-                    metadata={"pipecat.start_frame": kind},
+                    metadata={"contrib.pipecat.start_frame": kind},
                 )
                 event_owner = self.user
         elif kind in {"UserStoppedSpeakingFrame", "VADUserStoppedSpeakingFrame"}:
             if kind == "VADUserStoppedSpeakingFrame" and self.user:
                 event_owner = self.user
-                self.user.log(metadata={"pipecat.end_frame": kind})
+                self.user.log(metadata={"contrib.pipecat.end_frame": kind})
                 self.user.end()
                 self.user = None
         elif kind == "TranscriptionFrame":
@@ -392,7 +412,7 @@ class NativeObserver(BaseObserver):
                 type="task",
                 set_current=False,
                 internal={"instrumentation": "pipecat-auto"},
-                metadata={f"pipecat.{key}": value for key, value in fields.items()},
+                metadata={f"contrib.pipecat.{key}": value for key, value in fields.items()},
             )
             span.log(input={"text": frame.text})
             span.end()
@@ -451,7 +471,7 @@ class NativeObserver(BaseObserver):
                     ),
                 )
             if self.llm:
-                self.llm.log(metadata={"pipecat.function_calls": native_value(frame.function_calls)})
+                self.llm.log(metadata={"contrib.pipecat.function_calls": native_value(frame.function_calls)})
         elif kind == "FunctionCallInProgressFrame":
             if frame.tool_call_id in self.started_tools:
                 return
@@ -463,11 +483,11 @@ class NativeObserver(BaseObserver):
                 input=frame.arguments,
                 metadata={
                     **correlation,
-                    "pipecat.tool_call_id": frame.tool_call_id,
-                    "pipecat.function_name": frame.function_name,
-                    "pipecat.arguments": frame.arguments,
-                    "pipecat.group_id": frame.group_id,
-                    "pipecat.cancel_on_interruption": frame.cancel_on_interruption,
+                    "contrib.pipecat.tool_call_id": frame.tool_call_id,
+                    "contrib.pipecat.function_name": frame.function_name,
+                    "contrib.pipecat.arguments": frame.arguments,
+                    "contrib.pipecat.group_id": frame.group_id,
+                    "contrib.pipecat.cancel_on_interruption": frame.cancel_on_interruption,
                 },
                 set_current=False,
                 internal={"instrumentation": "pipecat-auto"},
@@ -483,19 +503,19 @@ class NativeObserver(BaseObserver):
                         self.result_origins[frame.tool_call_id] = request[1].get("turn.reply_to")
                     tool.log(
                         output=native_value(frame.result),
-                        metadata={"pipecat.result": native_value(frame.result)},
+                        metadata={"contrib.pipecat.result": native_value(frame.result)},
                     )
                     if frame.error:
                         tool.log(error=frame.error)
                 else:
-                    tool.log(metadata={"pipecat.cancelled": True})
+                    tool.log(metadata={"contrib.pipecat.cancelled": True})
                 tool.end()
         elif kind == "LLMFullResponseEndFrame" and self.llm:
             text = "".join(self.llm_text)
             message = {"role": "assistant", "content": text or None}
             if self.llm_tool_calls:
                 message["tool_calls"] = list(self.llm_tool_calls)
-            self.llm.log(output=[message], metadata={"pipecat.text": text} if text else {})
+            self.llm.log(output=[message], metadata={"contrib.pipecat.text": text} if text else {})
             self.ttfb.end("llm")
             self.llm.end()
             self.llm = None
@@ -509,9 +529,9 @@ class NativeObserver(BaseObserver):
                 type="task",
                 metadata={
                     **self.turns.metadata(turn),
-                    "pipecat.context_id": getattr(frame, "context_id", None),
+                    "contrib.pipecat.context_id": getattr(frame, "context_id", None),
                     **({"openai.response.id": context} if self.realtime and context else {}),
-                    "pipecat.append_to_context": frame.append_to_context,
+                    "contrib.pipecat.append_to_context": frame.append_to_context,
                     **_metadata_from_processor(data.source),
                 },
                 set_current=False,
@@ -532,7 +552,7 @@ class NativeObserver(BaseObserver):
             state = self.tts.get(self.frame_context(frame))
             if state:
                 state["text"].append(frame.text)
-                state["span"].log(metadata={"pipecat.text": "".join(state["text"])})
+                state["span"].log(metadata={"contrib.pipecat.text": "".join(state["text"])})
         elif kind == "TTSStoppedFrame":
             self.ttfb.end(("tts", self.frame_context(frame)))
             state = self.tts.pop(self.frame_context(frame), None)
@@ -541,7 +561,7 @@ class NativeObserver(BaseObserver):
                 self.complete_recording(state)
         elif kind == "InterruptionFrame":
             for state in self.tts.values():
-                state["span"].log(metadata={"pipecat.end_frame": kind})
+                state["span"].log(metadata={"contrib.pipecat.end_frame": kind})
                 state["span"].end()
                 self.complete_recording(state)
             for context in self.tts:
@@ -550,18 +570,45 @@ class NativeObserver(BaseObserver):
         elif kind in {"ErrorFrame", "FatalErrorFrame"}:
             self.root.log(error=str(frame.error))
 
-        if kind in EVENT_TYPES:
+        if kind in CONFIG_TYPES:
+            fields = compact_frame(fields)
+            identity = (kind, data.source.name)
+            initial = identity not in self.configuration
+            if not initial and self.configuration[identity] == fields:
+                return
+            if initial and len(self.configuration) >= 32:
+                self.omitted_events += 1
+                return
+            self.configuration[identity] = fields
+            self.root.log(
+                metadata={
+                    "contrib.pipecat.configuration": [
+                        {"type": frame_type, "source": source, "fields": values}
+                        for (frame_type, source), values in self.configuration.items()
+                    ]
+                }
+            )
+            # Explicit update commands are changes even on their first observation.
+            if initial and kind in {"SpeechControlParamsFrame", "STTMetadataFrame", "LLMServiceMetadataFrame"}:
+                return
+        if kind in EVENT_TYPES and kind not in {
+            "StartFrame",
+            "EndFrame",
+            "ClientConnectedFrame",
+            "OutputTransportReadyFrame",
+        }:
             if kind.startswith("User"):
                 turn = self.turns.user
                 event_owner = turn["span"] if turn else self.root
             elif kind.startswith("Bot") or kind == "InterruptionFrame":
                 turn = self.turns.assistant
                 event_owner = turn["span"] if turn else self.root
-            # The current LLM is not evidence that a concurrent service metric
-            # belongs to it. Keep metrics at the root with native processor IDs.
             self.capture_event(data, fields, event_owner)
 
     def capture_event(self, data, fields, owner):
+        if len(self.events) >= 256:
+            self.omitted_events += 1
+            return
         if not self.clock_anchored:
             self.root.log(
                 metadata={
@@ -574,13 +621,10 @@ class NativeObserver(BaseObserver):
             )
             self.clock_anchored = True
         event = {
-            "pipecat.frame.type": type(data.frame).__name__,
-            "pipecat.frame.id": data.frame.id,
-            "pipecat.observer.timestamp": data.timestamp,
-            "pipecat.observer.source": data.source.name,
-            "pipecat.observer.destination": data.destination.name,
-            "pipecat.observer.direction": data.direction.name,
-            "pipecat.frame": fields,
+            "contrib.pipecat.frame.type": type(data.frame).__name__,
+            "contrib.pipecat.observer.timestamp": data.timestamp,
+            "contrib.pipecat.observer.source": data.source.name,
+            "contrib.pipecat.frame": compact_frame(fields),
         }
         size = len(json.dumps(event, ensure_ascii=False).encode("utf-8"))
         if len(self.events) < 256 and self.event_bytes + size < 65536:
@@ -593,7 +637,7 @@ class NativeObserver(BaseObserver):
 
     def complete_recording(self, state):
         if "last_pts" in state:
-            state["span"].log(metadata={"pipecat.frame.pts": state["last_pts"]})
+            state["span"].log(metadata={"contrib.pipecat.frame.pts": state["last_pts"]})
         if len(self.recordings) < 256:
             self.recordings.append(state)
             task = asyncio.create_task(self._publish_tts_clip(state))
@@ -659,7 +703,7 @@ class NativeObserver(BaseObserver):
             state["reason"] = "pipeline_closed_before_tts_stop"
             self.complete_recording(state)
         for owner, events in self.event_groups.values():
-            owner.log(metadata={"pipecat.events": events})
+            owner.log(metadata={"contrib.pipecat.events": events})
         self.root.log(
             metadata={
                 "braintrust.capture.events_omitted": self.omitted_events,

@@ -251,6 +251,14 @@ async def test_cascade_voice_conversation(memory_logger, request):
     recognition = _single_span(rows, "stt")
     tool = _single_span(rows, "lookup_order")
     synthesis = _single_span(rows, "tts")
+    measurements = synthesis["metadata"]["contrib.pipecat.measurements"]
+    assert any(m["type"] == "TTSUsageMetricsData" for m in measurements)
+    assert any(m["type"] == "ProcessingMetricsData" for m in measurements)
+    assert all(m["processor"].startswith("OpenAITTSService") for m in measurements)
+    for row in rows:
+        assert not any(key.startswith("pipecat.") for key in row.get("metadata", {}))
+        events = row.get("metadata", {}).get("contrib.pipecat.events", [])
+        assert not any(e["contrib.pipecat.frame.type"] in {"StartFrame", "EndFrame", "MetricsFrame"} for e in events)
     models = [r for r in rows if r.get("span_attributes", {}).get("name") == "llm_response"]
     assert models
     assert recognition["span_parents"] == [user["span_id"]]
@@ -258,7 +266,7 @@ async def test_cascade_voice_conversation(memory_logger, request):
     assert any(
         r["span_id"] not in tool["span_parents"] and "friday" in json.dumps(r["output"]).lower() for r in models
     ), "a model response must deliver the tool result to the caller"
-    assert "friday" in synthesis["metadata"]["pipecat.text"].lower()
+    assert "friday" in synthesis["metadata"]["contrib.pipecat.text"].lower()
     for model in models:
         assert model["metadata"]["model"] == "gpt-4.1-mini"
         assert model["metrics"]["tokens"] > 0
@@ -382,7 +390,7 @@ async def test_realtime_voice_conversation(memory_logger, monkeypatch, request, 
         assert model["metadata"]["provider"] == "openai"
         assert model["metadata"]["model"].startswith("gpt-realtime")
         assert model["metrics"]["tokens"] > 0
-        assert model["metadata"].get("pipecat.text") != ""
+        assert model["metadata"].get("contrib.pipecat.text") != ""
         assert model["output"]
     assert not [r for r in rows if r.get("span_attributes", {}).get("name") in ("stt", "tts")]
     audio_spans = [r for r in rows if r.get("span_attributes", {}).get("name") == "pipecat.audio_output"]

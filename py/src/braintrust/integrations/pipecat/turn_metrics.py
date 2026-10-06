@@ -20,4 +20,4 @@ def log_turn_metric(span, state, metric):
             },
         }
     )
-    span.log(metadata={"pipecat.turn_metrics": list(predictions)})
+    span.log(metadata={"contrib.pipecat.turn_metrics": list(predictions)})

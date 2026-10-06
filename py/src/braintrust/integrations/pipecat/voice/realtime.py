@@ -177,7 +177,7 @@ class RealtimeCapture:
                 ids = [f.get("result", {}).get("item_id") for f in consumed if isinstance(f.get("result"), dict)]
                 turn["span"].log(
                     metadata={
-                        "pipecat.transcriptions": consumed,
+                        "contrib.pipecat.transcriptions": consumed,
                         "openai.item_ids": ids,
                         "braintrust.user_capture.association": "aggregator_consumed_frames",
                     }

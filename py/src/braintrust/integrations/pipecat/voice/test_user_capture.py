@@ -88,7 +88,7 @@ class UserCaptureTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(capture.batches[turn["span"].span_id]["segments"][0]["boundaries"]), 2)
         stt_span = capture.batches[turn["span"].span_id]["segments"][0]["span"]
         metadata = {key: value for row in stt_span.rows for key, value in row.get("metadata", {}).items()}
-        self.assertEqual(metadata["pipecat.ttfb"][0]["value"], 0.12)
+        self.assertEqual(metadata["contrib.pipecat.ttfb"][0]["value"], 0.12)
         return observer, capture, turn
 
     async def test_opt_out_keeps_metadata_without_retaining_encoding_or_attaching_audio(
@@ -109,7 +109,7 @@ class UserCaptureTests(unittest.IsolatedAsyncioTestCase):
             turn["span"].rows[-1]["metadata"]["audio.recordings"][0]["reason"],
             "disabled",
         )
-        self.assertTrue(any("pipecat.transcriptions" in row.get("metadata", {}) for row in turn["span"].rows))
+        self.assertTrue(any("contrib.pipecat.transcriptions" in row.get("metadata", {}) for row in turn["span"].rows))
 
     async def test_user_audio_limit_is_explicit(self):
         observer, capture, turn = await self.exercise(True, max_bytes=10)

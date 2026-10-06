@@ -86,10 +86,10 @@ class TurnTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(first_assistant["span"].rows[0]["name"], "assistant_turn")
         self.assertEqual(first_model.rows[0]["name"], "llm_response")
         self.assertIn(tool, first_model.children)
-        self.assertEqual(tool.rows[0]["metadata"]["pipecat.tool_call_id"], "call-1")
+        self.assertEqual(tool.rows[0]["metadata"]["contrib.pipecat.tool_call_id"], "call-1")
         self.assertEqual(final_output[0]["tool_calls"][0]["id"], "call-1")
         self.assertIsNone(final_output[0]["content"])
-        self.assertFalse(any(row.get("metadata", {}).get("pipecat.text") == "" for row in first_model.rows))
+        self.assertFalse(any(row.get("metadata", {}).get("contrib.pipecat.text") == "" for row in first_model.rows))
         observer.turns.stop("assistant", SimpleNamespace(content="", timestamp="t2", interrupted=False))
         await self.push(UserStartedSpeakingFrame())
         await self.push(
@@ -176,7 +176,7 @@ class TurnTests(unittest.IsolatedAsyncioTestCase):
         await self.push(InterruptionFrame())
         self.assertEqual(self.observer.tts, {})
         self.assertIn(state, self.observer.recordings)
-        self.assertEqual(state["span"].rows[-1]["metadata"]["pipecat.end_frame"], "InterruptionFrame")
+        self.assertEqual(state["span"].rows[-1]["metadata"]["contrib.pipecat.end_frame"], "InterruptionFrame")
         await self.observer.finish()
 
     async def test_native_turn_metrics_ownership_and_limits(self):
@@ -201,10 +201,10 @@ class TurnTests(unittest.IsolatedAsyncioTestCase):
                 await self.push(frame, self.user)
                 await self.push(frame, self.user)  # broadcast/repeated observations do not duplicate predictions
         metadata = {key: value for row in turn["span"].rows for key, value in row.get("metadata", {}).items()}
-        assert len(metadata["pipecat.turn_metrics"]) == 32
+        assert len(metadata["contrib.pipecat.turn_metrics"]) == 32
         assert metadata["braintrust.turn_metrics.omitted"] == 8
-        assert metadata["pipecat.turn_metrics"][0]["processor"] == "BaseSmartTurn"
-        assert metadata["pipecat.turn_metrics"][20]["type"] == "SmartTurnMetricsData"
+        assert metadata["contrib.pipecat.turn_metrics"][0]["processor"] == "BaseSmartTurn"
+        assert metadata["contrib.pipecat.turn_metrics"][20]["type"] == "SmartTurnMetricsData"
         before = len(turn["span"].rows)
         await self.push(
             MetricsFrame(
@@ -214,7 +214,9 @@ class TurnTests(unittest.IsolatedAsyncioTestCase):
         assert len(turn["span"].rows) == before
         observer.turns.stop("user", SimpleNamespace(content="hello", timestamp="t", user_id="u"))
         await self.push(UserStartedSpeakingFrame())
-        assert not any("pipecat.turn_metrics" in row.get("metadata", {}) for row in observer.turns.user["span"].rows)
+        assert not any(
+            "contrib.pipecat.turn_metrics" in row.get("metadata", {}) for row in observer.turns.user["span"].rows
+        )
         await observer.finish()
 
     async def test_ttfb_routes_only_to_unambiguous_processor_operation(self):
@@ -226,14 +228,14 @@ class TurnTests(unittest.IsolatedAsyncioTestCase):
         await self.push(TTSStartedFrame(context_id="a"), tts)
         span = self.observer.tts["a"]["span"]
         await self.push(MetricsFrame(data=[TTFBMetricsData(processor="tts", value=0.09)]), tts)
-        assert span.rows[-1]["metadata"]["pipecat.ttfb"][0]["value"] == 0.09
+        assert span.rows[-1]["metadata"]["contrib.pipecat.ttfb"][0]["value"] == 0.09
         await self.push(TTSStartedFrame(context_id="b"), tts)
         await self.push(MetricsFrame(data=[TTFBMetricsData(processor="tts", value=0.11)]), tts)
-        assert self.observer.root.rows[-1]["metadata"]["pipecat.ttfb"][0]["value"] == 0.11
+        assert self.observer.root.rows[-1]["metadata"]["contrib.pipecat.ttfb"][0]["value"] == 0.11
         await self.push(TTSStoppedFrame(context_id="a"), tts)
         await self.push(TTSStoppedFrame(context_id="b"), tts)
         await self.push(MetricsFrame(data=[TTFBMetricsData(processor="tts", value=0.13)]), tts)
-        assert self.observer.root.rows[-1]["metadata"]["pipecat.ttfb"][-1]["value"] == 0.13
+        assert self.observer.root.rows[-1]["metadata"]["contrib.pipecat.ttfb"][-1]["value"] == 0.13
         # A speech-to-speech processor can have model and audio operations open
         # simultaneously. Usage must select the model operation, not become ambiguous.
         from pipecat.metrics.metrics import LLMTokenUsage, LLMUsageMetricsData  # pylint: disable=import-error

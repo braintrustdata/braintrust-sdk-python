@@ -28,7 +28,7 @@ class Turns:
                 type="task",
                 set_current=False,
                 internal={"instrumentation": "pipecat-auto"},
-                metadata={"pipecat.turn.start_observation": trigger},
+                metadata={"contrib.pipecat.turn.start_observation": trigger},
             ),
             "role": role,
             "confirmed": False,
@@ -71,9 +71,9 @@ class Turns:
                 self.log_message(state, message.content)
                 state["span"].log(
                     metadata={
-                        "pipecat.content": message.content,
-                        "pipecat.timestamp": message.timestamp,
-                        "pipecat.user_id": message.user_id,
+                        "contrib.pipecat.content": message.content,
+                        "contrib.pipecat.timestamp": message.timestamp,
+                        "contrib.pipecat.user_id": message.user_id,
                     }
                 )
 
@@ -94,9 +94,9 @@ class Turns:
         if state is None:
             state = self.start(role, f"on_{role}_turn_started")
         state["confirmed"] = True
-        metadata = {"pipecat.turn.start_event": f"on_{role}_turn_started"}
+        metadata = {"contrib.pipecat.turn.start_event": f"on_{role}_turn_started"}
         if strategy:
-            metadata["pipecat.turn.start_strategy"] = strategy
+            metadata["contrib.pipecat.turn.start_strategy"] = strategy
         state["span"].log(metadata=metadata)
 
     def stop(self, role, message, strategy=None):
@@ -104,15 +104,15 @@ class Turns:
             return
         state = self.pending[role].popleft()
         metadata = {
-            "pipecat.turn.stop_event": f"on_{role}_turn_stopped",
-            "pipecat.content": message.content,
-            "pipecat.timestamp": message.timestamp,
+            "contrib.pipecat.turn.stop_event": f"on_{role}_turn_stopped",
+            "contrib.pipecat.content": message.content,
+            "contrib.pipecat.timestamp": message.timestamp,
         }
         for field in ("user_id", "interrupted"):
             if hasattr(message, field):
-                metadata[f"pipecat.{field}"] = getattr(message, field)
+                metadata[f"contrib.pipecat.{field}"] = getattr(message, field)
         if strategy:
-            metadata["pipecat.turn.stop_strategy"] = strategy
+            metadata["contrib.pipecat.turn.stop_strategy"] = strategy
         state["span"].log(metadata=metadata)
         self.log_message(state, message.content)
         state["span"].end()

@@ -47,5 +47,16 @@ class TTFBRouter:
                 else {"processor": name, "value": metric.value}
             )
             values.append(payload)
-            log(metadata={"pipecat.ttfb": list(values)})
+            log(metadata={"contrib.pipecat.ttfb": list(values)})
         return key
+
+    def capture_measurement(self, metric, source):
+        """Retain native measurements without a frame/routing envelope."""
+        _, log, state = self.owner(metric, source)
+        values = state.setdefault("measurements", [])
+        if len(values) >= 32:
+            state["measurements_omitted"] = state.get("measurements_omitted", 0) + 1
+            log(metadata={"braintrust.measurements.omitted": state["measurements_omitted"]})
+            return
+        values.append({"type": type(metric).__name__, **metric.model_dump(mode="json")})
+        log(metadata={"contrib.pipecat.measurements": list(values)})

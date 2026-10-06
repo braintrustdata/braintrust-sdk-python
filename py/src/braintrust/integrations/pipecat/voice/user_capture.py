@@ -70,8 +70,8 @@ class UserCapture:
         async def speech_start(frame):
             self.boundaries = [
                 {
-                    "pipecat.frame.type": type(frame).__name__,
-                    "pipecat.frame": native_value(frame),
+                    "contrib.pipecat.frame.type": type(frame).__name__,
+                    "contrib.pipecat.frame": native_value(frame),
                 }
             ]
             return await original_start(frame)
@@ -84,8 +84,8 @@ class UserCapture:
                         "events": [
                             *self.boundaries,
                             {
-                                "pipecat.frame.type": type(frame).__name__,
-                                "pipecat.frame": native_value(frame),
+                                "contrib.pipecat.frame.type": type(frame).__name__,
+                                "contrib.pipecat.frame": native_value(frame),
                             },
                         ],
                     }
@@ -182,8 +182,8 @@ class UserCapture:
                         self.create_stt(segment, owner, turn)
                 owner.log(
                     metadata={
-                        "pipecat.transcriptions": [frame for frame, _ in accepted],
-                        "pipecat.speech_events": [event for s in segments for event in s["boundaries"]],
+                        "contrib.pipecat.transcriptions": [frame for frame, _ in accepted],
+                        "contrib.pipecat.speech_events": [event for s in segments for event in s["boundaries"]],
                         "braintrust.user_capture.association": "aggregator_consumed_frames",
                     }
                 )
@@ -198,8 +198,10 @@ class UserCapture:
                             batch["segments"].append(segment)
                     owner.log(
                         metadata={
-                            "pipecat.transcriptions": batch["frames"],
-                            "pipecat.speech_events": [event for s in batch["segments"] for event in s["boundaries"]],
+                            "contrib.pipecat.transcriptions": batch["frames"],
+                            "contrib.pipecat.speech_events": [
+                                event for s in batch["segments"] for event in s["boundaries"]
+                            ],
                         }
                     )
                 if turn:
@@ -225,8 +227,8 @@ class UserCapture:
         if segment["span"] is not None:
             return
         metadata = {
-            "pipecat.transcriptions": segment["frames"],
-            "pipecat.function": "run_stt",
+            "contrib.pipecat.transcriptions": segment["frames"],
+            "contrib.pipecat.function": "run_stt",
             **segment.get("service_metadata", {}),
             **segment.get("ttfb_metadata", {}),
         }

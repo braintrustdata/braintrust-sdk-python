@@ -6,6 +6,7 @@ from pipecat.frames.frames import (  # pylint: disable=import-error
     FunctionCallInProgressFrame,
     FunctionCallResultFrame,
     StartFrame,
+    STTMetadataFrame,
     TTSAudioRawFrame,
     TTSStartedFrame,
     TTSStoppedFrame,
@@ -40,6 +41,9 @@ class Span:
 
 class Tests(unittest.IsolatedAsyncioTestCase):
     async def test_native_frames_and_audio_bounds(self):
+        from pipecat.audio.vad.vad_analyzer import VADParams  # pylint: disable=import-error
+        from pipecat.frames.frames import VADParamsUpdateFrame  # pylint: disable=import-error
+
         logger = Span()
         observer = NativeObserver(logger, retain_audio=True, max_audio_bytes=10)
 
@@ -56,6 +60,11 @@ class Tests(unittest.IsolatedAsyncioTestCase):
             )
 
         await push(StartFrame())
+        await push(STTMetadataFrame(service_name="stt", ttfs_p99_latency=0.5))
+        await push(STTMetadataFrame(service_name="stt", ttfs_p99_latency=0.5))
+        self.assertEqual(observer.events, [])
+        await push(STTMetadataFrame(service_name="stt", ttfs_p99_latency=0.7))
+        await push(VADParamsUpdateFrame(params=VADParams(confidence=0.8)))
         await push(TTSStartedFrame(context_id="c1"))
         frame = TTSAudioRawFrame(audio=b"\x01\x00" * 480, sample_rate=24000, num_channels=1, context_id="c1")
         await push(frame)
@@ -66,7 +75,12 @@ class Tests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(recording["state"], "omitted")
         self.assertEqual(observer.audio_bytes, 0)
         self.assertNotIn("audio", native_value(frame))
-        self.assertEqual(observer.events[0]["pipecat.observer.timestamp"], 1234)
+        self.assertEqual(len(observer.events), 2)  # Changed metadata and an explicit settings update.
+        event = observer.events[0]
+        self.assertEqual(event["contrib.pipecat.observer.timestamp"], 1234)
+        self.assertEqual(event["contrib.pipecat.frame"]["ttfs_p99_latency"], 0.7)
+        self.assertNotIn("id", event["contrib.pipecat.frame"])
+        self.assertEqual(observer.events[1]["contrib.pipecat.frame.type"], "VADParamsUpdateFrame")
 
     async def test_repeated_tool_frames_keep_one_execution_span(self):
         observer = NativeObserver(Span(), retain_audio=True)

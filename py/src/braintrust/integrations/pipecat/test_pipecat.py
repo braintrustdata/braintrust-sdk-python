@@ -225,13 +225,13 @@ async def test_setup_pipecat_traces_real_pipeline_frames(memory_logger, native):
         assert llm_span["metadata"]["turn.id"] == turn["span_id"]
         assert llm_span["span_attributes"]["type"] == "llm"
         assert "braintrust pipecat integration" in llm_span["output"][0]["content"].lower()
-        assert llm_span["metadata"]["pipecat.usage"]["value"]["total_tokens"] == llm_span["metrics"]["tokens"]
+        assert llm_span["metadata"]["contrib.pipecat.usage"]["value"]["total_tokens"] == llm_span["metrics"]["tokens"]
         assert llm_span["metadata"]["model"] == "gpt-4o-mini"
         assert llm_span["metadata"]["provider"] == "openai"
         assert llm_span["metrics"]["prompt_tokens"] > 0
         assert llm_span["metrics"]["completion_tokens"] > 0
         assert llm_span["metrics"]["time_to_first_token"] >= 0
-        assert llm_span["metadata"]["pipecat.ttfb"]
+        assert llm_span["metadata"]["contrib.pipecat.ttfb"]
         return
     pipeline_span = _single_span(logs, "pipecat_pipeline")
     assert _span_type(pipeline_span) == "task"
@@ -308,7 +308,7 @@ async def test_legacy_turn_metrics_follow_speech_or_pipeline(memory_logger, metr
     await observer._handle_frame(frames.MetricsFrame(data=[metric]))
     await observer.cleanup()
     span = _single_span(memory_logger.pop(), "user_speaking" if capture_audio else "pipecat_pipeline")
-    assert span["metadata"]["pipecat.turn_metrics"] == [
+    assert span["metadata"]["contrib.pipecat.turn_metrics"] == [
         dict(
             type=metric_name,
             processor="BaseSmartTurn",
@@ -351,10 +351,10 @@ async def test_ttfb_routes_by_processor_and_retains_unmatched(memory_logger):
     await observer._handle_frame(frames.TTSStoppedFrame(), processor=tts)
     observer._close_all_open_spans()
     logs = memory_logger.pop()
-    assert _single_span(logs, "tts_response")["metadata"]["pipecat.ttfb"][0]["value"] == 0.09
+    assert _single_span(logs, "tts_response")["metadata"]["contrib.pipecat.ttfb"][0]["value"] == 0.09
     assert _single_span(logs, "pipecat_llm_response")["metrics"]["time_to_first_token"] == 0.24
     assert _single_span(logs, "pipecat_llm_response")["metrics"]["tokens"] == 15
-    assert _single_span(logs, "pipecat_pipeline")["metadata"]["pipecat.ttfb"][0]["processor"] == "stt"
+    assert _single_span(logs, "pipecat_pipeline")["metadata"]["contrib.pipecat.ttfb"][0]["processor"] == "stt"
 
 
 def test_ttfb_router_bounds_and_rejects_mismatched_sources():
@@ -371,6 +371,18 @@ def test_ttfb_router_bounds_and_rejects_mismatched_sources():
     for _ in range(35):
         router.capture(metric, source)
     assert operation[-1]["metadata"]["braintrust.ttfb.omitted"] == 3
+    measurement = _import("pipecat.metrics.metrics.ProcessingMetricsData")(processor="tts", value=0.5)
+    router.capture_measurement(measurement, SimpleNamespace(name="tts"))
+    assert root[-1]["metadata"]["contrib.pipecat.measurements"][0]["type"] == "ProcessingMetricsData"
+    for _ in range(35):
+        router.capture_measurement(measurement, source)
+    assert operation[-1]["metadata"]["braintrust.measurements.omitted"] == 3
+    retained = [
+        row["metadata"]["contrib.pipecat.measurements"]
+        for row in operation
+        if "contrib.pipecat.measurements" in row["metadata"]
+    ]
+    assert len(retained[-1]) == 32
     router.start("a", source, lambda **row: operation.append(row))
     assert router.capture(metric, source) is None
     router.clear()
