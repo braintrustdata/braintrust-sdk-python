@@ -270,7 +270,6 @@ async def test_cascade_voice_conversation(memory_logger, request):
 @pytest.mark.asyncio
 async def test_realtime_voice_conversation(memory_logger, monkeypatch, request, vcr_cassette_dir):
     from braintrust.integrations.pipecat._test_websocket import WebSocketCassette
-    from pipecat.audio.utils import create_stream_resampler
     from pipecat.frames.frames import LLMRunFrame
     from pipecat.services.openai.realtime import events
     from pipecat.services.openai.realtime import llm as realtime_module
@@ -351,9 +350,11 @@ async def test_realtime_voice_conversation(memory_logger, monkeypatch, request, 
     async def feed(worker, frame):
         await worker.queue_frame(LLMRunFrame())
         await asyncio.wait_for(greeted.wait(), 20)
-        with wave.open(str(Path(__file__).parent / "voice/fixtures/order.wav")) as audio:
+        # Fixed wire-rate input keeps strict cassette matching independent of
+        # platform-specific resampler rounding. Recording uses this same input.
+        with wave.open(str(Path(__file__).parent / "voice/fixtures/order-24khz.wav")) as audio:
+            assert (audio.getframerate(), audio.getnchannels(), audio.getsampwidth()) == (24000, 1, 2)
             pcm = audio.readframes(audio.getnframes())
-        pcm = await create_stream_resampler().resample(pcm, 16000, 24000)
         pcm += b"\0" * 48000  # Server VAD detects the end of the spoken request.
         for offset in range(0, len(pcm), 960):
             await source.push_audio_frame(InputAudioRawFrame(pcm[offset : offset + 960], 24000, 1))
