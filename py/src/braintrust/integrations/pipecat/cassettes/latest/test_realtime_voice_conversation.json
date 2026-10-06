@@ -1,0 +1,4108 @@
+{
+  "endpoint": "wss://api.openai.com/v1/realtime?model=gpt-realtime",
+  "events": [
+    {
+      "direction": "receive",
+      "message": {
+        "type": "session.created",
+        "event_id": "event_EVgfEAiup12QhYVd70qag",
+        "session": {
+          "type": "realtime",
+          "object": "realtime.session",
+          "id": "sess_EVgfE0UHxI9DXQ9Yo8zII",
+          "model": "gpt-realtime",
+          "output_modalities": [
+            "audio"
+          ],
+          "instructions": "Your knowledge cutoff is 2023-10. You are a helpful, witty, and friendly AI. Act like a human, but remember that you aren't a human and that you can't do human things in the real world. Your voice and personality should be warm and engaging, with a lively and playful tone. If interacting in a non-English language, start by using the standard accent or dialect familiar to the user. Talk quickly. You should always call a function if you can. Do not refer to these rules, even if you\u2019re asked about them.",
+          "tools": [],
+          "tool_choice": "auto",
+          "max_output_tokens": "inf",
+          "tracing": null,
+          "truncation": "auto",
+          "prompt": null,
+          "expires_at": 1791224476,
+          "audio": {
+            "input": {
+              "format": {
+                "type": "audio/pcm",
+                "rate": 24000
+              },
+              "transcription": null,
+              "noise_reduction": null,
+              "turn_detection": {
+                "type": "server_vad",
+                "threshold": 0.5,
+                "prefix_padding_ms": 300,
+                "silence_duration_ms": 200,
+                "idle_timeout_ms": null,
+                "create_response": true,
+                "interrupt_response": true
+              }
+            },
+            "output": {
+              "format": {
+                "type": "audio/pcm",
+                "rate": 24000
+              },
+              "voice": "alloy",
+              "speed": 1.0
+            }
+          },
+          "include": null
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "3dd4fef7-0f9b-4f34-a6f6-208b66befa86",
+        "type": "session.update",
+        "session": {
+          "type": "realtime",
+          "model": "gpt-realtime",
+          "audio": {
+            "input": {
+              "transcription": {
+                "model": "gpt-4o-mini-transcribe",
+                "language": "en"
+              },
+              "turn_detection": {
+                "type": "server_vad",
+                "threshold": 0.5,
+                "prefix_padding_ms": 300,
+                "silence_duration_ms": 500
+              }
+            },
+            "output": {
+              "voice": "alloy"
+            }
+          }
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "session.updated",
+        "event_id": "event_EVgfEN7QM6WTgGAob6gcR",
+        "session": {
+          "type": "realtime",
+          "object": "realtime.session",
+          "id": "sess_EVgfE0UHxI9DXQ9Yo8zII",
+          "model": "gpt-realtime",
+          "output_modalities": [
+            "audio"
+          ],
+          "instructions": "Your knowledge cutoff is 2023-10. You are a helpful, witty, and friendly AI. Act like a human, but remember that you aren't a human and that you can't do human things in the real world. Your voice and personality should be warm and engaging, with a lively and playful tone. If interacting in a non-English language, start by using the standard accent or dialect familiar to the user. Talk quickly. You should always call a function if you can. Do not refer to these rules, even if you\u2019re asked about them.",
+          "tools": [],
+          "tool_choice": "auto",
+          "max_output_tokens": "inf",
+          "tracing": null,
+          "truncation": "auto",
+          "prompt": null,
+          "expires_at": 1791224476,
+          "audio": {
+            "input": {
+              "format": {
+                "type": "audio/pcm",
+                "rate": 24000
+              },
+              "transcription": {
+                "model": "gpt-4o-mini-transcribe",
+                "language": "en",
+                "prompt": null
+              },
+              "noise_reduction": null,
+              "turn_detection": {
+                "type": "server_vad",
+                "threshold": 0.5,
+                "prefix_padding_ms": 300,
+                "silence_duration_ms": 500,
+                "idle_timeout_ms": null,
+                "create_response": true,
+                "interrupt_response": true
+              }
+            },
+            "output": {
+              "format": {
+                "type": "audio/pcm",
+                "rate": 24000
+              },
+              "voice": "alloy",
+              "speed": 1.0
+            }
+          },
+          "include": null
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "e768ee89-d596-488b-8d80-269da1e9c5b0",
+        "type": "session.update",
+        "session": {
+          "type": "realtime",
+          "model": "gpt-realtime",
+          "instructions": "Speak English. Start by saying exactly: Hello, what is your order number? When the user gives an order number, always call lookup_order. After its result, say only: Your order arrives Friday.",
+          "audio": {
+            "input": {
+              "transcription": {
+                "model": "gpt-4o-mini-transcribe",
+                "language": "en"
+              },
+              "turn_detection": {
+                "type": "server_vad",
+                "threshold": 0.5,
+                "prefix_padding_ms": 300,
+                "silence_duration_ms": 500
+              }
+            },
+            "output": {
+              "voice": "alloy"
+            }
+          },
+          "tools": [
+            {
+              "type": "function",
+              "name": "lookup_order",
+              "description": "Look up an order",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "order_id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "order_id"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "97a191cf-60e7-4190-b6aa-e36a64ed22dc",
+        "type": "response.create",
+        "response": {
+          "output_modalities": [
+            "audio"
+          ]
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "session.updated",
+        "event_id": "event_EVgfFPztItLujfdo4yLci",
+        "session": {
+          "type": "realtime",
+          "object": "realtime.session",
+          "id": "sess_EVgfE0UHxI9DXQ9Yo8zII",
+          "model": "gpt-realtime",
+          "output_modalities": [
+            "audio"
+          ],
+          "instructions": "Speak English. Start by saying exactly: Hello, what is your order number? When the user gives an order number, always call lookup_order. After its result, say only: Your order arrives Friday.",
+          "tools": [
+            {
+              "type": "function",
+              "name": "lookup_order",
+              "description": "Look up an order",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "order_id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "order_id"
+                ]
+              }
+            }
+          ],
+          "tool_choice": "auto",
+          "max_output_tokens": "inf",
+          "tracing": null,
+          "truncation": "auto",
+          "prompt": null,
+          "expires_at": 1791224476,
+          "audio": {
+            "input": {
+              "format": {
+                "type": "audio/pcm",
+                "rate": 24000
+              },
+              "transcription": {
+                "model": "gpt-4o-mini-transcribe",
+                "language": "en",
+                "prompt": null
+              },
+              "noise_reduction": null,
+              "turn_detection": {
+                "type": "server_vad",
+                "threshold": 0.5,
+                "prefix_padding_ms": 300,
+                "silence_duration_ms": 500,
+                "idle_timeout_ms": null,
+                "create_response": true,
+                "interrupt_response": true
+              }
+            },
+            "output": {
+              "format": {
+                "type": "audio/pcm",
+                "rate": 24000
+              },
+              "voice": "alloy",
+              "speed": 1.0
+            }
+          },
+          "include": null
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.created",
+        "event_id": "event_EVgfFylg6nuToHIIbEL1c",
+        "response": {
+          "object": "realtime.response",
+          "id": "resp_EVgfF05xkwLTRprf4ZMGS",
+          "status": "in_progress",
+          "status_details": null,
+          "output": [],
+          "conversation_id": "conv_EVgfECJ3whhWkN1aLHqyp",
+          "output_modalities": [
+            "audio"
+          ],
+          "max_output_tokens": "inf",
+          "audio": {
+            "output": {
+              "format": {
+                "type": "audio/pcm",
+                "rate": 24000
+              },
+              "voice": "alloy"
+            }
+          },
+          "usage": null,
+          "metadata": null
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_item.added",
+        "event_id": "event_EVgfFcvOCYJw4U3QzzAta",
+        "response_id": "resp_EVgfF05xkwLTRprf4ZMGS",
+        "output_index": 0,
+        "item": {
+          "id": "item_EVgfFMwZMFVUydi3vk3kH",
+          "type": "message",
+          "status": "in_progress",
+          "role": "assistant",
+          "content": []
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "conversation.item.added",
+        "event_id": "event_EVgfFx0bCZHjn5bmy6T0p",
+        "previous_item_id": null,
+        "item": {
+          "id": "item_EVgfFMwZMFVUydi3vk3kH",
+          "type": "message",
+          "status": "in_progress",
+          "role": "assistant",
+          "content": []
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.content_part.added",
+        "event_id": "event_EVgfFxiYWK2vHHKeTiT30",
+        "response_id": "resp_EVgfF05xkwLTRprf4ZMGS",
+        "item_id": "item_EVgfFMwZMFVUydi3vk3kH",
+        "output_index": 0,
+        "content_index": 0,
+        "part": {
+          "type": "audio",
+          "transcript": ""
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio_transcript.delta",
+        "event_id": "event_EVgfF0TFL44zN97ZV3rCS",
+        "response_id": "resp_EVgfF05xkwLTRprf4ZMGS",
+        "item_id": "item_EVgfFMwZMFVUydi3vk3kH",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": "Hello",
+        "obfuscation": "DeLEdh6Ytke"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio_transcript.delta",
+        "event_id": "event_EVgfFGukh1XaEPV55gHT0",
+        "response_id": "resp_EVgfF05xkwLTRprf4ZMGS",
+        "item_id": "item_EVgfFMwZMFVUydi3vk3kH",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": ",",
+        "obfuscation": "6jYgU2pWZdrsrEx"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio_transcript.delta",
+        "event_id": "event_EVgfF1Dw7ZGupP2WNCLoB",
+        "response_id": "resp_EVgfF05xkwLTRprf4ZMGS",
+        "item_id": "item_EVgfFMwZMFVUydi3vk3kH",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": " what",
+        "obfuscation": "nIqZ5jeLRyx"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio.delta",
+        "event_id": "event_EVgfFSake8THjRPVSasBa",
+        "response_id": "resp_EVgfF05xkwLTRprf4ZMGS",
+        "item_id": "item_EVgfFMwZMFVUydi3vk3kH",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": {
+          "audio_file": "test_realtime_voice_conversation.audio/agent-000.wav",
+          "pcm": true,
+          "offset_bytes": 0,
+          "length_bytes": 4800
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio.delta",
+        "event_id": "event_EVgfFa2hjq3GWEf0xjMtU",
+        "response_id": "resp_EVgfF05xkwLTRprf4ZMGS",
+        "item_id": "item_EVgfFMwZMFVUydi3vk3kH",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": {
+          "audio_file": "test_realtime_voice_conversation.audio/agent-000.wav",
+          "pcm": true,
+          "offset_bytes": 4800,
+          "length_bytes": 7200
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio.delta",
+        "event_id": "event_EVgfF99gI14pN9GbvgPbz",
+        "response_id": "resp_EVgfF05xkwLTRprf4ZMGS",
+        "item_id": "item_EVgfFMwZMFVUydi3vk3kH",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": {
+          "audio_file": "test_realtime_voice_conversation.audio/agent-000.wav",
+          "pcm": true,
+          "offset_bytes": 12000,
+          "length_bytes": 12000
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio_transcript.delta",
+        "event_id": "event_EVgfFvkFSKIxozDZkmL4J",
+        "response_id": "resp_EVgfF05xkwLTRprf4ZMGS",
+        "item_id": "item_EVgfFMwZMFVUydi3vk3kH",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": " is",
+        "obfuscation": "lo9K3Hly2JeLz"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio_transcript.delta",
+        "event_id": "event_EVgfFHEA9PPwyQVreUPcG",
+        "response_id": "resp_EVgfF05xkwLTRprf4ZMGS",
+        "item_id": "item_EVgfFMwZMFVUydi3vk3kH",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": " your",
+        "obfuscation": "24fzDDAbbzc"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio_transcript.delta",
+        "event_id": "event_EVgfFF1nBxumTYIVgwb3w",
+        "response_id": "resp_EVgfF05xkwLTRprf4ZMGS",
+        "item_id": "item_EVgfFMwZMFVUydi3vk3kH",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": " order",
+        "obfuscation": "esClxxYiFa"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio_transcript.delta",
+        "event_id": "event_EVgfFdGpkB1nwKjtXOO6c",
+        "response_id": "resp_EVgfF05xkwLTRprf4ZMGS",
+        "item_id": "item_EVgfFMwZMFVUydi3vk3kH",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": " number",
+        "obfuscation": "pPGWNfMzm"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio_transcript.delta",
+        "event_id": "event_EVgfFE0ToAAUqU1mqIEpn",
+        "response_id": "resp_EVgfF05xkwLTRprf4ZMGS",
+        "item_id": "item_EVgfFMwZMFVUydi3vk3kH",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": "?",
+        "obfuscation": "G2ppfEvThGrMStn"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio.delta",
+        "event_id": "event_EVgfFnGaL4zCZfL2zjKlp",
+        "response_id": "resp_EVgfF05xkwLTRprf4ZMGS",
+        "item_id": "item_EVgfFMwZMFVUydi3vk3kH",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": {
+          "audio_file": "test_realtime_voice_conversation.audio/agent-000.wav",
+          "pcm": true,
+          "offset_bytes": 24000,
+          "length_bytes": 12000
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio.delta",
+        "event_id": "event_EVgfFZf2vYtFmKGgXtua6",
+        "response_id": "resp_EVgfF05xkwLTRprf4ZMGS",
+        "item_id": "item_EVgfFMwZMFVUydi3vk3kH",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": {
+          "audio_file": "test_realtime_voice_conversation.audio/agent-000.wav",
+          "pcm": true,
+          "offset_bytes": 36000,
+          "length_bytes": 12000
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio.delta",
+        "event_id": "event_EVgfFbMRFE3NC5TK09gjS",
+        "response_id": "resp_EVgfF05xkwLTRprf4ZMGS",
+        "item_id": "item_EVgfFMwZMFVUydi3vk3kH",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": {
+          "audio_file": "test_realtime_voice_conversation.audio/agent-000.wav",
+          "pcm": true,
+          "offset_bytes": 48000,
+          "length_bytes": 12000
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio.delta",
+        "event_id": "event_EVgfFBMt8MZL2DZkIFIYA",
+        "response_id": "resp_EVgfF05xkwLTRprf4ZMGS",
+        "item_id": "item_EVgfFMwZMFVUydi3vk3kH",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": {
+          "audio_file": "test_realtime_voice_conversation.audio/agent-000.wav",
+          "pcm": true,
+          "offset_bytes": 60000,
+          "length_bytes": 12000
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio.delta",
+        "event_id": "event_EVgfFlySfzpaPGIQTaoll",
+        "response_id": "resp_EVgfF05xkwLTRprf4ZMGS",
+        "item_id": "item_EVgfFMwZMFVUydi3vk3kH",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": {
+          "audio_file": "test_realtime_voice_conversation.audio/agent-000.wav",
+          "pcm": true,
+          "offset_bytes": 72000,
+          "length_bytes": 26400
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio.done",
+        "event_id": "event_EVgfFifZ6swki1doiVUx0",
+        "response_id": "resp_EVgfF05xkwLTRprf4ZMGS",
+        "item_id": "item_EVgfFMwZMFVUydi3vk3kH",
+        "output_index": 0,
+        "content_index": 0
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio_transcript.done",
+        "event_id": "event_EVgfFp9wkrPpEd8ysK94r",
+        "response_id": "resp_EVgfF05xkwLTRprf4ZMGS",
+        "item_id": "item_EVgfFMwZMFVUydi3vk3kH",
+        "output_index": 0,
+        "content_index": 0,
+        "transcript": "Hello, what is your order number?"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.content_part.done",
+        "event_id": "event_EVgfFXSGWi0KpOx4hGqES",
+        "response_id": "resp_EVgfF05xkwLTRprf4ZMGS",
+        "item_id": "item_EVgfFMwZMFVUydi3vk3kH",
+        "output_index": 0,
+        "content_index": 0,
+        "part": {
+          "type": "audio",
+          "transcript": "Hello, what is your order number?"
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "conversation.item.done",
+        "event_id": "event_EVgfFyEfywh398vOxgBqm",
+        "previous_item_id": null,
+        "item": {
+          "id": "item_EVgfFMwZMFVUydi3vk3kH",
+          "type": "message",
+          "status": "completed",
+          "role": "assistant",
+          "content": [
+            {
+              "type": "output_audio",
+              "transcript": "Hello, what is your order number?"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_item.done",
+        "event_id": "event_EVgfFz2vGp6iGLHmDM7Jy",
+        "response_id": "resp_EVgfF05xkwLTRprf4ZMGS",
+        "output_index": 0,
+        "item": {
+          "id": "item_EVgfFMwZMFVUydi3vk3kH",
+          "type": "message",
+          "status": "completed",
+          "role": "assistant",
+          "content": [
+            {
+              "type": "output_audio",
+              "transcript": "Hello, what is your order number?"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.done",
+        "event_id": "event_EVgfFPmrJJi1WrEu6n9MU",
+        "response": {
+          "object": "realtime.response",
+          "id": "resp_EVgfF05xkwLTRprf4ZMGS",
+          "status": "completed",
+          "status_details": null,
+          "output": [
+            {
+              "id": "item_EVgfFMwZMFVUydi3vk3kH",
+              "type": "message",
+              "status": "completed",
+              "role": "assistant",
+              "content": [
+                {
+                  "type": "output_audio",
+                  "transcript": "Hello, what is your order number?"
+                }
+              ]
+            }
+          ],
+          "conversation_id": "conv_EVgfECJ3whhWkN1aLHqyp",
+          "output_modalities": [
+            "audio"
+          ],
+          "max_output_tokens": "inf",
+          "audio": {
+            "output": {
+              "format": {
+                "type": "audio/pcm",
+                "rate": 24000
+              },
+              "voice": "alloy"
+            }
+          },
+          "usage": {
+            "total_tokens": 134,
+            "input_tokens": 75,
+            "output_tokens": 59,
+            "input_token_details": {
+              "text_tokens": 75,
+              "audio_tokens": 0,
+              "image_tokens": 0,
+              "cached_tokens": 0,
+              "cached_tokens_details": {
+                "text_tokens": 0,
+                "audio_tokens": 0,
+                "image_tokens": 0
+              }
+            },
+            "output_token_details": {
+              "text_tokens": 18,
+              "audio_tokens": 41
+            }
+          },
+          "metadata": null
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "f7bfec2b-6337-49ba-84ad-cdd7cb216713",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 0,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "rate_limits.updated",
+        "event_id": "event_EVgfFoOG2vC4FO7RSBKTu",
+        "rate_limits": [
+          {
+            "name": "tokens",
+            "limit": 15000000,
+            "remaining": 14999295,
+            "reset_seconds": 0.002
+          }
+        ]
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "a3226ad9-901c-49d0-ba5b-85901ec861c7",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 960,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "d17ec867-e351-4751-a463-d34852df50cf",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 1920,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "688940fc-c37d-46b2-beaf-df032335b090",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 2880,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "e30c4e33-9aa7-4ab4-89bb-8fc96b702c40",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 3840,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "a073f6c8-fde5-4355-bf01-08476cddb0e3",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 4800,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "input_audio_buffer.speech_started",
+        "event_id": "event_EVgfFnlJEQsBTNebtdJR7",
+        "audio_start_ms": 0,
+        "item_id": "item_EVgfFVrfdinRe1ZSR1mqw"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.done",
+        "event_id": "event_EVgfF9SV1K6uGIKS8ARtK",
+        "response": {
+          "object": "realtime.response",
+          "id": "resp_EVgfF05xkwLTRprf4ZMGS",
+          "status": "cancelled",
+          "status_details": {
+            "type": "cancelled",
+            "reason": "turn_detected"
+          },
+          "output": [
+            {
+              "id": "item_EVgfFMwZMFVUydi3vk3kH",
+              "type": "message",
+              "status": "completed",
+              "role": "assistant",
+              "content": [
+                {
+                  "type": "output_audio",
+                  "transcript": "Hello, what is your order number?"
+                }
+              ]
+            }
+          ],
+          "conversation_id": "conv_EVgfECJ3whhWkN1aLHqyp",
+          "output_modalities": [
+            "audio"
+          ],
+          "max_output_tokens": "inf",
+          "audio": {
+            "output": {
+              "format": {
+                "type": "audio/pcm",
+                "rate": 24000
+              },
+              "voice": "alloy"
+            }
+          },
+          "usage": {
+            "total_tokens": 134,
+            "input_tokens": 75,
+            "output_tokens": 59,
+            "input_token_details": {
+              "text_tokens": 75,
+              "audio_tokens": 0,
+              "image_tokens": 0,
+              "cached_tokens": 0,
+              "cached_tokens_details": {
+                "text_tokens": 0,
+                "audio_tokens": 0,
+                "image_tokens": 0
+              }
+            },
+            "output_token_details": {
+              "text_tokens": 18,
+              "audio_tokens": 41
+            }
+          },
+          "metadata": null
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "02f51c34-3e63-460f-bdb9-d1134186b710",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 5760,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "aa446dd7-a0a2-4df6-8eca-2da9b2cc2659",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 6720,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "ca46c49f-8431-40d0-bfb1-1f4e75593d93",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 7680,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "dae61607-b169-452e-93ca-8ddcbb05d2fd",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 8640,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "b50454b7-844e-4973-9023-f38390e4b22e",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 9600,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "b2e58dd2-2bde-4da1-a1c2-67c6a33baca0",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 10560,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "48c399b3-496b-44f9-a5f1-9baf2d0fc32c",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 11520,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "116df30c-f3d0-4f99-9a54-551657f144c1",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 12480,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "68ca726c-1aa5-4322-bbfc-c36f0e086873",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 13440,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "a67b7195-1555-4196-9e11-7bac06acfbe5",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 14400,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "b261659e-ae51-498e-88af-363a207dd722",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 15360,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "6cfd996c-25f2-493a-99c8-ac835739b5be",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 16320,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "ffa43c26-db0b-4e9f-971c-65e4fdca8fc6",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 17280,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "bb90a923-c79e-4e6e-9bb9-94ccaf74db91",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 18240,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "1d603fcf-0134-4ad0-9f31-bdff0b4465de",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 19200,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "d0aef808-4c4f-4e39-adef-3d53847660b4",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 20160,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "ab889c3c-7617-4bc9-b900-3d4e77920384",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 21120,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "18de6373-e9fa-4c13-ae23-1f4eae985b96",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 22080,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "87724c6e-c1d3-4f63-b160-d8d5e74f4655",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 23040,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "d5a1b5cb-ac38-4e73-8523-8202c9190ac7",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 24000,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "c58e7e59-c0c9-4dfb-80fe-46fcf435ac30",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 24960,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "61cfe423-8034-446b-9363-1bece3f05667",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 25920,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "4e83dc99-6495-4b24-b5ee-5386b5579908",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 26880,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "3cb52bc2-6f59-47ec-9a7f-e1a85d5d3132",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 27840,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "563b6b6a-0348-4de7-8c2d-6784d051868f",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 28800,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "a032a0bc-6b56-4adf-aef3-1ca158b0b5b4",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 29760,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "6f25b8e1-d8ba-40af-89d8-f3f098636fa2",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 30720,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "105a642c-5289-4796-beab-5dd48c21bc3f",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 31680,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "9fdba103-9e5b-47db-8cdc-e062ad975628",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 32640,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "32966952-a4b3-4332-9556-55c64acf4a5a",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 33600,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "15b3d18a-c39e-4260-a103-32f94a040254",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 34560,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "cd0ea8b0-c0d1-4f8b-b97a-7b9b6a31460e",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 35520,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "d5f54928-f425-46f4-b147-4c4dcd47de20",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 36480,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "479c61f4-43b0-4582-96ba-4388140c30da",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 37440,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "9b937a7c-1649-4abd-a162-e145e308be5d",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 38400,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "10765989-e813-4373-b31a-603265f797a8",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 39360,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "17f9a3ff-d3dc-44d2-98ff-91f9c8924639",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 40320,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "210cd4ca-7046-45f3-b096-27fd0123fce2",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 41280,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "7e76ebc7-78a9-41e7-87e3-9440c6aaf84d",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 42240,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "28bb66af-98cf-430e-ab09-6f5114a0e241",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 43200,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "436ac059-e477-441a-8006-de79444f2331",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 44160,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "f8450ed2-fe8a-402d-a1c2-29076611569e",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 45120,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "493ebafe-5f6f-4951-8507-1c8183e0c9fa",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 46080,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "47c146d0-4e31-4749-886f-f1045e048e6c",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 47040,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "929d26fa-1421-446a-9ee4-b2a97e776bc2",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 48000,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "d45d3cff-c768-4957-96e2-b7bd2267f520",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 48960,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "173a79d6-5bdb-4054-b6be-87ea572cfc34",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 49920,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "5ea459ab-def3-4303-bc7d-84709eea1039",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 50880,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "5fa28be3-ab00-40ff-8c87-3df275e5092c",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 51840,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "98771546-703d-40e6-8807-e987fcf437f5",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 52800,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "76e0c0cf-8bb4-4e6e-acb1-ed92b9a1686f",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 53760,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "fb929e4a-afee-42d6-a2ad-43c2793047fc",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 54720,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "51975e9d-670c-45fa-9072-9f568a45449d",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 55680,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "83a01c70-740e-43ae-adb6-eab20f2e66e7",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 56640,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "c0fe50b9-b7e9-4221-bd73-5c2d600920d4",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 57600,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "69128bdf-e775-4bff-8786-29c181202991",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 58560,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "f61c7afa-8f20-481a-99d5-5edc0c8c5435",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 59520,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "55ba71b5-b898-4bd3-943c-c155a5983472",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 60480,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "6a52f532-dd47-45a7-929b-8bd85f3dbe53",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 61440,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "409c85de-761e-4878-822e-6c9608444c20",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 62400,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "d6d1eaae-930d-49f6-a9f1-047b9699f370",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 63360,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "33482a0a-187a-41ee-9f92-66b72ae503c3",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 64320,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "58897aef-5362-4a74-9151-293f22f2c3a1",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 65280,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "cf2c4ca1-fa37-42b2-a613-748c03af1cc0",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 66240,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "a2c7b986-6f1a-4b20-92ea-c651692f6e26",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 67200,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "473b7c86-3a14-4ef9-9010-75e0d827a828",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 68160,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "47938415-a4bc-421b-967e-e073872ce6f2",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 69120,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "b9c5ffab-d406-43ad-876e-3b5065b08282",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 70080,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "cee8c170-4506-419b-b001-d3d8ac1607d7",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 71040,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "e799c112-03e2-4901-a8a8-bab1ed5bfea8",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 72000,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "33e2c2ef-81bd-4ee5-8e5e-3180b9c23c5a",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 72960,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "109cc7bd-38ef-40ea-9bd9-df54352dea8e",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 73920,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "db800133-e793-487f-82f6-5e1ca6e148ff",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 74880,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "7add7dcd-f373-43f2-b60b-c2ec1d5f5d28",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 75840,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "dd6f1c49-aad1-44a3-b804-ee6f9f40edd1",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 76800,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "ee4e621e-1444-4aaf-9d70-de8ee90b46d8",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 77760,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "501a95e7-f776-45de-a65d-7c8a7f6791fa",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 78720,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "19f5bcef-e170-46f9-869c-07890c9e62b9",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 79680,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "784b8432-c9bd-40b5-8fe9-ea95fd5c740f",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 80640,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "1e827666-9fe3-48dd-940b-7d1322ab3ce0",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 81600,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "c1e38745-37d1-41c6-a421-03253f140824",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 82560,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "30820b77-2929-4ac5-aa8d-f6dd3e2efebd",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 83520,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "a8f3e4b2-9f62-48a2-8a0f-d57ef52e246d",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 84480,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "e8cd74e6-007c-46ca-aca9-c8624ec6a785",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 85440,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "fd0ebeb3-c3aa-44ec-bac6-88defd19572d",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 86400,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "9d4b0138-16fd-4ffc-bfb5-718509091e9c",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 87360,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "45abb5c4-4e19-4617-9467-358679752c2f",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 88320,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "3d713e3a-5168-4867-9581-381bb672f08c",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 89280,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "3f147f5a-8be3-48e6-ac96-524408176c5e",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 90240,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "20bdddcb-3d4d-484f-954f-a4855b9cfd2c",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 91200,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "4cbef2fc-3d46-431a-9cde-2dc9440d442d",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 92160,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "95813d97-8134-48c6-a97c-c669bba688f7",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 93120,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "69b22e4a-d8cc-4cad-8127-04615471e4c5",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 94080,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "1fecc163-47b3-40f4-a8c3-0f518a18cab2",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 95040,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "47d942b6-b93c-4688-9911-2e20c3c93acd",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 96000,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "381702ab-f3d5-41d4-a63e-72c5b141e0a0",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 96960,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "4baa6457-dd12-44f6-ad76-1957fc3d2cc2",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 97920,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "bfbb2d54-6a0b-4ac6-a37b-6e34725ac218",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 98880,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "012fdf16-26d6-4496-80cd-506bb91ac503",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 99840,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "d370cd2b-2062-4198-9b6e-2a9ea4d32013",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 100800,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "ab131834-dfc9-4cb5-a888-162117269a4e",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 101760,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "abad5e75-e88c-49b0-9252-26580cbf984e",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 102720,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "a3636f27-f1f5-4640-ba16-5c4c2bc75006",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 103680,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "c2383ec2-dc15-4a13-beae-bb63d01d5e35",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 104640,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "e4f55448-8051-4791-83d1-3ba9f092127f",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 105600,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "0e72d30e-da7a-4c4a-a2cb-fff1932378b9",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 106560,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "72a0a6c4-589d-4a4a-8549-095b7a41431a",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 107520,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "d87f507d-0f4a-4fb3-93b9-acfbdc9a6186",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 108480,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "b90f5da7-b503-4ade-8c11-62bf30c05498",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 109440,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "ce78e385-3124-4a55-9e75-22cfd24ef286",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 110400,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "ff873656-0410-4d6e-bf30-6aa64b0c9d08",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 111360,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "c4b85220-ed28-48c7-88fd-d0e3f9df0ffe",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 112320,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "91652b74-c891-49ea-8bb6-dbd9998d02e4",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 113280,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "e4305a2f-e0df-46b5-b851-92105d5c3e0b",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 114240,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "b9807c6e-c129-4caa-86de-50c3b5597d86",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 115200,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "3ce37cf8-5330-404f-8608-166e99dd10ea",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 116160,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "ddb7ed48-ab3b-4f5f-9fed-760b44520c48",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 117120,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "c355a218-258b-4e7c-bac2-41bc0bb95865",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 118080,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "8a091b74-016a-4722-9c6c-a401285ab1d9",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 119040,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "f197850d-76fe-4803-b222-39d0a617bd0f",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 120000,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "5cb90ef0-5eab-4588-917d-333f719ae17e",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 120960,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "db26ef05-a2a2-43cb-aafb-219c99fa81dc",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 121920,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "f3ea7ef2-f13e-4313-a4c9-2552a445c624",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 122880,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "5e01c98d-de14-467d-94c1-8ddd11a5683b",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 123840,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "a83af831-3a30-4c1c-a178-103db8db5b28",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 124800,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "dcce341c-5058-4e07-bec5-1df33cd1177a",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 125760,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "a9846961-5086-4090-9dba-cf2c5ff52629",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 126720,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "cf774499-6190-4176-8f64-95cf20bcb045",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 127680,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "babedae6-8a9c-476c-9fcd-192500600f23",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 128640,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "ed9c2c70-651a-4964-beda-2cee914ce508",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 129600,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "18f8cf47-f59c-4bb8-84f5-09e4604610bc",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 130560,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "9c1bdf4a-0591-4b24-b16e-395a74d94496",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 131520,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "948173dc-1c5c-4ee9-880a-a36a6164a7f6",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 132480,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "e7247f24-c9cf-4041-8558-4e7cc5f782af",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 133440,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "4878be01-3422-4883-94a7-e04ebf12c43d",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 134400,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "d0304734-5c19-4f21-92f3-608190f0a18e",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 135360,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "a01aef44-0e00-4c81-bf3b-cf5ba1a6ec79",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 136320,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "9ea16082-1a57-4c6d-823b-18408875259a",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 137280,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "0c6e0fbb-8884-4175-a27a-aaeb74c9e52b",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 138240,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "5f403c14-0035-4d60-bc12-a2ba5862506c",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 139200,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "f2dda14d-6c7a-4b01-9d5a-629af9ad4e13",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 140160,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "e7daff3f-5cbb-42bf-b536-6848df39d8eb",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 141120,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "aea15b99-0f4c-43d5-8b7a-cb78fc410c5d",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 142080,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "c2786b1c-cdd0-4c39-b5c2-52c87a41c6c1",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 143040,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "b363dbf7-c7ae-4a4c-b655-d357cbc98541",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 144000,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "30f5ea5c-c7e4-497c-afcc-134c0a594a1f",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 144960,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "a0e10d8c-d1f4-46e5-b1af-fbeb390db66a",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 145920,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "6aeb3adb-f3a4-425f-a69c-476c338dd449",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 146880,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "0a546860-b9e8-44bc-8447-3e61d5fd217a",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 147840,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "583070cf-f786-4569-8353-17e0cac701f7",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 148800,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "794f489f-d673-41c6-a610-a5d55a8cb81b",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 149760,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "2381dbdf-b836-487b-b1c4-aaace016f0ca",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 150720,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "8e608d2b-e8c9-4d64-ae03-7e62352f012a",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 151680,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "ce21055b-03af-4ba0-b606-351c83815d6c",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 152640,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "20fe83e2-55da-44ca-8445-587712652a1a",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 153600,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "a5654288-9500-4660-9c3e-2e5a885d3524",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 154560,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "6b9b17c4-1dc2-4d9c-bb5b-ef2fcd470cd1",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 155520,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "input_audio_buffer.speech_stopped",
+        "event_id": "event_EVgfJ0RAxlAOvXlsmyw3Q",
+        "audio_end_ms": 3040,
+        "item_id": "item_EVgfFVrfdinRe1ZSR1mqw"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "input_audio_buffer.committed",
+        "event_id": "event_EVgfJJ35RmgC9mLmHdMWM",
+        "previous_item_id": "item_EVgfFMwZMFVUydi3vk3kH",
+        "item_id": "item_EVgfFVrfdinRe1ZSR1mqw"
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "23a878c1-ca2b-4487-90fe-057f36dd762e",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 156480,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "conversation.item.added",
+        "event_id": "event_EVgfJfuq4eQVvcy8NzAOf",
+        "previous_item_id": "item_EVgfFMwZMFVUydi3vk3kH",
+        "item": {
+          "id": "item_EVgfFVrfdinRe1ZSR1mqw",
+          "type": "message",
+          "status": "completed",
+          "role": "user",
+          "content": [
+            {
+              "type": "input_audio",
+              "transcript": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "conversation.item.done",
+        "event_id": "event_EVgfJlWefyODH8aYPL6Tr",
+        "previous_item_id": "item_EVgfFMwZMFVUydi3vk3kH",
+        "item": {
+          "id": "item_EVgfFVrfdinRe1ZSR1mqw",
+          "type": "message",
+          "status": "completed",
+          "role": "user",
+          "content": [
+            {
+              "type": "input_audio",
+              "transcript": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.created",
+        "event_id": "event_EVgfJFQeCBsURKxtKhXT9",
+        "response": {
+          "object": "realtime.response",
+          "id": "resp_EVgfJxiXrXnWkWXUmzhkL",
+          "status": "in_progress",
+          "status_details": null,
+          "output": [],
+          "conversation_id": "conv_EVgfECJ3whhWkN1aLHqyp",
+          "output_modalities": [
+            "audio"
+          ],
+          "max_output_tokens": "inf",
+          "audio": {
+            "output": {
+              "format": {
+                "type": "audio/pcm",
+                "rate": 24000
+              },
+              "voice": "alloy"
+            }
+          },
+          "usage": null,
+          "metadata": null
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "c55d667e-ead1-4703-949e-255143548f46",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 157440,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "bcfd8860-3617-48ef-ac20-463ee5f59556",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 158400,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "0224cc3e-eb25-4ffd-a45b-93094228d6bc",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 159360,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "a6a339ca-6fea-4d61-a4ee-cd0e6168d98d",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 160320,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "ba0daa90-a533-49b2-a608-5dc72d47b251",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 161280,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "031729e8-3f26-4ffb-abdb-eceabea65127",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 162240,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "b783491d-6f9c-4910-870f-f8a66c0fddb9",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 163200,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "c26555bc-ccd1-4414-824a-5112e8faa56e",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 164160,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "29a0b42e-f600-4440-a7c9-0582c68b33ce",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 165120,
+          "length_bytes": 960
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "96bd5f3c-f0dd-4f9a-89f5-4cb6dde21558",
+        "type": "input_audio_buffer.append",
+        "audio": {
+          "audio_file": "test_realtime_voice_conversation.audio/caller.wav",
+          "pcm": true,
+          "offset_bytes": 166080,
+          "length_bytes": 720
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "conversation.item.input_audio_transcription.delta",
+        "event_id": "event_EVgfJL85UN6Y4jawZbmF5",
+        "item_id": "item_EVgfFVrfdinRe1ZSR1mqw",
+        "content_index": 0,
+        "delta": "Where",
+        "obfuscation": "8BA0mrCENCA"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "conversation.item.input_audio_transcription.delta",
+        "event_id": "event_EVgfJxMyhv7pyrOiLmPRM",
+        "item_id": "item_EVgfFVrfdinRe1ZSR1mqw",
+        "content_index": 0,
+        "delta": " is",
+        "obfuscation": "Nf3Fl2dZ4xMKw"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "conversation.item.input_audio_transcription.delta",
+        "event_id": "event_EVgfJ8F7LTB7KPGmfJ4z5",
+        "item_id": "item_EVgfFVrfdinRe1ZSR1mqw",
+        "content_index": 0,
+        "delta": " my",
+        "obfuscation": "aMXI2Ux65ystd"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "conversation.item.input_audio_transcription.delta",
+        "event_id": "event_EVgfJ5YvUyTW03mjBd6Mo",
+        "item_id": "item_EVgfFVrfdinRe1ZSR1mqw",
+        "content_index": 0,
+        "delta": " order",
+        "obfuscation": "UV1BWl0qVl"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "conversation.item.input_audio_transcription.delta",
+        "event_id": "event_EVgfJf77pKBFMCA8V8wHr",
+        "item_id": "item_EVgfFVrfdinRe1ZSR1mqw",
+        "content_index": 0,
+        "delta": " number",
+        "obfuscation": "nnPk5Kpxf"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "conversation.item.input_audio_transcription.delta",
+        "event_id": "event_EVgfJN9l9XiownhQdSMVR",
+        "item_id": "item_EVgfFVrfdinRe1ZSR1mqw",
+        "content_index": 0,
+        "delta": " ",
+        "obfuscation": "TNQcYMhDOYHT0Vp"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "conversation.item.input_audio_transcription.delta",
+        "event_id": "event_EVgfJ3CSzYcFLzJ2K3F8n",
+        "item_id": "item_EVgfFVrfdinRe1ZSR1mqw",
+        "content_index": 0,
+        "delta": "104",
+        "obfuscation": "u0uHvdx2YxMVr"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "conversation.item.input_audio_transcription.delta",
+        "event_id": "event_EVgfJioIgc7GATT0AfrDM",
+        "item_id": "item_EVgfFVrfdinRe1ZSR1mqw",
+        "content_index": 0,
+        "delta": "2",
+        "obfuscation": "pk8Nf8rRFb7qVC8"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "conversation.item.input_audio_transcription.delta",
+        "event_id": "event_EVgfJn493wYXVatsBzciB",
+        "item_id": "item_EVgfFVrfdinRe1ZSR1mqw",
+        "content_index": 0,
+        "delta": "?",
+        "obfuscation": "wTmotNh8GwuOMib"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_item.added",
+        "event_id": "event_EVgfJah6n7758dfF0r0hk",
+        "response_id": "resp_EVgfJxiXrXnWkWXUmzhkL",
+        "output_index": 0,
+        "item": {
+          "id": "item_EVgfJp1sqRU5rN3ftYQF9",
+          "type": "function_call",
+          "status": "in_progress",
+          "name": "lookup_order",
+          "call_id": "call_RDQqTdChlVfCtYwS",
+          "arguments": ""
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "conversation.item.added",
+        "event_id": "event_EVgfJYVzZcEAakXMsWPBI",
+        "previous_item_id": "item_EVgfFVrfdinRe1ZSR1mqw",
+        "item": {
+          "id": "item_EVgfJp1sqRU5rN3ftYQF9",
+          "type": "function_call",
+          "status": "in_progress",
+          "name": "lookup_order",
+          "call_id": "call_RDQqTdChlVfCtYwS",
+          "arguments": ""
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.function_call_arguments.delta",
+        "event_id": "event_EVgfJqYg0jm5GR604Twyz",
+        "response_id": "resp_EVgfJxiXrXnWkWXUmzhkL",
+        "item_id": "item_EVgfJp1sqRU5rN3ftYQF9",
+        "output_index": 0,
+        "call_id": "call_RDQqTdChlVfCtYwS",
+        "delta": "{",
+        "obfuscation": "7UAIFEo3WZWubWT"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.function_call_arguments.delta",
+        "event_id": "event_EVgfJ6ngaN9NV07lDyyy2",
+        "response_id": "resp_EVgfJxiXrXnWkWXUmzhkL",
+        "item_id": "item_EVgfJp1sqRU5rN3ftYQF9",
+        "output_index": 0,
+        "call_id": "call_RDQqTdChlVfCtYwS",
+        "delta": "  \n",
+        "obfuscation": "za4VALmTWQbpB"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.function_call_arguments.delta",
+        "event_id": "event_EVgfJGhVTb1gCY53Q0udi",
+        "response_id": "resp_EVgfJxiXrXnWkWXUmzhkL",
+        "item_id": "item_EVgfJp1sqRU5rN3ftYQF9",
+        "output_index": 0,
+        "call_id": "call_RDQqTdChlVfCtYwS",
+        "delta": " ",
+        "obfuscation": "sqxNdTVVuld3jqK"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.function_call_arguments.delta",
+        "event_id": "event_EVgfJ9f5Wum9TQOU2itiU",
+        "response_id": "resp_EVgfJxiXrXnWkWXUmzhkL",
+        "item_id": "item_EVgfJp1sqRU5rN3ftYQF9",
+        "output_index": 0,
+        "call_id": "call_RDQqTdChlVfCtYwS",
+        "delta": " \"",
+        "obfuscation": "SoYFWDqxk2IAYB"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.function_call_arguments.delta",
+        "event_id": "event_EVgfJXdPlA4Unk4hVhcNu",
+        "response_id": "resp_EVgfJxiXrXnWkWXUmzhkL",
+        "item_id": "item_EVgfJp1sqRU5rN3ftYQF9",
+        "output_index": 0,
+        "call_id": "call_RDQqTdChlVfCtYwS",
+        "delta": "order",
+        "obfuscation": "JSZMenVTIJg"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.function_call_arguments.delta",
+        "event_id": "event_EVgfJUNiVDVToJuOAvCK8",
+        "response_id": "resp_EVgfJxiXrXnWkWXUmzhkL",
+        "item_id": "item_EVgfJp1sqRU5rN3ftYQF9",
+        "output_index": 0,
+        "call_id": "call_RDQqTdChlVfCtYwS",
+        "delta": "_id",
+        "obfuscation": "LIKaiSrjaJLgK"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.function_call_arguments.delta",
+        "event_id": "event_EVgfJyN9g0JyPdwzTh7rC",
+        "response_id": "resp_EVgfJxiXrXnWkWXUmzhkL",
+        "item_id": "item_EVgfJp1sqRU5rN3ftYQF9",
+        "output_index": 0,
+        "call_id": "call_RDQqTdChlVfCtYwS",
+        "delta": "\":",
+        "obfuscation": "9D49h1GEqB4EPz"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.function_call_arguments.delta",
+        "event_id": "event_EVgfJQfa4UPUO99qo6k9C",
+        "response_id": "resp_EVgfJxiXrXnWkWXUmzhkL",
+        "item_id": "item_EVgfJp1sqRU5rN3ftYQF9",
+        "output_index": 0,
+        "call_id": "call_RDQqTdChlVfCtYwS",
+        "delta": " \"",
+        "obfuscation": "jjqT1ZXP6uS7sA"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.function_call_arguments.delta",
+        "event_id": "event_EVgfJ18WZPqXWgIrc7iqn",
+        "response_id": "resp_EVgfJxiXrXnWkWXUmzhkL",
+        "item_id": "item_EVgfJp1sqRU5rN3ftYQF9",
+        "output_index": 0,
+        "call_id": "call_RDQqTdChlVfCtYwS",
+        "delta": "104",
+        "obfuscation": "UQXCeKwH6zcEm"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.function_call_arguments.delta",
+        "event_id": "event_EVgfJ4KJqx2q56QSuEkOY",
+        "response_id": "resp_EVgfJxiXrXnWkWXUmzhkL",
+        "item_id": "item_EVgfJp1sqRU5rN3ftYQF9",
+        "output_index": 0,
+        "call_id": "call_RDQqTdChlVfCtYwS",
+        "delta": "2",
+        "obfuscation": "tbjYHfKL8aD9Ypi"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.function_call_arguments.delta",
+        "event_id": "event_EVgfJ60f5tVJGzFfbDnIK",
+        "response_id": "resp_EVgfJxiXrXnWkWXUmzhkL",
+        "item_id": "item_EVgfJp1sqRU5rN3ftYQF9",
+        "output_index": 0,
+        "call_id": "call_RDQqTdChlVfCtYwS",
+        "delta": "\"",
+        "obfuscation": "2NEpQkIWJnjPql0"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.function_call_arguments.delta",
+        "event_id": "event_EVgfJffrprSpCueCzBbKz",
+        "response_id": "resp_EVgfJxiXrXnWkWXUmzhkL",
+        "item_id": "item_EVgfJp1sqRU5rN3ftYQF9",
+        "output_index": 0,
+        "call_id": "call_RDQqTdChlVfCtYwS",
+        "delta": " \n",
+        "obfuscation": "Mqe23ITSjag48R"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.function_call_arguments.delta",
+        "event_id": "event_EVgfJE8BYvC7qhKVLFiZG",
+        "response_id": "resp_EVgfJxiXrXnWkWXUmzhkL",
+        "item_id": "item_EVgfJp1sqRU5rN3ftYQF9",
+        "output_index": 0,
+        "call_id": "call_RDQqTdChlVfCtYwS",
+        "delta": "}",
+        "obfuscation": "OcCJTNNZebjZlpi"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.function_call_arguments.delta",
+        "event_id": "event_EVgfJQkXKjEjgP9Fb4Ugp",
+        "response_id": "resp_EVgfJxiXrXnWkWXUmzhkL",
+        "item_id": "item_EVgfJp1sqRU5rN3ftYQF9",
+        "output_index": 0,
+        "call_id": "call_RDQqTdChlVfCtYwS",
+        "delta": "  \n",
+        "obfuscation": "soDkUni7FDyhc"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.function_call_arguments.done",
+        "event_id": "event_EVgfJZs1meBUul8V3wFuj",
+        "response_id": "resp_EVgfJxiXrXnWkWXUmzhkL",
+        "item_id": "item_EVgfJp1sqRU5rN3ftYQF9",
+        "output_index": 0,
+        "call_id": "call_RDQqTdChlVfCtYwS",
+        "name": "lookup_order",
+        "arguments": "{  \n  \"order_id\": \"1042\" \n}  \n"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "conversation.item.done",
+        "event_id": "event_EVgfJTwsIayNzKVsPIJ0w",
+        "previous_item_id": "item_EVgfFVrfdinRe1ZSR1mqw",
+        "item": {
+          "id": "item_EVgfJp1sqRU5rN3ftYQF9",
+          "type": "function_call",
+          "status": "completed",
+          "name": "lookup_order",
+          "call_id": "call_RDQqTdChlVfCtYwS",
+          "arguments": "{  \n  \"order_id\": \"1042\" \n}  \n"
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_item.done",
+        "event_id": "event_EVgfJpcFux6RBUJA1wZGI",
+        "response_id": "resp_EVgfJxiXrXnWkWXUmzhkL",
+        "output_index": 0,
+        "item": {
+          "id": "item_EVgfJp1sqRU5rN3ftYQF9",
+          "type": "function_call",
+          "status": "completed",
+          "name": "lookup_order",
+          "call_id": "call_RDQqTdChlVfCtYwS",
+          "arguments": "{  \n  \"order_id\": \"1042\" \n}  \n"
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "47353ced-f561-431f-86df-507715d74b36",
+        "type": "conversation.item.create",
+        "item": {
+          "id": "88c379374e4843268e84a9a687ed7246",
+          "type": "function_call_output",
+          "call_id": "call_RDQqTdChlVfCtYwS",
+          "output": "{\"order_id\": \"1042\", \"delivery\": \"Friday\"}"
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "event_id": "e5bc84a4-bb91-46aa-88a3-adae5d81489f",
+        "type": "response.create",
+        "response": {
+          "output_modalities": [
+            "audio"
+          ]
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.done",
+        "event_id": "event_EVgfJ5yJoB3vVSlefKGd0",
+        "response": {
+          "object": "realtime.response",
+          "id": "resp_EVgfJxiXrXnWkWXUmzhkL",
+          "status": "completed",
+          "status_details": null,
+          "output": [
+            {
+              "id": "item_EVgfJp1sqRU5rN3ftYQF9",
+              "type": "function_call",
+              "status": "completed",
+              "name": "lookup_order",
+              "call_id": "call_RDQqTdChlVfCtYwS",
+              "arguments": "{  \n  \"order_id\": \"1042\" \n}  \n"
+            }
+          ],
+          "conversation_id": "conv_EVgfECJ3whhWkN1aLHqyp",
+          "output_modalities": [
+            "audio"
+          ],
+          "max_output_tokens": "inf",
+          "audio": {
+            "output": {
+              "format": {
+                "type": "audio/pcm",
+                "rate": 24000
+              },
+              "voice": "alloy"
+            }
+          },
+          "usage": {
+            "total_tokens": 198,
+            "input_tokens": 174,
+            "output_tokens": 24,
+            "input_token_details": {
+              "text_tokens": 103,
+              "audio_tokens": 71,
+              "image_tokens": 0,
+              "cached_tokens": 0,
+              "cached_tokens_details": {
+                "text_tokens": 0,
+                "audio_tokens": 0,
+                "image_tokens": 0
+              }
+            },
+            "output_token_details": {
+              "text_tokens": 24,
+              "audio_tokens": 0
+            }
+          },
+          "metadata": null
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "rate_limits.updated",
+        "event_id": "event_EVgfJSNdBzq4oCvrrbz6N",
+        "rate_limits": [
+          {
+            "name": "tokens",
+            "limit": 15000000,
+            "remaining": 14999232,
+            "reset_seconds": 0.003
+          }
+        ]
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "conversation.item.added",
+        "event_id": "event_EVgfJ49Ac7LItPVTslxoH",
+        "previous_item_id": "item_EVgfJp1sqRU5rN3ftYQF9",
+        "item": {
+          "id": "88c379374e4843268e84a9a687ed7246",
+          "type": "function_call_output",
+          "call_id": "call_RDQqTdChlVfCtYwS",
+          "output": "{\"order_id\": \"1042\", \"delivery\": \"Friday\"}"
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "conversation.item.done",
+        "event_id": "event_EVgfJFdCQXf8W3YeA1xPJ",
+        "previous_item_id": "item_EVgfJp1sqRU5rN3ftYQF9",
+        "item": {
+          "id": "88c379374e4843268e84a9a687ed7246",
+          "type": "function_call_output",
+          "call_id": "call_RDQqTdChlVfCtYwS",
+          "output": "{\"order_id\": \"1042\", \"delivery\": \"Friday\"}"
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.created",
+        "event_id": "event_EVgfJjDq39AEhcwjs4Trk",
+        "response": {
+          "object": "realtime.response",
+          "id": "resp_EVgfJLWseCWlHxaBAAei7",
+          "status": "in_progress",
+          "status_details": null,
+          "output": [],
+          "conversation_id": "conv_EVgfECJ3whhWkN1aLHqyp",
+          "output_modalities": [
+            "audio"
+          ],
+          "max_output_tokens": "inf",
+          "audio": {
+            "output": {
+              "format": {
+                "type": "audio/pcm",
+                "rate": 24000
+              },
+              "voice": "alloy"
+            }
+          },
+          "usage": null,
+          "metadata": null
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "conversation.item.input_audio_transcription.completed",
+        "event_id": "event_EVgfJ2HRVr5zp0DQeuvUL",
+        "item_id": "item_EVgfFVrfdinRe1ZSR1mqw",
+        "content_index": 0,
+        "transcript": "Where is my order number 1042?",
+        "usage": {
+          "type": "tokens",
+          "total_tokens": 42,
+          "input_tokens": 31,
+          "input_token_details": {
+            "text_tokens": 1,
+            "audio_tokens": 30
+          },
+          "output_tokens": 11
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_item.added",
+        "event_id": "event_EVgfKC2mI7grtiAkK6sgE",
+        "response_id": "resp_EVgfJLWseCWlHxaBAAei7",
+        "output_index": 0,
+        "item": {
+          "id": "item_EVgfJgz3hZNReB0kPe0AW",
+          "type": "message",
+          "status": "in_progress",
+          "role": "assistant",
+          "content": []
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "conversation.item.added",
+        "event_id": "event_EVgfKx4DM50ZLUUODGTjE",
+        "previous_item_id": "88c379374e4843268e84a9a687ed7246",
+        "item": {
+          "id": "item_EVgfJgz3hZNReB0kPe0AW",
+          "type": "message",
+          "status": "in_progress",
+          "role": "assistant",
+          "content": []
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.content_part.added",
+        "event_id": "event_EVgfKWpIJJSj7iVT01PL3",
+        "response_id": "resp_EVgfJLWseCWlHxaBAAei7",
+        "item_id": "item_EVgfJgz3hZNReB0kPe0AW",
+        "output_index": 0,
+        "content_index": 0,
+        "part": {
+          "type": "audio",
+          "transcript": ""
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio_transcript.delta",
+        "event_id": "event_EVgfKA8tlWH2Y8Q15QRWI",
+        "response_id": "resp_EVgfJLWseCWlHxaBAAei7",
+        "item_id": "item_EVgfJgz3hZNReB0kPe0AW",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": "Your",
+        "obfuscation": "hQHwXeEcUnTz"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio_transcript.delta",
+        "event_id": "event_EVgfKCRWDJBm8gxZkln2k",
+        "response_id": "resp_EVgfJLWseCWlHxaBAAei7",
+        "item_id": "item_EVgfJgz3hZNReB0kPe0AW",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": " order",
+        "obfuscation": "lSf7HS3clv"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio_transcript.delta",
+        "event_id": "event_EVgfKk3TdCTFlWpXHkAfP",
+        "response_id": "resp_EVgfJLWseCWlHxaBAAei7",
+        "item_id": "item_EVgfJgz3hZNReB0kPe0AW",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": " arrives",
+        "obfuscation": "Md2BPoRb"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio.delta",
+        "event_id": "event_EVgfKN7bA2ItyMieRsMxj",
+        "response_id": "resp_EVgfJLWseCWlHxaBAAei7",
+        "item_id": "item_EVgfJgz3hZNReB0kPe0AW",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": {
+          "audio_file": "test_realtime_voice_conversation.audio/agent-001.wav",
+          "pcm": true,
+          "offset_bytes": 0,
+          "length_bytes": 4800
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio.delta",
+        "event_id": "event_EVgfKDf20sAHbW4zB8adH",
+        "response_id": "resp_EVgfJLWseCWlHxaBAAei7",
+        "item_id": "item_EVgfJgz3hZNReB0kPe0AW",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": {
+          "audio_file": "test_realtime_voice_conversation.audio/agent-001.wav",
+          "pcm": true,
+          "offset_bytes": 4800,
+          "length_bytes": 7200
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio_transcript.delta",
+        "event_id": "event_EVgfKX0tcR3rC2CWLso8g",
+        "response_id": "resp_EVgfJLWseCWlHxaBAAei7",
+        "item_id": "item_EVgfJgz3hZNReB0kPe0AW",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": " Friday",
+        "obfuscation": "b001URnYL"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio.delta",
+        "event_id": "event_EVgfK1PA0bzoOVOPRS62f",
+        "response_id": "resp_EVgfJLWseCWlHxaBAAei7",
+        "item_id": "item_EVgfJgz3hZNReB0kPe0AW",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": {
+          "audio_file": "test_realtime_voice_conversation.audio/agent-001.wav",
+          "pcm": true,
+          "offset_bytes": 12000,
+          "length_bytes": 12000
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio_transcript.delta",
+        "event_id": "event_EVgfKueVpBTFfuDMNLYiG",
+        "response_id": "resp_EVgfJLWseCWlHxaBAAei7",
+        "item_id": "item_EVgfJgz3hZNReB0kPe0AW",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": ".",
+        "obfuscation": "p37bWaBJobEfqoH"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio.delta",
+        "event_id": "event_EVgfKoKMvSKJfyTn3WnaX",
+        "response_id": "resp_EVgfJLWseCWlHxaBAAei7",
+        "item_id": "item_EVgfJgz3hZNReB0kPe0AW",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": {
+          "audio_file": "test_realtime_voice_conversation.audio/agent-001.wav",
+          "pcm": true,
+          "offset_bytes": 24000,
+          "length_bytes": 12000
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio.delta",
+        "event_id": "event_EVgfK10mVVvrRNGMvNbej",
+        "response_id": "resp_EVgfJLWseCWlHxaBAAei7",
+        "item_id": "item_EVgfJgz3hZNReB0kPe0AW",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": {
+          "audio_file": "test_realtime_voice_conversation.audio/agent-001.wav",
+          "pcm": true,
+          "offset_bytes": 36000,
+          "length_bytes": 12000
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio.delta",
+        "event_id": "event_EVgfKTFo2KawLetWH3ms6",
+        "response_id": "resp_EVgfJLWseCWlHxaBAAei7",
+        "item_id": "item_EVgfJgz3hZNReB0kPe0AW",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": {
+          "audio_file": "test_realtime_voice_conversation.audio/agent-001.wav",
+          "pcm": true,
+          "offset_bytes": 48000,
+          "length_bytes": 12000
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio.delta",
+        "event_id": "event_EVgfKNMOW3bG6hxS9Dctt",
+        "response_id": "resp_EVgfJLWseCWlHxaBAAei7",
+        "item_id": "item_EVgfJgz3hZNReB0kPe0AW",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": {
+          "audio_file": "test_realtime_voice_conversation.audio/agent-001.wav",
+          "pcm": true,
+          "offset_bytes": 60000,
+          "length_bytes": 12000
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio.delta",
+        "event_id": "event_EVgfKK3zOyrcTFYYNz2BJ",
+        "response_id": "resp_EVgfJLWseCWlHxaBAAei7",
+        "item_id": "item_EVgfJgz3hZNReB0kPe0AW",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": {
+          "audio_file": "test_realtime_voice_conversation.audio/agent-001.wav",
+          "pcm": true,
+          "offset_bytes": 72000,
+          "length_bytes": 33600
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio.done",
+        "event_id": "event_EVgfK67Q5JKqF7kkhgb3b",
+        "response_id": "resp_EVgfJLWseCWlHxaBAAei7",
+        "item_id": "item_EVgfJgz3hZNReB0kPe0AW",
+        "output_index": 0,
+        "content_index": 0
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_audio_transcript.done",
+        "event_id": "event_EVgfKUg38NaDv2LWNV6ew",
+        "response_id": "resp_EVgfJLWseCWlHxaBAAei7",
+        "item_id": "item_EVgfJgz3hZNReB0kPe0AW",
+        "output_index": 0,
+        "content_index": 0,
+        "transcript": "Your order arrives Friday."
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.content_part.done",
+        "event_id": "event_EVgfKQuk5s1Le7nZefyCl",
+        "response_id": "resp_EVgfJLWseCWlHxaBAAei7",
+        "item_id": "item_EVgfJgz3hZNReB0kPe0AW",
+        "output_index": 0,
+        "content_index": 0,
+        "part": {
+          "type": "audio",
+          "transcript": "Your order arrives Friday."
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "conversation.item.done",
+        "event_id": "event_EVgfKhvjXr5zzDG4mPix7",
+        "previous_item_id": "88c379374e4843268e84a9a687ed7246",
+        "item": {
+          "id": "item_EVgfJgz3hZNReB0kPe0AW",
+          "type": "message",
+          "status": "completed",
+          "role": "assistant",
+          "content": [
+            {
+              "type": "output_audio",
+              "transcript": "Your order arrives Friday."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.output_item.done",
+        "event_id": "event_EVgfKuh3rIIUJsno1Co0o",
+        "response_id": "resp_EVgfJLWseCWlHxaBAAei7",
+        "output_index": 0,
+        "item": {
+          "id": "item_EVgfJgz3hZNReB0kPe0AW",
+          "type": "message",
+          "status": "completed",
+          "role": "assistant",
+          "content": [
+            {
+              "type": "output_audio",
+              "transcript": "Your order arrives Friday."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "response.done",
+        "event_id": "event_EVgfK4wcO7KeYIxU5DjCm",
+        "response": {
+          "object": "realtime.response",
+          "id": "resp_EVgfJLWseCWlHxaBAAei7",
+          "status": "completed",
+          "status_details": null,
+          "output": [
+            {
+              "id": "item_EVgfJgz3hZNReB0kPe0AW",
+              "type": "message",
+              "status": "completed",
+              "role": "assistant",
+              "content": [
+                {
+                  "type": "output_audio",
+                  "transcript": "Your order arrives Friday."
+                }
+              ]
+            }
+          ],
+          "conversation_id": "conv_EVgfECJ3whhWkN1aLHqyp",
+          "output_modalities": [
+            "audio"
+          ],
+          "max_output_tokens": "inf",
+          "audio": {
+            "output": {
+              "format": {
+                "type": "audio/pcm",
+                "rate": 24000
+              },
+              "voice": "alloy"
+            }
+          },
+          "usage": {
+            "total_tokens": 220,
+            "input_tokens": 163,
+            "output_tokens": 57,
+            "input_token_details": {
+              "text_tokens": 133,
+              "audio_tokens": 30,
+              "image_tokens": 0,
+              "cached_tokens": 64,
+              "cached_tokens_details": {
+                "text_tokens": 64,
+                "audio_tokens": 0,
+                "image_tokens": 0
+              }
+            },
+            "output_token_details": {
+              "text_tokens": 13,
+              "audio_tokens": 44
+            }
+          },
+          "metadata": null
+        }
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "type": "rate_limits.updated",
+        "event_id": "event_EVgfKxCXzL588xkpiYfJz",
+        "rate_limits": [
+          {
+            "name": "tokens",
+            "limit": 15000000,
+            "remaining": 14998442,
+            "reset_seconds": 0.006
+          }
+        ]
+      }
+    }
+  ]
+}

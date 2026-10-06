@@ -38,6 +38,38 @@ class SegmentTests(unittest.IsolatedAsyncioTestCase):
             position += len(decoded) / rate * 1000
         self.assertAlmostEqual(position, 1800)
 
+    async def test_large_frame_crosses_rotation_without_losing_samples(self):
+        files = []
+
+        async def publish(segment, encoded):
+            files.append((segment.start_ms, encoded))
+
+        recorder = SegmentedRecording(
+            options=RecordingOptions(segment_duration_seconds=1), on_segment=publish, audio_format="wav"
+        )
+        # One native write contains three seconds. Subsequent writes advance
+        # the export watermark across it; rotation must preserve every sample.
+        audio = np.arange(24000 * 3, dtype=np.int16)
+        recorder.capture(1, audio.tobytes(), 24000, 1, observed_ns=0)
+        for index in range(4):
+            recorder.capture(1, b"\0\0" * 24000, 24000, 1, observed_ns=(3 + index) * 1_000_000_000)
+            if recorder.pending:
+                await asyncio.gather(*tuple(recorder.pending))
+        self.assertTrue(files, "rotation must export before shutdown")
+        await recorder.finish()
+        pieces = []
+        position = 0
+        for start, encoded in files:
+            self.assertAlmostEqual(start, position)
+            samples, rate = sf.read(io.BytesIO(encoded["data"]), dtype="int16", always_2d=True)
+            pieces.append(samples[:, 1])
+            position += len(samples) / rate * 1000
+        np.testing.assert_array_equal(
+            np.concatenate(pieces), np.concatenate([audio, np.zeros(24000 * 4, dtype=np.int16)])
+        )
+        self.assertIsNone(recorder.reason)
+        self.assertEqual(recorder.retained_bytes, 0)
+
     async def test_duration_limit_preserves_partial_audio(self):
         files = []
 

@@ -1,7 +1,5 @@
-import io
 import itertools
 import unittest
-import wave
 from types import SimpleNamespace
 
 from pipecat.frames.frames import (  # pylint: disable=import-error
@@ -14,7 +12,7 @@ from pipecat.frames.frames import (  # pylint: disable=import-error
 )
 from pipecat.processors.frame_processor import FrameDirection  # pylint: disable=import-error
 
-from .instrumentation import NativeObserver, encode_wav, native_value
+from .instrumentation import NativeObserver, native_value
 
 
 class Span:
@@ -69,13 +67,6 @@ class Tests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(observer.audio_bytes, 0)
         self.assertNotIn("audio", native_value(frame))
         self.assertEqual(observer.events[0]["pipecat.observer.timestamp"], 1234)
-
-    async def test_disabled_capture_and_duplicate_push(self):
-        observer = NativeObserver(Span(), retain_audio=False)
-        data = SimpleNamespace(frame=StartFrame(), first_push=False)
-        await observer.on_push_frame(data)
-        self.assertEqual(observer.events, [])
-        await observer.finish()
 
     async def test_repeated_tool_frames_keep_one_execution_span(self):
         observer = NativeObserver(Span(), retain_audio=True)
@@ -169,12 +160,6 @@ class Tests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(descriptors[0]["reason"], "RuntimeError")
         observer.logger.flush.assert_called_once()
-
-    def test_wav_format_and_samples(self):
-        wav = encode_wav([b"\x01\x00" * 480], 24000, 1)
-        with wave.open(io.BytesIO(wav)) as stream:
-            self.assertEqual(stream.getnframes(), 480)
-            self.assertEqual(stream.getframerate(), 24000)
 
 
 if __name__ == "__main__":

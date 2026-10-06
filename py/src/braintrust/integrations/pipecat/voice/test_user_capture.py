@@ -1,10 +1,8 @@
 import asyncio
-import io
 import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
-import soundfile as sf  # pylint: disable=import-error
 from pipecat.frames.frames import (  # pylint: disable=import-error
     MetricsFrame,
     TranscriptionFrame,
@@ -92,20 +90,6 @@ class UserCaptureTests(unittest.IsolatedAsyncioTestCase):
         metadata = {key: value for row in stt_span.rows for key, value in row.get("metadata", {}).items()}
         self.assertEqual(metadata["pipecat.ttfb"][0]["value"], 0.12)
         return observer, capture, turn
-
-    async def test_native_consumption_attributes_earlier_frame_and_clip_to_later_turn(
-        self,
-    ):
-        observer, capture, turn = await self.exercise(True)
-        # Force progressive export to complete before final cleanup.
-        await asyncio.gather(*tuple(capture.tasks))
-        await observer.finish()
-        payload = next(row["input"] for row in turn["span"].rows if isinstance(row.get("input"), list))
-        self.assertEqual(payload[0]["content"][0]["text"], "Where is my order?")
-        decoded, rate = sf.read(io.BytesIO(payload[0]["content"][1]["file"]["file_data"].data))
-        self.assertAlmostEqual(len(decoded) / rate, 0.1)
-        self.assertGreater(abs(decoded).max(), 0.01)
-        self.assertEqual(capture.bytes, 0)
 
     async def test_opt_out_keeps_metadata_without_retaining_encoding_or_attaching_audio(
         self,

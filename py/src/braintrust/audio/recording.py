@@ -118,9 +118,9 @@ class CallRecording:
             else max((observed_ns - self.origin_ns) / 1e6, self.ends[channel])
         )
         duration = len(pcm) / 2 / channels / sample_rate * 1000
-        if duration > 1000:
-            self.omit("frame_size_limit")
-        elif start + duration > self.max_duration_ms:
+        # Transport frames can contain seconds of audio (e.g. shutdown silence).
+        # Bound retained bytes and timeline duration, not the transport's packetization.
+        if start + duration > self.max_duration_ms:
             self.omit("duration_limit")
         elif self.bytes + len(pcm) > self.max_bytes:
             self.omit("capture_byte_limit")

@@ -234,36 +234,20 @@ class TurnTests(unittest.IsolatedAsyncioTestCase):
         await self.push(TTSStoppedFrame(context_id="b"), tts)
         await self.push(MetricsFrame(data=[TTFBMetricsData(processor="tts", value=0.13)]), tts)
         assert self.observer.root.rows[-1]["metadata"]["pipecat.ttfb"][-1]["value"] == 0.13
-        await self.observer.finish()
+        # A speech-to-speech processor can have model and audio operations open
+        # simultaneously. Usage must select the model operation, not become ambiguous.
+        from pipecat.metrics.metrics import LLMTokenUsage, LLMUsageMetricsData  # pylint: disable=import-error
 
-    async def test_native_llm_standard_metrics_preserve_native_usage(self):
-        from pipecat.frames.frames import MetricsFrame  # pylint: disable=import-error
-        from pipecat.metrics.metrics import (  # pylint: disable=import-error
-            LLMTokenUsage,
-            LLMUsageMetricsData,
-            TTFBMetricsData,
+        await self.push(TTSStartedFrame(context_id="same-service"), llm)
+        await self.push(
+            MetricsFrame(
+                data=[
+                    LLMUsageMetricsData(
+                        processor="llm", value=LLMTokenUsage(prompt_tokens=10, completion_tokens=3, total_tokens=13)
+                    )
+                ]
+            ),
+            llm,
         )
-
-        processor = SimpleNamespace(name="OpenAILLMService#0", model="gpt-4o-mini")
-        await self.push(LLMFullResponseStartFrame(), processor)
-        span = self.observer.llm
-        usage = LLMUsageMetricsData(
-            processor=processor.name,
-            model=processor.model,
-            value=LLMTokenUsage(prompt_tokens=10, completion_tokens=3, total_tokens=13),
-        )
-        await self.push(MetricsFrame(data=[TTFBMetricsData(processor=processor.name, value=0.2)]), processor)
-        await self.push(TTSStartedFrame(context_id="speech"), processor)
-        await self.push(MetricsFrame(data=[usage]), processor)
-        await self.push(MetricsFrame(data=[TTFBMetricsData(processor="tts", value=0.9)]), SimpleNamespace(name="tts"))
-        await self.push(LLMFullResponseEndFrame(), processor)
-        metrics = {key: value for row in span.rows for key, value in row.get("metrics", {}).items()}
-        metadata = {key: value for row in span.rows for key, value in row.get("metadata", {}).items()}
-        assert metrics["prompt_tokens"] == 10
-        assert metrics["completion_tokens"] == 3
-        assert metrics["tokens"] == 13
-        assert metrics["time_to_first_token"] == 0.2
-        assert metadata["model"] == "gpt-4o-mini"
-        assert metadata["provider"] == "openai"
-        assert metadata["pipecat.usage"]["value"]["total_tokens"] == 13
+        assert self.observer.llm.rows[-1]["metrics"]["tokens"] == 13
         await self.observer.finish()

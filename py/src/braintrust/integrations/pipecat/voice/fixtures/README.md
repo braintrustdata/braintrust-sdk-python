@@ -1,5 +1,20 @@
-# Recorded realtime responses
+# Voice cassette maintenance
 
-`realtime-responses.json` contains the native OpenAI response objects observed during the synthetic DEMO-1042 call on September 30, 2026, using Pipecat 1.12.0 and `gpt-realtime`. It includes the greeting, tool request, and spoken continuation. These are exported provider response objects, not complete WebSocket traffic. No credentials or audio bytes are included.
+Run from `py/`. Replay needs no credentials:
 
-Trace row: `bbffcf29-8862-4ee1-bd78-8365c1a20382`, project `voice-sdk-instrumentation-pipecat`.
+```sh
+mise exec -- uv run nox -s 'test_pipecat(latest)' -- --vcr-record=none
+mise exec -- uv run nox -s 'test_pipecat(1.3.0)' -- --vcr-record=none
+```
+
+To re-record the voice conversations, set `OPENAI_API_KEY` in your shell, then run:
+
+```sh
+mise exec -- uv run nox -s 'test_pipecat(latest)' -- --vcr-record=all -k voice_conversation
+```
+
+- Re-recording makes short, billable OpenAI calls. No other API keys are needed. Existing fixtures are replaced only after the conversation passes its assertions.
+- HTTP uses VCR; Realtime uses `_test_websocket.py` to record/replay WebSocket messages. `_test_audio_cassettes.py` stores audio separately and restores exact bytes for replay.
+- Commit YAML/JSON manifests **and** companion `.audio/` directories under `pipecat/cassettes/latest/` together. Re-recording regenerates these WAVs; do not edit or compress them manually. WebSocket offsets refer to PCM bytes, excluding the WAV header.
+- `order.wav` is the fixed caller input: 16 kHz mono PCM16, “Where is my order number one zero four two?”, generated with macOS's Samantha voice. Changing it requires re-recording both conversations.
+- After re-recording, review the fixture diff and run replay with `--vcr-record=none` before committing. Missing or truncated audio files fail replay.
