@@ -156,7 +156,6 @@ class NativeObserver(BaseObserver):
         )
         self.call_descriptors = {}
         self.clip_tasks = set()
-        self.frame_contexts = {}
         self.realtime = None
         self.input_processor = None
         self.capture_transport = False
@@ -164,6 +163,7 @@ class NativeObserver(BaseObserver):
             root if root is not None else logger.start_span(name="pipecat.pipeline", type="task", set_current=False)
         )
         self.ttfb = TTFBRouter(self.root.log)
+        self.tts_requests = None
         self.turns = Turns(self.root, self.hooks)
         self.turns.on_completed = self._turn_completed
         self.alignment = Alignment(self.root, self.call_recording)
@@ -208,7 +208,9 @@ class NativeObserver(BaseObserver):
             source_budget.release(retained)
             self.audio_bytes = 0
 
-    def bind(self, *, transport, user_aggregator, assistant_aggregator, stt=None, realtime_service=None):
+    def bind(
+        self, *, transport, user_aggregator, assistant_aggregator, stt=None, realtime_service=None, tts_services=()
+    ):
         """Bind one supported pipeline before it starts; does not alter routing."""
         import importlib.metadata
 
@@ -219,6 +221,9 @@ class NativeObserver(BaseObserver):
         if (stt is None) == (realtime_service is None):
             raise ValueError("Bind either segmented STT or an OpenAI realtime service")
         self.turns.install(user_aggregator, assistant_aggregator)
+        from .tts_metrics import TTSRequests
+
+        self.tts_requests = TTSRequests(self.hooks, tts_services)
         self.user_aggregator, self.assistant_aggregator = user_aggregator, assistant_aggregator
         self.capture_transport = True
         if stt is not None:
@@ -238,7 +243,10 @@ class NativeObserver(BaseObserver):
         return self
 
     def frame_context(self, frame):
-        return self.frame_contexts.get(frame.id, getattr(frame, "context_id", None))
+        identity = getattr(frame, "_braintrust_realtime_context", None)
+        if identity and self.realtime and identity[0] is self.realtime.frame_token:
+            return identity[1]
+        return getattr(frame, "context_id", None)
 
     async def on_push_frame(self, data):
         if not data.first_push or self.finished:
@@ -326,6 +334,11 @@ class NativeObserver(BaseObserver):
         fields = native_value(frame) if kind != "LLMContextFrame" else {}
         event_owner = self.root
         if kind == "MetricsFrame":
+            request = self.tts_requests.take(frame, data.source) if self.tts_requests else None
+            if request is not None:
+                for metric in frame.data:
+                    self.ttfb.capture_request(metric, data.source, request)
+                return
             # Pipeline startup broadcasts zero placeholders for every service.
             if frame.data and all(
                 getattr(metric, "value", None) == 0

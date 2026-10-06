@@ -113,6 +113,7 @@ class UserCapture:
                 self.segments.append(segment)
             else:
                 self.omitted += 1
+                segment["reason"] = "capture_backlog_limit"
             if observer.capture_user_audio and tracked:
                 if self.bytes + len(audio) <= observer.max_audio_bytes and source_budget.reserve(len(audio)):
                     segment.update(audio=audio, reason=None)
@@ -204,6 +205,21 @@ class UserCapture:
                             ],
                         }
                     )
+                else:
+                    if turn:
+                        self.omitted += 1
+                        owner.log(
+                            metadata={
+                                "audio.recordings": [
+                                    {
+                                        "id": "user-clip",
+                                        "state": "omitted",
+                                        "reason": "capture_backlog_limit",
+                                    }
+                                ]
+                            }
+                        )
+                    self.release_segments(segments)
                 if turn:
                     self.queue_completed(turn)
             return result
@@ -248,13 +264,14 @@ class UserCapture:
             span.log(error=segment["error"])
         span.end(end_time=segment["end"] or time.time())
         segment["span"] = span
+        self.segments = [pending for pending in self.segments if pending is not segment]
         self.observer.alignment.add(span, segment["ranges"], 0)
         if turn:
             self.observer.alignment.add(owner, segment["ranges"], 0)
             span.log(input={"recording_span_id": owner.span_id, "recording_id": "user-clip"})
 
     async def finish(self):
-        for segment in self.segments:
+        for segment in list(self.segments):
             self.create_stt(segment, self.observer.root)
         for batch in list(self.batches.values()):
             self.queue_completed(batch["turn"], force=True)
@@ -321,13 +338,17 @@ class UserCapture:
                 )
         turn["span"].log(metadata={"audio.recordings": [descriptor]})
 
+        self.release_segments(segments)
+        self.batches.pop(turn["span"].span_id, None)
+        await asyncio.to_thread(self.observer.logger.flush)
+
+    def release_segments(self, segments):
         for segment in segments:
             if segment["audio"] is not None:
                 size = len(segment["audio"])
                 segment["audio"] = None
                 self.bytes -= size
                 source_budget.release(size)
-        await asyncio.to_thread(self.observer.logger.flush)
 
     def release(self):
         self.batches.clear()

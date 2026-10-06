@@ -17,8 +17,10 @@ class RealtimeCapture:
         self.consumed = []
         self.associations = []
         self.sent_samples = 0
-        self.sent_ranges = []
+        self.sent_ranges: list[tuple[int, int, dict[str, int]]] = []
         self.invalid = False
+        self.omitted = 0
+        self.frame_token = object()
         self.active = ContextVar("realtime_response", default=None)
         self.service = service
         self.user_item = None
@@ -37,7 +39,6 @@ class RealtimeCapture:
                 self.user_turns[self.user_item] = observer.turns.user
                 if len(self.user_turns) > 256:
                     self.user_turns.pop(next(iter(self.user_turns)))
-                    self.invalid = True
                 observer.turns.user["span"].log(metadata={"openai.item_id": self.user_item})
 
         observer.hooks.event(aggregator, "on_user_turn_started", user_started)
@@ -76,10 +77,8 @@ class RealtimeCapture:
                 "TTSAudioRawFrame",
                 "TTSTextFrame",
             }:
-                if len(observer.frame_contexts) < 16000:
-                    observer.frame_contexts[frame.id] = context
-                else:
-                    self.invalid = True
+                # Keep provenance on the queued frame, not in a call-long ID map.
+                frame._braintrust_realtime_context = (self.frame_token, context)
             return await original_push(frame, *args, **kwargs)
 
         observer.hooks.set(service, "push_frame", push)
@@ -147,9 +146,13 @@ class RealtimeCapture:
             async def speech(evt, original=original, field=field):
                 if field == "audio_start_ms":
                     self.user_item = evt.item_id
-                if len(self.items) < 256 or evt.item_id in self.items:
-                    self.items.setdefault(evt.item_id, {})[field] = getattr(evt, field)
-                return await original(evt)
+                if evt.item_id not in self.items and len(self.items) >= 256:
+                    self.items.pop(next(iter(self.items)))
+                    self.omitted += 1
+                self.items.setdefault(evt.item_id, {})[field] = getattr(evt, field)
+                result = await original(evt)
+                self.publish()
+                return result
 
             observer.hooks.set(service, name, speech)
 
@@ -182,10 +185,11 @@ class RealtimeCapture:
                         "braintrust.user_capture.association": "aggregator_consumed_frames",
                     }
                 )
-                if len(self.associations) < 256:
-                    self.associations.append((turn["span"], ids))
-                else:
-                    self.invalid = True
+                if len(self.associations) >= 256:
+                    self.associations.pop(0)
+                    self.omitted += 1
+                self.associations.append((turn["span"], ids))
+                self.publish()
                 observer.context_reply_to = turn["span"].span_id
             return result
 
@@ -233,11 +237,25 @@ class RealtimeCapture:
                     observer.call_recording.omit("capture_error")
                     interval = None
                 size = len(frame.audio) // 2
-                if interval and len(self.sent_ranges) < 16000:
-                    self.sent_ranges.append((self.sent_samples, self.sent_samples + size, interval))
-                else:
-                    self.invalid = True
+                if interval and not self.invalid:
+                    merged = False
+                    if self.sent_ranges:
+                        start, end, previous = self.sent_ranges[-1]
+                        if end == self.sent_samples and previous["end"] == interval["start"]:
+                            self.sent_ranges[-1] = (
+                                start,
+                                self.sent_samples + size,
+                                {"start": previous["start"], "end": interval["end"]},
+                            )
+                            merged = True
+                    if not merged:
+                        if len(self.sent_ranges) >= 16000:
+                            self.sent_ranges.pop(0)
+                            self.omitted += 1
+                        self.sent_ranges.append((self.sent_samples, self.sent_samples + size, interval))
                 self.sent_samples += size
+                if self.associations:
+                    self.publish()
 
             async def send_audio(frame):
                 token = audio_frame.set(frame)
@@ -250,28 +268,52 @@ class RealtimeCapture:
 
             async def send_event(evt):
                 if evt.type == "input_audio_buffer.clear":
+                    self.publish()
                     self.invalid = True
                 return await original_event(evt)
 
             observer.hooks.set(service, "_send_user_audio", send_audio)
             observer.hooks.set(service, "send_client_event", send_event)
 
-    def finish(self):
+    def publish(self, final=False):
+        pending = []
+        completed = set()
         for span, ids in self.associations:
             events = [{"item_id": item, **self.items.get(item, {})} for item in ids]
-            span.log(metadata={"openai.input_audio_segments": events})
-            if not self.observer.capture_user_audio or self.invalid:
+            ready = all("audio_start_ms" in event and "audio_end_ms" in event for event in events)
+            if ready and self.observer.capture_user_audio and not self.invalid:
+                ready = all(round(event["audio_end_ms"] * 24) <= self.sent_samples for event in events)
+            if not ready and not final:
+                pending.append((span, ids))
                 continue
-            for event in events:
-                if "audio_start_ms" not in event or "audio_end_ms" not in event:
-                    continue
-                start, end = round(event["audio_start_ms"] * 24), round(event["audio_end_ms"] * 24)
-                ranges = []
-                for a, b, interval in self.sent_ranges:
-                    left, right = max(start, a), min(end, b)
-                    if right > left:
-                        ranges.append([interval["start"] + left - a, interval["start"] + right - a])
-                if sum(b - a for a, b in ranges) == end - start:
-                    self.observer.alignment.add(span, ranges, 0)
-        self.observer.root.log(metadata={"braintrust.realtime.alignment_invalidated": self.invalid})
+            span.log(metadata={"openai.input_audio_segments": events})
+            if self.observer.capture_user_audio and not self.invalid:
+                for event in events:
+                    if "audio_start_ms" not in event or "audio_end_ms" not in event:
+                        continue
+                    start, end = round(event["audio_start_ms"] * 24), round(event["audio_end_ms"] * 24)
+                    ranges = []
+                    for a, b, interval in self.sent_ranges:
+                        left, right = max(start, a), min(end, b)
+                        if right > left:
+                            ranges.append([interval["start"] + left - a, interval["start"] + right - a])
+                    if sum(b - a for a, b in ranges) == end - start:
+                        self.observer.alignment.add(span, ranges, 0)
+                    else:
+                        self.omitted += 1
+            completed.update(ids)
+        for item in completed.difference(item for _, ids in pending for item in ids):
+            self.items.pop(item, None)
+        self.associations = pending
+
+    def finish(self):
+        self.publish(final=True)
+        self.observer.root.log(
+            metadata={
+                "braintrust.realtime.alignment_invalidated": self.invalid,
+                "braintrust.realtime.associations_omitted": self.omitted,
+            }
+        )
         self.sent_ranges.clear()
+        self.items.clear()
+        self.user_turns.clear()

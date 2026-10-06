@@ -175,7 +175,8 @@ def _assert_shutdown_audio(output, root, recordings):
 
 @pytest.mark.vcr(match_on=["method", "uri", "voice_payload"])
 @pytest.mark.asyncio
-async def test_cascade_voice_conversation(memory_logger, request):
+@pytest.mark.parametrize("early_metrics", [False, True])
+async def test_cascade_voice_conversation(memory_logger, request, monkeypatch, early_metrics):
     setup_pipecat(capture_audio_attachments=True, audio_format="wav", recording_options=RecordingOptions())
     init_test_logger("test-project-pipecat-py-tracing")
     tool_calls = []
@@ -214,6 +215,24 @@ async def test_cascade_voice_conversation(memory_logger, request):
         api_key=key,
         settings=OpenAITTSService.Settings(model="gpt-4o-mini-tts", voice="alloy"),
     )
+    if early_metrics:
+        # Exercise native audio-queue scheduling without replacing the service,
+        # metric emission, or provider responses.
+        usage_emitted = asyncio.Event()
+        original_push = tts.push_frame
+
+        async def delayed_start(frame, *args, **kwargs):
+            if type(frame).__name__ == "TTSStartedFrame":
+                await usage_emitted.wait()  # Covered by the conversation's overall deadline.
+                await asyncio.sleep(0)
+            result = await original_push(frame, *args, **kwargs)
+            if type(frame).__name__ == "MetricsFrame" and any(
+                type(metric).__name__ == "TTSUsageMetricsData" for metric in frame.data
+            ):
+                usage_emitted.set()
+            return result
+
+        monkeypatch.setattr(tts, "push_frame", delayed_start)
     worker = _make_worker(
         Pipeline([source, stt, pair.user(), llm, tts, output, pair.assistant()]),
         params=PipelineParams(
@@ -251,10 +270,23 @@ async def test_cascade_voice_conversation(memory_logger, request):
     recognition = _single_span(rows, "stt")
     tool = _single_span(rows, "lookup_order")
     synthesis = _single_span(rows, "tts")
-    measurements = synthesis["metadata"]["contrib.pipecat.measurements"]
-    assert any(m["type"] == "TTSUsageMetricsData" for m in measurements)
-    assert any(m["type"] == "ProcessingMetricsData" for m in measurements)
-    assert all(m["processor"].startswith("OpenAITTSService") for m in measurements)
+    # Request identity must survive early metrics, without root duplicates.
+    tts_measurements = [
+        (row, measurement)
+        for row in rows
+        for measurement in row.get("metadata", {}).get("contrib.pipecat.measurements", [])
+        if measurement["processor"].startswith("OpenAITTSService")
+    ]
+    for metric_type in ("TTSUsageMetricsData", "ProcessingMetricsData"):
+        matching = [(row, metric) for row, metric in tts_measurements if metric["type"] == metric_type]
+        assert len(matching) == 1
+        owner, metric = matching[0]
+        assert owner["span_id"] == synthesis["span_id"]
+        assert metric["value"] > 0
+    assert all(
+        metric["processor"].startswith("OpenAITTSService")
+        for metric in synthesis.get("metadata", {}).get("contrib.pipecat.measurements", [])
+    )
     for row in rows:
         assert not any(key.startswith("pipecat.") for key in row.get("metadata", {}))
         events = row.get("metadata", {}).get("contrib.pipecat.events", [])

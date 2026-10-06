@@ -221,12 +221,17 @@ class TurnTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_ttfb_routes_only_to_unambiguous_processor_operation(self):
         from pipecat.frames.frames import MetricsFrame, TTSStoppedFrame  # pylint: disable=import-error
-        from pipecat.metrics.metrics import TTFBMetricsData  # pylint: disable=import-error
+        from pipecat.metrics.metrics import TTFBMetricsData, TTSUsageMetricsData  # pylint: disable=import-error
 
         llm, tts = SimpleNamespace(name="llm"), SimpleNamespace(name="tts")
         await self.push(LLMFullResponseStartFrame(), llm)
+        # The usage frame can beat the queued TTSStartedFrame to the observer.
+        await self.push(MetricsFrame(data=[TTSUsageMetricsData(processor="tts", value=25)]), tts)
+        early_usage = self.observer.root.rows[-1]["metadata"]["contrib.pipecat.measurements"]
+        assert early_usage == [{"type": "TTSUsageMetricsData", "processor": "tts", "model": None, "value": 25}]
         await self.push(TTSStartedFrame(context_id="a"), tts)
         span = self.observer.tts["a"]["span"]
+        assert not any("contrib.pipecat.measurements" in row.get("metadata", {}) for row in span.rows)
         await self.push(MetricsFrame(data=[TTFBMetricsData(processor="tts", value=0.09)]), tts)
         assert span.rows[-1]["metadata"]["contrib.pipecat.ttfb"][0]["value"] == 0.09
         await self.push(TTSStartedFrame(context_id="b"), tts)

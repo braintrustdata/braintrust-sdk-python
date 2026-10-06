@@ -27,4 +27,5 @@ def discover(pipeline):
         assistant_aggregator=assistant,
         stt=stts[0] if stts else None,
         realtime_service=realtime[0] if realtime else None,
+        tts_services=[processor for processor in processors if _is(processor, "TTSService")],
     )

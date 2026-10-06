@@ -78,17 +78,17 @@ class UserCaptureTests(unittest.IsolatedAsyncioTestCase):
         turn = observer.turns.start("user", "UserStartedSpeakingFrame")
         observer.turns.confirm("user")
         await aggregator._push_aggregation()
-        observer.turns.stop(
-            "user",
-            SimpleNamespace(content="Where is my order?", timestamp="t1", user_id="user"),
-        )
-        await asyncio.sleep(0)
         self.assertEqual(context.get_messages()[-1]["content"], "Where is my order?")
         self.assertEqual(capture.batches[turn["span"].span_id]["frames"][0]["id"], frame.id)
         self.assertEqual(len(capture.batches[turn["span"].span_id]["segments"][0]["boundaries"]), 2)
         stt_span = capture.batches[turn["span"].span_id]["segments"][0]["span"]
         metadata = {key: value for row in stt_span.rows for key, value in row.get("metadata", {}).items()}
         self.assertEqual(metadata["contrib.pipecat.ttfb"][0]["value"], 0.12)
+        observer.turns.stop(
+            "user",
+            SimpleNamespace(content="Where is my order?", timestamp="t1", user_id="user"),
+        )
+        await asyncio.sleep(0)
         return observer, capture, turn
 
     async def test_opt_out_keeps_metadata_without_retaining_encoding_or_attaching_audio(
@@ -157,3 +157,36 @@ class UserCaptureTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(frames[0].text, "Where is my order?")
         self.assertEqual(capture.omitted, 1)
         await observer.finish()
+
+    async def test_completed_turns_release_capacity_for_later_clips(self):
+        observer = NativeObserver(Span(), retain_audio=True, audio_format="wav")
+        aggregator = LLMContextAggregatorPair(LLMContext()).user()
+
+        async def push_context():
+            pass
+
+        aggregator.push_context_frame = push_context
+        stt = STT()
+        capture = UserCapture(observer, stt, aggregator, native_value)
+        observer.user_capture = capture
+        audio = encode_wav([b"\x10\x10" * 160], 16000, 1)
+        try:
+            for index in range(270):
+                async for frame in stt.run_stt(audio):
+                    await aggregator._handle_transcription(frame)
+                turn = observer.turns.start("user", "UserStartedSpeakingFrame")
+                observer.turns.confirm("user")
+                await aggregator._push_aggregation()
+                observer.turns.stop("user", SimpleNamespace(content="order?", timestamp=str(index), user_id="user"))
+                await asyncio.gather(*capture.tasks)
+                descriptors = [
+                    r["metadata"]["audio.recordings"]
+                    for r in turn["span"].rows
+                    if "audio.recordings" in r.get("metadata", {})
+                ]
+                self.assertEqual(descriptors[-1][0]["state"], "ready")
+                self.assertFalse(capture.batches)
+                self.assertFalse(capture.segments)
+                self.assertEqual(capture.bytes, 0)
+        finally:
+            await observer.finish()

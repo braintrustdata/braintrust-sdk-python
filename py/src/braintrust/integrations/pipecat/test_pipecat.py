@@ -387,3 +387,37 @@ def test_ttfb_router_bounds_and_rejects_mismatched_sources():
     assert router.capture(metric, source) is None
     router.clear()
     assert not router.active
+
+
+def test_request_metrics_keep_identity_across_overlap_shutdown_and_limits():
+    from braintrust.integrations.pipecat.ttfb import TTFBRouter
+
+    usage = _import("pipecat.metrics.metrics.TTSUsageMetricsData")
+    root, first, second = [], [], []
+    source = SimpleNamespace(name="tts")
+    router = TTFBRouter(lambda **row: root.append(row))
+    a, b = ("tts", "a"), ("tts", "b")
+    router.start(b, source, lambda **row: second.append(row))
+    router.capture_request(usage(processor="tts", value=11), source, a)
+    assert not root and not second  # An active sibling is not the request's owner.
+    router.start(a, source, lambda **row: first.append(row))
+    router.capture_request(usage(processor="tts", value=22), source, b)
+    router.end(a)
+    router.capture_request(usage(processor="tts", value=33), source, a)
+    assert [m["value"] for m in first[-1]["metadata"]["contrib.pipecat.measurements"]] == [11, 33]
+    assert [m["value"] for m in second[-1]["metadata"]["contrib.pipecat.measurements"]] == [22]
+    router.capture_request(usage(processor="tts", value=44), SimpleNamespace(name="tts"), b)
+    assert root[-1]["metadata"]["contrib.pipecat.measurements"][0]["value"] == 44
+    # Requests that never produce audio, including cancellation, cannot grow
+    # retention without bound or be silently dropped at shutdown.
+    for index in range(300):
+        router.capture_request(usage(processor="tts", value=index), source, ("tts", str(index)))
+    assert len(router.pending) == 256
+    for index in range(100):
+        key = ("tts", f"completed-{index}")
+        router.start(key, source, lambda **row: None)
+        router.end(key)
+    assert len(router.completed) == 64
+    router.clear()
+    assert not router.pending and not router.completed and not router.active
+    assert root[-1]["metadata"]["braintrust.measurements.omitted"] == 269
