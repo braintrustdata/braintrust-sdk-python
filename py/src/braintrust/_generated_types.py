@@ -1816,6 +1816,10 @@ class ProjectAutomationConfig1Credentials1(TypedDict):
     """
     The GCP service account email to impersonate
     """
+    credential_name: NotRequired[str | None]
+    """
+    The name of a Google workload identity federation credential configured in this organization's AI providers. Supported data planes can use it regardless of hosting environment. If omitted, the data plane's GCP identity is used.
+    """
 
 
 class ProjectAutomationConfig2(TypedDict):
