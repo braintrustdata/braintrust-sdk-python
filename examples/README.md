@@ -79,6 +79,7 @@ Unless noted otherwise, every example below uses `braintrust.auto_instrument()`.
 | `openai_agents/` | OpenAI Agents SDK `Runner` running an agent |
 | `openrouter/` | OpenRouter chat completion routed to OpenAI |
 | `otel/` | OpenTelemetry interop — `BraintrustSpanProcessor`, filtering, distributed tracing |
+| [pipecat/](pipecat/) | Cascade and realtime voice agents with tool calls and recordings — uses `setup_pipecat()` |
 | `pydantic_ai/` | Pydantic AI agent run inside a `start_span` for a permalink |
 | `strands/` | Strands `Agent` against `gpt-4o-mini` |
 | `temporal/` | Distributed Temporal workflow tracing via `BraintrustPlugin` |
