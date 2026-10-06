@@ -40,7 +40,7 @@ def instrument_output(output, alignment, frame_context=None, hooks=None):
             start = source_offsets.get(context, 0)
             if context is not None:
                 source_offsets[context] = start + len(frame.audio)
-            owners = alignment.contexts.get(context, [])
+            owners = alignment.output_owners(context)
             current = active.set((owners, start))
             try:
                 return await handle_audio(frame)
@@ -55,7 +55,7 @@ def instrument_output(output, alignment, frame_context=None, hooks=None):
             finally:
                 active.reset(current)
                 source_offsets.pop(context, None)
-                alignment.contexts.pop(context, None)
+                alignment.end_output(context)
 
         def buffer(audio, *, uninterruptible):
             result = buffer_audio(audio, uninterruptible=uninterruptible)
@@ -144,9 +144,13 @@ def instrument_output(output, alignment, frame_context=None, hooks=None):
                             ]
                         ]
                         if owners:
-                            clip = alignment.clips.get(owners[0].span_id)
-                            if clip is not None:
-                                clip.add(start / 48, (start + size) / 48, ranges[0][0] / 24, ranges[0][1] / 24)
+                            alignment.add_clip_range(
+                                owners[0],
+                                start / 48,
+                                (start + size) / 48,
+                                ranges[0][0] / 24,
+                                ranges[0][1] / 24,
+                            )
                         for owner in owners:
                             alignment.add(owner, ranges, 1)
         return result

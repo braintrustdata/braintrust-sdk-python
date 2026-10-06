@@ -35,6 +35,40 @@ class WorkerTests(unittest.IsolatedAsyncioTestCase):
             release.set()
         self.assertEqual(await encode_in_worker(lambda: 4), 4)
 
+    async def test_recording_jobs_release_once_on_success_failure_and_early_cancellation(self):
+        from .jobs import RecordingJobs
+
+        jobs = RecordingJobs()
+        released = []
+        executed = []
+        flushed = []
+
+        async def flush():
+            self.assertEqual(released, ["success"])
+            flushed.append("success")
+
+        async def operation(outcome):
+            executed.append(outcome)
+            if outcome == "failure":
+                raise ValueError("publication failed")
+
+        for outcome in ("success", "failure", "cancelled"):
+            task = jobs.submit(
+                lambda: operation(outcome),
+                lambda: released.append(outcome),
+                after_release=flush if outcome == "success" else None,
+            )
+            if outcome == "cancelled":
+                task.cancel()  # No operation body or finally block has run yet.
+            if outcome == "failure":
+                with self.assertLogs("braintrust.audio.jobs", level="WARNING"):
+                    await jobs.drain()
+            else:
+                await jobs.drain()
+        self.assertEqual(flushed, ["success"])
+        self.assertEqual(executed, ["success", "failure"])
+        self.assertEqual(released, ["success", "failure", "cancelled"])
+
     async def test_process_capture_budget_rejects_without_retaining_and_releases(self):
         from unittest.mock import patch
 

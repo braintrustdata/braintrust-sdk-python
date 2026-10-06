@@ -57,8 +57,7 @@ class SegmentTests(unittest.IsolatedAsyncioTestCase):
         recorder.capture(1, audio.tobytes(), 24000, 1, observed_ns=0)
         for index in range(4):
             recorder.capture(1, b"\0\0" * 24000, 24000, 1, observed_ns=(3 + index) * 1_000_000_000)
-            if recorder.pending:
-                await asyncio.gather(*tuple(recorder.pending))
+            await recorder.drain_exports()
         self.assertTrue(files, "rotation must export before shutdown")
         await recorder.finish()
         pieces = []
@@ -117,8 +116,7 @@ class SegmentTests(unittest.IsolatedAsyncioTestCase):
             recorder.capture(1, agent, 24000, 1, observed_ns=index * 500_000_000)
             peak = max(peak, recorder.retained_bytes)
             # Accelerated replay: permit the real encoder/exporter to drain.
-            if recorder.pending:
-                await asyncio.gather(*tuple(recorder.pending))
+            await recorder.drain_exports()
         await recorder.finish()
         self.assertEqual(durations, [30000] * 20)
         self.assertIsNone(recorder.reason)
@@ -215,7 +213,7 @@ class SegmentTests(unittest.IsolatedAsyncioTestCase):
         alignment = Alignment(SimpleNamespace(span_id="root", log=lambda **_: None), recording)
         alignment.add(owner, [[0, 48000]], 0)
         alignment.publish()
-        self.assertEqual(alignment.owners["turn"][2], [[0, 24000]])
+        self.assertEqual(rows[-1]["metadata"]["audio.selection"]["recording_id"], "later")
         recording.completed.append({"id": "earlier", "start_ms": 0, "end_ms": 1000, "state": "ready"})
         alignment.publish()
         self.assertEqual(alignment.count, 0)

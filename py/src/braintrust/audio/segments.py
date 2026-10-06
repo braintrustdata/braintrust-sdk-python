@@ -5,6 +5,7 @@ import logging
 
 from .attachments import prepare_recording
 from .budget import source_budget
+from .jobs import RecordingJobs
 from .options import RecordingOptions
 from .recording import CallRecording, Packet
 from .worker import encode_in_worker
@@ -31,7 +32,7 @@ class SegmentedRecording(CallRecording):
         self.start_ms = 0.0
         self.sequence = 0
         self.completed = []
-        self.pending = set()
+        self.jobs = RecordingJobs()
         self.inflight = []
         self._finish_task = None
 
@@ -74,8 +75,7 @@ class SegmentedRecording(CallRecording):
     def _rotate(self, cut):
         if not self.packets:
             return
-        self.pending = {task for task in self.pending if not task.done()}
-        if len(self.pending) >= 2:
+        if len(self.jobs) >= 2:
             self.omit("recording_export_capacity")
             return
         segment = CallRecording()
@@ -110,18 +110,14 @@ class SegmentedRecording(CallRecording):
         self.start_ms = cut
         self.sequence += 1
         self.inflight.append(segment)
+
+        def release():
+            segment.clear()
+            self.inflight.remove(segment)
+
+        self.jobs.submit(lambda: self._export(segment), release)
         if self.on_pending:
             self.on_pending(segment)
-        task = asyncio.create_task(self._export(segment))
-        self.pending.add(task)
-
-        def completed(task):
-            self.pending.discard(task)
-            if segment in self.inflight:
-                segment.clear()
-                self.inflight.remove(segment)
-
-        task.add_done_callback(completed)
 
     async def _export(self, segment):
         descriptor = {
@@ -154,10 +150,11 @@ class SegmentedRecording(CallRecording):
                     await self.on_segment(segment, None)
                 except Exception:  # noqa: BLE001 - failure reporting must not break the call
                     logging.getLogger(__name__).warning("Failed to publish recording omission", exc_info=True)
-        finally:
-            # encode_in_worker drains native work before propagating cancellation.
-            segment.clear()
-            self.inflight.remove(segment)
+
+    def release_idle_buffer(self):
+        """Release unsubmitted audio unless a final drain still owns it."""
+        if self._finish_task is None or self._finish_task.done():
+            self.clear()
 
     async def finish(self):
         if self._finish_task is None:
@@ -166,9 +163,11 @@ class SegmentedRecording(CallRecording):
 
     async def _finish(self):
         self.seal()
-        if self.pending:
-            await asyncio.gather(*tuple(self.pending))
+        await self.drain_exports()
         if self.packets:
             self._rotate(max(self.ends))
-        if self.pending:
-            await asyncio.gather(*tuple(self.pending))
+        await self.drain_exports()
+
+    async def drain_exports(self):
+        """Wait for detached segments without sealing the active recording."""
+        await self.jobs.drain()

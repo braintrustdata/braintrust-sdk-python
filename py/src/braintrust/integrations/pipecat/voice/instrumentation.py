@@ -9,16 +9,13 @@ import wave
 from collections import Counter, deque
 
 from braintrust.audio.alignment import Alignment
-from braintrust.audio.attachments import prepare_recording
-from braintrust.audio.budget import source_budget
-from braintrust.audio.recording import encode_audio
 from braintrust.audio.segments import SegmentedRecording
-from braintrust.audio.worker import RecordingBusy, encode_in_worker
 from pipecat.observers.base_observer import BaseObserver  # pylint: disable=import-error
 
 from ..llm_metrics import _llm_usage_metrics, _metadata_from_metric, _metadata_from_processor
 from ..ttfb import TTFBRouter
 from ..turn_metrics import TURN_METRIC_TYPES, log_turn_metric
+from .synthesis import Synthesis, SynthesisRecordings
 from .turns import Turns
 
 
@@ -156,7 +153,6 @@ class NativeObserver(BaseObserver):
             on_pending=self._pending_call_segment,
         )
         self.call_descriptors = {}
-        self.clip_tasks = set()
         self.realtime = None
         self.input_processor = None
         self.capture_transport = False
@@ -168,6 +164,13 @@ class NativeObserver(BaseObserver):
         self.turns = Turns(self.root, self.hooks)
         self.turns.on_completed = self._turn_completed
         self.alignment = Alignment(self.root, self.call_recording)
+        self.synthesis = SynthesisRecordings(
+            logger,
+            self.alignment,
+            enabled=self.capture_agent_audio,
+            max_bytes=max_audio_bytes,
+            audio_format=audio_format,
+        )
         self.user_capture = None
         self.llm_turn = None
         self.user_aggregator = None
@@ -192,9 +195,6 @@ class NativeObserver(BaseObserver):
         self.event_bytes = 0
         self.retain_audio = retain_audio
         self.max_audio_bytes = max_audio_bytes
-        self.audio_bytes = 0
-        self.recordings = []
-        self.recordings_omitted = 0
         self.finished = False
         self._finish_task = None
         self.tool_names = []
@@ -202,12 +202,6 @@ class NativeObserver(BaseObserver):
         self.last_context = None
         self.seen = set()
         self.seen_order = deque()
-
-    def __del__(self):
-        retained = getattr(self, "audio_bytes", 0)
-        if retained:
-            source_budget.release(retained)
-            self.audio_bytes = 0
 
     def bind(
         self, *, transport, user_aggregator, assistant_aggregator, stt=None, realtime_service=None, tts_services=()
@@ -281,44 +275,7 @@ class NativeObserver(BaseObserver):
             context = self.frame_context(frame)
             state = self.tts.get(context)
             if state:
-                audio_format = (frame.sample_rate, frame.num_channels)
-                state["last_pts"] = frame.pts
-                if state.get("observed_format") != audio_format:
-                    state["observed_format"] = audio_format
-                    state["span"].log(
-                        metadata={
-                            "contrib.pipecat.sample_rate": frame.sample_rate,
-                            "contrib.pipecat.num_channels": frame.num_channels,
-                            "contrib.pipecat.frame.pts": frame.pts,
-                        }
-                    )
-                if state["chunks"] and (state["rate"], state["channels"]) != audio_format:
-                    state["omitted"] = True
-                    state["reason"] = "audio_format_changed"
-                    size = sum(map(len, state["chunks"]))
-                    source_budget.release(size)
-                    self.audio_bytes -= size
-                    state["chunks"].clear()
-                if self.capture_agent_audio and not state["omitted"]:
-                    if self.audio_bytes + len(frame.audio) <= self.max_audio_bytes and source_budget.reserve(
-                        len(frame.audio)
-                    ):
-                        state["chunks"].append(frame.audio)
-                        self.audio_bytes += len(frame.audio)
-                        state["rate"], state["channels"] = (
-                            frame.sample_rate,
-                            frame.num_channels,
-                        )
-                    else:
-                        state["omitted"] = True
-                        state["reason"] = (
-                            "capture_byte_limit"
-                            if self.audio_bytes + len(frame.audio) > self.max_audio_bytes
-                            else "process_capture_byte_limit"
-                        )
-                        source_budget.release(sum(map(len, state["chunks"])))
-                        self.audio_bytes -= sum(map(len, state["chunks"]))
-                        state["chunks"].clear()
+                self.synthesis.capture(state, frame)
             return
         if "AudioRawFrame" in kind:
             return
@@ -552,36 +509,26 @@ class NativeObserver(BaseObserver):
                 internal={"instrumentation": "pipecat-auto"},
             )
             self.ttfb.start(("tts", context), data.source, span.log)
-            self.tts[context] = {
-                "span": span,
-                "chunks": [],
-                "omitted": False,
-                "text": [],
-            }
-            if self.capture_agent_audio and len(self.alignment.contexts) < 16000:
-                from braintrust.audio.timeline import ClipTimeline
-
-                self.alignment.clips[span.span_id] = ClipTimeline()
-                self.alignment.contexts[context] = [span, turn["span"]]
-            elif self.capture_agent_audio:
-                self.alignment.omitted += 1
+            self.tts[context] = Synthesis(span)
+            if self.capture_agent_audio:
+                self.alignment.begin_output(context, [span, turn["span"]])
         elif kind == "TTSTextFrame":
             state = self.tts.get(self.frame_context(frame))
             if state:
-                state["text"].append(frame.text)
-                text = "".join(state["text"])
-                state["span"].log(input={"text": text}, metadata={"contrib.pipecat.text": text})
+                state.text.append(frame.text)
+                text = "".join(state.text)
+                state.span.log(input={"text": text}, metadata={"contrib.pipecat.text": text})
         elif kind == "TTSStoppedFrame":
             self.ttfb.end(("tts", self.frame_context(frame)))
             state = self.tts.pop(self.frame_context(frame), None)
             if state:
-                state["span"].end()
-                self.complete_recording(state)
+                state.span.end()
+                self.synthesis.complete(state)
         elif kind == "InterruptionFrame":
             for state in self.tts.values():
-                state["span"].log(metadata={"contrib.pipecat.end_frame": kind})
-                state["span"].end()
-                self.complete_recording(state)
+                state.span.log(metadata={"contrib.pipecat.end_frame": kind})
+                state.span.end()
+                self.synthesis.complete(state)
             for context in self.tts:
                 self.ttfb.end(("tts", context))
             self.tts.clear()
@@ -653,51 +600,6 @@ class NativeObserver(BaseObserver):
         else:
             self.omitted_events += 1
 
-    def complete_recording(self, state):
-        if "last_pts" in state:
-            state["span"].log(metadata={"contrib.pipecat.frame.pts": state["last_pts"]})
-        if len(self.recordings) < 256:
-            self.recordings.append(state)
-            if state["chunks"] and not state["omitted"]:
-                state["span"].log(
-                    metadata={
-                        "audio.recordings": [
-                            {"id": "tts-clip", "state": "pending", "sources": [{"boundary": "tts_output"}]}
-                        ]
-                    }
-                )
-            task = asyncio.create_task(self._publish_tts_clip(state))
-            self.clip_tasks.add(task)
-
-            def completed(task):
-                # A failed exporter must release its source lease too.
-                size = sum(map(len, state["chunks"]))
-                state["chunks"].clear()
-                source_budget.release(size)
-                self.audio_bytes -= size
-                self.clip_tasks.discard(task)
-                self.recordings = [pending for pending in self.recordings if pending is not state]
-
-            task.add_done_callback(completed)
-            return
-        self.recordings_omitted += 1
-        state["span"].log(
-            metadata={
-                "audio.recordings": [
-                    {
-                        "id": "tts-clip",
-                        "state": "omitted",
-                        "reason": "recording_count_limit",
-                        "sources": [{"boundary": "tts_output"}],
-                    }
-                ]
-            }
-        )
-        size = sum(map(len, state["chunks"]))
-        state["chunks"].clear()
-        source_budget.release(size)
-        self.audio_bytes -= size
-
     async def cleanup(self):
         await self.finish()
         await super().cleanup()
@@ -717,15 +619,12 @@ class NativeObserver(BaseObserver):
             self.hooks.close()
             # A shielded segment drain can outlive cancellation of this finalizer.
             # Its active tail still belongs to that drain until it seals/exports it.
-            drain = self.call_recording._finish_task
-            if drain is None or drain.done():
-                self.call_recording.clear()
-            for state in self.recordings:
-                state["chunks"].clear()
-            source_budget.release(self.audio_bytes)
-            self.audio_bytes = 0
+            self.call_recording.release_idle_buffer()
+            await self.synthesis.drain()
+            for state in self.tts.values():
+                self.synthesis.release(state)
             if self.user_capture:
-                self.user_capture.release()
+                await self.user_capture.close()
 
     async def _finalize(self):
         self.ttfb.clear()
@@ -734,16 +633,16 @@ class NativeObserver(BaseObserver):
             if span:
                 span.end()
         for state in self.tts.values():
-            state["span"].end()
-            state["omitted"] = True
-            state["reason"] = "pipeline_closed_before_tts_stop"
-            self.complete_recording(state)
+            state.span.end()
+            state.omitted = True
+            state.reason = "pipeline_closed_before_tts_stop"
+            self.synthesis.complete(state)
         for owner, events in self.event_groups.values():
             owner.log(metadata={"contrib.pipecat.events": events})
         self.root.log(
             metadata={
                 "braintrust.capture.events_omitted": self.omitted_events,
-                "braintrust.capture.recordings_omitted": self.recordings_omitted,
+                "braintrust.capture.recordings_omitted": self.synthesis.omitted,
                 "braintrust.capture.filtered_event_counts": dict(self.filtered_events),
                 "braintrust.capture.duplicate_events": self.duplicate_events,
                 "braintrust.capture.retained_events": len(self.events),
@@ -755,84 +654,11 @@ class NativeObserver(BaseObserver):
         if self.realtime:
             self.realtime.finish()
         # Trace lifetime ends before encoding; flush only after attachment updates.
-        if self.clip_tasks:
-            await asyncio.gather(*tuple(self.clip_tasks))
+        await self.synthesis.drain()
         if self.capture_transport:
             await self.call_recording.finish()
             self._publish_call_manifest()
             self.alignment.publish()
-        await asyncio.to_thread(self.logger.flush)
-
-    async def _publish_tts_clip(self, state):
-        span = state["span"]
-        recording = {"id": "tts-clip", "sources": [{"boundary": "tts_output"}]}
-        if state["chunks"] and not state["omitted"]:
-            try:
-                encoded = await encode_in_worker(
-                    prepare_recording,
-                    "tts-clip",
-                    encode_audio,
-                    state["chunks"],
-                    state["rate"],
-                    state["channels"],
-                    self.audio_format,
-                )
-            except Exception as error:  # noqa: BLE001 - capture/export failures must not break the call
-                span.log(
-                    metadata={
-                        "audio.recordings": [
-                            {
-                                **recording,
-                                "state": "omitted",
-                                "reason": str(error) if isinstance(error, RecordingBusy) else "encoding_failed",
-                            }
-                        ]
-                    }
-                )
-                source_budget.release(sum(map(len, state["chunks"])))
-                self.audio_bytes -= sum(map(len, state["chunks"]))
-                state["chunks"].clear()
-                return
-            recording.update(
-                state="ready",
-                attachment={
-                    "span_id": span.span_id,
-                    "ref": "/output/0/content/1/file/file_data",
-                },
-                mime_type=encoded["mime_type"],
-                duration_ms=encoded["duration_ms"],
-                channel_count=encoded["channel_count"],
-            )
-            span.log(
-                output=[
-                    {
-                        "role": "assistant",
-                        "content": [
-                            {"type": "text", "text": "".join(state["text"])},
-                            {
-                                "type": "file",
-                                "file": {
-                                    "file_data": encoded["attachment"],
-                                    "filename": f"tts-clip.{encoded['extension']}",
-                                },
-                            },
-                        ],
-                    }
-                ],
-                metadata={"braintrust.recording.processing": encoded["processing"]},
-            )
-        else:
-            recording.update(
-                state="omitted",
-                reason=state.get("reason", "no_audio_observed") if self.capture_agent_audio else "disabled",
-            )
-        span.log(metadata={"audio.recordings": [recording]})
-        if recording["state"] == "ready":
-            self.alignment.publish_clip(span, recording)
-        source_budget.release(sum(map(len, state["chunks"])))
-        self.audio_bytes -= sum(map(len, state["chunks"]))
-        state["chunks"].clear()
-
         await asyncio.to_thread(self.logger.flush)
 
     def _call_sources(self):

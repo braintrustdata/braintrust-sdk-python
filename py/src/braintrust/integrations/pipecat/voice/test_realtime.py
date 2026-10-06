@@ -98,18 +98,24 @@ class RealtimeBoundaryTests(unittest.IsolatedAsyncioTestCase):
                 await service._send_user_audio(frame)
             self.assertFalse(capture.invalid)
             self.assertEqual(len(capture.sent_ranges), 1)
+            turns = []
             for index in range(270):
                 turn = Span()
                 item_id = str(index)
                 capture.items[item_id] = {"audio_start_ms": index * 20, "audio_end_ms": (index + 1) * 20}
                 capture.associations.append((turn, [item_id]))
                 capture.publish()
-                self.assertIn(turn.span_id, observer.alignment.owners)
+                turns.append(turn)
                 self.assertEqual(capture.items, {})
                 self.assertEqual(capture.associations, [])
             await service.send_client_event(SimpleNamespace(type="input_audio_buffer.clear"))
             capture.finish()
-            self.assertIn(turn.span_id, observer.alignment.owners)
+            await observer.call_recording.finish()
+            observer.alignment.publish()
+            for index, turn in enumerate(turns):
+                selection = turn.rows[-1]["metadata"]["audio.selection"]
+                self.assertEqual(selection["start_offset_ms"], index * 20)
+                self.assertEqual(selection["end_offset_ms"], (index + 1) * 20)
         finally:
             observer.hooks.close()
             observer.call_recording.clear()

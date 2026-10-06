@@ -73,7 +73,8 @@ class AlignmentTests(unittest.IsolatedAsyncioTestCase):
     async def test_native_chunk_crossing_contexts_and_flush_padding(self):
         output, sender, alignment = await self.make_output()
         first, second = Span(), Span()
-        alignment.contexts = {"a": [first], "b": [second]}
+        alignment.begin_output("a", [first])
+        alignment.begin_output("b", [second])
 
         def audio(context, samples):
             return TTSAudioRawFrame(
@@ -91,8 +92,9 @@ class AlignmentTests(unittest.IsolatedAsyncioTestCase):
                 frame = sender._audio_queue.get_nowait()
                 if hasattr(frame, "audio"):
                     await output.write_audio_frame(frame)
-        self.assertEqual(alignment.owners[first.span_id][2], [[0, 3]])
-        self.assertEqual(alignment.owners[second.span_id][2], [[3, 6]])
+        alignment.publish()
+        self.assertEqual(first.rows[-1]["metadata"]["audio.selection"]["end_offset_ms"], 3 / 24)
+        self.assertEqual(second.rows[-1]["metadata"]["audio.selection"]["start_offset_ms"], 3 / 24)
         decoded, _ = sf.read(
             io.BytesIO(alignment.recording.encode("wav")["data"]),
             dtype="int16",
@@ -104,11 +106,9 @@ class AlignmentTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_discarded_output_and_failed_write_do_not_get_selections(self):
         output, sender, alignment = await self.make_output()
-        from braintrust.audio.timeline import ClipTimeline
 
         owner = Span()
-        alignment.clips[owner.span_id] = ClipTimeline()
-        alignment.contexts["a"] = [owner]
+        alignment.begin_output("a", [owner])
 
         def audio(samples):
             return TTSAudioRawFrame(
@@ -124,12 +124,14 @@ class AlignmentTests(unittest.IsolatedAsyncioTestCase):
         frame = sender._audio_queue.get_nowait()
         output.success = False
         await output.write_audio_frame(frame)
-        self.assertEqual(alignment.owners, {})
+        alignment.publish()
+        self.assertEqual(owner.rows, [{}])
         self.assertEqual(alignment.recording.bytes, 0)
         await sender.handle_audio_frame(audio([7, 8, 9, 10]))
         output.success = True
         await output.write_audio_frame(sender._audio_queue.get_nowait())
-        mapping = alignment.clips[owner.span_id].ranges
+        alignment.publish_clip(owner, {"id": "tts-clip", "state": "ready"})
+        mapping = owner.rows[-1]["metadata"]["audio.recordings"][0]["timeline"]["ranges"]
         self.assertEqual(len(mapping), 1)
         self.assertEqual(mapping[0]["recording_start_ms"], 6 / 24)
         self.assertEqual(mapping[0]["recording_end_ms"], 10 / 24)
@@ -138,7 +140,7 @@ class AlignmentTests(unittest.IsolatedAsyncioTestCase):
     async def test_queue_recreation_keeps_context_mapping(self):
         output, sender, alignment = await self.make_output()
         owner = Span()
-        alignment.contexts["after-interruption"] = [owner]
+        alignment.begin_output("after-interruption", [owner])
         import gc
         import weakref
 
@@ -155,7 +157,9 @@ class AlignmentTests(unittest.IsolatedAsyncioTestCase):
         )
         await sender.handle_audio_frame(frame)
         await output.write_audio_frame(sender._audio_queue.get_nowait())
-        self.assertEqual(alignment.owners[owner.span_id][2], [[0, 4]])
+        alignment.publish()
+        selection = owner.rows[-1]["metadata"]["audio.selection"]
+        self.assertEqual((selection["start_offset_ms"], selection["end_offset_ms"]), (0, 4 / 24))
 
     def test_disabled_or_omitted_recording_never_publishes_selection(self):
         root, owner = Span(), Span()

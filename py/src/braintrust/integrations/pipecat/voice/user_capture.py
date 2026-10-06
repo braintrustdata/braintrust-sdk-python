@@ -12,6 +12,7 @@ from collections import deque
 from braintrust.audio.alignment import InputRanges
 from braintrust.audio.attachments import prepare_recording
 from braintrust.audio.budget import source_budget
+from braintrust.audio.jobs import RecordingJobs
 from braintrust.audio.recording import encode_audio
 from braintrust.audio.timeline import ClipTimeline
 from braintrust.audio.worker import RecordingBusy, encode_in_worker
@@ -59,6 +60,7 @@ class UserCapture:
         self.omitted = 0
         self.input_ranges = InputRanges() if observer.capture_user_audio else None
         self.segments = []
+        self.jobs = RecordingJobs()
 
         original_start = observer.hooks.original(stt, "_handle_user_started_speaking")
         original_stop = observer.hooks.original(stt, "_handle_user_stopped_speaking")
@@ -291,9 +293,12 @@ class UserCapture:
             self.create_stt(segment, self.observer.root)
         for batch in list(self.batches.values()):
             self.queue_completed(batch["turn"], force=True)
-        if getattr(self, "tasks", None):
-            await asyncio.gather(*tuple(self.tasks))
+        await self.jobs.drain()
         self.observer.root.log(metadata={"braintrust.user_capture.events_omitted": self.omitted})
+        self.release()
+
+    async def close(self):
+        await self.jobs.drain()
         self.release()
 
     def queue_completed(self, turn, force=False):
@@ -301,6 +306,17 @@ class UserCapture:
         if not batch or batch.get("queued") or (not force and not turn.get("ended")):
             return
         batch["queued"] = True
+
+        def release():
+            self.release_segments(batch["segments"])
+            self.batches.pop(turn["span"].span_id, None)
+
+        self.jobs.submit(
+            lambda: self._publish_batch(batch),
+            release,
+            after_release=lambda: asyncio.to_thread(self.observer.logger.flush),
+        )
+
         if any(s["audio"] is not None for s in batch["segments"]):
             turn["span"].log(
                 metadata={
@@ -309,11 +325,6 @@ class UserCapture:
                     ]
                 }
             )
-        if not hasattr(self, "tasks"):
-            self.tasks = set()
-        task = asyncio.create_task(self._publish_batch(batch))
-        self.tasks.add(task)
-        task.add_done_callback(self.tasks.discard)
 
     async def _publish_batch(self, batch):
         turn, segments = batch["turn"], batch["segments"]
@@ -369,10 +380,6 @@ class UserCapture:
                     reason=str(error) if isinstance(error, RecordingBusy) else "encoding_failed",
                 )
         turn["span"].log(metadata={"audio.recordings": [descriptor]})
-
-        self.release_segments(segments)
-        self.batches.pop(turn["span"].span_id, None)
-        await asyncio.to_thread(self.observer.logger.flush)
 
     def release_segments(self, segments):
         for segment in segments:

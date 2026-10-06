@@ -1,6 +1,11 @@
 """Bounded sample ranges and recording selections shared by voice integrations."""
 
 from collections import deque
+from dataclasses import dataclass, field
+
+from braintrust.logger import Span
+
+from .timeline import ClipTimeline
 
 
 def merge_ranges(ranges):
@@ -15,51 +20,89 @@ def merge_ranges(ranges):
     return result
 
 
+@dataclass
+class _SelectionOwner:
+    span: Span
+    channel: int
+    ranges: list[list[int]] = field(default_factory=list)
+    published: list[dict] = field(default_factory=list)
+
+
+@dataclass
+class _Clip:
+    timeline: ClipTimeline = field(default_factory=ClipTimeline)
+    owner: Span | None = None
+    descriptor: dict | None = None
+
+
 class Alignment:
     def __init__(self, root, recording):
         self.root = root
         self.recording = recording
-        self.owners = {}
-        self.contexts = {}
-        self.clips = {}
-        self.clip_descriptors = {}
+        self._owners: dict[str, _SelectionOwner] = {}
+        self._contexts = {}
+        self._clips: dict[str, _Clip] = {}
+        self._dirty_clips: set[str] = set()
         self.count = 0
         self.omitted = 0
-        self.published = {}
         self.pending_owners = set()
 
     def add(self, owner, ranges, channel):
         if self.recording.reason:
             return
-        item = self.owners.setdefault(owner.span_id, (owner, channel, []))
+        item = self._owners.setdefault(owner.span_id, _SelectionOwner(owner, channel))
         for interval in ranges:
-            if item[2] and item[2][-1][0] <= interval[0] <= item[2][-1][1]:
-                item[2][-1][1] = max(item[2][-1][1], interval[1])
+            if item.ranges and item.ranges[-1][0] <= interval[0] <= item.ranges[-1][1]:
+                item.ranges[-1][1] = max(item.ranges[-1][1], interval[1])
                 continue
             if self.count >= 32000:
                 self.omitted += 1
                 continue
-            item[2].append(list(interval))
+            item.ranges.append(list(interval))
             self.count += 1
 
-        if item[2]:
+        if item.ranges:
             self.pending_owners.add(owner.span_id)
 
+    def begin_output(self, context, owners):
+        if len(self._contexts) >= 16000:
+            self.omitted += 1
+            return
+        self._contexts[context] = owners
+        self._clips[owners[0].span_id] = _Clip()
+
+    def output_owners(self, context):
+        return self._contexts.get(context, [])
+
+    def end_output(self, context):
+        self._contexts.pop(context, None)
+
+    def add_clip_range(self, owner, start_ms, end_ms, call_start_ms, call_end_ms):
+        clip = self._clips.get(owner.span_id)
+        if clip is not None:
+            clip.timeline.add(start_ms, end_ms, call_start_ms, call_end_ms)
+            self._dirty_clips.add(owner.span_id)
+
     def publish_clip(self, owner, descriptor):
-        self.clip_descriptors[owner.span_id] = (owner, descriptor)
-        self.publish_clips()
+        clip = self._clips.get(owner.span_id)
+        if clip is not None:
+            clip.owner, clip.descriptor = owner, descriptor
+            self._dirty_clips.add(owner.span_id)
+            self.publish_clips()
 
     def publish_clips(self):
         origin = getattr(self.recording, "origin_unix_ms", None)
         if origin is None:
             return
-        for span_id, (owner, descriptor) in self.clip_descriptors.items():
-            clip = self.clips.get(span_id)
-            if clip is not None:
-                timeline = clip.descriptor(origin)
-                if timeline != descriptor.get("timeline"):
-                    descriptor["timeline"] = timeline
-                    owner.log(metadata={"audio.recordings": [dict(descriptor)]})
+        for span_id in tuple(self._dirty_clips):
+            clip = self._clips[span_id]
+            if clip.descriptor is None:
+                continue
+            timeline = clip.timeline.descriptor(origin)
+            if timeline != clip.descriptor.get("timeline"):
+                clip.descriptor["timeline"] = timeline
+                clip.owner.log(metadata={"audio.recordings": [dict(clip.descriptor)]})
+            self._dirty_clips.discard(span_id)
 
     def publish(self):
         self.publish_clips()
@@ -70,15 +113,24 @@ class Alignment:
                 if not self.recording.reason and self.recording.packets
                 else []
             )
+        resolved = merge_ranges(
+            [
+                [round(s["start_ms"] * 24), round(s["end_ms"] * 24)]
+                for s in segments
+                if s["state"] in {"ready", "omitted"}
+            ]
+        )
         for span_id in tuple(self.pending_owners):
-            owner, channel, ranges = self.owners[span_id]
-            selections = list(self.published.get(owner.span_id, []))
+            state = self._owners[span_id]
+            owner, channel, ranges = state.span, state.channel, state.ranges
+            selections = list(state.published)
+            merged = merge_ranges(ranges)
             pending = []
             for segment in segments:
                 if segment["state"] != "ready":
                     continue
                 lower, upper = round(segment["start_ms"] * 24), round(segment["end_ms"] * 24)
-                for start, end in merge_ranges(ranges):
+                for start, end in merged:
                     start, end = max(start, lower), min(end, upper)
                     if end > start:
                         selections.append(
@@ -90,13 +142,6 @@ class Alignment:
                                 "channel_index": channel,
                             }
                         )
-            resolved = merge_ranges(
-                [
-                    [round(s["start_ms"] * 24), round(s["end_ms"] * 24)]
-                    for s in segments
-                    if s["state"] in {"ready", "omitted"}
-                ]
-            )
             for start, end in ranges:
                 for lower, upper in resolved:
                     if lower > start:
@@ -111,8 +156,8 @@ class Alignment:
             selections = [dict(items) for items in dict.fromkeys(tuple(s.items()) for s in selections)]
             if not pending:
                 self.pending_owners.discard(span_id)
-            if selections and selections != self.published.get(span_id):
-                self.published[span_id] = selections
+            if selections and selections != state.published:
+                state.published = selections
                 owner.log(
                     metadata={
                         "audio.selections": selections,

@@ -68,14 +68,13 @@ class Tests(unittest.IsolatedAsyncioTestCase):
         await push(TTSStartedFrame(context_id="c1"))
         frame = TTSAudioRawFrame(audio=b"\x01\x00" * 480, sample_rate=24000, num_channels=1, context_id="c1")
         await push(frame)
-        span = observer.tts["c1"]["span"]
+        span = observer.root.children[-1].children[-1]
         await push(TTSStoppedFrame(context_id="c1"))
         await observer.finish()
         self.assertEqual(span.rows[0]["name"], "tts")
         recording = span.rows[-1]["metadata"]["audio.recordings"][0]
         self.assertEqual(recording["state"], "omitted")
-        self.assertEqual(observer.audio_bytes, 0)
-        self.assertEqual(observer.recordings, [])
+        self.assertEqual(observer.synthesis.bytes, 0)
         self.assertNotIn("audio", native_value(frame))
         self.assertEqual(len(observer.events), 2)  # Changed metadata and an explicit settings update.
         event = observer.events[0]
@@ -204,14 +203,14 @@ class FormatTests(unittest.IsolatedAsyncioTestCase):
             frame = TTSAudioRawFrame(b"\0\0" * 480, 24000, 1, context_id="format-test")
             frame.pts = index * 20_000_000
             await push(frame)
-        assert len(state["span"].rows) <= 3
+        assert len(state.span.rows) <= 3
         await push(TTSAudioRawFrame(b"\0\0" * 320, 16000, 1, context_id="format-test"))
         await push(TTSStoppedFrame(context_id="format-test"))
         await observer.finish()
-        descriptor = state["span"].rows[-1]["metadata"]["audio.recordings"][0]
+        descriptor = state.span.rows[-1]["metadata"]["audio.recordings"][0]
         assert descriptor["state"] == "omitted"
         assert descriptor["reason"] == "audio_format_changed"
-        assert observer.audio_bytes == 0
+        assert observer.synthesis.bytes == 0
 
     async def test_cancelled_finalizer_preserves_pending_segment_and_active_tail(self):
         import asyncio
@@ -251,34 +250,37 @@ class FormatTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(observer.call_descriptors), 2)
 
     async def test_generated_clip_capacity_is_reused_after_publication(self):
-        import asyncio
+        from braintrust.audio.budget import source_budget
 
         observer = NativeObserver(Span(), retain_audio=True, audio_format="wav")
-        for _ in range(270):
-            span = Span()
-            state = {
-                "span": span,
-                "chunks": [b"\1\0" * 24],
-                "rate": 24000,
-                "channels": 1,
-                "text": ["hello"],
-                "omitted": False,
-            }
-            from braintrust.audio.budget import source_budget
-
-            self.assertTrue(source_budget.reserve(48))
-            observer.audio_bytes += 48
-            observer.complete_recording(state)
+        before = source_budget.used
+        for index in range(270):
+            context = str(index)
+            for frame in (
+                TTSStartedFrame(context_id=context),
+                TTSAudioRawFrame(b"\1\0" * 24, 24000, 1, context_id=context),
+                TTSStoppedFrame(context_id=context),
+            ):
+                await observer.on_push_frame(
+                    SimpleNamespace(
+                        frame=frame,
+                        first_push=True,
+                        source=SimpleNamespace(name="tts"),
+                        destination=SimpleNamespace(name="output"),
+                        direction=FrameDirection.DOWNSTREAM,
+                        timestamp=0,
+                    )
+                )
+            span = observer.root.children[-1].children[-1]
             self.assertEqual(span.rows[-1]["metadata"]["audio.recordings"][0]["state"], "pending")
-            await asyncio.gather(*tuple(observer.clip_tasks))
-            self.assertEqual(span.rows[-1]["metadata"]["audio.recordings"][0]["state"], "ready")
-            self.assertFalse(observer.recordings)
-            self.assertEqual(observer.audio_bytes, 0)
-        self.assertEqual(observer.recordings_omitted, 0)
+            await observer.synthesis.drain()
+            descriptor = span.rows[-1]["metadata"]["audio.recordings"][0]
+            self.assertEqual(descriptor["state"], "ready")
+            self.assertEqual(descriptor["duration_ms"], 1)
+            self.assertEqual(source_budget.used, before)
         await observer.finish()
 
     async def test_failed_segment_publishes_omission_before_shutdown(self):
-        import asyncio
 
         from braintrust.audio import RecordingOptions, worker
 
@@ -292,7 +294,7 @@ class FormatTests(unittest.IsolatedAsyncioTestCase):
             for index in range(60):
                 observer.call_recording.capture(0, b"\0\0" * 480, 24000, 1, observed_ns=index * 20_000_000)
             self.assertEqual(observer.call_descriptors["call-0000"]["state"], "pending")
-            await asyncio.gather(*tuple(observer.call_recording.pending))
+            await observer.call_recording.drain_exports()
             descriptor = observer.call_descriptors["call-0000"]
             self.assertEqual(descriptor["state"], "omitted")
             self.assertEqual(descriptor["reason"], "RecordingBusy")

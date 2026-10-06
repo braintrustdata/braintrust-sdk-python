@@ -178,7 +178,7 @@ class UserCaptureTests(unittest.IsolatedAsyncioTestCase):
                 observer.turns.confirm("user")
                 await aggregator._push_aggregation()
                 observer.turns.stop("user", SimpleNamespace(content="order?", timestamp=str(index), user_id="user"))
-                await asyncio.gather(*capture.tasks)
+                await capture.jobs.drain()
                 descriptors = [
                     r["metadata"]["audio.recordings"]
                     for r in turn["span"].rows

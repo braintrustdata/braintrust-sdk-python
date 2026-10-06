@@ -120,7 +120,7 @@ class TurnTests(unittest.IsolatedAsyncioTestCase):
             ["call-1"],
         )
         await self.push(TTSStartedFrame(context_id="tts-1"))
-        self.assertIn(observer.tts["tts-1"]["span"], continuation["span"].children)
+        self.assertIn(observer.tts["tts-1"].span, continuation["span"].children)
         # A historical tool result does not relink a later context push.
         await self.push(LLMContextFrame(context), self.assistant)
         self.assertIsNone(observer.context_reply_to)
@@ -175,8 +175,7 @@ class TurnTests(unittest.IsolatedAsyncioTestCase):
         state = self.observer.tts["interrupted"]
         await self.push(InterruptionFrame())
         self.assertEqual(self.observer.tts, {})
-        self.assertIn(state, self.observer.recordings)
-        self.assertEqual(state["span"].rows[-1]["metadata"]["contrib.pipecat.end_frame"], "InterruptionFrame")
+        self.assertEqual(state.span.rows[-1]["metadata"]["contrib.pipecat.end_frame"], "InterruptionFrame")
         await self.observer.finish()
 
     async def test_native_turn_metrics_ownership_and_limits(self):
@@ -230,7 +229,7 @@ class TurnTests(unittest.IsolatedAsyncioTestCase):
         early_usage = self.observer.root.rows[-1]["metadata"]["contrib.pipecat.measurements"]
         assert early_usage == [{"type": "TTSUsageMetricsData", "processor": "tts", "model": None, "value": 25}]
         await self.push(TTSStartedFrame(context_id="a"), tts)
-        span = self.observer.tts["a"]["span"]
+        span = self.observer.tts["a"].span
         assert not any("contrib.pipecat.measurements" in row.get("metadata", {}) for row in span.rows)
         await self.push(MetricsFrame(data=[TTFBMetricsData(processor="tts", value=0.09)]), tts)
         assert span.rows[-1]["metadata"]["contrib.pipecat.ttfb"][0]["value"] == 0.09
