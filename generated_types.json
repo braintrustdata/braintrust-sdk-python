@@ -626,6 +626,16 @@
                     },
                     "idempotency_key": {
                       "type": "string"
+                    },
+                    "triggered_xact_id": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
                     }
                   },
                   "required": [
