@@ -191,6 +191,7 @@ class AsyncScoringControlAsyncScoringControl4TriggeredFunction(TypedDict):
         | AsyncScoringControlAsyncScoringControl4TriggeredFunctionScope1
     )
     idempotency_key: NotRequired[str | None]
+    triggered_xact_id: NotRequired[str | float | None]
 
 
 class AsyncScoringControlAsyncScoringControl4(TypedDict):
