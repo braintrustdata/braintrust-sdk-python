@@ -703,6 +703,8 @@ def _aggregate_generate_content_chunks(
                 candidate_dict["safety_ratings"] = candidate.safety_ratings
             if hasattr(candidate, "grounding_metadata") and candidate.grounding_metadata:
                 candidate_dict["grounding_metadata"] = candidate.grounding_metadata
+            if hasattr(candidate, "url_context_metadata") and candidate.url_context_metadata:
+                candidate_dict["url_context_metadata"] = candidate.url_context_metadata
 
             candidates.append(candidate_dict)
 
