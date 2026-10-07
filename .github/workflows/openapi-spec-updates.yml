@@ -36,23 +36,22 @@ jobs:
         continue-on-error: true
         run: mise exec -- make -C py generate-api-client
 
-      - name: Run codegen tests
-        id: codegen
-        if: steps.update.outputs.changed == 'true'
-        continue-on-error: true
-        run: mise exec -- make -C py test-api-codegen
-
-      - name: Run REST client runtime tests
-        id: runtime
-        if: steps.update.outputs.changed == 'true'
-        continue-on-error: true
-        run: mise exec -- make -C py test-core
-
-      - name: Run public API type tests
-        id: types
-        if: steps.update.outputs.changed == 'true'
-        continue-on-error: true
-        run: mise exec -- uv run --project ./py nox -f ./py/noxfile.py -s test_types
+      - parallel:
+          - name: Run codegen tests
+            id: codegen
+            if: steps.update.outputs.changed == 'true'
+            continue-on-error: true
+            run: mise exec -- make -C py test-api-codegen
+          - name: Run REST client runtime tests
+            id: runtime
+            if: steps.update.outputs.changed == 'true'
+            continue-on-error: true
+            run: mise exec -- make -C py test-core
+          - name: Run public API type tests
+            id: types
+            if: steps.update.outputs.changed == 'true'
+            continue-on-error: true
+            run: mise exec -- uv run --project ./py nox -f ./py/noxfile.py -s test_types
 
       - name: Add validation results to pull request body
         if: steps.update.outputs.changed == 'true'
