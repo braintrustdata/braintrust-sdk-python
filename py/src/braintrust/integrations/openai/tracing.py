@@ -105,6 +105,7 @@ _RESPONSES_METADATA_PARAMS = (
     "conversation",
     "verbosity",
     "moderation",
+    "access_programs",
 )
 
 _RESPONSES_RESULT_METADATA_KEYS = (
@@ -114,6 +115,7 @@ _RESPONSES_RESULT_METADATA_KEYS = (
     "created_at",
     "moderation",
     "service_tier",
+    "access_programs",
     "object",
     "background",
     "incomplete_details",
@@ -1183,6 +1185,10 @@ _AGENT_TOOL_ITEM_INPUT_KEYS = {
     "command_execution": ("command", "cwd"),
     "mcp_call": ("arguments",),
     "web_search_call": ("action",),
+    "computer_use_call": ("title",),
+    "browser_authentication_request": ("request_id",),
+    "computer_use_approval_request": ("request_id", "request"),
+    "computer_use_approval_request_result": ("request_id",),
     "create_subagent_call": ("content", "model", "reasoning_effort"),
     "send_subagent_input_call": ("content", "recipient_agent_id"),
     "resume_subagent_call": ("recipient_agent_id",),
@@ -1194,6 +1200,7 @@ _AGENT_TOOL_ITEM_INPUT_KEYS = {
 _AGENT_TOOL_ITEM_OUTPUT_KEYS = {
     "command_execution": ("output", "exit_code", "duration_ms"),
     "mcp_call": ("output",),
+    "computer_use_approval_request_result": ("response",),
 }
 
 _AGENT_TURN_EVENTS = {
@@ -1272,7 +1279,13 @@ def _agent_tool_span_name(item: Any) -> str:
 
 
 def _agent_tool_span_data(item: Any, keys: tuple[str, ...]) -> Any:
-    values = clean_nones({key: getattr(item, key, None) for key in keys})
+    values = clean_nones(
+        {
+            key: _try_to_dict(value) if key in {"request", "response"} else value
+            for key in keys
+            if (value := getattr(item, key, None)) is not None
+        }
+    )
     if not values:
         return None
     if keys == ("arguments",):
@@ -1286,7 +1299,7 @@ def _agent_tool_span_metadata(item: Any) -> dict[str, Any]:
             "tool_type": item.type,
             "tool_id": item.id,
             "call_id": getattr(item, "call_id", None),
-            "status": item.status,
+            "status": getattr(item, "status", None),
             "turn_id": item.turn_id,
             "server_label": getattr(item, "server_label", None),
             "agent_id": getattr(item, "agent_id", None),
@@ -1299,7 +1312,7 @@ def _agent_tool_span_error(item: Any) -> Any:
     error = getattr(item, "error", None)
     if error is not None:
         return error
-    if item.status == "failed":
+    if getattr(item, "status", None) == "failed":
         return "Agent tool call failed"
     return None
 
@@ -1383,7 +1396,7 @@ class _AgentSessionTrace:
             error = _agent_tool_span_error(item)
             if error is not None:
                 tool_span.log(error=error)
-            output = _agent_tool_span_data(item, _AGENT_TOOL_ITEM_OUTPUT_KEYS.get(item.type, ()))
+            output = _agent_tool_span_output(item)
             if output is not None:
                 tool_span.log(output=output)
 
@@ -1410,6 +1423,27 @@ class _AgentSessionTrace:
             return
         self.finished = True
         self.span.end()
+
+
+def _agent_tool_span_output(item: Any) -> Any:
+    if item.type == "computer_use_call":
+        output = getattr(item, "output", None)
+        screenshot = getattr(output, "image_url", None)
+        if screenshot is None and isinstance(output, Mapping):
+            screenshot = output.get("image_url")
+        if screenshot is not None:
+            resolved = _materialize_attachment(screenshot, prefix="computer_use_screenshot")
+            if resolved is not None:
+                output_data = _try_to_dict(output)
+                if isinstance(output_data, dict):
+                    return {
+                        **output_data,
+                        "image_url": resolved.multimodal_part_payload["image_url"],
+                    }
+                return resolved.multimodal_part_payload
+        return output
+
+    return _agent_tool_span_data(item, _AGENT_TOOL_ITEM_OUTPUT_KEYS.get(item.type, ()))
 
 
 class AgentSessionWrapper:

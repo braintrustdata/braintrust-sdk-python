@@ -93,6 +93,15 @@ def _supports_agents_api() -> bool:
     return True
 
 
+def _supports_responses_access_programs() -> bool:
+    try:
+        from openai.resources.responses import Responses
+
+        return "access_programs" in inspect.signature(Responses.create).parameters
+    except (ImportError, AttributeError, ValueError):
+        return False
+
+
 @pytest.mark.vcr
 def test_openai_chat_metrics(memory_logger):
     assert not memory_logger.pop()
@@ -189,6 +198,11 @@ def test_openai_responses_metrics(memory_logger):
     assert TEST_MODEL in span["metadata"]["model"]
     assert span["metadata"]["provider"] == "openai"
     assert span["metadata"]["instructions"] == "Just the number please"
+    if hasattr(response, "access_programs"):
+        # Current OpenAI cassettes include the field with a null value. Older
+        # provider pins do not expose it; neither shape should add null metadata.
+        assert response.access_programs is None
+        assert "access_programs" not in span["metadata"]
     assert TEST_PROMPT in str(span["input"])
     assert len(span["output"]) > 0
     span_output_text = span["output"][0]["content"][0]["text"]
@@ -237,6 +251,25 @@ def test_openai_responses_metrics(memory_logger):
     assert span["output"][0]["content"][0]["parsed"]
     assert span["output"][0]["content"][0]["parsed"]["value"] == 24
     assert span["output"][0]["content"][0]["parsed"]["reasoning"] == parse_response.output_parsed.reasoning
+
+
+@pytest.mark.vcr
+def test_openai_responses_access_programs(memory_logger):
+    if not _supports_responses_access_programs():
+        pytest.skip("Responses access_programs is not available in this SDK version")
+
+    access_programs = {"cyber": "standard"}
+    client = wrap_openai(openai.OpenAI())
+    response = client.responses.create(
+        model=TEST_MODEL,
+        input="Say hello in one word.",
+        access_programs=access_programs,
+    )
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    assert _try_to_dict(response.access_programs) == access_programs
+    assert _try_to_dict(spans[0]["metadata"]["access_programs"]) == access_programs
 
 
 @pytest.mark.vcr
