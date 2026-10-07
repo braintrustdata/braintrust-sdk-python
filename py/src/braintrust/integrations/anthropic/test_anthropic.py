@@ -625,6 +625,63 @@ def test_anthropic_messages_create_prompt_cache_metrics(memory_logger, ttl, vcr_
 
 
 @pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
+# The SDK's generated method signature omits the runtime-supported diagnostics parameter.
+# pylint: disable=unexpected-keyword-arg
+def test_anthropic_messages_create_prompt_cache_diagnostics(memory_logger):
+    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
+        pytest.skip("Prompt cache diagnostics require the latest Anthropic SDK cassette")
+
+    client = wrap_anthropic(_get_client())
+    request = {
+        "model": LATEST_MODEL,
+        "max_tokens": 16,
+        "system": [
+            {
+                "type": "text",
+                "text": PROMPT_CACHE_TEST_TEXT,
+                "cache_control": {"type": "ephemeral"},
+            }
+        ],
+        "messages": [{"role": "user", "content": "Summarize section 1."}],
+    }
+    first_request = {**request, "diagnostics": {"previous_message_id": None}}
+    first_response = client.messages.create(**first_request)
+    second_request = {
+        **request,
+        "system": [
+            {
+                **request["system"][0],
+                "text": request["system"][0]["text"].replace(
+                    "Cached geography fact 0:", "Changed geography fact 0:", 1
+                ),
+            }
+        ],
+        "diagnostics": {"previous_message_id": first_response.id},
+    }
+    second_response = client.messages.create(**second_request)
+    stream_request = {**request, "diagnostics": {"previous_message_id": second_response.id}}
+    with client.messages.stream(**stream_request) as stream:
+        stream_events = list(stream)
+
+    spans = memory_logger.pop()
+    create_spans = [span for span in spans if span["span_attributes"]["name"] == "anthropic.messages.create"]
+    stream_span = next(span for span in spans if span["span_attributes"]["name"] == "anthropic.messages.stream")
+    assert len(create_spans) == 2
+    second_span = create_spans[1]
+    assert second_span["metadata"]["diagnostics"] == {"previous_message_id": first_response.id}
+    cache_miss_reason = second_response.diagnostics.cache_miss_reason
+    assert cache_miss_reason.type == "system_changed"
+    assert second_span["metadata"]["cache_miss_reason"] == cache_miss_reason.type
+    assert second_span["metadata"]["cache_missed_input_tokens"] == cache_miss_reason.cache_missed_input_tokens
+
+    message_start = stream_events[0]
+    stream_cache_miss_reason = message_start.message.diagnostics.cache_miss_reason
+    assert stream_cache_miss_reason.type == "system_changed"
+    assert stream_span["metadata"]["cache_miss_reason"] == stream_cache_miss_reason.type
+    assert stream_span["metadata"]["cache_missed_input_tokens"] == stream_cache_miss_reason.cache_missed_input_tokens
+
+
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
 @pytest.mark.asyncio
 @pytest.mark.parametrize("is_async", [False, True], ids=["sync", "async"])
 @pytest.mark.parametrize(

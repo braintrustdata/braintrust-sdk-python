@@ -78,6 +78,7 @@ METADATA_PARAMS = (
     "output_format",
     "compaction",
     "context_management",
+    "diagnostics",
 )
 
 
@@ -1556,6 +1557,15 @@ def _log_message_to_span(
 
     content = getattr(message, "content", None)
     output = _message_output(message, include_parsed_output=include_parsed_output)
+
+    diagnostics = getattr(message, "diagnostics", None)
+    cache_miss_reason = getattr(diagnostics, "cache_miss_reason", None)
+    reason_type = getattr(cache_miss_reason, "type", None)
+    if reason_type is not None:
+        metadata["cache_miss_reason"] = reason_type
+    cache_missed_input_tokens = getattr(cache_miss_reason, "cache_missed_input_tokens", None)
+    if is_numeric(cache_missed_input_tokens):
+        metadata["cache_missed_input_tokens"] = cache_missed_input_tokens
 
     span.log(output=output, metrics=metrics, metadata=metadata)
     _log_server_tool_spans(content, span)
