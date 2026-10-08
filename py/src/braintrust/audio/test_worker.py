@@ -69,7 +69,7 @@ class WorkerTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(executed, ["success", "failure"])
         self.assertEqual(released, ["success", "failure", "cancelled"])
 
-    async def test_process_capture_budget_rejects_without_retaining_and_releases(self):
+    async def test_capture_limits_reject_and_release_retained_audio(self):
         from unittest.mock import patch
 
         from .budget import ByteBudget
@@ -86,16 +86,13 @@ class WorkerTests(unittest.IsolatedAsyncioTestCase):
             first.clear()
             self.assertEqual(budget.used, 0)
 
-
-def test_sealed_recording_rejects_late_writes_without_losing_samples():
-    from .recording import CallRecording
-
-    recording = CallRecording()
-    try:
-        recording.capture(0, b"\0\0" * 480, 24000, 1)
-        recording.seal()
-        assert recording.capture(1, b"\0\0" * 480, 24000, 1) is None
-        assert recording.bytes == 960
-        assert recording.reason is None
-    finally:
-        recording.clear()
+        for options, reason in (
+            ({"max_bytes": 1000}, "capture_byte_limit"),
+            ({"max_duration_ms": 30}, "duration_limit"),
+        ):
+            recording = CallRecording(**options)
+            self.assertIsNotNone(recording.capture(0, pcm, 24000, 1))
+            self.assertIsNone(recording.capture(0, pcm, 24000, 1))
+            self.assertEqual(recording.reason, reason)
+            self.assertEqual(recording.bytes, 0)
+            self.assertIsNone(recording.encode())

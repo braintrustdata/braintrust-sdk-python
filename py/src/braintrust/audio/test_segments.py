@@ -15,7 +15,14 @@ class SegmentTests(unittest.IsolatedAsyncioTestCase):
         files = []
         pending = set()
 
-        async def publish(segment, encoded):
+        def publish_pending(segment):
+            self.assertEqual(segment.state, "pending")
+            self.assertIsNone(segment.encoded)
+            pending.add(segment.segment_id)
+
+        async def publish(segment):
+            encoded = segment.encoded
+            self.assertEqual(segment.state, "ready")
             self.assertIn(segment.segment_id, pending)
             pending.remove(segment.segment_id)
             files.append((segment.start_ms, encoded))
@@ -23,7 +30,7 @@ class SegmentTests(unittest.IsolatedAsyncioTestCase):
         recorder = SegmentedRecording(
             options=RecordingOptions(segment_duration_seconds=0.1),
             on_segment=publish,
-            on_pending=lambda segment: pending.add(segment.segment_id),
+            on_pending=publish_pending,
             audio_format="wav",
         )
         pcm = np.full(480, 1000, dtype="<i2").tobytes()
@@ -41,11 +48,15 @@ class SegmentTests(unittest.IsolatedAsyncioTestCase):
             self.assertTrue(np.all(decoded == 1000))
             position += len(decoded) / rate * 1000
         self.assertAlmostEqual(position, 1800)
+        self.assertFalse(pending)
+        self.assertTrue(all(segment.encoded is None for segment in recorder.segments))
+        self.assertTrue(all(segment.metadata["mime_type"] == "audio/wav" for segment in recorder.segments))
 
     async def test_large_frame_crosses_rotation_without_losing_samples(self):
         files = []
 
-        async def publish(segment, encoded):
+        async def publish(segment):
+            encoded = segment.encoded
             files.append((segment.start_ms, encoded))
 
         recorder = SegmentedRecording(
@@ -76,7 +87,8 @@ class SegmentTests(unittest.IsolatedAsyncioTestCase):
     async def test_duration_limit_preserves_partial_audio(self):
         files = []
 
-        async def publish(segment, encoded):
+        async def publish(segment):
+            encoded = segment.encoded
             files.append(encoded)
 
         recorder = SegmentedRecording(
@@ -89,18 +101,12 @@ class SegmentTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(sum(f["duration_ms"] for f in files), 100)
         self.assertEqual(recorder.retained_bytes, 0)
 
-    async def test_opt_out_never_schedules_encoding(self):
-        recorder = SegmentedRecording(enabled=False)
-        recorder.capture(0, b"\x00\x00" * 480, 24000, 1, observed_ns=0)
-        await recorder.finish()
-        self.assertEqual(recorder.retained_bytes, 0)
-        self.assertEqual(recorder.completed, [])
-
     async def test_ten_minute_timeline_with_thirty_second_segments(self):
         durations = []
         peak = 0
 
-        async def publish(segment, encoded):
+        async def publish(segment):
+            encoded = segment.encoded
             decoded, rate = sf.read(io.BytesIO(encoded["data"]), dtype="int16", always_2d=True)
             self.assertTrue(np.all(decoded == [1000, -2000]))
             self.assertAlmostEqual(segment.start_ms, sum(durations))
@@ -126,7 +132,8 @@ class SegmentTests(unittest.IsolatedAsyncioTestCase):
     async def test_byte_rotation_and_slow_export_preserve_bounded_prefix(self):
         released = asyncio.Event()
 
-        async def publish(segment, encoded):
+        async def publish(segment):
+            encoded = segment.encoded
             await released.wait()
 
         recorder = SegmentedRecording(
@@ -148,7 +155,7 @@ class SegmentTests(unittest.IsolatedAsyncioTestCase):
     def test_selection_crossing_segment_boundary(self):
         from types import SimpleNamespace
 
-        from .alignment import Alignment
+        from .export import Alignment
 
         logs = []
         root = SimpleNamespace(span_id="root", log=lambda **_: None)
@@ -203,7 +210,7 @@ class SegmentTests(unittest.IsolatedAsyncioTestCase):
     def test_out_of_order_export_releases_only_resolved_ranges(self):
         from types import SimpleNamespace
 
-        from .alignment import Alignment
+        from .export import Alignment
 
         rows = []
         owner = SimpleNamespace(span_id="turn", log=lambda **row: rows.append(row))

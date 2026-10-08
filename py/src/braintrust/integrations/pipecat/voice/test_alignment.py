@@ -1,12 +1,11 @@
 import asyncio
 import io
 import unittest
-from types import SimpleNamespace
 from unittest.mock import patch
 
 import numpy as np
 import soundfile as sf  # pylint: disable=import-error
-from braintrust.audio.alignment import Alignment, InputRanges
+from braintrust.audio.export import Alignment
 from braintrust.audio.recording import CallRecording
 from pipecat.frames.frames import TTSAudioRawFrame, TTSStoppedFrame  # pylint: disable=import-error
 from pipecat.transports.base_output import BaseOutputTransport  # pylint: disable=import-error
@@ -17,27 +16,6 @@ from .test_instrumentation import Span
 
 
 class AlignmentTests(unittest.IsolatedAsyncioTestCase):
-    def test_input_trim_uses_sample_positions_not_span_time(self):
-        recording = CallRecording()
-        ledger = InputRanges()
-        for index in range(3):
-            frame = SimpleNamespace(
-                audio=np.full(320, index + 1, dtype="<i2").tobytes(),
-                sample_rate=16000,
-                num_channels=1,
-            )
-            interval = recording.capture(
-                0, frame.audio, frame.sample_rate, frame.num_channels, observed_ns=(100 + index * 22) * 1000000
-            )
-            ledger.append(len(frame.audio), interval)
-        # Native STT retained the final 30 ms (half a packet plus a packet).
-        ledger.trim(960)
-        ranges = ledger.drain()
-        self.assertEqual(ranges, [[720, 1440]])
-        decoded, _ = sf.read(io.BytesIO(recording.encode("wav")["data"]), dtype="int16", always_2d=True)
-        self.assertTrue(np.all(decoded[720:960, 0] == 2))
-        self.assertTrue(np.all(decoded[960:1440, 0] == 3))
-
     async def make_output(self, enabled=True):
         class Output:
             success = True
@@ -160,11 +138,3 @@ class AlignmentTests(unittest.IsolatedAsyncioTestCase):
         alignment.publish()
         selection = owner.rows[-1]["metadata"]["audio.selection"]
         self.assertEqual((selection["start_offset_ms"], selection["end_offset_ms"]), (0, 4 / 24))
-
-    def test_disabled_or_omitted_recording_never_publishes_selection(self):
-        root, owner = Span(), Span()
-        recording = CallRecording(enabled=False)
-        alignment = Alignment(root, recording)
-        alignment.add(owner, [[0, 100]], 0)
-        alignment.publish()
-        self.assertEqual(owner.rows, [{}])

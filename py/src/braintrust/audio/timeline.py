@@ -1,5 +1,21 @@
 """Compact source-file to call-clock mappings, without retaining audio."""
 
+# Call recordings use a common 24 kHz sample clock regardless of input format.
+CALL_SAMPLE_RATE = 24000
+
+
+def ms_to_samples(milliseconds, sample_rate=CALL_SAMPLE_RATE):
+    return round(milliseconds * sample_rate / 1000)
+
+
+def samples_to_ms(samples, sample_rate=CALL_SAMPLE_RATE):
+    return samples * 1000 / sample_rate
+
+
+def pcm_bytes_to_ms(size, sample_rate, channels):
+    """Duration of interleaved signed 16-bit PCM, in milliseconds."""
+    return samples_to_ms(size / (2 * channels), sample_rate)
+
 
 class ClipTimeline:
     def __init__(self):

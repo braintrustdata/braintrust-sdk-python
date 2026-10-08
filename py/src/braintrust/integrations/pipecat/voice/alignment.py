@@ -3,6 +3,8 @@
 from collections import deque
 from contextvars import ContextVar
 
+from braintrust.audio.timeline import pcm_bytes_to_ms, samples_to_ms
+
 
 def instrument_output(output, alignment, frame_context=None, hooks=None):
     """Track equal-rate mono PCM through native chunking without copying audio.
@@ -146,10 +148,10 @@ def instrument_output(output, alignment, frame_context=None, hooks=None):
                         if owners:
                             alignment.add_clip_range(
                                 owners[0],
-                                start / 48,
-                                (start + size) / 48,
-                                ranges[0][0] / 24,
-                                ranges[0][1] / 24,
+                                pcm_bytes_to_ms(start, frame.sample_rate, frame.num_channels),
+                                pcm_bytes_to_ms(start + size, frame.sample_rate, frame.num_channels),
+                                samples_to_ms(ranges[0][0]),
+                                samples_to_ms(ranges[0][1]),
                             )
                         for owner in owners:
                             alignment.add(owner, ranges, 1)

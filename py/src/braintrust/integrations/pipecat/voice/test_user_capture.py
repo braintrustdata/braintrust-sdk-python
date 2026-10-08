@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from pipecat.frames.frames import (  # pylint: disable=import-error
+    InputAudioRawFrame,
     MetricsFrame,
     TranscriptionFrame,
     VADUserStartedSpeakingFrame,
@@ -67,8 +68,12 @@ class UserCaptureTests(unittest.IsolatedAsyncioTestCase):
                 yield result
 
         stt.run_stt = measured_run
+        original_audio = stt.process_audio_frame
         capture = UserCapture(observer, stt, aggregator, native_value)
         observer.user_capture = capture
+        if not enabled:
+            self.assertEqual(stt.process_audio_frame, original_audio)
+        await stt.process_audio_frame(InputAudioRawFrame(b"\0\0" * 320, 16000, 1), FrameDirection.DOWNSTREAM)
         await stt._handle_user_started_speaking(VADUserStartedSpeakingFrame())
         await stt._handle_user_stopped_speaking(VADUserStoppedSpeakingFrame())
         audio = encode_wav([b"\x10\x10" * 1600], 16000, 1)
@@ -94,57 +99,23 @@ class UserCaptureTests(unittest.IsolatedAsyncioTestCase):
     async def test_opt_out_keeps_metadata_without_retaining_encoding_or_attaching_audio(
         self,
     ):
-        observer, capture, turn = await self.exercise(False)
-        self.assertEqual(capture.bytes, 0)
-        self.assertTrue(all(s["audio"] is None for b in capture.batches.values() for s in b["segments"]))
         with (
             patch(
                 "braintrust.integrations.pipecat.voice.user_capture.encode_segments",
                 side_effect=AssertionError("encoded"),
             ),
-            patch("braintrust.audio.attachments.RecordingAttachment", side_effect=AssertionError("attached")),
+            patch("braintrust.audio.attachments.Attachment", side_effect=AssertionError("attached")),
         ):
+            observer, capture, turn = await self.exercise(False)
+            self.assertEqual(capture.bytes, 0)
+            self.assertTrue(all(s["audio"] is None for b in capture.batches.values() for s in b["segments"]))
             await observer.finish()
+        self.assertFalse(any("audio.selections" in row.get("metadata", {}) for row in turn["span"].rows))
         self.assertEqual(
             turn["span"].rows[-1]["metadata"]["audio.recordings"][0]["reason"],
             "disabled",
         )
         self.assertTrue(any("contrib.pipecat.transcriptions" in row.get("metadata", {}) for row in turn["span"].rows))
-
-    async def test_user_audio_limit_is_explicit(self):
-        observer, capture, turn = await self.exercise(True, max_bytes=10)
-        self.assertEqual(capture.bytes, 0)
-        await observer.finish()
-        self.assertEqual(
-            turn["span"].rows[-1]["metadata"]["audio.recordings"][0]["reason"],
-            "capture_byte_limit",
-        )
-
-    async def test_opt_out_does_not_install_audio_hook_or_dispatch_encoder(self):
-        observer = NativeObserver(Span(), retain_audio=False)
-        observer.capture_transport = True
-        stt = STT()
-        original = stt.process_audio_frame
-        aggregator = LLMContextAggregatorPair(LLMContext()).user()
-        observer.user_capture = UserCapture(observer, stt, aggregator, native_value)
-        self.assertEqual(stt.process_audio_frame, original)
-        with (
-            patch.object(observer.call_recording, "capture", side_effect=AssertionError("capture")),
-            patch.object(observer.call_recording, "encode", side_effect=AssertionError("encode")),
-            patch(
-                "braintrust.audio.alignment.InputRanges.append",
-                side_effect=AssertionError("ranges"),
-            ),
-            patch(
-                "braintrust.audio.attachments.RecordingAttachment",
-                side_effect=AssertionError("attachment"),
-            ),
-        ):
-            from pipecat.frames.frames import InputAudioRawFrame  # pylint: disable=import-error
-            from pipecat.processors.frame_processor import FrameDirection  # pylint: disable=import-error
-
-            await stt.process_audio_frame(InputAudioRawFrame(b"\0\0" * 320, 16000, 1), FrameDirection.DOWNSTREAM)
-            await observer.finish()
 
     async def test_observation_failure_does_not_drop_native_transcription(self):
         observer = NativeObserver(Span(), retain_audio=False)
@@ -159,7 +130,7 @@ class UserCaptureTests(unittest.IsolatedAsyncioTestCase):
         await observer.finish()
 
     async def test_completed_turns_release_capacity_for_later_clips(self):
-        observer = NativeObserver(Span(), retain_audio=True, audio_format="wav")
+        observer = NativeObserver(Span(), retain_audio=True, audio_format="wav", max_audio_bytes=1024)
         aggregator = LLMContextAggregatorPair(LLMContext()).user()
 
         async def push_context():
@@ -172,7 +143,9 @@ class UserCaptureTests(unittest.IsolatedAsyncioTestCase):
         audio = encode_wav([b"\x10\x10" * 160], 16000, 1)
         try:
             for index in range(270):
-                async for frame in stt.run_stt(audio):
+                # An oversized clip midway through the call must not prevent later clips.
+                clip = encode_wav([b"\1\0" * 1024], 16000, 1) if index == 135 else audio
+                async for frame in stt.run_stt(clip):
                     await aggregator._handle_transcription(frame)
                 turn = observer.turns.start("user", "UserStartedSpeakingFrame")
                 observer.turns.confirm("user")
@@ -184,7 +157,9 @@ class UserCaptureTests(unittest.IsolatedAsyncioTestCase):
                     for r in turn["span"].rows
                     if "audio.recordings" in r.get("metadata", {})
                 ]
-                self.assertEqual(descriptors[-1][0]["state"], "ready")
+                self.assertEqual(descriptors[-1][0]["state"], "omitted" if index == 135 else "ready")
+                if index == 135:
+                    self.assertEqual(descriptors[-1][0]["reason"], "capture_byte_limit")
                 self.assertFalse(capture.batches)
                 self.assertFalse(capture.segments)
                 self.assertEqual(capture.bytes, 0)
@@ -192,11 +167,17 @@ class UserCaptureTests(unittest.IsolatedAsyncioTestCase):
             await observer.finish()
 
     def test_joined_clip_positions_include_padding_but_do_not_map_it(self):
+        from braintrust.audio.alignment import InputRanges
+
         from .user_capture import encode_segments
 
+        ranges = InputRanges()
+        ranges.append(1440, {"start": 23520, "end": 24240})
+        ranges.append(480, {"start": 24240, "end": 24480})
+        ranges.trim(960)  # Retain only the final phrase, excluding earlier input.
         first = encode_wav([b"\1\0" * 480 + b"\0\0" * 240], 24000, 1)
         second = encode_wav([b"\2\0" * 480], 24000, 1)
-        encoded = encode_segments([first, second], "wav", [[(0, 960, 24000, 24480)], [(0, 960, 240000, 240480)]])
+        encoded = encode_segments([first, second], "wav", [ranges.drain_mapped(), [(0, 960, 240000, 240480)]])
         self.assertEqual(encoded["duration_ms"], 50)
         self.assertEqual(
             encoded["clip_timeline"].ranges,

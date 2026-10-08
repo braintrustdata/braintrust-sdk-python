@@ -21,7 +21,11 @@ from braintrust.audio.alignment import InputRanges
 from braintrust.audio import worker, RecordingOptions
 from braintrust.audio.segments import SegmentedRecording
 import asyncio
-asyncio.run(SegmentedRecording(enabled=False, options=RecordingOptions()).finish())
+disabled = SegmentedRecording(enabled=False, options=RecordingOptions())
+assert disabled.capture(0, b"\\0\\0" * 480, 24000, 1) is None
+asyncio.run(disabled.finish())
+assert disabled.retained_bytes == 0
+assert disabled.completed == []
 assert worker._executor is None
 recording = CallRecording()
 interval = recording.capture(0, b"\\0\\0" * 480, 24000, 1, observed_ns=0)

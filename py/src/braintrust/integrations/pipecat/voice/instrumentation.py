@@ -8,7 +8,7 @@ import time
 import wave
 from collections import Counter, deque
 
-from braintrust.audio.alignment import Alignment
+from braintrust.audio.export import Alignment, segment_descriptor
 from braintrust.audio.segments import SegmentedRecording
 from pipecat.observers.base_observer import BaseObserver  # pylint: disable=import-error
 
@@ -152,7 +152,6 @@ class NativeObserver(BaseObserver):
             on_segment=self._publish_call_segment,
             on_pending=self._pending_call_segment,
         )
-        self.call_descriptors = {}
         self.realtime = None
         self.input_processor = None
         self.capture_transport = False
@@ -672,67 +671,22 @@ class NativeObserver(BaseObserver):
         ]
 
     def _pending_call_segment(self, segment):
-        self.call_descriptors[segment.segment_id] = {
-            "id": segment.segment_id,
-            "recording_group_id": "call",
-            "state": "pending",
-            "sources": self._call_sources(),
-            "timeline": {
-                "origin_unix_ms": segment.origin_unix_ms,
-                "recording_start_offset_ms": segment.start_ms,
-                "basis": "input_sample_clock_and_output_write_observation",
-            },
-        }
         self._publish_call_manifest()
 
-    async def _publish_call_segment(self, segment, encoded):
-        if encoded is None:
+    async def _publish_call_segment(self, segment):
+        if segment.encoded is None:
             self._publish_call_manifest()
             return
-        recording_id = segment.segment_id
-        self.call_descriptors[recording_id] = {
-            "id": recording_id,
-            "recording_group_id": "call",
-            "state": "ready",
-            "attachment": {"span_id": self.root.span_id, "ref": f"/input/audio/{recording_id}"},
-            "mime_type": encoded["mime_type"],
-            "duration_ms": encoded["duration_ms"],
-            "channel_count": 2,
-            "sources": self._call_sources(),
-            "timeline": {
-                "origin_unix_ms": self.call_recording.origin_unix_ms,
-                "recording_start_offset_ms": segment.start_ms,
-                "basis": "input_sample_clock_and_output_write_observation",
-            },
-        }
-        self.root.log(input={"audio": {recording_id: encoded["attachment"]}})
+        self.root.log(input={"audio": {segment.segment_id: segment.encoded["attachment"]}})
         self._publish_call_manifest()
         self.alignment.publish()
         await asyncio.to_thread(self.logger.flush)
 
     def _publish_call_manifest(self):
-        for segment in self.call_recording.completed:
-            if segment["state"] == "omitted":
-                self.call_descriptors[segment["id"]] = {
-                    "id": segment["id"],
-                    "recording_group_id": "call",
-                    "state": "omitted",
-                    "reason": segment["reason"],
-                    "sources": self._call_sources(),
-                    "timeline": {
-                        "origin_unix_ms": self.call_recording.origin_unix_ms,
-                        "recording_start_offset_ms": segment["start_ms"],
-                        "basis": "input_sample_clock_and_output_write_observation",
-                    },
-                    "gaps": [
-                        {
-                            "start_offset_ms": segment["start_ms"],
-                            "end_offset_ms": segment["end_ms"],
-                            "reason": segment["reason"],
-                        }
-                    ],
-                }
-        descriptors = list(self.call_descriptors.values())
+        descriptors = [
+            segment_descriptor(segment, self.root.span_id, self._call_sources())
+            for segment in self.call_recording.segments
+        ]
         reason = self.call_recording.reason
         if reason or not descriptors:
             descriptors.append(

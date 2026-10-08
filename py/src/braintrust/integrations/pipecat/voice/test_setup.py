@@ -4,7 +4,7 @@
 
 import pytest
 from braintrust import SpanCustomizer, set_span_customizers
-from braintrust.integrations.pipecat import BraintrustPipecatObserver, setup_pipecat
+from braintrust.integrations.pipecat import BraintrustPipecatObserver, setup_pipecat, wrap_pipeline_worker
 from braintrust.integrations.pipecat.test_pipecat import _make_worker, memory_logger  # noqa: F401
 from braintrust.test_helpers import init_test_logger
 from pipecat.pipeline.pipeline import Pipeline  # pylint: disable=import-error
@@ -21,7 +21,11 @@ from pipecat.transports.base_transport import TransportParams  # pylint: disable
 @pytest.mark.asyncio
 @pytest.mark.parametrize("user,agent", [(False, False), (True, False), (False, True), (True, True)])
 async def test_existing_setup_installs_one_observer_and_restores_hooks(memory_logger, user, agent):
-    setup_pipecat(capture_user_audio_attachments=user, capture_agent_audio_attachments=agent)
+    from pipecat.pipeline.worker import PipelineWorker
+
+    for _ in range(2):
+        assert setup_pipecat(capture_user_audio_attachments=user, capture_agent_audio_attachments=agent)
+    assert wrap_pipeline_worker(PipelineWorker) is PipelineWorker
     logger = init_test_logger("test-project-pipecat-py-tracing")
     params = TransportParams(audio_in_enabled=True, audio_out_enabled=True)
     source, destination = BaseInputTransport(params), BaseOutputTransport(params)
@@ -29,10 +33,20 @@ async def test_existing_setup_installs_one_observer_and_restores_hooks(memory_lo
     stt = OpenAISTTService(api_key="test-key")
     original_run, original_audio, original_write = stt.run_stt, stt.process_audio_frame, destination.write_audio_frame
     with logger.start_span(name="customer-session") as parent:
-        worker = _make_worker(Pipeline([source, stt, aggregators.user(), destination, aggregators.assistant()]))
+        explicit = (
+            BraintrustPipecatObserver(capture_user_audio_attachments=user, capture_agent_audio_attachments=agent)
+            if user and agent
+            else None
+        )
+        worker = _make_worker(
+            Pipeline([source, stt, aggregators.user(), destination, aggregators.assistant()]),
+            observers=[explicit] if explicit else [],
+        )
     observers = [o for o in worker._observer._observers if isinstance(o, BraintrustPipecatObserver)]
     assert len(observers) == 1
     observer = observers[0]
+    if explicit:
+        assert observer is explicit
     voice = observer._voice
     assert voice is not None
     assert voice.capture_user_audio is user

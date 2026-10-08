@@ -5,8 +5,6 @@ from types import SimpleNamespace
 from pipecat.frames.frames import (  # pylint: disable=import-error
     FunctionCallInProgressFrame,
     FunctionCallResultFrame,
-    StartFrame,
-    STTMetadataFrame,
     TTSAudioRawFrame,
     TTSStartedFrame,
     TTSStoppedFrame,
@@ -40,49 +38,6 @@ class Span:
 
 
 class Tests(unittest.IsolatedAsyncioTestCase):
-    async def test_native_frames_and_audio_bounds(self):
-        from pipecat.audio.vad.vad_analyzer import VADParams  # pylint: disable=import-error
-        from pipecat.frames.frames import VADParamsUpdateFrame  # pylint: disable=import-error
-
-        logger = Span()
-        observer = NativeObserver(logger, retain_audio=True, max_audio_bytes=10)
-
-        async def push(frame, first_push=True):
-            await observer.on_push_frame(
-                SimpleNamespace(
-                    frame=frame,
-                    first_push=first_push,
-                    source=SimpleNamespace(name="source"),
-                    destination=SimpleNamespace(name="sink"),
-                    direction=FrameDirection.DOWNSTREAM,
-                    timestamp=1234,
-                )
-            )
-
-        await push(StartFrame())
-        await push(STTMetadataFrame(service_name="stt", ttfs_p99_latency=0.5))
-        await push(STTMetadataFrame(service_name="stt", ttfs_p99_latency=0.5))
-        self.assertEqual(observer.events, [])
-        await push(STTMetadataFrame(service_name="stt", ttfs_p99_latency=0.7))
-        await push(VADParamsUpdateFrame(params=VADParams(confidence=0.8)))
-        await push(TTSStartedFrame(context_id="c1"))
-        frame = TTSAudioRawFrame(audio=b"\x01\x00" * 480, sample_rate=24000, num_channels=1, context_id="c1")
-        await push(frame)
-        span = observer.root.children[-1].children[-1]
-        await push(TTSStoppedFrame(context_id="c1"))
-        await observer.finish()
-        self.assertEqual(span.rows[0]["name"], "tts")
-        recording = span.rows[-1]["metadata"]["audio.recordings"][0]
-        self.assertEqual(recording["state"], "omitted")
-        self.assertEqual(observer.synthesis.bytes, 0)
-        self.assertNotIn("audio", native_value(frame))
-        self.assertEqual(len(observer.events), 2)  # Changed metadata and an explicit settings update.
-        event = observer.events[0]
-        self.assertEqual(event["contrib.pipecat.observer.timestamp"], 1234)
-        self.assertEqual(event["contrib.pipecat.frame"]["ttfs_p99_latency"], 0.7)
-        self.assertNotIn("id", event["contrib.pipecat.frame"])
-        self.assertEqual(observer.events[1]["contrib.pipecat.frame.type"], "VADParamsUpdateFrame")
-
     async def test_repeated_tool_frames_keep_one_execution_span(self):
         observer = NativeObserver(Span(), retain_audio=True)
 
@@ -174,6 +129,10 @@ class Tests(unittest.IsolatedAsyncioTestCase):
             if "audio.recordings" in row.get("metadata", {})
         )
         self.assertEqual(descriptors[0]["reason"], "RuntimeError")
+        self.assertEqual(descriptors[0]["state"], "omitted")
+        self.assertNotIn("attachment", descriptors[0])
+        self.assertEqual(descriptors[0]["gaps"][0]["end_offset_ms"], 20)
+        self.assertEqual(observer.call_recording.retained_bytes, 0)
         observer.logger.flush.assert_called_once()
 
 
@@ -182,8 +141,8 @@ if __name__ == "__main__":
 
 
 class FormatTests(unittest.IsolatedAsyncioTestCase):
-    async def test_packet_pts_do_not_trigger_per_packet_export_and_format_changes_omit_clip(self):
-        observer = NativeObserver(Span(), retain_audio=True)
+    async def test_packet_pts_do_not_trigger_per_packet_export_and_invalid_clips_are_omitted(self):
+        observer = NativeObserver(Span(), retain_audio=True, max_audio_bytes=100000)
 
         async def push(frame):
             await observer.on_push_frame(
@@ -202,11 +161,19 @@ class FormatTests(unittest.IsolatedAsyncioTestCase):
         for index in range(100):
             frame = TTSAudioRawFrame(b"\0\0" * 480, 24000, 1, context_id="format-test")
             frame.pts = index * 20_000_000
+            self.assertNotIn("audio", native_value(frame))
             await push(frame)
         assert len(state.span.rows) <= 3
         await push(TTSAudioRawFrame(b"\0\0" * 320, 16000, 1, context_id="format-test"))
         await push(TTSStoppedFrame(context_id="format-test"))
+        await push(TTSStartedFrame(context_id="oversized"))
+        oversized = observer.tts["oversized"]
+        await push(TTSAudioRawFrame(b"\0\0" * 50001, 24000, 1, context_id="oversized"))
+        await push(TTSStoppedFrame(context_id="oversized"))
         await observer.finish()
+        rejected = oversized.span.rows[-1]["metadata"]["audio.recordings"][0]
+        self.assertEqual(rejected["state"], "omitted")
+        self.assertEqual(rejected["reason"], "capture_byte_limit")
         descriptor = state.span.rows[-1]["metadata"]["audio.recordings"][0]
         assert descriptor["state"] == "omitted"
         assert descriptor["reason"] == "audio_format_changed"
@@ -247,7 +214,13 @@ class FormatTests(unittest.IsolatedAsyncioTestCase):
             await observer.call_recording.finish()
         self.assertEqual(seen, [960, 960])
         self.assertEqual(observer.call_recording.retained_bytes, 0)
-        self.assertEqual(len(observer.call_descriptors), 2)
+        recordings = next(
+            row["metadata"]["audio.recordings"]
+            for row in reversed(observer.root.rows)
+            if "audio.recordings" in row.get("metadata", {})
+        )
+        self.assertEqual(len(recordings), 2)
+        self.assertTrue(all(recording["state"] == "ready" for recording in recordings))
 
     async def test_generated_clip_capacity_is_reused_after_publication(self):
         from braintrust.audio.budget import source_budget
@@ -293,9 +266,9 @@ class FormatTests(unittest.IsolatedAsyncioTestCase):
         try:
             for index in range(60):
                 observer.call_recording.capture(0, b"\0\0" * 480, 24000, 1, observed_ns=index * 20_000_000)
-            self.assertEqual(observer.call_descriptors["call-0000"]["state"], "pending")
+            self.assertEqual(observer.root.rows[-1]["metadata"]["audio.recordings"][0]["state"], "pending")
             await observer.call_recording.drain_exports()
-            descriptor = observer.call_descriptors["call-0000"]
+            descriptor = observer.root.rows[-1]["metadata"]["audio.recordings"][0]
             self.assertEqual(descriptor["state"], "omitted")
             self.assertEqual(descriptor["reason"], "RecordingBusy")
         finally:

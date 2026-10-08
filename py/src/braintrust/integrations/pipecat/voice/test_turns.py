@@ -145,6 +145,20 @@ class TurnTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.observer.filtered_events["BotSpeakingFrame"], 500)
         self.assertEqual(self.observer.duplicate_events, 1)
         self.assertEqual(self.observer.omitted_events, 0)
+        from pipecat.audio.vad.vad_analyzer import VADParams
+        from pipecat.frames.frames import STTMetadataFrame, VADParamsUpdateFrame
+
+        await self.push(STTMetadataFrame(service_name="stt", ttfs_p99_latency=0.5))
+        await self.push(STTMetadataFrame(service_name="stt", ttfs_p99_latency=0.5))
+        self.assertEqual(len(self.observer.events), 1)
+        await self.push(STTMetadataFrame(service_name="stt", ttfs_p99_latency=0.7))
+        await self.push(VADParamsUpdateFrame(params=VADParams(confidence=0.8)))
+        self.assertEqual(len(self.observer.events), 3)
+        event = self.observer.events[1]
+        self.assertEqual(event["contrib.pipecat.observer.timestamp"], 1234)
+        self.assertEqual(event["contrib.pipecat.frame"]["ttfs_p99_latency"], 0.7)
+        self.assertNotIn("id", event["contrib.pipecat.frame"])
+        self.assertEqual(self.observer.events[2]["contrib.pipecat.frame.type"], "VADParamsUpdateFrame")
         await self.observer.finish()
 
     async def test_delayed_callback_ends_its_turn_not_new_response(self):

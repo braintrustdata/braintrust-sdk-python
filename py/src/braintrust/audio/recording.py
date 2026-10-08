@@ -6,6 +6,7 @@ import time
 from dataclasses import dataclass
 
 from .budget import source_budget
+from .timeline import ms_to_samples, pcm_bytes_to_ms
 
 
 @dataclass(frozen=True)
@@ -117,7 +118,7 @@ class CallRecording:
             if channel == 0 and self.started[channel]
             else max((observed_ns - self.origin_ns) / 1e6, self.ends[channel])
         )
-        duration = len(pcm) / 2 / channels / sample_rate * 1000
+        duration = pcm_bytes_to_ms(len(pcm), sample_rate, channels)
         # Transport frames can contain seconds of audio (e.g. shutdown silence).
         # Bound retained bytes and timeline duration, not the transport's packetization.
         if start + duration > self.max_duration_ms:
@@ -135,8 +136,8 @@ class CallRecording:
             self.started[channel] = True
             # Coordinates match encode() placement, including resampling rounding.
             return {
-                "start": round(start * 24),
-                "end": round(start * 24) + round(duration * 24),
+                "start": ms_to_samples(start),
+                "end": ms_to_samples(start) + ms_to_samples(duration),
             }
 
     def encode(self, audio_format="ogg"):

@@ -14,7 +14,7 @@ from braintrust.audio.attachments import prepare_recording
 from braintrust.audio.budget import source_budget
 from braintrust.audio.jobs import RecordingJobs
 from braintrust.audio.recording import encode_audio
-from braintrust.audio.timeline import ClipTimeline
+from braintrust.audio.timeline import ClipTimeline, pcm_bytes_to_ms, samples_to_ms
 from braintrust.audio.worker import RecordingBusy, encode_in_worker
 from pipecat.frames.frames import TranscriptionFrame  # pylint: disable=import-error
 
@@ -37,10 +37,10 @@ def encode_segments(segments, audio_format, mappings=None):
             chunks.append(source.readframes(source.getnframes()))
             for start, end, call_start, call_end in mappings[index] if mappings else []:
                 timeline.add(
-                    position_ms + start / (2 * channels * rate) * 1000,
-                    position_ms + end / (2 * channels * rate) * 1000,
-                    call_start / 24,
-                    call_end / 24,
+                    position_ms + pcm_bytes_to_ms(start, rate, channels),
+                    position_ms + pcm_bytes_to_ms(end, rate, channels),
+                    samples_to_ms(call_start),
+                    samples_to_ms(call_end),
                 )
             position_ms += source.getnframes() / rate * 1000
     encoded = encode_audio(chunks, rate, channels, audio_format)

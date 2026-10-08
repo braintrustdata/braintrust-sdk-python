@@ -1,4 +1,4 @@
-"""Shared audio configuration; codecs load only when recording is enabled."""
+"""Public audio configuration. Recording and encoding modules are SDK internals."""
 
 from .options import RecordingOptions
 

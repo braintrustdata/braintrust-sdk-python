@@ -6,6 +6,8 @@ No STT operation is fabricated for asynchronous provider transcription events.
 
 from contextvars import ContextVar
 
+from braintrust.audio.timeline import ms_to_samples
+
 from ..llm_metrics import _metadata_from_processor
 from .instrumentation import native_value
 
@@ -282,7 +284,7 @@ class RealtimeCapture:
             events = [{"item_id": item, **self.items.get(item, {})} for item in ids]
             ready = all("audio_start_ms" in event and "audio_end_ms" in event for event in events)
             if ready and self.observer.capture_user_audio and not self.invalid:
-                ready = all(round(event["audio_end_ms"] * 24) <= self.sent_samples for event in events)
+                ready = all(ms_to_samples(event["audio_end_ms"]) <= self.sent_samples for event in events)
             if not ready and not final:
                 pending.append((span, ids))
                 continue
@@ -291,7 +293,7 @@ class RealtimeCapture:
                 for event in events:
                     if "audio_start_ms" not in event or "audio_end_ms" not in event:
                         continue
-                    start, end = round(event["audio_start_ms"] * 24), round(event["audio_end_ms"] * 24)
+                    start, end = ms_to_samples(event["audio_start_ms"]), ms_to_samples(event["audio_end_ms"])
                     ranges = []
                     for a, b, interval in self.sent_ranges:
                         left, right = max(start, a), min(end, b)

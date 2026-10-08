@@ -12,7 +12,6 @@ from braintrust import SpanCustomizer, logger, set_span_customizers
 from braintrust.integrations.pipecat import (
     BraintrustPipecatObserver,
     setup_pipecat,
-    wrap_pipeline_worker,
 )
 from braintrust.integrations.test_utils import verify_autoinstrument_script
 from braintrust.integrations.versioning import detect_module_version, version_satisfies
@@ -260,32 +259,6 @@ async def test_setup_pipecat_traces_real_pipeline_frames(memory_logger, native):
     assert llm_span["metrics"]["prompt_tokens"] > 0
     assert llm_span["metrics"]["completion_tokens"] > 0
     assert llm_span["metrics"]["tokens"] >= llm_span["metrics"]["completion_tokens"]
-
-
-def test_setup_and_wrap_pipeline_worker_are_idempotent():
-    Pipeline = _import("pipecat.pipeline.pipeline.Pipeline")
-    PipelineWorker = _import("pipecat.pipeline.worker.PipelineWorker")
-    IdentityFilter = _import("pipecat.processors.filters.identity_filter.IdentityFilter")
-
-    assert setup_pipecat(project_name="test-project-pipecat-py-tracing")
-    assert setup_pipecat(project_name="test-project-pipecat-py-tracing")
-    assert setup_pipecat(project_name="test-project-pipecat-py-tracing", capture_audio_attachments=True)
-    assert wrap_pipeline_worker(PipelineWorker) is PipelineWorker
-
-    capturing_worker = _make_worker(Pipeline([IdentityFilter()]))
-    capturing_observers = getattr(getattr(capturing_worker, "_observer"), "_observers")
-    capturing_bt_observer = next(
-        observer for observer in capturing_observers if isinstance(observer, BraintrustPipecatObserver)
-    )
-    assert capturing_bt_observer.capture_audio_attachments is True
-
-    assert setup_pipecat(project_name="test-project-pipecat-py-tracing", capture_audio_attachments=False)
-    explicit_observer = BraintrustPipecatObserver()
-    worker = _make_worker(Pipeline([IdentityFilter()]), observers=[explicit_observer])
-    worker_observer = getattr(worker, "_observer")
-    observers = getattr(worker_observer, "_observers")
-    braintrust_observers = [observer for observer in observers if isinstance(observer, BraintrustPipecatObserver)]
-    assert braintrust_observers == [explicit_observer]
 
 
 @pytest.mark.vcr

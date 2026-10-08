@@ -2,13 +2,54 @@
 
 import asyncio
 import logging
+from dataclasses import dataclass, field
 
 from .attachments import prepare_recording
 from .budget import source_budget
 from .jobs import RecordingJobs
 from .options import RecordingOptions
 from .recording import CallRecording, Packet
+from .timeline import ms_to_samples
 from .worker import encode_in_worker
+
+
+@dataclass
+class AudioSegment:
+    """One manifest throughout encoding and export; PCM is sealed at rotation.
+
+    Only the worker releases submitted PCM. Encoded bytes live through export;
+    afterwards only small metadata remains on the call's manifest.
+    """
+
+    segment_id: str
+    start_ms: float
+    end_ms: float
+    origin_unix_ms: float
+    source: CallRecording
+    state: str = "pending"
+    reason: str | None = None
+    encoded: dict | None = None
+    metadata: dict = field(default_factory=dict)
+
+    @property
+    def bytes(self):
+        return self.source.bytes
+
+    def clear(self):
+        self.source.clear()
+
+    def ready(self, encoded):
+        self.encoded = encoded
+        self.metadata = {key: encoded[key] for key in ("mime_type", "duration_ms", "channel_count")}
+        self.state = "ready"
+
+    def omit(self, reason):
+        self.state, self.reason = "omitted", reason
+        self.encoded = None
+        self.metadata.clear()
+
+    def interval(self):
+        return {"id": self.segment_id, "start_ms": self.start_ms, "end_ms": self.end_ms, "state": self.state}
 
 
 class SegmentedRecording(CallRecording):
@@ -31,10 +72,14 @@ class SegmentedRecording(CallRecording):
         self.audio_format = audio_format
         self.start_ms = 0.0
         self.sequence = 0
-        self.completed = []
+        self.segments: list[AudioSegment] = []
         self.jobs = RecordingJobs()
         self.inflight = []
         self._finish_task = None
+
+    @property
+    def completed(self):
+        return [segment.interval() for segment in self.segments if segment.state != "pending"]
 
     @property
     def retained_bytes(self):
@@ -56,7 +101,7 @@ class SegmentedRecording(CallRecording):
         if interval is None:
             return None
         # Never rewrite audio that was already sealed/exported.
-        if interval["start"] < round(self.start_ms * 24):
+        if interval["start"] < ms_to_samples(self.start_ms):
             self.omit("capture_clock_discontinuity")
             packet = self.packets.pop()
             self.bytes -= len(packet.pcm)
@@ -78,20 +123,18 @@ class SegmentedRecording(CallRecording):
         if len(self.jobs) >= 2:
             self.omit("recording_export_capacity")
             return
-        segment = CallRecording()
-        segment.start_ms = self.start_ms
-        segment.segment_id = f"call-{self.sequence:04d}"
-        segment.origin_unix_ms = self.origin_unix_ms
+        snapshot = CallRecording()
+        segment = AudioSegment(f"call-{self.sequence:04d}", self.start_ms, cut, self.origin_unix_ms, snapshot)
         later = []
         for packet in self.packets:
             size = len(packet.pcm) // (2 * packet.channels)
             before = min(size, max(0, round((cut - packet.start_ms) * packet.sample_rate / 1000)))
             if before:
                 data = packet.pcm if before == size else packet.pcm[: before * 2 * packet.channels]
-                segment.packets.append(
+                snapshot.packets.append(
                     Packet(packet.channel, packet.start_ms - self.start_ms, data, packet.sample_rate, packet.channels)
                 )
-                segment.bytes += len(data)
+                snapshot.bytes += len(data)
             if before < size:
                 data = packet.pcm if not before else packet.pcm[before * 2 * packet.channels :]
                 later.append(
@@ -103,13 +146,14 @@ class SegmentedRecording(CallRecording):
                         packet.channels,
                     )
                 )
-        segment.ends = [cut - self.start_ms, cut - self.start_ms]
-        segment.seal()
+        snapshot.ends = [cut - self.start_ms, cut - self.start_ms]
+        snapshot.seal()
         self.packets = later
         self.bytes -= segment.bytes
         self.start_ms = cut
         self.sequence += 1
         self.inflight.append(segment)
+        self.segments.append(segment)
 
         def release():
             segment.clear()
@@ -120,36 +164,28 @@ class SegmentedRecording(CallRecording):
             self.on_pending(segment)
 
     async def _export(self, segment):
-        descriptor = {
-            "id": segment.segment_id,
-            "start_ms": segment.start_ms,
-            "end_ms": segment.start_ms + max(segment.ends),
-            "state": "pending",
-        }
-
         def encode():
             try:
-                return prepare_recording(segment.segment_id, segment.encode, self.audio_format)
+                return prepare_recording(segment.segment_id, segment.source.encode, self.audio_format)
             finally:
                 # Only the encoder may release a segment handed to its thread.
                 segment.clear()
 
         try:
             encoded = await encode_in_worker(encode)
-            descriptor["state"] = "ready"
-            self.completed.append(descriptor)
+            segment.ready(encoded)
             if self.on_segment:
-                await self.on_segment(segment, encoded)
+                await self.on_segment(segment)
         except Exception as error:  # noqa: BLE001 - recording cannot stop speech
-            descriptor.update(state="omitted", reason=type(error).__name__)
-            if descriptor not in self.completed:
-                self.completed.append(descriptor)
+            segment.omit(type(error).__name__)
             self.omit("segment_export_failed")
             if self.on_segment:
                 try:
-                    await self.on_segment(segment, None)
+                    await self.on_segment(segment)
                 except Exception:  # noqa: BLE001 - failure reporting must not break the call
                     logging.getLogger(__name__).warning("Failed to publish recording omission", exc_info=True)
+        finally:
+            segment.encoded = None
 
     def release_idle_buffer(self):
         """Release unsubmitted audio unless a final drain still owns it."""
