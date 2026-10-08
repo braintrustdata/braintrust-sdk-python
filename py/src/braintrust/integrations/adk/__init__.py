@@ -11,6 +11,7 @@ from .patchers import (
     wrap_flow,
     wrap_mcp_tool,
     wrap_runner,
+    wrap_workflow,
 )
 
 
@@ -22,6 +23,7 @@ __all__ = [
     "setup_braintrust",
     "wrap_agent",
     "wrap_runner",
+    "wrap_workflow",
     "wrap_flow",
     "wrap_mcp_tool",
 ]
@@ -41,7 +43,7 @@ def setup_adk(
     """
     Setup Braintrust integration with Google ADK. Will automatically patch Google ADK agents, runners, flows, and MCP tools for automatic tracing.
 
-    If you prefer manual patching take a look at `wrap_agent`, `wrap_runner`, `wrap_flow`, and `wrap_mcp_tool`.
+    If you prefer manual patching take a look at `wrap_agent`, `wrap_runner`, `wrap_workflow`, `wrap_flow`, and `wrap_mcp_tool`.
 
     Args:
         api_key (Optional[str]): Braintrust API key.

@@ -1,5 +1,6 @@
 """ADK patchers — one patcher per coherent patch target."""
 
+from importlib import import_module
 from typing import Any, ClassVar
 
 from braintrust.integrations.base import CompositeFunctionWrapperPatcher, FunctionWrapperPatcher
@@ -226,6 +227,36 @@ def wrap_agent(Agent: Any) -> Any:
 def wrap_runner(Runner: Any) -> Any:
     """Manually patch a runner class for tracing."""
     return RunnerRunPatcher.wrap_target(Runner)
+
+
+def wrap_workflow(Workflow: Any) -> Any:
+    """Manually patch ADK 2.x workflow nodes for tracing.
+
+    Pass the ``Workflow`` class from ``google.adk.workflow``. The base node
+    patch covers workflow and graph nodes; the tool-node patch adds spans for
+    tools executed directly by the workflow graph.
+    """
+    base_node = next(
+        (
+            cls
+            for cls in Workflow.__mro__
+            if cls.__name__ == "BaseNode" and cls.__module__.startswith("google.adk.workflow")
+        ),
+        None,
+    )
+    if base_node is None:
+        raise TypeError("wrap_workflow expects an ADK Workflow class")
+
+    WorkflowNodeRunPatcher.wrap_target(base_node)
+    try:
+        tool_node_module = import_module("google.adk.workflow._tool_node")
+    except ImportError:
+        return Workflow
+
+    tool_node = getattr(tool_node_module, "_ToolNode", None)
+    if tool_node is not None:
+        WorkflowToolNodeRunImplPatcher.wrap_target(tool_node)
+    return Workflow
 
 
 def wrap_flow(Flow: Any) -> Any:

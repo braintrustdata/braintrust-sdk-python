@@ -396,13 +396,15 @@ async def _workflow_node_run_wrapper(wrapped: Any, instance: Any, args: Any, kwa
             input=node_input,
             metadata={"node_name": node_name, "node_class": instance.__class__.__name__},
         ) as node_span:
-            last_event = None
+            last_output = None
             async with aclosing(wrapped(*args, **kwargs)) as agen:
                 async for event in agen:
-                    last_event = event
+                    event_output = getattr(event, "output", None)
+                    if event_output is not None:
+                        last_output = event_output
                     yield event
-            if last_event is not None:
-                node_span.log(output=getattr(last_event, "output", last_event))
+            if last_output is not None:
+                node_span.log(output=last_output)
 
     async with aclosing(_trace()) as agen:
         async for event in agen:

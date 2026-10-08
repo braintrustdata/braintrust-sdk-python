@@ -567,6 +567,7 @@ async def test_adk_workflow_tool_node_is_traced(memory_logger):
     assert "temporarily inserted and removed" in tool_span["output"]["status"]
     tool_node_span = next(row for row in spans if row["span_id"] == tool_span["span_parents"][0])
     assert tool_node_span["span_attributes"]["name"] == "workflow_node [load_artifacts]"
+    assert tool_node_span["output"]["artifact_names"] == ["report.txt"]
 
 
 @pytest.mark.vcr
@@ -1185,3 +1186,13 @@ class TestAutoInstrumentADK:
         from braintrust.integrations.test_utils import verify_autoinstrument_script
 
         verify_autoinstrument_script("test_auto_adk.py")
+
+
+class TestManualWrapADK:
+    """Tests the public manual wrapping helpers in an isolated process."""
+
+    @pytest.mark.skipif(ADK_VERSION < (2, 10, 0), reason="Workflow nodes require ADK 2.10+")
+    def test_manual_wrap_adk_workflow(self):
+        from braintrust.integrations.test_utils import verify_autoinstrument_script
+
+        verify_autoinstrument_script("test_manual_wrap_adk_workflow.py")
