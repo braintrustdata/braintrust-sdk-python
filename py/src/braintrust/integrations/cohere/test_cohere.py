@@ -189,28 +189,6 @@ def test_wrap_cohere_is_idempotent():
     assert getattr(client, "__braintrust_cohere_traced__", False) is True
 
 
-def test_audio_transcriptions_patchers_target_sdk_surface():
-    """The audio transcription patchers must point at the Cohere SDK classes.
-
-    Regression guard for https://github.com/braintrustdata/braintrust-sdk-python/issues/327:
-    we must instrument both ``TranscriptionsClient.create`` and
-    ``AsyncTranscriptionsClient.create`` on the ``cohere.audio.transcriptions``
-    surface introduced in cohere>=6.1.0.
-    """
-    try:
-        import cohere.audio.transcriptions.client as transcriptions_module
-    except ImportError:
-        pytest.skip("cohere SDK does not expose audio.transcriptions")
-
-    assert TranscriptionsCreatePatcher.target_module == "cohere.audio.transcriptions.client"
-    assert TranscriptionsCreatePatcher.target_path == "TranscriptionsClient.create"
-    assert AsyncTranscriptionsCreatePatcher.target_module == "cohere.audio.transcriptions.client"
-    assert AsyncTranscriptionsCreatePatcher.target_path == "AsyncTranscriptionsClient.create"
-
-    assert hasattr(transcriptions_module.TranscriptionsClient, "create")
-    assert hasattr(transcriptions_module.AsyncTranscriptionsClient, "create")
-
-
 # ---------------------------------------------------------------------------
 # VCR-backed integration tests
 # ---------------------------------------------------------------------------
@@ -739,15 +717,24 @@ def test_wrap_cohere_audio_transcription_async(memory_logger):
     assert span["output"] == response.text
 
 
+# Same request as the manual-wrap test; only the tracing entry point differs.
 @pytest.mark.vcr
-def test_cohere_integration_setup_patches_audio_transcriptions(memory_logger, clean_cohere_methods):
-    """``CohereIntegration.setup()`` must wire up audio transcription tracing."""
+@pytest.mark.parametrize("vcr_cassette_name", ["test_wrap_cohere_audio_transcription_sync"], ids=["shared"])
+def test_cohere_integration_setup_patches_audio_transcriptions(memory_logger, clean_cohere_methods, vcr_cassette_name):
+    """``CohereIntegration.setup()`` must wire up audio transcription tracing.
+
+    Regression guard for https://github.com/braintrustdata/braintrust-sdk-python/issues/327:
+    both ``TranscriptionsClient.create`` and ``AsyncTranscriptionsClient.create``
+    on the ``cohere.audio.transcriptions`` surface (cohere>=6.1.0) must be patched.
+    """
     pytest.importorskip("cohere.audio.transcriptions.client")
     assert not memory_logger.pop()
 
     assert CohereIntegration.setup() is True
     # Second call is a no-op but still reports success.
     assert CohereIntegration.setup() is True
+    assert TranscriptionsCreatePatcher.is_patched(None, None)
+    assert AsyncTranscriptionsCreatePatcher.is_patched(None, None)
 
     client = _v1_client()  # NOT manually wrapped
     with open(TEST_AUDIO_FILE, "rb") as file_obj:
