@@ -226,80 +226,116 @@ def test_log_message_to_span_includes_stop_reason_and_stop_sequence():
     )
 
 
-def test_extract_anthropic_usage_includes_server_tool_use_metrics_from_objects():
-    usage = SimpleNamespace(
-        input_tokens=11,
-        output_tokens=7,
-        cache_read_input_tokens=3,
-        cache_creation_input_tokens=2,
-        server_tool_use=SimpleNamespace(
-            web_search_requests=2,
-            web_fetch_requests=1,
-            code_execution_requests=4,
+class _ToDictOnly:
+    __slots__ = ("_payload",)
+
+    def __init__(self, payload):
+        self._payload = payload
+
+    def to_dict(self):
+        return self._payload
+
+
+@pytest.mark.parametrize(
+    "usage,expected_metrics,expected_metadata",
+    [
+        pytest.param(
+            SimpleNamespace(
+                input_tokens=11,
+                output_tokens=7,
+                cache_read_input_tokens=3,
+                cache_creation_input_tokens=2,
+                server_tool_use=SimpleNamespace(
+                    web_search_requests=2,
+                    web_fetch_requests=1,
+                    code_execution_requests=4,
+                ),
+            ),
+            {
+                "prompt_tokens": 16.0,
+                "completion_tokens": 7.0,
+                "prompt_cached_tokens": 3.0,
+                "prompt_cache_creation_tokens": 2.0,
+                "server_tool_use_web_search_requests": 2.0,
+                "server_tool_use_web_fetch_requests": 1.0,
+                "server_tool_use_code_execution_requests": 4.0,
+                "tokens": 23.0,
+            },
+            {},
+            id="server_tool_use_from_objects",
         ),
-    )
-
-    metrics, metadata = extract_anthropic_usage(usage)
-
-    assert metrics == {
-        "prompt_tokens": 16.0,
-        "completion_tokens": 7.0,
-        "prompt_cached_tokens": 3.0,
-        "prompt_cache_creation_tokens": 2.0,
-        "server_tool_use_web_search_requests": 2.0,
-        "server_tool_use_web_fetch_requests": 1.0,
-        "server_tool_use_code_execution_requests": 4.0,
-        "tokens": 23.0,
-    }
-    assert metadata == {}
-
-
-def test_extract_anthropic_usage_supports_to_dict_only_objects():
-    class ToDictOnly:
-        __slots__ = ("_payload",)
-
-        def __init__(self, payload):
-            self._payload = payload
-
-        def to_dict(self):
-            return self._payload
-
-    usage = ToDictOnly(
-        {
-            "input_tokens": 11,
-            "output_tokens": 7,
-            "cache_read_input_tokens": 3,
-            "cache_creation": ToDictOnly(
+        pytest.param(
+            _ToDictOnly(
                 {
-                    "ephemeral_5m_input_tokens": 2,
-                    "ephemeral_1h_input_tokens": 5,
+                    "input_tokens": 11,
+                    "output_tokens": 7,
+                    "cache_read_input_tokens": 3,
+                    "cache_creation": _ToDictOnly(
+                        {
+                            "ephemeral_5m_input_tokens": 2,
+                            "ephemeral_1h_input_tokens": 5,
+                        }
+                    ),
+                    "server_tool_use": _ToDictOnly(
+                        {
+                            "web_search_requests": 2,
+                            "web_fetch_requests": 1,
+                        }
+                    ),
+                    "service_tier": "standard",
                 }
             ),
-            "server_tool_use": ToDictOnly(
-                {
+            {
+                "prompt_tokens": 21.0,
+                "completion_tokens": 7.0,
+                "prompt_cached_tokens": 3.0,
+                "prompt_cache_creation_5m_tokens": 2.0,
+                "prompt_cache_creation_1h_tokens": 5.0,
+                "server_tool_use_web_search_requests": 2.0,
+                "server_tool_use_web_fetch_requests": 1.0,
+                "tokens": 28.0,
+            },
+            {"usage_service_tier": "standard"},
+            id="to_dict_only_objects",
+        ),
+        pytest.param(
+            {
+                "input_tokens": 8,
+                "output_tokens": 12,
+                "cache_creation": {
+                    "ephemeral_5m_input_tokens": 3,
+                    "ephemeral_1h_input_tokens": 4,
+                },
+                "server_tool_use": {
                     "web_search_requests": 2,
                     "web_fetch_requests": 1,
-                }
-            ),
-            "service_tier": "standard",
-        }
-    )
-
+                },
+                "service_tier": "standard",
+                "inference_geo": "not_available",
+            },
+            {
+                "prompt_tokens": 15.0,
+                "completion_tokens": 12.0,
+                "prompt_cache_creation_5m_tokens": 3.0,
+                "prompt_cache_creation_1h_tokens": 4.0,
+                "server_tool_use_web_search_requests": 2.0,
+                "server_tool_use_web_fetch_requests": 1.0,
+                "tokens": 27.0,
+            },
+            {
+                "usage_service_tier": "standard",
+                "usage_inference_geo": "not_available",
+            },
+            id="nested_numeric_fields",
+        ),
+        pytest.param(SimpleNamespace(), {}, {}, id="empty_usage"),
+    ],
+)
+def test_extract_anthropic_usage(usage, expected_metrics, expected_metadata):
     metrics, metadata = extract_anthropic_usage(usage)
 
-    assert metrics == {
-        "prompt_tokens": 21.0,
-        "completion_tokens": 7.0,
-        "prompt_cached_tokens": 3.0,
-        "prompt_cache_creation_5m_tokens": 2.0,
-        "prompt_cache_creation_1h_tokens": 5.0,
-        "server_tool_use_web_search_requests": 2.0,
-        "server_tool_use_web_fetch_requests": 1.0,
-        "tokens": 28.0,
-    }
-    assert metadata == {
-        "usage_service_tier": "standard",
-    }
+    assert metrics == expected_metrics
+    assert metadata == expected_metadata
 
 
 @pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
@@ -697,6 +733,7 @@ def test_anthropic_messages_create_prompt_cache_diagnostics(memory_logger):
 async def test_anthropic_messages_reasoning_tokens_metrics(
     memory_logger, vcr_cassette, vcr_cassette_name, mode, is_async
 ):
+    assert not memory_logger.pop()
     client = wrap_anthropic(_get_async_client() if is_async else _get_client())
     params = {
         "model": LATEST_MODEL,
@@ -706,6 +743,8 @@ async def test_anthropic_messages_reasoning_tokens_metrics(
     }
     events = []
     text = ""
+    final_message = None
+    start = time.time()
     if mode == "create":
         response = await client.messages.create(**params) if is_async else client.messages.create(**params)
         text = "".join(block.text for block in response.content if block.type == "text")
@@ -722,22 +761,30 @@ async def test_anthropic_messages_reasoning_tokens_metrics(
                 text = "".join([chunk async for chunk in stream.text_stream])
             else:
                 events = [event async for event in stream]
+            final_message = await stream.get_final_message()
     else:
         with client.messages.stream(**params) as stream:
             if mode == "text_stream":
                 text = "".join(stream.text_stream)
             else:
                 events = list(stream)
+        final_message = stream.get_final_message()
+    end = time.time()
 
     if events:
         assert events[0].type == "message_start"
         assert events[-1].type == "message_stop"
+        if mode == "stream":
+            # MessageStream synthesizes "text" events on top of the raw events.
+            assert any(event.type == "text" for event in events)
         text = "".join(
             event.delta.text
             for event in events
             if event.type == "content_block_delta" and event.delta.type == "text_delta"
         )
     assert "391" in text
+    if final_message is not None:
+        assert "".join(block.text for block in final_message.content if block.type == "text") == text
 
     # Read expected usage from the wire, independently of the SDK's accumulator:
     # older SDKs retain unknown fields on events but discard them from snapshots.
@@ -745,28 +792,40 @@ async def test_anthropic_messages_reasoning_tokens_metrics(
     if isinstance(body, bytes):
         body = body.decode()
     if mode == "create":
-        usage = json.loads(body)["usage"]
+        wire_message = json.loads(body)
+        usage = wire_message["usage"]
+        wire_model = wire_message["model"]
+        wire_stop_reason = wire_message["stop_reason"]
     else:
         usage = {}
+        wire_model = wire_stop_reason = None
         for line in body.splitlines():
             if line.startswith("data: "):
                 event = json.loads(line[6:])
                 if event["type"] == "message_start":
                     usage.update(event["message"]["usage"])
+                    wire_model = event["message"]["model"]
                 elif event["type"] == "message_delta":
                     usage.update(event["usage"])
+                    wire_stop_reason = event["delta"]["stop_reason"]
+    assert wire_model and wire_stop_reason
 
     thinking_tokens = usage["output_tokens_details"]["thinking_tokens"]
     assert thinking_tokens > 0
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
+    assert span["project_id"] == PROJECT_NAME
     assert span["span_attributes"]["name"] == f"anthropic.messages.{'create' if mode == 'create' else 'stream'}"
     assert span["span_attributes"]["type"] == "llm"
     assert span["context"]["span_origin"]["instrumentation"]["name"] == "anthropic-auto"
     assert span["metadata"]["model"] == LATEST_MODEL
     assert span["metadata"]["provider"] == "anthropic"
+    assert span["metadata"]["max_tokens"] == params["max_tokens"]
     assert span["input"] == params["messages"]
+    assert span["output"]["role"] == "assistant"
+    assert span["output"]["model"] == wire_model
+    assert span["output"]["stop_reason"] == wire_stop_reason
     assert any(block["type"] == "thinking" for block in span["output"]["content"])
     assert "".join(block["text"] for block in span["output"]["content"] if block["type"] == "text") == text
     metrics = span["metrics"]
@@ -776,7 +835,12 @@ async def test_anthropic_messages_reasoning_tokens_metrics(
         usage["input_tokens"] + usage["cache_creation_input_tokens"] + usage["cache_read_input_tokens"]
     )
     assert metrics["tokens"] == metrics["prompt_tokens"] + usage["output_tokens"]
+    assert metrics["prompt_cached_tokens"] == usage["cache_read_input_tokens"]
+    assert "prompt_cache_creation_tokens" not in metrics
+    assert metrics["prompt_cache_creation_5m_tokens"] == usage["cache_creation"]["ephemeral_5m_input_tokens"]
+    assert metrics["prompt_cache_creation_1h_tokens"] == usage["cache_creation"]["ephemeral_1h_input_tokens"]
     assert metrics["time_to_first_token"] >= 0
+    assert start <= metrics["start"] <= metrics["end"] <= end
 
 
 @pytest.mark.parametrize("final_thinking_tokens", [None, 0, 17])
@@ -1100,6 +1164,11 @@ def test_anthropic_messages_model_params_inputs(memory_logger):
         logs = memory_logger.pop()
         assert len(logs) == 1
         log = logs[0]
+        inputs = log["input"]
+        assert len(inputs) == 2
+        inputs_by_role = {m["role"]: m["content"] for m in inputs}
+        assert inputs_by_role["system"] == kw["system"]
+        assert inputs_by_role["user"] == kw["messages"][0]["content"]
         assert log["output"]["role"] == "assistant"
         assert "2" in log["output"]["content"][0]["text"]
         assert log["metadata"]["model"] == MODEL
@@ -1109,86 +1178,6 @@ def test_anthropic_messages_model_params_inputs(memory_logger):
             assert log["metadata"]["top_p"] == 0.5
         else:
             assert log["metadata"]["stop_sequences"] == ["END"]
-
-
-@pytest.mark.vcr
-def test_anthropic_messages_system_prompt_inputs(memory_logger):
-    assert not memory_logger.pop()
-
-    client = wrap_anthropic(_get_client())
-    system = "Today's date is 2024-03-26. Only return the date"
-    q = [{"role": "user", "content": "what is tomorrow's date? only return the date"}]
-
-    args = {
-        "messages": q,
-        "max_tokens": 300,
-        "system": system,
-        "model": MODEL,
-    }
-    if MODEL == LEGACY_MODEL:
-        args["temperature"] = 0
-
-    def _with_messages_create():
-        return client.messages.create(**args)
-
-    def _with_messages_stream():
-        with client.messages.stream(**args) as stream:
-            for msg in stream:
-                pass
-        return stream.get_final_message()
-
-    for f in [_with_messages_create, _with_messages_stream]:
-        msg = f()
-        assert "2024-03-27" in msg.content[0].text
-
-        logs = memory_logger.pop()
-        assert len(logs) == 1
-        log = logs[0]
-        inputs = log["input"]
-        assert len(inputs) == 2
-        inputs_by_role = {m["role"]: m["content"] for m in inputs}
-        assert inputs_by_role["system"] == system
-        assert inputs_by_role["user"] == q[0]["content"]
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_anthropic_messages_streaming_async(memory_logger):
-    assert not memory_logger.pop()
-
-    client = wrap_anthropic(_get_async_client())
-    msgs_in = [{"role": "user", "content": "what is 1+1?, just return the number"}]
-
-    start = time.time()
-    msg_out = None
-
-    async with client.messages.stream(max_tokens=1024, messages=msgs_in, model=MODEL) as stream:
-        async for event in stream:
-            pass
-        msg_out = await stream.get_final_message()
-        assert msg_out.content[0].text == "2"
-        usage = msg_out.usage
-    end = time.time()
-
-    logs = memory_logger.pop()
-    assert len(logs) == 1
-    log = logs[0]
-    assert "user" in str(log["input"])
-    assert "1+1" in str(log["input"])
-    assert "2" in str(log["output"])
-    assert log["project_id"] == PROJECT_NAME
-    assert log["span_attributes"]["type"] == "llm"
-    assert log["metadata"]["model"] == MODEL
-    assert log["metadata"]["max_tokens"] == 1024
-    _assert_metrics_are_valid(log["metrics"], start, end)
-    metrics = log["metrics"]
-    assert metrics["prompt_tokens"] == usage.input_tokens
-    assert metrics["completion_tokens"] == usage.output_tokens
-    assert metrics["tokens"] == usage.input_tokens + usage.output_tokens
-    assert metrics["prompt_cached_tokens"] == usage.cache_read_input_tokens
-    _assert_cache_creation_metrics(metrics, usage)
-    assert log["metadata"]["model"] == MODEL
-    assert log["metadata"]["max_tokens"] == 1024
 
 
 @pytest.mark.vcr
@@ -1234,122 +1223,6 @@ def test_anthropic_messages_stream_errors(memory_logger):
     span = spans[0]
     assert "Exception: fake-error" in span["error"]
     assert span["metrics"]["end"] > 0
-
-
-@pytest.mark.vcr
-def test_anthropic_messages_streaming_sync(memory_logger):
-    assert not memory_logger.pop()
-
-    client = wrap_anthropic(_get_client())
-    msg_in = {"role": "user", "content": "what is 2+2? (just the number)"}
-
-    start = time.time()
-    with client.messages.stream(model=MODEL, max_tokens=300, messages=[msg_in]) as stream:
-        msgs_out = [m for m in stream]
-    end = time.time()
-    msg_out = stream.get_final_message()
-    usage = msg_out.usage
-    # crudely check that the stream is valid
-    assert len(msgs_out) > 3
-    assert 1 <= len([m for m in msgs_out if m.type == "text"])
-    assert msgs_out[0].type == "message_start"
-    assert msgs_out[-1].type == "message_stop"
-
-    logs = memory_logger.pop()
-    assert len(logs) == 1
-    log = logs[0]
-    assert "user" in str(log["input"])
-    assert "2+2" in str(log["input"])
-    assert "4" in str(log["output"])
-    assert log["project_id"] == PROJECT_NAME
-    assert log["span_attributes"]["type"] == "llm"
-    _assert_metrics_are_valid(log["metrics"], start, end)
-    assert log["metrics"]["prompt_tokens"] == usage.input_tokens
-    assert log["metrics"]["completion_tokens"] == usage.output_tokens
-    assert log["metrics"]["tokens"] == usage.input_tokens + usage.output_tokens
-    assert log["metrics"]["prompt_cached_tokens"] == usage.cache_read_input_tokens
-    _assert_cache_creation_metrics(log["metrics"], usage)
-
-
-@pytest.mark.vcr
-def test_anthropic_messages_streaming_sync_text_stream(memory_logger):
-    """time_to_first_token is captured when iterating via .text_stream (BT-4702)."""
-    assert not memory_logger.pop()
-
-    client = wrap_anthropic(_get_client())
-    msg_in = {"role": "user", "content": "what is 2+2? (just the number)"}
-
-    start = time.time()
-    with client.messages.stream(model=MODEL, max_tokens=300, messages=[msg_in]) as stream:
-        texts = list(stream.text_stream)
-    end = time.time()
-    msg_out = stream.get_final_message()
-    usage = msg_out.usage
-
-    text = "".join(texts)
-    assert "4" in text
-    assert "4" in msg_out.content[0].text
-
-    logs = memory_logger.pop()
-    assert len(logs) == 1
-    log = logs[0]
-    assert "user" in str(log["input"])
-    assert "2+2" in str(log["input"])
-    assert "4" in str(log["output"])
-    assert log["project_id"] == PROJECT_NAME
-    assert log["span_attributes"]["type"] == "llm"
-    assert log["metadata"]["model"] == MODEL
-    assert log["metadata"]["max_tokens"] == 300
-    assert log["output"]["role"] == "assistant"
-    assert log["output"]["model"] == msg_out.model
-    assert log["output"]["stop_reason"] == msg_out.stop_reason
-    _assert_metrics_are_valid(log["metrics"], start, end)
-    assert log["metrics"]["prompt_tokens"] == usage.input_tokens
-    assert log["metrics"]["completion_tokens"] == usage.output_tokens
-    assert log["metrics"]["tokens"] == usage.input_tokens + usage.output_tokens
-    assert log["metrics"]["prompt_cached_tokens"] == usage.cache_read_input_tokens
-    _assert_cache_creation_metrics(log["metrics"], usage)
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_anthropic_messages_streaming_async_text_stream(memory_logger):
-    """time_to_first_token is captured when iterating via .text_stream on async streams (BT-4702)."""
-    assert not memory_logger.pop()
-
-    client = wrap_anthropic(_get_async_client())
-    msgs_in = [{"role": "user", "content": "what is 1+1?, just return the number"}]
-
-    start = time.time()
-    async with client.messages.stream(max_tokens=1024, messages=msgs_in, model=MODEL) as stream:
-        texts = [t async for t in stream.text_stream]
-        msg_out = await stream.get_final_message()
-        usage = msg_out.usage
-    end = time.time()
-
-    text = "".join(texts)
-    assert "2" in text
-    assert msg_out.content[0].text == "2"
-
-    logs = memory_logger.pop()
-    assert len(logs) == 1
-    log = logs[0]
-    assert "user" in str(log["input"])
-    assert "1+1" in str(log["input"])
-    assert "2" in str(log["output"])
-    assert log["project_id"] == PROJECT_NAME
-    assert log["span_attributes"]["type"] == "llm"
-    assert log["metadata"]["model"] == MODEL
-    assert log["metadata"]["max_tokens"] == 1024
-    assert log["output"]["role"] == "assistant"
-    assert log["output"]["model"] == msg_out.model
-    assert log["output"]["stop_reason"] == msg_out.stop_reason
-    _assert_metrics_are_valid(log["metrics"], start, end)
-    assert log["metrics"]["prompt_tokens"] == usage.input_tokens
-    assert log["metrics"]["completion_tokens"] == usage.output_tokens
-    assert log["metrics"]["tokens"] == usage.input_tokens + usage.output_tokens
-    assert log["metrics"]["prompt_cached_tokens"] == usage.cache_read_input_tokens
-    _assert_cache_creation_metrics(log["metrics"], usage)
 
 
 @pytest.mark.vcr
@@ -1454,30 +1327,6 @@ def test_anthropic_messages_sync_server_tool_spans(memory_logger):
     assert tool_span["root_span_id"] == llm_span["root_span_id"]
 
 
-def _assert_cache_creation_metrics(metrics, usage):
-    cache_creation = getattr(usage, "cache_creation", None)
-    if cache_creation is None:
-        assert metrics["prompt_cache_creation_tokens"] == usage.cache_creation_input_tokens
-        return
-
-    if isinstance(cache_creation, dict):
-        ephemeral_5m = cache_creation.get("ephemeral_5m_input_tokens")
-        ephemeral_1h = cache_creation.get("ephemeral_1h_input_tokens")
-    else:
-        ephemeral_5m = getattr(cache_creation, "ephemeral_5m_input_tokens", None)
-        ephemeral_1h = getattr(cache_creation, "ephemeral_1h_input_tokens", None)
-
-    if ephemeral_5m is None and ephemeral_1h is None:
-        assert metrics["prompt_cache_creation_tokens"] == usage.cache_creation_input_tokens
-        return
-
-    assert "prompt_cache_creation_tokens" not in metrics
-    if ephemeral_5m is not None:
-        assert metrics["prompt_cache_creation_5m_tokens"] == ephemeral_5m
-    if ephemeral_1h is not None:
-        assert metrics["prompt_cache_creation_1h_tokens"] == ephemeral_1h
-
-
 def _assert_metrics_are_valid(metrics, start, end):
     assert metrics["tokens"] > 0
     assert metrics["prompt_tokens"] > 0
@@ -1490,128 +1339,96 @@ def _assert_metrics_are_valid(metrics, start, end):
         assert metrics["start"] <= metrics["end"]
 
 
-@pytest.mark.vcr
-def test_anthropic_beta_messages_sync(memory_logger):
+@pytest.mark.vcr(
+    match_on=["method", "scheme", "host", "port", "path", "body"]
+)  # exclude query - varies by SDK version
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "is_async,mode,content,max_tokens,expected,vcr_cassette_name",
+    [
+        pytest.param(
+            False,
+            "create",
+            "what's 3+3?",
+            300,
+            "6",
+            "test_anthropic_beta_messages_sync",
+            id="sync-create",
+        ),
+        pytest.param(
+            False,
+            "stream",
+            "what is 5+5? (just the number)",
+            300,
+            "10",
+            "test_anthropic_beta_messages_stream_sync",
+            id="sync-stream",
+        ),
+        pytest.param(
+            True,
+            "create",
+            "what is 8+2?, just return the number",
+            100,
+            "10",
+            "test_anthropic_beta_messages_create_async",
+            id="async-create",
+        ),
+        pytest.param(
+            True,
+            "stream",
+            "what is 9+1?, just return the number",
+            1024,
+            "10",
+            "test_anthropic_beta_messages_streaming_async",
+            id="async-stream",
+        ),
+    ],
+)
+async def test_anthropic_beta_messages(
+    memory_logger, is_async, mode, content, max_tokens, expected, vcr_cassette_name
+):
     assert not memory_logger.pop()
 
-    client = wrap_anthropic(_get_client())
-    msg_in = {"role": "user", "content": "what's 3+3?"}
+    client = wrap_anthropic(_get_async_client() if is_async else _get_client())
+    params = {"model": MODEL, "max_tokens": max_tokens, "messages": [{"role": "user", "content": content}]}
 
     start = time.time()
-    msg = client.beta.messages.create(model=MODEL, max_tokens=300, messages=[msg_in])
+    events = []
+    if mode == "create":
+        msg = await client.beta.messages.create(**params) if is_async else client.beta.messages.create(**params)
+    elif is_async:
+        async with client.beta.messages.stream(**params) as stream:
+            events = [event async for event in stream]
+            msg = await stream.get_final_message()
+    else:
+        with client.beta.messages.stream(**params) as stream:
+            events = list(stream)
+        msg = stream.get_final_message()
     end = time.time()
+    usage = msg.usage
 
-    text = msg.content[0].text
-    assert text
-    assert "6" in text
+    assert expected in msg.content[0].text
+    if mode == "stream":
+        assert len(events) > 3
+        assert events[0].type == "message_start"
+        assert events[-1].type == "message_stop"
 
     logs = memory_logger.pop()
     assert len(logs) == 1
     log = logs[0]
-    assert "3+3" in str(log["input"])
-    assert "6" in str(log["output"])
+    assert log["input"] == params["messages"]
+    assert log["output"]["role"] == "assistant"
+    assert expected in log["output"]["content"][0]["text"]
     assert log["project_id"] == PROJECT_NAME
     assert log["span_id"]
     assert log["root_span_id"]
     attrs = log["span_attributes"]
     assert attrs["type"] == "llm"
     assert "anthropic" in attrs["name"]
+    assert log["metadata"]["model"] == MODEL
+    assert log["metadata"]["max_tokens"] == max_tokens
     metrics = log["metrics"]
     _assert_metrics_are_valid(metrics, start, end)
-    assert log["metadata"]["model"] == MODEL
-
-
-@pytest.mark.vcr
-def test_anthropic_beta_messages_stream_sync(memory_logger):
-    assert not memory_logger.pop()
-
-    client = wrap_anthropic(_get_client())
-    msg_in = {"role": "user", "content": "what is 5+5? (just the number)"}
-
-    start = time.time()
-    with client.beta.messages.stream(model=MODEL, max_tokens=300, messages=[msg_in]) as stream:
-        msgs_out = [m for m in stream]
-    end = time.time()
-    msg_out = stream.get_final_message()
-    usage = msg_out.usage
-
-    assert len(msgs_out) > 3
-    assert msgs_out[0].type == "message_start"
-    assert msgs_out[-1].type == "message_stop"
-    assert "10" in msg_out.content[0].text
-
-    logs = memory_logger.pop()
-    assert len(logs) == 1
-    log = logs[0]
-    assert "user" in str(log["input"])
-    assert "5+5" in str(log["input"])
-    assert "10" in str(log["output"])
-    assert log["project_id"] == PROJECT_NAME
-    assert log["span_attributes"]["type"] == "llm"
-    _assert_metrics_are_valid(log["metrics"], start, end)
-    assert log["metrics"]["prompt_tokens"] == usage.input_tokens
-    assert log["metrics"]["completion_tokens"] == usage.output_tokens
-    assert log["metrics"]["tokens"] == usage.input_tokens + usage.output_tokens
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_anthropic_beta_messages_create_async(memory_logger):
-    assert not memory_logger.pop()
-
-    params = {
-        "model": MODEL,
-        "max_tokens": 100,
-        "messages": [{"role": "user", "content": "what is 8+2?, just return the number"}],
-    }
-
-    client = wrap_anthropic(anthropic.AsyncAnthropic())
-    msg = await client.beta.messages.create(**params)
-    assert "10" in msg.content[0].text
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span["metadata"]["model"] == MODEL
-    assert span["metadata"]["max_tokens"] == 100
-    assert span["input"] == params["messages"]
-    assert span["output"]["role"] == "assistant"
-    assert "10" in span["output"]["content"][0]["text"]
-
-
-@pytest.mark.vcr(
-    match_on=["method", "scheme", "host", "port", "path", "body"]
-)  # exclude query - varies by SDK version
-@pytest.mark.asyncio
-async def test_anthropic_beta_messages_streaming_async(memory_logger):
-    assert not memory_logger.pop()
-
-    client = wrap_anthropic(_get_async_client())
-    msgs_in = [{"role": "user", "content": "what is 9+1?, just return the number"}]
-
-    start = time.time()
-    msg_out = None
-
-    async with client.beta.messages.stream(max_tokens=1024, messages=msgs_in, model=MODEL) as stream:
-        async for event in stream:
-            pass
-        msg_out = await stream.get_final_message()
-        assert "10" in msg_out.content[0].text
-        usage = msg_out.usage
-    end = time.time()
-
-    logs = memory_logger.pop()
-    assert len(logs) == 1
-    log = logs[0]
-    assert "user" in str(log["input"])
-    assert "9+1" in str(log["input"])
-    assert "10" in str(log["output"])
-    assert log["project_id"] == PROJECT_NAME
-    assert log["span_attributes"]["type"] == "llm"
-    assert log["metadata"]["model"] == MODEL
-    assert log["metadata"]["max_tokens"] == 1024
-    _assert_metrics_are_valid(log["metrics"], start, end)
-    metrics = log["metrics"]
     assert metrics["prompt_tokens"] == usage.input_tokens
     assert metrics["completion_tokens"] == usage.output_tokens
     assert metrics["tokens"] == usage.input_tokens + usage.output_tokens
@@ -1837,45 +1654,6 @@ class TestAutoInstrumentAnthropic:
         verify_autoinstrument_script("test_auto_anthropic.py")
 
 
-def test_extract_anthropic_usage_preserves_nested_numeric_fields():
-    usage = {
-        "input_tokens": 8,
-        "output_tokens": 12,
-        "cache_creation": {
-            "ephemeral_5m_input_tokens": 3,
-            "ephemeral_1h_input_tokens": 4,
-        },
-        "server_tool_use": {
-            "web_search_requests": 2,
-            "web_fetch_requests": 1,
-        },
-        "service_tier": "standard",
-        "inference_geo": "not_available",
-    }
-    metrics, metadata = extract_anthropic_usage(usage)
-
-    assert metrics["prompt_tokens"] == 15
-    assert metrics["completion_tokens"] == 12
-    assert metrics["tokens"] == 27
-    assert "prompt_cache_creation_tokens" not in metrics
-    assert metrics["prompt_cache_creation_5m_tokens"] == 3
-    assert metrics["prompt_cache_creation_1h_tokens"] == 4
-    assert metrics["server_tool_use_web_search_requests"] == 2
-    assert metrics["server_tool_use_web_fetch_requests"] == 1
-    assert "service_tier" not in metrics
-    assert metadata == {
-        "usage_service_tier": "standard",
-        "usage_inference_geo": "not_available",
-    }
-
-
-def test_extract_anthropic_usage_skips_empty_usage():
-    metrics, metadata = extract_anthropic_usage(SimpleNamespace())
-
-    assert metrics == {}
-    assert metadata == {}
-
-
 def _make_batch_requests():
     return [
         {
@@ -1901,11 +1679,25 @@ class TestBatchesCreateSpans:
     """Tests verifying that batches.create() produces correct spans."""
 
     @pytest.mark.vcr
-    def test_sync_batches_create_produces_span(self, memory_logger):
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "is_async,beta,vcr_cassette_name",
+        [
+            (False, False, "TestBatchesCreateSpans.test_sync_batches_create_produces_span"),
+            (True, False, "TestBatchesCreateSpans.test_async_batches_create_produces_span"),
+            (False, True, "TestBetaBatchesCreateSpans.test_sync_beta_batches_create_produces_span"),
+            (True, True, "TestBetaBatchesCreateSpans.test_async_beta_batches_create_produces_span"),
+        ],
+        ids=["sync", "async", "beta-sync", "beta-async"],
+    )
+    async def test_batches_create_produces_span(self, memory_logger, is_async, beta, vcr_cassette_name):
         assert not memory_logger.pop()
 
-        client = wrap_anthropic(_get_client())
-        result = client.messages.batches.create(requests=_make_batch_requests())
+        client = wrap_anthropic(_get_async_client() if is_async else _get_client())
+        batches = (client.beta.messages if beta else client.messages).batches
+        result = batches.create(requests=_make_batch_requests())
+        if is_async:
+            result = await result
 
         assert result.id
         assert result.processing_status == "in_progress"
@@ -1922,28 +1714,6 @@ class TestBatchesCreateSpans:
         assert span["output"]["id"] == result.id
         assert span["output"]["processing_status"] == "in_progress"
         assert span["output"]["request_counts"]["processing"] == 2
-
-    @pytest.mark.vcr
-    @pytest.mark.asyncio
-    async def test_async_batches_create_produces_span(self, memory_logger):
-        assert not memory_logger.pop()
-
-        client = wrap_anthropic(_get_async_client())
-        result = await client.messages.batches.create(requests=_make_batch_requests())
-
-        assert result.id
-        assert result.processing_status == "in_progress"
-
-        spans = memory_logger.pop()
-        assert len(spans) == 1
-        span = spans[0]
-        assert span["span_attributes"]["name"] == "anthropic.messages.batches.create"
-        assert span["span_attributes"]["type"] == "task"
-        assert span["metadata"]["provider"] == "anthropic"
-        assert span["metadata"]["num_requests"] == 2
-        assert span["metadata"]["model"] == MODEL
-        assert span["input"] == [{"custom_id": "req-1"}, {"custom_id": "req-2"}]
-        assert span["output"]["id"] == result.id
 
     @pytest.mark.vcr
     def test_sync_batches_create_logs_error_on_failure(self, memory_logger):
@@ -2002,16 +1772,29 @@ class TestBatchesResultsSpans:
     can take up to 24 hours to finish processing.
     """
 
-    def test_sync_batches_results_produces_span(self, memory_logger):
+    @pytest.mark.asyncio
+    # The sync case passes the batch id positionally and the async case by keyword,
+    # covering both argument-extraction paths.
+    @pytest.mark.parametrize(
+        "is_async,batches_class,positional",
+        [(False, "Batches", True), (True, "AsyncBatches", False)],
+        ids=["sync", "async"],
+    )
+    async def test_batches_results_produces_span(self, memory_logger, is_async, batches_class, positional):
         assert not memory_logger.pop()
 
-        client = wrap_anthropic(_get_client())
+        client = wrap_anthropic(_get_async_client() if is_async else _get_client())
         mock_decoder = unittest.mock.MagicMock()
         with unittest.mock.patch(
-            "anthropic.resources.messages.batches.Batches.results",
+            f"anthropic.resources.messages.batches.{batches_class}.results",
             return_value=mock_decoder,
         ):
-            result = client.messages.batches.results("msgbatch_abc123")
+            if positional:
+                result = client.messages.batches.results("msgbatch_abc123")
+            else:
+                result = client.messages.batches.results(message_batch_id="msgbatch_abc123")
+            if is_async:
+                result = await result
 
         assert result is mock_decoder
 
@@ -2023,27 +1806,6 @@ class TestBatchesResultsSpans:
         assert span["metadata"]["provider"] == "anthropic"
         assert span["input"]["message_batch_id"] == "msgbatch_abc123"
         assert span["output"]["type"] == "jsonl_stream"
-
-    @pytest.mark.asyncio
-    async def test_async_batches_results_produces_span(self, memory_logger):
-        assert not memory_logger.pop()
-
-        client = wrap_anthropic(_get_async_client())
-        mock_decoder = unittest.mock.MagicMock()
-        with unittest.mock.patch(
-            "anthropic.resources.messages.batches.AsyncBatches.results",
-            return_value=mock_decoder,
-        ):
-            result = await client.messages.batches.results(message_batch_id="msgbatch_abc456")
-
-        assert result is mock_decoder
-
-        spans = memory_logger.pop()
-        assert len(spans) == 1
-        span = spans[0]
-        assert span["span_attributes"]["name"] == "anthropic.messages.batches.results"
-        assert span["metadata"]["provider"] == "anthropic"
-        assert span["input"]["message_batch_id"] == "msgbatch_abc456"
 
     def test_sync_batches_results_logs_error_on_failure(self, memory_logger):
         assert not memory_logger.pop()
@@ -2061,52 +1823,3 @@ class TestBatchesResultsSpans:
         span = spans[0]
         assert span["span_attributes"]["name"] == "anthropic.messages.batches.results"
         assert "results fetch failed" in span["error"]
-
-
-class TestBetaBatchesCreateSpans:
-    """Tests verifying that beta.messages.batches.create() produces correct spans."""
-
-    @pytest.mark.vcr
-    def test_sync_beta_batches_create_produces_span(self, memory_logger):
-        assert not memory_logger.pop()
-
-        client = wrap_anthropic(_get_client())
-        result = client.beta.messages.batches.create(requests=_make_batch_requests())
-
-        assert result.id
-        assert result.processing_status == "in_progress"
-
-        spans = memory_logger.pop()
-        assert len(spans) == 1
-        span = spans[0]
-        assert span["span_attributes"]["name"] == "anthropic.messages.batches.create"
-        assert span["span_attributes"]["type"] == "task"
-        assert span["metadata"]["provider"] == "anthropic"
-        assert span["metadata"]["num_requests"] == 2
-        assert span["metadata"]["model"] == MODEL
-        assert span["input"] == [{"custom_id": "req-1"}, {"custom_id": "req-2"}]
-        assert span["output"]["id"] == result.id
-        assert span["output"]["processing_status"] == "in_progress"
-        assert span["output"]["request_counts"]["processing"] == 2
-
-    @pytest.mark.vcr
-    @pytest.mark.asyncio
-    async def test_async_beta_batches_create_produces_span(self, memory_logger):
-        assert not memory_logger.pop()
-
-        client = wrap_anthropic(_get_async_client())
-        result = await client.beta.messages.batches.create(requests=_make_batch_requests())
-
-        assert result.id
-        assert result.processing_status == "in_progress"
-
-        spans = memory_logger.pop()
-        assert len(spans) == 1
-        span = spans[0]
-        assert span["span_attributes"]["name"] == "anthropic.messages.batches.create"
-        assert span["span_attributes"]["type"] == "task"
-        assert span["metadata"]["provider"] == "anthropic"
-        assert span["metadata"]["num_requests"] == 2
-        assert span["metadata"]["model"] == MODEL
-        assert span["input"] == [{"custom_id": "req-1"}, {"custom_id": "req-2"}]
-        assert span["output"]["id"] == result.id
