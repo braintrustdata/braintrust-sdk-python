@@ -102,4 +102,114 @@ interactions:
     status:
       code: 200
       message: OK
+- request:
+    body: '{"input":"What is the capital of France?","model":"gemini-2.5-flash"}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '69'
+      content-type:
+      - application/json
+      host:
+      - generativelanguage.googleapis.com
+      user-agent:
+      - GeminiNextGenAPIClient/Python 1.75.0, google-genai-sdk/1.75.0 gl-python/3.14.7
+      x-goog-api-client:
+      - google-genai-sdk/1.75.0 gl-python/3.14.7
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/interactions
+  response:
+    body:
+      string: '{"error":{"message":"The legacy Interactions API schema is no longer
+        supported. Please upgrade your google-genai Python SDK to version \u003e=
+        2.0.0 (e.g., run pip install -U google-genai) to use the Interactions API.
+        For details and migration examples, see: https://ai.google.dev/gemini-api/docs/interactions-breaking-changes-may-2026","code":"invalid_request"}}'
+    headers:
+      alt-svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      content-length:
+      - '363'
+      content-type:
+      - application/json; charset=UTF-8
+      date:
+      - Thu, 08 Oct 2026 18:29:42 GMT
+      server:
+      - scaffolding on HTTPServer2
+      server-timing:
+      - gfet4t7; dur=180
+      transfer-encoding:
+      - chunked
+      vary:
+      - Origin
+      - X-Origin
+      - Referer
+      x-content-type-options:
+      - nosniff
+      x-frame-options:
+      - SAMEORIGIN
+      x-xss-protection:
+      - '0'
+    status:
+      code: 400
+      message: Bad Request
+- request:
+    body: '{"input":"What is the capital of France?","model":"gemini-2.5-flash"}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '69'
+      content-type:
+      - application/json
+      host:
+      - generativelanguage.googleapis.com
+      user-agent:
+      - GeminiNextGenAPIClient/Python 1.75.0, google-genai-sdk/1.75.0 gl-python/3.14.7
+      x-goog-api-client:
+      - google-genai-sdk/1.75.0 gl-python/3.14.7
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/interactions
+  response:
+    body:
+      string: '{"error":{"message":"The legacy Interactions API schema is no longer
+        supported. Please upgrade your google-genai Python SDK to version \u003e=
+        2.0.0 (e.g., run pip install -U google-genai) to use the Interactions API.
+        For details and migration examples, see: https://ai.google.dev/gemini-api/docs/interactions-breaking-changes-may-2026","code":"invalid_request"}}'
+    headers:
+      alt-svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      content-length:
+      - '363'
+      content-type:
+      - application/json; charset=UTF-8
+      date:
+      - Thu, 08 Oct 2026 18:29:53 GMT
+      server:
+      - scaffolding on HTTPServer2
+      server-timing:
+      - gfet4t7; dur=102
+      transfer-encoding:
+      - chunked
+      vary:
+      - Origin
+      - X-Origin
+      - Referer
+      x-content-type-options:
+      - nosniff
+      x-frame-options:
+      - SAMEORIGIN
+      x-xss-protection:
+      - '0'
+    status:
+      code: 400
+      message: Bad Request
 version: 1
