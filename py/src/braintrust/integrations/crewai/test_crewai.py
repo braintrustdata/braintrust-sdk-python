@@ -292,6 +292,19 @@ def test_kickoff_llm_event_tree_parents_and_shape(memory_logger):
     assert kickoff_span["output"] == "final answer"
     assert kickoff_span["input"] == kickoff.inputs
 
+    # crewai.llm is a wrapper span; the leaf provider owns tokens (see module
+    # docstring), so the usage on the completed event must not become metrics.
+    metrics = llm_span["metrics"]
+    assert "start" in metrics and "end" in metrics
+    for token_key in (
+        "tokens",
+        "prompt_tokens",
+        "completion_tokens",
+        "prompt_cached_tokens",
+        "completion_reasoning_tokens",
+    ):
+        assert token_key not in metrics, f"crewai.llm leaked {token_key}={metrics.get(token_key)}"
+
 
 def test_llm_tools_route_to_metadata_not_input(memory_logger):
     """Tool definitions belong in ``metadata.tools`` per the spec, not in ``input``."""
@@ -311,45 +324,24 @@ def test_llm_tools_route_to_metadata_not_input(memory_logger):
     assert "tools" not in span["input"], span["input"]
 
 
-def test_llm_never_emits_token_metrics(memory_logger):
-    """crewai.llm is a wrapper span; the leaf provider owns tokens (see module docstring)."""
+@pytest.mark.parametrize(
+    ("build_started", "build_failed", "span_name", "error"),
+    [
+        (_build_llm_started, _build_llm_failed, "crewai.llm", "upstream 500"),
+        (_build_tool_started, _build_tool_error, "crewai.tool.search", "network unreachable"),
+    ],
+    ids=["llm-call-failed", "tool-error"],
+)
+def test_failure_event_logs_error(memory_logger, build_started, build_failed, span_name, error):
     patch_crewai()
 
-    llm_started = _build_llm_started()
-    _emit(llm_started)
-    _emit(
-        _build_llm_completed(
-            llm_started,
-            usage={"prompt_tokens": 11, "completion_tokens": 22, "total_tokens": 33},
-        )
-    )
-
-    spans = memory_logger.pop()
-    by_name = _spans_by_name(spans)
-    assert by_name.get("crewai.llm"), f"Missing crewai.llm in {sorted(by_name)}"
-    metrics = by_name["crewai.llm"][0]["metrics"]
-
-    assert "start" in metrics and "end" in metrics
-    for token_key in (
-        "tokens",
-        "prompt_tokens",
-        "completion_tokens",
-        "prompt_cached_tokens",
-        "completion_reasoning_tokens",
-    ):
-        assert token_key not in metrics, f"crewai.llm leaked {token_key}={metrics.get(token_key)}"
-
-
-def test_llm_call_failed_logs_error(memory_logger):
-    patch_crewai()
-
-    started = _build_llm_started()
+    started = build_started()
     _emit(started)
-    _emit(_build_llm_failed(started, error="upstream 500"))
+    _emit(build_failed(started, error=error))
 
     span = memory_logger.pop()[0]
-    assert span["span_attributes"]["name"] == "crewai.llm"
-    assert "upstream 500" in str(span.get("error"))
+    assert span["span_attributes"]["name"] == span_name
+    assert error in str(span.get("error"))
 
 
 def test_llm_streaming_time_to_first_token(memory_logger):
@@ -388,18 +380,6 @@ def test_tool_usage_span(memory_logger):
     assert tool_span["metadata"]["tool_name"] == "search"
     assert tool_span["metadata"]["run_attempts"] == 1
     assert tool_span["metadata"]["from_cache"] is False
-
-
-def test_tool_error_logs_error(memory_logger):
-    patch_crewai()
-
-    tool_started = _build_tool_started(tool_name="search")
-    _emit(tool_started)
-    _emit(_build_tool_error(tool_started, error="network unreachable"))
-
-    span = memory_logger.pop()[0]
-    assert span["span_attributes"]["name"] == "crewai.tool.search"
-    assert "network unreachable" in str(span.get("error"))
 
 
 def test_multimodal_messages_materialize_attachments(memory_logger):
