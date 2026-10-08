@@ -3,6 +3,7 @@ import importlib.util
 import inspect
 import sys
 import types
+from typing import Any
 
 import pytest
 from braintrust.integrations import base
@@ -253,7 +254,13 @@ class _FakeIntegration(BaseIntegration):
     patchers = (_ClientPatcher, _BoundSendPatcher)
 
 
-def _install_fake_sdk(monkeypatch, *, with_send=True):
+class _FakeSdkModule(types.ModuleType):
+    # Declared so static analysis knows the attributes _install_fake_sdk sets.
+    Client: type
+    bound_send: Any
+
+
+def _install_fake_sdk(monkeypatch, *, with_send=True) -> _FakeSdkModule:
     class Client:
         def legacy_send(self, value):
             return f"legacy {value}"
@@ -265,7 +272,7 @@ def _install_fake_sdk(monkeypatch, *, with_send=True):
 
         Client.send = send
 
-    module = types.ModuleType(_FAKE_SDK)
+    module = _FakeSdkModule(_FAKE_SDK)
     module.Client = Client
     # A bound method rejects setattr, so its patch marker must live on the root.
     module.bound_send = Client().legacy_send
