@@ -1,5 +1,6 @@
 """ADK patchers — one patcher per coherent patch target."""
 
+from importlib import import_module
 from typing import Any, ClassVar
 
 from braintrust.integrations.base import CompositeFunctionWrapperPatcher, FunctionWrapperPatcher
@@ -12,6 +13,8 @@ from .tracing import (
     _mcp_tool_run_async_wrapper_async,
     _runner_run_async_wrapper,
     _tool_call_async_wrapper,
+    _workflow_node_run_wrapper,
+    _workflow_tool_node_run_impl_wrapper,
 )
 
 
@@ -83,6 +86,29 @@ class FlowRunAsyncPatcher(CompositeFunctionWrapperPatcher):
 
     name = "adk.flow.run_async"
     sub_patchers = (_FlowRunAsyncSubPatcher, _FlowCallLlmAsyncSubPatcher)
+
+
+# ---------------------------------------------------------------------------
+# ADK 2.x workflow patchers
+# ---------------------------------------------------------------------------
+
+
+class WorkflowNodeRunPatcher(FunctionWrapperPatcher):
+    """Patch ``BaseNode.run`` to trace workflow and graph node execution."""
+
+    name = "adk.workflow.node.run"
+    target_module = "google.adk.workflow._base_node"
+    target_path = "BaseNode.run"
+    wrapper = _workflow_node_run_wrapper
+
+
+class WorkflowToolNodeRunImplPatcher(FunctionWrapperPatcher):
+    """Patch ``_ToolNode._run_impl`` to trace direct workflow tool execution."""
+
+    name = "adk.workflow.tool_node.run_impl"
+    target_module = "google.adk.workflow._tool_node"
+    target_path = "_ToolNode._run_impl"
+    wrapper = _workflow_tool_node_run_impl_wrapper
 
 
 # ---------------------------------------------------------------------------
@@ -201,6 +227,36 @@ def wrap_agent(Agent: Any) -> Any:
 def wrap_runner(Runner: Any) -> Any:
     """Manually patch a runner class for tracing."""
     return RunnerRunPatcher.wrap_target(Runner)
+
+
+def wrap_workflow(Workflow: Any) -> Any:
+    """Manually patch ADK 2.x workflow nodes for tracing.
+
+    Pass the ``Workflow`` class from ``google.adk.workflow``. The base node
+    patch covers workflow and graph nodes; the tool-node patch adds spans for
+    tools executed directly by the workflow graph.
+    """
+    base_node = next(
+        (
+            cls
+            for cls in Workflow.__mro__
+            if cls.__name__ == "BaseNode" and cls.__module__.startswith("google.adk.workflow")
+        ),
+        None,
+    )
+    if base_node is None:
+        raise TypeError("wrap_workflow expects an ADK Workflow class")
+
+    WorkflowNodeRunPatcher.wrap_target(base_node)
+    try:
+        tool_node_module = import_module("google.adk.workflow._tool_node")
+    except ImportError:
+        return Workflow
+
+    tool_node = getattr(tool_node_module, "_ToolNode", None)
+    if tool_node is not None:
+        WorkflowToolNodeRunImplPatcher.wrap_target(tool_node)
+    return Workflow
 
 
 def wrap_flow(Flow: Any) -> Any:
