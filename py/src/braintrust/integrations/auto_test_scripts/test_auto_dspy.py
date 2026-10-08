@@ -26,7 +26,7 @@ dspy.configure(lm=None)
 from dspy.dsp.utils.settings import settings
 
 
-has_bt_callback = any(isinstance(cb, BraintrustDSpyCallback) for cb in settings.callbacks)
-assert has_bt_callback, f"Expected BraintrustDSpyCallback in callbacks after configure()"
+bt_callbacks = [cb for cb in settings.callbacks if isinstance(cb, BraintrustDSpyCallback)]
+assert len(bt_callbacks) == 1, f"Expected one BraintrustDSpyCallback in callbacks after configure()"
 
 print("SUCCESS")
