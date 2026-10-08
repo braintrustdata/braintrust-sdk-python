@@ -1,3 +1,4 @@
+import copy
 import os
 from collections.abc import AsyncGenerator
 from importlib.metadata import version as pkg_version
@@ -654,19 +655,19 @@ async def test_adk_max_tokens_captures_content(memory_logger):
 
     # When MAX_TOKENS is hit, we should still have content captured
     # The integration should merge content from earlier events if the final event lacks it
-    if "finish_reason" in output and output["finish_reason"] == "MAX_TOKENS":
-        # This is the MAX_TOKENS case - verify we still captured content
-        assert "content" in output, "Content should be captured even with MAX_TOKENS"
-        assert output["content"] is not None, "Content should not be None"
-        assert "parts" in output["content"], "Content should have parts"
-        assert len(output["content"]["parts"]) > 0, "Content parts should not be empty"
+    # Every recorded cassette ends with MAX_TOKENS.
+    assert output["finish_reason"] == "MAX_TOKENS"
+    assert "content" in output, "Content should be captured even with MAX_TOKENS"
+    assert output["content"] is not None, "Content should not be None"
+    assert "parts" in output["content"], "Content should have parts"
+    assert len(output["content"]["parts"]) > 0, "Content parts should not be empty"
 
-        # Verify the text was actually captured
-        text_content = output["content"]["parts"][0].get("text", "")
-        assert len(text_content) > 0, "Should have captured some text content before MAX_TOKENS"
+    # Verify the text was actually captured
+    text_content = output["content"]["parts"][0].get("text", "")
+    assert len(text_content) > 0, "Should have captured some text content before MAX_TOKENS"
 
-        # Verify usage metadata is present
-        assert "usage_metadata" in output, "Should have usage metadata"
+    # Verify usage metadata is present
+    assert "usage_metadata" in output, "Should have usage metadata"
 
 
 @pytest.mark.vcr
@@ -883,133 +884,61 @@ async def test_adk_captures_metrics(memory_logger):
 # path is asserted in `test_adk_captures_metrics`.
 
 
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_adk_input_schema_serialization(memory_logger):
-    """Test that input_schema with Pydantic models is properly serialized."""
-    from unittest.mock import ANY
+class Address(BaseModel):
+    street: str = Field(description="Street address")
+    city: str = Field(description="City name")
+    country: str = Field(description="Country name")
 
-    class UserInput(BaseModel):
-        name: str = Field(description="User's name")
-        age: int = Field(description="User's age", ge=0)
 
-    assert not memory_logger.pop()
+class Person(BaseModel):
+    name: str = Field(description="Person's name")
+    age: int = Field(description="Person's age", ge=0, le=150)
+    address: Address = Field(description="Person's address")
 
-    agent = LlmAgent(
-        name="input_schema_agent",
-        model=ADK_MODEL,
-        instruction="You are a test agent with input schema.",
-        input_schema=UserInput,
-    )
 
-    APP_NAME = "input_schema_app"
-    USER_ID = "test-user"
-    SESSION_ID = "test-session-input-schema"
-
-    runner = await _create_runner(agent, app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
-
-    user_msg = types.Content(role="user", parts=[types.Part(text='{"name":"Alice","age":30}')])
-
-    responses = await _run_final_responses(runner, user_id=USER_ID, session_id=SESSION_ID, new_message=user_msg)
-
-    assert len(responses) > 0
-
-    spans = memory_logger.pop()
-
-    # Find LLM span - input_schema is on the agent, but we verify serialization doesn't break
-    llm_spans = [span for span in spans if span["span_attributes"]["type"] == "llm"]
-
-    assert len(llm_spans) > 0, "Should have at least one LLM call"
-
-    llm_span = llm_spans[0]
-
-    # Assert complete input structure
-    assert llm_span["input"] == {
-        "model": ADK_MODEL,
-        "contents": [
-            {
-                "role": "user",
-                "parts": [{"text": '{"name":"Alice","age":30}'}],
-            }
-        ],
-        "config": {
-            "system_instruction": ANY,  # Contains agent name
+CITY_JSON_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "city": {
+            "type": "string",
+            "description": "Name of the city",
         },
-        "live_connect_config": ANY,
-    }
+        "population": {
+            "type": "integer",
+            "description": "Population of the city",
+            "minimum": 0,
+        },
+        "country": {
+            "type": "string",
+            "description": "Country where the city is located",
+        },
+    },
+    "required": ["city", "country"],
+}
 
-    _assert_llm_output_shape(llm_span["output"])
+
+# _capture_config's allowlisted fields are exercised through the VCR-backed
+# integration tests: response_schema and response_json_schema
+# (`test_adk_structured_output_schema`), and the sampling params
+# (`test_adk_max_tokens_captures_content`).
 
 
 @pytest.mark.vcr
 @pytest.mark.asyncio
-async def test_adk_complex_nested_schema(memory_logger):
-    """Test that complex nested Pydantic schemas are properly serialized."""
-    from unittest.mock import ANY
-
-    class Address(BaseModel):
-        street: str = Field(description="Street address")
-        city: str = Field(description="City name")
-        country: str = Field(description="Country name")
-
-    class Person(BaseModel):
-        name: str = Field(description="Person's name")
-        age: int = Field(description="Person's age", ge=0, le=150)
-        address: Address = Field(description="Person's address")
-
-    assert not memory_logger.pop()
-
-    nested_agent = LlmAgent(
-        name="nested_agent",
-        model=ADK_MODEL,
-        instruction="Return a person with their address.",
-        output_schema=Person,
-        output_key="person_data",
-    )
-
-    APP_NAME = "nested_app"
-    USER_ID = "test-user"
-    SESSION_ID = "test-session-nested"
-
-    runner = await _create_runner(nested_agent, app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
-
-    user_msg = types.Content(
-        role="user", parts=[types.Part(text="Give me info about Alice who lives in Paris, France.")]
-    )
-
-    responses = await _run_final_responses(runner, user_id=USER_ID, session_id=SESSION_ID, new_message=user_msg)
-
-    assert len(responses) > 0
-
-    spans = memory_logger.pop()
-
-    # Find LLM span with response_schema
-    llm_spans_with_schema = [
-        span
-        for span in spans
-        if span["span_attributes"]["type"] == "llm"
-        and "input" in span
-        and "config" in span["input"]
-        and span["input"]["config"].get("response_schema") is not None
-    ]
-
-    assert len(llm_spans_with_schema) > 0, "Should have at least one LLM call with response_schema"
-
-    llm_span = llm_spans_with_schema[0]
-
-    # Assert complete input structure with nested schema
-    assert llm_span["input"] == {
-        "model": ADK_MODEL,
-        "contents": [
+@pytest.mark.parametrize(
+    ("agent_kwargs", "prompt", "schema_field", "expected_schema"),
+    [
+        pytest.param(
+            # Nested Pydantic output_schema is sent as response_schema
             {
-                "role": "user",
-                "parts": [{"text": "Give me info about Alice who lives in Paris, France."}],
-            }
-        ],
-        "config": {
-            "system_instruction": ANY,  # Contains agent name
-            "response_mime_type": "application/json",
-            "response_schema": {
+                "name": "nested_agent",
+                "instruction": "Return a person with their address.",
+                "output_schema": Person,
+                "output_key": "person_data",
+            },
+            "Give me info about Alice who lives in Paris, France.",
+            "response_schema",
+            {
                 "properties": {
                     "name": {
                         "description": "Person's name",
@@ -1056,69 +985,40 @@ async def test_adk_complex_nested_schema(memory_logger):
                 "title": "Person",
                 "type": "object",
             },
-        },
-        "live_connect_config": ANY,
-    }
-
-    _assert_llm_output_shape(llm_span["output"])
-
-
-# _capture_config's allowlisted fields are exercised through the VCR-backed
-# integration tests: response_schema (`test_adk_complex_nested_schema`),
-# input_schema (`test_adk_input_schema_serialization`), response_json_schema
-# (`test_adk_response_json_schema_dict`), and the sampling params
-# (`test_adk_max_tokens_captures_content`).
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_adk_response_json_schema_dict(memory_logger):
-    """Test that Google ADK with response_json_schema (plain dict) is properly captured."""
+            id="pydantic_output_schema",
+        ),
+        pytest.param(
+            # Plain JSON schema dict passed via generate_content_config should be preserved
+            {
+                "name": "city_agent",
+                "instruction": "You are a City Information Agent. Provide city information.",
+                "generate_content_config": types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    response_json_schema=CITY_JSON_SCHEMA,
+                ),
+            },
+            "Tell me about Tokyo",
+            "response_json_schema",
+            copy.deepcopy(CITY_JSON_SCHEMA),
+            id="response_json_schema_dict",
+        ),
+    ],
+)
+async def test_adk_structured_output_schema(memory_logger, agent_kwargs, prompt, schema_field, expected_schema):
+    """Test that structured output schemas are properly serialized into the LLM span input."""
     from unittest.mock import ANY
-
-    # Use a plain JSON schema dict (not Pydantic)
-    json_schema_dict = {
-        "type": "object",
-        "properties": {
-            "city": {
-                "type": "string",
-                "description": "Name of the city",
-            },
-            "population": {
-                "type": "integer",
-                "description": "Population of the city",
-                "minimum": 0,
-            },
-            "country": {
-                "type": "string",
-                "description": "Country where the city is located",
-            },
-        },
-        "required": ["city", "country"],
-    }
 
     assert not memory_logger.pop()
 
-    # Pass JSON schema via generate_content_config
-    config = types.GenerateContentConfig(
-        response_mime_type="application/json",
-        response_json_schema=json_schema_dict,
-    )
+    agent = LlmAgent(model=ADK_MODEL, **agent_kwargs)
 
-    json_schema_agent = LlmAgent(
-        name="city_agent",
-        model=ADK_MODEL,
-        instruction="You are a City Information Agent. Provide city information.",
-        generate_content_config=config,
-    )
-
-    APP_NAME = "city_app"
+    APP_NAME = "schema_app"
     USER_ID = "test-user"
-    SESSION_ID = "test-session-json-dict"
+    SESSION_ID = "test-session-schema"
 
-    runner = await _create_runner(json_schema_agent, app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
+    runner = await _create_runner(agent, app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
 
-    user_msg = types.Content(role="user", parts=[types.Part(text="Tell me about Tokyo")])
+    user_msg = types.Content(role="user", parts=[types.Part(text=prompt)])
 
     responses = await _run_final_responses(runner, user_id=USER_ID, session_id=SESSION_ID, new_message=user_msg)
 
@@ -1126,51 +1026,33 @@ async def test_adk_response_json_schema_dict(memory_logger):
 
     spans = memory_logger.pop()
 
-    # Find LLM span with response_json_schema
+    # Find LLM span with the schema
     llm_spans_with_schema = [
         span
         for span in spans
         if span["span_attributes"]["type"] == "llm"
         and "input" in span
         and "config" in span["input"]
-        and span["input"]["config"].get("response_json_schema") is not None
+        and span["input"]["config"].get(schema_field) is not None
     ]
 
-    assert len(llm_spans_with_schema) > 0, "Should have at least one LLM call with response_json_schema"
+    assert len(llm_spans_with_schema) > 0, f"Should have at least one LLM call with {schema_field}"
 
     llm_span = llm_spans_with_schema[0]
 
-    # Assert complete input structure - plain JSON schema dict should be preserved
+    # Assert complete input structure
     assert llm_span["input"] == {
         "model": ADK_MODEL,
         "contents": [
             {
                 "role": "user",
-                "parts": [{"text": "Tell me about Tokyo"}],
+                "parts": [{"text": prompt}],
             }
         ],
         "config": {
             "system_instruction": ANY,  # Contains agent name
             "response_mime_type": "application/json",
-            "response_json_schema": {
-                "type": "object",
-                "properties": {
-                    "city": {
-                        "type": "string",
-                        "description": "Name of the city",
-                    },
-                    "population": {
-                        "type": "integer",
-                        "description": "Population of the city",
-                        "minimum": 0,
-                    },
-                    "country": {
-                        "type": "string",
-                        "description": "Country where the city is located",
-                    },
-                },
-                "required": ["city", "country"],
-            },
+            schema_field: expected_schema,
         },
         "live_connect_config": ANY,
     }
