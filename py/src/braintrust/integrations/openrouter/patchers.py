@@ -1,5 +1,7 @@
 """OpenRouter patchers."""
 
+from functools import partial
+
 from braintrust.integrations.base import CompositeFunctionWrapperPatcher, FunctionWrapperPatcher
 
 from .tracing import (
@@ -51,19 +53,38 @@ class EmbeddingsPatcher(CompositeFunctionWrapperPatcher):
 
 
 class ResponsesSendPatcher(FunctionWrapperPatcher):
-    name = "openrouter.beta.responses.send"
+    name = "openrouter.responses.send"
     target_module = "openrouter.responses"
     target_path = "Responses.send"
     wrapper = _responses_send_wrapper
 
 
 class ResponsesSendAsyncPatcher(FunctionWrapperPatcher):
-    name = "openrouter.beta.responses.send_async"
+    name = "openrouter.responses.send_async"
     target_module = "openrouter.responses"
     target_path = "Responses.send_async"
     wrapper = _responses_send_async_wrapper
 
 
 class ResponsesPatcher(CompositeFunctionWrapperPatcher):
-    name = "openrouter.beta.responses"
+    name = "openrouter.responses"
     sub_patchers = (ResponsesSendPatcher, ResponsesSendAsyncPatcher)
+
+
+class BetaResponsesSendPatcher(FunctionWrapperPatcher):
+    name = "openrouter.beta.responses.send"
+    target_module = "openrouter.beta_responses"
+    target_path = "BetaResponses.send"
+    wrapper = partial(_responses_send_wrapper, span_name="openrouter.beta.responses.send")
+
+
+class BetaResponsesSendAsyncPatcher(FunctionWrapperPatcher):
+    name = "openrouter.beta.responses.send_async"
+    target_module = "openrouter.beta_responses"
+    target_path = "BetaResponses.send_async"
+    wrapper = partial(_responses_send_async_wrapper, span_name="openrouter.beta.responses.send")
+
+
+class BetaResponsesPatcher(CompositeFunctionWrapperPatcher):
+    name = "openrouter.beta.responses"
+    sub_patchers = (BetaResponsesSendPatcher, BetaResponsesSendAsyncPatcher)

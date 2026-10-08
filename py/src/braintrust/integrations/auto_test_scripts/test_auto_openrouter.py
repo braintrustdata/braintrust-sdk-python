@@ -29,4 +29,26 @@ with autoinstrument_test_context("test_auto_openrouter", integration="openrouter
     assert span["metadata"]["model"] == "gpt-4o-mini"
     assert "4" in span["output"][0]["message"]["content"]
 
+with autoinstrument_test_context(
+    "test_wrap_openrouter_beta_responses_send", integration="openrouter"
+) as memory_logger:
+    client = openrouter.OpenRouter(api_key=os.environ.get("OPENROUTER_API_KEY"))
+    response = client.beta.responses.send(
+        model="openai/gpt-4o-mini",
+        input="Say one short sentence about observability.",
+        max_output_tokens=64,
+        temperature=0,
+    )
+    assert response.output
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1, f"Expected 1 beta Responses span, got {len(spans)}"
+    span = spans[0]
+    assert span["span_attributes"]["name"] == "openrouter.beta.responses.send"
+    assert span["input"] == "Say one short sentence about observability."
+    assert span["metadata"]["model"] == "gpt-4o-mini"
+    assert span["metadata"]["provider"] == "openai"
+    assert span["output"][0]["type"] == "message"
+    assert span["metrics"]["tokens"] > 0
+
 print("SUCCESS")

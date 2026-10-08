@@ -153,7 +153,7 @@ def test_wrap_openrouter_embeddings_generate(memory_logger):
 
 
 @pytest.mark.vcr
-def test_wrap_openrouter_responses_send(memory_logger):
+def test_wrap_openrouter_beta_responses_send(memory_logger):
     assert not memory_logger.pop()
 
     client = wrap_openrouter(_get_client())
@@ -183,6 +183,34 @@ def test_wrap_openrouter_responses_send(memory_logger):
     assert span["metrics"]["tokens"] > 0
     assert span["output"][0]["type"] == "message"
     assert_metrics_are_valid(span["metrics"], start, end)
+
+
+@pytest.mark.vcr
+def test_wrap_openrouter_responses_send(memory_logger):
+    client = _get_client()
+    if not hasattr(client, "responses"):
+        pytest.skip("GA Responses is unavailable in this OpenRouter version")
+
+    wrap_openrouter(client)
+    response = client.responses.send(
+        model=CHAT_MODEL,
+        input="Say one short sentence about observability.",
+        max_output_tokens=64,
+        temperature=0,
+    )
+    assert response.output
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["span_attributes"]["name"] == "openrouter.responses.send"
+    assert span["span_attributes"]["type"] == "llm"
+    assert span["input"] == "Say one short sentence about observability."
+    assert span["metadata"]["model"] == "gpt-4o-mini"
+    assert span["metadata"]["provider"] == "openai"
+    assert span["output"][0]["type"] == "message"
+    assert span["metrics"]["tokens"] > 0
+    assert span["context"]["span_origin"]["instrumentation"]["name"] == "openrouter-auto"
 
 
 @pytest.mark.vcr

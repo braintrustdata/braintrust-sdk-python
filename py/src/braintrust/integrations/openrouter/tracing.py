@@ -1,5 +1,6 @@
 """OpenRouter-specific tracing helpers."""
 
+import importlib.util
 import logging
 import time
 from collections.abc import AsyncIterator, Iterator
@@ -625,9 +626,18 @@ async def _embeddings_generate_async_wrapper(wrapped, instance, args, kwargs):
     return result
 
 
-def _responses_send_wrapper(wrapped, instance, args, kwargs):
+def _responses_span_name(span_name: str | None) -> str:
+    if span_name is not None:
+        return span_name
+    # In older releases, openrouter.responses.Responses backs client.beta.responses.
+    if importlib.util.find_spec("openrouter.beta_responses") is None:
+        return "openrouter.beta.responses.send"
+    return "openrouter.responses.send"
+
+
+def _responses_send_wrapper(wrapped, instance, args, kwargs, *, span_name: str | None = None):
     request_metadata = _build_request_metadata(kwargs, _RESPONSES_REQUEST_KEYS)
-    span = _start_span("openrouter.beta.responses.send", kwargs.get("input"), request_metadata)
+    span = _start_span(_responses_span_name(span_name), kwargs.get("input"), request_metadata)
     start_time = time.time()
 
     try:
@@ -650,9 +660,9 @@ def _responses_send_wrapper(wrapped, instance, args, kwargs):
     return result
 
 
-async def _responses_send_async_wrapper(wrapped, instance, args, kwargs):
+async def _responses_send_async_wrapper(wrapped, instance, args, kwargs, *, span_name: str | None = None):
     request_metadata = _build_request_metadata(kwargs, _RESPONSES_REQUEST_KEYS)
-    span = _start_span("openrouter.beta.responses.send", kwargs.get("input"), request_metadata)
+    span = _start_span(_responses_span_name(span_name), kwargs.get("input"), request_metadata)
     start_time = time.time()
 
     try:
@@ -677,7 +687,7 @@ async def _responses_send_async_wrapper(wrapped, instance, args, kwargs):
 
 def wrap_openrouter(client: Any) -> Any:
     """Wrap a single OpenRouter client instance for tracing."""
-    from .patchers import ChatPatcher, EmbeddingsPatcher, ResponsesPatcher
+    from .patchers import BetaResponsesPatcher, ChatPatcher, EmbeddingsPatcher, ResponsesPatcher
 
     chat = getattr(client, "chat", None)
     if chat is not None:
@@ -687,9 +697,13 @@ def wrap_openrouter(client: Any) -> Any:
     if embeddings is not None:
         EmbeddingsPatcher.wrap_target(embeddings)
 
+    responses = getattr(client, "responses", None)
+    if responses is not None:
+        ResponsesPatcher.wrap_target(responses)
+
     beta = getattr(client, "beta", None)
     responses = getattr(beta, "responses", None) if beta is not None else None
     if responses is not None:
-        ResponsesPatcher.wrap_target(responses)
+        BetaResponsesPatcher.wrap_target(responses)
 
     return client

@@ -2,7 +2,7 @@
 
 from braintrust.integrations.base import BaseIntegration
 
-from .patchers import ChatPatcher, EmbeddingsPatcher, ResponsesPatcher
+from .patchers import BetaResponsesPatcher, ChatPatcher, EmbeddingsPatcher, ResponsesPatcher
 
 
 class OpenRouterIntegration(BaseIntegration):
@@ -15,4 +15,5 @@ class OpenRouterIntegration(BaseIntegration):
         ChatPatcher,
         EmbeddingsPatcher,
         ResponsesPatcher,
+        BetaResponsesPatcher,
     )
