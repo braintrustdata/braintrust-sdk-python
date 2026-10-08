@@ -39,42 +39,12 @@ def isolate_openai_agents_tracing():
         provider._refresh_disabled_flag()
 
 
-def test_tracing_processor_sets_current_span(memory_logger):
-    """Ensure that on_trace_start sets the span as current so nested spans work."""
+def test_tracing_processor_trace_spans(memory_logger):
+    """Trace metadata flows to the trace span, and on_trace_start sets it current so nested spans work."""
     assert not memory_logger.pop()
     processor = BraintrustTracingProcessor()
 
     class DummyTrace:
-        def __init__(self):
-            self.trace_id = "test-trace-id"
-            self.name = "test-trace"
-
-        def export(self):
-            return {"group_id": "group", "metadata": {"foo": "bar"}}
-
-    trace = DummyTrace()
-
-    with braintrust.start_span(name="parent-span") as parent_span:
-        assert braintrust.current_span() == parent_span
-        processor.on_trace_start(trace)
-        created_span = processor._spans[trace.trace_id]
-        assert braintrust.current_span() == created_span
-
-        processor.on_trace_end(trace)
-        assert braintrust.current_span() == parent_span
-
-    spans = memory_logger.pop()
-    assert spans
-    assert any(span.get("span_attributes", {}).get("name") == trace.name for span in spans)
-
-
-def test_braintrust_tracing_processor_trace_metadata_logging(memory_logger):
-    """Trace metadata should flow through to the root span."""
-    assert not memory_logger.pop()
-
-    processor = BraintrustTracingProcessor()
-
-    class MockTrace:
         def __init__(self, trace_id, name, metadata):
             self.trace_id = trace_id
             self.name = name
@@ -83,15 +53,28 @@ def test_braintrust_tracing_processor_trace_metadata_logging(memory_logger):
         def export(self):
             return {"group_id": self.trace_id, "metadata": self.metadata}
 
-    trace = MockTrace("test-trace", "Test Trace", {"conversation_id": "test-12345"})
+    # Without a current span the trace becomes a root span.
+    root_trace = DummyTrace("test-trace", "Test Trace", {"conversation_id": "test-12345"})
+    processor.on_trace_start(root_trace)
+    processor.on_trace_end(root_trace)
 
-    processor.on_trace_start(trace)
-    processor.on_trace_end(trace)
+    # With a current span the trace nests under it and becomes current itself.
+    nested_trace = DummyTrace("test-trace-id", "test-trace", {"foo": "bar"})
+    with braintrust.start_span(name="parent-span") as parent_span:
+        assert braintrust.current_span() == parent_span
+        processor.on_trace_start(nested_trace)
+        created_span = processor._spans[nested_trace.trace_id]
+        assert braintrust.current_span() == created_span
 
-    spans = memory_logger.pop()
-    root_span = spans[0]
+        processor.on_trace_end(nested_trace)
+        assert braintrust.current_span() == parent_span
+
+    spans = {span["span_attributes"]["name"]: span for span in memory_logger.pop()}
+    root_span = spans[root_trace.name]
+    assert not root_span.get("span_parents")
     assert root_span["context"]["span_origin"]["instrumentation"]["name"] == "openai-agents-auto"
     assert root_span["metadata"]["conversation_id"] == "test-12345"
+    assert spans[nested_trace.name]["span_parents"] == [spans["parent-span"]["span_id"]]
 
 
 @pytest.mark.asyncio
@@ -132,6 +115,38 @@ async def test_openai_agents_integration_setup_creates_spans(memory_logger):
     assert any(metrics.get("tokens") is not None for metrics in llm_metrics)
     assert any(metrics.get("prompt_cached_tokens") == 0 for metrics in llm_metrics)
     assert any(metrics.get("completion_reasoning_tokens") == 0 for metrics in llm_metrics)
+
+    # v0.14.0+ produces TaskSpanData and TurnSpanData wrapping agent runs. The
+    # tracing processor must give them proper names, metadata, and usage
+    # metrics rather than returning "Unknown" / empty dicts.
+    if not hasattr(agents.tracing, "TaskSpanData") or not hasattr(agents.tracing, "TurnSpanData"):
+        return
+
+    assert len(spans) >= 3  # root + task + turn + agent + response at minimum
+
+    # There should be no spans named "Unknown".
+    unknown_spans = [s for s in spans if s.get("span_attributes", {}).get("name") == "Unknown"]
+    assert unknown_spans == [], f"Found Unknown spans: {unknown_spans}"
+
+    # Find TaskSpanData-derived span (name should be the workflow name, not "Unknown").
+    task_spans = [
+        s
+        for s in spans
+        if s.get("span_attributes", {}).get("name") == "Agent workflow"
+        and s.get("span_parents")  # child of the root trace span, not the root itself
+    ]
+    assert task_spans, "Expected a task span child of the root trace"
+    task_span = task_spans[0]
+    assert task_span.get("span_attributes", {}).get("type") == "task"
+
+    # Find TurnSpanData-derived span.
+    turn_spans = [s for s in spans if "Turn" in (s.get("span_attributes", {}).get("name") or "")]
+    assert turn_spans, "Expected at least one turn span"
+    turn_span = turn_spans[0]
+    assert turn_span.get("span_attributes", {}).get("type") == "task"
+    # Turn span should have turn number and agent_name in metadata.
+    assert turn_span.get("metadata", {}).get("turn") is not None
+    assert turn_span.get("metadata", {}).get("agent_name") is not None
 
 
 @pytest.mark.asyncio
@@ -266,61 +281,6 @@ async def test_braintrust_tracing_processor_concurrency_bug(memory_logger):
     assert agent_a_trace.get("input") != agent_b_trace.get("input")
     if agent_a_trace.get("output") and agent_b_trace.get("output"):
         assert agent_a_trace.get("output") != agent_b_trace.get("output")
-
-
-@pytest.mark.asyncio
-@pytest.mark.vcr
-async def test_openai_agents_task_and_turn_span_types(memory_logger):
-    """v0.14.0+ produces TaskSpanData and TurnSpanData wrapping agent runs.
-
-    Verify that the tracing processor handles these new span types with
-    proper names, metadata, and usage metrics rather than returning
-    'Unknown' / empty dicts.
-    """
-    from agents import tracing as agents_tracing
-
-    has_task_span = hasattr(agents_tracing, "TaskSpanData")
-    has_turn_span = hasattr(agents_tracing, "TurnSpanData")
-    if not has_task_span or not has_turn_span:
-        pytest.skip("TaskSpanData/TurnSpanData not available in this openai-agents version")
-
-    from agents import Agent
-    from agents.run import AgentRunner
-
-    assert not memory_logger.pop()
-
-    assert OpenAIAgentsIntegration.setup() is True
-
-    agent = Agent(name="test-agent", model=TEST_MODEL, instructions=TEST_AGENT_INSTRUCTIONS)
-    result = await AgentRunner().run(agent, TEST_PROMPT)
-    assert result is not None
-
-    spans = memory_logger.pop()
-    assert len(spans) >= 3  # root + task + turn + agent + response at minimum
-
-    # There should be no spans named "Unknown".
-    unknown_spans = [s for s in spans if s.get("span_attributes", {}).get("name") == "Unknown"]
-    assert unknown_spans == [], f"Found Unknown spans: {unknown_spans}"
-
-    # Find TaskSpanData-derived span (name should be the workflow name, not "Unknown").
-    task_spans = [
-        s
-        for s in spans
-        if s.get("span_attributes", {}).get("name") == "Agent workflow"
-        and s.get("span_parents")  # child of the root trace span, not the root itself
-    ]
-    assert task_spans, "Expected a task span child of the root trace"
-    task_span = task_spans[0]
-    assert task_span.get("span_attributes", {}).get("type") == "task"
-
-    # Find TurnSpanData-derived span.
-    turn_spans = [s for s in spans if "Turn" in (s.get("span_attributes", {}).get("name") or "")]
-    assert turn_spans, "Expected at least one turn span"
-    turn_span = turn_spans[0]
-    assert turn_span.get("span_attributes", {}).get("type") == "task"
-    # Turn span should have turn number and agent_name in metadata.
-    assert turn_span.get("metadata", {}).get("turn") is not None
-    assert turn_span.get("metadata", {}).get("agent_name") is not None
 
 
 class TestAutoInstrumentOpenAIAgents:
