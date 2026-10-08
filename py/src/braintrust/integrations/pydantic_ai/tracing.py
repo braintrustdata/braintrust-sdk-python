@@ -1432,11 +1432,19 @@ def _extract_response_metrics(
 
 def _extract_response_metadata(response: Any) -> dict[str, Any] | None:
     usage = getattr(response, "usage", None)
-    audio_seconds = getattr(usage, "audio_seconds", None)
-    if audio_seconds is None:
-        return None
+    metadata: dict[str, Any] = {}
 
-    return {"pydantic_ai_usage": {"audio_seconds": float(audio_seconds)}}
+    audio_seconds = getattr(usage, "audio_seconds", None)
+    if audio_seconds is not None:
+        metadata["audio_seconds"] = float(audio_seconds)
+
+    details = getattr(usage, "details", None)
+    if isinstance(details, Mapping):
+        web_search_requests = details.get("web_search_requests")
+        if web_search_requests is not None:
+            metadata["web_search_requests"] = web_search_requests
+
+    return {"pydantic_ai_usage": metadata} if metadata else None
 
 
 class _ContextPropagatingAsyncContextManager(AbstractAsyncContextManager):
