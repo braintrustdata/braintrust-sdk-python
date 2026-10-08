@@ -1701,7 +1701,7 @@ def init(
         state.login(org_name=org_name, api_key=api_key, app_url=app_url)
         if project_id is None:
             project_info = state.api_client().projects.post_project(
-                body={"name": project or GLOBAL_PROJECT, "org_name": state.org_name}
+                body={"name": project if project is not None else GLOBAL_PROJECT, "org_name": state.org_name}
             )
         else:
             project_info = state.api_client().projects.get_project_id(project_id)
