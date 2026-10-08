@@ -12,11 +12,7 @@ from itertools import chain
 from typing import Any
 
 from braintrust.bt_json import bt_safe_deep_copy
-from braintrust.integrations.utils import (
-    _extract_google_usage_metadata_metrics,
-    _extract_google_usage_metadata_provider_metadata,
-    _materialize_attachment,
-)
+from braintrust.integrations.utils import _materialize_attachment
 from braintrust.logger import start_span as _bt_start_span
 
 
@@ -175,19 +171,6 @@ def _capture_config(config: Any) -> dict[str, Any] | Any:
         captured[field] = value
 
     return captured or config
-
-
-def _extract_metrics(response: Any) -> dict[str, Any] | None:
-    """Extract token usage metrics from Google GenAI response."""
-    if not response:
-        return None
-
-    usage_metadata = getattr(response, "usage_metadata", None)
-    if not usage_metadata:
-        return None
-
-    metrics = _extract_google_usage_metadata_metrics(usage_metadata)
-    return metrics if metrics else None
 
 
 def _extract_model_name(response: Any, llm_request: Any, instance: Any) -> str | None:
@@ -508,12 +491,14 @@ async def _flow_call_llm_async_wrapper(wrapped: Any, instance: Any, args: Any, k
 
         # Create span BEFORE execution so child spans (like mcp_tool) have proper parent
         # Start with generic name - we'll update it after we see the response
+        # A task, not an llm span: the provider client ADK calls (google-genai,
+        # litellm, ...) owns the llm span and its usage.
         with _start_stream_span(
             name="llm_call",
-            type=SpanTypeAttribute.LLM,
+            type=SpanTypeAttribute.TASK,
             input=captured_request,
             metadata=metadata,
-        ) as llm_span:
+        ) as model_call_span:
             # Execute the LLM call and yield events while span is active
             last_event = None
             event_with_content = None
@@ -536,32 +521,16 @@ async def _flow_call_llm_async_wrapper(wrapped: Any, instance: Any, args: Any, k
                 # We need to check if we should merge content from an earlier event.
                 output = _event_output_with_content(last_event, event_with_content)
 
-                # Extract metrics from response
-                metrics = _extract_metrics(last_event)
-
-                # Add time to first token if we captured it
-                if first_token_time is not None:
-                    if metrics is None:
-                        metrics = {}
-                    metrics["time_to_first_token"] = first_token_time - start_time
-
                 # Determine the actual call type based on the response
                 call_type = _determine_llm_call_type(llm_request, last_event)
 
                 # Update span name with the specific call type now that we know it
-                llm_span.set_attributes(
+                model_call_span.set_attributes(
                     name=f"llm_call [{call_type}]",
                     span_attributes={"llm_call_type": call_type},
                 )
 
-                # Log output, metrics, and provider-specific usage details.
-                llm_span.log(
-                    output=output,
-                    metrics=metrics,
-                    metadata=_extract_google_usage_metadata_provider_metadata(
-                        getattr(last_event, "usage_metadata", None)
-                    ),
-                )
+                model_call_span.log(output=output, metrics={"time_to_first_token": first_token_time - start_time})
 
     async with aclosing(_trace()) as agen:
         async for event in agen:
