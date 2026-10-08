@@ -2018,6 +2018,28 @@ async def test_agent_run_anthropic_reasoning_tokens(memory_logger):
     # pylint: enable=unsupported-membership-test,unsubscriptable-object
 
 
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_agent_run_openai_web_search_usage(memory_logger):
+    """Capture native web-search usage reported in RequestUsage.details."""
+    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
+        pytest.skip("Native web search usage is covered by the latest pydantic-ai cassette")
+
+    from pydantic_ai.capabilities import NativeTool
+    from pydantic_ai.native_tools import WebSearchTool
+
+    agent = Agent("openai-responses:gpt-4.1-mini", capabilities=[NativeTool(WebSearchTool())])
+    result = await agent.run("Search the web for the current weather in Paris and answer in one sentence.")
+    assert result.output
+
+    spans = memory_logger.pop()
+    chat_span = next((s for s in spans if "chat" in s["span_attributes"]["name"]), None)
+    assert chat_span is not None, "chat span not found"
+    # pylint: disable=unsupported-membership-test,unsubscriptable-object
+    assert chat_span["metadata"]["pydantic_ai_usage"]["web_search_requests"] > 0
+    # pylint: enable=unsupported-membership-test,unsubscriptable-object
+
+
 @pytest.mark.parametrize(
     "details_key",
     [
