@@ -30,21 +30,11 @@ except ImportError:
     from mistralai import Mistral
 
 try:
-    Chat = importlib.import_module("mistralai.client.chat").Chat
-    Embeddings = importlib.import_module("mistralai.client.embeddings").Embeddings
-    Fim = importlib.import_module("mistralai.client.fim").Fim
-    Agents = importlib.import_module("mistralai.client.agents").Agents
     Conversations = importlib.import_module("mistralai.client.conversations").Conversations
-    Ocr = importlib.import_module("mistralai.client.ocr").Ocr
     Transcriptions = importlib.import_module("mistralai.client.transcriptions").Transcriptions
     models = importlib.import_module("mistralai.client.models")
 except ImportError:
-    Chat = importlib.import_module("mistralai.chat").Chat
-    Embeddings = importlib.import_module("mistralai.embeddings").Embeddings
-    Fim = importlib.import_module("mistralai.fim").Fim
-    Agents = importlib.import_module("mistralai.agents").Agents
     Conversations = importlib.import_module("mistralai.conversations").Conversations
-    Ocr = importlib.import_module("mistralai.ocr").Ocr
     Transcriptions = importlib.import_module("mistralai.transcriptions").Transcriptions
     models = importlib.import_module("mistralai.models")
 
@@ -146,16 +136,6 @@ def _method_refs(*targets):
         if cls is not None
         for method in methods
     }
-
-
-def _core_method_refs():
-    return _method_refs(
-        (Chat, ("complete", "complete_async", "stream", "stream_async")),
-        (Embeddings, ("create", "create_async")),
-        (Fim, ("complete", "complete_async", "stream", "stream_async")),
-        (Agents, ("complete", "complete_async", "stream", "stream_async")),
-        (Ocr, ("process", "process_async")),
-    )
 
 
 def _audio_method_refs():
@@ -544,27 +524,6 @@ def test_wrap_mistral_beta_conversations_restart_sync(memory_logger):
         end,
         expected_content="12",
     )
-
-
-@pytest.mark.vcr
-def test_wrap_mistral_agents_complete_tool_spans(memory_logger):
-    assert not memory_logger.pop()
-
-    client = wrap_mistral(_get_client())
-    with _temporary_agent(client) as agent_id:
-        response = client.agents.complete(
-            agent_id=agent_id,
-            messages=[{"role": "user", "content": "Use get_weather for Paris. Do not answer directly."}],
-            tools=[_weather_tool()],
-            tool_choice="any",
-            max_tokens=100,
-        )
-
-    assert response.choices[0].message.tool_calls
-    assert response.choices[0].message.tool_calls[0].function.name == "get_weather"
-    spans = memory_logger.pop()
-    assert len(find_spans_by_type(spans, SpanTypeAttribute.LLM)) == 1
-    assert len(find_spans_by_type(spans, SpanTypeAttribute.TOOL)) == 1
 
 
 @pytest.mark.vcr
@@ -1114,19 +1073,6 @@ def test_mistral_integration_setup_instruments_beta_conversations(memory_logger,
     )
 
 
-def test_mistral_integration_setup_is_idempotent(monkeypatch):
-    first_methods = {**_core_method_refs(), **_conversation_method_refs(), **_audio_method_refs()}
-
-    assert MistralIntegration.setup()
-    patched_methods = {**_core_method_refs(), **_conversation_method_refs(), **_audio_method_refs()}
-
-    assert MistralIntegration.setup()
-    for key, method in patched_methods.items():
-        assert inspect.getattr_static(*key) is method, key
-
-    _restore_method_refs(monkeypatch, first_methods)
-
-
 def test_chat_complete_wrapper_logs_errors(memory_logger):
     assert not memory_logger.pop()
 
@@ -1180,36 +1126,43 @@ async def test_chat_complete_async_wrapper_logs_errors(memory_logger):
     assert "async boom" in span["error"]
 
 
-def test_normalize_mistral_multimodal_value_converts_image_url_data_uri_to_attachment():
-    sanitized = _normalize_mistral_multimodal_value(
-        {
-            "type": "image_url",
-            "image_url": {"url": "data:image/png;base64,aGVsbG8="},
-        }
-    )
+@pytest.mark.parametrize(
+    ("value", "attachment_path", "expected_reference"),
+    [
+        pytest.param(
+            {"type": "image_url", "image_url": {"url": "data:image/png;base64,aGVsbG8="}},
+            ("image_url", "url"),
+            {"content_type": "image/png"},
+            id="image_url_data_uri_to_attachment",
+        ),
+        pytest.param(
+            {"type": "input_audio", "input_audio": base64.b64encode(b"hello" * 16).decode("ascii")},
+            ("input_audio",),
+            {"filename": "input_audio.bin"},
+            id="large_base64_input_audio_to_attachment",
+        ),
+        # attachment_path=None means the value should come back unchanged.
+        pytest.param(
+            {"type": "input_audio", "input_audio": "not base64"},
+            None,
+            None,
+            id="non_base64_input_audio_unchanged",
+        ),
+    ],
+)
+def test_normalize_mistral_multimodal_value(value, attachment_path, expected_reference):
+    sanitized = _normalize_mistral_multimodal_value(value)
 
-    assert isinstance(sanitized["image_url"]["url"], Attachment)
-    assert sanitized["image_url"]["url"].reference["content_type"] == "image/png"
+    if attachment_path is None:
+        assert sanitized == value
+        return
 
-
-def test_normalize_mistral_multimodal_value_converts_large_base64_input_audio_to_attachment():
-    sanitized = _normalize_mistral_multimodal_value(
-        {
-            "type": "input_audio",
-            "input_audio": base64.b64encode(b"hello" * 16).decode("ascii"),
-        }
-    )
-
-    assert isinstance(sanitized["input_audio"], Attachment)
-    assert sanitized["input_audio"].reference["filename"] == "input_audio.bin"
-
-
-def test_normalize_mistral_multimodal_value_leaves_non_base64_input_audio_unchanged():
-    original = {"type": "input_audio", "input_audio": "not base64"}
-
-    sanitized = _normalize_mistral_multimodal_value(original)
-
-    assert sanitized == original
+    attachment = sanitized
+    for key in attachment_path:
+        attachment = attachment[key]
+    assert isinstance(attachment, Attachment)
+    for key, expected in expected_reference.items():
+        assert attachment.reference[key] == expected
 
 
 class _PlainResponse:

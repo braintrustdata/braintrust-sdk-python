@@ -243,7 +243,7 @@ def test_wrap_huggingface_hub_chat_completion_streaming(memory_logger):
     assert start <= metrics["start"] <= metrics["end"] <= end
 
 
-@pytest.mark.vcr(cassette_name="test_wrap_huggingface_hub_chat_completion_streaming")
+@pytest.mark.vcr
 def test_wrap_huggingface_hub_chat_completion_streaming_finalizes_on_early_close(memory_logger):
     """Closing a real provider stream early must finalize the span."""
     assert not memory_logger.pop()
@@ -270,7 +270,7 @@ def test_wrap_huggingface_hub_chat_completion_streaming_finalizes_on_early_close
     assert memory_logger.pop() == []
 
 
-@pytest.mark.vcr(cassette_name="test_wrap_huggingface_hub_chat_completion_streaming")
+@pytest.mark.vcr
 def test_wrap_huggingface_hub_chat_completion_streaming_context_manager_finalizes(memory_logger):
     """Using a real provider stream as a ``with`` block must finalize on exit."""
     assert not memory_logger.pop()
@@ -556,11 +556,11 @@ def test_wrap_huggingface_hub_sentence_similarity_sync(memory_logger):
 # Parent / child span relationships
 #
 # These tests assert that HF spans nest correctly under a user-opened parent
-# span. The HTTP request body is identical to the non-nested tests above, so
-# cassettes only differ by file name; the parent-span logic is purely local.
-# Streaming + async paths matter most because the LLM span is started inside
-# the wrapper but finalized later — the parent context must be captured at
-# ``start_span`` time, not at iterator-exhaustion time.
+# span. The HTTP requests are identical to the non-nested tests above, so they
+# replay those cassettes; the parent-span logic is purely local. Only the
+# streaming paths are covered: every wrapper opens its span at call time, but
+# streaming spans are finalized later, so the parent context must be captured
+# at ``start_span`` time, not at iterator-exhaustion time.
 # ---------------------------------------------------------------------------
 
 
@@ -575,30 +575,8 @@ def _assert_child_of(child: dict, parent_id: str, root_id: str) -> None:
 
 
 @pytest.mark.vcr
-def test_chat_completion_nests_under_parent_span(memory_logger):
-    """Non-streaming chat span must nest under an outer user span."""
-    assert not memory_logger.pop()
-    client = wrap_huggingface_hub(_sync_client())
-
-    with start_span(name="user.outer") as outer:
-        outer_id = outer.span_id
-        outer_root = outer.root_span_id
-        client.chat_completion(
-            messages=[{"role": "user", "content": "Say hi in one word."}],
-            max_tokens=10,
-        )
-
-    spans = memory_logger.pop()
-    by_name = {span["span_attributes"]["name"]: span for span in spans}
-    assert "user.outer" in by_name
-    assert "huggingface.chat_completion" in by_name
-
-    llm_span = by_name["huggingface.chat_completion"]
-    _assert_child_of(llm_span, parent_id=outer_id, root_id=outer_root)
-
-
-@pytest.mark.vcr
-def test_chat_completion_streaming_nests_under_parent_span(memory_logger):
+@pytest.mark.parametrize("vcr_cassette_name", ["test_wrap_huggingface_hub_chat_completion_streaming"], ids=["shared"])
+def test_chat_completion_streaming_nests_under_parent_span(memory_logger, vcr_cassette_name):
     """Streaming span must capture the parent at start time, not at finalize.
 
     The wrapper opens the span inside the call to ``chat_completion`` while
@@ -633,7 +611,10 @@ def test_chat_completion_streaming_nests_under_parent_span(memory_logger):
 
 
 @pytest.mark.vcr
-def test_chat_completion_async_streaming_nests_under_parent_span(memory_logger):
+@pytest.mark.parametrize(
+    "vcr_cassette_name", ["test_wrap_huggingface_hub_chat_completion_async_streaming"], ids=["shared"]
+)
+def test_chat_completion_async_streaming_nests_under_parent_span(memory_logger, vcr_cassette_name):
     """Async streaming span must also capture the parent at start time."""
     captured: dict[str, str] = {}
 

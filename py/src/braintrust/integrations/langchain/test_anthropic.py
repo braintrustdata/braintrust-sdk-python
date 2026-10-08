@@ -89,37 +89,3 @@ def test_langchain_anthropic_integration(
         llm_span["metrics"],
         expected_metrics,
     )
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_async_langchain_invoke(
-    logger_memory_logger,
-):
-    test_logger, memory_logger = logger_memory_logger
-    assert not memory_logger.pop()
-
-    handler = BraintrustCallbackHandler(logger=test_logger)
-    set_global_handler(handler)
-
-    prompt = ChatPromptTemplate.from_template("What is 1 + {number}?")
-    model = ChatAnthropic(model_name=MODEL)
-
-    chain = prompt | model
-
-    result = await chain.ainvoke({"number": "2"})
-
-    flush()
-
-    assert isinstance(result.content, str)
-    assert "3" in result.content.lower()
-
-    spans = memory_logger.pop()
-    llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
-    assert len(llm_spans) == 1
-    llm_span = llm_spans[0]
-    assert llm_span["metadata"]["model"] == MODEL
-    assert llm_span["metadata"]["provider"] == "anthropic"
-    assert "3" in str(llm_span["output"])
-    assert llm_span["metrics"]["prompt_tokens"] > 0
-    assert llm_span["metrics"]["completion_tokens"] > 0

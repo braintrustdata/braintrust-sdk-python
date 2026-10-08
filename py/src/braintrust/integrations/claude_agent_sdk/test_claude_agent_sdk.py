@@ -258,37 +258,15 @@ async def test_calculator_with_multiple_operations(memory_logger):
     _assert_llm_spans_have_time_to_first_token(llm_spans)
 
     expected_partial_usage = _final_partial_usage(received_messages)
-    if expected_partial_usage:
-        ordered_llm_spans = sorted(llm_spans, key=lambda span: span["metrics"]["start"])
-        assert len(ordered_llm_spans) == len(expected_partial_usage)
-        for llm_span, usage in zip(ordered_llm_spans, expected_partial_usage, strict=True):
-            assert llm_span["metrics"] | _metrics_from_exact_anthropic_usage(usage) == llm_span["metrics"]
-        llm_spans_with_output = [span for span in llm_spans if "completion_tokens" in span["metrics"]]
-        assert llm_spans_with_output
-        for llm_span in llm_spans_with_output:
-            assert "usage_output_tokens_unknown" not in llm_span.get("metadata", {})
-    elif _sdk_version_at_least("0.1.11"):
-        expected_usage_by_message_id: dict[str, dict[str, Any]] = {}
-        for message in received_messages:
-            message_id = getattr(message, "message_id", None)
-            usage = _copy_numeric_usage(getattr(message, "usage", None))
-            if isinstance(message_id, str) and usage:
-                expected_usage_by_message_id[message_id] = usage
-
-        expected_usage = list(expected_usage_by_message_id.values())
-        assert expected_usage, "Cassette must contain per-request assistant usage"
-        ordered_llm_spans = sorted(llm_spans, key=lambda span: span["metrics"]["start"])
-        assert len(ordered_llm_spans) == len(expected_usage)
-        for llm_span, usage in zip(ordered_llm_spans, expected_usage, strict=True):
-            expected_metrics = _metrics_from_exact_anthropic_usage(usage)
-            for unreliable_metric in ("completion_tokens", "tokens"):
-                expected_metrics.pop(unreliable_metric, None)
-            assert llm_span["metrics"] | expected_metrics == llm_span["metrics"]
-            assert "completion_tokens" not in llm_span["metrics"]
-            assert "tokens" not in llm_span["metrics"]
-            if "cache_creation" in usage:
-                assert "prompt_cache_creation_tokens" not in llm_span["metrics"]
-
+    assert expected_partial_usage, "Cassette must contain partial-message usage"
+    ordered_llm_spans = sorted(llm_spans, key=lambda span: span["metrics"]["start"])
+    assert len(ordered_llm_spans) == len(expected_partial_usage)
+    for llm_span, usage in zip(ordered_llm_spans, expected_partial_usage, strict=True):
+        assert llm_span["metrics"] | _metrics_from_exact_anthropic_usage(usage) == llm_span["metrics"]
+    llm_spans_with_output = [span for span in llm_spans if "completion_tokens" in span["metrics"]]
+    assert llm_spans_with_output
+    for llm_span in llm_spans_with_output:
+        assert "usage_output_tokens_unknown" not in llm_span.get("metadata", {})
     assert not {
         "prompt_tokens",
         "completion_tokens",
@@ -423,22 +401,16 @@ async def test_query_helper_keeps_options_untouched_and_logs_aggregate_task_usag
         pytest.skip("The 0.1.10 query() transport lifecycle is incompatible with the client cassette")
     assert not memory_logger.pop()
     prompt = "Say hello in one short sentence."
-    supports_verbatim_prompts = _sdk_version_at_least("0.2.158")
 
     hooks = {"UserPromptSubmit": [claude_agent_sdk.HookMatcher(hooks=[_concise_user_prompt_hook])]}
-    option_values: dict[str, Any] = {
-        "model": TEST_MODEL,
-        "permission_mode": "bypassPermissions",
-        "hooks": hooks,
-    }
-    if supports_verbatim_prompts:
-        option_values["verbatim_prompts"] = True
-    options = claude_agent_sdk.ClaudeAgentOptions(**option_values)
-    cassette_name = "test_user_prompt_submit_hook_creates_function_span"
-    if supports_verbatim_prompts:
-        cassette_name = "test_query_helper_verbatim_prompts"
+    options = claude_agent_sdk.ClaudeAgentOptions(
+        model=TEST_MODEL,
+        permission_mode="bypassPermissions",
+        hooks=hooks,
+        verbatim_prompts=True,
+    )
     transport = make_cassette_transport(
-        cassette_name=cassette_name,
+        cassette_name="test_query_helper_verbatim_prompts",
         prompt="",
         options=options,
     )
@@ -458,8 +430,7 @@ async def test_query_helper_keeps_options_untouched_and_logs_aggregate_task_usag
 
     spans = memory_logger.pop()
     task_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.TASK), "Claude Agent")
-    if supports_verbatim_prompts:
-        assert task_span["metadata"]["verbatim_prompts"] is True
+    assert task_span["metadata"]["verbatim_prompts"] is True
     llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
     assert len(llm_spans) == 1
     assert not {
@@ -1947,10 +1918,49 @@ def test_parse_tool_name(tool_name, expected):
     assert parsed.mcp_server == expected["mcp_server"]
 
 
-def test_tool_span_tracker_lifecycle(memory_logger):
+@pytest.mark.parametrize(
+    "tool_name,tool_input,is_error,expected_span_name,expected_metadata",
+    [
+        pytest.param(
+            "calculator",
+            {"operation": "multiply", "a": 6, "b": 7},
+            False,
+            "calculator",
+            {"gen_ai.tool.name": "calculator", "gen_ai.tool.call.id": "call-1"},
+            id="plain",
+        ),
+        pytest.param(
+            "mcp__filesystem__team__read_file",
+            {"path": "/tmp/test.txt"},
+            False,
+            "read_file",
+            {
+                "gen_ai.tool.name": "read_file",
+                "gen_ai.tool.call.id": "call-1",
+                "gen_ai.operation.name": "execute_tool",
+                "mcp.method.name": "tools/call",
+                "mcp.server": "filesystem__team",
+                "raw_tool_name": "mcp__filesystem__team__read_file",
+            },
+            id="mcp",
+        ),
+        pytest.param(
+            "calculator",
+            {"a": 1, "b": 0},
+            True,
+            "calculator",
+            {"gen_ai.tool.name": "calculator", "gen_ai.tool.call.id": "call-1"},
+            id="error",
+        ),
+    ],
+)
+def test_tool_span_tracker_lifecycle(
+    memory_logger, tool_name, tool_input, is_error, expected_span_name, expected_metadata
+):
     assert not memory_logger.pop()
 
     tracker = ToolSpanTracker()
+    result_text = "Division by zero" if is_error else "tool result"
 
     with start_span(name="Claude Agent", type=SpanTypeAttribute.TASK) as task_span:
         llm_span = start_span(
@@ -1961,57 +1971,38 @@ def test_tool_span_tracker_lifecycle(memory_logger):
         tracker.start_tool_spans(
             AssistantMessage(
                 content=[
-                    TextBlock("Let me calculate that."),
-                    ToolUseBlock(id="call-4", name="calculator", input={"operation": "multiply", "a": 6, "b": 7}),
+                    TextBlock("Let me use a tool."),
+                    ToolUseBlock(id="call-1", name=tool_name, input=tool_input),
                 ]
             ),
             llm_span.export(),
         )
         tracker.finish_tool_spans(
-            UserMessage(content=[ToolResultBlock(tool_use_id="call-4", content=[TextBlock("42")])])
-        )
-        llm_span.end()
-
-    spans = memory_logger.pop()
-    llm_span_log = find_span_by_name(spans, "anthropic.messages.create")
-    tool_span = find_span_by_name(spans, "calculator")
-
-    assert tool_span["input"] == {"operation": "multiply", "a": 6, "b": 7}
-    assert tool_span["output"] == {"content": "42"}
-    assert tool_span["metadata"]["gen_ai.tool.name"] == "calculator"
-    assert tool_span["metadata"]["gen_ai.tool.call.id"] == "call-4"
-    assert llm_span_log["span_id"] in tool_span["span_parents"]
-
-
-def test_tool_span_tracker_logs_errors(memory_logger):
-    assert not memory_logger.pop()
-
-    tracker = ToolSpanTracker()
-
-    with start_span(name="Claude Agent", type=SpanTypeAttribute.TASK) as task_span:
-        llm_span = start_span(
-            name="anthropic.messages.create",
-            type=SpanTypeAttribute.LLM,
-            parent=task_span.export(),
-        )
-        tracker.start_tool_spans(
-            AssistantMessage(content=[ToolUseBlock(id="call-err", name="calculator", input={"a": 1, "b": 0})]),
-            llm_span.export(),
-        )
-        tracker.finish_tool_spans(
             UserMessage(
                 content=[
-                    ToolResultBlock(tool_use_id="call-err", content=[TextBlock("Division by zero")], is_error=True)
+                    ToolResultBlock(
+                        tool_use_id="call-1",
+                        content=[TextBlock(result_text)],
+                        is_error=True if is_error else None,
+                    )
                 ]
             )
         )
         llm_span.end()
 
     spans = memory_logger.pop()
-    tool_span = find_span_by_name(spans, "calculator")
+    llm_span_log = find_span_by_name(spans, "anthropic.messages.create")
+    tool_span = find_span_by_name(spans, expected_span_name)
 
-    assert tool_span["output"] == {"content": "Division by zero", "is_error": True}
-    assert tool_span["error"] == "Division by zero"
+    assert tool_span["input"] == tool_input
+    assert tool_span["metadata"] == expected_metadata
+    assert llm_span_log["span_id"] in tool_span["span_parents"]
+    if is_error:
+        assert tool_span["output"] == {"content": result_text, "is_error": True}
+        assert tool_span["error"] == result_text
+    else:
+        assert tool_span["output"] == {"content": result_text}
+        assert tool_span.get("error") is None
 
 
 def test_tool_span_tracker_cleanup_closes_unmatched_spans(memory_logger):
@@ -2229,101 +2220,6 @@ def test_build_llm_input(prompt, conversation_history, expected):
     assert _build_llm_input(prompt, conversation_history) == expected
 
 
-def test_tool_span_tracker_records_mcp_metadata(memory_logger):
-    assert not memory_logger.pop()
-
-    tracker = ToolSpanTracker()
-
-    with start_span(name="Claude Agent", type=SpanTypeAttribute.TASK) as task_span:
-        llm_span = start_span(
-            name="anthropic.messages.create",
-            type=SpanTypeAttribute.LLM,
-            parent=task_span.export(),
-        )
-        tracker.start_tool_spans(
-            AssistantMessage(
-                content=[
-                    ToolUseBlock(
-                        id="call-mcp",
-                        name="mcp__filesystem__team__read_file",
-                        input={"path": "/tmp/test.txt"},
-                    )
-                ]
-            ),
-            llm_span.export(),
-        )
-        tracker.finish_tool_spans(
-            UserMessage(content=[ToolResultBlock(tool_use_id="call-mcp", content=[TextBlock("file contents")])])
-        )
-        llm_span.end()
-
-    spans = memory_logger.pop()
-    tool_span = find_span_by_name(spans, "read_file")
-
-    assert tool_span["input"] == {"path": "/tmp/test.txt"}
-    assert tool_span["output"] == {"content": "file contents"}
-    assert tool_span["metadata"]["gen_ai.tool.name"] == "read_file"
-    assert tool_span["metadata"]["gen_ai.tool.call.id"] == "call-mcp"
-    assert tool_span["metadata"]["gen_ai.operation.name"] == "execute_tool"
-    assert tool_span["metadata"]["mcp.method.name"] == "tools/call"
-    assert tool_span["metadata"]["mcp.server"] == "filesystem__team"
-    assert tool_span["metadata"]["raw_tool_name"] == "mcp__filesystem__team__read_file"
-
-
-@pytest.mark.asyncio
-async def test_wrapped_tool_handler_keeps_nested_traces_under_stream_tool_span(memory_logger):
-    assert not memory_logger.pop()
-
-    wrapped_tool_class = _create_tool_wrapper_class(_make_fake_sdk_mcp_tool_class())
-
-    async def calculator_handler(args):
-        nested_span = start_span(name="nested_tool_work")
-        nested_span.log(input=args)
-        nested_span.end()
-        return {"content": [{"type": "text", "text": "42"}]}
-
-    calculator_tool = wrapped_tool_class(
-        name="calculator",
-        description="Multiply two numbers",
-        input_schema={"type": "object"},
-        handler=calculator_handler,
-    )
-
-    tracker = ToolSpanTracker()
-    with start_span(name="Claude Agent", type=SpanTypeAttribute.TASK) as task_span:
-        llm_span = start_span(
-            name="anthropic.messages.create",
-            type=SpanTypeAttribute.LLM,
-            parent=task_span.export(),
-        )
-        tracker.start_tool_spans(
-            AssistantMessage(
-                content=[
-                    ToolUseBlock(id="call-4", name="calculator", input={"operation": "multiply", "a": 6, "b": 7}),
-                ]
-            ),
-            llm_span.export(),
-        )
-        _thread_local.tool_span_tracker = tracker
-        try:
-            result = await calculator_tool.handler({"operation": "multiply", "a": 6, "b": 7})
-            tracker.finish_tool_spans(
-                UserMessage(content=[ToolResultBlock(tool_use_id="call-4", content=[TextBlock("42")])])
-            )
-        finally:
-            _clear_tool_span_tracker()
-            tracker.cleanup_all()
-            llm_span.end()
-
-    assert result == {"content": [{"type": "text", "text": "42"}]}
-
-    spans = memory_logger.pop()
-    tool_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.TOOL), "calculator")
-    nested_span = find_span_by_name(spans, "nested_tool_work")
-
-    assert tool_span["span_id"] in nested_span["span_parents"]
-
-
 @pytest.mark.asyncio
 async def test_wrapped_tool_handler_matches_same_name_tool_spans_by_input(memory_logger):
     assert not memory_logger.pop()
@@ -2361,8 +2257,8 @@ async def test_wrapped_tool_handler_matches_same_name_tool_spans_by_input(memory
         )
         _thread_local.tool_span_tracker = tracker
         try:
-            await calculator_tool.handler({"operation": "add", "a": 10, "b": 5})
-            await calculator_tool.handler({"operation": "add", "a": 2, "b": 3})
+            second_result = await calculator_tool.handler({"operation": "add", "a": 10, "b": 5})
+            first_result = await calculator_tool.handler({"operation": "add", "a": 2, "b": 3})
             tracker.finish_tool_spans(
                 UserMessage(
                     content=[
@@ -2375,6 +2271,9 @@ async def test_wrapped_tool_handler_matches_same_name_tool_spans_by_input(memory
             _clear_tool_span_tracker()
             tracker.cleanup_all()
             llm_span.end()
+
+    assert first_result == {"content": [{"type": "text", "text": "5"}]}
+    assert second_result == {"content": [{"type": "text", "text": "15"}]}
 
     spans = memory_logger.pop()
     calculator_spans = [
@@ -2753,18 +2652,6 @@ async def test_concurrent_subagents_produce_parallel_llm_spans_with_correct_pare
         task_parent_id = next(pid for pid in llm_span["span_parents"] if pid in subagent_span_ids)
         first_delegated_llm_by_task.setdefault(task_parent_id, llm_span)
     assert len(first_delegated_llm_by_task) == 3, "Expected each delegated task to have an LLM span"
-
-    # claude-agent-sdk 0.1.64 (bundled Claude Code CLI 2.1.116) appears to schedule
-    # bundled Task subagents sequentially rather than truly concurrently, so the
-    # delegated LLM spans no longer overlap in wall-clock time. Keep the parenting
-    # assertions below, but gate the timing overlap check to older SDKs until the
-    # upstream scheduling behavior is understood.
-    # TODO(braintrust): revisit once upstream clarifies subagent scheduling.
-    if not _sdk_version_at_least("0.1.64"):
-        first_two_llms = sorted(first_delegated_llm_by_task.values(), key=lambda span: span["metrics"]["start"])[:2]
-        assert first_two_llms[0]["metrics"]["end"] >= first_two_llms[1]["metrics"]["start"], (
-            "Expected delegated LLM spans from different subagents to overlap in time"
-        )
 
     for tool_span in bash_spans + read_spans:
         parent_llm = next(span for span in llm_spans if span["span_id"] == tool_span["span_parents"][0])

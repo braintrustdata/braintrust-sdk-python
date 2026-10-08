@@ -34,8 +34,17 @@ def _get_client():
     )
 
 
+@pytest.mark.parametrize(
+    "stream,prompt,expected",
+    (
+        (False, "What is 2+2? Reply with just the number.", "4"),
+        (True, "What is 5+5? Reply with just the number.", "10"),
+    ),
+    ids=("non_stream", "stream"),
+)
 @pytest.mark.vcr
-def test_openrouter_chat_completion_sync(memory_logger):
+def test_openrouter_chat_completion(memory_logger, stream, prompt, expected):
+    """Test that wrap_openai works with OpenRouter's streaming and non-streaming responses."""
     assert not memory_logger.pop()
 
     client = wrap_openai(_get_client())
@@ -43,14 +52,21 @@ def test_openrouter_chat_completion_sync(memory_logger):
     start = time.time()
     response = client.chat.completions.create(
         model=TEST_MODEL,
-        messages=[{"role": "user", "content": "What is 2+2? Reply with just the number."}],
+        messages=[{"role": "user", "content": prompt}],
         max_tokens=10,
+        stream=stream,
     )
+    if stream:
+        chunks = list(response)
+        assert chunks
+        content = "".join(c.choices[0].delta.content or "" for c in chunks if c.choices)
+    else:
+        assert response
+        content = response.choices[0].message.content
     end = time.time()
 
-    assert response
-    assert response.choices[0].message.content
-    assert "4" in response.choices[0].message.content
+    assert content
+    assert expected in content
 
     spans = memory_logger.pop()
     assert len(spans) == 1
@@ -60,39 +76,5 @@ def test_openrouter_chat_completion_sync(memory_logger):
     assert_metrics_are_valid(metrics, start, end)
 
     # Ensure no boolean values in metrics (the original bug with is_byok)
-    for key, value in metrics.items():
-        assert not isinstance(value, bool), f"Metric {key} should not be a boolean"
-
-
-@pytest.mark.vcr
-def test_openrouter_streaming_sync(memory_logger):
-    """Test that wrap_openai works with OpenRouter's streaming responses."""
-    assert not memory_logger.pop()
-
-    client = wrap_openai(_get_client())
-
-    start = time.time()
-    chunks = []
-    stream = client.chat.completions.create(
-        model=TEST_MODEL,
-        messages=[{"role": "user", "content": "What is 5+5? Reply with just the number."}],
-        max_tokens=10,
-        stream=True,
-    )
-    for chunk in stream:
-        chunks.append(chunk)
-    end = time.time()
-
-    assert chunks
-    content = "".join(c.choices[0].delta.content or "" for c in chunks if c.choices)
-    assert "10" in content
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-
-    metrics = span["metrics"]
-    assert_metrics_are_valid(metrics, start, end)
-
     for key, value in metrics.items():
         assert not isinstance(value, bool), f"Metric {key} should not be a boolean"

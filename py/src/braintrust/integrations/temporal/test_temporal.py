@@ -3,6 +3,7 @@
 import asyncio
 import os
 import uuid
+from collections import Counter
 from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any, cast
@@ -42,53 +43,27 @@ class WorkflowInfoForTest:
 class TestHeaderSerialization:
     """Unit tests for header serialization/deserialization."""
 
-    def test_span_context_to_headers_with_empty_context(self):
+    def test_span_context_header_roundtrip(self):
         interceptor = BraintrustInterceptor()
-        span_context: dict[str, Any] = {}
-        headers: dict[str, temporalio.api.common.v1.Payload] = {}
 
-        result_headers = interceptor._span_context_to_headers(span_context, headers)
+        # An empty span context adds no header, and a missing header reads back as None.
+        empty_headers: dict[str, temporalio.api.common.v1.Payload] = {}
+        assert interceptor._span_context_to_headers({}, empty_headers) == {}
+        assert interceptor._span_context_from_headers(empty_headers) is None
 
-        assert "_braintrust-span" not in result_headers
-        assert len(result_headers) == 0
-
-    def test_span_context_to_headers_preserves_existing_headers(self):
-        interceptor = BraintrustInterceptor()
-        span_context = {"trace_id": "test-trace-id"}
-
-        # Create a payload for existing header
-        existing_payload = interceptor.payload_converter.to_payloads(["existing_value"])[0]
-        headers = {"existing_header": existing_payload}
-
-        result_headers = interceptor._span_context_to_headers(span_context, headers)
-
-        assert "existing_header" in result_headers
-        assert "_braintrust-span" in result_headers
-        assert len(result_headers) == 2
-
-    def test_span_context_from_headers_with_missing_header(self):
-        interceptor = BraintrustInterceptor()
-        headers: dict[str, temporalio.api.common.v1.Payload] = {}
-
-        result = interceptor._span_context_from_headers(headers)
-
-        assert result is None
-
-    def test_span_context_roundtrip(self):
-        interceptor = BraintrustInterceptor()
         original_context = {
             "trace_id": "test-trace-id",
             "span_id": "test-span-id",
             "root_span_id": "test-root-span-id",
         }
+        existing_payload = interceptor.payload_converter.to_payloads(["existing_value"])[0]
 
-        # Serialize
-        headers = interceptor._span_context_to_headers(original_context, {})
+        headers = interceptor._span_context_to_headers(original_context, {"existing_header": existing_payload})
 
-        # Deserialize
-        result_context = interceptor._span_context_from_headers(headers)
-
-        assert result_context == original_context
+        # Existing headers are preserved alongside the Braintrust span header.
+        assert set(headers) == {"existing_header", "_braintrust-span"}
+        assert headers["existing_header"] == existing_payload
+        assert interceptor._span_context_from_headers(headers) == original_context
 
 
 class TestWorkflowSpanContext:
@@ -177,22 +152,6 @@ async def failing_activity(input: TaskInput) -> int:
 async def simple_local_activity(input: TaskInput) -> int:
     """Simple local activity."""
     return input.value + 5
-
-
-@temporalio.workflow.defn
-class TestWorkflow:
-    """Simple test workflow."""
-
-    @temporalio.workflow.run
-    async def run(self, input: TaskInput) -> int:
-        # Execute an activity
-        result = await temporalio.workflow.execute_activity(
-            simple_activity,
-            input,
-            start_to_close_timeout=timedelta(seconds=10),
-        )
-
-        return result
 
 
 @temporalio.workflow.defn
@@ -418,173 +377,75 @@ class TestBraintrustPluginIntegration:
             assert len(client_spans) == 1
             assert workflow_span["root_span_id"] == client_spans[0]["root_span_id"]
 
+    @pytest.mark.parametrize(
+        "workflow,input_value,expected_result,expected_span_counts,expected_activity_errors",
+        [
+            # failing_activity fails its first attempt, so the retry yields a second activity span.
+            pytest.param(
+                WorkflowWithRetry,
+                30,
+                50,
+                {"temporal.workflow.WorkflowWithRetry": 1, "temporal.activity.failing_activity": 2},
+                [True, False],
+                id="activity_retry",
+            ),
+            pytest.param(
+                ParentWorkflow,
+                40,
+                50,
+                {
+                    "temporal.workflow.ParentWorkflow": 1,
+                    "temporal.workflow.ChildWorkflow": 1,
+                    "temporal.activity.simple_activity": 1,
+                },
+                [False],
+                id="child_workflow",
+            ),
+            # Local activities execute in the worker process and are traced like regular activities.
+            pytest.param(
+                WorkflowWithLocalActivity,
+                100,
+                105,
+                {"temporal.workflow.WorkflowWithLocalActivity": 1, "temporal.activity.simple_local_activity": 1},
+                [False],
+                id="local_activity",
+            ),
+        ],
+    )
     @pytest.mark.asyncio
-    async def test_plugin_activity_retry_tracing(self, temporal_env, memory_logger):
-        """Test that activity retries are properly traced.
-
-        Verifies that each retry attempt creates a span with appropriate
-        error information.
-        """
+    async def test_plugin_workflow_tracing(
+        self,
+        temporal_env,
+        memory_logger,
+        workflow,
+        input_value,
+        expected_result,
+        expected_span_counts,
+        expected_activity_errors,
+    ):
+        task_queue = f"test-queue-{uuid.uuid4()}"
         async with Worker(
             temporal_env.client,
-            task_queue="test-queue-3",
-            workflows=[WorkflowWithRetry],
-            activities=[failing_activity],
-            plugins=[BraintrustPlugin(logger=memory_logger)],
-        ):
-            # Execute workflow with failing activity
-            result = await temporal_env.client.execute_workflow(
-                WorkflowWithRetry.run,
-                TaskInput(value=30),
-                id=f"test-workflow-retry-{uuid.uuid4()}",
-                task_queue="test-queue-3",
-            )
-
-            # Should eventually succeed on retry
-            assert result == 50  # 30 + 20
-
-            # Get captured spans
-            spans = memory_logger.pop()
-
-            # Verify spans were created
-            assert len(spans) > 0, "Expected spans to be created"
-
-            # Verify activity spans (should have multiple attempts)
-            activity_spans = [s for s in spans if "temporal.activity" in s.get("span_attributes", {}).get("name", "")]
-            assert len(activity_spans) >= 1, "Expected at least one activity span for retries"
-
-    @pytest.mark.asyncio
-    async def test_plugin_child_workflow_tracing(self, temporal_env, memory_logger):
-        """Test tracing of child workflows.
-
-        Verifies that child workflows are traced and linked to parent workflows.
-        """
-        async with Worker(
-            temporal_env.client,
-            task_queue="test-queue-4",
-            workflows=[ParentWorkflow, ChildWorkflow],
-            activities=[simple_activity],
-            plugins=[BraintrustPlugin(logger=memory_logger)],
-        ):
-            # Execute parent workflow which spawns child
-            result = await temporal_env.client.execute_workflow(
-                ParentWorkflow.run,
-                TaskInput(value=40),
-                id=f"test-workflow-parent-{uuid.uuid4()}",
-                task_queue="test-queue-4",
-            )
-
-            # Result should come from child workflow's activity
-            assert result == 50  # 40 + 10
-
-            # Get captured spans
-            spans = memory_logger.pop()
-
-            # Verify spans were created
-            assert len(spans) > 0, "Expected spans to be created"
-
-            # Verify both parent and child workflow spans
-            workflow_spans = [s for s in spans if "temporal.workflow" in s.get("span_attributes", {}).get("name", "")]
-            assert len(workflow_spans) >= 2, "Expected at least 2 workflow spans (parent and child)"
-
-            # Verify activity span
-            activity_spans = [s for s in spans if "temporal.activity" in s.get("span_attributes", {}).get("name", "")]
-            assert len(activity_spans) > 0, "Expected activity spans"
-
-    @pytest.mark.asyncio
-    async def test_plugin_local_activity_tracing(self, temporal_env, memory_logger):
-        """Test that local activities are traced correctly.
-
-        Local activities execute in the same worker process and should
-        be traced like regular activities.
-        """
-        async with Worker(
-            temporal_env.client,
-            task_queue="test-queue-5",
-            workflows=[WorkflowWithLocalActivity],
-            activities=[simple_local_activity],
+            task_queue=task_queue,
+            workflows=[WorkflowWithRetry, ParentWorkflow, ChildWorkflow, WorkflowWithLocalActivity],
+            activities=[failing_activity, simple_activity, simple_local_activity],
             plugins=[BraintrustPlugin(logger=memory_logger)],
         ):
             result = await temporal_env.client.execute_workflow(
-                WorkflowWithLocalActivity.run,
-                TaskInput(value=100),
-                id=f"test-workflow-local-{uuid.uuid4()}",
-                task_queue="test-queue-5",
+                workflow.run,
+                TaskInput(value=input_value),
+                id=f"test-workflow-{uuid.uuid4()}",
+                task_queue=task_queue,
             )
+        assert result == expected_result
 
-            assert result == 105  # 100 + 5
-
-            # Get captured spans
-            spans = memory_logger.pop()
-
-            # Verify spans were created
-            assert len(spans) > 0, "Expected spans to be created"
-
-            # Verify local activity span was created
-            activity_spans = [s for s in spans if "temporal.activity" in s.get("span_attributes", {}).get("name", "")]
-            assert len(activity_spans) > 0, "Expected local activity span to be created"
-
-    @pytest.mark.asyncio
-    async def test_plugin_client_context_propagation(self, temporal_env, memory_logger):
-        """Test that BraintrustPlugin works with Client.connect for context propagation.
-
-        Verifies that:
-        1. Plugin can be passed to Client.connect (not just Worker)
-        2. Client-side spans are linked to workflow/activity spans via headers
-        """
-        from temporalio.client import Client
-
-        # Create a NEW client with the plugin (simulates user doing Client.connect with plugin)
-        plugin = BraintrustPlugin(logger=memory_logger)
-        client = await Client.connect(
-            temporal_env.client.service_client.config.target_host,
-            namespace=temporal_env.client.namespace,
-            plugins=[plugin],
-        )
-
-        # Create worker (still needs plugin for worker-side tracing)
-        async with Worker(
-            client,
-            task_queue="test-queue-client-plugin",
-            workflows=[TestWorkflow],
-            activities=[simple_activity],
-            plugins=[BraintrustPlugin(logger=memory_logger)],
-        ):
-            # Create a parent span at the client level
-            with braintrust.start_span(name="test.client_with_plugin", type="task") as parent_span:
-                parent_context = parent_span.export()
-
-                # Execute workflow - plugin should inject span context via client interceptor
-                result = await client.execute_workflow(
-                    TestWorkflow.run,
-                    TaskInput(value=25),
-                    id=f"test-workflow-client-plugin-{uuid.uuid4()}",
-                    task_queue="test-queue-client-plugin",
-                )
-
-                assert result == 35  # 25 + 10
-
-        # Get captured spans
         spans = memory_logger.pop()
+        assert Counter(span["span_attributes"]["name"] for span in spans) == expected_span_counts
 
-        # Verify spans were created
-        assert len(spans) > 0, "Expected spans to be created"
-
-        # Verify client span exists
-        client_spans = [s for s in spans if "test.client_with_plugin" in s.get("span_attributes", {}).get("name", "")]
-        assert len(client_spans) > 0, "Expected client span to be created"
-
-        # Verify workflow span was created and linked to client span
-        workflow_spans = [s for s in spans if "temporal.workflow" in s.get("span_attributes", {}).get("name", "")]
-        assert len(workflow_spans) > 0, "Expected workflow span to be created"
-
-        # Verify activity span was created
-        activity_spans = [s for s in spans if "temporal.activity" in s.get("span_attributes", {}).get("name", "")]
-        assert len(activity_spans) > 0, "Expected activity span to be created"
-
-        # Verify parent-child relationship: workflow should have client span as parent
-        workflow_span = workflow_spans[0]
-        client_span = client_spans[0]
-        assert workflow_span.get("root_span_id") == client_span.get("root_span_id"), (
-            "Workflow span should be in same trace as client span"
+        activity_spans = sorted(
+            (span for span in spans if span["span_attributes"]["name"].startswith("temporal.activity.")),
+            key=lambda span: span["metrics"]["start"],
         )
+        assert [bool(span.get("error")) for span in activity_spans] == expected_activity_errors
+        if any(expected_activity_errors):
+            assert "Simulated failure on first attempt" in activity_spans[0]["error"]

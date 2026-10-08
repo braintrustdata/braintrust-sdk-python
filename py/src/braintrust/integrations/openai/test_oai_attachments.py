@@ -20,15 +20,20 @@ def memory_logger():
         yield bgl
 
 
-@pytest.mark.vcr
-def test_openai_image_data_url_converts_to_attachment(memory_logger):
-    """Test that image data URLs in chat completions are converted to Attachment objects."""
+@pytest.mark.vcr(cassette_name="test_openai_image_data_url_converts_to_attachment")
+def test_openai_data_urls_convert_to_attachments(memory_logger):
+    """Image and PDF data URLs in chat completions are converted to Attachment objects."""
     assert not memory_logger.pop()
 
     # Create a simple 1x1 red pixel PNG
     base64_image = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="
-    data_url = f"data:image/png;base64,{base64_image}"
+    image_data_url = f"data:image/png;base64,{base64_image}"
 
+    # Create a minimal PDF
+    base64_pdf = "JVBERi0xLjAKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI+PmVuZG9iagoyIDAgb2JqCjw8L1R5cGUvUGFnZXMvS2lkc1szIDAgUl0vQ291bnQgMT4+ZW5kb2JqCjMgMCBvYmoKPDwvVHlwZS9QYWdlL01lZGlhQm94WzAgMCA2MTIgNzkyXT4+ZW5kb2JqCnhyZWYKMCA0CjAwMDAwMDAwMDAgNjU1MzUgZg0KMDAwMDAwMDAxMCAwMDAwMCBuDQowMDAwMDAwMDUzIDAwMDAwIG4NCjAwMDAwMDAxMDIgMDAwMDAgbg0KdHJhaWxlcgo8PC9TaXplIDQvUm9vdCAxIDAgUj4+CnN0YXJ0eHJlZgoxNDkKJUVPRg=="
+    pdf_data_url = f"data:application/pdf;base64,{base64_pdf}"
+
+    prompt = "What color is this image, and what type of document is this?"
     client = wrap_openai(openai.OpenAI())
 
     start = time.time()
@@ -38,8 +43,15 @@ def test_openai_image_data_url_converts_to_attachment(memory_logger):
             {
                 "role": "user",
                 "content": [
-                    {"type": "text", "text": "What color is this image?"},
-                    {"type": "image_url", "image_url": {"url": data_url}},
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {"url": image_data_url}},
+                    {
+                        "type": "file",
+                        "file": {
+                            "file_data": pdf_data_url,
+                            "filename": "test.pdf",
+                        },
+                    },
                 ],
             }
         ],
@@ -66,15 +78,15 @@ def test_openai_image_data_url_converts_to_attachment(memory_logger):
     assert TEST_MODEL in span["metadata"]["model"]
     assert span["metadata"]["provider"] == "openai"
 
-    # Verify input contains the attachment
+    # Verify input contains the attachments
     assert span["input"]
     assert len(span["input"]) == 1
     message_content = span["input"][0]["content"]
-    assert len(message_content) == 2
+    assert len(message_content) == 3
 
     # First item should be text
     assert message_content[0]["type"] == "text"
-    assert message_content[0]["text"] == "What color is this image?"
+    assert message_content[0]["text"] == prompt
 
     # Second item should have the image URL converted to Attachment
     assert message_content[1]["type"] == "image_url"
@@ -85,69 +97,9 @@ def test_openai_image_data_url_converts_to_attachment(memory_logger):
     assert image_url_value.reference["filename"] == "image.png"
     assert image_url_value.reference["key"]
 
-
-@pytest.mark.vcr
-def test_openai_pdf_data_url_converts_to_attachment(memory_logger):
-    """Test that PDF data URLs in chat completions are converted to Attachment objects."""
-    assert not memory_logger.pop()
-
-    # Create a minimal PDF
-    base64_pdf = "JVBERi0xLjAKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI+PmVuZG9iagoyIDAgb2JqCjw8L1R5cGUvUGFnZXMvS2lkc1szIDAgUl0vQ291bnQgMT4+ZW5kb2JqCjMgMCBvYmoKPDwvVHlwZS9QYWdlL01lZGlhQm94WzAgMCA2MTIgNzkyXT4+ZW5kb2JqCnhyZWYKMCA0CjAwMDAwMDAwMDAgNjU1MzUgZg0KMDAwMDAwMDAxMCAwMDAwMCBuDQowMDAwMDAwMDUzIDAwMDAwIG4NCjAwMDAwMDAxMDIgMDAwMDAgbg0KdHJhaWxlcgo8PC9TaXplIDQvUm9vdCAxIDAgUj4+CnN0YXJ0eHJlZgoxNDkKJUVPRg=="
-    data_url = f"data:application/pdf;base64,{base64_pdf}"
-
-    client = wrap_openai(openai.OpenAI())
-
-    start = time.time()
-    response = client.chat.completions.create(
-        model=TEST_MODEL,
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": "What type of document is this?"},
-                    {
-                        "type": "file",
-                        "file": {
-                            "file_data": data_url,
-                            "filename": "test.pdf",
-                        },
-                    },
-                ],
-            }
-        ],
-    )
-    end = time.time()
-
-    # Verify we got a successful response
-    assert response
-    assert response.choices
-    assert response.choices[0].message.content
-
-    # Verify spans were created
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span
-
-    # Verify metrics
-    metrics = span["metrics"]
-    assert_metrics_are_valid(metrics, start, end)
-    assert TEST_MODEL in span["metadata"]["model"]
-    assert span["metadata"]["provider"] == "openai"
-
-    # Verify input contains the attachment
-    assert span["input"]
-    assert len(span["input"]) == 1
-    message_content = span["input"][0]["content"]
-    assert len(message_content) == 2
-
-    # First item should be text
-    assert message_content[0]["type"] == "text"
-    assert message_content[0]["text"] == "What type of document is this?"
-
-    # Second item should have the file_data converted to Attachment
-    assert message_content[1]["type"] == "file"
-    file_data_value = message_content[1]["file"]["file_data"]
+    # Third item should have the file_data converted to Attachment
+    assert message_content[2]["type"] == "file"
+    file_data_value = message_content[2]["file"]["file_data"]
     assert isinstance(file_data_value, Attachment)
     assert file_data_value.reference["type"] == "braintrust_attachment"
     assert file_data_value.reference["content_type"] == "application/pdf"

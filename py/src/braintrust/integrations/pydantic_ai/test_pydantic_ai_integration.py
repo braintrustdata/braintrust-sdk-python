@@ -697,7 +697,8 @@ async def test_direct_model_request_with_settings(memory_logger, direct):
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_direct_model_request_stream(memory_logger, direct):
-    """Test direct API model_request_stream() - verifies time_to_first_token is captured."""
+    """Test direct API model_request_stream() - verifies time_to_first_token is captured
+    and that all text is surfaced, including the first chunk from PartStartEvent."""
     assert not memory_logger.pop()
 
     model, customization_calls = _model_with_customization_counter()
@@ -705,14 +706,30 @@ async def test_direct_model_request_stream(memory_logger, direct):
 
     start = time.time()
     chunk_count = 0
+    collected_text = ""
+    seen_delta = False
     async with direct.model_request_stream(model=model, messages=messages) as stream:
         async for chunk in stream:
             chunk_count += 1
+            # Extract text, skipping final PartStartEvent after deltas
+            if hasattr(chunk, "part") and hasattr(chunk.part, "content") and not seen_delta:
+                # PartStartEvent has part.content with initial text
+                collected_text += str(chunk.part.content)
+            elif hasattr(chunk, "delta") and chunk.delta:
+                seen_delta = True
+                # PartDeltaEvent has delta.content_delta
+                if hasattr(chunk.delta, "content_delta") and chunk.delta.content_delta:
+                    collected_text += chunk.delta.content_delta
     end = time.time()
 
     # Verify we got chunks and tracing did not rerun request customization.
     assert chunk_count > 0
     assert len(customization_calls) == 1
+
+    # Verify we got complete output including the first chunk ("1")
+    assert "1" in collected_text
+    assert "2" in collected_text
+    assert "3" in collected_text
 
     # Check spans
     spans = memory_logger.pop()
@@ -749,38 +766,6 @@ async def test_direct_model_request_stream(memory_logger, direct):
         assert token_key not in direct_span["metrics"], (
             f"wrapper span must not log {token_key}; it duplicates the leaf chat span"
         )
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_direct_model_request_stream_complete_output(memory_logger, direct):
-    """Test that direct API streaming captures all text including first chunk from PartStartEvent."""
-    assert not memory_logger.pop()
-
-    messages = [ModelRequest(parts=[UserPromptPart(content="Say exactly: 1, 2, 3")])]
-
-    collected_text = ""
-    seen_delta = False
-    async with direct.model_request_stream(model=MODEL, messages=messages) as stream:
-        async for chunk in stream:
-            # Extract text, skipping final PartStartEvent after deltas
-            if hasattr(chunk, "part") and hasattr(chunk.part, "content") and not seen_delta:
-                # PartStartEvent has part.content with initial text
-                collected_text += str(chunk.part.content)
-            elif hasattr(chunk, "delta") and chunk.delta:
-                seen_delta = True
-                # PartDeltaEvent has delta.content_delta
-                if hasattr(chunk.delta, "content_delta") and chunk.delta.content_delta:
-                    collected_text += chunk.delta.content_delta
-
-    # Verify we got complete output including "1"
-    assert "1" in collected_text
-    assert "2" in collected_text
-    assert "3" in collected_text
-
-    # Check spans were created
-    spans = memory_logger.pop()
-    assert len(spans) >= 1
 
 
 @pytest.mark.vcr
@@ -907,7 +892,10 @@ async def test_agent_with_model_settings_in_metadata(memory_logger):
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_agent_with_model_settings_override_in_input(memory_logger):
-    """Test that model_settings passed to run() appears in input, not metadata."""
+    """Test that model_settings passed to run() appears in input, not metadata, and
+    that non-allowlisted kwargs (`infer_name`, `usage`) do not leak into span input."""
+    from pydantic_ai.usage import RunUsage
+
     assert not memory_logger.pop()
 
     # Agent has default settings
@@ -918,7 +906,13 @@ async def test_agent_with_model_settings_override_in_input(memory_logger):
     override_settings = ModelSettings(max_tokens=200, temperature=0.9)
 
     start = time.time()
-    result = await agent.run("Tell me a story", model_settings=override_settings)
+    result = await agent.run(
+        "Tell me a story",
+        model_settings=override_settings,
+        # Neither affects the outbound HTTP request; both must be dropped from span input.
+        infer_name=False,
+        usage=RunUsage(),
+    )
     end = time.time()
 
     assert result.output
@@ -941,6 +935,12 @@ async def test_agent_with_model_settings_override_in_input(memory_logger):
     assert "model_settings" not in agent_span["metadata"], (
         "model_settings should NOT be in metadata when explicitly passed to run()"
     )
+
+    # Security invariant: non-allowlisted kwargs must not leak into span input.
+    assert "infer_name" not in agent_span["input"]
+    assert "usage" not in agent_span["input"]
+
+    _assert_metrics_are_valid(agent_span["metrics"], start, end)
 
 
 @pytest.mark.vcr
@@ -1011,83 +1011,6 @@ async def test_agent_with_instructions_and_dynamic_system_prompt(memory_logger):
     assert any(
         part["part_kind"] == "system-prompt" and part["content"] == dynamic_system_prompt for part in request["parts"]
     )
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_agent_with_message_history(memory_logger):
-    """Test Agent with conversation history."""
-    assert not memory_logger.pop()
-
-    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=100))
-
-    # First message
-    result1 = await agent.run("My name is Alice")
-    assert result1.output
-    memory_logger.pop()  # Clear first span
-
-    # Second message with history
-    start = time.time()
-    result2 = await agent.run("What is my name?", message_history=result1.all_messages())
-    end = time.time()
-
-    # Verify it remembers
-    assert "Alice" in str(result2.output)
-
-    # Check spans - should now have parent agent_run + nested chat span
-    spans = memory_logger.pop()
-    assert len(spans) == 2, f"Expected 2 spans (agent_run + chat), got {len(spans)}"
-
-    # Find agent_run and chat spans
-    agent_span = _find_agent_span(spans)
-
-    assert agent_span is not None, "agent_run span not found"
-    assert "message_history" in str(agent_span["input"])
-    assert "Alice" in str(agent_span["output"])
-    _assert_metrics_are_valid(agent_span["metrics"], start, end)
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_agent_with_custom_settings(memory_logger):
-    """Test Agent with custom model settings, and that non-allowlisted kwargs
-    (`infer_name`, `usage`) do not leak into span input."""
-    from pydantic_ai.usage import RunUsage
-
-    assert not memory_logger.pop()
-
-    agent = Agent(MODEL)
-
-    start = time.time()
-    result = await agent.run(
-        "Say hello",
-        model_settings=ModelSettings(max_tokens=20, temperature=0.5, top_p=0.9),
-        # Neither affects the outbound HTTP request; both must be dropped from span input.
-        infer_name=False,
-        usage=RunUsage(),
-    )
-    end = time.time()
-
-    assert result.output
-
-    spans = memory_logger.pop()
-    assert len(spans) >= 2, f"Expected at least 2 spans (agent_run + chat), got {len(spans)}"
-
-    agent_span = _find_agent_span(spans)
-    assert agent_span is not None, "agent_run span not found"
-
-    # Model settings passed to run() should be in input (not metadata)
-    assert "model_settings" in agent_span["input"]
-    settings = agent_span["input"]["model_settings"]
-    assert settings["max_tokens"] == 20
-    assert settings["temperature"] == 0.5
-    assert settings["top_p"] == 0.9
-
-    # Security invariant: non-allowlisted kwargs must not leak into span input.
-    assert "infer_name" not in agent_span["input"]
-    assert "usage" not in agent_span["input"]
-
-    _assert_metrics_are_valid(agent_span["metrics"], start, end)
 
 
 @pytest.mark.vcr
@@ -1520,10 +1443,24 @@ async def test_agent_stream_buffer_pattern_early_return(memory_logger):
     assert "start" in agent_span["metrics"]
 
 
+# Small test image (1x1 PNG)
+_TINY_PNG = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
+# Minimal PDF (this is a valid but minimal PDF structure)
+_TINY_PDF = b"%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj 2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj 3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Contents 4 0 R>>endobj 4 0 obj<</Length 44>>stream\nBT /F1 12 Tf 100 700 Td (Test Document) Tj ET\nendstream\nendobj\nxref\n0 5\n0000000000 65535 f\n0000000009 00000 n\n0000000058 00000 n\n0000000115 00000 n\n0000000214 00000 n\ntrailer<</Size 5/Root 1 0 R>>\nstartxref\n307\n%%EOF"
+
+
 @pytest.mark.vcr
 @pytest.mark.asyncio
-async def test_agent_with_binary_content(memory_logger):
-    """Test that agents with binary content (images) work correctly.
+@pytest.mark.parametrize(
+    "data,media_type,prompt,max_tokens",
+    [
+        (_TINY_PNG, "image/png", "What color is this image?", 50),
+        (_TINY_PDF, "application/pdf", "What is in this document?", 150),
+    ],
+    ids=["image", "pdf"],
+)
+async def test_agent_with_binary_input(memory_logger, data, media_type, prompt, max_tokens):
+    """Test that agents with binary input (images, PDFs) work correctly.
 
     Verifies that BinaryContent is properly converted to Braintrust attachments
     in both the agent_run span (parent) and chat span (child).
@@ -1532,16 +1469,13 @@ async def test_agent_with_binary_content(memory_logger):
 
     assert not memory_logger.pop()
 
-    # Use a small test image (1x1 PNG)
-    image_data = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
-
-    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=50))
+    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=max_tokens))
 
     start = time.time()
     result = await agent.run(
         [
-            BinaryContent(data=image_data, media_type="image/png"),
-            "What color is this image?",
+            BinaryContent(data=data, media_type=media_type),
+            prompt,
         ]
     )
     end = time.time()
@@ -1565,79 +1499,21 @@ async def test_agent_with_binary_content(memory_logger):
     assert agent_span["span_attributes"]["type"] == SpanTypeAttribute.TASK
     assert agent_span["metadata"]["model"] == "gpt-4o-mini"
     _assert_metrics_are_valid(agent_span["metrics"], start, end)
+    _assert_metrics_are_valid(chat_span["metrics"], start, end)
 
     # CRITICAL: Verify that BOTH spans properly serialize BinaryContent to attachments
     # Verify agent_run span has attachment
-    agent_has_attachment = _has_binary_attachment(agent_span.get("input", {}))
-    assert agent_has_attachment, (
+    assert _has_binary_attachment(agent_span.get("input", {}), media_type), (
         "agent_run span should have BinaryContent converted to Braintrust Attachment. "
         f"Input: {agent_span.get('input', {})}"
     )
 
     # Verify chat span has attachment (this is the key test for the bug)
-    chat_has_attachment = _has_binary_attachment(chat_span.get("input", {}))
-    assert chat_has_attachment, (
+    assert _has_binary_attachment(chat_span.get("input", {}), media_type), (
         "chat span should have BinaryContent converted to Braintrust Attachment. "
         "The child span should process attachments the same way as the parent. "
         f"Input: {chat_span.get('input', {})}"
     )
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_agent_with_document_input(memory_logger):
-    """Test that agents with document input (PDF) properly serialize attachments.
-
-    Verifies that both agent_run and chat spans convert BinaryContent to Braintrust
-    attachments for document files like PDFs.
-    """
-    from pydantic_ai.models.function import BinaryContent
-
-    assert not memory_logger.pop()
-
-    # Create a minimal PDF (this is a valid but minimal PDF structure)
-    pdf_data = b"%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj 2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj 3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Contents 4 0 R>>endobj 4 0 obj<</Length 44>>stream\nBT /F1 12 Tf 100 700 Td (Test Document) Tj ET\nendstream\nendobj\nxref\n0 5\n0000000000 65535 f\n0000000009 00000 n\n0000000058 00000 n\n0000000115 00000 n\n0000000214 00000 n\ntrailer<</Size 5/Root 1 0 R>>\nstartxref\n307\n%%EOF"
-
-    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=150))
-
-    start = time.time()
-    result = await agent.run(
-        [
-            BinaryContent(data=pdf_data, media_type="application/pdf"),
-            "What is in this document?",
-        ]
-    )
-    end = time.time()
-
-    assert result.output
-    assert isinstance(result.output, str)
-
-    # Check spans
-    spans = memory_logger.pop()
-    assert len(spans) >= 2, f"Expected at least 2 spans (agent_run + chat), got {len(spans)}"
-
-    # Find spans
-    agent_span = _find_agent_span(spans)
-    chat_span = next((s for s in spans if "chat" in s["span_attributes"]["name"]), None)
-
-    assert agent_span is not None, "agent_run span not found"
-    assert chat_span is not None, "chat span not found"
-
-    # Verify agent_run span has PDF attachment
-    assert _has_binary_attachment(agent_span.get("input", {}), "application/pdf"), (
-        "agent_run span should have PDF BinaryContent converted to Braintrust Attachment"
-    )
-
-    # Verify chat span has PDF attachment (critical for document input)
-    assert _has_binary_attachment(chat_span.get("input", {}), "application/pdf"), (
-        "chat span should have PDF BinaryContent converted to Braintrust Attachment. "
-        "This ensures documents are properly traced in the low-level model call. "
-        f"Chat span input: {chat_span.get('input', {})}"
-    )
-
-    # Verify metrics
-    _assert_metrics_are_valid(agent_span["metrics"], start, end)
-    _assert_metrics_are_valid(chat_span["metrics"], start, end)
 
 
 @pytest.mark.vcr
@@ -1880,6 +1756,12 @@ def test_agent_tool_metadata_extraction(memory_logger):
         """Search the database."""
         return "Results"
 
+    # Tool registered under a custom name (differs from the function name)
+    @agent.tool_plain(name="custom_calculator")
+    def calc(a: int, b: int) -> int:
+        """Add two numbers."""
+        return a + b
+
     # Extract metadata using the actual function signature
     args = ("Test prompt",)
     kwargs = {}
@@ -1907,13 +1789,15 @@ def test_agent_tool_metadata_extraction(memory_logger):
     # Verify all tools are present with FULL SCHEMAS
     tools = agent_toolset["tools"]
     assert isinstance(tools, list), "tools should be a list"
-    assert len(tools) == 3, f"Should have exactly 3 tools, got {len(tools)}"
+    assert len(tools) == 4, f"Should have exactly 4 tools, got {len(tools)}"
 
     # Check each tool has full schema information
     tool_names = [t["name"] for t in tools]
     assert "calculate" in tool_names, f"calculate tool should be present, got: {tool_names}"
     assert "get_weather" in tool_names, f"get_weather tool should be present, got: {tool_names}"
     assert "search_database" in tool_names, f"search_database tool should be present, got: {tool_names}"
+    assert "custom_calculator" in tool_names, f"Should use custom tool name, got: {tool_names}"
+    assert "calc" not in tool_names, f"Should not use the function name for a custom-named tool, got: {tool_names}"
 
     # Verify calculate tool has full schema
     calculate_tool = next(t for t in tools if t["name"] == "calculate")
@@ -1937,41 +1821,6 @@ def test_agent_tool_metadata_extraction(memory_logger):
     assert "limit" in search_params["properties"]
     # 'query' should be required, 'limit' should be optional (has default)
     assert "query" in search_params.get("required", [])
-
-
-def test_agent_tool_with_custom_name():
-    """Test that tools with custom names are properly extracted with schemas in input."""
-    from braintrust.integrations.pydantic_ai.tracing import _build_agent_input_and_metadata
-
-    agent = Agent(MODEL)
-
-    # Add tool with custom name
-    @agent.tool_plain(name="custom_calculator")
-    def calc(a: int, b: int) -> int:
-        """Add two numbers."""
-        return a + b
-
-    args = ("Test",)
-    kwargs = {}
-    input_data, metadata = _build_agent_input_and_metadata(args, kwargs, agent)
-
-    # Verify custom name is used in input (not metadata)
-    assert "toolsets" in input_data
-    assert "toolsets" not in metadata, "toolsets should not be in metadata"
-
-    agent_toolset = next((ts for ts in input_data["toolsets"] if ts.get("id") == "<agent>"), None)
-    assert agent_toolset is not None
-    tools = agent_toolset.get("tools", [])
-
-    # The tool should be a dict with schema info
-    assert len(tools) == 1, f"Should have 1 tool, got {len(tools)}"
-    tool = tools[0]
-    assert isinstance(tool, dict), "Tool should be a dict with schema"
-    assert tool["name"] == "custom_calculator", f"Should use custom name, got: {tool.get('name')}"
-    assert "description" in tool, "Tool should have description"
-    assert "parameters" in tool, "Tool should have parameters schema"
-    assert "a" in tool["parameters"]["properties"]
-    assert "b" in tool["parameters"]["properties"]
 
 
 @pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path"])
@@ -2043,7 +1892,6 @@ async def test_agent_run_openai_web_search_usage(memory_logger):
 @pytest.mark.parametrize(
     "details_key",
     [
-        "reasoning_tokens",  # OpenAI
         "thinking_tokens",  # Anthropic
         "thoughts_tokens",  # Google
     ],
@@ -2052,7 +1900,8 @@ def test_reasoning_tokens_extraction_provider_keys(details_key):
     """pydantic_ai stashes the reasoning-token count under a provider-specific key:
     OpenAI "reasoning_tokens", Anthropic "thinking_tokens", Google "thoughts_tokens".
     All three must surface as `completion_reasoning_tokens` (previously only OpenAI's
-    key was read, silently dropping Anthropic/Google reasoning).
+    key was read, silently dropping Anthropic/Google reasoning). OpenAI's key is
+    covered by `test_extract_response_metrics_leaf_fields`.
     """
     from types import SimpleNamespace
 
@@ -2067,8 +1916,6 @@ def test_reasoning_tokens_extraction_provider_keys(details_key):
     assert metrics is not None
     # pylint: disable=unsupported-membership-test,unsubscriptable-object
     assert metrics["completion_reasoning_tokens"] == 128.0
-    # pylint: enable=unsupported-membership-test,unsubscriptable-object
-
     # pylint: enable=unsupported-membership-test,unsubscriptable-object
 
 
@@ -2223,21 +2070,6 @@ def test_v2_model_provider_inference():
     assert _extract_model_info_from_model_instance(xai_model) == ("grok-2", "xai")
 
 
-def test_model_classes_patcher_marker_check_is_mro_safe():
-    from braintrust.integrations.pydantic_ai.patchers import ModelClassesPatcher
-
-    class WrapperModel:
-        pass
-
-    class InstrumentedModel(WrapperModel):
-        pass
-
-    ModelClassesPatcher.mark_patched(WrapperModel)
-
-    assert ModelClassesPatcher.has_patch_marker(WrapperModel) is True
-    assert ModelClassesPatcher.has_patch_marker(InstrumentedModel) is False
-
-
 def test_wrap_model_class_is_idempotent():
     from braintrust.integrations.pydantic_ai.patchers import ModelClassesPatcher, wrap_model_class
 
@@ -2292,58 +2124,6 @@ def test_setup_pydantic_ai_is_idempotent_across_new_patch_points():
     assert AbstractAgent.__dict__["run"] is run
     assert direct_module.__dict__["_prepare_model"] is prepare_model
     assert agent_graph_module.ToolManager.__dict__[tool_method_name] is tool_method
-
-
-def test_shape_messages_with_binary_content():
-    """Unit test to verify _shape_messages handles ModelRequest with BinaryContent in parts.
-
-    This tests the full message shaping path that's used for the chat span,
-    ensuring that nested BinaryContent in UserPromptPart is properly converted.
-    """
-    from braintrust.integrations.pydantic_ai.tracing import _shape_messages
-    from braintrust.logger import Attachment
-    from pydantic_ai.messages import ModelRequest, UserPromptPart
-    from pydantic_ai.models.function import BinaryContent
-
-    # Create a ModelRequest with UserPromptPart containing BinaryContent
-    pdf_data = b"%PDF-1.4 test document content"
-    binary = BinaryContent(data=pdf_data, media_type="application/pdf")
-    user_prompt_part = UserPromptPart(content=[binary, "What is in this document?"])
-    model_request = ModelRequest(parts=[user_prompt_part])
-
-    # Shape the messages
-    messages = [model_request]
-    result = _shape_messages(messages)
-
-    # Verify structure
-    assert len(result) == 1, f"Should have 1 message, got {len(result)}"
-    msg = result[0]
-    assert "parts" in msg, f"Message should have 'parts'. Keys: {msg.keys()}"
-
-    parts = msg["parts"]
-    assert len(parts) == 1, f"Should have 1 part, got {len(parts)}"
-
-    part = parts[0]
-    assert isinstance(part, dict), f"Part should be dict, got {type(part)}"
-    assert "content" in part, f"Part should have 'content'. Keys: {part.keys()}"
-
-    content = part["content"]
-    assert isinstance(content, list), f"Content should be list, got {type(content)}"
-    assert len(content) == 2, f"Should have 2 content items, got {len(content)}"
-
-    # CRITICAL: First content item should be shaped BinaryContent with Attachment
-    binary_item = content[0]
-    assert isinstance(binary_item, dict), f"Binary item should be dict, got {type(binary_item)}"
-    assert binary_item.get("type") == "binary", f"Binary item should have type='binary'. Got: {binary_item}"
-    assert "attachment" in binary_item, f"Binary item should have 'attachment'. Keys: {binary_item.keys()}"
-    assert isinstance(binary_item["attachment"], Attachment), (
-        f"Should be Braintrust Attachment, got {type(binary_item.get('attachment'))}"
-    )
-    assert binary_item["media_type"] == "application/pdf"
-    assert binary_item["attachment"]._reference["content_type"] == "application/pdf"
-
-    # Second content item should be the string
-    assert content[1] == "What is in this document?"
 
 
 @pytest.mark.vcr

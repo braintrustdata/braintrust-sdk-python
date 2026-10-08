@@ -13,7 +13,7 @@ from braintrust.test_helpers import init_test_logger
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnableSerializable
+from langchain_core.runnables import RunnableConfig, RunnableSerializable
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
@@ -595,30 +595,43 @@ def test_consecutive_eval_calls(logger_memory_logger):
 
 
 @pytest.mark.vcr
-def test_streaming_ttft(logger_memory_logger):
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("is_async", "count_to", "max_completion_tokens"),
+    [(False, 5, 50), (True, 3, 20)],
+    ids=["sync", "async"],
+)
+async def test_streaming_ttft(logger_memory_logger, is_async, count_to, max_completion_tokens):
     test_logger, memory_logger = logger_memory_logger
     assert not memory_logger.pop()
 
     handler = BraintrustCallbackHandler(logger=test_logger)
-    prompt = ChatPromptTemplate.from_template("Count from 1 to 5.")
+    prompt = ChatPromptTemplate.from_template(f"Count from 1 to {count_to}.")
     model = ChatOpenAI(
         model="gpt-4o-mini",
-        max_completion_tokens=50,
+        max_completion_tokens=max_completion_tokens,
         streaming=True,
     )
     chain: RunnableSerializable[dict[str, str], BaseMessage] = prompt.pipe(model)
+    config: RunnableConfig = {"callbacks": [cast(BaseCallbackHandler, handler)]}
 
     # Collect chunks to verify streaming works
     chunks: list[str] = []
-    for chunk in chain.stream({}, config={"callbacks": [cast(BaseCallbackHandler, handler)]}):
-        if chunk.content:
-            chunks.append(str(chunk.content))
+    if is_async:
+        async for chunk in chain.astream({}, config=config):
+            if chunk.content:
+                chunks.append(str(chunk.content))
+    else:
+        for chunk in chain.stream({}, config=config):
+            if chunk.content:
+                chunks.append(str(chunk.content))
 
     # Verify we got streaming chunks
     assert len(chunks) > 0, "Expected to receive streaming chunks"
+    expected_text = ", ".join(str(i) for i in range(1, count_to + 1)) + "."
 
     spans = memory_logger.pop()
-    assert len(spans) == 3
+    assert len(spans) == 3  # RunnableSequence + ChatPromptTemplate + ChatOpenAI
 
     # Find the LLM span
     llm_spans = find_spans_by_attributes(spans, name="ChatOpenAI", type="llm")
@@ -635,7 +648,7 @@ def test_streaming_ttft(logger_memory_logger):
                     [
                         {
                             "additional_kwargs": {},
-                            "content": "Count from 1 to 5.",
+                            "content": f"Count from 1 to {count_to}.",
                             "response_metadata": {},
                             "type": "human",
                         }
@@ -647,6 +660,8 @@ def test_streaming_ttft(logger_memory_logger):
                     }
                 },
                 "metrics": {
+                    "start": ANY,
+                    "end": ANY,
                     "time_to_first_token": ANY,
                 },
                 "output": {
@@ -658,10 +673,10 @@ def test_streaming_ttft(logger_memory_logger):
                                     "model_name": ANY,
                                 },
                                 "message": {
-                                    "content": "1, 2, 3, 4, 5.",
+                                    "content": expected_text,
                                     "type": "AIMessageChunk",
                                 },
-                                "text": "1, 2, 3, 4, 5.",
+                                "text": expected_text,
                                 "type": "ChatGenerationChunk",
                             }
                         ]
@@ -673,6 +688,10 @@ def test_streaming_ttft(logger_memory_logger):
             }
         ],
     )
+    # The 0.3.28 sync recording was made without stream usage, so only the
+    # async recordings are guaranteed to carry token counts.
+    if is_async:
+        assert llm_span["metrics"]["total_tokens"] > 0
 
 
 @pytest.mark.vcr
@@ -997,103 +1016,47 @@ def test_tool_use_with_result(logger_memory_logger):
     model = ChatOpenAI(model="gpt-4o-mini")
     model_with_tools = model.bind_tools([calculate])
 
-    # First call: model returns a tool call
+    # First call (untraced): get a real tool call to send back. Tracing of a
+    # tool-call response is covered by test_tool_usage.
     query = "What is 127 multiplied by 49?"
-    first_result = model_with_tools.invoke(
-        query,
-        config={"callbacks": [cast(BaseCallbackHandler, handler)]},
-    )
-
-    first_spans = memory_logger.pop()
-    first_llm_spans = find_spans_by_attributes(first_spans, name="ChatOpenAI", type="llm")
-    assert len(first_llm_spans) == 1
-
-    assert hasattr(first_result, "tool_calls") and first_result.tool_calls
+    first_result = model_with_tools.invoke(query)
+    assert first_result.tool_calls
     tool_call = first_result.tool_calls[0]
-    assert tool_call["name"] == "calculate"
 
-    # Second call: provide the tool result
+    # Second call: the only test that feeds an AIMessage with tool_calls and a
+    # ToolMessage through the handler, so check how that history is logged.
     messages = [
         HumanMessage(content=query),
         AIMessage(content="", tool_calls=[tool_call]),
         ToolMessage(content=str(127 * 49), tool_call_id=tool_call["id"]),
     ]
-    second_result = model_with_tools.invoke(
+    model_with_tools.invoke(
         messages,
         config={"callbacks": [cast(BaseCallbackHandler, handler)]},
     )
 
-    second_spans = memory_logger.pop()
-    second_llm_spans = find_spans_by_attributes(second_spans, name="ChatOpenAI", type="llm")
-    assert len(second_llm_spans) == 1
-    second_span = second_llm_spans[0]
-
-    assert_matches_object(
-        [second_span],
-        [
-            {
-                "span_attributes": {"name": "ChatOpenAI", "type": "llm"},
-                "metrics": {
-                    "start": ANY,
-                    "end": ANY,
-                    "total_tokens": ANY,
-                    "prompt_tokens": ANY,
-                    "completion_tokens": ANY,
-                },
-                "output": {
-                    "generations": [
-                        [
-                            {
-                                "type": "ChatGeneration",
-                                "message": {
-                                    "content": ANY,
-                                    "type": "ai",
-                                },
-                            }
-                        ]
-                    ],
-                    "type": "LLMResult",
-                },
-            }
-        ],
-    )
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_async_streaming(logger_memory_logger):
-    test_logger, memory_logger = logger_memory_logger
-    assert not memory_logger.pop()
-
-    handler = BraintrustCallbackHandler(logger=test_logger)
-    prompt = ChatPromptTemplate.from_template("Count from 1 to 3.")
-    model = ChatOpenAI(model="gpt-4o-mini", max_completion_tokens=20, streaming=True)
-    chain: RunnableSerializable[dict[str, str], BaseMessage] = prompt.pipe(model)
-
-    chunks: list[str] = []
-    async for chunk in chain.astream({}, config={"callbacks": [cast(BaseCallbackHandler, handler)]}):
-        if chunk.content:
-            chunks.append(str(chunk.content))
-
-    assert len(chunks) > 0
-
     spans = memory_logger.pop()
-    assert len(spans) == 3  # RunnableSequence + ChatPromptTemplate + ChatOpenAI
-
     llm_spans = find_spans_by_attributes(spans, name="ChatOpenAI", type="llm")
     assert len(llm_spans) == 1
-    llm_span = llm_spans[0]
 
     assert_matches_object(
-        [llm_span],
+        llm_spans[0]["input"],
         [
-            {
-                "span_attributes": {"name": "ChatOpenAI", "type": "llm"},
-                "metrics": {
-                    "start": ANY,
-                    "end": ANY,
-                    "total_tokens": ANY,
+            [
+                {"content": query, "type": "human"},
+                {
+                    "content": "",
+                    "type": "ai",
+                    "tool_calls": [
+                        {
+                            "name": "calculate",
+                            "args": {"operation": "multiply", "a": 127, "b": 49},
+                            "id": tool_call["id"],
+                            "type": "tool_call",
+                        }
+                    ],
                 },
-            }
+                {"content": "6223", "type": "tool", "tool_call_id": tool_call["id"]},
+            ]
         ],
     )

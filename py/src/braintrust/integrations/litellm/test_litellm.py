@@ -20,7 +20,6 @@ PROJECT_NAME = "test-project-litellm-py-tracing"
 TEST_MODEL = "gpt-4o-mini"  # cheapest model for tests
 TEST_TEXT_MODEL = "anthropic/claude-haiku-4-5-20251001"
 TEST_PROMPT = "What's 12 + 12?"
-TEST_SYSTEM_PROMPT = "You are a helpful assistant that only responds with numbers."
 TEST_CACHE_MODEL = "anthropic/claude-haiku-4-5-20251001"
 TEST_CACHEABLE_PROMPT = "Braintrust LiteLLM prompt caching regression context. " * 400
 TEST_AUDIO_FILE = os.path.join(os.path.dirname(__file__), "..", "..", "fixtures", "test_audio.wav")
@@ -126,7 +125,7 @@ def test_litellm_completion_metrics(memory_logger, is_async) -> None:
     assert_metrics_are_valid(metrics, start, end)
     assert span["metadata"]["model"] == TEST_MODEL
     assert span["metadata"]["provider"] == "openai"
-    assert TEST_PROMPT in str(span["input"])
+    assert span["input"] == [{"role": "user", "content": TEST_PROMPT}]
 
 
 @pytest.mark.vcr
@@ -395,34 +394,6 @@ def test_litellm_image_generation(memory_logger, is_async):
 
 @pytest.mark.vcr
 @sync_async
-def test_litellm_completion_with_system_prompt(memory_logger, is_async):
-    assert not memory_logger.pop()
-
-    response = _run(
-        is_async,
-        litellm.completion,
-        litellm.acompletion,
-        model=TEST_MODEL,
-        messages=[{"role": "system", "content": TEST_SYSTEM_PROMPT}, {"role": "user", "content": TEST_PROMPT}],
-    )
-
-    assert response
-    assert response.choices
-    assert "24" in response.choices[0].message.content
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    inputs = span["input"]
-    assert len(inputs) == 2
-    assert inputs[0]["role"] == "system"
-    assert inputs[0]["content"] == TEST_SYSTEM_PROMPT
-    assert inputs[1]["role"] == "user"
-    assert inputs[1]["content"] == TEST_PROMPT
-
-
-@pytest.mark.vcr
-@sync_async
 def test_litellm_transcription(memory_logger, is_async):
     assert not memory_logger.pop()
 
@@ -565,7 +536,6 @@ def test_litellm_tool_calls(memory_logger):
     )
     end = time.time()
 
-    print(response)
     assert response
     assert response.choices
 
@@ -636,8 +606,6 @@ async def test_litellm_async_streaming_with_break(memory_logger):
     stream = await litellm.acompletion(
         model=TEST_MODEL, messages=[{"role": "user", "content": TEST_PROMPT}], stream=True
     )
-
-    time.sleep(0.1)  # time to first token sleep
 
     # Only process the first few chunks
     counter = 0

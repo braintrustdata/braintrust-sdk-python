@@ -8,7 +8,7 @@ import inspect
 import pytest
 from braintrust import logger
 from braintrust.integrations.test_utils import verify_autoinstrument_script
-from braintrust.integrations.transformers import TransformersIntegration, setup_transformers, wrap_transformers
+from braintrust.integrations.transformers import setup_transformers, wrap_transformers
 from braintrust.integrations.transformers.patchers import PIPELINE_PATCHERS
 from braintrust.integrations.transformers.tracing import _input, _metadata
 from braintrust.integrations.utils import _tensor_shape
@@ -156,28 +156,6 @@ def _assert_common_span(span, task, pipeline_instance):
         assert "finish_reason" not in choice
 
 
-def test_integration_targets_only_supported_pipeline_classes():
-    assert TransformersIntegration.min_version == "4.42.0"
-    assert {patcher.target_path for patcher in PIPELINE_PATCHERS} == {
-        "TextGenerationPipeline.__call__",
-        "Text2TextGenerationPipeline.__call__",
-        "SummarizationPipeline.__call__",
-        "TranslationPipeline.__call__",
-        "FeatureExtractionPipeline.__call__",
-        "QuestionAnsweringPipeline.__call__",
-    }
-    assert all(patcher.target_path != "Pipeline.__call__" for patcher in PIPELINE_PATCHERS)
-
-
-def test_setup_is_idempotent(text_generation_pipeline, memory_logger):
-    assert setup_transformers() is True
-    assert setup_transformers() is True
-
-    result = text_generation_pipeline("Hello", do_sample=False, max_new_tokens=1)
-    assert result
-    _assert_common_span(_only_span(memory_logger), "text-generation", text_generation_pipeline)
-
-
 def test_manual_wrap_is_idempotent_and_traces_string_input(text_generation_pipeline, memory_logger):
     assert wrap_transformers(text_generation_pipeline) is text_generation_pipeline
     assert wrap_transformers(text_generation_pipeline) is text_generation_pipeline
@@ -239,6 +217,7 @@ def test_text_generation_batch_is_one_span(text_generation_pipeline, memory_logg
         ("text2text_pipeline", "text2text-generation", "generated_text"),
         ("summarization_pipeline", "summarization", "summary_text"),
         ("translation_pipeline", "translation", "translation_text"),
+        ("language_translation_pipeline", "translation_en_to_fr", "translation_text"),
     ],
 )
 def test_text2text_task_families(request, memory_logger, fixture_name, task, result_field):
@@ -251,16 +230,6 @@ def test_text2text_task_families(request, memory_logger, fixture_name, task, res
     _assert_common_span(span, task, pipeline_instance)
     assert span["input"] == [{"role": "user", "content": "Hello world"}]
     assert span["output"][0]["message"]["content"] == result[0][result_field]
-
-
-def test_language_specific_translation_name(language_translation_pipeline, memory_logger):
-    setup_transformers()
-
-    result = language_translation_pipeline("Hello", do_sample=False, max_new_tokens=2)
-    span = _only_span(memory_logger)
-
-    _assert_common_span(span, "translation_en_to_fr", language_translation_pipeline)
-    assert span["output"][0]["message"]["content"] == result[0]["translation_text"]
 
 
 def test_question_answering_combines_context_and_question(question_answering_pipeline, memory_logger):

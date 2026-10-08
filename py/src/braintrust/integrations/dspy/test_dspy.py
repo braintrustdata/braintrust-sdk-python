@@ -180,75 +180,37 @@ def test_dspy_adapter_callbacks(memory_logger):
 class TestPatchDSPy:
     """Tests for patch_dspy()."""
 
-    def test_patch_dspy_wraps_configure(self):
-        """After patch_dspy(), dspy.configure() should auto-add BraintrustDSpyCallback."""
+    def test_patch_dspy_adds_exactly_one_callback(self):
+        """After patch_dspy(), dspy.configure() should add exactly one BraintrustDSpyCallback."""
         result = run_in_subprocess("""
             from braintrust.integrations.dspy import patch_dspy, BraintrustDSpyCallback
             assert patch_dspy(), "patch_dspy() should return True"
             assert patch_dspy(), "second patch_dspy() should be a no-op that still returns True"
 
             import dspy
-
-            # Configure without explicitly adding callback
-            dspy.configure(lm=None)
-
-            # Check that exactly one BraintrustDSpyCallback was auto-added (no double-wrap)
             from dspy.dsp.utils.settings import settings
-            callbacks = settings.callbacks
-            bt_callbacks = [cb for cb in callbacks if isinstance(cb, BraintrustDSpyCallback)]
-            assert len(bt_callbacks) == 1, f"Expected one BraintrustDSpyCallback in {callbacks}"
-            print("SUCCESS")
-        """)
-        assert result.returncode == 0, f"Failed: {result.stderr}"
-        assert "SUCCESS" in result.stdout
-
-    def test_patch_dspy_preserves_existing_callbacks(self):
-        """patch_dspy() should preserve user-provided callbacks."""
-        result = run_in_subprocess("""
-            from braintrust.integrations.dspy import patch_dspy, BraintrustDSpyCallback
-            patch_dspy()
-
-            import dspy
             from dspy.utils.callback import BaseCallback
 
+            def bt_callbacks():
+                return [cb for cb in settings.callbacks if isinstance(cb, BraintrustDSpyCallback)]
+
+            # Configure without explicitly adding callback (no double-wrap)
+            dspy.configure(lm=None)
+            assert len(bt_callbacks()) == 1, f"Expected one BraintrustDSpyCallback in {settings.callbacks}"
+
+            # User-provided callbacks are preserved
             class MyCallback(BaseCallback):
                 pass
 
             my_callback = MyCallback()
             dspy.configure(lm=None, callbacks=[my_callback])
+            assert any(cb is my_callback for cb in settings.callbacks), "User callback should be preserved"
+            assert len(bt_callbacks()) == 1, f"Expected one BraintrustDSpyCallback in {settings.callbacks}"
 
-            from dspy.dsp.utils.settings import settings
-            callbacks = settings.callbacks
-
-            # Should have both callbacks
-            has_my_callback = any(cb is my_callback for cb in callbacks)
-            has_bt_callback = any(isinstance(cb, BraintrustDSpyCallback) for cb in callbacks)
-
-            assert has_my_callback, "User callback should be preserved"
-            assert has_bt_callback, "BraintrustDSpyCallback should be added"
-            print("SUCCESS")
-        """)
-        assert result.returncode == 0, f"Failed: {result.stderr}"
-        assert "SUCCESS" in result.stdout
-
-    def test_patch_dspy_does_not_duplicate_callback(self):
-        """patch_dspy() should not add duplicate BraintrustDSpyCallback."""
-        result = run_in_subprocess("""
-            from braintrust.integrations.dspy import patch_dspy, BraintrustDSpyCallback
-            patch_dspy()
-
-            import dspy
-
-            # User explicitly adds BraintrustDSpyCallback
+            # An explicit BraintrustDSpyCallback is not duplicated
             bt_callback = BraintrustDSpyCallback()
             dspy.configure(lm=None, callbacks=[bt_callback])
-
-            from dspy.dsp.utils.settings import settings
-            callbacks = settings.callbacks
-
-            # Should only have one BraintrustDSpyCallback
-            bt_callbacks = [cb for cb in callbacks if isinstance(cb, BraintrustDSpyCallback)]
-            assert len(bt_callbacks) == 1, f"Expected 1 BraintrustDSpyCallback, got {len(bt_callbacks)}"
+            assert bt_callbacks() == [bt_callback], f"Expected only the user's callback in {settings.callbacks}"
             print("SUCCESS")
         """)
         assert result.returncode == 0, f"Failed: {result.stderr}"
@@ -256,14 +218,11 @@ class TestPatchDSPy:
 
     def test_legacy_wrapper_import_still_works(self):
         """The old braintrust.wrappers.dspy import path should still work."""
-        result = run_in_subprocess("""
-            from braintrust.wrappers.dspy import BraintrustDSpyCallback, patch_dspy
-            assert BraintrustDSpyCallback is not None
-            assert callable(patch_dspy)
-            print("SUCCESS")
-        """)
-        assert result.returncode == 0, f"Failed: {result.stderr}"
-        assert "SUCCESS" in result.stdout
+        from braintrust.wrappers.dspy import BraintrustDSpyCallback as LegacyBraintrustDSpyCallback
+        from braintrust.wrappers.dspy import patch_dspy
+
+        assert LegacyBraintrustDSpyCallback is BraintrustDSpyCallback
+        assert callable(patch_dspy)
 
 
 class TestAutoInstrumentDSPy:

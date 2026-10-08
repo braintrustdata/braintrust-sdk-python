@@ -1,92 +1,88 @@
 interactions:
 - request:
     body: '{"messages":[{"role":"user","content":[{"type":"text","text":"What color
-      is this image?"},{"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="}}]}],"model":"gpt-4o-mini"}'
+      is this image, and what type of document is this?"},{"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="}},{"type":"file","file":{"file_data":"data:application/pdf;base64,JVBERi0xLjAKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI+PmVuZG9iagoyIDAgb2JqCjw8L1R5cGUvUGFnZXMvS2lkc1szIDAgUl0vQ291bnQgMT4+ZW5kb2JqCjMgMCBvYmoKPDwvVHlwZS9QYWdlL01lZGlhQm94WzAgMCA2MTIgNzkyXT4+ZW5kb2JqCnhyZWYKMCA0CjAwMDAwMDAwMDAgNjU1MzUgZg0KMDAwMDAwMDAxMCAwMDAwMCBuDQowMDAwMDAwMDUzIDAwMDAwIG4NCjAwMDAwMDAxMDIgMDAwMDAgbg0KdHJhaWxlcgo8PC9TaXplIDQvUm9vdCAxIDAgUj4+CnN0YXJ0eHJlZgoxNDkKJUVPRg==","filename":"test.pdf"}}]}],"model":"gpt-4o-mini"}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
-      - '277'
-      Content-Type:
+      content-length:
+      - '794'
+      content-type:
       - application/json
-      Host:
+      host:
       - api.openai.com
-      User-Agent:
+      user-agent:
       - OpenAI/Python 1.92.0
-      X-Stainless-Arch:
+      x-stainless-arch:
       - arm64
-      X-Stainless-Async:
+      x-stainless-async:
       - 'false'
-      X-Stainless-Lang:
+      x-stainless-lang:
       - python
-      X-Stainless-OS:
+      x-stainless-os:
       - MacOS
-      X-Stainless-Package-Version:
+      x-stainless-package-version:
       - 1.92.0
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.13.3
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
       - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-DV3SAAlPfGTnwLReRQu31AixbEGVC\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1776293814,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EWn6pfGHlIfVo6GSaK2Wwqm0f2lt7\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1791483979,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"The image is a solid color red.\",\n
+        \"assistant\",\n        \"content\": \"The color of the image is red. However,
+        I can't determine the type of document based on just the color. If you have
+        more information or details about the document, I can assist further!\",\n
         \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
         null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        8513,\n    \"completion_tokens\": 8,\n    \"total_tokens\": 8521,\n    \"prompt_tokens_details\":
+        8740,\n    \"completion_tokens\": 39,\n    \"total_tokens\": 8779,\n    \"prompt_tokens_details\":
         {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_4debc47fe0\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_390d7a8a5b\"\n}\n"
     headers:
-      CF-Cache-Status:
-      - DYNAMIC
-      CF-Ray:
-      - 9ece8bd319162388-YYZ
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json
-      Date:
-      - Wed, 15 Apr 2026 22:56:55 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
       access-control-expose-headers:
       - X-Request-ID
+      - CF-Ray
+      - CF-Ray
       alt-svc:
       - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a4773176985039f6-YYZ
+      connection:
+      - keep-alive
       content-length:
-      - '841'
-      openai-organization:
-      - braintrust-data
+      - '996'
+      content-type:
+      - application/json
+      date:
+      - Thu, 08 Oct 2026 18:26:20 GMT
       openai-processing-ms:
-      - '771'
-      openai-project:
-      - proj_vsCSXafhhByzWOThMrJcZiw9
+      - '816'
       openai-version:
       - '2020-10-01'
-      set-cookie:
-      - __cf_bm=P_WiFfauTAyD9xDR.OaxGwWogC371CjBmGyIuIXWX7E-1776293814.251198-1.0.1.1-zHwQsIis._92PduFQUroQkazSiRIVn3oi6xR32gvJd2cluvxTa_dg.9S02GlAEp9nx3GiT9zcWv4Aq0B1qgZZbKM35mskBt6n9r2eoUtBImZyoY1TZoslJbXSR75xV3M;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 15 Apr 2026
-        23:26:55 GMT
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-input-images:
@@ -100,7 +96,7 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999227'
+      - '149998455'
       x-ratelimit-reset-input-images:
       - 1ms
       x-ratelimit-reset-requests:
@@ -108,7 +104,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_bb0abf20b40749d18a413b335287b75b
+      - req_98149f25211840df8c4dfade84403027
     status:
       code: 200
       message: OK

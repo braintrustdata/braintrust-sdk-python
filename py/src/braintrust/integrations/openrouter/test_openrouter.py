@@ -7,6 +7,7 @@ from braintrust import logger
 from braintrust.integrations.openrouter import OpenRouterIntegration, wrap_openrouter
 from braintrust.integrations.test_utils import assert_metrics_are_valid, verify_autoinstrument_script
 from braintrust.test_helpers import init_test_logger
+from wrapt import FunctionWrapper
 
 
 openrouter = pytest.importorskip("openrouter")
@@ -257,13 +258,20 @@ def test_openrouter_integration_setup_is_idempotent(monkeypatch):
     patched_generate = inspect.getattr_static(Embeddings, "generate")
     patched_responses_send = inspect.getattr_static(Responses, "send")
 
+    # The first setup() wraps each original method exactly once.
+    for patched, original in (
+        (patched_send, first_send),
+        (patched_generate, first_generate),
+        (patched_responses_send, first_responses_send),
+    ):
+        assert isinstance(patched, FunctionWrapper)
+        assert patched.__wrapped__ is original
+
+    # The second setup() must not re-wrap.
     assert OpenRouterIntegration.setup()
     assert inspect.getattr_static(Chat, "send") is patched_send
     assert inspect.getattr_static(Embeddings, "generate") is patched_generate
     assert inspect.getattr_static(Responses, "send") is patched_responses_send
-    assert patched_send is not None
-    assert patched_generate is not None
-    assert patched_responses_send is not None
 
     monkeypatch.setattr(Chat, "send", first_send)
     monkeypatch.setattr(Embeddings, "generate", first_generate)

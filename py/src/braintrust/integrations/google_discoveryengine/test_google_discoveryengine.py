@@ -69,12 +69,6 @@ def DATASTORE(DATASTORE_CONFIG):
     return DATASTORE_CONFIG.split("/dataStores/")[1].split("/")[0]
 
 
-@pytest.fixture
-def vcr_cassette_name(request):
-    marker = request.node.get_closest_marker("vcr")
-    return marker.args[0] if marker and marker.args else request.node.name
-
-
 @pytest.fixture(scope="module")
 def vcr_config():
     return {**get_vcr_config(), "match_on": ["method", "scheme", "host", "port", "path", "query", "body"]}
@@ -114,7 +108,7 @@ def rank_request(LOCATION):
     }
 
 
-@pytest.mark.vcr("test_rank.yaml")
+@pytest.mark.vcr(cassette_name="test_rank")
 @pytest.mark.parametrize("mode", ["manual", "manual_then_setup", "setup_then_manual"])
 def test_rank(memory_logger, credentials, rank_request, mode):
     from braintrust.integrations.google_discoveryengine import (
@@ -399,7 +393,7 @@ def test_patch_scope():
         assert not hasattr(target.__wrapped__, "__wrapped__")
 
 
-@pytest.mark.vcr("test_answer_query[True].yaml")
+@pytest.mark.vcr(cassette_name="test_answer_query[True]")
 @pytest.mark.parametrize("consume", ["close", "abandon", "unstarted"])
 def test_stream_lifecycle(memory_logger, credentials, SERVING_CONFIG, consume):
     from braintrust import current_span, start_span
@@ -484,7 +478,7 @@ def test_answer_requested_model(memory_logger, credentials, asynchronous_mode, S
         assert spans[0]["metadata"]["model"] == "stable"
 
 
-@pytest.mark.vcr("test_rank.yaml")
+@pytest.mark.vcr(cassette_name="test_rank")
 def test_normalization_failure_does_not_change_result(memory_logger, credentials, monkeypatch, rank_request):
     from braintrust.integrations.google_discoveryengine import setup_google_discoveryengine, tracing
 
