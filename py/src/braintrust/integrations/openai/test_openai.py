@@ -128,46 +128,61 @@ def _supports_responses_access_programs() -> bool:
 async def test_openai_chat_metrics(memory_logger, is_async):
     assert not memory_logger.pop()
 
-    unwrapped_client = _client(is_async)
-    wrapped_client = wrap_openai(_client(is_async))
-    clients = [unwrapped_client, wrapped_client]
+    client = wrap_openai(_client(is_async))
+    start = time.time()
+    response = await _call(
+        is_async,
+        client.chat.completions.create,
+        model=TEST_MODEL,
+        messages=[{"role": "user", "content": TEST_PROMPT}],
+        extra_headers={RAW_RESPONSE_HEADER: "true"},
+    )
+    end = time.time()
 
-    for client in clients:
-        start = time.time()
-        response = await _call(
-            is_async,
-            client.chat.completions.create,
-            model=TEST_MODEL,
-            messages=[{"role": "user", "content": TEST_PROMPT}],
-            extra_headers={RAW_RESPONSE_HEADER: "true"},
-        )
-        end = time.time()
+    assert response
+    assert response.headers
 
-        assert response
-        assert response.headers
+    parsed_response = response.parse()
+    assert parsed_response.choices[0].message.content
+    assert (
+        "24" in parsed_response.choices[0].message.content
+        or "twenty-four" in parsed_response.choices[0].message.content.lower()
+    )
 
-        parsed_response = response.parse()
-        assert parsed_response.choices[0].message.content
-        assert (
-            "24" in parsed_response.choices[0].message.content
-            or "twenty-four" in parsed_response.choices[0].message.content.lower()
-        )
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span
+    assert span["context"]["span_origin"]["instrumentation"]["name"] == "openai-auto"
+    metrics = span["metrics"]
+    assert_metrics_are_valid(metrics, start, end)
+    assert TEST_MODEL in span["metadata"]["model"]
+    assert span["metadata"]["provider"] == "openai"
+    assert span["input"] == [{"role": "user", "content": TEST_PROMPT}]
 
-        if not _is_wrapped(client):
-            assert not memory_logger.pop()
-            continue
 
-        # Verify spans were created with wrapped client
-        spans = memory_logger.pop()
-        assert len(spans) == 1
-        span = spans[0]
-        assert span
-        assert span["context"]["span_origin"]["instrumentation"]["name"] == "openai-auto"
-        metrics = span["metrics"]
-        assert_metrics_are_valid(metrics, start, end)
-        assert TEST_MODEL in span["metadata"]["model"]
-        assert span["metadata"]["provider"] == "openai"
-        assert span["input"] == [{"role": "user", "content": TEST_PROMPT}]
+@pytest.mark.asyncio
+@pytest.mark.vcr
+@pytest.mark.parametrize(
+    "is_async,vcr_cassette_name",
+    [(False, "test_openai_chat_metrics[sync]"), (True, "test_openai_chat_metrics[async]")],
+    ids=["sync", "async"],
+)
+async def test_unwrapped_client_emits_no_spans(memory_logger, is_async, vcr_cassette_name):
+    """A plain OpenAI client is untouched by wrap_openai() elsewhere and logs nothing."""
+    assert not memory_logger.pop()
+
+    client = _client(is_async)
+    assert not _is_wrapped(client)
+    response = await _call(
+        is_async,
+        client.chat.completions.create,
+        model=TEST_MODEL,
+        messages=[{"role": "user", "content": TEST_PROMPT}],
+    )
+
+    assert response.choices[0].message.content
+    assert not memory_logger.pop()
 
 
 @sync_async
@@ -176,24 +191,6 @@ async def test_openai_chat_metrics(memory_logger, is_async):
 async def test_openai_responses_metrics(memory_logger, is_async):
     assert not memory_logger.pop()
 
-    # First test with an unwrapped client
-    unwrapped_client = _client(is_async)
-    unwrapped_response = await _call(
-        is_async,
-        unwrapped_client.responses.create,
-        model=TEST_MODEL,
-        input=TEST_PROMPT,
-        instructions="Just the number please",
-    )
-    assert unwrapped_response
-    assert unwrapped_response.output
-    assert len(unwrapped_response.output) > 0
-    unwrapped_content = unwrapped_response.output[0].content[0].text
-
-    # No spans should be generated with unwrapped client
-    assert not memory_logger.pop()
-
-    # Now test with wrapped client
     client = wrap_openai(_client(is_async))
     start = time.time()
     response = await _call(
@@ -210,9 +207,6 @@ async def test_openai_responses_metrics(memory_logger, is_async):
     assert response.output
     assert len(response.output) > 0
     wrapped_content = response.output[0].content[0].text
-
-    # Both should contain a numeric response for the math question
-    assert "24" in unwrapped_content or "twenty-four" in unwrapped_content.lower()
     assert "24" in wrapped_content or "twenty-four" in wrapped_content.lower()
 
     # Verify spans were created with wrapped client
@@ -243,20 +237,6 @@ async def test_openai_responses_metrics(memory_logger, is_async):
         value: int
         reasoning: str
 
-    # First test with unwrapped client - should work but no spans
-    parse_response = await _call(
-        is_async, unwrapped_client.responses.parse, model=TEST_MODEL, input=TEST_PROMPT, text_format=NumberAnswer
-    )
-    assert parse_response
-    # Access the structured output via text_format
-    assert parse_response.output_parsed
-    assert parse_response.output_parsed.value == 24
-    assert parse_response.output_parsed.reasoning
-
-    # No spans should be generated with unwrapped client
-    assert not memory_logger.pop()
-
-    # Now test with wrapped client - should generate spans
     start = time.time()
     parse_response = await _call(
         is_async, client.responses.parse, model=TEST_MODEL, input=TEST_PROMPT, text_format=NumberAnswer
@@ -583,26 +563,12 @@ def test_openai_agents_session_stream(memory_logger, is_async):
 async def test_openai_embeddings(memory_logger, is_async):
     assert not memory_logger.pop()
 
-    client = _client(is_async)
+    client = wrap_openai(_client(is_async))
     response = await _call(is_async, client.embeddings.create, model="text-embedding-ada-002", input="This is a test")
 
     assert response
     assert response.data
     assert response.data[0].embedding
-
-    assert not memory_logger.pop()
-
-    client2 = wrap_openai(_client(is_async))
-
-    start = time.time()
-    response2 = await _call(
-        is_async, client2.embeddings.create, model="text-embedding-ada-002", input="This is a test"
-    )
-    end = time.time()
-
-    assert response2
-    assert response2.data
-    assert response2.data[0].embedding
 
     spans = memory_logger.pop()
     assert len(spans) == 1
@@ -617,51 +583,44 @@ async def test_openai_embeddings(memory_logger, is_async):
 def test_openai_chat_streaming_sync(memory_logger):
     assert not memory_logger.pop()
 
-    clients = [(openai.OpenAI(), False), (wrap_openai(openai.OpenAI()), True)]
+    client = wrap_openai(openai.OpenAI())
+    start = time.time()
 
-    for client, is_wrapped in clients:
-        start = time.time()
+    stream = client.chat.completions.create(
+        model=TEST_MODEL,
+        messages=[{"role": "user", "content": TEST_PROMPT}],
+        stream=True,
+        stream_options={"include_usage": True},
+    )
 
-        stream = client.chat.completions.create(
-            model=TEST_MODEL,
-            messages=[{"role": "user", "content": TEST_PROMPT}],
-            stream=True,
-            stream_options={"include_usage": True},
-        )
+    chunks = []
+    for chunk in stream:
+        chunks.append(chunk)
+    end = time.time()
 
-        chunks = []
-        for chunk in stream:
-            chunks.append(chunk)
-        end = time.time()
+    # Verify streaming works
+    assert chunks
+    assert len(chunks) > 1
 
-        # Verify streaming works
-        assert chunks
-        assert len(chunks) > 1
+    # Concatenate content from chunks to verify
+    content = ""
+    for chunk in chunks:
+        if chunk.choices and chunk.choices[0].delta.content:
+            content += chunk.choices[0].delta.content
 
-        # Concatenate content from chunks to verify
-        content = ""
-        for chunk in chunks:
-            if chunk.choices and chunk.choices[0].delta.content:
-                content += chunk.choices[0].delta.content
+    # Make sure we got a valid answer in the content
+    assert "24" in content or "twenty-four" in content.lower()
 
-        # Make sure we got a valid answer in the content
-        assert "24" in content or "twenty-four" in content.lower()
-
-        if not is_wrapped:
-            assert not memory_logger.pop()
-            continue
-
-        # Verify spans were created with wrapped client
-        spans = memory_logger.pop()
-        assert len(spans) == 1
-        span = spans[0]
-        assert span
-        metrics = span["metrics"]
-        assert_metrics_are_valid(metrics, start, end)
-        assert TEST_MODEL in span["metadata"]["model"]
-        # assert span["metadata"]["provider"] == "openai"
-        assert TEST_PROMPT in str(span["input"])
-        assert "24" in str(span["output"]) or "twenty-four" in str(span["output"]).lower()
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span
+    metrics = span["metrics"]
+    assert_metrics_are_valid(metrics, start, end)
+    assert TEST_MODEL in span["metadata"]["model"]
+    # assert span["metadata"]["provider"] == "openai"
+    assert TEST_PROMPT in str(span["input"])
+    assert "24" in str(span["output"]) or "twenty-four" in str(span["output"]).lower()
 
 
 @pytest.mark.vcr
@@ -699,49 +658,43 @@ async def test_openai_chat_stream_helper(memory_logger, is_async):
     if not hasattr(_client(is_async).chat.completions, "stream"):
         pytest.skip("openai.chat.completions.stream is not available in this SDK version")
 
-    clients = [(_client(is_async), False), (wrap_openai(_client(is_async)), True)]
+    client = wrap_openai(_client(is_async))
+    start = time.time()
 
-    for client, is_wrapped in clients:
-        start = time.time()
+    stream_kwargs = dict(
+        model=TEST_MODEL,
+        messages=[{"role": "user", "content": TEST_PROMPT}],
+        stream_options={"include_usage": True},
+    )
+    if is_async:
+        async with client.chat.completions.stream(**stream_kwargs) as stream:
+            events = await _drain(is_async, stream)
+            final = await stream.get_final_completion()
+    else:
+        with client.chat.completions.stream(**stream_kwargs) as stream:
+            events = await _drain(is_async, stream)
+            final = stream.get_final_completion()
+    end = time.time()
 
-        stream_kwargs = dict(
-            model=TEST_MODEL,
-            messages=[{"role": "user", "content": TEST_PROMPT}],
-            stream_options={"include_usage": True},
-        )
-        if is_async:
-            async with client.chat.completions.stream(**stream_kwargs) as stream:
-                events = await _drain(is_async, stream)
-                final = await stream.get_final_completion()
-        else:
-            with client.chat.completions.stream(**stream_kwargs) as stream:
-                events = await _drain(is_async, stream)
-                final = stream.get_final_completion()
-        end = time.time()
+    event_types = [event.type for event in events]
+    content = "".join(event.delta for event in events if event.type == "content.delta")
+    assert event_types
+    assert "content.delta" in event_types
+    assert final.choices[0].message.content
+    assert "24" in final.choices[0].message.content or "twenty-four" in final.choices[0].message.content.lower()
+    assert "24" in content or "twenty-four" in content.lower()
 
-        event_types = [event.type for event in events]
-        content = "".join(event.delta for event in events if event.type == "content.delta")
-        assert event_types
-        assert "content.delta" in event_types
-        assert final.choices[0].message.content
-        assert "24" in final.choices[0].message.content or "twenty-four" in final.choices[0].message.content.lower()
-        assert "24" in content or "twenty-four" in content.lower()
-
-        if not is_wrapped:
-            assert not memory_logger.pop()
-            continue
-
-        spans = memory_logger.pop()
-        assert len(spans) == 1
-        span = spans[0]
-        metrics = span["metrics"]
-        assert_metrics_are_valid(metrics, start, end)
-        assert span["metadata"]["stream"] == True
-        assert "extra_headers" not in span["metadata"]
-        assert TEST_MODEL in span["metadata"]["model"]
-        assert span["metadata"]["provider"] == "openai"
-        assert TEST_PROMPT in str(span["input"])
-        assert "24" in str(span["output"]) or "twenty-four" in str(span["output"]).lower()
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    metrics = span["metrics"]
+    assert_metrics_are_valid(metrics, start, end)
+    assert span["metadata"]["stream"] == True
+    assert "extra_headers" not in span["metadata"]
+    assert TEST_MODEL in span["metadata"]["model"]
+    assert span["metadata"]["provider"] == "openai"
+    assert TEST_PROMPT in str(span["input"])
+    assert "24" in str(span["output"]) or "twenty-four" in str(span["output"]).lower()
 
 
 @pytest.mark.vcr
@@ -933,58 +886,46 @@ async def test_openai_client_error(memory_logger, is_async):
 async def test_openai_chat_streaming_async(memory_logger):
     assert not memory_logger.pop()
 
-    clients = [(AsyncOpenAI(), False), (wrap_openai(AsyncOpenAI()), True)]
+    client = wrap_openai(AsyncOpenAI())
+    start = time.time()
 
-    for client, is_wrapped in clients:
-        start = time.time()
+    async with client.chat.completions.with_streaming_response.create(
+        model=TEST_MODEL,
+        messages=[{"role": "user", "content": TEST_PROMPT}],
+        stream=True,
+        stream_options={"include_usage": True},
+    ) as raw_response:
+        assert raw_response.headers
+        parse_result = raw_response.parse()
+        assert inspect.isawaitable(parse_result)
+        stream = await parse_result
+        assert stream.response
+        chunks = [chunk async for chunk in stream]
+    end = time.time()
 
-        create_kwargs = {
-            "model": TEST_MODEL,
-            "messages": [{"role": "user", "content": TEST_PROMPT}],
-            "stream": True,
-            "stream_options": {"include_usage": True},
-        }
-        if is_wrapped:
-            async with client.chat.completions.with_streaming_response.create(**create_kwargs) as raw_response:
-                assert raw_response.headers
-                parse_result = raw_response.parse()
-                assert inspect.isawaitable(parse_result)
-                stream = await parse_result
-                assert stream.response
-                chunks = [chunk async for chunk in stream]
-        else:
-            stream = await client.chat.completions.create(**create_kwargs)
-            chunks = [chunk async for chunk in stream]
-        end = time.time()
+    assert chunks
+    assert len(chunks) > 1
 
-        assert chunks
-        assert len(chunks) > 1
+    # Concatenate content from chunks to verify
+    content = ""
+    for chunk in chunks:
+        if chunk.choices and chunk.choices[0].delta.content:
+            content += chunk.choices[0].delta.content
 
-        # Concatenate content from chunks to verify
-        content = ""
-        for chunk in chunks:
-            if chunk.choices and chunk.choices[0].delta.content:
-                content += chunk.choices[0].delta.content
+    # Make sure we got a valid answer in the content
+    assert "24" in content or "twenty-four" in content.lower()
 
-        # Make sure we got a valid answer in the content
-        assert "24" in content or "twenty-four" in content.lower()
-
-        if not is_wrapped:
-            assert not memory_logger.pop()
-            continue
-
-        # Verify spans were created with wrapped client
-        spans = memory_logger.pop()
-        assert len(spans) == 1
-        span = spans[0]
-        assert span
-        metrics = span["metrics"]
-        assert_metrics_are_valid(metrics, start, end)
-        assert span["metadata"]["stream"] == True
-        assert TEST_MODEL in span["metadata"]["model"]
-        # assert span["metadata"]["provider"] == "openai"
-        assert TEST_PROMPT in str(span["input"])
-        assert "24" in str(span["output"]) or "twenty-four" in str(span["output"]).lower()
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span
+    metrics = span["metrics"]
+    assert_metrics_are_valid(metrics, start, end)
+    assert span["metadata"]["stream"] == True
+    assert TEST_MODEL in span["metadata"]["model"]
+    # assert span["metadata"]["provider"] == "openai"
+    assert TEST_PROMPT in str(span["input"])
+    assert "24" in str(span["output"]) or "twenty-four" in str(span["output"]).lower()
 
 
 @pytest.mark.asyncio
@@ -1021,49 +962,43 @@ async def test_openai_chat_async_context_manager(memory_logger):
     """Test async context manager behavior for chat completions streams."""
     assert not memory_logger.pop()
 
-    clients = [(AsyncOpenAI(), False), (wrap_openai(AsyncOpenAI()), True)]
+    client = wrap_openai(AsyncOpenAI())
+    start = time.time()
+    stream = await client.chat.completions.create(
+        model=TEST_MODEL,
+        messages=[{"role": "user", "content": TEST_PROMPT}],
+        stream=True,
+        stream_options={"include_usage": True},
+    )
 
-    for client, is_wrapped in clients:
-        start = time.time()
-        stream = await client.chat.completions.create(
-            model=TEST_MODEL,
-            messages=[{"role": "user", "content": TEST_PROMPT}],
-            stream=True,
-            stream_options={"include_usage": True},
-        )
+    # Test the context manager behavior
+    chunks = []
+    async with stream as s:
+        async for chunk in s:
+            chunks.append(chunk)
+    end = time.time()
 
-        # Test the context manager behavior
-        chunks = []
-        async with stream as s:
-            async for chunk in s:
-                chunks.append(chunk)
-        end = time.time()
+    # Verify we got chunks from the stream
+    assert chunks
+    assert len(chunks) > 1
 
-        # Verify we got chunks from the stream
-        assert chunks
-        assert len(chunks) > 1
+    # Concatenate content from chunks to verify
+    content = ""
+    for chunk in chunks:
+        if chunk.choices and chunk.choices[0].delta.content:
+            content += chunk.choices[0].delta.content
 
-        # Concatenate content from chunks to verify
-        content = ""
-        for chunk in chunks:
-            if chunk.choices and chunk.choices[0].delta.content:
-                content += chunk.choices[0].delta.content
+    # Make sure we got a valid answer in the content
+    assert "24" in content or "twenty-four" in content.lower()
 
-        # Make sure we got a valid answer in the content
-        assert "24" in content or "twenty-four" in content.lower()
-
-        if not is_wrapped:
-            assert not memory_logger.pop()
-            continue
-
-        # Check metrics
-        spans = memory_logger.pop()
-        assert len(spans) == 1
-        span = spans[0]
-        metrics = span["metrics"]
-        assert_metrics_are_valid(metrics, start, end)
-        assert span["metadata"]["stream"] == True
-        assert "24" in str(span["output"]) or "twenty-four" in str(span["output"]).lower()
+    # Check metrics
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    metrics = span["metrics"]
+    assert_metrics_are_valid(metrics, start, end)
+    assert span["metadata"]["stream"] == True
+    assert "24" in str(span["output"]) or "twenty-four" in str(span["output"]).lower()
 
 
 @pytest.mark.asyncio
@@ -1136,9 +1071,7 @@ async def test_openai_response_streaming_async(memory_logger):
     """Test the newer responses API with streaming."""
     assert not memory_logger.pop()
 
-    unwrapped_client = openai.AsyncOpenAI()
-    wrapped_client = wrap_openai(openai.AsyncOpenAI())
-    clients = [unwrapped_client, wrapped_client]
+    client = wrap_openai(openai.AsyncOpenAI())
 
     # OpenAI 1.x MCP parsing is incompatible with Python 3.14.
     tools = []
@@ -1153,46 +1086,42 @@ async def test_openai_response_streaming_async(memory_logger):
             }
         ]
 
-    for client in clients:
-        start = time.time()
+    start = time.time()
 
-        stream = await client.responses.create(
-            model=TEST_MODEL, input="What's 12 + 12?", stream=True, **({"tools": tools} if tools else {})
-        )
+    stream = await client.responses.create(
+        model=TEST_MODEL, input="What's 12 + 12?", stream=True, **({"tools": tools} if tools else {})
+    )
 
-        chunks = []
-        mcp_items = []
-        async for chunk in stream:
-            if chunk.type == "response.output_text.delta":
-                chunks.append(chunk.delta)
-            if chunk.type == "response.output_item.done" and chunk.item.type == "mcp_list_tools":
-                assert not hasattr(chunk.item, "status")
-                mcp_items.append(chunk.item.model_dump(exclude_none=True))
-        end = time.time()
-        output = "".join(chunks)
+    chunks = []
+    mcp_items = []
+    async for chunk in stream:
+        if chunk.type == "response.output_text.delta":
+            chunks.append(chunk.delta)
+        if chunk.type == "response.output_item.done" and chunk.item.type == "mcp_list_tools":
+            assert not hasattr(chunk.item, "status")
+            mcp_items.append(chunk.item.model_dump(exclude_none=True))
+    end = time.time()
+    output = "".join(chunks)
 
-        assert chunks
-        assert len(chunks) > 1
+    assert chunks
+    assert len(chunks) > 1
 
-        assert "24" in output
-        if tools:
-            assert mcp_items
+    assert "24" in output
+    if tools:
+        assert mcp_items
 
-        if not _is_wrapped(client):
-            assert not memory_logger.pop()
-            continue
-        # verify the span is created
-        spans = memory_logger.pop()
-        assert len(spans) == 1
-        span = spans[0]
-        metrics = span["metrics"]
-        assert_metrics_are_valid(metrics, start, end)
-        assert span["metadata"]["stream"] == True
-        assert "What's 12 + 12?" in str(span["input"])
-        assert "24" in str(span["output"])
+    # verify the span is created
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    metrics = span["metrics"]
+    assert_metrics_are_valid(metrics, start, end)
+    assert span["metadata"]["stream"] == True
+    assert "What's 12 + 12?" in str(span["input"])
+    assert "24" in str(span["output"])
 
-        for item in mcp_items:
-            assert item in span["output"]
+    for item in mcp_items:
+        assert item in span["output"]
 
 
 @sync_async
@@ -1202,39 +1131,32 @@ async def test_openai_responses_stream_helper(memory_logger, is_async):
     """responses.stream() should preserve the helper interface and emit a tracing span."""
     assert not memory_logger.pop()
 
-    unwrapped_client = _client(is_async)
-    if not hasattr(unwrapped_client.responses, "stream"):
+    if not hasattr(_client(is_async).responses, "stream"):
         pytest.skip("openai.responses.stream is not available in this SDK version")
-
-    async def run_stream(client):
-        stream_kwargs = dict(
-            model=TEST_MODEL,
-            input=TEST_PROMPT,
-            instructions="Just the number please",
-        )
-        if is_async:
-            async with client.responses.stream(**stream_kwargs) as stream:
-                events = await _drain(is_async, stream)
-                final_response = await stream.get_final_response()
-        else:
-            with client.responses.stream(**stream_kwargs) as stream:
-                events = await _drain(is_async, stream)
-                final_response = stream.get_final_response()
-
-        event_types = [event.type for event in events]
-        output = "".join(event.delta for event in events if event.type == "response.output_text.delta")
-        assert "response.output_text.delta" in event_types
-        assert final_response.output_text
-        assert "24" in output or "twenty-four" in output.lower()
-        assert "24" in final_response.output_text or "twenty-four" in final_response.output_text.lower()
-
-    await run_stream(unwrapped_client)
-    assert not memory_logger.pop()
 
     client = wrap_openai(_client(is_async))
     start = time.time()
-    await run_stream(client)
+    stream_kwargs = dict(
+        model=TEST_MODEL,
+        input=TEST_PROMPT,
+        instructions="Just the number please",
+    )
+    if is_async:
+        async with client.responses.stream(**stream_kwargs) as stream:
+            events = await _drain(is_async, stream)
+            final_response = await stream.get_final_response()
+    else:
+        with client.responses.stream(**stream_kwargs) as stream:
+            events = await _drain(is_async, stream)
+            final_response = stream.get_final_response()
     end = time.time()
+
+    event_types = [event.type for event in events]
+    output = "".join(event.delta for event in events if event.type == "response.output_text.delta")
+    assert "response.output_text.delta" in event_types
+    assert final_response.output_text
+    assert "24" in output or "twenty-four" in output.lower()
+    assert "24" in final_response.output_text or "twenty-four" in final_response.output_text.lower()
 
     spans = memory_logger.pop()
     assert len(spans) == 1
@@ -1489,23 +1411,6 @@ async def test_openai_responses_with_raw_response_create(memory_logger, is_async
     """Test that with_raw_response.create returns HTTP response headers AND generates a tracing span."""
     assert not memory_logger.pop()
 
-    # Unwrapped client: with_raw_response should work but produce no spans.
-    unwrapped_client = _client(is_async)
-    raw = await _call(
-        is_async,
-        unwrapped_client.responses.with_raw_response.create,
-        model=TEST_MODEL,
-        input=TEST_PROMPT,
-        instructions="Just the number please",
-    )
-    assert raw.headers  # HTTP response headers are accessible
-    response = raw.parse()
-    assert response.output
-    content = response.output[0].content[0].text
-    assert "24" in content or "twenty-four" in content.lower()
-    assert not memory_logger.pop()
-
-    # Wrapped client: with_raw_response should ALSO generate a span.
     client = wrap_openai(_client(is_async))
     start = time.time()
     raw = await _call(
@@ -1543,22 +1448,7 @@ def test_openai_responses_with_raw_response_create_stream(memory_logger):
     """Test that with_raw_response.create with stream=True returns headers AND generates a tracing span."""
     assert not memory_logger.pop()
 
-    # Unwrapped client: headers accessible, stream iterable via parse(), no spans.
-    unwrapped_client = openai.OpenAI()
-    raw = unwrapped_client.responses.with_raw_response.create(
-        model=TEST_MODEL,
-        input=TEST_PROMPT,
-        stream=True,
-    )
-    assert raw.headers
-    chunks = []
-    for chunk in raw.parse():
-        if chunk.type == "response.output_text.delta":
-            chunks.append(chunk.delta)
-    assert "24" in "".join(chunks) or "twenty-four" in "".join(chunks).lower()
-    assert not memory_logger.pop()
-
-    # Wrapped client: headers still accessible, parse() yields traced stream, span generated.
+    # Headers still accessible, parse() yields traced stream, span generated.
     client = wrap_openai(openai.OpenAI())
     start = time.time()
     raw = client.responses.with_raw_response.create(
@@ -1596,18 +1486,8 @@ def test_openai_responses_with_raw_response_parse(memory_logger):
         value: int
         reasoning: str
 
-    unwrapped_client = openai.OpenAI()
-    if not hasattr(unwrapped_client.responses.with_raw_response, "parse"):
+    if not hasattr(openai.OpenAI().responses.with_raw_response, "parse"):
         pytest.skip("openai.responses.with_raw_response.parse is not available in this SDK version")
-
-    raw_parse = unwrapped_client.responses.with_raw_response.parse(
-        model=TEST_MODEL, input=TEST_PROMPT, text_format=NumberAnswer
-    )
-    assert raw_parse.headers
-    parse_response = raw_parse.parse()
-    assert parse_response.output_parsed
-    assert parse_response.output_parsed.value == 24
-    assert not memory_logger.pop()
 
     client = wrap_openai(openai.OpenAI())
     start = time.time()
@@ -1636,22 +1516,7 @@ async def test_openai_responses_with_raw_response_create_stream_async(memory_log
     """Async raw-response variants preserve headers, parsing, streams, and tracing."""
     assert not memory_logger.pop()
 
-    # Unwrapped client: headers accessible, stream iterable via parse(), no spans.
-    unwrapped_client = AsyncOpenAI()
-    raw = await unwrapped_client.responses.with_raw_response.create(
-        model=TEST_MODEL,
-        input=TEST_PROMPT,
-        stream=True,
-    )
-    assert raw.headers
-    chunks = []
-    async for chunk in raw.parse():
-        if chunk.type == "response.output_text.delta":
-            chunks.append(chunk.delta)
-    assert "24" in "".join(chunks) or "twenty-four" in "".join(chunks).lower()
-    assert not memory_logger.pop()
-
-    # Wrapped client: the newer streaming-response wrapper keeps async parse() and tracing.
+    # The streaming-response wrapper keeps async parse() and tracing.
     client = wrap_openai(AsyncOpenAI())
     start = time.time()
     async with client.responses.with_streaming_response.create(
@@ -1715,78 +1580,70 @@ def test_openai_parallel_tool_calls(memory_logger):
         },
     ]
 
-    unwrapped_client = openai.OpenAI()
-    wrapped_client = wrap_openai(openai.OpenAI())
-    clients = [unwrapped_client, wrapped_client]
+    client = wrap_openai(openai.OpenAI())
 
     for stream in [False, True]:
-        for client in clients:
-            start = time.time()
+        start = time.time()
 
-            resp = client.chat.completions.create(
-                model=TEST_MODEL,
-                messages=[{"role": "user", "content": "What's the weather in New York and the time in Tokyo?"}],
-                tools=tools,
-                temperature=0,
-                stream=stream,
-                stream_options={"include_usage": True} if stream else None,
-            )
+        resp = client.chat.completions.create(
+            model=TEST_MODEL,
+            messages=[{"role": "user", "content": "What's the weather in New York and the time in Tokyo?"}],
+            tools=tools,
+            temperature=0,
+            stream=stream,
+            stream_options={"include_usage": True} if stream else None,
+        )
 
-            if stream:
-                # Consume the stream
-                for chunk in resp:  # type: ignore
-                    # Exhaust the stream
-                    pass
+        if stream:
+            # Consume the stream
+            for chunk in resp:  # type: ignore
+                # Exhaust the stream
+                pass
 
-            end = time.time()
+        end = time.time()
 
-            if not _is_wrapped(client):
-                assert not memory_logger.pop()
-                continue
+        spans = memory_logger.pop()
+        assert len(spans) == 1
+        span = spans[0]
 
-            # Verify spans were created with wrapped client
-            spans = memory_logger.pop()
-            assert len(spans) == 1
-            span = spans[0]
-
-            # Validate the span structure
-            assert_dict_matches(
-                span,
-                {
-                    "span_attributes": {"type": "llm", "name": "Chat Completion"},
-                    "metadata": {
-                        "model": TEST_MODEL,
-                        "provider": "openai",
-                        "stream": stream,
-                        "tools": lambda tools_list: (
-                            len(tools_list) == 2
-                            and any(tool.get("function", {}).get("name") == "get_weather" for tool in tools_list)
-                            and any(tool.get("function", {}).get("name") == "get_time" for tool in tools_list)
-                        ),
-                    },
-                    "input": lambda inp: "What's the weather in New York and the time in Tokyo?" in str(inp),
-                    "metrics": lambda m: assert_metrics_are_valid(m, start, end) is None,
+        # Validate the span structure
+        assert_dict_matches(
+            span,
+            {
+                "span_attributes": {"type": "llm", "name": "Chat Completion"},
+                "metadata": {
+                    "model": TEST_MODEL,
+                    "provider": "openai",
+                    "stream": stream,
+                    "tools": lambda tools_list: (
+                        len(tools_list) == 2
+                        and any(tool.get("function", {}).get("name") == "get_weather" for tool in tools_list)
+                        and any(tool.get("function", {}).get("name") == "get_time" for tool in tools_list)
+                    ),
                 },
-            )
+                "input": lambda inp: "What's the weather in New York and the time in Tokyo?" in str(inp),
+                "metrics": lambda m: assert_metrics_are_valid(m, start, end) is None,
+            },
+        )
 
-            # Verify tool calls are in the output (if present)
-            if span.get("output") and isinstance(span["output"], list) and len(span["output"]) > 0:
-                message = span["output"][0].get("message", {})
-                tool_calls = message.get("tool_calls")
-                if tool_calls and len(tool_calls) >= 2:
-                    # Extract tool names, handling cases where function.name might be None
-                    tool_names = []
-                    for call in tool_calls:
-                        func = call.get("function", {})
-                        name = func.get("name") if isinstance(func, dict) else None
-                        if name:
-                            tool_names.append(name)
+        # Verify tool calls are in the output (if present)
+        if span.get("output") and isinstance(span["output"], list) and len(span["output"]) > 0:
+            message = span["output"][0].get("message", {})
+            tool_calls = message.get("tool_calls")
+            if tool_calls and len(tool_calls) >= 2:
+                # Extract tool names, handling cases where function.name might be None
+                tool_names = []
+                for call in tool_calls:
+                    func = call.get("function", {})
+                    name = func.get("name") if isinstance(func, dict) else None
+                    if name:
+                        tool_names.append(name)
 
-                    # Check if we have the expected tools (only if names are available)
-                    if tool_names:
-                        assert "get_weather" in tool_names or "get_time" in tool_names, (
-                            f"Expected weather/time tools, got: {tool_names}"
-                        )
+                # Check if we have the expected tools (only if names are available)
+                if tool_names:
+                    assert "get_weather" in tool_names or "get_time" in tool_names, (
+                        f"Expected weather/time tools, got: {tool_names}"
+                    )
 
 
 def _is_wrapped(client):
@@ -1881,31 +1738,25 @@ def test_openai_images_generate(memory_logger):
     assert not memory_logger.pop()
 
     prompt = "A tiny red square on a white background"
-    clients = [(openai.OpenAI(), False), (wrap_openai(openai.OpenAI()), True)]
+    client = wrap_openai(openai.OpenAI())
+    response = client.images.generate(
+        model="gpt-image-1-mini",
+        prompt=prompt,
+        size="1024x1024",
+    )
 
-    for client, is_wrapped in clients:
-        response = client.images.generate(
-            model="gpt-image-1-mini",
-            prompt=prompt,
-            size="1024x1024",
-        )
+    assert response
+    assert response.data
+    assert response.data[0].b64_json or response.data[0].url
 
-        assert response
-        assert response.data
-        assert response.data[0].b64_json or response.data[0].url
-
-        if not is_wrapped:
-            assert not memory_logger.pop()
-            continue
-
-        spans = memory_logger.pop()
-        assert len(spans) == 1
-        span = spans[0]
-        assert span["metadata"]["model"] == "gpt-image-1-mini"
-        assert span["metadata"]["provider"] == "openai"
-        assert span["input"] == prompt
-        assert span["output"]["images_count"] == 1
-        assert span["metrics"]["duration"] >= 0
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == "gpt-image-1-mini"
+    assert span["metadata"]["provider"] == "openai"
+    assert span["input"] == prompt
+    assert span["output"]["images_count"] == 1
+    assert span["metrics"]["duration"] >= 0
 
 
 def test_materialize_logged_file_input_preserves_unrecognized_values():
@@ -1927,36 +1778,30 @@ def test_openai_images_edit(memory_logger):
         image_path = os.path.join(temp_dir, "braintrust-test-image.png")
         _write_test_png(image_path)
 
-        clients = [(openai.OpenAI(), False), (wrap_openai(openai.OpenAI()), True)]
+        client = wrap_openai(openai.OpenAI())
+        with open(image_path, "rb") as image_file:
+            response = client.images.edit(
+                model="gpt-image-1-mini",
+                prompt=prompt,
+                image=image_file,
+                size="1024x1024",
+            )
 
-        for client, is_wrapped in clients:
-            with open(image_path, "rb") as image_file:
-                response = client.images.edit(
-                    model="gpt-image-1-mini",
-                    prompt=prompt,
-                    image=image_file,
-                    size="1024x1024",
-                )
+        assert response
+        assert response.data
+        assert response.data[0].b64_json or response.data[0].url
 
-            assert response
-            assert response.data
-            assert response.data[0].b64_json or response.data[0].url
-
-            if not is_wrapped:
-                assert not memory_logger.pop()
-                continue
-
-            spans = memory_logger.pop()
-            assert len(spans) == 1
-            span = spans[0]
-            assert span["metadata"]["model"] == "gpt-image-1-mini"
-            assert span["metadata"]["provider"] == "openai"
-            assert span["input"]["prompt"] == prompt
-            assert isinstance(span["input"]["image"], Attachment)
-            assert span["input"]["image"].reference["filename"] == "braintrust-test-image.png"
-            assert span["input"]["image"].reference["content_type"] == "image/png"
-            assert span["output"]["images_count"] == 1
-            assert span["metrics"]["duration"] >= 0
+        spans = memory_logger.pop()
+        assert len(spans) == 1
+        span = spans[0]
+        assert span["metadata"]["model"] == "gpt-image-1-mini"
+        assert span["metadata"]["provider"] == "openai"
+        assert span["input"]["prompt"] == prompt
+        assert isinstance(span["input"]["image"], Attachment)
+        assert span["input"]["image"].reference["filename"] == "braintrust-test-image.png"
+        assert span["input"]["image"].reference["content_type"] == "image/png"
+        assert span["output"]["images_count"] == 1
+        assert span["metrics"]["duration"] >= 0
 
 
 @sync_async
@@ -1965,8 +1810,7 @@ def test_openai_images_edit(memory_logger):
 async def test_openai_audio_speech(memory_logger, is_async):
     assert not memory_logger.pop()
 
-    # Unwrapped client should produce no spans
-    client = _client(is_async)
+    client = wrap_openai(_client(is_async))
     response = await _call(
         is_async,
         client.audio.speech.create,
@@ -1975,18 +1819,6 @@ async def test_openai_audio_speech(memory_logger, is_async):
         input="Hello, this is a test.",
     )
     assert response
-    assert not memory_logger.pop()
-
-    # Wrapped client should produce a span
-    client2 = wrap_openai(_client(is_async))
-    response2 = await _call(
-        is_async,
-        client2.audio.speech.create,
-        model="tts-1",
-        voice="alloy",
-        input="Hello, this is a test.",
-    )
-    assert response2
 
     spans = memory_logger.pop()
     assert len(spans) == 1
@@ -2004,18 +1836,10 @@ async def test_openai_audio_speech(memory_logger, is_async):
 async def test_openai_audio_transcription(memory_logger, is_async):
     assert not memory_logger.pop()
 
-    # Unwrapped client should produce no spans
-    client = _client(is_async)
+    client = wrap_openai(_client(is_async))
     with open(TEST_AUDIO_FILE, "rb") as f:
         response = await _call(is_async, client.audio.transcriptions.create, model="whisper-1", file=f)
     assert response
-    assert not memory_logger.pop()
-
-    # Wrapped client should produce a span
-    client2 = wrap_openai(_client(is_async))
-    with open(TEST_AUDIO_FILE, "rb") as f:
-        response2 = await _call(is_async, client2.audio.transcriptions.create, model="whisper-1", file=f)
-    assert response2
 
     spans = memory_logger.pop()
     assert len(spans) == 1
@@ -2126,18 +1950,10 @@ def test_openai_audio_transcription_text_format(memory_logger):
     """When response_format='text', the API returns a plain string (not JSON)."""
     assert not memory_logger.pop()
 
-    # Unwrapped client should produce no spans
-    client = openai.OpenAI()
+    client = wrap_openai(openai.OpenAI())
     with open(TEST_AUDIO_FILE, "rb") as f:
         response = client.audio.transcriptions.create(model="whisper-1", file=f, response_format="text")
     assert response
-    assert not memory_logger.pop()
-
-    # Wrapped client should produce a span with the plain-text output
-    client2 = wrap_openai(openai.OpenAI())
-    with open(TEST_AUDIO_FILE, "rb") as f:
-        response2 = client2.audio.transcriptions.create(model="whisper-1", file=f, response_format="text")
-    assert response2
 
     spans = memory_logger.pop()
     assert len(spans) == 1
@@ -2154,18 +1970,10 @@ def test_openai_audio_transcription_text_format(memory_logger):
 async def test_openai_audio_translation(memory_logger, is_async):
     assert not memory_logger.pop()
 
-    # Unwrapped client should produce no spans
-    client = _client(is_async)
+    client = wrap_openai(_client(is_async))
     with open(TEST_AUDIO_FILE, "rb") as f:
         response = await _call(is_async, client.audio.translations.create, model="whisper-1", file=f)
     assert response
-    assert not memory_logger.pop()
-
-    # Wrapped client should produce a span
-    client2 = wrap_openai(_client(is_async))
-    with open(TEST_AUDIO_FILE, "rb") as f:
-        response2 = await _call(is_async, client2.audio.translations.create, model="whisper-1", file=f)
-    assert response2
 
     spans = memory_logger.pop()
     assert len(spans) == 1
