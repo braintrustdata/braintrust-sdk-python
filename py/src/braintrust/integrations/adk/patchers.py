@@ -12,6 +12,8 @@ from .tracing import (
     _mcp_tool_run_async_wrapper_async,
     _runner_run_async_wrapper,
     _tool_call_async_wrapper,
+    _workflow_node_run_wrapper,
+    _workflow_tool_node_run_impl_wrapper,
 )
 
 
@@ -83,6 +85,29 @@ class FlowRunAsyncPatcher(CompositeFunctionWrapperPatcher):
 
     name = "adk.flow.run_async"
     sub_patchers = (_FlowRunAsyncSubPatcher, _FlowCallLlmAsyncSubPatcher)
+
+
+# ---------------------------------------------------------------------------
+# ADK 2.x workflow patchers
+# ---------------------------------------------------------------------------
+
+
+class WorkflowNodeRunPatcher(FunctionWrapperPatcher):
+    """Patch ``BaseNode.run`` to trace workflow and graph node execution."""
+
+    name = "adk.workflow.node.run"
+    target_module = "google.adk.workflow._base_node"
+    target_path = "BaseNode.run"
+    wrapper = _workflow_node_run_wrapper
+
+
+class WorkflowToolNodeRunImplPatcher(FunctionWrapperPatcher):
+    """Patch ``_ToolNode._run_impl`` to trace direct workflow tool execution."""
+
+    name = "adk.workflow.tool_node.run_impl"
+    target_module = "google.adk.workflow._tool_node"
+    target_path = "_ToolNode._run_impl"
+    wrapper = _workflow_tool_node_run_impl_wrapper
 
 
 # ---------------------------------------------------------------------------

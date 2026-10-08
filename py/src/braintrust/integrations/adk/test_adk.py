@@ -525,6 +525,89 @@ async def test_adk_nested_subagent_tool_calls_are_traced(memory_logger):
     assert tool_span["output"]["temperature"] == "72°F"
 
 
+@pytest.mark.asyncio
+@pytest.mark.skipif(ADK_VERSION < (2, 10, 0), reason="Workflow nodes require ADK 2.10+")
+async def test_adk_workflow_tool_node_is_traced(memory_logger):
+    """A graph ToolNode should emit tool and workflow node spans."""
+    from google.adk.tools.load_artifacts_tool import LoadArtifactsTool
+    from google.adk.workflow import START, Workflow
+
+    assert not memory_logger.pop()
+
+    tool = LoadArtifactsTool()
+    workflow = Workflow(
+        name="weather_workflow",
+        edges=[(START, tool)],
+    )
+    app_name = "workflow_weather_app"
+    user_id = "test-user"
+    session_id = "test-session-workflow"
+    runner = await _create_runner(workflow, app_name=app_name, user_id=user_id, session_id=session_id)
+
+    events = [
+        event
+        async for event in runner.run_async(
+            user_id=user_id,
+            session_id=session_id,
+            new_message=types.Content(role="user", parts=[types.Part(text='{"artifact_names": ["report.txt"]}')]),
+        )
+    ]
+
+    assert events
+    spans = memory_logger.pop()
+    invocation = next(row for row in spans if row["span_attributes"]["name"] == f"invocation [{app_name}]")
+    workflow_span = next(row for row in spans if row["span_attributes"]["name"] == "workflow [weather_workflow]")
+    tool_span = next(row for row in spans if row["span_attributes"]["type"] == "tool")
+
+    assert workflow_span["span_attributes"]["type"] == "task"
+    assert workflow_span["span_parents"] == [invocation["span_id"]]
+    assert tool_span["span_attributes"]["name"] == "tool [load_artifacts]"
+    assert tool_span["input"]["arguments"] == {"artifact_names": ["report.txt"]}
+    assert tool_span["output"]["artifact_names"] == ["report.txt"]
+    assert "temporarily inserted and removed" in tool_span["output"]["status"]
+    tool_node_span = next(row for row in spans if row["span_id"] == tool_span["span_parents"][0])
+    assert tool_node_span["span_attributes"]["name"] == "workflow_node [load_artifacts]"
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+@pytest.mark.skipif(ADK_VERSION < (2, 10, 0), reason="Workflow nodes require ADK 2.10+")
+async def test_adk_workflow_root_traces_recorded_agent_tool_calls(memory_logger):
+    """A real ADK LLM/tool turn stays nested under the Workflow task span."""
+    from google.adk.workflow import START, Workflow
+
+    assert not memory_logger.pop()
+
+    weather_agent = Agent(
+        name="weather_agent",
+        model=ADK_MODEL,
+        instruction="You are a helpful weather assistant. Use the get_weather tool to answer questions about weather.",
+        tools=[get_weather],
+    )
+    workflow = Workflow(name="weather_workflow", edges=[(START, weather_agent)])
+    app_name = "workflow_weather_app"
+    user_id = "test-user"
+    session_id = "test-session-workflow-recorded"
+    runner = await _create_runner(workflow, app_name=app_name, user_id=user_id, session_id=session_id)
+    response = await _run_final_responses(
+        runner,
+        user_id=user_id,
+        session_id=session_id,
+        new_message=types.Content(role="user", parts=[types.Part(text="What's the weather in San Francisco?")]),
+    )
+
+    assert response
+    spans = memory_logger.pop()
+    invocation = next(row for row in spans if row["span_attributes"]["name"] == f"invocation [{app_name}]")
+    workflow_span = next(row for row in spans if row["span_attributes"]["name"] == "workflow [weather_workflow]")
+    agent_span = next(row for row in spans if row["span_attributes"]["name"] == "agent_run [weather_agent]")
+    tool_span = next(row for row in spans if row["span_attributes"]["name"] == "tool [get_weather]")
+    assert workflow_span["span_parents"] == [invocation["span_id"]]
+    assert agent_span["span_parents"] == [workflow_span["span_id"]]
+    assert tool_span["span_attributes"]["type"] == "tool"
+    assert tool_span["input"]["arguments"] == {"location": "San Francisco"}
+
+
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_adk_max_tokens_captures_content(memory_logger):

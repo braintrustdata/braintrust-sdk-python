@@ -3,6 +3,7 @@
 import asyncio
 import contextvars
 import inspect
+import json
 import logging
 import time
 from contextlib import aclosing, contextmanager
@@ -365,6 +366,103 @@ async def _agent_run_async_wrapper(wrapped: Any, instance: Any, args: Any, kwarg
                 yield event
         if last_event:
             agent_span.log(output=last_event)
+
+
+async def _workflow_node_run_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+    """Trace ADK 2.x workflow nodes, including the Workflow root node."""
+    if any(
+        cls.__name__ == "BaseAgent" and cls.__module__.startswith("google.adk.agents")
+        for cls in instance.__class__.__mro__
+    ):
+        # Newer ADK agent classes share BaseNode.run; their existing agent span
+        # is the canonical task span and must remain the direct child of Runner.
+        async with aclosing(wrapped(*args, **kwargs)) as agen:
+            async for event in agen:
+                yield event
+        return
+
+    node_name = getattr(instance, "name", instance.__class__.__name__)
+    node_input = kwargs.get("node_input", args[1] if len(args) > 1 else None)
+    is_workflow = any(
+        cls.__name__ == "Workflow" and cls.__module__.startswith("google.adk.workflow")
+        for cls in instance.__class__.__mro__
+    )
+    span_name = f"workflow [{node_name}]" if is_workflow else f"workflow_node [{node_name}]"
+
+    async def _trace():
+        with _start_stream_span(
+            name=span_name,
+            type=SpanTypeAttribute.TASK,
+            input=node_input,
+            metadata={"node_name": node_name, "node_class": instance.__class__.__name__},
+        ) as node_span:
+            last_event = None
+            async with aclosing(wrapped(*args, **kwargs)) as agen:
+                async for event in agen:
+                    last_event = event
+                    yield event
+            if last_event is not None:
+                node_span.log(output=getattr(last_event, "output", last_event))
+
+    async with aclosing(_trace()) as agen:
+        async for event in agen:
+            yield event
+
+
+async def _workflow_tool_node_run_impl_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+    """Trace tools executed directly by ADK 2.x workflow tool nodes."""
+    tool = getattr(instance, "tool", None)
+    if tool is None:
+        async with aclosing(wrapped(*args, **kwargs)) as agen:
+            async for event in agen:
+                yield event
+        return
+
+    # MCP tools already have their own wrapper around run_async.
+    if getattr(tool.__class__, "__module__", "").startswith("google.adk.tools.mcp_tool"):
+        async with aclosing(wrapped(*args, **kwargs)) as agen:
+            async for event in agen:
+                yield event
+        return
+
+    tool_name = getattr(tool, "name", tool.__class__.__name__)
+    node_input = kwargs.get("node_input", args[1] if len(args) > 1 else None)
+    tool_args = node_input
+    if hasattr(tool_args, "parts"):
+        tool_args = "".join(getattr(part, "text", "") or "" for part in (tool_args.parts or []))
+    if hasattr(tool_args, "model_dump"):
+        tool_args = tool_args.model_dump()
+    if isinstance(tool_args, str):
+        try:
+            tool_args = json.loads(tool_args)
+        except json.JSONDecodeError:
+            pass
+    if not isinstance(tool_args, dict):
+        tool_args = {}
+
+    async def _trace():
+        with _start_stream_span(
+            name=f"tool [{tool_name}]",
+            type=SpanTypeAttribute.TOOL,
+            input={"tool_name": tool_name, "arguments": tool_args},
+            metadata={"tool_class": tool.__class__.__name__},
+        ) as tool_span:
+            last_output = None
+            try:
+                async with aclosing(wrapped(*args, **kwargs)) as agen:
+                    async for event in agen:
+                        if getattr(event, "output", None) is not None:
+                            last_output = event.output
+                        yield event
+            except Exception as error:
+                tool_span.log(error=error)
+                raise
+            if last_output is not None:
+                tool_span.log(output=last_output)
+
+    async with aclosing(_trace()) as agen:
+        async for event in agen:
+            yield event
 
 
 async def _flow_run_async_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):

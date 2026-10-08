@@ -11,6 +11,8 @@ from .patchers import (
     RunnerRunPatcher,
     ThreadBridgePatcher,
     ToolCallAsyncPatcher,
+    WorkflowNodeRunPatcher,
+    WorkflowToolNodeRunImplPatcher,
 )
 
 
@@ -29,5 +31,7 @@ class ADKIntegration(BaseIntegration):
         RunnerRunPatcher,
         FlowRunAsyncPatcher,
         ToolCallAsyncPatcher,
+        WorkflowNodeRunPatcher,
+        WorkflowToolNodeRunImplPatcher,
         McpToolPatcher,
     )
