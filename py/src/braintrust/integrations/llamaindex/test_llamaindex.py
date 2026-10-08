@@ -1,5 +1,7 @@
 """Tests for the LlamaIndex integration."""
 
+import inspect
+
 import pytest
 from braintrust import logger
 from braintrust.integrations.llamaindex import BraintrustSpanHandler, LlamaIndexIntegration
@@ -55,36 +57,35 @@ def test_auto_instrument_includes_llamaindex():
     assert result["llamaindex"] is True
 
 
-@pytest.mark.asyncio
-async def test_streaming_outputs_are_not_stringified():
-    from braintrust.integrations.llamaindex.tracing import _extract_response_output
+def _stream():
+    yield "chunk"
 
-    def stream():
-        yield "chunk"
 
-    async def async_stream():
-        yield "chunk"
+async def _async_stream():
+    yield "chunk"
 
-    async_gen = async_stream()
-    try:
-        assert _extract_response_output(stream()) is None
-        assert _extract_response_output(async_gen) is None
-    finally:
-        await async_gen.aclose()
+
+async def _coroutine():
+    return "result"
 
 
 @pytest.mark.asyncio
-async def test_coroutine_outputs_are_not_stringified():
+@pytest.mark.parametrize(
+    "make_output",
+    [_stream, _async_stream, _coroutine],
+    ids=["generator", "async-generator", "coroutine"],
+)
+async def test_lazy_outputs_are_not_stringified(make_output):
     from braintrust.integrations.llamaindex.tracing import _extract_response_output
 
-    async def coroutine():
-        return "result"
-
-    coro = coroutine()
+    output = make_output()
     try:
-        assert _extract_response_output(coro) is None
+        assert _extract_response_output(output) is None
     finally:
-        getattr(coro, "close")()
+        if inspect.isasyncgen(output):
+            await output.aclose()
+        else:
+            output.close()
 
 
 @pytest.mark.vcr
