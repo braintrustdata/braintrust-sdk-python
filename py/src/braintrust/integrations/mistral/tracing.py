@@ -477,7 +477,7 @@ def _response_to_metadata(response: Any) -> dict[str, Any]:
 
     service_tier = _get_value(_get_value(response, "usage"), "service_tier")
     if service_tier is not None:
-        metadata["service_tier"] = service_tier
+        metadata["usage_service_tier"] = service_tier
 
     return metadata
 

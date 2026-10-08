@@ -294,9 +294,9 @@ def test_wrap_mistral_chat_complete_tool_spans(memory_logger):
     span = llm_spans[0]
     service_tier = getattr(response.usage, "service_tier", None)
     if service_tier is not None:
-        assert span["metadata"]["service_tier"] == service_tier
+        assert span["metadata"]["usage_service_tier"] == service_tier
     else:
-        assert "service_tier" not in span["metadata"]
+        assert "usage_service_tier" not in span["metadata"]
     assert len(find_spans_by_type(spans, SpanTypeAttribute.TOOL)) == 1
 
 
