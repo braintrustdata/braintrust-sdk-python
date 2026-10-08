@@ -113,7 +113,8 @@ def run_in_subprocess(code: str, timeout: int = 30, env: dict[str, str] | None =
 def verify_autoinstrument_script(script_name: str, timeout: int = 30) -> subprocess.CompletedProcess:
     """Run a test script from the integrations auto_test_scripts directory.
 
-    Raises AssertionError if the script exits with non-zero code.
+    Raises AssertionError if the script exits with non-zero code or exits
+    without printing ``SUCCESS`` (e.g. an early ``exit(0)``).
     """
     script_path = AUTO_TEST_SCRIPTS_DIR / script_name
     env = os.environ.copy()
@@ -132,6 +133,9 @@ def verify_autoinstrument_script(script_name: str, timeout: int = 30) -> subproc
         env=env,
     )
     assert result.returncode == 0, f"Script {script_name} failed:\n{result.stderr}"
+    assert "SUCCESS" in result.stdout, (
+        f"Script {script_name} exited without printing SUCCESS:\n{result.stdout}\n{result.stderr}"
+    )
     return result
 
 
