@@ -289,7 +289,14 @@ def test_wrap_mistral_chat_complete_tool_spans(memory_logger):
     assert response.choices[0].message.tool_calls[0].function.name == "get_weather"
 
     spans = memory_logger.pop()
-    assert len(find_spans_by_type(spans, SpanTypeAttribute.LLM)) == 1
+    llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
+    assert len(llm_spans) == 1
+    span = llm_spans[0]
+    service_tier = getattr(response.usage, "service_tier", None)
+    if service_tier is not None:
+        assert span["metadata"]["service_tier"] == service_tier
+    else:
+        assert "service_tier" not in span["metadata"]
     assert len(find_spans_by_type(spans, SpanTypeAttribute.TOOL)) == 1
 
 

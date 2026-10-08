@@ -45,6 +45,7 @@ _TOKEN_DETAIL_PREFIX_MAP = {
 }
 _CHAT_METADATA_KEYS = (
     "model",
+    "service_tier",
     "temperature",
     "top_p",
     "max_tokens",
@@ -65,6 +66,7 @@ _CHAT_METADATA_KEYS = (
 )
 _AGENTS_METADATA_KEYS = (
     "agent_id",
+    "service_tier",
     "max_tokens",
     "stop",
     "random_seed",
@@ -472,6 +474,11 @@ def _response_to_metadata(response: Any) -> dict[str, Any]:
         value = _get_value(response, key)
         if value is not None:
             metadata[key] = value
+
+    service_tier = _get_value(_get_value(response, "usage"), "service_tier")
+    if service_tier is not None:
+        metadata["service_tier"] = service_tier
+
     return metadata
 
 
