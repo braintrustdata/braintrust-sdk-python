@@ -1278,6 +1278,66 @@ def _assert_grounding_metadata(span_output):
     )
 
 
+def _assert_url_context_metadata(span_output):
+    candidates = span_output.get("candidates", [])
+    assert candidates, "Expected candidates in span output"
+
+    url_context = candidates[0].get("url_context_metadata")
+    assert url_context is not None, f"Expected url_context_metadata, got keys: {list(candidates[0])}"
+    url_metadata = url_context.get("url_metadata")
+    assert url_metadata, "Expected retrieved URL details in url_context_metadata"
+    assert any(item.get("retrieved_url") for item in url_metadata)
+
+
+@LATEST_ONLY
+@pytest.mark.vcr
+def test_url_context_metadata_stream(memory_logger):
+    assert not memory_logger.pop()
+
+    client = Client()
+    stream = client.models.generate_content_stream(
+        model=GROUNDING_MODEL,
+        contents="Summarize the article at https://ai.google.dev/gemini-api/docs/url-context",
+        config=types.GenerateContentConfig(
+            tools=[types.Tool(url_context=types.UrlContext())],
+            max_output_tokens=300,
+        ),
+    )
+    text = "".join(chunk.text or "" for chunk in stream)
+
+    assert text
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    assert spans[0]["output"]
+    _assert_url_context_metadata(spans[0]["output"])
+
+
+@LATEST_ONLY
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_url_context_metadata_async_stream(memory_logger):
+    assert not memory_logger.pop()
+
+    client = Client()
+    stream = await client.aio.models.generate_content_stream(
+        model=GROUNDING_MODEL,
+        contents="Summarize the article at https://ai.google.dev/gemini-api/docs/url-context",
+        config=types.GenerateContentConfig(
+            tools=[types.Tool(url_context=types.UrlContext())],
+            max_output_tokens=300,
+        ),
+    )
+    text = ""
+    async for chunk in stream:
+        text += chunk.text or ""
+
+    assert text
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    assert spans[0]["output"]
+    _assert_url_context_metadata(spans[0]["output"])
+
+
 # Test: Google Search Grounding (Sync)
 @pytest.mark.vcr
 @pytest.mark.parametrize(
@@ -1497,6 +1557,9 @@ def test_interactions_create_and_get(memory_logger):
     assert create_span["metadata"]["model"] == INTERACTIONS_MODEL
     assert create_span["metadata"]["provider"] == "google"
     assert create_span["metadata"]["interaction_id"] == response.id
+    assert create_span["metadata"]["status"] == response.status
+    assert "response_mime_type" not in create_span["metadata"]
+    assert "response_modalities" not in create_span["metadata"]
     assert get_span["metadata"]["provider"] == "google"
     assert create_span["output"]["status"] == "completed"
     assert "Paris" in create_span["output"]["text"]

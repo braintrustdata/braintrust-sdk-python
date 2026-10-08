@@ -549,8 +549,8 @@ def _extract_interaction_metadata(response: "Interaction") -> dict[str, Any]:
             "interaction_id": getattr(response, "id", None),
             "previous_interaction_id": getattr(response, "previous_interaction_id", None),
             "role": getattr(response, "role", None),
-            "response_mime_type": getattr(response, "response_mime_type", None),
-            "response_modalities": _materialize_interaction_value(getattr(response, "response_modalities", None)),
+            "status": getattr(response, "status", None),
+            "continuation_token": getattr(response, "continuation_token", None),
             "total_tool_use_tokens": (
                 usage_serialized.get("total_tool_use_tokens") if isinstance(usage_serialized, dict) else None
             ),
@@ -659,6 +659,7 @@ def _aggregate_generate_content_chunks(
     other_parts = []
     usage_metadata = None
     last_response = None
+    candidate_fields: list[dict[str, Any]] = []
 
     for chunk in chunks:
         last_response = chunk
@@ -667,7 +668,17 @@ def _aggregate_generate_content_chunks(
             usage_metadata = chunk.usage_metadata
 
         if hasattr(chunk, "candidates") and chunk.candidates:
-            for candidate in chunk.candidates:
+            for candidate_index, candidate in enumerate(chunk.candidates):
+                while len(candidate_fields) <= candidate_index:
+                    candidate_fields.append({})
+                serialized_candidate = _materialize_interaction_value(
+                    candidate.model_dump(exclude_none=True, exclude={"content"})
+                )
+                if isinstance(serialized_candidate, dict):
+                    candidate_fields[candidate_index].update(
+                        {key: value for key, value in serialized_candidate.items() if value is not None}
+                    )
+
                 if hasattr(candidate, "content") and candidate.content:
                     if hasattr(candidate.content, "parts") and candidate.content.parts:
                         for part in candidate.content.parts:
@@ -694,16 +705,9 @@ def _aggregate_generate_content_chunks(
 
     if parts and last_response and hasattr(last_response, "candidates"):
         candidates = []
-        for candidate in last_response.candidates:
-            candidate_dict = {"content": {"parts": parts, "role": "model"}}
-
-            if hasattr(candidate, "finish_reason"):
-                candidate_dict["finish_reason"] = candidate.finish_reason
-            if hasattr(candidate, "safety_ratings"):
-                candidate_dict["safety_ratings"] = candidate.safety_ratings
-            if hasattr(candidate, "grounding_metadata") and candidate.grounding_metadata:
-                candidate_dict["grounding_metadata"] = candidate.grounding_metadata
-
+        for candidate_index, _candidate in enumerate(last_response.candidates):
+            candidate_dict = dict(candidate_fields[candidate_index])
+            candidate_dict["content"] = {"parts": parts, "role": "model"}
             candidates.append(candidate_dict)
 
         aggregated["candidates"] = candidates
