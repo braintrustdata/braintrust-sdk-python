@@ -1,54 +1,16 @@
 """Progressively export independently decodable segments on one sample timeline."""
 
 import asyncio
-from dataclasses import dataclass, field
+from collections.abc import Awaitable, Callable
 
-from .attachments import UploadFailed, prepare_recording, upload_recording
 from .budget import source_budget
+from .constants import MAX_BUFFERED_PACKETS, MAX_SEGMENT_JOBS, SEGMENT_HEADROOM_MS
+from .exporter import SegmentExporter
 from .jobs import RecordingJobs
 from .options import RecordingOptions
-from .recording import CallRecording, Packet
+from .recording import CallRecording, CaptureState, Packet
+from .segment import AudioSegment
 from .timeline import ms_to_samples
-from .worker import encode_in_worker
-
-
-@dataclass
-class AudioSegment:
-    """One manifest throughout encoding and export; PCM is sealed at rotation.
-
-    Only the worker releases submitted PCM. Encoded bytes live through export;
-    afterwards only small metadata remains on the call's manifest.
-    """
-
-    segment_id: str
-    start_ms: float
-    end_ms: float
-    origin_unix_ms: float
-    source: CallRecording
-    state: str = "pending"
-    reason: str | None = None
-    encoded: dict | None = None
-    metadata: dict = field(default_factory=dict)
-
-    @property
-    def bytes(self):
-        return self.source.bytes
-
-    def clear(self):
-        self.source.clear()
-
-    def ready(self, encoded):
-        self.encoded = encoded
-        self.metadata = {key: encoded[key] for key in ("mime_type", "duration_ms", "channel_count")}
-        self.state = "ready"
-
-    def omit(self, reason):
-        self.state, self.reason = "omitted", reason
-        self.encoded = None
-        self.metadata.clear()
-
-    def interval(self):
-        return {"id": self.segment_id, "start_ms": self.start_ms, "end_ms": self.end_ms, "state": self.state}
 
 
 class SegmentedRecording(CallRecording):
@@ -58,17 +20,25 @@ class SegmentedRecording(CallRecording):
     exported. One second of headroom permits in-flight output and packet skew.
     """
 
-    def __init__(self, *, options=None, on_segment=None, on_pending=None, audio_format="ogg", enabled=True):
+    def __init__(
+        self,
+        *,
+        options: RecordingOptions | None = None,
+        on_segment: Callable[[AudioSegment], Awaitable[None]] | None = None,
+        on_pending: Callable[[AudioSegment], None] | None = None,
+        audio_format: str = "ogg",
+        enabled: bool = True,
+    ):
         self.options = options or RecordingOptions()
         super().__init__(
             enabled=enabled,
             max_bytes=self.options.max_buffer_bytes,
             max_duration_ms=self.options.max_duration_seconds * 1000,
-            max_packets=100000,
+            max_packets=MAX_BUFFERED_PACKETS,
         )
         self.on_segment = on_segment
         self.on_pending = on_pending
-        self.audio_format = audio_format
+        self.exporter = SegmentExporter(audio_format)
         self.start_ms = 0.0
         self.sequence = 0
         self.segments: list[AudioSegment] = []
@@ -86,10 +56,10 @@ class SegmentedRecording(CallRecording):
 
     def omit(self, reason):
         # Keep the valid prefix. Neither an error nor a limit erases prior audio.
-        self.reason = reason
+        self.stop(reason)
 
     def capture(self, channel, pcm, sample_rate, channels, *, observed_ns=None, observed_unix_ms=None):
-        if self.reason or self.sealed:
+        if self.state is not CaptureState.OPEN:
             return None
         if self.retained_bytes + len(pcm) > self.max_bytes:
             self.omit("capture_byte_limit")
@@ -108,7 +78,7 @@ class SegmentedRecording(CallRecording):
             return None
         latest = self.packets[-1].start_ms
         watermark = min(self.ends[0], latest) if self.started[0] else latest
-        watermark = max(self.start_ms, watermark - 1000)
+        watermark = max(self.start_ms, watermark - SEGMENT_HEADROOM_MS)
         cut = self.start_ms + self.options.segment_duration_seconds * 1000
         if watermark >= cut:
             self._rotate(cut)
@@ -119,7 +89,7 @@ class SegmentedRecording(CallRecording):
     def _rotate(self, cut):
         if not self.packets:
             return
-        if len(self.jobs) >= 2:
+        if len(self.jobs) >= MAX_SEGMENT_JOBS:
             self.omit("recording_export_capacity")
             return
         snapshot = CallRecording()
@@ -162,25 +132,13 @@ class SegmentedRecording(CallRecording):
         if self.on_pending:
             self.on_pending(segment)
 
-    async def _export(self, segment):
-        def encode():
-            try:
-                return prepare_recording(segment.segment_id, segment.source.encode, self.audio_format)
-            finally:
-                # Only the encoder may release a segment handed to its thread.
-                segment.clear()
-
+    async def _export(self, segment: AudioSegment) -> None:
         try:
-            try:
-                encoded = await encode_in_worker(encode)
-                segment.encoded = encoded
-                await upload_recording(encoded)
-                segment.ready(encoded)
-            except Exception as error:  # noqa: BLE001 - recording cannot stop speech
-                segment.omit("upload_failed" if isinstance(error, UploadFailed) else type(error).__name__)
+            await self.exporter.export(segment)
+            if segment.state == "omitted":
                 self.omit("segment_export_failed")
-            # Publication failures do not invalidate an already uploaded recording.
-            # The authoritative manifest remains available for subsequent upserts.
+            # Publishing is independent of upload success. A logging failure
+            # cannot invalidate an already uploaded segment.
             if self.on_segment:
                 await self.on_segment(segment)
         finally:

@@ -8,6 +8,9 @@ from dataclasses import dataclass
 class RecordingOptions:
     """Per-call limits. A rotation threshold is not a total recording limit."""
 
+    # A minute of dual-mono 24 kHz PCM is about 5.5 MiB; duration usually
+    # rotates first. Byte rotation leaves headroom while an export is in flight.
+    # These are conservative defaults, not throughput guarantees.
     segment_duration_seconds: float = 60
     max_duration_seconds: float = 1800
     max_buffer_bytes: int = 32 * 1024 * 1024

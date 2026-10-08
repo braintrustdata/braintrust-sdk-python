@@ -1,6 +1,6 @@
 """Braintrust integration for Pipecat AI."""
 
-from braintrust.audio import RecordingOptions
+from braintrust._audio import RecordingOptions
 from braintrust.logger import NOOP_SPAN, current_span, init_logger
 
 from .integration import PipecatIntegration
@@ -11,6 +11,7 @@ from .tracing import BraintrustPipecatObserver
 __all__ = [
     "BraintrustPipecatObserver",
     "PipecatIntegration",
+    "RecordingOptions",
     "setup_pipecat",
     "wrap_pipeline_worker",
 ]

@@ -3,7 +3,7 @@
 from collections import deque
 from contextvars import ContextVar
 
-from braintrust.audio.timeline import pcm_bytes_to_ms, samples_to_ms
+from braintrust._audio import pcm_bytes_to_ms, samples_to_ms
 
 
 def instrument_output(output, alignment, frame_context=None, hooks=None):

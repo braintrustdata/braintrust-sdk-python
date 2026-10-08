@@ -155,7 +155,7 @@ class SegmentTests(unittest.IsolatedAsyncioTestCase):
     def test_selection_crossing_segment_boundary(self):
         from types import SimpleNamespace
 
-        from .export import Alignment
+        from .export import AlignmentPublisher
 
         logs = []
         root = SimpleNamespace(span_id="root", log=lambda **_: None)
@@ -167,7 +167,7 @@ class SegmentTests(unittest.IsolatedAsyncioTestCase):
                 {"id": "call-0001", "start_ms": 30000, "end_ms": 60000, "state": "ready"},
             ],
         )
-        alignment = Alignment(root, recording)
+        alignment = AlignmentPublisher(root, recording)
         alignment.add(owner, [[29000 * 24, 32000 * 24]], 0)
         alignment.publish()
         selections = logs[-1]["metadata"]["audio.selections"]
@@ -210,24 +210,68 @@ class SegmentTests(unittest.IsolatedAsyncioTestCase):
     def test_out_of_order_export_releases_only_resolved_ranges(self):
         from types import SimpleNamespace
 
-        from .export import Alignment
+        from .export import AlignmentPublisher
 
         rows = []
         owner = SimpleNamespace(span_id="turn", log=lambda **row: rows.append(row))
         recording = SimpleNamespace(
             reason=None, completed=[{"id": "later", "start_ms": 1000, "end_ms": 2000, "state": "ready"}]
         )
-        alignment = Alignment(SimpleNamespace(span_id="root", log=lambda **_: None), recording)
+        root_rows = []
+        alignment = AlignmentPublisher(
+            SimpleNamespace(span_id="root", log=lambda **row: root_rows.append(row)), recording
+        )
         alignment.add(owner, [[0, 48000]], 0)
         alignment.publish()
         self.assertEqual(rows[-1]["metadata"]["audio.selection"]["recording_id"], "later")
         recording.completed.append({"id": "earlier", "start_ms": 0, "end_ms": 1000, "state": "ready"})
         alignment.publish()
-        self.assertEqual(alignment.count, 0)
         self.assertEqual({s["recording_id"] for s in rows[-1]["metadata"]["audio.selections"]}, {"earlier", "later"})
         # The admission budget is available again, even after many completed ranges.
         for _ in range(33000):
             alignment.add(owner, [[0, 1]], 0)
             alignment.publish()
-        self.assertEqual(alignment.omitted, 0)
+        self.assertEqual(root_rows[-1]["metadata"]["braintrust.alignment.ranges_omitted"], 0)
         self.assertEqual(len(rows), 3, "unchanged historical selections must not be exported again")
+
+    def test_failed_alignment_publication_is_retried(self):
+        from types import SimpleNamespace
+
+        from .export import AlignmentPublisher
+
+        for kind in ("selection", "clip"):
+            with self.subTest(kind=kind):
+                rows = []
+                failing = True
+
+                def log(**row):
+                    if failing:
+                        raise RuntimeError("publication failed")
+                    rows.append(row)
+
+                root = SimpleNamespace(span_id="root", log=lambda **_: None)
+                owner = SimpleNamespace(span_id="turn", log=log)
+                recording = SimpleNamespace(
+                    reason=None,
+                    origin_unix_ms=1000,
+                    completed=[{"id": "call-0000", "start_ms": 0, "end_ms": 1000, "state": "ready"}],
+                )
+                alignment = AlignmentPublisher(root, recording)
+                with self.assertRaisesRegex(RuntimeError, "publication failed"):
+                    if kind == "selection":
+                        alignment.add(owner, [[0, 24000]], 0)
+                        alignment.publish()
+                    else:
+                        alignment.begin_output("context", [owner])
+                        alignment.add_clip_range(owner, 0, 1000, 0, 1000)
+                        alignment.publish_clip(owner, {"id": "clip", "state": "ready"})
+                failing = False
+                alignment.publish()
+                alignment.publish()
+                self.assertEqual(len(rows), 1, "retry must publish exactly once")
+                if kind == "selection":
+                    self.assertEqual(rows[0]["metadata"]["audio.selection"]["end_offset_ms"], 1000)
+                else:
+                    timeline = rows[0]["metadata"]["audio.recordings"][0]["timeline"]
+                    self.assertEqual(timeline["origin_unix_ms"], 1000)
+                    self.assertEqual(timeline["ranges"][0]["timeline_end_ms"], 1000)

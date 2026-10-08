@@ -2,7 +2,7 @@ import asyncio
 import unittest
 from types import SimpleNamespace
 
-from braintrust.audio.recording import CallRecording
+from braintrust._audio.recording import CallRecording
 
 from .recording import capture_transport_output
 

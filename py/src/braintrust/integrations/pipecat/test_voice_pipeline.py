@@ -13,7 +13,7 @@ from tempfile import TemporaryDirectory
 
 import numpy as np
 import pytest
-from braintrust.audio import RecordingOptions
+from braintrust._audio import RecordingOptions
 from braintrust.integrations.pipecat import setup_pipecat
 from braintrust.integrations.pipecat.test_pipecat import (
     _make_worker,

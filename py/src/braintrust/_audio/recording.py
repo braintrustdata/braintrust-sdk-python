@@ -4,9 +4,11 @@ import io
 import math
 import time
 from dataclasses import dataclass
+from enum import Enum, auto
 
 from .budget import source_budget
-from .timeline import ms_to_samples, pcm_bytes_to_ms
+from .timeline import CALL_SAMPLE_RATE, ms_to_samples, pcm_bytes_to_ms
+from .types import EncodedAudio
 
 
 @dataclass(frozen=True)
@@ -18,7 +20,7 @@ class Packet:
     channels: int
 
 
-def encode_audio(chunks, sample_rate, channels, audio_format="ogg"):
+def encode_audio(chunks: list[bytes], sample_rate: int, channels: int, audio_format: str = "ogg") -> EncodedAudio:
     import numpy as np
 
     started = time.perf_counter()
@@ -57,6 +59,13 @@ def _encode(samples, sample_rate, audio_format):
     }
 
 
+class CaptureState(Enum):
+    OPEN = auto()
+    SEALED = auto()
+    STOPPED = auto()
+    DISABLED = auto()
+
+
 class CallRecording:
     def __init__(
         self,
@@ -66,8 +75,7 @@ class CallRecording:
         max_duration_ms=120000,
         max_packets=16000,
     ):
-        self.enabled = enabled
-        self.sealed = False
+        self.state = CaptureState.OPEN if enabled else CaptureState.DISABLED
         self.max_bytes = max_bytes
         self.max_duration_ms = max_duration_ms
         self.max_packets = max_packets
@@ -80,14 +88,21 @@ class CallRecording:
         self.reason = None if enabled else "disabled"
 
     def __del__(self):
+        # Explicit clear() is the normal owner-release path. This fallback
+        # returns reserved process bytes if an unsubmitted recorder is abandoned.
         if getattr(self, "bytes", 0):
             self.clear()
 
-    def seal(self):
-        self.sealed = True
+    def seal(self) -> None:
+        if self.state is CaptureState.OPEN:
+            self.state = CaptureState.SEALED
 
-    def omit(self, reason):
+    def stop(self, reason: str) -> None:
+        self.state = CaptureState.STOPPED
         self.reason = reason
+
+    def omit(self, reason: str) -> None:
+        self.stop(reason)
         self.clear()
 
     def clear(self):
@@ -96,7 +111,7 @@ class CallRecording:
         self.packets.clear()
 
     def capture(self, channel, pcm, sample_rate, channels, *, observed_ns=None, observed_unix_ms=None):
-        if self.reason or self.sealed:
+        if self.state is not CaptureState.OPEN:
             return
         if channel not in (0, 1) or channels not in (1, 2) or not 8000 <= sample_rate <= 48000:
             self.omit("unsupported_audio_format")
@@ -140,7 +155,7 @@ class CallRecording:
                 "end": ms_to_samples(start) + ms_to_samples(duration),
             }
 
-    def encode(self, audio_format="ogg"):
+    def encode(self, audio_format: str = "ogg") -> EncodedAudio | None:
         if self.reason or not self.packets:
             return None
 
@@ -148,7 +163,7 @@ class CallRecording:
 
         started = time.perf_counter()
         cpu_started = time.thread_time()
-        sample_rate = 24000
+        sample_rate = CALL_SAMPLE_RATE
         sample_count = math.ceil(max(self.ends) * sample_rate / 1000)
         samples = np.zeros((sample_count, 2), dtype=np.int16)
         for packet in self.packets:

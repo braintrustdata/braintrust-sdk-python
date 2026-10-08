@@ -4,7 +4,7 @@ import json
 import logging
 from typing import Any
 
-from braintrust.audio import RecordingOptions
+from braintrust._audio import RecordingOptions
 from braintrust.integrations.utils import (
     _is_not_given,
     _normalize_chat_messages,

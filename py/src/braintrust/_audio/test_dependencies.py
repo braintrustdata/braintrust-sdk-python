@@ -16,10 +16,10 @@ class BlockOptional(importlib.abc.MetaPathFinder):
             raise AssertionError("Unexpected optional import: " + fullname)
 
 sys.meta_path.insert(0, BlockOptional())
-from braintrust.audio.recording import CallRecording
-from braintrust.audio.alignment import InputRanges
-from braintrust.audio import worker, RecordingOptions
-from braintrust.audio.segments import SegmentedRecording
+from braintrust._audio.recording import CallRecording
+from braintrust._audio.alignment import InputRanges
+from braintrust._audio import worker, RecordingOptions
+from braintrust._audio.segments import SegmentedRecording
 import asyncio
 disabled = SegmentedRecording(enabled=False, options=RecordingOptions())
 assert disabled.capture(0, b"\\0\\0" * 480, 24000, 1) is None

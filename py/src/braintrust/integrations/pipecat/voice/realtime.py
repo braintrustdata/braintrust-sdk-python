@@ -6,7 +6,7 @@ No STT operation is fabricated for asynchronous provider transcription events.
 
 from contextvars import ContextVar
 
-from braintrust.audio.timeline import ms_to_samples
+from braintrust._audio import ms_to_samples
 
 from ..llm_metrics import _metadata_from_processor
 from .instrumentation import native_value

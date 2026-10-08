@@ -5,8 +5,8 @@ from unittest.mock import patch
 
 import numpy as np
 import soundfile as sf  # pylint: disable=import-error
-from braintrust.audio.export import Alignment
-from braintrust.audio.recording import CallRecording
+from braintrust._audio.export import AlignmentPublisher
+from braintrust._audio.recording import CallRecording
 from pipecat.frames.frames import TTSAudioRawFrame, TTSStoppedFrame  # pylint: disable=import-error
 from pipecat.transports.base_output import BaseOutputTransport  # pylint: disable=import-error
 from pipecat.transports.base_transport import TransportParams  # pylint: disable=import-error
@@ -42,7 +42,7 @@ class AlignmentTests(unittest.IsolatedAsyncioTestCase):
         sender._audio_queue = asyncio.Queue()
         output._media_senders = {None: sender}
         recording = CallRecording(enabled=enabled)
-        alignment = Alignment(Span(), recording)
+        alignment = AlignmentPublisher(Span(), recording)
         instrument_output(output, alignment)
         await output.start(None)
         self.addCleanup(sender._executor.shutdown)

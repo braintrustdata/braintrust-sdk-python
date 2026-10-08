@@ -104,7 +104,7 @@ class UserCaptureTests(unittest.IsolatedAsyncioTestCase):
                 "braintrust.integrations.pipecat.voice.user_capture.encode_segments",
                 side_effect=AssertionError("encoded"),
             ),
-            patch("braintrust.audio.attachments.Attachment", side_effect=AssertionError("attached")),
+            patch("braintrust._audio.attachments.Attachment", side_effect=AssertionError("attached")),
         ):
             observer, capture, turn = await self.exercise(False)
             self.assertEqual(capture.bytes, 0)
@@ -187,7 +187,7 @@ class UserCaptureTests(unittest.IsolatedAsyncioTestCase):
             await observer.finish()
 
     def test_joined_clip_positions_include_padding_but_do_not_map_it(self):
-        from braintrust.audio.alignment import InputRanges
+        from braintrust._audio.alignment import InputRanges
 
         from .user_capture import encode_segments
 

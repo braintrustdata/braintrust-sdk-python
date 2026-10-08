@@ -8,8 +8,7 @@ import time
 import wave
 from collections import Counter, deque
 
-from braintrust.audio.export import Alignment, segment_descriptor
-from braintrust.audio.segments import SegmentedRecording
+from braintrust._audio import AlignmentPublisher, SegmentedRecording, segment_descriptor
 from pipecat.observers.base_observer import BaseObserver  # pylint: disable=import-error
 
 from ..llm_metrics import _llm_usage_metrics, _metadata_from_metric, _metadata_from_processor
@@ -162,7 +161,7 @@ class NativeObserver(BaseObserver):
         self.tts_requests = None
         self.turns = Turns(self.root, self.hooks)
         self.turns.on_completed = self._turn_completed
-        self.alignment = Alignment(self.root, self.call_recording)
+        self.alignment = AlignmentPublisher(self.root, self.call_recording)
         self.synthesis = SynthesisRecordings(
             logger,
             self.alignment,

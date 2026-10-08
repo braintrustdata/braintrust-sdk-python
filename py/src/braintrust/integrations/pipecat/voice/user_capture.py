@@ -9,13 +9,20 @@ import time
 import wave
 from collections import deque
 
-from braintrust.audio.alignment import InputRanges
-from braintrust.audio.attachments import UploadFailed, prepare_recording, upload_recording
-from braintrust.audio.budget import source_budget
-from braintrust.audio.jobs import RecordingJobs
-from braintrust.audio.recording import encode_audio
-from braintrust.audio.timeline import ClipTimeline, pcm_bytes_to_ms, samples_to_ms
-from braintrust.audio.worker import RecordingBusy, encode_in_worker
+from braintrust._audio import (
+    ClipTimeline,
+    InputRanges,
+    RecordingBusy,
+    RecordingJobs,
+    UploadFailed,
+    encode_audio,
+    encode_in_worker,
+    pcm_bytes_to_ms,
+    prepare_recording,
+    samples_to_ms,
+    source_budget,
+    upload_recording,
+)
 from pipecat.frames.frames import TranscriptionFrame  # pylint: disable=import-error
 
 from ..llm_metrics import _metadata_from_processor

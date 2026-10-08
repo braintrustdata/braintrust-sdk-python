@@ -93,7 +93,7 @@ class Tests(unittest.IsolatedAsyncioTestCase):
         observer.call_recording.capture(0, b"\0\0" * 480, 24000, 1)
         from unittest.mock import patch
 
-        from braintrust.audio.recording import CallRecording
+        from braintrust._audio.recording import CallRecording
 
         patcher = patch.object(CallRecording, "encode", lambda _self, audio_format: encode(audio_format))
         patcher.start()
@@ -115,7 +115,7 @@ class Tests(unittest.IsolatedAsyncioTestCase):
         observer.capture_transport = True
         from unittest.mock import patch
 
-        from braintrust.audio.recording import CallRecording
+        from braintrust._audio.recording import CallRecording
 
         observer.call_recording.capture(0, b"\0\0" * 480, 24000, 1)
         patcher = patch.object(CallRecording, "encode", side_effect=RuntimeError("encoder failed"))
@@ -184,7 +184,7 @@ class FormatTests(unittest.IsolatedAsyncioTestCase):
         import threading
         from unittest.mock import patch
 
-        from braintrust.audio.recording import CallRecording
+        from braintrust._audio.recording import CallRecording
 
         observer = NativeObserver(Span(), retain_audio=True)
         observer.capture_transport = True
@@ -240,7 +240,7 @@ class FormatTests(unittest.IsolatedAsyncioTestCase):
         uploader = patch.object(Attachment, "upload", upload)
         uploader.start()
         self.addCleanup(uploader.stop)
-        from braintrust.audio.budget import source_budget
+        from braintrust._audio.budget import source_budget
 
         observer = NativeObserver(Span(), retain_audio=True, audio_format="wav")
         before = source_budget.used
@@ -282,7 +282,7 @@ class FormatTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_failed_segment_publishes_omission_before_shutdown(self):
 
-        from braintrust.audio import RecordingOptions, worker
+        from braintrust._audio import RecordingOptions, worker
 
         observer = NativeObserver(
             Span(), retain_audio=True, recording_options=RecordingOptions(segment_duration_seconds=0.1)
@@ -315,7 +315,7 @@ async def test_segment_readiness_waits_for_upload_and_preserves_earlier_audio(mo
     import asyncio
     import threading
 
-    from braintrust.audio import RecordingOptions
+    from braintrust._audio import RecordingOptions
     from braintrust.logger import Attachment
 
     entered, release = threading.Event(), threading.Event()

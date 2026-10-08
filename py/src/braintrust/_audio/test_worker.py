@@ -61,7 +61,7 @@ class WorkerTests(unittest.IsolatedAsyncioTestCase):
             if outcome == "cancelled":
                 task.cancel()  # No operation body or finally block has run yet.
             if outcome == "failure":
-                with self.assertLogs("braintrust.audio.jobs", level="WARNING"):
+                with self.assertLogs("braintrust._audio.jobs", level="WARNING"):
                     await jobs.drain()
             else:
                 await jobs.drain()
@@ -76,7 +76,7 @@ class WorkerTests(unittest.IsolatedAsyncioTestCase):
         from .recording import CallRecording
 
         budget = ByteBudget(1000)
-        with patch("braintrust.audio.recording.source_budget", budget):
+        with patch("braintrust._audio.recording.source_budget", budget):
             first, second = CallRecording(), CallRecording()
             pcm = b"\0\0" * 480
             self.assertIsNotNone(first.capture(0, pcm, 24000, 1))

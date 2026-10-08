@@ -3,11 +3,16 @@
 import asyncio
 from dataclasses import dataclass, field
 
-from braintrust.audio.attachments import UploadFailed, prepare_recording, upload_recording
-from braintrust.audio.budget import source_budget
-from braintrust.audio.jobs import RecordingJobs
-from braintrust.audio.recording import encode_audio
-from braintrust.audio.worker import RecordingBusy, encode_in_worker
+from braintrust._audio import (
+    RecordingBusy,
+    RecordingJobs,
+    UploadFailed,
+    encode_audio,
+    encode_in_worker,
+    prepare_recording,
+    source_budget,
+    upload_recording,
+)
 from braintrust.logger import Span
 
 

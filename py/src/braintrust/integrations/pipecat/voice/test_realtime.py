@@ -78,7 +78,7 @@ class RealtimeBoundaryTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(observer.call_recording.bytes, 0)
 
     async def test_continuous_input_outlives_frame_limit_and_preserves_earlier_alignment(self):
-        from braintrust.audio import RecordingOptions
+        from braintrust._audio import RecordingOptions
 
         observer = NativeObserver(
             Span(), retain_audio=True, recording_options=RecordingOptions(segment_duration_seconds=600)
