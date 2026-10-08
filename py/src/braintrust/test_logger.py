@@ -141,6 +141,18 @@ class TestInit(TestCase):
 
         assert str(cm.exception) == f"duplicate tag: {tag}"
 
+    def test_init_preserves_empty_project_name(self):
+        api_client = self._mock_api_client()
+        api_client.projects.post_project.return_value = {"id": "empty-project-id", "name": ""}
+
+        simulate_login()
+        with patch.object(logger._state, "api_client", return_value=api_client):
+            exp = braintrust.init(project="")
+            metadata = exp._lazy_metadata.get()
+
+        api_client.projects.post_project.assert_called_once_with(body={"name": "", "org_name": logger._state.org_name})
+        assert metadata.project.name == ""
+
     def test_init_with_repo_info_does_not_raise(self):
         """Test that passing repo_info to init() doesn't cause an UnboundLocalError.
 
