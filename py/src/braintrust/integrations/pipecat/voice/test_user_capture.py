@@ -130,6 +130,23 @@ class UserCaptureTests(unittest.IsolatedAsyncioTestCase):
         await observer.finish()
 
     async def test_completed_turns_release_capacity_for_later_clips(self):
+        from unittest.mock import patch
+
+        from braintrust.logger import Attachment
+
+        uploaded = []
+
+        def upload(attachment):
+            uploaded.append(attachment.reference)
+            if len(uploaded) == 2:
+                return {"upload_status": "error", "error_message": "failed"}
+            if len(uploaded) == 3:
+                raise OSError("upload failed")
+            return {"upload_status": "done"}
+
+        uploader = patch.object(Attachment, "upload", upload)
+        uploader.start()
+        self.addCleanup(uploader.stop)
         observer = NativeObserver(Span(), retain_audio=True, audio_format="wav", max_audio_bytes=1024)
         aggregator = LLMContextAggregatorPair(LLMContext()).user()
 
@@ -157,9 +174,12 @@ class UserCaptureTests(unittest.IsolatedAsyncioTestCase):
                     for r in turn["span"].rows
                     if "audio.recordings" in r.get("metadata", {})
                 ]
-                self.assertEqual(descriptors[-1][0]["state"], "omitted" if index == 135 else "ready")
-                if index == 135:
-                    self.assertEqual(descriptors[-1][0]["reason"], "capture_byte_limit")
+                self.assertEqual(descriptors[-1][0]["state"], "omitted" if index in (1, 2, 135) else "ready")
+                if index in (1, 2, 135):
+                    self.assertEqual(
+                        descriptors[-1][0]["reason"], "capture_byte_limit" if index == 135 else "upload_failed"
+                    )
+                    self.assertFalse(any(d["state"] == "ready" for row in descriptors for d in row))
                 self.assertFalse(capture.batches)
                 self.assertFalse(capture.segments)
                 self.assertEqual(capture.bytes, 0)

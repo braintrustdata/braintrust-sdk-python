@@ -3,7 +3,7 @@
 import asyncio
 from dataclasses import dataclass, field
 
-from braintrust.audio.attachments import prepare_recording
+from braintrust.audio.attachments import UploadFailed, prepare_recording, upload_recording
 from braintrust.audio.budget import source_budget
 from braintrust.audio.jobs import RecordingJobs
 from braintrust.audio.recording import encode_audio
@@ -130,6 +130,7 @@ class SynthesisRecordings:
                     state.channels,
                     self.audio_format,
                 )
+                await upload_recording(encoded)
             except Exception as error:  # noqa: BLE001 - capture/export failures must not break the call
                 span.log(
                     metadata={
@@ -137,7 +138,9 @@ class SynthesisRecordings:
                             {
                                 **recording,
                                 "state": "omitted",
-                                "reason": str(error) if isinstance(error, RecordingBusy) else "encoding_failed",
+                                "reason": str(error)
+                                if isinstance(error, (RecordingBusy, UploadFailed))
+                                else "encoding_failed",
                             }
                         ]
                     }

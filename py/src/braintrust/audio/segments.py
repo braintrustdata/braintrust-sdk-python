@@ -1,10 +1,9 @@
 """Progressively export independently decodable segments on one sample timeline."""
 
 import asyncio
-import logging
 from dataclasses import dataclass, field
 
-from .attachments import prepare_recording
+from .attachments import UploadFailed, prepare_recording, upload_recording
 from .budget import source_budget
 from .jobs import RecordingJobs
 from .options import RecordingOptions
@@ -172,18 +171,18 @@ class SegmentedRecording(CallRecording):
                 segment.clear()
 
         try:
-            encoded = await encode_in_worker(encode)
-            segment.ready(encoded)
+            try:
+                encoded = await encode_in_worker(encode)
+                segment.encoded = encoded
+                await upload_recording(encoded)
+                segment.ready(encoded)
+            except Exception as error:  # noqa: BLE001 - recording cannot stop speech
+                segment.omit("upload_failed" if isinstance(error, UploadFailed) else type(error).__name__)
+                self.omit("segment_export_failed")
+            # Publication failures do not invalidate an already uploaded recording.
+            # The authoritative manifest remains available for subsequent upserts.
             if self.on_segment:
                 await self.on_segment(segment)
-        except Exception as error:  # noqa: BLE001 - recording cannot stop speech
-            segment.omit(type(error).__name__)
-            self.omit("segment_export_failed")
-            if self.on_segment:
-                try:
-                    await self.on_segment(segment)
-                except Exception:  # noqa: BLE001 - failure reporting must not break the call
-                    logging.getLogger(__name__).warning("Failed to publish recording omission", exc_info=True)
         finally:
             segment.encoded = None
 

@@ -37,7 +37,12 @@ async def encode_in_worker(function, *args):
     except BaseException:
         _slots.release()
         raise
-    wrapped = asyncio.wrap_future(future)
+    return await await_background(asyncio.wrap_future(future))
+
+
+async def await_background(work):
+    """Drain non-cancellable thread work before releasing its owning job."""
+    wrapped = asyncio.ensure_future(work)
     try:
         return await asyncio.shield(wrapped)
     except asyncio.CancelledError:

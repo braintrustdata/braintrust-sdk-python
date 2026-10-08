@@ -10,7 +10,7 @@ import wave
 from collections import deque
 
 from braintrust.audio.alignment import InputRanges
-from braintrust.audio.attachments import prepare_recording
+from braintrust.audio.attachments import UploadFailed, prepare_recording, upload_recording
 from braintrust.audio.budget import source_budget
 from braintrust.audio.jobs import RecordingJobs
 from braintrust.audio.recording import encode_audio
@@ -343,6 +343,13 @@ class UserCapture:
                     self.observer.audio_format,
                     [s["clip_ranges"] for s in segments if s["audio"] is not None],
                 )
+                await upload_recording(encoded)
+            except Exception as error:  # noqa: BLE001 - recording failure must not break the call
+                descriptor.update(
+                    state="omitted",
+                    reason=str(error) if isinstance(error, (RecordingBusy, UploadFailed)) else "encoding_failed",
+                )
+            else:
                 descriptor.update(
                     state="ready",
                     attachment={
@@ -373,11 +380,6 @@ class UserCapture:
                             ],
                         }
                     ]
-                )
-            except Exception as error:  # noqa: BLE001 - attachment failure must not break flush
-                descriptor.update(
-                    state="omitted",
-                    reason=str(error) if isinstance(error, RecordingBusy) else "encoding_failed",
                 )
         turn["span"].log(metadata={"audio.recordings": [descriptor]})
 

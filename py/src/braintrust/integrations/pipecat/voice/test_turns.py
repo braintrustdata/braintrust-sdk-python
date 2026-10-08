@@ -145,8 +145,8 @@ class TurnTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.observer.filtered_events["BotSpeakingFrame"], 500)
         self.assertEqual(self.observer.duplicate_events, 1)
         self.assertEqual(self.observer.omitted_events, 0)
-        from pipecat.audio.vad.vad_analyzer import VADParams
-        from pipecat.frames.frames import STTMetadataFrame, VADParamsUpdateFrame
+        from pipecat.audio.vad.vad_analyzer import VADParams  # pylint: disable=import-error
+        from pipecat.frames.frames import STTMetadataFrame, VADParamsUpdateFrame  # pylint: disable=import-error
 
         await self.push(STTMetadataFrame(service_name="stt", ttfs_p99_latency=0.5))
         await self.push(STTMetadataFrame(service_name="stt", ttfs_p99_latency=0.5))

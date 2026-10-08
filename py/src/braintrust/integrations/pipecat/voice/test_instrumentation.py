@@ -223,6 +223,23 @@ class FormatTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(all(recording["state"] == "ready" for recording in recordings))
 
     async def test_generated_clip_capacity_is_reused_after_publication(self):
+        from unittest.mock import patch
+
+        from braintrust.logger import Attachment
+
+        uploaded = []
+
+        def upload(attachment):
+            uploaded.append(attachment.reference)
+            if len(uploaded) == 2:
+                return {"upload_status": "error", "error_message": "failed"}
+            if len(uploaded) == 3:
+                raise OSError("upload failed")
+            return {"upload_status": "done"}
+
+        uploader = patch.object(Attachment, "upload", upload)
+        uploader.start()
+        self.addCleanup(uploader.stop)
         from braintrust.audio.budget import source_budget
 
         observer = NativeObserver(Span(), retain_audio=True, audio_format="wav")
@@ -248,8 +265,18 @@ class FormatTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(span.rows[-1]["metadata"]["audio.recordings"][0]["state"], "pending")
             await observer.synthesis.drain()
             descriptor = span.rows[-1]["metadata"]["audio.recordings"][0]
-            self.assertEqual(descriptor["state"], "ready")
-            self.assertEqual(descriptor["duration_ms"], 1)
+            self.assertEqual(descriptor["state"], "omitted" if index in (1, 2) else "ready")
+            if index in (1, 2):
+                self.assertEqual(descriptor["reason"], "upload_failed")
+                self.assertFalse(
+                    any(
+                        d["state"] == "ready"
+                        for row in span.rows
+                        for d in row.get("metadata", {}).get("audio.recordings", [])
+                    )
+                )
+            else:
+                self.assertEqual(descriptor["duration_ms"], 1)
             self.assertEqual(source_budget.used, before)
         await observer.finish()
 
@@ -275,3 +302,93 @@ class FormatTests(unittest.IsolatedAsyncioTestCase):
             worker._slots.release()
             worker._slots.release()
             await observer.finish()
+
+
+# This tests local publication ordering, not the attachment HTTP protocol.
+# Provider conversations are exercised separately through cassette replay.
+import pytest
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("outcome", ["done", "error", "exception", "flush_error"])
+async def test_segment_readiness_waits_for_upload_and_preserves_earlier_audio(monkeypatch, outcome):
+    import asyncio
+    import threading
+
+    from braintrust.audio import RecordingOptions
+    from braintrust.logger import Attachment
+
+    entered, release = threading.Event(), threading.Event()
+    loop_thread = threading.get_ident()
+
+    def upload(attachment):
+        assert threading.get_ident() != loop_thread
+        if attachment.reference["filename"] == "call-0001.wav":
+            entered.set()
+            if not release.wait(3):
+                raise TimeoutError("test upload deadline")
+            if outcome == "exception":
+                raise OSError("upload failed")
+            if outcome == "error":
+                return {"upload_status": "error", "error_message": "upload failed"}
+        return {"upload_status": "done"}
+
+    monkeypatch.setattr(Attachment, "upload", upload)
+    observer = NativeObserver(
+        Span(),
+        retain_audio=True,
+        audio_format="wav",
+        recording_options=RecordingOptions(segment_duration_seconds=0.02),
+    )
+    observer.capture_transport = True
+    turn = Span()
+
+    def recordings():
+        return [
+            row["metadata"]["audio.recordings"]
+            for row in observer.root.rows
+            if "audio.recordings" in row.get("metadata", {})
+        ]
+
+    def selections():
+        return [s for row in turn.rows for s in row.get("metadata", {}).get("audio.selections", [])]
+
+    try:
+        for index in range(2):
+            observer.call_recording.capture(0, b"\1\0" * 26400, 24000, 1, observed_ns=index * 1_100_000_000)
+            observer.alignment.add(turn, [[index * 480, (index + 1) * 480]], 0)
+            observer.call_recording.capture(1, b"\2\0" * 480, 24000, 1, observed_ns=(index + 1) * 1_100_000_000)
+            if index == 0:
+                await observer.call_recording.drain_exports()
+                assert recordings()[-1][0]["state"] == "ready"
+        assert await asyncio.to_thread(entered.wait, 1), "export must upload before marking ready"
+        # An unrelated publication must not expose the encoded segment as ready.
+        observer._publish_call_manifest()
+        observer.alignment.publish()
+        assert recordings()[-1][1]["state"] == "pending"
+        assert all(s["recording_id"] != "call-0001" for s in selections())
+        if outcome == "flush_error":
+
+            def fail_flush():
+                raise OSError("trace publication failed")
+
+            monkeypatch.setattr(observer.logger, "flush", fail_flush)
+        release.set()
+        await observer.call_recording.drain_exports()
+        observer._publish_call_manifest()
+        expected = "omitted" if outcome in {"error", "exception"} else "ready"
+        assert recordings()[-1][0]["state"] == "ready"
+        assert recordings()[-1][1]["state"] == expected
+        if expected == "omitted":
+            assert recordings()[-1][1]["reason"]
+            assert not any(d["id"] == "call-0001" and d["state"] == "ready" for row in recordings() for d in row)
+            assert all(s["recording_id"] != "call-0001" for s in selections())
+        else:
+            selected = [s for s in selections() if s["recording_id"] == "call-0001"]
+            assert selected and selected[-1]["start_offset_ms"] == 0
+            assert selected[-1]["end_offset_ms"] == 20
+        assert any(s["recording_id"] == "call-0000" for s in selections())
+    finally:
+        release.set()
+        monkeypatch.setattr(observer.logger, "flush", lambda: None)
+        await observer.finish()
