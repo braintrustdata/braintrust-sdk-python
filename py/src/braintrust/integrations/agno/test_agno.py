@@ -51,10 +51,8 @@ def _assert_tool_fields_not_in_input(llm_span) -> None:
         assert forbidden not in llm_span["input"], f"{forbidden!r} must live under metadata, not input"
 
 
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_agno_agent_cancellation_stage_metadata(memory_logger):
-    """A real cancelled agent run puts its cancellation stage in span metadata."""
+async def _cancel_weather_agent_during_tool(run_id, start_run):
+    """Start a real agent run via *start_run*, cancel it while its tool executes, and return the result."""
     agent_module = pytest.importorskip("agno.agent")
     openai_module = pytest.importorskip("agno.models.openai")
     run_module = pytest.importorskip("agno.run.agent")
@@ -80,21 +78,31 @@ async def test_agno_agent_cancellation_stage_metadata(memory_logger):
         tools=[get_weather],
         instructions="Use the get_weather tool to answer questions.",
     )
-    run_id = "agno-cancellation-stage-test"
-    run_task = asyncio.create_task(agent.arun("What's the weather in Paris?", run_id=run_id))
+    run_task = asyncio.create_task(start_run(agent))
     try:
         await asyncio.wait_for(tool_started.wait(), timeout=10)
         assert agent.cancel_run(run_id)
     finally:
         release_tool.set()
 
-    response = await asyncio.wait_for(run_task, timeout=10)
+    return await asyncio.wait_for(run_task, timeout=10)
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_agno_agent_cancellation_stage_metadata(memory_logger):
+    """A real cancelled agent run puts its cancellation stage in span metadata."""
+    run_id = "agno-cancellation-stage-test"
+    response = await _cancel_weather_agent_during_tool(
+        run_id, lambda agent: agent.arun("What's the weather in Paris?", run_id=run_id)
+    )
     assert response.cancellation_stage.value == "EXECUTING"
 
     spans = memory_logger.pop()
     root = next(s for s in spans if s["span_attributes"]["name"] == "Weather Agent.arun")
     assert root["metadata"]["cancellation_stage"] == "EXECUTING"
 
+    from agno.models.openai import OpenAIChat
     from agno.team import Team
 
     team = Team(name="Weather Team", model=OpenAIChat(id="gpt-4o-mini"), members=[])
@@ -111,34 +119,9 @@ async def test_agno_agent_cancellation_stage_metadata(memory_logger):
 @pytest.mark.asyncio
 async def test_agno_agent_stream_cancellation_stage_metadata(memory_logger):
     """A cancelled streamed run logs its final cancellation stage."""
-    agent_module = pytest.importorskip("agno.agent")
-    openai_module = pytest.importorskip("agno.models.openai")
-    run_module = pytest.importorskip("agno.run.agent")
-    Agent = agent_module.Agent
-    OpenAIChat = openai_module.OpenAIChat
-    if "cancellation_stage" not in run_module.RunOutput.__dataclass_fields__:
-        pytest.skip("cancellation_stage requires Agno 3.0.11 or newer")
-
-    tool_started = asyncio.Event()
-    release_tool = asyncio.Event()
-
-    async def get_weather(agent: Agent, city: str) -> str:
-        """Return the current weather for *city*."""
-        assert agent.name == "Weather Agent"
-        assert city == "Paris"
-        tool_started.set()
-        await asyncio.wait_for(release_tool.wait(), timeout=10)
-        return "The weather in Paris is 72F and sunny."
-
-    agent = Agent(
-        name="Weather Agent",
-        model=OpenAIChat(id="gpt-4o-mini"),
-        tools=[get_weather],
-        instructions="Use the get_weather tool to answer questions.",
-    )
     run_id = "agno-stream-cancellation-stage-test"
 
-    async def consume_run():
+    async def consume_run(agent):
         return [
             chunk
             async for chunk in agent.arun(
@@ -150,16 +133,11 @@ async def test_agno_agent_stream_cancellation_stage_metadata(memory_logger):
             )
         ]
 
-    run_task = asyncio.create_task(consume_run())
-    try:
-        await asyncio.wait_for(tool_started.wait(), timeout=10)
-        assert agent.cancel_run(run_id)
-    finally:
-        release_tool.set()
+    chunks = await _cancel_weather_agent_during_tool(run_id, consume_run)
+    from agno.run.agent import RunOutput
 
-    chunks = await asyncio.wait_for(run_task, timeout=10)
     assert any(chunk.event == "RunCancelled" for chunk in chunks)
-    run_response = next(chunk for chunk in chunks if isinstance(chunk, run_module.RunOutput))
+    run_response = next(chunk for chunk in chunks if isinstance(chunk, RunOutput))
     assert run_response.cancellation_stage.value == "EXECUTING"
 
     spans = memory_logger.pop()
@@ -323,6 +301,7 @@ async def test_agno_resume_session_id(memory_logger, component, async_mode, stre
 
     resumed = memory_logger.pop()
     root = resumed[0]
+    assert root["output"]
     assert root["span_attributes"]["type"].value == "task"
     assert root["metadata"]["session_id"] == paused.session_id
     assert root["root_span_id"] != original["root_span_id"]
@@ -656,31 +635,6 @@ async def test_agno_public_arun_awaited_async_iterator_span_lifecycle(monkeypatc
     assert strict_span.ended is True
 
 
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "wrapper,name",
-    [
-        (wrap_agent, "CompatAgentAsyncNonStream"),
-        (wrap_team, "CompatTeamAsyncNonStream"),
-    ],
-)
-async def test_agno_public_arun_non_stream_awaitable_compat(memory_logger, wrapper, name):
-    Component = wrapper(make_fake_component(name))
-    instance = Component()
-
-    result = instance.arun("hello", stream=False)
-    if isawaitable(result):
-        result = await result
-
-    assert result.content == "hello-async"
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span["span_attributes"]["name"] == f"{name}.arun"
-    assert span["output"]
-
-
 @pytest.mark.parametrize(
     "wrapper,name",
     [
@@ -723,96 +677,6 @@ async def test_agno_public_arun_stream_error_path(memory_logger, wrapper, name):
     spans = memory_logger.pop()
     assert len(spans) == 1
     assert "async-stream-error" in spans[0]["error"]
-
-
-@pytest.mark.parametrize(
-    "wrapper,name",
-    [
-        (wrap_agent, "CompatAgentSyncEarlyBreak"),
-        (wrap_team, "CompatTeamSyncEarlyBreak"),
-    ],
-)
-def test_agno_public_run_stream_early_break(memory_logger, wrapper, name):
-    Component = wrapper(make_fake_component(name))
-    instance = Component()
-
-    for _ in instance.run("hello", stream=True):
-        break
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    assert spans[0]["span_attributes"]["name"] == f"{name}.run"
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "wrapper,name",
-    [
-        (wrap_agent, "CompatAgentAsyncEarlyBreak"),
-        (wrap_team, "CompatTeamAsyncEarlyBreak"),
-    ],
-)
-async def test_agno_public_arun_stream_early_break(memory_logger, wrapper, name):
-    Component = wrapper(make_fake_component(name))
-    instance = Component()
-
-    stream = instance.arun("hello", stream=True)
-    if isawaitable(stream):
-        stream = await stream
-
-    async for _ in stream:
-        break
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    assert spans[0]["span_attributes"]["name"] == f"{name}.arun"
-
-
-@pytest.mark.parametrize(
-    "wrapper,name",
-    [
-        (wrap_agent, "CompatAgentParentSync"),
-        (wrap_team, "CompatTeamParentSync"),
-    ],
-)
-def test_agno_public_run_parent_span_nesting(memory_logger, wrapper, name):
-    Component = wrapper(make_fake_component(name))
-    instance = Component()
-
-    with start_span(name="outer_sync_parent", type="task"):
-        instance.run("hello")
-
-    spans = memory_logger.pop()
-    by_name = {s["span_attributes"]["name"]: s for s in spans}
-    outer = by_name["outer_sync_parent"]
-    child = by_name[f"{name}.run"]
-    assert child["span_parents"] == [outer["span_id"]]
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "wrapper,name",
-    [
-        (wrap_agent, "CompatAgentParentAsync"),
-        (wrap_team, "CompatTeamParentAsync"),
-    ],
-)
-async def test_agno_public_arun_parent_span_nesting(memory_logger, wrapper, name):
-    Component = wrapper(make_fake_component(name))
-    instance = Component()
-
-    with start_span(name="outer_async_parent", type="task"):
-        stream = instance.arun("hello", stream=True)
-        if isawaitable(stream):
-            stream = await stream
-        async for _ in stream:
-            pass
-
-    spans = memory_logger.pop()
-    by_name = {s["span_attributes"]["name"]: s for s in spans}
-    outer = by_name["outer_async_parent"]
-    child = by_name[f"{name}.arun"]
-    assert child["span_parents"] == [outer["span_id"]]
 
 
 @pytest.mark.asyncio

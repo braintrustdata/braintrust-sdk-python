@@ -138,62 +138,59 @@ async def test_agno_async_workflow_agent_arun_metadata_includes_workflow_fields(
     assert agent_span["metadata"]["workflow_name"] == "CompatAsyncWorkflow"
 
 
-def test_agno_workflow_stream_aggregates_workflow_events(memory_logger):
-    Workflow = wrap_workflow(make_fake_workflow("CompatWorkflowStream"))
+@pytest.mark.parametrize(
+    "make_workflow,name,user_input,num_chunks,expected_content,expected_status",
+    [
+        # Content is aggregated across step and workflow-completed events.
+        pytest.param(
+            make_fake_workflow,
+            "CompatWorkflowStream",
+            "hello world",
+            5,
+            "hello world",
+            "COMPLETED",
+            id="aggregates_events",
+        ),
+        # The final workflow output wins over duplicated step content.
+        pytest.param(
+            make_fake_duplicate_content_workflow,
+            "CompatWorkflowDuplicateContent",
+            "hello",
+            2,
+            "hello",
+            "COMPLETED",
+            id="prefers_final_output",
+        ),
+        # Fields the workflow sets on its run response during the stream are preserved.
+        pytest.param(
+            make_fake_streaming_workflow_with_mutated_run_response,
+            "CompatWorkflowMutatedRunResponse",
+            "hello world",
+            3,
+            "hello world",
+            "FAILED",
+            id="preserves_final_run_response_fields",
+        ),
+    ],
+)
+def test_agno_workflow_stream(
+    memory_logger, make_workflow, name, user_input, num_chunks, expected_content, expected_status
+):
+    Workflow = wrap_workflow(make_workflow(name))
     workflow = Workflow()
 
-    execution_input = FakeExecutionInput("hello world")
-    run_response = FakeWorkflowRunResponse(input="hello world")
+    execution_input = FakeExecutionInput(user_input)
+    run_response = FakeWorkflowRunResponse(input=user_input)
 
     chunks = list(workflow._execute_stream("session-1", execution_input, run_response))
-    assert len(chunks) == 5
+    assert len(chunks) == num_chunks
 
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
-    assert span["span_attributes"]["name"] == "CompatWorkflowStream.run_stream"
-    assert span["output"]["content"] == "hello world"
-    assert span["output"]["status"] == "COMPLETED"
-    assert span["metrics"]["prompt_tokens"] == 1
-    assert span["metrics"]["completion_tokens"] == 2
-
-
-def test_agno_workflow_stream_prefers_final_workflow_output(memory_logger):
-    Workflow = wrap_workflow(make_fake_duplicate_content_workflow("CompatWorkflowDuplicateContent"))
-    workflow = Workflow()
-
-    execution_input = FakeExecutionInput("hello")
-    run_response = FakeWorkflowRunResponse(input="hello")
-
-    chunks = list(workflow._execute_stream("session-1", execution_input, run_response))
-    assert len(chunks) == 2
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span["span_attributes"]["name"] == "CompatWorkflowDuplicateContent.run_stream"
-    assert span["output"]["content"] == "hello"
-    assert span["output"]["status"] == "COMPLETED"
-
-
-def test_agno_workflow_stream_preserves_final_run_response_fields(memory_logger):
-    Workflow = wrap_workflow(
-        make_fake_streaming_workflow_with_mutated_run_response("CompatWorkflowMutatedRunResponse")
-    )
-    workflow = Workflow()
-
-    execution_input = FakeExecutionInput("hello world")
-    run_response = FakeWorkflowRunResponse(input="hello world")
-
-    chunks = list(workflow._execute_stream("session-1", execution_input, run_response))
-    assert len(chunks) == 3
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span["span_attributes"]["name"] == "CompatWorkflowMutatedRunResponse.run_stream"
-    assert span["output"]["content"] == "hello world"
-    assert span["output"]["status"] == "FAILED"
+    assert span["span_attributes"]["name"] == f"{name}.run_stream"
+    assert span["output"]["content"] == expected_content
+    assert span["output"]["status"] == expected_status
     assert span["metrics"]["prompt_tokens"] == 1
     assert span["metrics"]["completion_tokens"] == 2
 
