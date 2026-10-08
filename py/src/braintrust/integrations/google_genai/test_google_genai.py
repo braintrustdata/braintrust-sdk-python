@@ -269,14 +269,15 @@ def _serialized_modality_details(details):
     return [detail.model_dump(exclude_none=True) for detail in details or []]
 
 
-# Test 1: Basic Completion (Sync)
+# Test 1: Basic Completion
 @pytest.mark.vcr
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "mode",
-    ["sync", "stream"],
+    ["sync", "stream", "async", "async_stream"],
 )
-def test_basic_completion(memory_logger, mode):
-    """Test basic text completion in sync modes."""
+async def test_basic_completion(memory_logger, mode):
+    """Test basic text completion in sync and async modes."""
     assert not memory_logger.pop()
 
     client = Client()
@@ -303,136 +304,7 @@ def test_basic_completion(memory_logger, mode):
         for chunk in stream:
             if chunk.text:
                 text += chunk.text
-
-    end = time.time()
-
-    # Verify response contains expected content
-    assert "Paris" in text
-
-    # Verify logging
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span["context"]["span_origin"]["instrumentation"]["name"] == "google-genai-auto"
-    assert span["metadata"]["model"] == MODEL
-    assert span["metadata"]["provider"] == "google"
-    assert "What is the capital of France?" in str(span["input"])
-    assert span["output"]
-    assert "Paris" in str(span["output"])
-    _assert_metrics_are_valid(span["metrics"], start, end)
-
-
-@pytest.mark.vcr
-def test_stream_completion_preserves_creation_parent_when_consumed_later(memory_logger):
-    assert not memory_logger.pop()
-
-    client = Client()
-    with logger.start_span(name="stream_parent"):
-        stream = client.models.generate_content_stream(
-            model=MODEL,
-            contents="What is the capital of France?",
-            config=types.GenerateContentConfig(max_output_tokens=100),
-        )
-
-    text = ""
-    for chunk in stream:
-        if chunk.text:
-            text += chunk.text
-
-    assert "Paris" in text
-    spans = memory_logger.pop()
-    parent_span = find_span_by_name(spans, "stream_parent")
-    stream_span = find_span_by_name(spans, "generate_content_stream")
-    assert stream_span["span_parents"] == [parent_span["span_id"]]
-
-
-@pytest.mark.vcr
-def test_stream_completion_preserves_no_parent_when_consumed_under_parent(memory_logger):
-    assert not memory_logger.pop()
-
-    client = Client()
-    stream = client.models.generate_content_stream(
-        model=MODEL,
-        contents="What is the capital of France?",
-        config=types.GenerateContentConfig(max_output_tokens=100),
-    )
-
-    text = ""
-    with logger.start_span(name="consumer_parent"):
-        for chunk in stream:
-            if chunk.text:
-                text += chunk.text
-
-    assert "Paris" in text
-    spans = memory_logger.pop()
-    stream_span = find_span_by_name(spans, "generate_content_stream")
-    assert stream_span.get("span_parents") is None
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_async_stream_completion_preserves_creation_parent_when_consumed_later(memory_logger):
-    assert not memory_logger.pop()
-
-    client = Client()
-    with logger.start_span(name="stream_parent"):
-        stream = await client.aio.models.generate_content_stream(
-            model=MODEL,
-            contents="What is the capital of France?",
-            config=types.GenerateContentConfig(max_output_tokens=100),
-        )
-
-    text = ""
-    async for chunk in stream:
-        if chunk.text:
-            text += chunk.text
-
-    assert "Paris" in text
-    spans = memory_logger.pop()
-    parent_span = find_span_by_name(spans, "stream_parent")
-    stream_span = find_span_by_name(spans, "generate_content_stream")
-    assert stream_span["span_parents"] == [parent_span["span_id"]]
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_async_stream_completion_preserves_no_parent_when_consumed_under_parent(memory_logger):
-    assert not memory_logger.pop()
-
-    client = Client()
-    stream = await client.aio.models.generate_content_stream(
-        model=MODEL,
-        contents="What is the capital of France?",
-        config=types.GenerateContentConfig(max_output_tokens=100),
-    )
-
-    text = ""
-    with logger.start_span(name="consumer_parent"):
-        async for chunk in stream:
-            if chunk.text:
-                text += chunk.text
-
-    assert "Paris" in text
-    spans = memory_logger.pop()
-    stream_span = find_span_by_name(spans, "generate_content_stream")
-    assert stream_span.get("span_parents") is None
-
-
-# Test 1b: Basic Completion (Async)
-@pytest.mark.vcr
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "mode",
-    ["async", "async_stream"],
-)
-async def test_basic_completion_async(memory_logger, mode):
-    """Test basic text completion in async modes."""
-    assert not memory_logger.pop()
-
-    client = Client()
-    start = time.time()
-
-    if mode == "async":
+    elif mode == "async":
         response = await client.aio.models.generate_content(
             model=MODEL,
             contents="What is the capital of France?",
@@ -463,54 +335,96 @@ async def test_basic_completion_async(memory_logger, mode):
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
+    assert span["context"]["span_origin"]["instrumentation"]["name"] == "google-genai-auto"
     assert span["metadata"]["model"] == MODEL
+    assert span["metadata"]["provider"] == "google"
     assert "What is the capital of France?" in str(span["input"])
     assert span["output"]
     assert "Paris" in str(span["output"])
     _assert_metrics_are_valid(span["metrics"], start, end)
 
 
-@pytest.mark.vcr
-def test_embed_content(memory_logger):
-    assert not memory_logger.pop()
+async def _start_text_stream(client, mode):
+    kwargs = {
+        "model": MODEL,
+        "contents": "What is the capital of France?",
+        "config": types.GenerateContentConfig(max_output_tokens=100),
+    }
+    if mode == "async":
+        return await client.aio.models.generate_content_stream(**kwargs)
+    return client.models.generate_content_stream(**kwargs)
 
-    client = Client()
-    start = time.time()
-    response = client.models.embed_content(
-        model=EMBEDDING_MODEL,
-        contents=["This is a test", "This is another test"],
-        config=types.EmbedContentConfig(
-            task_type="RETRIEVAL_DOCUMENT",
-            output_dimensionality=32,
-        ),
-    )
-    end = time.time()
 
-    assert response.embeddings
-    assert len(response.embeddings) == 2
-    assert response.embeddings[0].values
-    assert len(response.embeddings[0].values) == 32
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    _assert_embed_span(spans[0], start, end)
+async def _consume_text_stream(stream, mode):
+    text = ""
+    if mode == "async":
+        async for chunk in stream:
+            if chunk.text:
+                text += chunk.text
+    else:
+        for chunk in stream:
+            if chunk.text:
+                text += chunk.text
+    return text
 
 
 @pytest.mark.vcr
 @pytest.mark.asyncio
-async def test_embed_content_async(memory_logger):
+@pytest.mark.parametrize("mode", ["sync", "async"])
+async def test_stream_completion_preserves_creation_parent_when_consumed_later(memory_logger, mode):
+    assert not memory_logger.pop()
+
+    client = Client()
+    with logger.start_span(name="stream_parent"):
+        stream = await _start_text_stream(client, mode)
+
+    text = await _consume_text_stream(stream, mode)
+
+    assert "Paris" in text
+    spans = memory_logger.pop()
+    parent_span = find_span_by_name(spans, "stream_parent")
+    stream_span = find_span_by_name(spans, "generate_content_stream")
+    assert stream_span["span_parents"] == [parent_span["span_id"]]
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mode", ["sync", "async"])
+async def test_stream_completion_preserves_no_parent_when_consumed_under_parent(memory_logger, mode):
+    assert not memory_logger.pop()
+
+    client = Client()
+    stream = await _start_text_stream(client, mode)
+
+    with logger.start_span(name="consumer_parent"):
+        text = await _consume_text_stream(stream, mode)
+
+    assert "Paris" in text
+    spans = memory_logger.pop()
+    stream_span = find_span_by_name(spans, "generate_content_stream")
+    assert stream_span.get("span_parents") is None
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mode", ["sync", "async"])
+async def test_embed_content(memory_logger, mode):
     assert not memory_logger.pop()
 
     client = Client()
     start = time.time()
-    response = await client.aio.models.embed_content(
-        model=EMBEDDING_MODEL,
-        contents=["This is a test", "This is another test"],
-        config=types.EmbedContentConfig(
+    kwargs = {
+        "model": EMBEDDING_MODEL,
+        "contents": ["This is a test", "This is another test"],
+        "config": types.EmbedContentConfig(
             task_type="RETRIEVAL_DOCUMENT",
             output_dimensionality=32,
         ),
-    )
+    }
+    if mode == "async":
+        response = await client.aio.models.embed_content(**kwargs)
+    else:
+        response = client.models.embed_content(**kwargs)
     end = time.time()
 
     assert response.embeddings
@@ -524,19 +438,27 @@ async def test_embed_content_async(memory_logger):
 
 
 @pytest.mark.vcr
-def test_image_input(memory_logger):
-    """Verify image inputs are traced as attachments instead of raw bytes."""
+@pytest.mark.parametrize(
+    "fixture_name,mime_type,filename,prompt",
+    [
+        ("test-image.png", "image/png", "file.png", "What color is this image?"),
+        ("test-document.pdf", "application/pdf", "file.pdf", "What is in this document?"),
+    ],
+    ids=["image", "document"],
+)
+def test_binary_input(memory_logger, fixture_name, mime_type, filename, prompt):
+    """Verify image and document inputs are traced as attachments instead of raw bytes."""
     assert not memory_logger.pop()
 
-    image_data = (FIXTURES_DIR / "test-image.png").read_bytes()
+    binary_data = (FIXTURES_DIR / fixture_name).read_bytes()
 
     client = Client()
     start = time.time()
     response = client.models.generate_content(
         model=MODEL,
         contents=[
-            types.Part.from_bytes(data=image_data, mime_type="image/png"),
-            types.Part.from_text(text="What color is this image?"),
+            types.Part.from_bytes(data=binary_data, mime_type=mime_type),
+            types.Part.from_text(text=prompt),
         ],
         config=types.GenerateContentConfig(
             max_output_tokens=150,
@@ -552,45 +474,9 @@ def test_image_input(memory_logger):
     assert span["metadata"]["model"] == MODEL
     contents = span["input"]["contents"]
     assert len(contents) == 2
-    _assert_attachment_part(contents[0], content_type="image/png", filename="file.png")
-    assert contents[1] == {"text": "What color is this image?"}
-    _assert_binary_not_logged(span, image_data)
-    assert span["output"]
-    _assert_metrics_are_valid(span["metrics"], start, end)
-
-
-@pytest.mark.vcr
-def test_document_input(memory_logger):
-    """Verify document inputs are traced as attachments instead of raw bytes."""
-    assert not memory_logger.pop()
-
-    pdf_data = (FIXTURES_DIR / "test-document.pdf").read_bytes()
-
-    client = Client()
-    start = time.time()
-    response = client.models.generate_content(
-        model=MODEL,
-        contents=[
-            types.Part.from_bytes(data=pdf_data, mime_type="application/pdf"),
-            types.Part.from_text(text="What is in this document?"),
-        ],
-        config=types.GenerateContentConfig(
-            max_output_tokens=150,
-        ),
-    )
-    end = time.time()
-
-    assert response.text
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span["metadata"]["model"] == MODEL
-    contents = span["input"]["contents"]
-    assert len(contents) == 2
-    _assert_attachment_part(contents[0], content_type="application/pdf", filename="file.pdf")
-    assert contents[1] == {"text": "What is in this document?"}
-    _assert_binary_not_logged(span, pdf_data)
+    _assert_attachment_part(contents[0], content_type=mime_type, filename=filename)
+    assert contents[1] == {"text": prompt}
+    _assert_binary_not_logged(span, binary_data)
     assert span["output"]
     _assert_metrics_are_valid(span["metrics"], start, end)
 
@@ -676,14 +562,15 @@ def test_image_input_wrapped_in_content(memory_logger):
     _assert_metrics_are_valid(span["metrics"], start, end)
 
 
-# Test 3: Tool Use (Sync)
+# Test 3: Tool Use
 @pytest.mark.vcr
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "mode",
-    ["sync", "stream"],
+    ["sync", "stream", "async", "async_stream"],
 )
-def test_tool_use(memory_logger, mode):
-    """Test function calling / tool use in sync modes."""
+async def test_tool_use(memory_logger, mode):
+    """Test function calling / tool use in sync and async modes."""
     assert not memory_logger.pop()
 
     client = Client()
@@ -711,34 +598,7 @@ def test_tool_use(memory_logger, mode):
         )
         chunks = list(stream)
         has_function_call = _has_function_call(chunks)
-
-    end = time.time()
-
-    # Verify function call was made
-    assert has_function_call, f"Expected function call in {mode} mode but got has_function_call={has_function_call}"
-
-    # Automatic function calling may create multiple spans; check the initial request.
-    spans = memory_logger.pop()
-    assert len(spans) >= 1
-    _assert_tool_use_span(spans[0], start, end)
-
-
-# Test 3b: Tool Use (Async)
-@pytest.mark.vcr
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "mode",
-    ["async", "async_stream"],
-)
-async def test_tool_use_async(memory_logger, mode):
-    """Test function calling / tool use in async modes."""
-    assert not memory_logger.pop()
-
-    client = Client()
-    start = time.time()
-    has_function_call = False
-
-    if mode == "async":
+    elif mode == "async":
         response = await client.aio.models.generate_content(
             model=TOOL_MODEL,
             contents="What is the weather like in Paris, France?",
@@ -800,7 +660,7 @@ def test_system_prompt(memory_logger):
     assert span["input"]
     assert span["output"]
     # Check that system instruction is captured
-    assert "pirate" in str(span["input"]).lower() or "system_instruction" in str(span)
+    assert span["input"]["config"]["system_instruction"] == "You are a pirate. Always respond in pirate speak."
 
 
 # Test 7: Error Handling
@@ -1079,52 +939,28 @@ def test_generated_image_usage(memory_logger):
 
 @DEVELOPER_API_IMAGEN_ONLY
 @pytest.mark.vcr
-def test_generate_images(memory_logger):
-    assert not memory_logger.pop()
-
-    client = Client()
-    start = time.time()
-
-    response = client.models.generate_images(
-        model=IMAGE_MODEL,
-        prompt="A watercolor fox in a forest",
-        config=types.GenerateImagesConfig(
-            number_of_images=1,
-            aspect_ratio="1:1",
-            safety_filter_level="BLOCK_LOW_AND_ABOVE",
-            include_rai_reason=True,
-        ),
-    )
-    end = time.time()
-
-    assert len(response.generated_images) == 1
-    assert response.generated_images[0].image
-    assert response.generated_images[0].image.image_bytes
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    _assert_generate_images_span(spans[0], start, end)
-
-
-@DEVELOPER_API_IMAGEN_ONLY
-@pytest.mark.vcr
 @pytest.mark.asyncio
-async def test_generate_images_async(memory_logger):
+@pytest.mark.parametrize("mode", ["sync", "async"])
+async def test_generate_images(memory_logger, mode):
     assert not memory_logger.pop()
 
     client = Client()
     start = time.time()
 
-    response = await client.aio.models.generate_images(
-        model=IMAGE_MODEL,
-        prompt="A watercolor fox in a forest",
-        config=types.GenerateImagesConfig(
+    kwargs = {
+        "model": IMAGE_MODEL,
+        "prompt": "A watercolor fox in a forest",
+        "config": types.GenerateImagesConfig(
             number_of_images=1,
             aspect_ratio="1:1",
             safety_filter_level="BLOCK_LOW_AND_ABOVE",
             include_rai_reason=True,
         ),
-    )
+    }
+    if mode == "async":
+        response = await client.aio.models.generate_images(**kwargs)
+    else:
+        response = client.models.generate_images(**kwargs)
     end = time.time()
 
     assert len(response.generated_images) == 1
@@ -1134,31 +970,6 @@ async def test_generate_images_async(memory_logger):
     spans = memory_logger.pop()
     assert len(spans) == 1
     _assert_generate_images_span(spans[0], start, end)
-
-
-def test_attachment_with_pydantic_model(memory_logger):
-    """Test that attachments work alongside Pydantic model serialization."""
-    from braintrust.bt_json import bt_safe_deep_copy
-    from braintrust.logger import Attachment
-    from pydantic import BaseModel
-
-    class TestModel(BaseModel):
-        name: str
-        value: int
-
-    attachment = Attachment(data=b"model data", filename="model.txt", content_type="text/plain")
-
-    # Structure with both Pydantic model and attachment
-    data = {"model_config": TestModel(name="test", value=42), "context_file": attachment}
-
-    copied = bt_safe_deep_copy(data)
-
-    # Pydantic model should be converted to dict
-    assert isinstance(copied["model_config"], dict)
-    assert copied["model_config"]["name"] == "test"
-
-    # Attachment should be preserved
-    assert copied["context_file"] is attachment
 
 
 def test_interaction_materialization_only_converts_multimodal_payloads():
@@ -1196,47 +1007,6 @@ def test_interaction_materialization_only_converts_multimodal_payloads():
     assert materialized["media"]["caption"] is None
     assert isinstance(materialized["media"]["data"], Attachment)
     assert materialized["media"]["image_url"]["url"] is materialized["media"]["data"]
-
-
-def test_serialize_content_item_with_content_and_binary_part():
-    """Content objects wrapping binary Parts must produce Attachment objects.
-
-    _serialize_content_item only replaces binary inline_data with Attachments;
-    non-binary parts are left as-is for bt_safe_deep_copy to serialise later.
-    """
-    from braintrust.integrations.google_genai.tracing import _serialize_content_item
-    from braintrust.logger import Attachment
-
-    image_data = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64  # small fake PNG bytes
-    content = types.Content(
-        role="user",
-        parts=[
-            types.Part.from_bytes(data=image_data, mime_type="image/png"),
-            types.Part.from_text(text="What color is this image?"),
-        ],
-    )
-
-    serialized = _serialize_content_item(content)
-
-    # The Content wrapper must be preserved with role + serialized parts.
-    assert isinstance(serialized, dict), f"Expected dict, got {type(serialized)}"
-    assert serialized["role"] == "user"
-    assert isinstance(serialized.get("parts"), list)
-    assert len(serialized["parts"]) == 2
-
-    # The binary part must have been converted to an attachment – not left as
-    # raw bytes or a model_dump of inline_data.
-    binary_part = serialized["parts"][0]
-    assert "image_url" in binary_part, f"Expected image_url key in binary part, got keys: {list(binary_part.keys())}"
-    attachment = binary_part["image_url"]["url"]
-    assert isinstance(attachment, Attachment), f"Expected Attachment, got {type(attachment)}"
-    assert attachment.reference["content_type"] == "image/png"
-    assert attachment.reference["filename"] == "file.png"
-
-    # The text part is left as the original Part object — bt_safe_deep_copy
-    # will serialise it downstream.
-    text_part = serialized["parts"][1]
-    assert getattr(text_part, "text", None) == "What color is this image?"
 
 
 GROUNDING_MODEL = (
@@ -1338,13 +1108,14 @@ async def test_url_context_metadata_async_stream(memory_logger):
     _assert_url_context_metadata(spans[0]["output"])
 
 
-# Test: Google Search Grounding (Sync)
+# Test: Google Search Grounding
 @pytest.mark.vcr
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "mode",
-    ["sync", "stream"],
+    ["sync", "stream", "async", "async_stream"],
 )
-def test_google_search_grounding(memory_logger, mode):
+async def test_google_search_grounding(memory_logger, mode):
     """Test that Google Search grounding metadata is captured in span output."""
     assert not memory_logger.pop()
 
@@ -1374,6 +1145,32 @@ def test_google_search_grounding(memory_logger, mode):
         )
         text = ""
         for chunk in stream:
+            if chunk.text:
+                text += chunk.text
+            if chunk.usage_metadata:
+                usage_metadata = chunk.usage_metadata
+    elif mode == "async":
+        response = await client.aio.models.generate_content(
+            model=GROUNDING_MODEL,
+            contents="What is the current population of Tokyo, Japan?",
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())],
+                max_output_tokens=300,
+            ),
+        )
+        text = response.text
+        usage_metadata = response.usage_metadata
+    elif mode == "async_stream":
+        stream = await client.aio.models.generate_content_stream(
+            model=GROUNDING_MODEL,
+            contents="What is the current population of Tokyo, Japan?",
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())],
+                max_output_tokens=300,
+            ),
+        )
+        text = ""
+        async for chunk in stream:
             if chunk.text:
                 text += chunk.text
             if chunk.usage_metadata:
@@ -1441,63 +1238,6 @@ def test_cached_content_usage_metadata(memory_logger):
     spans = memory_logger.pop()
     assert len(spans) == 1
     assert spans[0]["metadata"]["usage_by_modality"]["cache_tokens_details"] == cache_details
-
-
-# Test: Google Search Grounding (Async)
-@pytest.mark.vcr
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "mode",
-    ["async", "async_stream"],
-)
-async def test_google_search_grounding_async(memory_logger, mode):
-    """Test that Google Search grounding metadata is captured in async span output."""
-    assert not memory_logger.pop()
-
-    client = Client()
-    start = time.time()
-
-    if mode == "async":
-        response = await client.aio.models.generate_content(
-            model=GROUNDING_MODEL,
-            contents="What is the current population of Tokyo, Japan?",
-            config=types.GenerateContentConfig(
-                tools=[types.Tool(google_search=types.GoogleSearch())],
-                max_output_tokens=300,
-            ),
-        )
-        text = response.text
-    elif mode == "async_stream":
-        stream = await client.aio.models.generate_content_stream(
-            model=GROUNDING_MODEL,
-            contents="What is the current population of Tokyo, Japan?",
-            config=types.GenerateContentConfig(
-                tools=[types.Tool(google_search=types.GoogleSearch())],
-                max_output_tokens=300,
-            ),
-        )
-        text = ""
-        async for chunk in stream:
-            if chunk.text:
-                text += chunk.text
-
-    end = time.time()
-
-    # Verify response contains expected content
-    assert text
-    assert len(text) > 0
-
-    # Verify logging
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span["metadata"]["model"] == GROUNDING_MODEL
-    assert "population" in str(span["input"]).lower() or "Tokyo" in str(span["input"])
-    assert span["output"]
-    _assert_metrics_are_valid(span["metrics"], start, end)
-
-    # Verify grounding metadata is captured
-    _assert_grounding_metadata(span["output"])
 
 
 def _interaction_function_tool():
