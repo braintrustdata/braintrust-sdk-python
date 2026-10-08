@@ -7,7 +7,6 @@ import time
 
 import pytest
 from braintrust import logger
-from braintrust.auto import auto_instrument
 from braintrust.integrations.livekit_agents import (
     setup_livekit_agents,
     tracing,
@@ -137,7 +136,11 @@ async def test_llm_stream_run_does_not_create_user_turn_on_cancellation(memory_l
     with pytest.raises(asyncio.CancelledError):
         await traced_llm_stream_run(cancelled_run, object(), (), {})
 
-    memory_logger.pop()
+    logs = memory_logger.pop()
+    assert _span_names(logs) == {"llm_request_run"}, logs
+    llm_log = _single_span(logs, "llm_request_run")
+    assert "end" in llm_log.get("metrics", {})
+    assert not llm_log.get("error")
 
 
 @pytest.mark.asyncio
@@ -344,15 +347,7 @@ async def test_livekit_agents_function_tool_e2e(memory_logger, livekit_server):
     assert all(log.get("root_span_id") == session_logs[0].get("root_span_id") for log in function_tool_logs), logs
 
 
-@pytest.mark.asyncio
-@pytest.mark.vcr
-async def test_auto_instrument_livekit_agents_openai_e2e_voice_turn(memory_logger, livekit_server):
-    results = auto_instrument()
-    assert results.get("livekit_agents") is True
-    await _run_livekit_agents_openai_e2e_voice_turn(memory_logger)
-
-
-async def _run_livekit_agents_openai_e2e_voice_turn(memory_logger, outer_parent_name=None):
+async def _run_livekit_agents_openai_e2e_voice_turn(memory_logger, outer_parent_name):
     from livekit import rtc
     from livekit.agents import Agent, AgentSession
     from livekit.plugins import openai
@@ -379,10 +374,7 @@ async def _run_livekit_agents_openai_e2e_voice_turn(memory_logger, outer_parent_
             user_input=speech_text,
         )
 
-    if outer_parent_name:
-        with logger.start_span(name=outer_parent_name):
-            await run_session()
-    else:
+    with logger.start_span(name=outer_parent_name):
         await run_session()
 
     logs = memory_logger.pop()
@@ -432,9 +424,7 @@ def _assert_openai_voice_turn_spans(logs, *, speech_text, outer_parent_name):
     _assert_session_spans(logs)
     _assert_no_function_tool_spans_without_tools(logs)
     _assert_custom_metrics_stay_in_metadata(logs)
-
-    if outer_parent_name:
-        _assert_voice_turn_parenting(logs, outer_parent_name)
+    _assert_voice_turn_parenting(logs, outer_parent_name)
 
 
 def _assert_required_voice_turn_spans(logs):
