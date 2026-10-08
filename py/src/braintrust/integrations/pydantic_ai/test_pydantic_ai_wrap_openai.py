@@ -77,13 +77,18 @@ def _assert_wrapped_span(span, start, end):
 
 @pytest.mark.vcr
 @pytest.mark.asyncio
-async def test_pydantic_wrapped_stream(memory_logger):
-    """Test that Pydantic AI streaming operations work with Braintrust wrapping."""
+@pytest.mark.parametrize(
+    "run_prompt",
+    [_run_prompt_streaming, _run_prompt_completion],
+    ids=["stream", "completion"],
+)
+async def test_pydantic_wrapped(memory_logger, run_prompt):
+    """Test that Pydantic AI streaming and completion operations work with Braintrust wrapping."""
     assert not memory_logger.pop()
 
     # First, verify pure Pydantic AI client works as expected (without wrapping)
     async_client = AsyncOpenAI()
-    pure_output = await _run_prompt_streaming(async_client, TEST_PROMPT)
+    pure_output = await run_prompt(async_client, TEST_PROMPT)
     assert "Rome" in pure_output
 
     # No spans should be created for unwrapped client
@@ -91,37 +96,7 @@ async def test_pydantic_wrapped_stream(memory_logger):
 
     # Now test the wrapped client
     start = time.time()
-    wrapped_output = await _run_prompt_streaming(wrap_openai(async_client), TEST_PROMPT)
-    end = time.time()
-
-    # Verify output is still correct with wrapping
-    assert "Rome" in wrapped_output
-
-    spans = memory_logger.pop()
-
-    assert len(spans) == 1
-
-    _assert_wrapped_span(spans[0], start, end)
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_pydantic_wrapped_completion(memory_logger):
-    """Test that Pydantic AI completion operations work with Braintrust wrapping."""
-    # Clear any previous logs
-    assert not memory_logger.pop()
-
-    # First, verify pure Pydantic AI client works as expected (without wrapping)
-    async_client = AsyncOpenAI()
-    pure_output = await _run_prompt_completion(async_client, TEST_PROMPT)
-    assert "Rome" in pure_output
-
-    # No spans should be created for unwrapped client
-    assert not memory_logger.pop(), "No spans created"
-
-    # Now test the wrapped client
-    start = time.time()
-    wrapped_output = await _run_prompt_completion(wrap_openai(async_client), TEST_PROMPT)
+    wrapped_output = await run_prompt(wrap_openai(async_client), TEST_PROMPT)
     end = time.time()
 
     # Verify output is still correct with wrapping
