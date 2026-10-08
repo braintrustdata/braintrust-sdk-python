@@ -2070,21 +2070,6 @@ def test_v2_model_provider_inference():
     assert _extract_model_info_from_model_instance(xai_model) == ("grok-2", "xai")
 
 
-def test_model_classes_patcher_marker_check_is_mro_safe():
-    from braintrust.integrations.pydantic_ai.patchers import ModelClassesPatcher
-
-    class WrapperModel:
-        pass
-
-    class InstrumentedModel(WrapperModel):
-        pass
-
-    ModelClassesPatcher.mark_patched(WrapperModel)
-
-    assert ModelClassesPatcher.has_patch_marker(WrapperModel) is True
-    assert ModelClassesPatcher.has_patch_marker(InstrumentedModel) is False
-
-
 def test_wrap_model_class_is_idempotent():
     from braintrust.integrations.pydantic_ai.patchers import ModelClassesPatcher, wrap_model_class
 

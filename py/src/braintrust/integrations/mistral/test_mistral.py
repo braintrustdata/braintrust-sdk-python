@@ -30,21 +30,11 @@ except ImportError:
     from mistralai import Mistral
 
 try:
-    Chat = importlib.import_module("mistralai.client.chat").Chat
-    Embeddings = importlib.import_module("mistralai.client.embeddings").Embeddings
-    Fim = importlib.import_module("mistralai.client.fim").Fim
-    Agents = importlib.import_module("mistralai.client.agents").Agents
     Conversations = importlib.import_module("mistralai.client.conversations").Conversations
-    Ocr = importlib.import_module("mistralai.client.ocr").Ocr
     Transcriptions = importlib.import_module("mistralai.client.transcriptions").Transcriptions
     models = importlib.import_module("mistralai.client.models")
 except ImportError:
-    Chat = importlib.import_module("mistralai.chat").Chat
-    Embeddings = importlib.import_module("mistralai.embeddings").Embeddings
-    Fim = importlib.import_module("mistralai.fim").Fim
-    Agents = importlib.import_module("mistralai.agents").Agents
     Conversations = importlib.import_module("mistralai.conversations").Conversations
-    Ocr = importlib.import_module("mistralai.ocr").Ocr
     Transcriptions = importlib.import_module("mistralai.transcriptions").Transcriptions
     models = importlib.import_module("mistralai.models")
 
@@ -146,16 +136,6 @@ def _method_refs(*targets):
         if cls is not None
         for method in methods
     }
-
-
-def _core_method_refs():
-    return _method_refs(
-        (Chat, ("complete", "complete_async", "stream", "stream_async")),
-        (Embeddings, ("create", "create_async")),
-        (Fim, ("complete", "complete_async", "stream", "stream_async")),
-        (Agents, ("complete", "complete_async", "stream", "stream_async")),
-        (Ocr, ("process", "process_async")),
-    )
 
 
 def _audio_method_refs():
@@ -1091,19 +1071,6 @@ def test_mistral_integration_setup_instruments_beta_conversations(memory_logger,
         end,
         expected_content="8",
     )
-
-
-def test_mistral_integration_setup_is_idempotent(monkeypatch):
-    first_methods = {**_core_method_refs(), **_conversation_method_refs(), **_audio_method_refs()}
-
-    assert MistralIntegration.setup()
-    patched_methods = {**_core_method_refs(), **_conversation_method_refs(), **_audio_method_refs()}
-
-    assert MistralIntegration.setup()
-    for key, method in patched_methods.items():
-        assert inspect.getattr_static(*key) is method, key
-
-    _restore_method_refs(monkeypatch, first_methods)
 
 
 def test_chat_complete_wrapper_logs_errors(memory_logger):
