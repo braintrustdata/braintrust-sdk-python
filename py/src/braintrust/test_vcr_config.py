@@ -1,3 +1,4 @@
+import pytest
 from braintrust.conftest import get_vcr_config
 
 
@@ -17,3 +18,8 @@ def test_vcr_config_scrubs_sensitive_provider_headers():
     scrubbed = config["before_record_response"](response)
 
     assert scrubbed["headers"] == {"Content-Type": ["application/json"]}
+
+
+@pytest.mark.vcr(cassette_name="test_vcr_config_scrubs_sensitive_provider_headers")
+def test_vcr_marker_cassette_name_overrides_default_cassette(vcr_cassette_name):
+    assert vcr_cassette_name == "test_vcr_config_scrubs_sensitive_provider_headers"

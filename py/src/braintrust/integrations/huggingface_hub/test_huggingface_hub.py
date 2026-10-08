@@ -243,7 +243,7 @@ def test_wrap_huggingface_hub_chat_completion_streaming(memory_logger):
     assert start <= metrics["start"] <= metrics["end"] <= end
 
 
-@pytest.mark.vcr(cassette_name="test_wrap_huggingface_hub_chat_completion_streaming")
+@pytest.mark.vcr
 def test_wrap_huggingface_hub_chat_completion_streaming_finalizes_on_early_close(memory_logger):
     """Closing a real provider stream early must finalize the span."""
     assert not memory_logger.pop()
@@ -270,7 +270,7 @@ def test_wrap_huggingface_hub_chat_completion_streaming_finalizes_on_early_close
     assert memory_logger.pop() == []
 
 
-@pytest.mark.vcr(cassette_name="test_wrap_huggingface_hub_chat_completion_streaming")
+@pytest.mark.vcr
 def test_wrap_huggingface_hub_chat_completion_streaming_context_manager_finalizes(memory_logger):
     """Using a real provider stream as a ``with`` block must finalize on exit."""
     assert not memory_logger.pop()

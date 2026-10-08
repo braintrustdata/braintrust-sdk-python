@@ -324,3 +324,19 @@ def get_vcr_config():
 def vcr_config():
     """Pytest fixture wrapper for get_vcr_config()."""
     return get_vcr_config()
+
+
+@pytest.fixture
+def vcr_cassette_name(request):
+    """Name of the VCR cassette, overridable with ``@pytest.mark.vcr(cassette_name=...)``.
+
+    pytest-vcr forwards marker kwargs to vcrpy as config and ignores
+    ``cassette_name``, so without this override tests that share a cassette
+    silently record and replay their own.
+    """
+    marker = request.node.get_closest_marker("vcr")
+    if marker and "cassette_name" in marker.kwargs:
+        return marker.kwargs["cassette_name"]
+    if request.cls:
+        return f"{request.cls.__name__}.{request.node.name}"
+    return request.node.name
