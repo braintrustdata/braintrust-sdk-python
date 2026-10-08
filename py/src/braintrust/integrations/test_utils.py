@@ -301,23 +301,23 @@ def test_attachment_filename_for_mime_type_prefers_known_extensions():
     )
 
 
-def test_materialize_attachment_from_bytes_uses_default_filename():
-    resolved = _materialize_attachment(b"hello", mime_type="image/png")
+@pytest.mark.parametrize(
+    ("kwargs", "mime_type", "filename"),
+    [
+        ({"mime_type": "image/png"}, "image/png", "image.png"),
+        ({"mime_type": "application/pdf", "prefix": "document"}, "application/pdf", "document.pdf"),
+    ],
+    ids=["default-filename", "custom-prefix"],
+)
+def test_materialize_attachment_from_bytes(kwargs, mime_type, filename):
+    resolved = _materialize_attachment(b"hello", **kwargs)
 
     assert isinstance(resolved, _ResolvedAttachment)
     assert isinstance(resolved.attachment, Attachment)
-    assert resolved.mime_type == "image/png"
-    assert resolved.filename == "image.png"
-    assert resolved.attachment.reference["content_type"] == "image/png"
-    assert resolved.attachment.reference["filename"] == "image.png"
-
-
-def test_materialize_attachment_from_bytes_accepts_custom_prefix():
-    resolved = _materialize_attachment(b"hello", mime_type="application/pdf", prefix="document")
-
-    assert isinstance(resolved, _ResolvedAttachment)
-    assert resolved.mime_type == "application/pdf"
-    assert resolved.filename == "document.pdf"
+    assert resolved.mime_type == mime_type
+    assert resolved.filename == filename
+    assert resolved.attachment.reference["content_type"] == mime_type
+    assert resolved.attachment.reference["filename"] == filename
 
 
 @pytest.mark.parametrize(
@@ -343,27 +343,35 @@ def test_materialize_attachment_from_data_url(value, kwargs, content_type, filen
     assert resolved.attachment.reference["filename"] == filename
 
 
-def test_materialize_attachment_returns_none_for_invalid_base64_payloads():
-    assert _materialize_attachment("aGVsbG8=!", mime_type="image/png") is None
+@pytest.mark.parametrize(
+    ("value", "kwargs"),
+    [
+        ("aGVsbG8=!", {"mime_type": "image/png"}),
+        ("data:image/png;base64,aGVsbG8=!", {}),
+        ("https://example.com/image.png", {}),
+    ],
+    ids=["invalid-base64-payload", "invalid-base64-data-url", "non-data-url-string"],
+)
+def test_materialize_attachment_returns_none_for_unsupported_strings(value, kwargs):
+    assert _materialize_attachment(value, **kwargs) is None
 
 
-def test_resolved_attachment_multimodal_part_payload_uses_image_url_for_images():
-    resolved = _materialize_attachment(b"hello", mime_type="image/png")
+@pytest.mark.parametrize(
+    ("kwargs", "expected_payload"),
+    [
+        ({"mime_type": "image/png"}, lambda attachment: {"image_url": {"url": attachment}}),
+        (
+            {"mime_type": "application/pdf", "filename": "document.pdf"},
+            lambda attachment: {"file": {"file_data": attachment, "filename": "document.pdf"}},
+        ),
+    ],
+    ids=["image-url-for-images", "file-parts-for-non-images"],
+)
+def test_resolved_attachment_multimodal_part_payload(kwargs, expected_payload):
+    resolved = _materialize_attachment(b"hello", **kwargs)
 
     assert resolved is not None
-    assert resolved.multimodal_part_payload == {"image_url": {"url": resolved.attachment}}
-
-
-def test_resolved_attachment_multimodal_part_payload_uses_file_parts_for_non_images():
-    resolved = _materialize_attachment(b"hello", mime_type="application/pdf", filename="document.pdf")
-
-    assert resolved is not None
-    assert resolved.multimodal_part_payload == {
-        "file": {
-            "file_data": resolved.attachment,
-            "filename": "document.pdf",
-        }
-    }
+    assert resolved.multimodal_part_payload == expected_payload(resolved.attachment)
 
 
 def test_materialize_attachment_handles_common_input_shapes(tmp_path):
@@ -407,10 +415,6 @@ def test_materialize_attachment_preserves_file_position(tmp_path):
         assert file_obj.tell() == 0
 
 
-def test_materialize_attachment_preserves_invalid_base64_strings_without_mime_type():
-    assert _materialize_attachment("data:image/png;base64,aGVsbG8=!") is None
-
-
 def test_materialize_attachment_preserves_existing_attachment_filename_over_prefix():
     attachment = Attachment(data=b"hello", filename="existing.pdf", content_type="application/pdf")
 
@@ -418,10 +422,6 @@ def test_materialize_attachment_preserves_existing_attachment_filename_over_pref
 
     assert isinstance(resolved, _ResolvedAttachment)
     assert resolved.attachment.reference["filename"] == "existing.pdf"
-
-
-def test_materialize_attachment_returns_none_for_non_data_url_strings():
-    assert _materialize_attachment("https://example.com/image.png") is None
 
 
 def test_infer_audio_mime_type_prefers_response_headers():
@@ -448,33 +448,36 @@ def test_resolve_audio_attachment_options_uses_generic_env_with_explicit_precede
     assert _resolve_audio_attachment_options(**options) == expected
 
 
-def test_extract_audio_output_materializes_attachment_from_binary_response():
-    raw_response = unittest.mock.Mock(headers={"content-type": "audio/mpeg"})
-    response = unittest.mock.Mock(content=b"audio-bytes", response=raw_response)
-
+@pytest.mark.parametrize(
+    ("response", "mime_type", "content", "filename"),
+    [
+        (
+            unittest.mock.Mock(
+                content=b"audio-bytes", response=unittest.mock.Mock(headers={"content-type": "audio/mpeg"})
+            ),
+            "audio/mpeg",
+            b"audio-bytes",
+            "generated_speech.mp3",
+        ),
+        (
+            {"response": unittest.mock.Mock(headers={"content-type": "audio/wav"}, content=b"wave")},
+            "audio/wav",
+            b"wave",
+            "generated_speech.wav",
+        ),
+    ],
+    ids=["binary-response", "mapping-with-raw-response-only"],
+)
+def test_extract_audio_output_materializes_attachment(response, mime_type, content, filename):
     output = _extract_audio_output(response, prefix="generated_speech")
 
     assert output["type"] == "audio"
-    assert output["mime_type"] == "audio/mpeg"
-    assert output["audio_size_bytes"] == len(b"audio-bytes")
+    assert output["mime_type"] == mime_type
+    assert output["audio_size_bytes"] == len(content)
     attachment = output["file"]["file_data"]
     assert isinstance(attachment, Attachment)
-    assert attachment.reference["content_type"] == "audio/mpeg"
-    assert attachment.reference["filename"] == "generated_speech.mp3"
-
-
-def test_extract_audio_output_supports_mapping_with_raw_response_only():
-    raw_response = unittest.mock.Mock(headers={"content-type": "audio/wav"}, content=b"wave")
-
-    output = _extract_audio_output({"response": raw_response}, prefix="generated_speech")
-
-    assert output["type"] == "audio"
-    assert output["mime_type"] == "audio/wav"
-    assert output["audio_size_bytes"] == len(b"wave")
-    attachment = output["file"]["file_data"]
-    assert isinstance(attachment, Attachment)
-    assert attachment.reference["content_type"] == "audio/wav"
-    assert attachment.reference["filename"] == "generated_speech.wav"
+    assert attachment.reference["content_type"] == mime_type
+    assert attachment.reference["filename"] == filename
 
 
 def test_serialize_response_format_with_pydantic_basemodel_subclass():
@@ -490,47 +493,32 @@ def test_serialize_response_format_with_pydantic_basemodel_subclass():
     assert serialized["json_schema"]["schema"]["properties"]["answer"]["title"] == "Answer"
 
 
-def test_timing_metrics_includes_time_to_first_token_when_present():
-    assert _timing_metrics(10.0, 15.0, 12.0) == {
-        "start": 10.0,
-        "end": 15.0,
-        "duration": 5.0,
-        "time_to_first_token": 2.0,
-    }
+@pytest.mark.parametrize(
+    ("args", "expected"),
+    [
+        ((10.0, 15.0, 12.0), {"start": 10.0, "end": 15.0, "duration": 5.0, "time_to_first_token": 2.0}),
+        ((10.0, 15.0), {"start": 10.0, "end": 15.0, "duration": 5.0}),
+    ],
+    ids=["with-time-to-first-token", "without-time-to-first-token"],
+)
+def test_timing_metrics(args, expected):
+    assert _timing_metrics(*args) == expected
 
 
-def test_timing_metrics_omits_time_to_first_token_when_absent():
-    assert _timing_metrics(10.0, 15.0) == {
-        "start": 10.0,
-        "end": 15.0,
-        "duration": 5.0,
-    }
-
-
-def test_log_and_end_span_logs_populated_event_then_ends():
+@pytest.mark.parametrize(
+    "event",
+    [{"output": {"answer": "4"}, "metrics": {"tokens": 2}, "metadata": {"provider": "test"}}, {}],
+    ids=["populated-event", "empty-event-skips-log"],
+)
+def test_log_and_end_span(event):
     span = unittest.mock.Mock()
 
-    _log_and_end_span(
-        span,
-        output={"answer": "4"},
-        metrics={"tokens": 2},
-        metadata={"provider": "test"},
-    )
+    _log_and_end_span(span, **event)
 
-    span.log.assert_called_once_with(
-        output={"answer": "4"},
-        metrics={"tokens": 2},
-        metadata={"provider": "test"},
-    )
-    span.end.assert_called_once_with()
-
-
-def test_log_and_end_span_skips_log_for_empty_event():
-    span = unittest.mock.Mock()
-
-    _log_and_end_span(span)
-
-    span.log.assert_not_called()
+    if event:
+        span.log.assert_called_once_with(**event)
+    else:
+        span.log.assert_not_called()
     span.end.assert_called_once_with()
 
 
