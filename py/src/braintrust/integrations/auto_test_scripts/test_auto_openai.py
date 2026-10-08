@@ -51,7 +51,7 @@ with autoinstrument_test_context("test_auto_openai", integration="openai") as me
     assert "gpt-4o-mini" in span["metadata"]["model"]
 
 # 5. Manual wrapping after auto-instrumentation must not duplicate the span or tokens.
-with autoinstrument_test_context("test_openai_responses_metrics", integration="openai") as memory_logger:
+with autoinstrument_test_context("test_openai_responses_metrics[sync]", integration="openai") as memory_logger:
     client = wrap_openai(openai.OpenAI())
     response = client.responses.create(
         model="gpt-4o-mini",
