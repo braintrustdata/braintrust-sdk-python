@@ -251,43 +251,18 @@ test-types = [
 lint = [
     "pylint==4.0.5",
     "pyperf==2.10.0",
-    # Packages below are needed so pylint can resolve every SDK import.
-    # Versions are unpinned (unless already constrained) so the resolver
-    # can find mutually compatible transitive deps.
-    "agentscope<2",
-    "agno",
-    "ai>=0.4.0; python_version>='3.12'",
-    "anthropic",
-    "autogen-agentchat",
-    "autogen-ext[openai]",
-    "claude-agent-sdk",
-    "cohere",
-    "autoevals",
-    "braintrust-core",
-    # Do not install crewai in the shared lint environment: current releases
-    # transitively pin vulnerable chromadb versions. CrewAI integration tests
-    # install the provider package via the nox matrix instead.
-    # onnxruntime 1.24.3 dropped cp310 wheels. Constrain the transitive
-    # resolution on Python 3.10 so pylint can still build its environment.
-    "onnxruntime<1.24; python_version<'3.11'",
-    "dspy",
-    "google-adk",
-    "google-genai",
-    "google-cloud-discoveryengine",
-    "instructor",
-    "litellm>=1.83.10",
-    "livekit-agents",
+    # Non-vendor packages needed by pylint imports and the project's `all` extra.
+    # Vendor SDK versions are installed from [tool.braintrust.matrix] below.
+    "python-dotenv",
+    "starlette",
+    "uv",
+    "uvicorn",
+    "orjson; platform_python_implementation != 'PyPy'",
+    # Imported directly by LiveKit integration tests, but not a standalone
+    # version-matrix package.
     "livekit-plugins-openai",
-    "mistralai",
-    "openai",
-    "openai-agents",
-    "openrouter",
-    "huggingface-hub",
-    "numpy",
-    "strands-agents",
-    "typesafe-sdk",
-    "temporalio",
-    "pydantic-ai",
+    # Keep these available to pylint without installing CrewAI (whose
+    # transitive chromadb versions are unsuitable for shared CI).
     "opentelemetry-instrumentation-openai==0.59.1",
     "langsmith==0.8.18",
     "langchain-core",
@@ -624,6 +599,7 @@ typesafe = ["typesafe-sdk"]
 
 [tool.braintrust.vendor-packages]
 ai-sdk = "ai"
+claude-agent-sdk = "claude_agent_sdk"
 agno = "agno"
 agentscope = "agentscope"
 autogen-agentchat = "autogen_agentchat"
@@ -648,7 +624,11 @@ huggingface-hub = "huggingface_hub"
 openai = "openai"
 openai-agents = "agents"
 openrouter = "openrouter"
+opentelemetry-api = "opentelemetry"
+opentelemetry-sdk = "opentelemetry.sdk"
+opentelemetry-exporter-otlp-proto-http = "opentelemetry.exporter.otlp.proto.http"
 pipecat-ai = "pipecat"
+pydantic-ai-integration = "pydantic_ai"
 strands-agents = "strands"
 temporalio = "temporalio"
 transformers = "transformers"

@@ -873,10 +873,13 @@ def test_types(session):
 
 @nox.session()
 def pylint(session):
-    # pylint needs everything so we don't trigger missing import errors
-    session.install(".[all]")
-    # Base test deps + lint tools + all vendor packages, all from the lockfile.
+    # Install the project without optional extras, then install stable lint and
+    # test dependencies from the lockfile. Optional vendor packages follow the
+    # matrix's latest pins so lint sees the same SDK versions as CI tests.
+    session.install(".")
     _install_group_locked(session, "test", "lint")
+    for package in _VENDOR_TABLE:
+        _install_matrix_dep(session, package, LATEST)
 
     result = session.run("git", "ls-files", "**/*.py", silent=True, log=False)
     files = [path for path in result.strip().splitlines() if not path.startswith(GENERATED_LINT_EXCLUDES)]

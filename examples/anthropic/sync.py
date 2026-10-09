@@ -23,7 +23,9 @@ def ask_anthropic_sync(question, system=None):
     }
     if system:
         args["system"] = system
-    msg = client.messages.create(**args)
+    # Temperature remains accepted by the API although the latest SDK typing
+    # omits it from the parameter signature.
+    msg = client.messages.create(**args)  # pylint: disable=unexpected-keyword-arg
     print(msg)
 
 

@@ -1,5 +1,5 @@
 """Test auto_instrument for AgentScope."""
-# pylint: disable=import-error,no-name-in-module,no-value-for-parameter,no-member
+# pylint: disable=import-error,no-name-in-module,no-value-for-parameter,no-member,unexpected-keyword-arg
 
 import asyncio
 import importlib
