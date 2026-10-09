@@ -913,7 +913,100 @@ class FunctionDataFunctionData4(TypedDict):
     """
 
 
-FunctionFormat: TypeAlias = Literal['llm', 'code', 'global', 'graph', 'topic_map']
+class FunctionDataFunctionData5ConfigAgent(TypedDict):
+    type: Literal['livekit']
+    server_url: str
+    """
+    The WebSocket URL of the LiveKit project hosting the agent
+    """
+    agent_name: str
+    """
+    The name of the LiveKit agent to dispatch
+    """
+
+
+class FunctionDataFunctionData5ConfigAgent1(TypedDict):
+    type: Literal['phone']
+    phone_number: str
+
+
+class FunctionDataFunctionData5ConfigAgent2(TypedDict):
+    type: Literal['sip']
+    uri: str
+
+
+class FunctionDataFunctionData5Config(TypedDict):
+    initiator: NotRequired[Literal['agent', 'simulated_user'] | None]
+    """
+    Who speaks first in the conversation
+    """
+    timeout_seconds: NotRequired[int | None]
+    """
+    Maximum conversation duration in seconds
+    """
+    modality: NotRequired[Literal['voice'] | None]
+    agent: (
+        FunctionDataFunctionData5ConfigAgent
+        | FunctionDataFunctionData5ConfigAgent1
+        | FunctionDataFunctionData5ConfigAgent2
+    )
+
+
+class FunctionDataFunctionData5Config1Agent(TypedDict):
+    type: Literal['livekit']
+    server_url: str
+    """
+    The WebSocket URL of the LiveKit project hosting the agent
+    """
+    agent_name: str
+    """
+    The name of the LiveKit agent to dispatch
+    """
+
+
+class FunctionDataFunctionData5Config1Agent1(TypedDict):
+    type: Literal['acp']
+    command: str
+    """
+    Executable for the ACP agent subprocess, communicating over stdio
+    """
+    args: NotRequired[Sequence[str] | None]
+    """
+    Arguments passed to the executable without shell interpretation
+    """
+    cwd: str
+    """
+    Absolute working directory for the ACP session on the execution host
+    """
+    permissions: NotRequired[Literal['deny'] | None]
+    """
+    Deny ACP permission requests; this does not sandbox the subprocess
+    """
+
+
+class FunctionDataFunctionData5Config1(TypedDict):
+    initiator: NotRequired[Literal['agent', 'simulated_user'] | None]
+    """
+    Who speaks first in the conversation
+    """
+    timeout_seconds: NotRequired[int | None]
+    """
+    Maximum conversation duration in seconds
+    """
+    modality: Literal['text']
+    agent: (
+        FunctionDataFunctionData5Config1Agent | FunctionDataFunctionData5Config1Agent1
+    )
+
+
+class FunctionDataFunctionData5(TypedDict):
+    type: Literal['simulation']
+    config: FunctionDataFunctionData5Config | FunctionDataFunctionData5Config1
+
+
+FunctionFormat: TypeAlias = Literal[
+    'llm', 'code', 'global', 'graph', 'topic_map', 'simulation'
+]
 
 
 class FunctionIdFunctionId(TypedDict):
@@ -4821,6 +4914,7 @@ FunctionData: TypeAlias = (
     | BatchedFacetData
     | FunctionDataFunctionData4
     | TopicMapData
+    | FunctionDataFunctionData5
 )
 
 
