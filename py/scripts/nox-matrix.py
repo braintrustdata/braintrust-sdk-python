@@ -11,10 +11,15 @@ Usage:
 
 import argparse
 import json
+import platform
 import re
 import subprocess
 import sys
 from pathlib import Path
+
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from nox_session_constraints import session_is_compatible  # noqa: E402
 
 
 # Sessions that run in the dedicated static_checks CI job and should be
@@ -81,11 +86,18 @@ def assign_shards(
     return shard_assignments
 
 
+def filter_compatible_sessions(sessions: list[str], python_version: str, operating_system: str) -> list[str]:
+    """Remove sessions which are declared to skip for this CI target."""
+    return [s for s in sessions if session_is_compatible(s, python_version, operating_system, check_ci_platforms=True)]
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("shard_index", type=int, help="Zero-based shard index")
     parser.add_argument("num_shards", type=int, help="Total number of shards")
     parser.add_argument("--dry-run", action="store_true", help="Print assignment without running nox")
+    parser.add_argument("--python-version", default=f"{sys.version_info.major}.{sys.version_info.minor}")
+    parser.add_argument("--os", dest="operating_system", default=platform.system())
     parser.add_argument(
         "--exclude-session",
         action="append",
@@ -132,6 +144,7 @@ def main() -> None:
     weights_file = root_dir / "py" / "scripts" / "session-weights.json"
 
     all_sessions = get_nox_sessions(noxfile)
+    all_sessions = filter_compatible_sessions(all_sessions, args.python_version, args.operating_system)
     excluded_sessions = set(args.exclude_session)
     if args.exclude_static_checks:
         excluded_sessions.update(STATIC_CHECK_SESSIONS)

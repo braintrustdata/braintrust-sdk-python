@@ -26,6 +26,11 @@ import urllib.request
 from packaging.version import Version
 
 
+sys.path.insert(0, str(pathlib.Path(__file__).parent))
+
+from nox_session_constraints import incompatibility_reason  # noqa: E402
+
+
 if sys.version_info >= (3, 11):
     import tomllib
 else:
@@ -149,6 +154,13 @@ def _install_group_locked(
         os.unlink(req_file)
 
 
+def _skip_if_incompatible(session: nox.Session) -> None:
+    python_version = f"{sys.version_info.major}.{sys.version_info.minor}"
+    reason = incompatibility_reason(session.name, python_version, platform.system())
+    if reason:
+        session.skip(reason)
+
+
 def _get_matrix_versions(prefix: str) -> tuple[str, ...]:
     """Read the version matrix for *prefix* from ``[tool.braintrust.matrix]``.
 
@@ -252,87 +264,86 @@ _VENDOR_IMPORT_NAMES = tuple(_VENDOR_TABLE.values())
 
 AI_SDK_VERSIONS = _get_matrix_versions("ai-sdk")
 
-
-@nox.session()
-@nox.parametrize("version", AI_SDK_VERSIONS, ids=AI_SDK_VERSIONS)
-def test_ai_sdk(session, version):
-    """Test the Vercel AI SDK for Python telemetry integration."""
-    if sys.version_info < (3, 12):
-        session.skip("Vercel AI SDK for Python requires Python 3.12+")
-    _install_test_deps(session)
-    _install_matrix_dep(session, "openai", LATEST)
-    _install_matrix_dep(session, "ai-sdk", version)
-    _run_tests(session, f"{INTEGRATION_DIR}/ai_sdk/test_ai_sdk.py", version=version)
-
-
 ANTHROPIC_VERSIONS = _get_matrix_versions("anthropic")
-
-
-@nox.session()
-@nox.parametrize("version", ANTHROPIC_VERSIONS, ids=ANTHROPIC_VERSIONS)
-def test_anthropic(session, version):
-    _install_test_deps(session)
-    _install_matrix_dep(session, "anthropic", version)
-    _run_tests(session, f"{INTEGRATION_DIR}/anthropic/test_anthropic.py", version=version)
-
 
 COHERE_VERSIONS = _get_matrix_versions("cohere")
 
-
-@nox.session()
-@nox.parametrize("version", COHERE_VERSIONS, ids=COHERE_VERSIONS)
-def test_cohere(session, version):
-    """Test the native Cohere SDK integration."""
-    _install_test_deps(session)
-    _install_matrix_dep(session, "cohere", version)
-    _run_tests(session, f"{INTEGRATION_DIR}/cohere/test_cohere.py", version=version)
-
-
 BOTO3_VERSIONS = _get_matrix_versions("boto3")
 
-
-@nox.session()
-@nox.parametrize("version", BOTO3_VERSIONS, ids=BOTO3_VERSIONS)
-def test_bedrock_runtime(session, version):
-    """Test the boto3 Bedrock Runtime integration."""
-    _install_test_deps(session)
-    _install_matrix_dep(session, "boto3", version)
-    _install_matrix_dep(session, "botocore", version)
-    _run_tests(session, f"{INTEGRATION_DIR}/bedrock_runtime/test_bedrock_runtime.py", version=version)
-
-
 INSTRUCTOR_VERSIONS = _get_matrix_versions("instructor")
-
-
-@nox.session()
-@nox.parametrize("version", INSTRUCTOR_VERSIONS, ids=INSTRUCTOR_VERSIONS)
-def test_instructor(session, version):
-    """Test the native Instructor structured-output integration."""
-    _install_test_deps(session, "test-instructor")
-    _install_matrix_dep(session, "instructor", version)
-    # The locked auxiliary group selects an OpenAI SDK version supported by
-    # Instructor. These tests use VCR cassettes against ``api.openai.com``.
-    _run_tests(session, f"{INTEGRATION_DIR}/instructor/test_instructor.py", version=version)
-
 
 OPENAI_VERSIONS = _get_matrix_versions("openai")
 OPENAI_ENDPOINT_VERSIONS = (OPENAI_VERSIONS[0], OPENAI_VERSIONS[-1])
 
 
-@nox.session()
-@nox.parametrize("version", OPENAI_VERSIONS, ids=OPENAI_VERSIONS)
-def test_openai(session, version):
-    _install_test_deps(session)
-    _install_matrix_dep(session, "openai", version)
-    _run_tests(
-        session,
-        [
-            f"{INTEGRATION_DIR}/openai/test_openai.py",
-            f"{INTEGRATION_DIR}/openai/test_oai_attachments.py",
-            f"{INTEGRATION_DIR}/openai/test_openai_openrouter_gateway.py",
-        ],
-        version=version,
-    )
+def _register_matrix_sessions(specs):
+    """Register the routine provider sessions from compact data records."""
+    for spec in specs:
+
+        def run(session, version, spec=spec):
+            _skip_if_incompatible(session)
+            _install_test_deps(session, *spec.get("groups", ()))
+            for package, package_version in spec["dependencies"]:
+                _install_matrix_dep(session, package, version if package_version == "$version" else package_version)
+            _run_tests(
+                session,
+                spec["tests"],
+                version=version,
+                env=spec.get("env"),
+            )
+
+        run.__name__ = spec["name"]
+        run.__qualname__ = spec["name"]
+        run.__doc__ = spec.get("doc")
+        decorated = nox.parametrize("version", spec["versions"], ids=spec["versions"])(run)
+        globals()[spec["name"]] = nox.session()(decorated)
+
+
+_register_matrix_sessions(
+    [
+        {
+            "name": "test_ai_sdk",
+            "versions": AI_SDK_VERSIONS,
+            "dependencies": [("openai", LATEST), ("ai-sdk", "$version")],
+            "tests": f"{INTEGRATION_DIR}/ai_sdk/test_ai_sdk.py",
+        },
+        {
+            "name": "test_anthropic",
+            "versions": ANTHROPIC_VERSIONS,
+            "dependencies": [("anthropic", "$version")],
+            "tests": f"{INTEGRATION_DIR}/anthropic/test_anthropic.py",
+        },
+        {
+            "name": "test_cohere",
+            "versions": COHERE_VERSIONS,
+            "dependencies": [("cohere", "$version")],
+            "tests": f"{INTEGRATION_DIR}/cohere/test_cohere.py",
+        },
+        {
+            "name": "test_bedrock_runtime",
+            "versions": BOTO3_VERSIONS,
+            "dependencies": [("boto3", "$version"), ("botocore", "$version")],
+            "tests": f"{INTEGRATION_DIR}/bedrock_runtime/test_bedrock_runtime.py",
+        },
+        {
+            "name": "test_instructor",
+            "versions": INSTRUCTOR_VERSIONS,
+            "groups": ("test-instructor",),
+            "dependencies": [("instructor", "$version")],
+            "tests": f"{INTEGRATION_DIR}/instructor/test_instructor.py",
+        },
+        {
+            "name": "test_openai",
+            "versions": OPENAI_VERSIONS,
+            "dependencies": [("openai", "$version")],
+            "tests": [
+                f"{INTEGRATION_DIR}/openai/test_openai.py",
+                f"{INTEGRATION_DIR}/openai/test_oai_attachments.py",
+                f"{INTEGRATION_DIR}/openai/test_openai_openrouter_gateway.py",
+            ],
+        },
+    ]
+)
 
 
 @nox.session()
@@ -392,8 +403,7 @@ _LITELLM_LOCAL_COST_MAP = {"LITELLM_LOCAL_MODEL_COST_MAP": "True"}
 @nox.parametrize("version", LITELLM_VERSIONS, ids=LITELLM_VERSIONS)
 def test_litellm(session, version):
     # LiteLLM 1.97.0 leaves Pydantic forward references unresolved on Python 3.10.
-    if version == LATEST and sys.version_info < (3, 11):
-        session.skip("Latest LiteLLM is currently broken on Python 3.10")
+    _skip_if_incompatible(session)
     _install_test_deps(session)
     # Auxiliary deps (openai upper-bounded, fastapi, orjson) are locked in the lockfile.
     _install_group_locked(session, "test-litellm")
@@ -450,8 +460,7 @@ LIVEKIT_AGENTS_VERSIONS = _get_matrix_versions("livekit-agents")
 @nox.session()
 @nox.parametrize("version", LIVEKIT_AGENTS_VERSIONS, ids=LIVEKIT_AGENTS_VERSIONS)
 def test_livekit_agents(session, version):
-    if sys.version_info >= (3, 14):
-        session.skip("LiveKit Agents Silero VAD depends on onnxruntime, which does not ship Python 3.14 wheels")
+    _skip_if_incompatible(session)
     _install_test_deps(session)
     _install_matrix_dep(session, "livekit-agents", version)
     _install_group_locked(session, "test-livekit-agents")
@@ -482,10 +491,7 @@ PIPECAT_VERSIONS = _get_matrix_versions("pipecat-ai")
 @nox.session()
 @nox.parametrize("version", PIPECAT_VERSIONS, ids=PIPECAT_VERSIONS)
 def test_pipecat(session, version):
-    if sys.version_info < (3, 11):
-        session.skip("Pipecat AI 1.x requires Python 3.11+")
-    if sys.version_info >= (3, 14):
-        session.skip("Pipecat AI's onnxruntime dependency does not ship Python 3.14 wheels")
+    _skip_if_incompatible(session)
     _install_test_deps(session)
     _install_group_locked(session, "test-pipecat")
     _install_matrix_dep(session, "pipecat-ai", version)
@@ -517,8 +523,7 @@ AGENTSCOPE_VERSIONS = _get_matrix_versions("agentscope")
 @nox.session()
 @nox.parametrize("version", AGENTSCOPE_VERSIONS, ids=AGENTSCOPE_VERSIONS)
 def test_agentscope(session, version):
-    if version == LATEST and sys.version_info < (3, 11):
-        session.skip("AgentScope 2.x requires Python 3.11+")
+    _skip_if_incompatible(session)
     _install_test_deps(session)
     # AgentScope 1.0.0 imports streamablehttp_client, which MCP 2 no longer exports.
     constraint_group = "test-mcp-v1" if version == "1.0.0" else None
@@ -621,8 +626,7 @@ DSPY_VERSIONS = _get_matrix_versions("dspy")
 def test_dspy(session, version):
     # DSPy latest preinstalls our latest LiteLLM pin, which is currently broken
     # on Python 3.10 due to unresolved Pydantic forward references.
-    if version == LATEST and sys.version_info < (3, 11):
-        session.skip("DSPy latest currently resolves a LiteLLM version broken on Python 3.10")
+    _skip_if_incompatible(session)
     _install_test_deps(session)
     if version == LATEST:
         # DSPy only lower-bounds LiteLLM, whose 1.92.0 release lacks Windows
@@ -639,10 +643,7 @@ CREWAI_VERSIONS = _get_matrix_versions("crewai")
 @nox.session()
 @nox.parametrize("version", CREWAI_VERSIONS, ids=CREWAI_VERSIONS)
 def test_crewai(session, version):
-    if sys.version_info >= (3, 14):
-        session.skip(
-            "CrewAI currently resolves instructor -> pydantic-core builds that do not ship Python 3.14 wheels"
-        )
+    _skip_if_incompatible(session)
     _install_test_deps(session)
     _install_group_locked(session, "test-crewai")
     _install_matrix_dep(session, "crewai", version)
@@ -686,8 +687,7 @@ DEEPAGENTS_VERSIONS = _get_matrix_versions("deepagents")
 @nox.session()
 @nox.parametrize("version", DEEPAGENTS_VERSIONS, ids=DEEPAGENTS_VERSIONS)
 def test_deepagents(session, version):
-    if sys.version_info < (3, 11):
-        session.skip("Deep Agents requires Python 3.11+")
+    _skip_if_incompatible(session)
     _install_test_deps(session)
     _install_group_locked(session, "test-deepagents")
     _install_matrix_dep(session, "deepagents", version)
@@ -765,8 +765,7 @@ TRANSFORMERS_VERSIONS = _get_matrix_versions("transformers")
 def test_transformers(session, version):
     """Test local Hugging Face Transformers pipeline instrumentation."""
     # The 4.42.0 floor pins tokenizers 0.19, whose wheels stop at Python 3.12.
-    if version != LATEST and sys.version_info >= (3, 13):
-        session.skip(f"Transformers {version} does not support Python 3.13+")
+    _skip_if_incompatible(session)
     _install_test_deps(session)
     _install_matrix_dep(session, "transformers", version)
     _install_group_locked(session, "test-transformers", indexes=("pytorch-cpu",))
@@ -795,8 +794,7 @@ HARBOR_VERSIONS = _get_matrix_versions("harbor")
 @nox.session()
 @nox.parametrize("version", HARBOR_VERSIONS, ids=HARBOR_VERSIONS)
 def test_harbor(session, version):
-    if sys.version_info < (3, 12):
-        session.skip("Harbor requires Python 3.12+")
+    _skip_if_incompatible(session)
     _install_test_deps(session)
     _install_matrix_dep(session, "harbor", version)
     _run_tests(session, f"{INTEGRATION_DIR}/harbor", version=version)
@@ -865,8 +863,7 @@ OTEL_VERSIONS = _get_matrix_versions("opentelemetry-sdk")
 @nox.parametrize("version", OTEL_VERSIONS, ids=OTEL_VERSIONS)
 def test_otel(session, version):
     """Test OtelExporter with OpenTelemetry installed."""
-    if version != LATEST and Version(version) < Version("1.28.0") and sys.version_info >= (3, 14):
-        session.skip("OpenTelemetry <1.28 requires protobuf<5, which does not support Python 3.14")
+    _skip_if_incompatible(session)
     _install_test_deps(session)
     _install_matrix_dep(session, "opentelemetry-api", version)
     _install_matrix_dep(session, "opentelemetry-sdk", version)
