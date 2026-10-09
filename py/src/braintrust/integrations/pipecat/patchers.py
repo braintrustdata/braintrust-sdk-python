@@ -1,5 +1,6 @@
 """Pipecat integration patchers."""
 
+import logging
 from typing import Any
 
 from braintrust.integrations.base import FunctionWrapperPatcher
@@ -12,6 +13,7 @@ _DEFAULT_OBSERVER_OPTIONS: dict[str, Any] = {
     "capture_user_audio_attachments": None,
     "capture_agent_audio_attachments": None,
     "trace_turns": True,
+    "audio_format": "ogg",
 }
 
 
@@ -35,7 +37,15 @@ def traced_pipeline_worker_init(wrapped: Any, _instance: Any, args: tuple[Any, .
     """Inject the Braintrust Pipecat observer into PipelineWorker construction."""
     kwargs = dict(kwargs)
     kwargs["observers"] = _with_braintrust_observer(kwargs.get("observers"))
-    return wrapped(*args, **kwargs)
+    result = wrapped(*args, **kwargs)
+    pipeline = kwargs.get("pipeline", args[0] if args else None)
+    for observer in kwargs["observers"]:
+        if isinstance(observer, BraintrustPipecatObserver):
+            try:
+                observer._bind_pipeline(pipeline)
+            except Exception:  # noqa: BLE001 - optional discovery cannot break worker construction
+                logging.getLogger(__name__).warning("Pipecat voice discovery unavailable; using frame tracing")
+    return result
 
 
 class PipelineWorkerInitPatcher(FunctionWrapperPatcher):

@@ -474,7 +474,7 @@ def test_pipecat(session, version):
     # loaded from Nox's virtualenv when it is beneath the current directory.
     _run_tests(
         session,
-        f"{INTEGRATION_DIR}/pipecat/test_pipecat.py",
+        f"{INTEGRATION_DIR}/pipecat" if version == LATEST else f"{INTEGRATION_DIR}/pipecat/test_pipecat.py",
         version=version,
         run_from_temp_dir=True,
     )
@@ -799,6 +799,13 @@ def test_pytest_plugin(session, version):
 
 
 @nox.session()
+def test_audio(session):
+    _install_test_deps(session)
+    _install_group_locked(session, "test-audio")
+    _run_tests(session, "braintrust/_audio")
+
+
+@nox.session()
 def test_core(session):
     _install_test_deps(session)
     # verify we haven't installed our 3p deps.
@@ -978,6 +985,8 @@ def _run_core_tests(session):
         SRC_DIR,
         ignore_paths=[
             WRAPPER_DIR,
+            "braintrust/_audio/test_recording.py",
+            "braintrust/_audio/test_segments.py",
             *_integration_subdirs_to_ignore(),
             CONTRIB_DIR,
             DEVSERVER_DIR,
