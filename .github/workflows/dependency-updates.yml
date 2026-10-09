@@ -23,6 +23,12 @@ jobs:
         working-directory: py
         run: python scripts/update-matrix-latest.py
 
+      - name: Advance uv exclude-newer cutoff
+        working-directory: py
+        run: |
+          cutoff=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          sed -i -E "s/^exclude-newer = .*/exclude-newer = \"$cutoff\"/" pyproject.toml
+
       - name: Upgrade lockfile
         working-directory: py
         run: uv lock --upgrade
@@ -57,7 +63,7 @@ jobs:
         with:
           title: "chore(deps): weekly dependency update"
           body: |
-            Automated weekly dependency update via `python scripts/update-matrix-latest.py && uv lock --upgrade`.
+            Automated weekly dependency update via `python scripts/update-matrix-latest.py`, advancing the `uv` `exclude-newer` cutoff, and `uv lock --upgrade`.
 
             ${{ steps.labels.outputs.needs_rerecord == 'true' && '⚠️ **Provider SDK packages changed.** A human needs to re-record cassettes locally before merging.' || '✅ Only test infrastructure deps changed. Safe to merge if CI passes.' }}
           branch: deps/weekly-update-${{ steps.date.outputs.date }}
