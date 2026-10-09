@@ -144,9 +144,10 @@ def main() -> None:
 
         print(f"{session:<50} {expected:>7}s {actual:>7}s {drift_pct:>+7.0%}{flag}")
 
-    # Check for sessions in weights but not measured (may have been removed)
+    # Check for current sharded sessions missing from measurements.
     known_sessions = current_sessions - EXCLUDED_SESSIONS
     missing = sorted(known_sessions - set(measured))
+    stale = sorted({k for k in weights_data if k not in meta_keys} - current_sessions)
 
     print()
 
@@ -163,7 +164,13 @@ def main() -> None:
             print(f"   {s}")
         print()
 
-    if new_sessions or missing:
+    if stale:
+        print(f"🗑️  {len(stale)} stale session weight(s) no longer in nox -l:")
+        for s in stale:
+            print(f"   {s}")
+        print()
+
+    if new_sessions or missing or stale:
         print("❌ Session weights need updating or measurement is incomplete.")
         sys.exit(1)
     elif drifted:
