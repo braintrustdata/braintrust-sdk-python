@@ -302,11 +302,10 @@ INSTRUCTOR_VERSIONS = _get_matrix_versions("instructor")
 @nox.parametrize("version", INSTRUCTOR_VERSIONS, ids=INSTRUCTOR_VERSIONS)
 def test_instructor(session, version):
     """Test the native Instructor structured-output integration."""
-    _install_test_deps(session)
+    _install_test_deps(session, "test-instructor")
     _install_matrix_dep(session, "instructor", version)
-    # Instructor wraps a provider client; we exercise it against an OpenAI
-    # client via VCR cassettes recorded against ``api.openai.com``.
-    _install_matrix_dep(session, "openai", LATEST)
+    # The locked auxiliary group selects an OpenAI SDK version supported by
+    # Instructor. These tests use VCR cassettes against ``api.openai.com``.
     _run_tests(session, f"{INTEGRATION_DIR}/instructor/test_instructor.py", version=version)
 
 
@@ -450,6 +449,17 @@ def test_livekit_agents(session, version):
     _install_test_deps(session)
     _install_matrix_dep(session, "livekit-agents", version)
     _install_group_locked(session, "test-livekit-agents")
+    if version == "1.3.1":
+        # LiveKit 1.3.1 accepts a newer OTLP exporter, but its dependencies
+        # require an SDK version that breaks LiveKit's LogData import. The
+        # locked group downgrades the exporter, so remove its now-orphaned deps.
+        session.run(
+            "uv",
+            "pip",
+            "uninstall",
+            "opentelemetry-exporter-otlp-common",
+            "opentelemetry-exporter-http-transport",
+        )
     livekit_server_dir = _ensure_livekit_server(session)
     env = {
         "LIVEKIT_URL": os.environ.get("LIVEKIT_URL", "ws://localhost:7880"),
@@ -684,7 +694,8 @@ LLAMAINDEX_VERSIONS = _get_matrix_versions("llama-index-core")
 @nox.session()
 @nox.parametrize("version", LLAMAINDEX_VERSIONS, ids=LLAMAINDEX_VERSIONS)
 def test_llamaindex(session, version):
-    _install_test_deps(session, "test-llamaindex")
+    group = "test-llamaindex-0-13" if version == "0.13.0" else "test-llamaindex"
+    _install_test_deps(session, group)
     _install_matrix_dep(session, "llama-index-core", version, "test-sqlalchemy-2-0")
     _run_tests(session, f"{INTEGRATION_DIR}/llamaindex/test_llamaindex.py", version=version)
 
@@ -893,11 +904,14 @@ def test_types(session):
 
 @nox.session()
 def pylint(session):
-    # Install the project without optional extras, then install stable lint and
-    # test dependencies from the lockfile. Optional vendor packages follow the
-    # matrix's latest pins so lint sees the same SDK versions as CI tests.
+    # Install the project and locked base/lint dependencies, then vendor SDKs
+    # at their matrix latest versions for import coverage.
     session.install(".")
     _install_group_locked(session, "test", "lint")
+    # Provider latest pins intentionally coexist in the lint environment even
+    # when their dependency metadata conflicts. Validate the lock-resolved base
+    # environment before adding those matrix versions for import coverage.
+    _check_installed_deps(session)
     minimum_python = {
         "ai-sdk": (3, 12),
         "agentscope": (3, 11),
@@ -905,18 +919,13 @@ def pylint(session):
         "pipecat-ai": (3, 11),
     }
     for package in _VENDOR_TABLE:
-        # These providers do not support the Python versions in the static
-        # checks matrix. Keep lint installs compatible with the active Python.
         if sys.version_info[:2] < minimum_python.get(package, (3, 10)):
             continue
         if package == "pipecat-ai" and sys.version_info >= (3, 14):
             continue
-        # CrewAI's latest release brings unsuitable chromadb transitive deps;
-        # its integration tests install it in their isolated session instead.
         if package == "crewai":
             continue
         _install_matrix_dep(session, package, LATEST)
-    _check_installed_deps(session)
 
     result = session.run("git", "ls-files", "**/*.py", silent=True, log=False)
     files = [path for path in result.strip().splitlines() if not path.startswith(GENERATED_LINT_EXCLUDES)]
