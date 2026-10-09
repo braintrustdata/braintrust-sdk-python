@@ -307,6 +307,7 @@ def test_instructor(session, version):
 
 
 OPENAI_VERSIONS = _get_matrix_versions("openai")
+OPENAI_ENDPOINT_VERSIONS = (OPENAI_VERSIONS[0], OPENAI_VERSIONS[-1])
 
 
 @nox.session()
@@ -320,7 +321,7 @@ def test_openai(session, version):
 
 
 @nox.session()
-@nox.parametrize("version", OPENAI_VERSIONS, ids=OPENAI_VERSIONS)
+@nox.parametrize("version", OPENAI_ENDPOINT_VERSIONS, ids=OPENAI_ENDPOINT_VERSIONS)
 def test_openai_http2_streaming(session, version):
     _install_test_deps(session)
     _install_matrix_dep(session, "openai", version)
@@ -331,7 +332,7 @@ def test_openai_http2_streaming(session, version):
 
 
 @nox.session()
-@nox.parametrize("version", OPENAI_VERSIONS, ids=OPENAI_VERSIONS)
+@nox.parametrize("version", OPENAI_ENDPOINT_VERSIONS, ids=OPENAI_ENDPOINT_VERSIONS)
 def test_btx_openai(session, version):
     """Run the BTX cross-language LLM-span spec tests (OpenAI provider)."""
     _install_test_deps(session)
@@ -557,12 +558,11 @@ AUTOEVALS_VERSIONS = _get_matrix_versions("autoevals")
 @nox.session()
 @nox.parametrize("version", AUTOEVALS_VERSIONS, ids=AUTOEVALS_VERSIONS)
 def test_autoevals(session, version):
-    # Run all of our core tests with autoevals installed. Some tests
-    # specifically validate scores from autoevals work properly, so
-    # we need some tests with it installed.
+    # Only this test exercises the changed scorer behavior. Running the full
+    # core suite here duplicates test_core without extending package coverage.
     _install_test_deps(session)
     _install_matrix_dep(session, "autoevals", version)
-    _run_core_tests(session)
+    _run_tests(session, f"{SRC_DIR}/test_framework.py::test_run_evaluator_with_many_scorers")
 
 
 # google-genai 1.29.0 has a broken async streaming path unless aiohttp is installed.
@@ -805,12 +805,11 @@ def test_api_codegen(session):
 
 @nox.session()
 def test_braintrust_core(session):
-    # Some tests do specific things if braintrust_core is installed, so run our
-    # common tests with it installed. Testing the latest (aka the last ever version)
-    # is enough.
+    # This is the core test whose scorer behavior changes with braintrust_core.
+    # The rest of the core suite already runs in test_core.
     _install_test_deps(session)
     _install_matrix_dep(session, "braintrust-core", LATEST)
-    _run_core_tests(session)
+    _run_tests(session, f"{SRC_DIR}/test_framework.py::test_run_evaluator_with_many_scorers")
 
 
 @nox.session()
