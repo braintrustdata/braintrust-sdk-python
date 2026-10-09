@@ -153,7 +153,9 @@ def _get_matrix_versions(prefix: str) -> tuple[str, ...]:
 
     Returns a tuple ordered with LATEST first, then descending version order.
     """
-    matrix_entry = _MATRIX.get(prefix, {})
+    matrix_entry = _MATRIX.get(prefix)
+    if not matrix_entry:
+        raise KeyError(f"Missing [tool.braintrust.matrix.{prefix}] in pyproject.toml")
     latest = [LATEST] if "latest" in matrix_entry else []
     rest = sorted([v for v in matrix_entry if v != "latest"], key=Version, reverse=True)
     return tuple(latest + rest)
@@ -161,11 +163,13 @@ def _get_matrix_versions(prefix: str) -> tuple[str, ...]:
 
 def _install_matrix_dep(session: nox.Session, prefix: str, version: str, constraint_group: str | None = None) -> None:
     """Install a matrix dependency, optionally using pinned compatibility constraints."""
-    matrix_entry = _MATRIX.get(prefix, {})
+    matrix_entry = _MATRIX.get(prefix)
+    if not matrix_entry:
+        session.error(f"Missing [tool.braintrust.matrix.{prefix}] in pyproject.toml")
     key = "latest" if version == LATEST else version
     req = matrix_entry.get(key)
     if not req:
-        return
+        session.error(f"Missing matrix key {key!r} in [tool.braintrust.matrix.{prefix}]")
     if constraint_group is None:
         session.install(req, silent=SILENT_INSTALLS)
         return
@@ -341,9 +345,8 @@ def test_openai_http2_streaming(session, version):
 @nox.parametrize("version", OPENAI_ENDPOINT_VERSIONS, ids=OPENAI_ENDPOINT_VERSIONS)
 def test_btx_openai(session, version):
     """Run the BTX cross-language LLM-span spec tests (OpenAI provider)."""
-    _install_test_deps(session)
+    _install_test_deps(session, "test-btx")
     _install_matrix_dep(session, "openai", version)
-    session.install("pyyaml")
     _run_tests(session, "braintrust/btx", version=version, env={"BTX_PROVIDER": "openai", "BTX_CLIENT": "openai"})
 
 
@@ -541,9 +544,8 @@ def test_pydantic_ai_integration(session, version):
 @nox.parametrize("version", PYDANTIC_AI_INTEGRATION_VERSIONS, ids=PYDANTIC_AI_INTEGRATION_VERSIONS)
 def test_pydantic_ai_logfire(session, version):
     """Test pydantic_ai + logfire coexistence (issue #1324)."""
-    _install_test_deps(session)
-    _install_matrix_dep(session, "pydantic-ai-integration", version)
-    _install_group_locked(session, "test-pydantic-ai-logfire")
+    _install_test_deps(session, "test-pydantic-ai-logfire")
+    _install_matrix_dep(session, "pydantic-ai-integration", version, "test-pydantic-ai-logfire-constraints")
     _run_tests(session, f"{INTEGRATION_DIR}/pydantic_ai/test_pydantic_ai_logfire.py", version=version)
 
 
@@ -682,12 +684,8 @@ LLAMAINDEX_VERSIONS = _get_matrix_versions("llama-index-core")
 @nox.session()
 @nox.parametrize("version", LLAMAINDEX_VERSIONS, ids=LLAMAINDEX_VERSIONS)
 def test_llamaindex(session, version):
-    _install_test_deps(session)
-    _install_group_locked(session, "test-llamaindex")
+    _install_test_deps(session, "test-llamaindex")
     _install_matrix_dep(session, "llama-index-core", version, "test-sqlalchemy-2-0")
-    # These packages are tightly version-coupled to llama-index-core, so we
-    # install them unpinned and let pip resolve compatible versions.
-    session.install("llama-index-llms-openai", "llama-index-embeddings-openai", silent=SILENT_INSTALLS)
     _run_tests(session, f"{INTEGRATION_DIR}/llamaindex/test_llamaindex.py", version=version)
 
 
@@ -823,6 +821,7 @@ def test_api_codegen(session):
     """Test the pinned OpenAPI validator and deterministic model generator."""
     _install_test_deps(session)
     _install_group_locked(session, "api-codegen")
+    _check_installed_deps(session)
     session.run("pytest", "-p", "no:braintrust", "tests/api_codegen", *session.posargs)
 
 
@@ -838,9 +837,7 @@ def test_braintrust_core(session):
 @nox.session()
 def test_cli(session):
     """Test CLI/devserver with starlette installed."""
-    _install_test_deps(session)
-    session.install(".[cli]")
-    _install_group_locked(session, "test-cli")
+    _install_test_deps(session, "test-cli")
     _run_tests(session, DEVSERVER_DIR)
 
 
@@ -874,6 +871,7 @@ def test_types(session):
     """Run type-check tests with pyright, mypy, and pytest."""
     _install_test_deps(session)
     _install_group_locked(session, "test-types")
+    _check_installed_deps(session)
 
     type_tests_dir = f"src/{TYPE_TESTS_DIR}"
     test_files = glob.glob(os.path.join(type_tests_dir, "test_*.py"))
@@ -918,6 +916,7 @@ def pylint(session):
         if package == "crewai":
             continue
         _install_matrix_dep(session, package, LATEST)
+    _check_installed_deps(session)
 
     result = session.run("git", "ls-files", "**/*.py", silent=True, log=False)
     files = [path for path in result.strip().splitlines() if not path.startswith(GENERATED_LINT_EXCLUDES)]
@@ -939,7 +938,7 @@ def pylint(session):
     session.run("pylint", "--errors-only", *files)
 
 
-def _install_test_deps(session):
+def _install_test_deps(session, *groups):
     # Choose the way we'll install braintrust ... wheel or source.
     install_wheel = "--wheel" in session.posargs
 
@@ -954,7 +953,7 @@ def _install_test_deps(session):
 
     # Install base test deps (pytest, pytest-asyncio, pytest-vcr) from the
     # lockfile so transitive deps are pinned and reproducible.
-    _install_group_locked(session, "test")
+    _install_group_locked(session, "test", *groups)
 
     # Sanity check braintrust imports from where this mode expects it:
     # site-packages for a wheel, the source tree for an editable install.
@@ -964,6 +963,11 @@ def _install_test_deps(session):
         f"sys.exit(0 if {install_wheel} == ('site-packages' in b.__file__) else 1)",
     ]
     session.run("python", "-c", ";".join(lines))
+
+
+def _check_installed_deps(session):
+    """Fail setup if installed packages have incompatible requirements."""
+    session.run("uv", "pip", "check")
 
 
 def _get_braintrust_wheel():
@@ -1015,6 +1019,7 @@ def _run_tests(
     run_from_temp_dir=False,
 ):
     """Run tests against a wheel or the source code. Paths should be relative and start with braintrust."""
+    _check_installed_deps(session)
     env = env.copy() if env else {}
     if version:
         env["BRAINTRUST_TEST_PACKAGE_VERSION"] = version

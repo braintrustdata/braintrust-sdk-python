@@ -171,7 +171,11 @@ test-strands = [
 
 test-pydantic-ai-logfire = [
     {include-group = "test"},
-    "logfire==4.32.1",
+    "logfire==4.39.0",
+]
+
+test-pydantic-ai-logfire-constraints = [
+    "logfire==4.39.0",
 ]
 
 test-langchain = [
@@ -212,6 +216,13 @@ test-crewai = [
 
 test-llamaindex = [
     {include-group = "test"},
+    "llama-index-llms-openai",
+    "llama-index-embeddings-openai",
+]
+
+test-btx = [
+    {include-group = "test"},
+    "pyyaml",
 ]
 
 test-huggingface-hub = [
@@ -236,7 +247,12 @@ test-transformers = [
 
 test-cli = [
     {include-group = "test"},
+    "boto3",
     "httpx==0.28.1",
+    "python-dotenv",
+    "starlette",
+    "uv",
+    "uvicorn",
 ]
 
 test-types = [
@@ -269,8 +285,6 @@ lint = [
     "langchain-openai",
     "langchain-anthropic",
     "llama-index-core",
-    "llama-index-llms-openai",
-    "llama-index-embeddings-openai",
 ]
 
 # -- Build and code-generation deps --------------------------------------------
@@ -337,6 +351,10 @@ conflicts = [
     ],
     [
         {group = "test-pydantic-ai-otel-events"},
+        {group = "test-livekit-agents"},
+    ],
+    [
+        {group = "test-pydantic-ai-logfire-constraints"},
         {group = "test-livekit-agents"},
     ],
 ]
