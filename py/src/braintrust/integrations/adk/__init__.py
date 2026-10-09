@@ -43,6 +43,12 @@ def setup_adk(
     """
     Setup Braintrust integration with Google ADK. Will automatically patch Google ADK agents, runners, flows, and MCP tools for automatic tracing.
 
+    Also enables the Google GenAI integration, which ADK's Gemini models call
+    through. It owns the ``llm`` span and token usage for each Gemini request;
+    ADK's ``llm_call`` spans are ``task`` spans so usage is counted once. For
+    other ADK models (e.g. LiteLLM or Anthropic), enable that provider's
+    integration, or use ``braintrust.auto_instrument()``, to record usage.
+
     If you prefer manual patching take a look at `wrap_agent`, `wrap_runner`, `wrap_workflow`, `wrap_flow`, and `wrap_mcp_tool`.
 
     Args:
@@ -61,4 +67,7 @@ def setup_adk(
     if span == NOOP_SPAN:
         init_logger(project=project_name, api_key=api_key, project_id=project_id)
 
+    from braintrust.integrations.google_genai import GoogleGenAIIntegration
+
+    GoogleGenAIIntegration.setup()
     return ADKIntegration.setup()
