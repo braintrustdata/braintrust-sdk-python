@@ -5,7 +5,7 @@ works with and without different dependencies. A few commands to check out:
     nox                        Run all sessions.
     nox -l                     List all sessions.
     nox -s <session>           Run a specific session.
-    nox ... -- --no-vcr        Run tests without vcrpy.
+    nox ... -- --disable-vcr  Run tests without vcrpy.
     nox ... -- --wheel         Run tests against the wheel in dist.
     nox -h                     Get help.
 """
@@ -237,7 +237,7 @@ _VENDOR_TABLE: dict[str, str] = _PYPROJECT.get("tool", {}).get("braintrust", {})
 _VENDOR_IMPORT_NAMES = tuple(_VENDOR_TABLE.values())
 
 # ---------------------------------------------------------------------------
-# Version matrices — derived from dependency groups in pyproject.toml
+# Version matrices — derived from [tool.braintrust.matrix] in pyproject.toml
 # ---------------------------------------------------------------------------
 
 AI_SDK_VERSIONS = _get_matrix_versions("ai-sdk")
@@ -314,9 +314,15 @@ OPENAI_VERSIONS = _get_matrix_versions("openai")
 def test_openai(session, version):
     _install_test_deps(session)
     _install_matrix_dep(session, "openai", version)
-    _run_tests(session, f"{INTEGRATION_DIR}/openai/test_openai.py", version=version)
-    _run_tests(session, f"{INTEGRATION_DIR}/openai/test_oai_attachments.py", version=version)
-    _run_tests(session, f"{INTEGRATION_DIR}/openai/test_openai_openrouter_gateway.py", version=version)
+    _run_tests(
+        session,
+        [
+            f"{INTEGRATION_DIR}/openai/test_openai.py",
+            f"{INTEGRATION_DIR}/openai/test_oai_attachments.py",
+            f"{INTEGRATION_DIR}/openai/test_openai_openrouter_gateway.py",
+        ],
+        version=version,
+    )
 
 
 @nox.session()
@@ -645,9 +651,15 @@ def test_langchain(session, version):
     _install_test_deps(session)
     _install_matrix_dep(session, "langchain-core", version)
     _install_group_locked(session, "test-langchain")
-    _run_tests(session, f"{INTEGRATION_DIR}/langchain/test_callbacks.py", version=version)
-    _run_tests(session, f"{INTEGRATION_DIR}/langchain/test_context.py", version=version)
-    _run_tests(session, f"{INTEGRATION_DIR}/langchain/test_anthropic.py", version=version)
+    _run_tests(
+        session,
+        [
+            f"{INTEGRATION_DIR}/langchain/test_callbacks.py",
+            f"{INTEGRATION_DIR}/langchain/test_context.py",
+            f"{INTEGRATION_DIR}/langchain/test_anthropic.py",
+        ],
+        version=version,
+    )
 
 
 DEEPAGENTS_VERSIONS = _get_matrix_versions("deepagents")
@@ -759,7 +771,7 @@ TEMPORAL_VERSIONS = _get_matrix_versions("temporalio")
 def test_temporal(session, version):
     _install_test_deps(session)
     _install_matrix_dep(session, "temporalio", version)
-    _run_tests(session, f"{INTEGRATION_DIR}/temporal")
+    _run_tests(session, f"{INTEGRATION_DIR}/temporal", version=version)
 
 
 HARBOR_VERSIONS = _get_matrix_versions("harbor")
@@ -768,7 +780,7 @@ HARBOR_VERSIONS = _get_matrix_versions("harbor")
 @nox.session()
 @nox.parametrize("version", HARBOR_VERSIONS, ids=HARBOR_VERSIONS)
 def test_harbor(session, version):
-    if Version(platform.python_version()) < Version("3.12"):
+    if sys.version_info < (3, 12):
         session.skip("Harbor requires Python 3.12+")
     _install_test_deps(session)
     _install_matrix_dep(session, "harbor", version)
@@ -783,15 +795,26 @@ PYTEST_VERSIONS = _get_matrix_versions("pytest-matrix")
 def test_pytest_plugin(session, version):
     _install_test_deps(session)
     _install_matrix_dep(session, "pytest-matrix", version)
-    _run_tests(session, f"{WRAPPER_DIR}/pytest_plugin/test_plugin.py")
+    _run_tests(session, f"{WRAPPER_DIR}/pytest_plugin/test_plugin.py", version=version)
 
 
 @nox.session()
 def test_core(session):
     _install_test_deps(session)
     # verify we haven't installed our 3p deps.
-    for p in _VENDOR_IMPORT_NAMES:
-        session.run("python", "-c", f"import {p}", success_codes=ERROR_CODES, silent=True)
+    script = f"""
+import importlib.util
+import sys
+
+def is_importable(name):
+    try:
+        return importlib.util.find_spec(name) is not None
+    except ModuleNotFoundError:
+        return False
+
+sys.exit(1 if any(is_importable(name) for name in {_VENDOR_IMPORT_NAMES!r}) else 0)
+"""
+    session.run("python", "-c", script, silent=True)
     _run_core_tests(session)
 
 
@@ -968,7 +991,6 @@ def _run_core_tests(session):
 def _run_tests(
     session,
     test_path,
-    ignore_path="",
     ignore_paths=None,
     env=None,
     version=None,
@@ -982,19 +1004,15 @@ def _run_tests(
     common_args = ["--disable-vcr"] if "--disable-vcr" in session.posargs else []
     pytest_posargs = [arg for arg in session.posargs if arg not in INTERNAL_TEST_FLAGS]
 
-    # Support both ignore_path (for backward compatibility) and ignore_paths
-    paths_to_ignore = []
-    if ignore_path:
-        paths_to_ignore.append(ignore_path)
-    if ignore_paths:
-        paths_to_ignore.extend(ignore_paths)
+    test_paths = [test_path] if isinstance(test_path, str) else list(test_path)
+    paths_to_ignore = ignore_paths or []
 
     if not wheel_flag:
         # Run the tests in the src directory.
-        source_test_path = f"src/{test_path}"
+        source_test_paths = [f"src/{path}" for path in test_paths]
         source_ignore_paths = [f"src/{path}" for path in paths_to_ignore]
         if run_from_temp_dir:
-            source_test_path = os.path.abspath(source_test_path)
+            source_test_paths = [os.path.abspath(path) for path in source_test_paths]
             source_ignore_paths = [os.path.abspath(path) for path in source_ignore_paths]
         test_args = [
             "pytest",
@@ -1003,7 +1021,7 @@ def _run_tests(
             # and the source tree both contain braintrust/conftest.py.
             "-p",
             "no:braintrust",
-            source_test_path,
+            *source_test_paths,
         ]
         test_args.extend(f"--ignore={path}" for path in source_ignore_paths)
         if run_from_temp_dir:
@@ -1018,7 +1036,7 @@ def _run_tests(
     # First, we need to absolute paths to all the binaries and libs in our venv that we'll see.
     py = os.path.join(session.bin, "python")
     site_packages = session.run(py, "-c", "import site; print(site.getsitepackages()[0])", silent=True).strip()
-    abs_test_path = os.path.abspath(os.path.join(site_packages, test_path))
+    abs_test_paths = [os.path.abspath(os.path.join(site_packages, path)) for path in test_paths]
     pytest_path = os.path.join(session.bin, "pytest")
 
     ignore_args = []
@@ -1028,12 +1046,12 @@ def _run_tests(
 
     # Lastly, change to a different directory to ensure we don't install local stuff.
     with tempfile.TemporaryDirectory() as tmp:
-        os.chdir(tmp)
-        # This env var is used to detect if we're running from the wheel.
-        # It proved very helpful because it's very easy
-        # to accidentally import local modules from the source directory.
-        env["BRAINTRUST_TESTING_WHEEL"] = "1"
-        session.run(pytest_path, abs_test_path, *ignore_args, *common_args, *pytest_posargs, env=env)
+        with session.chdir(tmp):
+            # This env var is used to detect if we're running from the wheel.
+            # It proved very helpful because it's very easy
+            # to accidentally import local modules from the source directory.
+            env["BRAINTRUST_TESTING_WHEEL"] = "1"
+            session.run(pytest_path, *abs_test_paths, *ignore_args, *common_args, *pytest_posargs, env=env)
 
     # And a final note ... if it's not clear from above, we include test files in our wheel, which
     # is perhaps not ideal?
