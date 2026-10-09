@@ -569,8 +569,9 @@ async def test_agent_run_stream(memory_logger):
     ttft = agent_span["metrics"]["time_to_first_token"]
     duration = agent_span["metrics"]["duration"]
 
-    # time_to_first_token should be reasonable: > 0 and < duration
-    assert ttft > 0, f"time_to_first_token should be > 0, got {ttft}"
+    # time_to_first_token should be reasonable: >= 0 and <= duration. VCR replay is near-instant
+    # and Windows clocks tick coarsely, so the first chunk can land in the same tick as start.
+    assert ttft >= 0, f"time_to_first_token should be >= 0, got {ttft}"
     assert ttft <= duration, f"time_to_first_token ({ttft}s) should be <= duration ({duration}s)"
     assert ttft < MAX_REASONABLE_TTFT_SECONDS, (
         f"time_to_first_token should be < {MAX_REASONABLE_TTFT_SECONDS}s for API call, got {ttft}s"
@@ -751,8 +752,9 @@ async def test_direct_model_request_stream(memory_logger, direct):
     ttft = direct_span["metrics"]["time_to_first_token"]
     duration = direct_span["metrics"]["duration"]
 
-    # time_to_first_token should be reasonable: > 0 and < duration
-    assert ttft > 0, f"time_to_first_token should be > 0, got {ttft}"
+    # time_to_first_token should be reasonable: >= 0 and <= duration. VCR replay is near-instant
+    # and Windows clocks tick coarsely, so the first chunk can land in the same tick as start.
+    assert ttft >= 0, f"time_to_first_token should be >= 0, got {ttft}"
     assert ttft <= duration, f"time_to_first_token ({ttft}s) should be <= duration ({duration}s)"
     assert ttft < MAX_REASONABLE_TTFT_SECONDS, (
         f"time_to_first_token should be < {MAX_REASONABLE_TTFT_SECONDS}s for API call, got {ttft}s"
@@ -1055,8 +1057,9 @@ def test_agent_run_stream_sync(memory_logger):
     ttft = agent_span["metrics"]["time_to_first_token"]
     duration = agent_span["metrics"]["duration"]
 
-    # time_to_first_token should be reasonable: > 0 and < duration
-    assert ttft > 0, f"time_to_first_token should be > 0, got {ttft}"
+    # time_to_first_token should be reasonable: >= 0 and <= duration. VCR replay is near-instant
+    # and Windows clocks tick coarsely, so the first chunk can land in the same tick as start.
+    assert ttft >= 0, f"time_to_first_token should be >= 0, got {ttft}"
     assert ttft <= duration, f"time_to_first_token ({ttft}s) should be <= duration ({duration}s)"
     assert ttft < MAX_REASONABLE_TTFT_SECONDS, (
         f"time_to_first_token should be < {MAX_REASONABLE_TTFT_SECONDS}s for API call, got {ttft}s"
@@ -1190,8 +1193,9 @@ def test_direct_model_request_stream_sync(memory_logger, direct):
     ttft = span["metrics"]["time_to_first_token"]
     duration = span["metrics"]["duration"]
 
-    # time_to_first_token should be reasonable: > 0 and < duration
-    assert ttft > 0, f"time_to_first_token should be > 0, got {ttft}"
+    # time_to_first_token should be reasonable: >= 0 and <= duration. VCR replay is near-instant
+    # and Windows clocks tick coarsely, so the first chunk can land in the same tick as start.
+    assert ttft >= 0, f"time_to_first_token should be >= 0, got {ttft}"
     assert ttft <= duration, f"time_to_first_token ({ttft}s) should be <= duration ({duration}s)"
     assert ttft < MAX_REASONABLE_TTFT_SECONDS, (
         f"time_to_first_token should be < {MAX_REASONABLE_TTFT_SECONDS}s for API call, got {ttft}s"
