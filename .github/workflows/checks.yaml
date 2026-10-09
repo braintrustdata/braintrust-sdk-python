@@ -153,6 +153,7 @@ jobs:
         shell: bash
         run: |
           mise exec python@${{ matrix.python-version }} -- python ./py/scripts/nox-matrix.py ${{ matrix.shard }} 6 \
+            --python-version '${{ matrix.python-version }}' --os '${{ matrix.os }}' \
             --exclude-static-checks \
             --exclude-session test_api_codegen
 
