@@ -6,7 +6,7 @@ import re
 CONSTRAINTS = {
     "test_ai_sdk": {"min_python": "3.12"},
     "test_litellm": {"versions": {"latest": {"min_python": "3.11"}}},
-    "test_livekit_agents": {"max_python_exclusive": "3.14", "platforms": ["linux"]},
+    "test_livekit_agents": {"max_python_exclusive": "3.14", "ci_platforms": ["linux"]},
     "test_pipecat": {"min_python": "3.11", "max_python_exclusive": "3.14"},
     "test_agentscope": {"versions": {"latest": {"min_python": "3.11"}}},
     "test_dspy": {"versions": {"latest": {"min_python": "3.11"}}},
@@ -56,13 +56,19 @@ def _session_rules(session_id: str) -> tuple[dict, list[dict]]:
     return constraint, selected
 
 
-def incompatibility_reason(session_id: str, python_version: str, operating_system: str) -> str | None:
+def incompatibility_reason(
+    session_id: str,
+    python_version: str,
+    operating_system: str,
+    *,
+    check_ci_platforms: bool = False,
+) -> str | None:
     """Return the declared reason a session is incompatible, if any."""
     python = _version_key(python_version)
     platform_name = _normalize_platform(operating_system)
     constraint, version_rules = _session_rules(session_id)
     for rule in [constraint, *version_rules]:
-        if "platforms" in rule and platform_name not in rule["platforms"]:
+        if check_ci_platforms and "ci_platforms" in rule and platform_name not in rule["ci_platforms"]:
             return f"not supported on {operating_system}"
         if "min_python" in rule and python < _version_key(rule["min_python"]):
             return f"requires Python {rule['min_python']}+"
@@ -73,6 +79,20 @@ def incompatibility_reason(session_id: str, python_version: str, operating_syste
     return None
 
 
-def session_is_compatible(session_id: str, python_version: str, operating_system: str) -> bool:
+def session_is_compatible(
+    session_id: str,
+    python_version: str,
+    operating_system: str,
+    *,
+    check_ci_platforms: bool = False,
+) -> bool:
     """Return whether the requested nox session has work for this target."""
-    return incompatibility_reason(session_id, python_version, operating_system) is None
+    return (
+        incompatibility_reason(
+            session_id,
+            python_version,
+            operating_system,
+            check_ci_platforms=check_ci_platforms,
+        )
+        is None
+    )

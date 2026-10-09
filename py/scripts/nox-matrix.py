@@ -88,7 +88,7 @@ def assign_shards(
 
 def filter_compatible_sessions(sessions: list[str], python_version: str, operating_system: str) -> list[str]:
     """Remove sessions which are declared to skip for this CI target."""
-    return [s for s in sessions if session_is_compatible(s, python_version, operating_system)]
+    return [s for s in sessions if session_is_compatible(s, python_version, operating_system, check_ci_platforms=True)]
 
 
 def main() -> None:
