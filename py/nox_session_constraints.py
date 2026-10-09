@@ -2,8 +2,6 @@
 
 import re
 
-from packaging.version import Version
-
 
 CONSTRAINTS = {
     "test_ai_sdk": {"min_python": "3.12"},
@@ -18,6 +16,11 @@ CONSTRAINTS = {
     "test_harbor": {"min_python": "3.12"},
     "test_otel": {"versions": {"not_latest_below": {"version": "1.28.0", "skip_from_python": "3.14"}}},
 }
+
+
+def _version_key(value: str) -> tuple[int, ...]:
+    """Compare the numeric release versions used by this session matrix."""
+    return tuple(int(component) for component in re.findall(r"\d+", value))
 
 
 def _normalize_platform(operating_system: str) -> str:
@@ -48,24 +51,24 @@ def _session_rules(session_id: str) -> tuple[dict, list[dict]]:
         else:
             selected.append(version_rules.get("not_latest", {}))
             threshold = version_rules.get("not_latest_below")
-            if threshold and Version(version) < Version(threshold["version"]):
+            if threshold and _version_key(version) < _version_key(threshold["version"]):
                 selected.append(threshold)
     return constraint, selected
 
 
 def incompatibility_reason(session_id: str, python_version: str, operating_system: str) -> str | None:
     """Return the declared reason a session is incompatible, if any."""
-    python = Version(python_version)
+    python = _version_key(python_version)
     platform_name = _normalize_platform(operating_system)
     constraint, version_rules = _session_rules(session_id)
     for rule in [constraint, *version_rules]:
         if "platforms" in rule and platform_name not in rule["platforms"]:
             return f"not supported on {operating_system}"
-        if "min_python" in rule and python < Version(rule["min_python"]):
+        if "min_python" in rule and python < _version_key(rule["min_python"]):
             return f"requires Python {rule['min_python']}+"
-        if "max_python_exclusive" in rule and python >= Version(rule["max_python_exclusive"]):
+        if "max_python_exclusive" in rule and python >= _version_key(rule["max_python_exclusive"]):
             return f"does not support Python {rule['max_python_exclusive']}+"
-        if "skip_from_python" in rule and python >= Version(rule["skip_from_python"]):
+        if "skip_from_python" in rule and python >= _version_key(rule["skip_from_python"]):
             return f"skips on Python {rule['skip_from_python']}+"
     return None
 
