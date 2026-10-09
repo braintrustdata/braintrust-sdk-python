@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 """AgentScope ReAct agent traced via braintrust.auto_instrument()."""
+# This example documents the pre-2.0 AgentScope API, which is no longer exposed
+# by the matrix's 2.x SDK to static analysis.
+# pylint: disable=import-error,no-name-in-module,unexpected-keyword-arg,no-value-for-parameter
 
 import asyncio
 
