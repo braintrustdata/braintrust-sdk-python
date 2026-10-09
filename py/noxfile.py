@@ -46,6 +46,7 @@ import nox
 
 _PYPROJECT = tomllib.loads((pathlib.Path(__file__).parent / "pyproject.toml").read_text())
 _MATRIX = _PYPROJECT.get("tool", {}).get("braintrust", {}).get("matrix", {})
+_UV_EXCLUDE_NEWER = _PYPROJECT["tool"]["uv"]["exclude-newer"]
 
 
 _PROJECT_DIR = str(pathlib.Path(__file__).parent)
@@ -143,7 +144,7 @@ def _install_group_locked(
             # all configured indexes for each exact version. Without this,
             # uv may stop at PyTorch's index for unrelated packages.
             install_args.extend(("--index-strategy", "unsafe-best-match"))
-        session.install(*install_args, silent=SILENT_INSTALLS)
+        _session_install(session, *install_args, silent=SILENT_INSTALLS)
     finally:
         os.unlink(req_file)
 
@@ -171,7 +172,7 @@ def _install_matrix_dep(session: nox.Session, prefix: str, version: str, constra
     if not req:
         session.error(f"Missing matrix key {key!r} in [tool.braintrust.matrix.{prefix}]")
     if constraint_group is None:
-        session.install(req, silent=SILENT_INSTALLS)
+        _session_install(session, req, silent=SILENT_INSTALLS)
         return
 
     constraints = _PYPROJECT.get("dependency-groups", {}).get(constraint_group, [])
@@ -180,7 +181,12 @@ def _install_matrix_dep(session: nox.Session, prefix: str, version: str, constra
     with tempfile.NamedTemporaryFile(mode="w", suffix=".txt") as constraint_file:
         constraint_file.write("\n".join(constraints))
         constraint_file.flush()
-        session.install(req, "-c", constraint_file.name, silent=SILENT_INSTALLS)
+        _session_install(session, req, "-c", constraint_file.name, silent=SILENT_INSTALLS)
+
+
+def _session_install(session: nox.Session, *args, **kwargs) -> None:
+    """Install packages with the project's reproducibility cutoff."""
+    session.install("--exclude-newer", _UV_EXCLUDE_NEWER, *args, **kwargs)
 
 
 # ---------------------------------------------------------------------------
@@ -906,7 +912,7 @@ def test_types(session):
 def pylint(session):
     # Install the project and locked base/lint dependencies, then vendor SDKs
     # at their matrix latest versions for import coverage.
-    session.install(".")
+    _session_install(session, ".")
     _install_group_locked(session, "test", "lint")
     # Provider latest pins intentionally coexist in the lint environment even
     # when their dependency metadata conflicts. Validate the lock-resolved base
@@ -958,7 +964,7 @@ def _install_test_deps(session, *groups):
     # spawned by ``verify_autoinstrument_script`` -- picks up site-packages
     # rather than the source tree, so it would silently exercise the code from
     # whenever the venv was last built.
-    session.install(*([_get_braintrust_wheel()] if install_wheel else ["-e", "."]))
+    _session_install(session, *([_get_braintrust_wheel()] if install_wheel else ["-e", "."]))
 
     # Install base test deps (pytest, pytest-asyncio, pytest-vcr) from the
     # lockfile so transitive deps are pinned and reproducible.
