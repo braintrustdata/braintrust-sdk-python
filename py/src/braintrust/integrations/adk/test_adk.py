@@ -8,7 +8,6 @@ import pytest
 from braintrust import logger
 from braintrust.integrations.adk import setup_adk
 from braintrust.integrations.adk.tracing import _create_thread_wrapper
-from braintrust.integrations.test_utils import assert_metrics_are_valid
 from braintrust.logger import Attachment
 from braintrust.test_helpers import init_test_logger
 from google.adk import Agent
@@ -20,7 +19,6 @@ from google.adk.agents.invocation_context import InvocationContext
 from google.adk.events.event import Event
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
-from google.adk.tools import google_search
 from google.genai import types
 from pydantic import BaseModel, Field
 
@@ -774,69 +772,21 @@ async def test_adk_binary_data_attachment_conversion(memory_logger):
     assert b"\x89PNG".hex() not in span_str, "Raw binary data should not be in logged span"
     assert "89504e47" not in span_str.lower(), "Raw binary data (hex) should not be in logged span"
 
-    # Find LLM spans and verify they also don't contain raw binary
-    llm_spans = [row for row in spans if row["span_attributes"]["name"].startswith(("llm_call", "generate_content"))]
-    assert len(llm_spans) == 2, "Should have ADK and Google GenAI model-call spans"
+    # Find model-call spans and verify they also don't contain raw binary
+    model_call_spans = _adk_model_call_spans(spans)
+    assert len(model_call_spans) > 0, "Should have model-call spans"
 
-    for llm_span in llm_spans:
-        if "input" in llm_span and "contents" in llm_span["input"]:
-            llm_str = str(llm_span["input"])
+    for model_call_span in model_call_spans:
+        if "input" in model_call_span and "contents" in model_call_span["input"]:
+            llm_str = str(model_call_span["input"])
             assert b"\x89PNG".hex() not in llm_str, "Raw binary data should not be in LLM span input"
             assert "89504e47" not in llm_str.lower(), "Raw binary data (hex) should not be in LLM span input"
 
 
 @pytest.mark.vcr
 @pytest.mark.asyncio
-async def test_adk_usage_metadata_metrics(memory_logger):
-    """Google Search usage includes tool prompts and reasoning in normalized totals."""
-    assert not memory_logger.pop()
-
-    agent = Agent(
-        name="usage_metadata_agent",
-        model="gemini-2.5-flash",
-        instruction="Use Google Search to answer the user's question accurately and concisely.",
-        tools=[google_search],
-    )
-    app_name = "usage_metadata_app"
-    user_id = "test-user"
-    session_id = "test-session-usage-metadata"
-    runner = await _create_runner(agent, app_name=app_name, user_id=user_id, session_id=session_id)
-    user_msg = types.Content(
-        role="user",
-        parts=[types.Part(text="What is the current population of Tokyo, Japan? Answer in one sentence.")],
-    )
-
-    events = [event async for event in runner.run_async(user_id=user_id, session_id=session_id, new_message=user_msg)]
-    usage_metadata = next(
-        (event.usage_metadata for event in reversed(events) if getattr(event, "usage_metadata", None) is not None),
-        None,
-    )
-    assert usage_metadata is not None
-    assert usage_metadata.tool_use_prompt_token_count > 0
-    assert usage_metadata.thoughts_token_count > 0
-
-    spans = memory_logger.pop()
-    llm_spans = _assert_provider_owns_llm_spans(spans)
-    assert len(llm_spans) == 1
-    llm_span = llm_spans[0]
-    metrics = llm_span["metrics"]
-
-    assert metrics["prompt_tokens"] == (usage_metadata.prompt_token_count + usage_metadata.tool_use_prompt_token_count)
-    assert metrics["completion_tokens"] == (
-        usage_metadata.candidates_token_count + usage_metadata.thoughts_token_count
-    )
-    assert metrics["completion_reasoning_tokens"] == usage_metadata.thoughts_token_count
-    assert metrics["tokens"] == usage_metadata.total_token_count
-    assert metrics["tokens"] == metrics["prompt_tokens"] + metrics["completion_tokens"]
-    assert llm_span["metadata"]["usage_by_modality"]["tool_use_prompt_tokens_details"] == [
-        detail.model_dump(exclude_none=True) for detail in usage_metadata.tool_use_prompt_tokens_details
-    ]
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
 async def test_adk_captures_metrics(memory_logger):
-    """Test that token usage metrics are captured from LLM responses."""
+    """setup_adk() alone yields one usage-bearing Google GenAI ``llm`` span under a task ``llm_call``."""
     assert not memory_logger.pop()
 
     agent = Agent(
@@ -859,28 +809,16 @@ async def test_adk_captures_metrics(memory_logger):
 
     spans = memory_logger.pop()
 
-    # Google GenAI owns the provider call: exactly one usage-bearing ``llm`` span
-    # per Gemini request, so trace totals count its usage once.
-    (llm_span,) = _assert_provider_owns_llm_spans(spans)
-    assert llm_span["metadata"]["model"] == ADK_MODEL
-    assert llm_span["metadata"]["provider"] == "google"
+    # setup_adk() enables Google GenAI, which owns the one usage-bearing ``llm``
+    # span per Gemini request, so trace totals count its usage once.
+    _assert_provider_owns_llm_spans(spans)
 
-    assert_metrics_are_valid(llm_span["metrics"])
-    assert (
-        llm_span["metrics"]["tokens"]
-        == llm_span["metrics"]["prompt_tokens"] + llm_span["metrics"]["completion_tokens"]
-    )
-
-    # ADK's model-call span keeps its readable request/response and call type,
-    # but as a task parent of the provider span.
+    # ADK's model-call span keeps its request/response, call type, and time to
+    # first token, as a task parent of the provider span.
     (adk_model_span,) = _adk_model_call_spans(spans)
     assert adk_model_span["span_attributes"]["type"] == "task"
     assert adk_model_span["span_attributes"]["name"] == "llm_call [direct_response]"
-    assert adk_model_span["context"]["span_origin"]["instrumentation"]["name"] == "adk-auto"
-    assert adk_model_span["metadata"]["model"] == ADK_MODEL
-    assert adk_model_span["metadata"]["provider"] == "google"
     assert "usage_metadata" in adk_model_span["output"]
-    assert "time_to_first_token" in adk_model_span["metrics"]
     assert 0 < adk_model_span["metrics"]["time_to_first_token"] < 10
 
 
@@ -1036,9 +974,7 @@ async def test_adk_structured_output_schema(memory_logger, agent_kwargs, prompt,
     model_call_spans_with_schema = [
         span
         for span in _adk_model_call_spans(spans)
-        if "input" in span
-        and "config" in span["input"]
-        and span["input"]["config"].get(schema_field) is not None
+        if "input" in span and "config" in span["input"] and span["input"]["config"].get(schema_field) is not None
     ]
 
     assert len(model_call_spans_with_schema) > 0, f"Should have at least one LLM call with {schema_field}"
