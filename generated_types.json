@@ -3722,6 +3722,237 @@
                 "title": "topic_map"
               }
             ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "simulation"
+                ]
+              },
+              "config": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "initiator": {
+                        "type": "string",
+                        "enum": [
+                          "agent",
+                          "simulated_user"
+                        ],
+                        "default": "agent",
+                        "description": "Who speaks first in the conversation"
+                      },
+                      "timeout_seconds": {
+                        "type": "integer",
+                        "minimum": 15,
+                        "maximum": 3600,
+                        "default": 600,
+                        "description": "Maximum conversation duration in seconds"
+                      },
+                      "modality": {
+                        "type": "string",
+                        "enum": [
+                          "voice"
+                        ],
+                        "default": "voice"
+                      },
+                      "agent": {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "livekit"
+                                ]
+                              },
+                              "server_url": {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "The WebSocket URL of the LiveKit project hosting the agent"
+                              },
+                              "agent_name": {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "The name of the LiveKit agent to dispatch"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "server_url",
+                              "agent_name"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "phone"
+                                ]
+                              },
+                              "phone_number": {
+                                "type": "string",
+                                "pattern": "^\\+[1-9]\\d{7,14}$"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "phone_number"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "sip"
+                                ]
+                              },
+                              "uri": {
+                                "type": "string",
+                                "pattern": "^sips?:[^\\s]+$"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "uri"
+                            ],
+                            "additionalProperties": false
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "agent"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "initiator": {
+                        "type": "string",
+                        "enum": [
+                          "agent",
+                          "simulated_user"
+                        ],
+                        "default": "agent",
+                        "description": "Who speaks first in the conversation"
+                      },
+                      "timeout_seconds": {
+                        "type": "integer",
+                        "minimum": 15,
+                        "maximum": 3600,
+                        "default": 600,
+                        "description": "Maximum conversation duration in seconds"
+                      },
+                      "modality": {
+                        "type": "string",
+                        "enum": [
+                          "text"
+                        ]
+                      },
+                      "agent": {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "livekit"
+                                ]
+                              },
+                              "server_url": {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "The WebSocket URL of the LiveKit project hosting the agent"
+                              },
+                              "agent_name": {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "The name of the LiveKit agent to dispatch"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "server_url",
+                              "agent_name"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "acp"
+                                ]
+                              },
+                              "command": {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "Executable for the ACP agent subprocess, communicating over stdio"
+                              },
+                              "args": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                },
+                                "default": [],
+                                "description": "Arguments passed to the executable without shell interpretation"
+                              },
+                              "cwd": {
+                                "type": "string",
+                                "pattern": "^(?:\\/|[A-Za-z]:[\\\\/]|\\\\\\\\)",
+                                "description": "Absolute working directory for the ACP session on the execution host"
+                              },
+                              "permissions": {
+                                "type": "string",
+                                "enum": [
+                                  "deny"
+                                ],
+                                "default": "deny",
+                                "description": "Deny ACP permission requests; this does not sandbox the subprocess"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "command",
+                              "cwd"
+                            ],
+                            "additionalProperties": false
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "modality",
+                      "agent"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "config"
+            ],
+            "additionalProperties": false,
+            "description": "A task function that runs a conversation between an agent and a simulated user.",
+            "title": "simulation"
           }
         ]
       },
@@ -3732,7 +3963,8 @@
           "code",
           "global",
           "graph",
-          "topic_map"
+          "topic_map",
+          "simulation"
         ]
       },
       "FunctionId": {
