@@ -889,6 +889,8 @@ def pylint(session):
         # checks matrix. Keep lint installs compatible with the active Python.
         if sys.version_info[:2] < minimum_python.get(package, (3, 10)):
             continue
+        if package == "pipecat-ai" and sys.version_info >= (3, 14):
+            continue
         # CrewAI's latest release brings unsuitable chromadb transitive deps;
         # its integration tests install it in their isolated session instead.
         if package == "crewai":
