@@ -878,7 +878,21 @@ def pylint(session):
     # matrix's latest pins so lint sees the same SDK versions as CI tests.
     session.install(".")
     _install_group_locked(session, "test", "lint")
+    minimum_python = {
+        "ai-sdk": (3, 12),
+        "agentscope": (3, 11),
+        "harbor": (3, 12),
+        "pipecat-ai": (3, 11),
+    }
     for package in _VENDOR_TABLE:
+        # These providers do not support the Python versions in the static
+        # checks matrix. Keep lint installs compatible with the active Python.
+        if sys.version_info[:2] < minimum_python.get(package, (3, 10)):
+            continue
+        # CrewAI's latest release brings unsuitable chromadb transitive deps;
+        # its integration tests install it in their isolated session instead.
+        if package == "crewai":
+            continue
         _install_matrix_dep(session, package, LATEST)
 
     result = session.run("git", "ls-files", "**/*.py", silent=True, log=False)
