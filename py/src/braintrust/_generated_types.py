@@ -3302,7 +3302,7 @@ class WindowedAutomationConfigLoop(TypedDict):
     """
     Write tools that may run without interactive approval
     """
-    harness: NotRequired[Literal['codex', 'native', 'claude-code'] | None]
+    harness: NotRequired[Literal['native', 'codex', 'claude-code', 'pi'] | None]
     """
     Required when saving a Loop automation. Currently only Codex is supported.
     """
