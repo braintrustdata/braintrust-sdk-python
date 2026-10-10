@@ -20,6 +20,7 @@ from .framework import (
     Filter,
     _call_user_fn_args,
     await_or_run,
+    default_error_score_handler,
     evaluate_filter,
     parse_filters,
     run_evaluator,
@@ -1132,6 +1133,46 @@ async def test_per_input_trial_count_with_dict_data():
     assert input_1_trials == [0, 1]
     assert input_2_trials == [0, 1, 2, 3]
     assert input_3_trials == [0]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("first_input", ["ok", "scorer_error"])
+async def test_error_score_handler_scores_each_failed_row_independently(first_input):
+    """A failed task gets error scores for every scorer, regardless of how earlier rows finished."""
+
+    async def task(input_value):
+        if input_value == "task_error":
+            raise ValueError("task failed")
+        return input_value
+
+    def exact_match(output, expected):
+        return 1.0 if output == expected else 0.0
+
+    def picky(output):
+        if output == "scorer_error":
+            raise ValueError("scorer failed")
+        return 1.0
+
+    evaluator = Evaluator(
+        project_name="test-project",
+        eval_name="test-error-score-handler",
+        data=[
+            EvalCase(input=first_input, expected=first_input),
+            EvalCase(input="task_error", expected="task_error"),
+        ],
+        task=task,
+        scores=[exact_match, picky],
+        experiment_name=None,
+        metadata=None,
+        max_concurrency=1,
+        error_score_handler=default_error_score_handler,
+    )
+
+    result = await run_evaluator(experiment=None, evaluator=evaluator, position=None, filters=[])
+
+    failed = next(r for r in result.results if r.input == "task_error")
+    assert isinstance(failed.error, ValueError)
+    assert failed.scores == {"exact_match": 0, "picky": 0}
 
 
 @pytest.mark.vcr
