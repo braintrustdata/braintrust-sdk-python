@@ -1686,7 +1686,6 @@ async def _run_evaluator_internal_impl(
     scorer_names = [_scorer_name(scorer, i) for i, scorer in enumerate(scorers)]
     classifiers = list(evaluator.classifiers or [])
     classifier_names = [_classifier_name(classifier, i) for i, classifier in enumerate(classifiers)]
-    unhandled_scores = scorer_names
 
     if evaluator.parameter_values is not None:
         resolved_evaluator_parameters = evaluator.parameter_values
@@ -1706,6 +1705,7 @@ async def _run_evaluator_internal_impl(
         error = None
         exc_info = None
         scores = {}
+        unhandled_scores = scorer_names
         classifications = {}
         tags = datum.tags
 
@@ -1919,7 +1919,6 @@ async def _run_evaluator_internal_impl(
                 if classifications:
                     root_span.log(classifications=classifications)
 
-                nonlocal unhandled_scores
                 unhandled_scores = None
                 if failing_scorers_and_exceptions:
                     scorer_errors = {
