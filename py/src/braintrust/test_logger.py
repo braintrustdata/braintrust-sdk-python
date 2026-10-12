@@ -3426,6 +3426,28 @@ def test_attachment_upload_tracked_on_flush(with_memory_logger, with_simulate_lo
     assert with_memory_logger.upload_attempts[0] is attachment
 
 
+@pytest.mark.parametrize("field", ["input", "output"])
+def test_dataclass_nested_attachments_reach_flush(field, with_memory_logger, with_simulate_login):
+    from dataclasses import dataclass
+
+    @dataclass
+    class Payload:
+        files: list[BaseAttachment]
+
+    attachment = Attachment(data=b"data", filename="file.txt", content_type="text/plain")
+    external = ExternalAttachment(url="s3://bucket/key", filename="file.pdf", content_type="application/pdf")
+    payload = Payload([attachment, external])
+    test_logger = init_test_logger(__name__)
+    with test_logger.start_span(name="dataclass-attachments") as span:
+        span.log(**{field: payload})
+    test_logger.flush()
+
+    # The memory logger exercises extraction without making upload requests.
+    assert with_memory_logger.upload_attempts == [attachment, external]
+    assert with_memory_logger.pop()[0][field] == {"files": [attachment.reference, external.reference]}
+    assert payload.files == [attachment, external]
+
+
 def test_same_attachment_logged_twice_tracked_twice(with_memory_logger, with_simulate_login):
     """Test that same attachment logged twice appears twice in upload attempts."""
     attachment = Attachment(data=b"data", filename="file.txt", content_type="text/plain")

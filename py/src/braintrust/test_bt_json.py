@@ -6,9 +6,84 @@ import warnings
 from typing import Any
 from unittest import TestCase
 
+import pytest
 from braintrust.bt_json import bt_dumps, bt_safe_deep_copy
 from braintrust.logger import Attachment, ExternalAttachment
 from braintrust.test_helpers import with_memory_logger  # noqa: F401
+
+
+@pytest.mark.parametrize("shape", ["direct", "list", "dict", "tuple", "dataclass", "dataclass-in-list"])
+def test_dataclass_nested_attachments(shape):
+    from dataclasses import dataclass
+
+    @dataclass
+    class Payload:
+        value: Any
+
+    attachment = Attachment(data=b"data", filename="file.txt", content_type="text/plain")
+    original, expected = {
+        "direct": (attachment, attachment),
+        "list": ([attachment], [attachment]),
+        "dict": ({"file": attachment}, {"file": attachment}),
+        "tuple": ((attachment,), [attachment]),
+        "dataclass": (Payload(attachment), {"value": attachment}),
+        "dataclass-in-list": ([Payload(attachment)], [{"value": attachment}]),
+    }[shape]
+
+    assert bt_safe_deep_copy(Payload(original)) == {"value": expected}
+
+
+def test_dataclass_container_cycles_and_shared_values():
+    from dataclasses import dataclass
+
+    @dataclass
+    class Payload:
+        value: Any
+
+    attachment = Attachment(data=b"data", filename="file.txt", content_type="text/plain")
+    payload = Payload([attachment])
+    payload.value.append(payload)
+
+    assert bt_safe_deep_copy([payload, payload]) == [
+        {"value": [attachment, "<circular reference>"]},
+        {"value": [attachment, "<circular reference>"]},
+    ]
+
+
+def test_dataclass_container_depth_limit():
+    from dataclasses import dataclass
+
+    @dataclass
+    class Payload:
+        value: Any
+
+    assert bt_safe_deep_copy(Payload([Payload("leaf")]), max_depth=2) == {"value": ["<max depth exceeded>"]}
+
+
+def test_dataclass_json_container_fields():
+    from dataclasses import dataclass
+
+    @dataclass
+    class Payload:
+        value: Any
+
+    payload = Payload({"items": (1, None, "text"), "nested": {"enabled": True}})
+    assert json.loads(bt_dumps(payload)) == {"value": {"items": [1, None, "text"], "nested": {"enabled": True}}}
+
+
+def test_dataclass_unreadable_field_is_non_sanitizable():
+    from dataclasses import dataclass
+
+    @dataclass
+    class Payload:
+        value: int
+
+        def __getattribute__(self, name):
+            if name == "value":
+                raise RuntimeError("Cannot read field")
+            return super().__getattribute__(name)
+
+    assert bt_safe_deep_copy(Payload(1)) == "<non-sanitizable: Payload>"
 
 
 class TestBTJson(TestCase):

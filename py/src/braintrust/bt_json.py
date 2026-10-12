@@ -59,10 +59,7 @@ def _to_bt_safe(v: Any) -> Any:
         return v.reference
 
     if dataclasses.is_dataclass(v) and not isinstance(v, type):
-        # Use manual field iteration instead of dataclasses.asdict() because
-        # asdict() deep-copies values, which breaks objects like Attachment
-        # that contain non-copyable items (thread locks, file handles, etc.)
-        return {f.name: _to_bt_safe(getattr(v, f.name)) for f in dataclasses.fields(v)}
+        return bt_safe_deep_copy(v)
 
     # Pydantic model classes (not instances) with model_json_schema
     if isinstance(v, type) and hasattr(v, "model_json_schema") and callable(cast(Any, v).model_json_schema):
@@ -216,6 +213,18 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                 visited_discard(obj_id)
 
         try:
+            if dataclasses.is_dataclass(v) and not isinstance(v, type):
+                obj_id = id(v)
+                if obj_id in visited:
+                    return "<circular reference>"
+                visited_add(obj_id)
+                try:
+                    # Share the container traversal so nested attachments retain
+                    # their identity and dataclass fields honor cycle/depth limits.
+                    # dataclasses.asdict() would try to deepcopy attachment locks.
+                    return {f.name: _deep_copy_object(getattr(v, f.name), depth + 1) for f in dataclasses.fields(v)}
+                finally:
+                    visited_discard(obj_id)
             return _to_bt_safe(v)
         except Exception:
             return f"<non-sanitizable: {type(v).__name__}>"
