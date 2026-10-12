@@ -33,6 +33,66 @@ def test_dataclass_nested_attachments(shape):
     assert bt_safe_deep_copy(Payload(original)) == {"value": expected}
 
 
+@pytest.mark.parametrize("kind", ["base", "readonly"])
+@pytest.mark.parametrize("shape", ["direct", "list", "dict", "dataclass", "dataclass-in-list"])
+def test_dataclass_attachment_types_keep_special_handling(kind, shape):
+    from dataclasses import dataclass
+
+    from braintrust.logger import BaseAttachment, ReadonlyAttachment
+
+    @dataclass
+    class CustomAttachment(BaseAttachment):
+        key: str
+
+        @property
+        def reference(self):
+            return {
+                "type": "braintrust_attachment",
+                "key": self.key,
+                "filename": "file.txt",
+                "content_type": "text/plain",
+            }
+
+        @property
+        def data(self):
+            return b"data"
+
+        def upload(self):
+            raise AssertionError("Serialization must not upload attachments")
+
+        def debug_info(self):
+            return {"key": self.key}
+
+    @dataclass
+    class CustomReadonlyAttachment(ReadonlyAttachment):
+        reference: dict[str, Any]
+
+        def __post_init__(self):
+            super().__init__(self.reference)
+
+    @dataclass
+    class Payload:
+        value: Any
+
+    attachment = CustomAttachment("test-key")
+    if kind == "readonly":
+        attachment = CustomReadonlyAttachment(attachment.reference)
+    expected = attachment if kind == "base" else attachment.reference
+    original, expected = {
+        "direct": (attachment, expected),
+        "list": ([attachment], [expected]),
+        "dict": ({"file": attachment}, {"file": expected}),
+        "dataclass": (Payload(attachment), {"value": expected}),
+        "dataclass-in-list": (Payload([attachment]), {"value": [expected]}),
+    }[shape]
+
+    copied = bt_safe_deep_copy(original)
+    assert copied == expected
+    if shape == "direct" and kind == "base":
+        assert copied is attachment
+    assert json.loads(bt_dumps(copied)) == json.loads(bt_dumps(expected))
+
+
 def test_dataclass_container_cycles_and_shared_values():
     from dataclasses import dataclass
 

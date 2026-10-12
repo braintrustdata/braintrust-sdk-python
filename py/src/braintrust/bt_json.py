@@ -214,6 +214,12 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
 
         try:
             if dataclasses.is_dataclass(v) and not isinstance(v, type):
+                # Attachment subclasses may also be dataclasses. Keep their
+                # specialized handling instead of copying their fields.
+                from braintrust.logger import BaseAttachment, ReadonlyAttachment
+
+                if isinstance(v, (BaseAttachment, ReadonlyAttachment)):
+                    return _to_bt_safe(v)
                 obj_id = id(v)
                 if obj_id in visited:
                     return "<circular reference>"

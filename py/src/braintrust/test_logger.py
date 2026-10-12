@@ -3448,6 +3448,52 @@ def test_dataclass_nested_attachments_reach_flush(field, with_memory_logger, wit
     assert payload.files == [attachment, external]
 
 
+@pytest.mark.parametrize("field", ["input", "output"])
+@pytest.mark.parametrize("nested", [False, True])
+def test_dataclass_base_attachment_reaches_flush(field, nested, with_memory_logger, with_simulate_login):
+    from dataclasses import dataclass
+
+    @dataclass
+    class CustomAttachment(BaseAttachment):
+        key: str
+
+        @property
+        def reference(self):
+            return {
+                "type": "braintrust_attachment",
+                "key": self.key,
+                "filename": "file.txt",
+                "content_type": "text/plain",
+            }
+
+        @property
+        def data(self):
+            return b"data"
+
+        def upload(self):
+            raise AssertionError("The memory logger must not perform real uploads")
+
+        def debug_info(self):
+            return {"key": self.key}
+
+    @dataclass
+    class Payload:
+        files: list[BaseAttachment]
+
+    attachment = CustomAttachment("test-key")
+    value = Payload([attachment]) if nested else attachment
+    test_logger = init_test_logger(__name__)
+    with test_logger.start_span(name="custom-dataclass-attachment") as span:
+        span.log(**{field: value})
+    test_logger.flush()
+
+    # The memory logger verifies extraction and scheduling, without real uploads.
+    assert len(with_memory_logger.upload_attempts) == 1
+    assert with_memory_logger.upload_attempts[0] is attachment
+    expected = {"files": [attachment.reference]} if nested else attachment.reference
+    assert with_memory_logger.pop()[0][field] == expected
+
+
 def test_same_attachment_logged_twice_tracked_twice(with_memory_logger, with_simulate_login):
     """Test that same attachment logged twice appears twice in upload attempts."""
     attachment = Attachment(data=b"data", filename="file.txt", content_type="text/plain")
