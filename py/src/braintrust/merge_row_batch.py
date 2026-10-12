@@ -2,6 +2,7 @@ from collections.abc import Callable, Sequence
 from typing import Any, TypeVar
 
 from .db_fields import IS_MERGE_FIELD
+from .span_customizer import _StrippedSpanExportData
 
 
 T = TypeVar("T")
@@ -53,11 +54,22 @@ def _restore_merge_row_skip_fields(row: dict[str, Any], skip_fields: dict[str, A
 
 
 def merge_row_batch(rows: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Like `merge_row_batch_waves`, flattened into one ordered list of rows."""
+    return [row for wave in merge_row_batch_waves(rows) for row in wave]
+
+
+def merge_row_batch_waves(rows: Sequence[dict[str, Any]]) -> list[list[dict[str, Any]]]:
     """Given a batch of rows, merges conflicting rows together to end up with a
-    set of rows to insert. Returns a set of de-conflicted rows as a flat list.
+    set of rows to insert. Returns de-conflicted rows split into ordered waves.
 
     Note that the returned rows will be the same objects as the input `rows`,
     meaning they are mutated in place.
+    SDK-stripped customizer failures are exceptions: they are never mutated and
+    act as merge barriers for their own row only. Rows for that key before the
+    barrier, the barrier itself, and rows after it land in successive waves.
+    A wave never contains two rows with the same key, and without barriers there
+    is exactly one wave. Exporters must send waves in order to preserve same-ID
+    update ordering; rows within a wave are independent.
 
     There are a few important considerations for the merge procedure:
 
@@ -99,10 +111,24 @@ def merge_row_batch(rows: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
                 "Logged row is missing an id. This is an internal braintrust error. Please contact us at info@braintrust.dev for help"
             )
 
-    row_groups: dict[_MergedRowKey, dict[str, Any]] = {}
+    waves: list[dict[_MergedRowKey, dict[str, Any]]] = []
+    # The earliest wave each key may still be written to.
+    next_wave: dict[_MergedRowKey, int] = {}
     for row in rows:
         key = _generate_merged_row_key(row)
-        existing_row = row_groups.get(key)
+        wave_index = next_wave.get(key, 0)
+        if wave_index == len(waves):
+            waves.append({})
+        existing_row = waves[wave_index].get(key)
+        if isinstance(row, _StrippedSpanExportData):
+            # Never mutate a memoized failure with neighboring record content.
+            if existing_row is not None:
+                wave_index += 1
+                if wave_index == len(waves):
+                    waves.append({})
+            waves[wave_index][key] = row
+            next_wave[key] = wave_index + 1
+            continue
         # If there is an existing row and the new row has the IS_MERGE_FIELD ==
         # True property, we merge it with the existing row. Otherwise we can
         # replace it.
@@ -116,9 +142,9 @@ def merge_row_batch(rows: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
             if preserve_nomerge:
                 del existing_row[IS_MERGE_FIELD]
         else:
-            row_groups[key] = row
+            waves[wave_index][key] = row
 
-    return list(row_groups.values())
+    return [list(wave.values()) for wave in waves]
 
 
 def batch_items(

@@ -80,7 +80,7 @@ from .generated_types import (
 )
 from .git_fields import GitMetadataSettings, RepoInfo
 from .gitutil import get_past_n_ancestors, get_repo_info
-from .merge_row_batch import batch_items, merge_row_batch
+from .merge_row_batch import batch_items, merge_row_batch, merge_row_batch_waves
 from .object import DEFAULT_IS_LEGACY_DATASET, ensure_dataset_record
 from .parameters import RemoteEvalParameters
 from .prompt import BRAINTRUST_PARAMS, ImagePart, PromptBlockData, PromptData, PromptMessage, PromptSchema, TextPart
@@ -102,7 +102,12 @@ from .propagation import (
 )
 from .queue import DEFAULT_QUEUE_SIZE, LogQueue
 from .serializable_data_class import SerializableDataClass
-from .span_customizer import SpanCustomizer, _customize_span_export, _get_span_customizers, _MaskingCustomizer
+from .span_customizer import (
+    SpanCustomizer,
+    _customize_span_export,
+    _get_span_customizers,
+    _MaskingCustomizer,
+)
 from .span_identifier_v3 import SpanComponentsV3, SpanObjectTypeV3
 from .span_identifier_v4 import SpanComponentsV4
 from .span_origin import SpanOriginEnvironment, detect_environment, merge_span_origin_context
@@ -996,7 +1001,7 @@ def utf8_byte_length(value: str) -> int:
     return len(value) if value.isascii() else len(value.encode("utf-8"))
 
 
-_LazyLogRecord = LazyValue[dict[str, Any]] | LazyValue[dict[str, Any] | None]
+_LazyLogRecord = LazyValue[dict[str, Any]]
 
 
 class _BackgroundLogger(ABC):
@@ -1033,8 +1038,7 @@ class _MemoryBackgroundLogger(_BackgroundLogger):
             if not self.logs:
                 return
 
-            # Filter dropped records before touching attachments.
-            logs = [record for item in self.logs if (record := item.get()) is not None]
+            logs = [item.get() for item in self.logs]
 
             # Extract attachments from all logs
             attachments: list[BaseAttachment] = []
@@ -1046,7 +1050,7 @@ class _MemoryBackgroundLogger(_BackgroundLogger):
 
     def pop(self) -> list[dict[str, Any]]:
         with self.lock:
-            logs = [record for item in self.logs if (record := item.get()) is not None]
+            logs = [item.get() for item in self.logs]
             self.logs = []
 
             if not logs:
@@ -1057,11 +1061,7 @@ class _MemoryBackgroundLogger(_BackgroundLogger):
             batch = merge_row_batch(logs)
 
             if self._export_customizers:
-                batch = [
-                    record
-                    for item in batch
-                    if (record := _customize_span_export(item, self._export_customizers)) is not None
-                ]
+                batch = [_customize_span_export(item, self._export_customizers) for item in batch]
 
             return batch
 
@@ -1206,40 +1206,28 @@ class _HTTPBackgroundLogger:
             # Drain the queue.
             wrapped_items = self.queue.drain_all()
 
-            all_items, attachments = self._unwrap_lazy_values(wrapped_items)
-            if len(all_items) == 0:
+            waves, attachments = self._unwrap_lazy_values(wrapped_items)
+            if not any(waves):
                 return
 
-            # Construct batches of records to flush in parallel.
-            all_items_with_meta = [stringify_with_overflow_meta(item) for item in all_items]
             max_request_size_result = self._get_max_request_size()
-            batches = batch_items(
-                items=all_items_with_meta,
-                batch_max_num_items=batch_size,
-                batch_max_num_bytes=max(
-                    0, max_request_size_result["max_request_size"] - utf8_byte_length(construct_logs3_data([])) + 1
-                ),
-                get_byte_size=lambda item: item.overflow_meta.byte_size + 1,
+            batch_max_num_bytes = max(
+                0, max_request_size_result["max_request_size"] - utf8_byte_length(construct_logs3_data([])) + 1
             )
-
-            post_promises = []
-            try:
-                post_promises = [
-                    HTTP_REQUEST_THREAD_POOL.submit(self._submit_logs_request, batch, max_request_size_result)
-                    for batch in batches
-                ]
-            except RuntimeError:
-                # If the thread pool has shut down, e.g. because the process
-                # is terminating, run the requests the old fashioned way.
-                for batch in batches:
-                    self._submit_logs_request(batch, max_request_size_result)
-
-            concurrent.futures.wait(post_promises)
-            # Raise any exceptions from the promises as one group.
-            post_promise_exceptions = [e for e in (f.exception() for f in post_promises) if e is not None]
-            if post_promise_exceptions:
+            # Waves only split same-ID updates around stripped customizer
+            # failures; send them in order, and each wave's batches in parallel.
+            post_errors: list[BaseException] = []
+            for wave in waves:
+                batches = batch_items(
+                    items=[stringify_with_overflow_meta(item) for item in wave],
+                    batch_max_num_items=batch_size,
+                    batch_max_num_bytes=batch_max_num_bytes,
+                    get_byte_size=lambda item: item.overflow_meta.byte_size + 1,
+                )
+                post_errors.extend(self._submit_logs_requests(batches, max_request_size_result))
+            if post_errors:
                 raise exceptiongroup.BaseExceptionGroup(
-                    f"Encountered the following errors while logging:", post_promise_exceptions
+                    f"Encountered the following errors while logging:", post_errors
                 )
 
             attachment_errors: list[Exception] = []
@@ -1259,27 +1247,48 @@ class _HTTPBackgroundLogger:
                     attachment_errors,
                 )
 
+    def _submit_logs_requests(
+        self, batches: Sequence[Sequence[LogItemWithMeta]], max_request_size_result: dict[str, Any]
+    ) -> list[BaseException]:
+        post_promises = []
+        errors: list[BaseException] = []
+        for index, batch in enumerate(batches):
+            try:
+                post_promises.append(
+                    HTTP_REQUEST_THREAD_POOL.submit(self._submit_logs_request, batch, max_request_size_result)
+                )
+            except RuntimeError:
+                # If the thread pool has shut down, e.g. because the process
+                # is terminating, run the remaining requests the old fashioned way.
+                for remaining_batch in batches[index:]:
+                    try:
+                        self._submit_logs_request(remaining_batch, max_request_size_result)
+                    except Exception as e:
+                        errors.append(e)
+                break
+        concurrent.futures.wait(post_promises)
+        return [e for e in (f.exception() for f in post_promises) if e is not None] + errors
+
     def _unwrap_lazy_values(
         self, wrapped_items: Sequence[_LazyLogRecord]
-    ) -> tuple[list[dict[str, Any]], list["BaseAttachment"]]:
+    ) -> tuple[list[list[dict[str, Any]]], list["BaseAttachment"]]:
         for i in range(self.num_tries):
             try:
-                unwrapped_items = [record for item in wrapped_items if (record := item.get()) is not None]
-                merged_items = merge_row_batch(unwrapped_items)
+                unwrapped_items = [item.get() for item in wrapped_items]
+                waves = merge_row_batch_waves(unwrapped_items)
 
                 # Logger-local hooks run after span hooks and merging.
                 if self._export_customizers:
-                    merged_items = [
-                        record
-                        for item in merged_items
-                        if (record := _customize_span_export(item, self._export_customizers)) is not None
+                    waves = [
+                        [_customize_span_export(item, self._export_customizers) for item in wave] for wave in waves
                     ]
 
                 attachments: list["BaseAttachment"] = []
-                for item in merged_items:
-                    _extract_attachments(item, attachments)
+                for wave in waves:
+                    for item in wave:
+                        _extract_attachments(item, attachments)
 
-                return merged_items, attachments
+                return waves, attachments
             except Exception as e:
                 errmsg = "Encountered error when constructing records to flush"
                 is_retrying = i + 1 < self.num_tries
@@ -1441,8 +1450,8 @@ class _HTTPBackgroundLogger:
         if not (wrapped_items and publish_payloads_dir):
             return
         try:
-            all_items, attachments = self._unwrap_lazy_values(wrapped_items)
-            items_with_meta = [stringify_with_overflow_meta(item) for item in all_items]
+            waves, attachments = self._unwrap_lazy_values(wrapped_items)
+            items_with_meta = [stringify_with_overflow_meta(item) for wave in waves for item in wave]
             dataStr = construct_logs3_data(items_with_meta)
             attachment_str = bt_dumps([a.debug_info() for a in attachments])
             payload = "{" + f""""data": {dataStr}, "attachments": {attachment_str}""" + "}"
@@ -4034,7 +4043,7 @@ def _update_span_impl(
             object_id=parent_object_id.get(),
         ).object_id_fields()
 
-    def compute_record() -> dict[str, Any] | None:
+    def compute_record() -> dict[str, Any]:
         record = dict(
             id=id,
             **update_event,
@@ -4978,11 +4987,11 @@ class SpanImpl(Span):
             self.state.span_cache.queue_write(self.root_span_id, self.span_id, cached_span)
 
         # Customized records are cached after export customization instead, so
-        # local scorers never see content that a customizer redacted or dropped.
+        # local scorers never see content that a customizer redacted or stripped.
         if not customizers:
             write_span_cache(serializable_partial_record)
 
-        def compute_record() -> dict[str, Any] | None:
+        def compute_record() -> dict[str, Any]:
             exporter = _get_exporter()
             record = dict(
                 **serializable_partial_record,
@@ -4997,8 +5006,7 @@ class SpanImpl(Span):
             # logger merges, masks, extracts attachments, or retries delivery.
             if customizers:
                 customized_record = _customize_span_export(record, customizers)
-                if customized_record is not None:
-                    write_span_cache(customized_record)
+                write_span_cache(customized_record)
                 if pending_cache_key is not None:
                     self.state.span_cache._forget_pending_record(self.root_span_id, pending_cache_key)
                 return customized_record

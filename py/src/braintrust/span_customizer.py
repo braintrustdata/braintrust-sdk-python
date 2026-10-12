@@ -2,7 +2,8 @@
 
 import inspect
 import logging
-from collections.abc import Callable, Sequence
+import threading
+from collections.abc import Callable, Iterable, Sequence
 from typing import Any
 
 from .db_fields import (
@@ -33,9 +34,15 @@ class SpanCustomizer:
         Hooks run in registration order after lazy values resolve, before merging,
         attachment processing, masking, and serialization. Identity, routing, and
         merge protocol fields are restored after each hook. Exceptions and invalid
-        synchronous returns log a safe error, stop the hook chain, and drop that
-        outgoing record. Handle recoverable errors within the hook. Only
-        KeyboardInterrupt and SystemExit propagate.
+        synchronous returns stop the hook chain and strip the outgoing record.
+        Only original identity, routing/protocol fields, created,
+        span_attributes.type, and metrics.start/end survive, plus
+        context={"customizer_error": True}, replacing all original context. No
+        attachments from failed records are uploaded. One safe error is logged per
+        process, without payloads or exception details. Handle recoverable errors
+        within the hook. Only KeyboardInterrupt and SystemExit propagate,
+        including while snapshotting fields. Unreadable snapshot fields are
+        omitted. Dict subclasses are accepted and copied into plain dicts.
 
         Records may contain SDK ``Attachment`` objects: integrations convert inline
         media at capture time. Remove or replace them to prevent their upload;
@@ -44,13 +51,18 @@ class SpanCustomizer:
         Manual roots and children, instrumented spans, logger spans, and experiment
         spans are included. Dataset rows and feedback records are not. Each hook
         receives a possibly incremental record, not a completed logical span;
-        fields may be absent and hooks may run before the span ends. Dropping a
-        record does not retract earlier exports or disable later records.
+        fields may be absent and hooks may run before the span ends. Stripping a
+        record does not retract earlier exports or disable later records. Failed
+        records retain their original timing without inventing absent timestamps;
+        they bypass masking and are exported separately from other updates to the
+        same row.
         """
         return data
 
 
 _span_customizers: tuple[SpanCustomizer, ...] = ()
+_failure_logged = False
+_failure_log_lock = threading.Lock()
 _PROTECTED_FIELDS = frozenset(
     (
         ID_FIELD,
@@ -84,8 +96,11 @@ class _MaskingCustomizer(SpanCustomizer):
                 continue
             try:
                 data[field] = self._masking_function(data[field])
-            except Exception as error:
-                # Fail closed per field, without leaking exception messages or stacks.
+            except (KeyboardInterrupt, SystemExit):
+                raise
+            except BaseException as error:
+                # Fail closed per field (including GeneratorExit and CancelledError),
+                # without leaking exception messages or stacks.
                 message = f"ERROR: Failed to mask field '{field}' - {type(error).__name__}"
                 if field in ("scores", "metrics"):
                     del data[field]
@@ -101,7 +116,7 @@ def set_span_customizers(customizers: Sequence[SpanCustomizer] | None) -> None:
     Configure before logging spans; pass None or an empty sequence to disable.
     The sequence is copied, but customizer instances are not. Each span record
     uses the configuration active when it is logged, and retries reuse its
-    transformed data or dropped result. There is no environment-variable registration.
+    transformed or stripped data. There is no environment-variable registration.
 
     Raises TypeError for classes, objects without a callable ``on_span_export``,
     and async hooks. Invalid synchronous returns are rejected at export time.
@@ -125,7 +140,7 @@ def _get_span_customizers() -> tuple[SpanCustomizer, ...]:
 
 
 def _validate_customizer(customizer: Any) -> None:
-    # Reject misconfiguration eagerly rather than dropping records at export time.
+    # Reject misconfiguration eagerly rather than stripping records at export time.
     if isinstance(customizer, type):
         raise TypeError(f"Span customizers must be instances, not classes; did you mean {customizer.__name__}()?")
     hook = getattr(customizer, "on_span_export", None)
@@ -154,24 +169,32 @@ def _restore_protocol_fields(data: SpanExportData, protected: SpanExportData) ->
     return restored
 
 
+class _StrippedSpanExportData(dict[str, Any]):
+    """SDK-only marker: do not merge or mask a memoized failed record."""
+
+
 def _customize_span_export(
     data: SpanExportData, customizers: Sequence[SpanCustomizer] | None = None
-) -> SpanExportData | None:
+) -> SpanExportData:
     if customizers is None:
         customizers = _span_customizers
-    if not customizers:
+    if not customizers or isinstance(data, _StrippedSpanExportData):
         return data
 
-    protected = None
-    for customizer in customizers:
-        try:
+    # Capture identity and timing before even looking up a hook: user-defined
+    # descriptors and earlier hooks can fail or mutate the record in place.
+    protected = _snapshot_fields(data, _PROTECTED_FIELDS)
+    # Non-content fields that keep a stripped initial record recognizable.
+    preserved = _snapshot_fields(data, ("created",))
+    timing = _snapshot_fields(data.get("metrics"), ("start", "end"))
+    span_type = _snapshot_fields(data.get("span_attributes"), ("type",))
+    try:
+        # Protocol containers may alias span state; don't expose those to hooks.
+        data = _restore_protocol_fields(data, protected)
+        for customizer in customizers:
             hook = getattr(customizer, "on_span_export", None)
             if hook is None:
                 continue
-            if protected is None:
-                protected = {key: _copy_protocol_value(data[key]) for key in _PROTECTED_FIELDS if key in data}
-                # Protocol containers may alias span state; don't expose those to hooks.
-                data = _restore_protocol_fields(data, protected)
             result = hook(data)
             if inspect.isawaitable(result):
                 # Do not execute asynchronous hooks or emit unawaited coroutine warnings.
@@ -182,12 +205,52 @@ def _customize_span_export(
                 raise TypeError("Span customizers must return a dict")
             # Always a fresh plain dict, even for dict subclasses.
             data = _restore_protocol_fields(result, protected)
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except BaseException:
+        # Memoize this stripped result in the caller's LazyValue, including
+        # GeneratorExit and CancelledError, without rejecting other records.
+        stripped = _StrippedSpanExportData(protected)
+        stripped.update(preserved)
+        if timing:
+            stripped["metrics"] = timing
+        if span_type:
+            stripped["span_attributes"] = span_type
+        stripped["context"] = {"customizer_error": True}
+        _log_customizer_failure()
+        return stripped
+    return data
+
+
+def _snapshot_fields(source: Any, keys: Iterable[str]) -> dict[str, Any]:
+    # Best-effort fallback; only process-control exceptions may escape.
+    snapshot: dict[str, Any] = {}
+    if not isinstance(source, dict):
+        return snapshot
+    for key in keys:
+        try:
+            if key not in source:
+                continue
+            value = source[key]
         except (KeyboardInterrupt, SystemExit):
             raise
         except BaseException:
-            # Treat GeneratorExit, CancelledError, etc. as hook failures so the drop
-            # is memoized and cannot escape flush with the rest of the batch.
-            # Neither exception details nor record data are safe to include here.
-            logging.getLogger("braintrust").error("Span customizer failed; dropping outgoing span record.")
-            return None
-    return data
+            continue
+        try:
+            snapshot[key] = _copy_protocol_value(value)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except BaseException:
+            # e.g. RecursionError on a self-referential container.
+            snapshot[key] = value
+    return snapshot
+
+
+def _log_customizer_failure() -> None:
+    global _failure_logged
+    with _failure_log_lock:
+        if _failure_logged:
+            return
+        _failure_logged = True
+    # Neither exception details nor record data are safe to include here.
+    logging.getLogger("braintrust").error("Span customizer failed; stripping outgoing span content.")

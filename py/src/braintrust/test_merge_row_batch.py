@@ -1,7 +1,8 @@
 import unittest
 
 from braintrust.db_fields import IS_MERGE_FIELD
-from braintrust.merge_row_batch import batch_items, merge_row_batch
+from braintrust.merge_row_batch import batch_items, merge_row_batch, merge_row_batch_waves
+from braintrust.span_customizer import _StrippedSpanExportData
 
 
 class MergeRowBatchTest(unittest.TestCase):
@@ -130,6 +131,75 @@ class MergeRowBatchTest(unittest.TestCase):
                 ),
             ],
         )
+
+
+def _row(row_id, **fields):
+    return dict(experiment_id="e0", id=row_id, **fields)
+
+
+def _stripped(row_id, **fields):
+    return _StrippedSpanExportData(_row(row_id, context={"customizer_error": True}, **fields))
+
+
+class MergeRowBatchWavesTest(unittest.TestCase):
+    def test_no_barriers_is_one_wave(self):
+        rows = [_row("x", a=1), _row("y", a=2), _row("x", b=3, **{IS_MERGE_FIELD: True})]
+        self.assertEqual(merge_row_batch_waves(rows), [[_row("x", a=1, b=3), _row("y", a=2)]])
+        self.assertEqual(merge_row_batch_waves([]), [])
+
+    def test_barrier_only_splits_its_own_row(self):
+        barrier = _stripped("x", **{IS_MERGE_FIELD: True})
+        rows = [
+            _row("x", a=1),
+            _row("y", a=1),
+            barrier,
+            _row("y", b=2, **{IS_MERGE_FIELD: True}),
+            _row("x", c=3, **{IS_MERGE_FIELD: True}),
+            _row("z", a=1),
+            _row("x", d=4, **{IS_MERGE_FIELD: True}),
+        ]
+        waves = merge_row_batch_waves(rows)
+        self.assertEqual(
+            waves,
+            [
+                [_row("x", a=1), _row("y", a=1, b=2), _row("z", a=1)],
+                [barrier],
+                [_row("x", c=3, d=4, **{IS_MERGE_FIELD: True})],
+            ],
+        )
+        self.assertIs(waves[1][0], barrier)
+        self.assertEqual(barrier, _stripped("x", **{IS_MERGE_FIELD: True}))
+
+    def test_leading_and_consecutive_barriers(self):
+        # A barrier with no earlier rows for its key needs no extra wave, but
+        # consecutive barriers for one key must not share a wave.
+        first = _stripped("x", n=1)
+        second = _stripped("x", n=2, **{IS_MERGE_FIELD: True})
+        rows = [first, _row("y", a=1), second, _row("x", a=1, **{IS_MERGE_FIELD: True}), _stripped("y")]
+        self.assertEqual(
+            merge_row_batch_waves(rows),
+            [
+                [first, _row("y", a=1)],
+                [second, _stripped("y")],
+                [_row("x", a=1, **{IS_MERGE_FIELD: True})],
+            ],
+        )
+
+    def test_waves_never_repeat_keys_and_flatten_in_order(self):
+        rows = [
+            _row("x", n=0),
+            _stripped("x"),
+            _row("y", n=0),
+            _stripped("y"),
+            _row("x", n=1, **{IS_MERGE_FIELD: True}),
+            _stripped("x"),
+            _row("y", n=1, **{IS_MERGE_FIELD: True}),
+        ]
+        waves = merge_row_batch_waves(rows)
+        for wave in waves:
+            self.assertEqual(len({row["id"] for row in wave}), len(wave))
+        self.assertEqual(merge_row_batch(list(rows)), [row for wave in waves for row in wave])
+        self.assertEqual(len(waves), 4)
 
 
 class BatchItemsTest(unittest.TestCase):
