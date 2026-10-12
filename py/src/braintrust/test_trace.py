@@ -1,5 +1,6 @@
 """Tests for Trace functionality."""
 
+import asyncio
 import os
 
 import braintrust
@@ -212,6 +213,142 @@ class TestCachedSpanFetcher:
         span_ids = [s.span_id for s in result]
         assert sorted(span_ids) == ["fn-1", "llm-1", "llm-2"]
         assert len(span_ids) == len(set(span_ids)), f"duplicate spans: {span_ids}"
+
+    @pytest.mark.parametrize(
+        ("first_types", "second_types"),
+        [
+            (None, None),
+            (["llm"], ["llm"]),
+            (["llm", "tool"], ["tool", "function"]),
+            (None, ["llm"]),
+        ],
+    )
+    @pytest.mark.parametrize("completion_order", [(0, 1), (1, 0)])
+    @pytest.mark.asyncio
+    async def test_concurrent_fetches_do_not_append_duplicate_groups(
+        self, first_types, second_types, completion_order
+    ):
+        # Repeated IDs within one response are preserved; only duplication caused
+        # by merging overlapping responses should be removed.
+        all_spans = [
+            make_span("llm-1", "llm"),
+            make_span("llm-1", "llm"),
+            make_span("tool-1", "tool"),
+            make_span("function-1", "function"),
+        ]
+        requests = asyncio.Queue()
+
+        async def fetch_fn(filters):
+            response = asyncio.get_running_loop().create_future()
+            await requests.put((filters, response))
+            return await response
+
+        fetcher = CachedSpanFetcher(fetch_fn=fetch_fn)
+        filters = [{"span_type": types} if types is not None else {} for types in (first_types, second_types)]
+        tasks = [asyncio.create_task(fetcher.get_spans(filters=value)) for value in filters]
+        try:
+            pending = [await asyncio.wait_for(requests.get(), timeout=5) for _ in tasks]
+            for index in completion_order:
+                requested_filters, response = pending[index]
+                assert requested_filters == filters[index]
+                expected = [span for span in all_spans if _matches_span_filters(span, filters[index])]
+                response.set_result(expected)
+                result = await asyncio.wait_for(tasks[index], timeout=5)
+                assert sorted(span.span_id for span in result) == sorted(span.span_id for span in expected)
+
+            cached_types = None if first_types is None else sorted(set(first_types + second_types))
+            cached_filters = {"span_type": cached_types} if cached_types is not None else {}
+            cached = await asyncio.wait_for(fetcher.get_spans(filters=cached_filters), timeout=5)
+            expected = [span for span in all_spans if _matches_span_filters(span, cached_filters)]
+            assert sorted(span.span_id for span in cached) == sorted(span.span_id for span in expected)
+            assert requests.empty()
+        finally:
+            for task in tasks:
+                task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
+
+    @pytest.mark.parametrize("cancel", [False, True], ids=["failure", "cancellation"])
+    @pytest.mark.asyncio
+    async def test_interrupted_full_fetch_preserves_cached_types(self, cancel):
+        cached_span = make_span("llm-1", "llm")
+        full_spans = [cached_span, make_span("tool-1", "tool")]
+        started = asyncio.Event()
+        response = asyncio.get_running_loop().create_future()
+        calls = []
+
+        async def fetch_fn(filters):
+            calls.append(filters)
+            if len(calls) == 1:
+                return [cached_span]
+            if len(calls) == 2:
+                started.set()
+                return await response
+            return full_spans
+
+        fetcher = CachedSpanFetcher(fetch_fn=fetch_fn)
+        assert await fetcher.get_spans(filters={"span_type": ["llm"]}) == [cached_span]
+        task = asyncio.create_task(fetcher.get_spans())
+        try:
+            await asyncio.wait_for(started.wait(), timeout=5)
+            if cancel:
+                task.cancel()
+                with pytest.raises(asyncio.CancelledError):
+                    await task
+            else:
+                response.set_exception(RuntimeError("fetch failed"))
+                with pytest.raises(RuntimeError, match="fetch failed"):
+                    await task
+
+            assert await fetcher.get_spans(filters={"span_type": ["llm"]}) == [cached_span]
+            assert calls == [{"span_type": ["llm"]}, {}]
+            assert await fetcher.get_spans() == full_spans
+            assert calls == [{"span_type": ["llm"]}, {}, {}]
+        finally:
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
+
+    @pytest.mark.asyncio
+    async def test_concurrent_empty_full_fetch_remains_retriable(self):
+        spans = [make_span("llm-1", "llm")]
+        requests = asyncio.Queue()
+        call_count = 0
+
+        async def fetch_fn(_filters):
+            nonlocal call_count
+            call_count += 1
+            if call_count > 2:
+                return spans
+            response = asyncio.get_running_loop().create_future()
+            await requests.put(response)
+            return await response
+
+        fetcher = CachedSpanFetcher(fetch_fn=fetch_fn)
+        tasks = [asyncio.create_task(fetcher.get_spans()) for _ in range(2)]
+        try:
+            responses = [await asyncio.wait_for(requests.get(), timeout=5) for _ in tasks]
+            responses[0].set_result(spans)
+            assert await tasks[0] == spans
+            responses[1].set_result([])
+            assert await tasks[1] == []
+            assert await fetcher.get_spans() == spans
+            assert call_count == 3
+        finally:
+            for task in tasks:
+                task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
+
+    @pytest.mark.asyncio
+    async def test_full_fetch_replaces_stale_types(self):
+        cached_span = make_span("llm-1", "llm")
+        full_spans = [make_span("tool-1", "tool")]
+
+        async def fetch_fn(filters):
+            return [cached_span] if filters else full_spans
+
+        fetcher = CachedSpanFetcher(fetch_fn=fetch_fn)
+        assert await fetcher.get_spans(filters={"span_type": ["llm"]}) == [cached_span]
+        assert await fetcher.get_spans() == full_spans
+        assert await fetcher.get_spans(filters={"span_type": ["llm"]}) == []
 
     def test_span_data_roundtrip(self):
         row = {

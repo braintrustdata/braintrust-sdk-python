@@ -393,13 +393,10 @@ class CachedSpanFetcher:
 
         # If no filter requested, fetch everything.
         if not span_type:
-            # A full fetch is authoritative; reset the per-type cache first so a
-            # prior typed fetch's spans are not duplicated by re-fetching them
-            # (_fetch_spans appends).
-            self._span_cache = {}
             await self._fetch_spans(None)
-            if self._span_cache:  # Only cache if we got results
-                self._all_fetched = True
+            # An overlapping full fetch may have already marked the cache complete.
+            # Reset the flag if this response is empty so later calls can retry.
+            self._all_fetched = bool(self._span_cache)
             return self._get_from_cache(None)
 
         # Find which span types we don't have in cache yet.
@@ -416,12 +413,19 @@ class CachedSpanFetcher:
         """
         spans = await self._fetch_fn({"span_type": span_type} if span_type else {}, False)
 
+        fetched: dict[str, list[SpanData]] = {}
         for span in spans:
             span_attrs = span.span_attributes or {}
             span_type_str = span_attrs.get("type", "")
-            if span_type_str not in self._span_cache:
-                self._span_cache[span_type_str] = []
-            self._span_cache[span_type_str].append(span)
+            fetched.setdefault(span_type_str, []).append(span)
+
+        # Commit complete groups without awaiting, so overlapping requests never
+        # append the same spans twice. A failed or cancelled fetch leaves the
+        # previous cache intact, and a full fetch replaces every prior type.
+        if span_type is None:
+            self._span_cache = fetched
+        else:
+            self._span_cache.update(fetched)
 
     def _get_from_cache(self, span_type: list[str] | None) -> list[SpanData]:
         """Read spans back out of the cache, optionally narrowing to some types.
