@@ -267,6 +267,273 @@ class TestCachedSpanFetcher:
                 task.cancel()
             await asyncio.gather(*tasks, return_exceptions=True)
 
+    @pytest.mark.parametrize("older_empty", [False, True], ids=["older-nonempty", "older-empty"])
+    @pytest.mark.parametrize("new_span_type", ["llm", "tool"])
+    @pytest.mark.parametrize("completion_order", [(0, 1), (1, 0)])
+    @pytest.mark.asyncio
+    async def test_concurrent_full_fetches_keep_newer_snapshot(self, new_span_type, completion_order, older_empty):
+        older_spans = [] if older_empty else [make_span("llm-1", "llm")]
+        newer_spans = [*older_spans, make_span("new-1", new_span_type)]
+        snapshots = [older_spans, newer_spans]
+        requests = asyncio.Queue()
+
+        async def fetch_fn(filters):
+            assert filters == {}
+            response = asyncio.get_running_loop().create_future()
+            await requests.put(response)
+            return await response
+
+        fetcher = CachedSpanFetcher(fetch_fn=fetch_fn)
+        tasks = []
+        responses = []
+        try:
+            for _ in snapshots:
+                tasks.append(asyncio.create_task(fetcher.get_spans()))
+                responses.append(await asyncio.wait_for(requests.get(), timeout=5))
+            for index in completion_order:
+                responses[index].set_result(snapshots[index])
+                await asyncio.wait_for(tasks[index], timeout=5)
+
+            # A late older response must not make the newer span disappear from
+            # the complete cache or the last caller's result.
+            assert fetcher._span_cache
+            cached = await asyncio.wait_for(fetcher.get_spans(), timeout=5)
+            assert [tasks[completion_order[-1]].result(), cached] == [newer_spans, newer_spans]
+            expected_type = [span for span in newer_spans if span.span_attributes["type"] == new_span_type]
+            assert await fetcher.get_spans(filters={"span_type": [new_span_type]}) == expected_type
+            assert requests.empty()
+        finally:
+            for task in tasks:
+                task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
+
+    @pytest.mark.parametrize(
+        ("first_types", "second_types", "expected"),
+        [
+            (None, ["llm"], [("absent-1", "old"), ("llm-1", "new"), ("llm-2", "new"), ("tool-1", "old")]),
+            (None, ["function"], [("absent-1", "old"), ("function-1", "new"), ("llm-1", "old"), ("tool-1", "old")]),
+            (
+                ["llm"],
+                None,
+                [("function-1", "new"), ("llm-1", "new"), ("llm-2", "new"), ("tool-1", "new")],
+            ),
+            (
+                ["absent"],
+                None,
+                [("function-1", "new"), ("llm-1", "new"), ("llm-2", "new"), ("tool-1", "new")],
+            ),
+            (["llm"], ["llm"], [("llm-1", "new"), ("llm-2", "new")]),
+            (["llm", "tool"], ["tool", "function"], [("function-1", "new"), ("llm-1", "old"), ("tool-1", "new")]),
+        ],
+    )
+    @pytest.mark.parametrize("completion_order", [(0, 1), (1, 0)])
+    @pytest.mark.asyncio
+    async def test_overlapping_fetches_keep_newer_type_groups(
+        self, first_types, second_types, expected, completion_order
+    ):
+        snapshots = [
+            [
+                make_span("llm-1", "llm", metadata={"version": "old"}),
+                make_span("tool-1", "tool", metadata={"version": "old"}),
+                make_span("absent-1", "absent", metadata={"version": "old"}),
+            ],
+            [
+                make_span("llm-1", "llm", metadata={"version": "new"}),
+                make_span("llm-2", "llm", metadata={"version": "new"}),
+                make_span("tool-1", "tool", metadata={"version": "new"}),
+                make_span("function-1", "function", metadata={"version": "new"}),
+            ],
+        ]
+        requests = asyncio.Queue()
+
+        async def fetch_fn(filters):
+            response = asyncio.get_running_loop().create_future()
+            await requests.put((filters, response))
+            return await response
+
+        fetcher = CachedSpanFetcher(fetch_fn=fetch_fn)
+        tasks = []
+        pending = []
+        try:
+            for types in (first_types, second_types):
+                filters = {"span_type": types} if types is not None else {}
+                tasks.append(asyncio.create_task(fetcher.get_spans(filters=filters)))
+                pending.append(await asyncio.wait_for(requests.get(), timeout=5))
+            for index in completion_order:
+                filters, response = pending[index]
+                response.set_result([span for span in snapshots[index] if _matches_span_filters(span, filters)])
+                await asyncio.wait_for(tasks[index], timeout=5)
+
+            types = None if first_types is None or second_types is None else sorted(set(first_types + second_types))
+            cached = await asyncio.wait_for(
+                fetcher.get_spans(filters={"span_type": types} if types is not None else {}), timeout=5
+            )
+            assert sorted((span.span_id, span.metadata["version"]) for span in cached) == expected
+            assert requests.empty()
+        finally:
+            for task in tasks:
+                task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
+
+    @pytest.mark.parametrize("completion_order", [(0, 1), (1, 0)])
+    @pytest.mark.asyncio
+    async def test_empty_full_fetch_keeps_newer_type_retriable(self, completion_order):
+        spans = [make_span("llm-1", "llm")]
+        full_spans = [*spans, make_span("tool-1", "tool")]
+        requests = asyncio.Queue()
+        calls = []
+
+        async def fetch_fn(filters):
+            calls.append(filters)
+            if len(calls) > 2:
+                return full_spans
+            response = asyncio.get_running_loop().create_future()
+            await requests.put(response)
+            return await response
+
+        fetcher = CachedSpanFetcher(fetch_fn=fetch_fn)
+        tasks = []
+        responses = []
+        try:
+            for filters in ({}, {"span_type": ["llm"]}):
+                tasks.append(asyncio.create_task(fetcher.get_spans(filters=filters)))
+                responses.append(await asyncio.wait_for(requests.get(), timeout=5))
+            for index in completion_order:
+                responses[index].set_result([] if index == 0 else spans)
+                await asyncio.wait_for(tasks[index], timeout=5)
+
+            assert await fetcher.get_spans(filters={"span_type": ["llm"]}) == spans
+            assert calls == [{}, {"span_type": ["llm"]}]
+            assert await fetcher.get_spans() == full_spans
+            assert calls == [{}, {"span_type": ["llm"]}, {}]
+        finally:
+            for task in tasks:
+                task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
+
+    @pytest.mark.parametrize("cancel", [False, True], ids=["failure", "cancellation"])
+    @pytest.mark.parametrize("interrupted_first", [False, True])
+    @pytest.mark.parametrize(
+        "first_types,second_types", [(None, None), (None, ["llm"]), (["llm"], None), (["llm"], ["llm"])]
+    )
+    @pytest.mark.asyncio
+    async def test_interrupted_newer_fetch_preserves_older_response(
+        self, cancel, interrupted_first, first_types, second_types
+    ):
+        spans = [make_span("llm-1", "llm")]
+        requests = asyncio.Queue()
+
+        async def fetch_fn(_filters):
+            response = asyncio.get_running_loop().create_future()
+            await requests.put(response)
+            return await response
+
+        fetcher = CachedSpanFetcher(fetch_fn=fetch_fn)
+        tasks = []
+        responses = []
+        try:
+            for types in (first_types, second_types):
+                filters = {"span_type": types} if types is not None else {}
+                tasks.append(asyncio.create_task(fetcher.get_spans(filters=filters)))
+                responses.append(await asyncio.wait_for(requests.get(), timeout=5))
+            for index in (1, 0) if interrupted_first else (0, 1):
+                if index == 0:
+                    responses[0].set_result(spans)
+                    assert await asyncio.wait_for(tasks[0], timeout=5) == spans
+                elif cancel:
+                    tasks[1].cancel()
+                    with pytest.raises(asyncio.CancelledError):
+                        await tasks[1]
+                else:
+                    responses[1].set_exception(RuntimeError("fetch failed"))
+                    with pytest.raises(RuntimeError, match="fetch failed"):
+                        await tasks[1]
+
+            filters = {"span_type": first_types} if first_types is not None else {}
+            assert await asyncio.wait_for(fetcher.get_spans(filters=filters), timeout=5) == spans
+            assert requests.empty()
+        finally:
+            for task in tasks:
+                task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
+
+    @pytest.mark.parametrize("first_types", [None, ["llm"]])
+    @pytest.mark.parametrize(
+        "later_kwargs,empty",
+        [
+            ({"filters": {"name": ["search"]}}, False),
+            ({"include_scorers": True}, False),
+            ({"filters": {"span_type": ["llm"]}}, True),
+        ],
+    )
+    @pytest.mark.asyncio
+    async def test_uncached_response_does_not_supersede_older_fetch(self, first_types, later_kwargs, empty):
+        older_spans = [make_span("llm-1", "llm")]
+        later_spans = [] if empty else [make_span("llm-2", "llm", name="search")]
+        started = asyncio.Event()
+        response = asyncio.get_running_loop().create_future()
+        call_count = 0
+
+        async def fetch_fn(_filters):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                started.set()
+                return await response
+            return later_spans
+
+        fetcher = CachedSpanFetcher(fetch_fn=fetch_fn)
+        filters = {"span_type": first_types} if first_types is not None else {}
+        task = asyncio.create_task(fetcher.get_spans(filters=filters))
+        try:
+            await asyncio.wait_for(started.wait(), timeout=5)
+            assert await fetcher.get_spans(**later_kwargs) == later_spans
+            response.set_result(older_spans)
+            assert await asyncio.wait_for(task, timeout=5) == older_spans
+            assert await fetcher.get_spans(filters=filters) == older_spans
+            assert call_count == 2
+        finally:
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
+
+    @pytest.mark.parametrize("first_types", [None, ["llm"]])
+    @pytest.mark.parametrize("completion_order", [(0, 1), (1, 0)])
+    @pytest.mark.asyncio
+    async def test_newer_empty_full_fetch_remains_retriable(self, first_types, completion_order):
+        older_spans = [make_span("llm-1", "llm")]
+        retry_spans = [make_span("tool-1", "tool")]
+        requests = asyncio.Queue()
+        call_count = 0
+
+        async def fetch_fn(_filters):
+            nonlocal call_count
+            call_count += 1
+            if call_count > 2:
+                return retry_spans
+            response = asyncio.get_running_loop().create_future()
+            await requests.put(response)
+            return await response
+
+        fetcher = CachedSpanFetcher(fetch_fn=fetch_fn)
+        tasks = []
+        responses = []
+        try:
+            for types in (first_types, None):
+                filters = {"span_type": types} if types is not None else {}
+                tasks.append(asyncio.create_task(fetcher.get_spans(filters=filters)))
+                responses.append(await asyncio.wait_for(requests.get(), timeout=5))
+            for index in completion_order:
+                responses[index].set_result(older_spans if index == 0 else [])
+                await asyncio.wait_for(tasks[index], timeout=5)
+
+            assert tasks[completion_order[-1]].result() == []
+            assert await fetcher.get_spans() == retry_spans
+            assert call_count == 3
+        finally:
+            for task in tasks:
+                task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
+
     @pytest.mark.parametrize("cancel", [False, True], ids=["failure", "cancellation"])
     @pytest.mark.asyncio
     async def test_interrupted_full_fetch_preserves_cached_types(self, cancel):
