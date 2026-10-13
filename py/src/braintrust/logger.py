@@ -3398,12 +3398,16 @@ class ObjectIterator(Generic[T]):
     def __init__(self, refetch_fn: Callable[[], Sequence[T]]):
         self.refetch_fn = refetch_fn
         self.idx = 0
+        self._data: Sequence[T] | None = None
 
     def __iter__(self):
         return self
 
     def __next__(self) -> T:
-        data = self.refetch_fn()
+        if self._data is None:
+            # Keep this iteration stable if a mutation invalidates the fetcher's cache.
+            self._data = self.refetch_fn()
+        data = self._data
         if self.idx >= len(data):
             raise StopIteration
         value = data[self.idx]
