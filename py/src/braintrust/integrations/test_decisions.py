@@ -28,7 +28,7 @@ DECISIONS_QUESTIONS = [
 def assert_decisions_span(spans, response, *, name, model, instrumentation, start=None, end=None):
     assert len(spans) == 1
     span = spans[0]
-    assert_dict_matches(span["span_attributes"], {"name": name, "type": "question"})
+    assert_dict_matches(span["span_attributes"], {"name": name, "type": "decision"})
     assert span["input"] == {
         "state": DECISIONS_INPUT,
         "questions": [

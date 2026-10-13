@@ -21,7 +21,7 @@ def memory_logger():
 
 def _assert_span(span, *, question_ids):
     assert span["span_attributes"]["name"] == "typesafe.systemOne"
-    assert span["span_attributes"]["type"] == SpanTypeAttribute.QUESTION
+    assert span["span_attributes"]["type"] == SpanTypeAttribute.DECISION
     assert span["context"]["span_origin"]["instrumentation"]["name"] == "typesafe"
     assert span["metadata"]["provider"] == "typesafe"
     assert span["metadata"]["model"].startswith("jev-")

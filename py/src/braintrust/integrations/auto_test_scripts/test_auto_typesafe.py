@@ -22,6 +22,7 @@ with autoinstrument_test_context("test_auto_typesafe", integration="typesafe") a
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
+    assert span["span_attributes"]["type"] == "decision"
     assert span["metadata"]["provider"] == "typesafe"
     assert span["metadata"]["model"].startswith("jev-")
     assert span["input"]["questions"][0]["id"] == "positive"

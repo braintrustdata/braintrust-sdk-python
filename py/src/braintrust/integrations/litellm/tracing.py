@@ -359,7 +359,7 @@ def _decisions_span_payload(args, kwargs):
 def _decisions_wrapper(wrapped, instance, args, kwargs):
     with start_span(
         **merge_dicts(
-            dict(name="Decision", span_attributes={"type": SpanTypeAttribute.QUESTION}),
+            dict(name="Decision", span_attributes={"type": SpanTypeAttribute.DECISION}),
             _decisions_span_payload(args, kwargs),
         )
     ) as span:
@@ -376,7 +376,7 @@ def _decisions_wrapper(wrapped, instance, args, kwargs):
 async def _adecisions_wrapper_async(wrapped, instance, args, kwargs):
     with start_span(
         **merge_dicts(
-            dict(name="Decision", span_attributes={"type": SpanTypeAttribute.QUESTION}),
+            dict(name="Decision", span_attributes={"type": SpanTypeAttribute.DECISION}),
             _decisions_span_payload(args, kwargs),
         )
     ) as span:

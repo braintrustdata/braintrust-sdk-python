@@ -1,10 +1,11 @@
 import braintrust
 from braintrust.logger import Span
+from braintrust.span_types import SpanTypeAttribute
 from typing_extensions import assert_type
 
 
 def span_context_manager_keeps_span_type() -> None:
-    with braintrust.start_span(name="typed") as span:
+    with braintrust.start_span(name="typed", type=SpanTypeAttribute.DECISION) as span:
         assert_type(span, Span)
         span.log(output="ok")
 

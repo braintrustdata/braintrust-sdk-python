@@ -111,7 +111,7 @@ def _start_system_one_span(instance: Any, args: Any, kwargs: dict[str, Any]):
         metadata["model"] = model
     return start_span(
         name="typesafe.systemOne",
-        type=SpanTypeAttribute.QUESTION,
+        type=SpanTypeAttribute.DECISION,
         input=_span_input(state, questions),
         metadata=metadata,
     )

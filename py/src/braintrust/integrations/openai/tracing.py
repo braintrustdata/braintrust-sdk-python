@@ -2189,7 +2189,7 @@ def _decisions_create_wrapper(wrapped, instance, args, kwargs):
         async def call():
             with start_span(
                 **merge_dicts(
-                    dict(name="openai.decisions.create", span_attributes={"type": SpanTypeAttribute.QUESTION}),
+                    dict(name="openai.decisions.create", span_attributes={"type": SpanTypeAttribute.DECISION}),
                     _decisions_span_params(kwargs),
                 )
             ) as span:
@@ -2200,7 +2200,7 @@ def _decisions_create_wrapper(wrapped, instance, args, kwargs):
         return call()
     with start_span(
         **merge_dicts(
-            dict(name="openai.decisions.create", span_attributes={"type": SpanTypeAttribute.QUESTION}),
+            dict(name="openai.decisions.create", span_attributes={"type": SpanTypeAttribute.DECISION}),
             _decisions_span_params(kwargs),
         )
     ) as span:

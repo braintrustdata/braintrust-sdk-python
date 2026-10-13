@@ -1,4 +1,4 @@
-"""Shared question span structure from braintrust/typespecs/src/question.ts.
+"""Shared decision span structure from braintrust/typespecs/src/question.ts.
 
 Provider adapters normalize their question and answer types before using these
 helpers. Named maps become arrays linked by ID; arrays already carry their IDs.
