@@ -22,9 +22,9 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.28.0+afc gl-python/3.14.7
+      - google-genai-sdk/2.29.0+afc gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/2.28.0+afc gl-python/3.14.7
+      - google-genai-sdk/2.29.0+afc gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
   response:
@@ -32,27 +32,27 @@ interactions:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
         [\n          {\n            \"functionCall\": {\n              \"name\": \"get_weather\",\n
         \             \"args\": {\n                \"location\": \"Paris, France\"\n
-        \             }\n            },\n            \"thoughtSignature\": \"CuUCAWkUfROtaReeyOB3KrdaHwoZ6ahkjaIqM/mzhZIh08FFBS+wzeO3cE+bbD2cXgA3E1cjz894kdrtv3s7aJzh9dUyOzIgF79Gh9zqCBpoPr4hvlXtNaY612ssUR+ecL9IcL+35kjFdh8gRZLh4x8fHUCbWEMUddA/PlTe2EKWY+qm1tW471CJDvRexcs16v3aQm/zKMFxdx2JcPVOABAZWJMnkp3dWse2VgZ5Lzh2NzHV3jpfRkcQdmeSdCkPuoTmaxxHziOIBVGGlfozTpneqPvi9yyRfC1H/gHrS2DV20QYplZgy4HmBFZGeL7SahynLtlmYHNHz+vbgR8vp5djCM9OVJyXRMRY5gZpkYg9/J///4nv/SG7/hLZCy/pNT/zq/6jlcjt1TPASNrs6hdGnhKTWYyg901xpnwbBuM5ePT70vHBfIlyWaeXSrVXYzjhZgN8B1tIaQJ3hwtbPF6YWFNb9Kin\"\n
+        \             }\n            },\n            \"thoughtSignature\": \"CoQDAWkUfRP1cvM6RFuIxa+DhbAwjZ0W6eIYQkXowBscGMAY7BSqkiYqdG1CUYWpr/h+Dgv9mpKIMCcCyhI4COij+Mm4+VapXlEfmK9RLn3kASXUyTcB/qavLnvYBFNl4jogkSiMuNp9OLGG5NLnxwSDLemfUkOEWX3mSiIH20Qse9paZoj7RVEBirA6GKj/mNhMhWDNJG3jfuyZcSbJw2MPRDMl/QClJ2nlU4LyzvVD89Hh2Be03qhf2FRDYuMQZTwc46kCwg5C1zvdcNhElPQUiB/ykH6Dkkj1RtiOp8Xdhfg7MwiljOJu9TCiRTuRT/f8evkFE6pg+dIr1wJN2Y72WQuKLRhclwmfFiSJNpMyyhr3qUEmFUJuqWQlSYA3Z3qR1BzLTvdakSzwpfmREnOqgOOLb2ORl2AJZJ6Sr37PYxSz65v/+yW6HaR1NfdgLzZ9HUL8nvuSbx2sdch/P+B9DrTEpkXyE3qaRESgTjqSAIliPWdl79iiz+Juq9HmbFJZ7HG+/g==\"\n
         \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
         \"STOP\",\n      \"index\": 0,\n      \"finishMessage\": \"Model generated
         function call(s).\"\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
-        104,\n    \"candidatesTokenCount\": 17,\n    \"totalTokenCount\": 199,\n    \"promptTokensDetails\":
+        104,\n    \"candidatesTokenCount\": 17,\n    \"totalTokenCount\": 205,\n    \"promptTokensDetails\":
         [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 104\n
-        \     }\n    ],\n    \"thoughtsTokenCount\": 78,\n    \"serviceTier\": \"standard\"\n
-        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"CLjDatOoAe6739IP1dKn6Ag\"\n}\n"
+        \     }\n    ],\n    \"thoughtsTokenCount\": 84,\n    \"serviceTier\": \"standard\"\n
+        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"vDvOarHtLc2d-8YPnJ6hmQI\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '1294'
+      - '1338'
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Mon, 05 Oct 2026 14:45:28 GMT
+      - Tue, 13 Oct 2026 14:10:05 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=825
+      - gfet4t7; dur=887
       transfer-encoding:
       - chunked
       vary:
@@ -73,7 +73,7 @@ interactions:
 - request:
     body: '{"contents": [{"parts": [{"text": "What is the weather like in Paris, France?"}],
       "role": "user"}, {"parts": [{"functionCall": {"args": {"location": "Paris, France"},
-      "name": "get_weather"}, "thoughtSignature": "CuUCAWkUfROtaReeyOB3KrdaHwoZ6ahkjaIqM_mzhZIh08FFBS-wzeO3cE-bbD2cXgA3E1cjz894kdrtv3s7aJzh9dUyOzIgF79Gh9zqCBpoPr4hvlXtNaY612ssUR-ecL9IcL-35kjFdh8gRZLh4x8fHUCbWEMUddA_PlTe2EKWY-qm1tW471CJDvRexcs16v3aQm_zKMFxdx2JcPVOABAZWJMnkp3dWse2VgZ5Lzh2NzHV3jpfRkcQdmeSdCkPuoTmaxxHziOIBVGGlfozTpneqPvi9yyRfC1H_gHrS2DV20QYplZgy4HmBFZGeL7SahynLtlmYHNHz-vbgR8vp5djCM9OVJyXRMRY5gZpkYg9_J___4nv_SG7_hLZCy_pNT_zq_6jlcjt1TPASNrs6hdGnhKTWYyg901xpnwbBuM5ePT70vHBfIlyWaeXSrVXYzjhZgN8B1tIaQJ3hwtbPF6YWFNb9Kin"}],
+      "name": "get_weather"}, "thoughtSignature": "CoQDAWkUfRP1cvM6RFuIxa-DhbAwjZ0W6eIYQkXowBscGMAY7BSqkiYqdG1CUYWpr_h-Dgv9mpKIMCcCyhI4COij-Mm4-VapXlEfmK9RLn3kASXUyTcB_qavLnvYBFNl4jogkSiMuNp9OLGG5NLnxwSDLemfUkOEWX3mSiIH20Qse9paZoj7RVEBirA6GKj_mNhMhWDNJG3jfuyZcSbJw2MPRDMl_QClJ2nlU4LyzvVD89Hh2Be03qhf2FRDYuMQZTwc46kCwg5C1zvdcNhElPQUiB_ykH6Dkkj1RtiOp8Xdhfg7MwiljOJu9TCiRTuRT_f8evkFE6pg-dIr1wJN2Y72WQuKLRhclwmfFiSJNpMyyhr3qUEmFUJuqWQlSYA3Z3qR1BzLTvdakSzwpfmREnOqgOOLb2ORl2AJZJ6Sr37PYxSz65v_-yW6HaR1NfdgLzZ9HUL8nvuSbx2sdch_P-B9DrTEpkXyE3qaRESgTjqSAIliPWdl79iiz-Juq9HmbFJZ7HG-_g=="}],
       "role": "model"}, {"parts": [{"functionResponse": {"name": "get_weather", "response":
       {"result": "22 degrees celsius and sunny in Paris, France"}}}], "role": "user"}],
       "tools": [{"functionDeclarations": [{"description": "Get the current weather
@@ -91,15 +91,15 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '1372'
+      - '1416'
       content-type:
       - application/json
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.28.0+afc gl-python/3.14.7
+      - google-genai-sdk/2.29.0+afc gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/2.28.0+afc gl-python/3.14.7
+      - google-genai-sdk/2.29.0+afc gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
   response:
@@ -112,7 +112,7 @@ interactions:
         15,\n    \"totalTokenCount\": 160,\n    \"promptTokensDetails\": [\n      {\n
         \       \"modality\": \"TEXT\",\n        \"tokenCount\": 145\n      }\n    ],\n
         \   \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash\",\n
-        \ \"responseId\": \"CLjDaoXmNL25sOIP3ojngAk\"\n}\n"
+        \ \"responseId\": \"vTvOaseeKtGD-8YPpp_owAw\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
@@ -121,11 +121,11 @@ interactions:
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Mon, 05 Oct 2026 14:45:29 GMT
+      - Tue, 13 Oct 2026 14:10:06 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=410
+      - gfet4t7; dur=622
       transfer-encoding:
       - chunked
       vary:

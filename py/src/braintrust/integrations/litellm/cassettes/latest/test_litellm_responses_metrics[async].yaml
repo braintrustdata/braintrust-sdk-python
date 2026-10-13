@@ -16,19 +16,19 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - litellm/1.104.0
+      - litellm/1.105.0
     method: POST
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_01fa5762fcf0e363006ac3b811b10c87d283eafdbcc54d5410\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1791211537,\n  \"status\":
+      string: "{\n  \"id\": \"resp_04a3d62421a9e573006ace3bc0b9e487d1b997f3ce1c632ff1\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1791900608,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1791211538,\n  \"error\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1791900609,\n  \"error\":
         null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         \"Just the number please\",\n  \"max_output_tokens\": null,\n  \"max_tool_calls\":
         null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n
-        \ \"output\": [\n    {\n      \"id\": \"msg_01fa5762fcf0e363006ac3b812112887d2813f607a8600b446\",\n
+        \ \"output\": [\n    {\n      \"id\": \"msg_04a3d62421a9e573006ace3bc11b5c87d199fc6e8c7c3d8815\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"24\"\n        }\n
@@ -55,16 +55,18 @@ interactions:
       - X-Request-ID
       - CF-Ray
       - CF-Ray
+      Alt-Svc:
+      - h3=":443"; ma=86400
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - a45d360d9cff076d-YYZ
+      - a49eed13f814a1db-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Mon, 05 Oct 2026 14:45:38 GMT
+      - Tue, 13 Oct 2026 14:10:09 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -73,12 +75,12 @@ interactions:
       - chunked
       X-Content-Type-Options:
       - nosniff
-      alt-svc:
-      - h3=":443"; ma=86400
+      X-Request-ID:
+      - req_57a95c1b67544f268bd85041a0f8219c
       content-length:
       - '2018'
       openai-processing-ms:
-      - '696'
+      - '630'
       openai-version:
       - '2020-10-01'
       x-ratelimit-limit-requests:
@@ -86,15 +88,13 @@ interactions:
       x-ratelimit-limit-tokens:
       - '150000000'
       x-ratelimit-remaining-requests:
-      - '29992'
+      - '29993'
       x-ratelimit-remaining-tokens:
-      - '149999377'
+      - '149999742'
       x-ratelimit-reset-requests:
-      - 16ms
+      - 14ms
       x-ratelimit-reset-tokens:
       - 0s
-      x-request-id:
-      - req_eb2827181af24091b0c15d56479d0a0b
     status:
       code: 200
       message: OK

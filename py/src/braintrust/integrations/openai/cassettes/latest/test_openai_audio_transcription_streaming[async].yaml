@@ -1,10 +1,10 @@
 interactions:
 - request:
     body: !!binary |
-      LS1jZTNkM2E5YjNiOTAyNDdiYmNmY2JhMjYwZjQxODgyNw0KQ29udGVudC1EaXNwb3NpdGlvbjog
-      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0KZ3B0LTRvLXRyYW5zY3JpYmUNCi0tY2UzZDNhOWIz
-      YjkwMjQ3YmJjZmNiYTI2MGY0MTg4MjcNCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
-      bmFtZT0ic3RyZWFtIg0KDQp0cnVlDQotLWNlM2QzYTliM2I5MDI0N2JiY2ZjYmEyNjBmNDE4ODI3
+      LS00OTFkODE3YjllYTg5ZWE1NWVkYzNmNjBjYTNmNDE1Nw0KQ29udGVudC1EaXNwb3NpdGlvbjog
+      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0KZ3B0LTRvLXRyYW5zY3JpYmUNCi0tNDkxZDgxN2I5
+      ZWE4OWVhNTVlZGMzZjYwY2EzZjQxNTcNCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
+      bmFtZT0ic3RyZWFtIg0KDQp0cnVlDQotLTQ5MWQ4MTdiOWVhODllYTU1ZWRjM2Y2MGNhM2Y0MTU3
       DQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0i
       dGVzdF9hdWRpby53YXYiDQpDb250ZW50LVR5cGU6IGF1ZGlvL3gtd2F2DQoNClJJRkYkfQAAV0FW
       RWZtdCAQAAAAAQABAIA+AAAAfQAAAgAQAGRhdGEAfQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -569,7 +569,7 @@ interactions:
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN
-      Ci0tY2UzZDNhOWIzYjkwMjQ3YmJjZmNiYTI2MGY0MTg4MjctLQ0K
+      Ci0tNDkxZDgxN2I5ZWE4OWVhNTVlZGMzZjYwY2EzZjQxNTctLQ0K
     headers:
       accept:
       - application/json
@@ -580,11 +580,11 @@ interactions:
       content-length:
       - '32415'
       content-type:
-      - multipart/form-data; boundary=ce3d3a9b3b90247bbcfcba260f418827
+      - multipart/form-data; boundary=491d817b9ea89ea55edc3f60ca3f4157
       host:
       - api.openai.com
       user-agent:
-      - AsyncOpenAI/Python 3.24.0
+      - AsyncOpenAI/Python 3.29.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -594,7 +594,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.24.0
+      - 3.29.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -607,10 +607,9 @@ interactions:
     uri: https://api.openai.com/v1/audio/transcriptions
   response:
     body:
-      string: "data: {\"type\":\"transcript.text.delta\",\"delta\":\"\u0627\u0639\"}\r\n\r\ndata:
-        {\"type\":\"transcript.text.delta\",\"delta\":\"\u0644\u0627\u0645\"}\r\n\r\ndata:
-        {\"type\":\"transcript.text.delta\",\"delta\":\"\u06CC\u0647\"}\r\n\r\ndata:
-        {\"type\":\"transcript.text.done\",\"text\":\"\u0627\u0639\u0644\u0627\u0645\u06CC\u0647\",\"usage\":{\"type\":\"tokens\",\"total_tokens\":15,\"input_tokens\":10,\"input_token_details\":{\"text_tokens\":0,\"audio_tokens\":10},\"output_tokens\":5}}\r\n\r\ndata:
+      string: "data: {\"type\":\"transcript.text.delta\",\"delta\":\"S\"}\r\n\r\ndata:
+        {\"type\":\"transcript.text.delta\",\"delta\":\"inge\"}\r\n\r\ndata: {\"type\":\"transcript.text.delta\",\"delta\":\"\u013E\"}\r\n\r\ndata:
+        {\"type\":\"transcript.text.delta\",\"delta\":\".\"}\r\n\r\ndata: {\"type\":\"transcript.text.done\",\"text\":\"Singe\u013E.\",\"usage\":{\"type\":\"tokens\",\"total_tokens\":16,\"input_tokens\":10,\"input_token_details\":{\"text_tokens\":0,\"audio_tokens\":10},\"output_tokens\":6}}\r\n\r\ndata:
         [DONE]\r\n\r\n"
     headers:
       access-control-expose-headers:
@@ -623,15 +622,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a4772df1b944b5e5-YYZ
+      - a49ef0325f67a23b-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Thu, 08 Oct 2026 18:23:55 GMT
+      - Tue, 13 Oct 2026 14:12:17 GMT
       openai-processing-ms:
-      - '297'
+      - '569'
       openai-version:
       - '2020-10-01'
       server:
@@ -651,7 +650,7 @@ interactions:
       x-ratelimit-reset-requests:
       - 12ms
       x-request-id:
-      - req_faa5325bdf104752ab23873c8479573e
+      - req_157df2626f984dc9bf3c97bf34967b7b
     status:
       code: 200
       message: OK

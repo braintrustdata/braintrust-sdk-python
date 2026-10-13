@@ -21,7 +21,7 @@ interactions:
       host:
       - api.anthropic.com
       user-agent:
-      - Anthropic/Python 1.8.0
+      - Anthropic/Python 1.13.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -31,7 +31,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 1.8.0
+      - 1.13.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -46,7 +46,7 @@ interactions:
     uri: https://api.anthropic.com/v1/messages?beta=true
   response:
     body:
-      string: '{"model":"claude-haiku-4-5-20251001","id":"msg_011CfWR7cj2gjAVLoER8Tmdn","type":"message","role":"assistant","content":[{"type":"mcp_tool_listing","mcp_server_name":"braintrust-test","tools":[{"name":"ask_wiki_question","description":"Ask
+      string: '{"model":"claude-haiku-4-5-20251001","id":"msg_011CfzNQtzJoMv8w6CgmHHTh","type":"message","role":"assistant","content":[{"type":"mcp_tool_listing","mcp_server_name":"braintrust-test","tools":[{"name":"ask_wiki_question","description":"Ask
         any question about a GitHub repository''s codebase and get an AI-powered answer\ngrounded
         in its DeepWiki.","input_schema":{"properties":{"repoName":{"anyOf":[{"type":"string"},{"items":{"type":"string"},"type":"array"}],"description":"GitHub
         repository or list of repositories (max 10) in owner/repo format."},"question":{"description":"The
@@ -54,83 +54,90 @@ interactions:
         documentation about a GitHub repository.","input_schema":{"properties":{"repoName":{"description":"GitHub
         repository in owner/repo format (e.g. \"facebook/react\").","type":"string"}},"required":["repoName"],"type":"object"}},{"name":"read_wiki_structure","description":"Get
         a list of documentation topics for a GitHub repository.","input_schema":{"properties":{"repoName":{"description":"GitHub
-        repository in owner/repo format (e.g. \"facebook/react\").","type":"string"}},"required":["repoName"],"type":"object"}}]},{"type":"mcp_tool_use","id":"mcptoolu_01RtXoGtAkP2hPmac6exzVzA","name":"ask_wiki_question","input":{"repoName":"braintrustdata/braintrust-sdk-python","question":"What
-        language is the SDK written in?"},"server_name":"braintrust-test"},{"type":"mcp_tool_result","tool_use_id":"mcptoolu_01RtXoGtAkP2hPmac6exzVzA","is_error":false,"content":[{"type":"text","text":"The
-        Braintrust SDK is primarily written in Python. This is evident from various
-        files within the repository, including the `setup.py` file which defines the
-        package for Python, and numerous workflow files that specify Python versions
-        for testing and publishing. \n\n## Evidence of Python Usage\n\n*   **`setup.py`**:
-        This file is a standard Python setup script used to package Python projects.
-        It specifies the package name as \"braintrust\" and lists Python versions
-        `3.10` and above as requirements. \n*   **GitHub Actions Workflows**:\n    *   The
-        `py.yaml` workflow explicitly sets up Python for various versions (3.10, 3.11,
-        3.12, 3.13) for building and testing the SDK. \n    *   The `publish-py-sdk.yaml`
-        and `test-publish-py-sdk.yaml` workflows also set up Python 3.13 for building
-        and publishing the SDK to PyPI and TestPyPI, respectively. \n*   **`README.md`**:
-        The quickstart guide in the `README.md` provides instructions for installing
-        the library using `pip` and running Python code snippets. \n*   **Integration
-        Files**: Files within the `integrations` directory, such as `integrations/langchain-py/src/braintrust_langchain/callbacks.py`,
-        explicitly mention `\"language\": \"python\"` within their metadata. \n\n##
-        Notes\n\nThe codebase also contains configuration files for various tools
-        and integrations, such as `pyproject.toml` files for `braintrust-langchain`
-        and `braintrust-adk`, which further specify Python dependencies and versions.
-        \n\nWiki pages you might want to explore:\n- [CI/CD and Release (braintrustdata/braintrust-sdk-python)](/wiki/braintrustdata/braintrust-sdk-python#10)\n\nView
-        this search on DeepWiki: https://deepwiki.com/search/what-language-is-the-sdk-writt_3b46472c-f8fb-42ea-9266-5ed302b20494\n"}]},{"type":"text","text":"The
-        **braintrust-sdk-python** is written in **Python**. The SDK supports Python
-        versions 3.10 and above, as specified in the `setup.py` file. The codebase
-        includes Python-specific files and GitHub Actions workflows for testing and
-        publishing the SDK to PyPI."}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":2347,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":167,"service_tier":"standard","inference_geo":"not_available","server_tool_use":{"web_search_requests":0,"web_fetch_requests":0}},"diagnostics":null}'
+        repository in owner/repo format (e.g. \"facebook/react\").","type":"string"}},"required":["repoName"],"type":"object"}}]},{"type":"mcp_tool_use","id":"mcptoolu_01MyDBrDjj3Gn6Xacf4iJ8rZ","name":"ask_wiki_question","input":{"repoName":"braintrustdata/braintrust-sdk-python","question":"What
+        language is the SDK written in?"},"server_name":"braintrust-test"},{"type":"mcp_tool_result","tool_use_id":"mcptoolu_01MyDBrDjj3Gn6Xacf4iJ8rZ","is_error":false,"content":[{"type":"text","text":"The
+        Braintrust SDK is primarily written in Python.  This is evident from various
+        files within the repository, including the `README.md` which explicitly states
+        \"This repository contains the Python SDK for Braintrust\" , and the `setup.py`
+        file which is a standard Python package configuration file.  Additionally,
+        the continuous integration workflows, such as `.github/workflows/py.yaml`  and
+        `.github/workflows/publish-py-sdk.yaml` , are configured to build, test, and
+        publish Python packages.\n\n## Evidence of Python Language Usage\n\n### `README.md`\nThe
+        `README.md` file clearly identifies the SDK as a Python SDK.  It also provides
+        installation instructions using `pip`, the standard package installer for
+        Python. \n\n### `setup.py`\nThe presence of a `setup.py` file in the `py/`
+        directory is a strong indicator of a Python project.  This file uses `setuptools`
+        to define the package metadata, dependencies, and entry points, all of which
+        are characteristic of a Python distribution. \n\n### `pyproject.toml`\nThe
+        `integrations/langchain-py/pyproject.toml`  and `integrations/adk-py/pyproject.toml`  files
+        specify Python versions in their `requires-python` fields, such as `>=3.10`  and
+        `>=3.10` , and list Python versions in their classifiers.  \n\n### GitHub
+        Actions Workflows\nThe GitHub Actions workflows, such as `py.yaml`  and `publish-py-sdk.yaml`
+        , explicitly set up Python environments using `actions/setup-python@v5`   and
+        run commands like `python -m uv pip install`  and `make install-dev`  within
+        a Python context. These workflows are designed to test and publish the Python
+        SDK. \n\n### Source Code Files\nNumerous source code files within the `py/src/braintrust/`
+        directory, such as `framework.py`  and `logger.py` , are written in Python,
+        using Python syntax, imports, and libraries.  \n\n## Notes\nThe codebase also
+        contains shell scripts for CI/CD processes , but the core SDK and its integrations
+        are written in Python. \n\nWiki pages you might want to explore:\n- [CI/CD
+        and Release (braintrustdata/braintrust-sdk-python)](/wiki/braintrustdata/braintrust-sdk-python#10)\n\nView
+        this search on DeepWiki: https://deepwiki.com/search/what-language-is-the-sdk-writt_14013fd3-fca0-448d-8c5b-cecbd0c07da5\n"}]},{"type":"text","text":"The
+        Braintrust SDK (braintrust-sdk-python) is written in **Python**. This is confirmed
+        by the repository''s README, setup.py configuration file, and numerous Python
+        source files within the codebase. The project uses standard Python tooling
+        like pip for installation and setuptools for package management."}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":2465,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":169,"service_tier":"standard","inference_geo":"not_available","server_tool_use":{"web_search_requests":0,"web_fetch_requests":0}},"diagnostics":null}'
     headers:
       anthropic-organization-id:
       - 27796668-7351-40ac-acc4-024aee8995a5
       anthropic-ratelimit-input-tokens-limit:
       - '10000000'
       anthropic-ratelimit-input-tokens-remaining:
-      - '9999000'
+      - '9998000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-09-28T19:49:07Z'
+      - '2026-10-13T14:10:35Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-09-28T19:49:07Z'
+      - '2026-10-13T14:10:36Z'
       anthropic-ratelimit-requests-limit:
       - '20000'
       anthropic-ratelimit-requests-remaining:
       - '19999'
       anthropic-ratelimit-requests-reset:
-      - '2026-09-28T19:48:53Z'
+      - '2026-10-13T14:10:06Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
-      - '11999000'
+      - '11998000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-09-28T19:49:07Z'
+      - '2026-10-13T14:10:35Z'
       anthropic-workspace-id:
       - wrkspc_018bFG1FgNVWqx5pthtdGTzS
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a42544a31dcf52e6-YYZ
+      - a49eecfb685739ea-YYZ
       connection:
       - keep-alive
       content-length:
-      - '4063'
+      - '4597'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - application/json
       date:
-      - Mon, 28 Sep 2026 19:49:08 GMT
+      - Tue, 13 Oct 2026 14:10:36 GMT
       request-id:
-      - req_011CfWR7bVMmWYRQJoyVG5Yx
+      - req_011CfzNQtnetcmU23EgAS9oR
       server:
       - cloudflare
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-dbac084249b3d5b8857406404987a18c-feb44a2ef3e2c50e-01
+      - 00-4c6eb333c2c79780bf91f17651cc7052-1b8b4b3fd476e502-01
       transfer-encoding:
       - chunked
       vary:
@@ -162,17 +169,17 @@ interactions:
       host:
       - api.anthropic.com
       user-agent:
-      - Anthropic/Python 1.11.0
+      - AsyncAnthropic/Python 1.13.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
-      - 'false'
+      - async:asyncio
       x-stainless-lang:
       - python
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 1.11.0
+      - 1.13.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -187,7 +194,7 @@ interactions:
     uri: https://api.anthropic.com/v1/messages?beta=true
   response:
     body:
-      string: '{"model":"claude-haiku-4-5-20251001","id":"msg_011CfjGe5eMZfmUjGXvN9uzZ","type":"message","role":"assistant","content":[{"type":"mcp_tool_listing","mcp_server_name":"braintrust-test","tools":[{"name":"ask_wiki_question","description":"Ask
+      string: '{"model":"claude-haiku-4-5-20251001","id":"msg_011CfzNTFdLdxHp7HcPJeMgK","type":"message","role":"assistant","content":[{"type":"mcp_tool_listing","mcp_server_name":"braintrust-test","tools":[{"name":"ask_wiki_question","description":"Ask
         any question about a GitHub repository''s codebase and get an AI-powered answer\ngrounded
         in its DeepWiki.","input_schema":{"properties":{"repoName":{"anyOf":[{"type":"string"},{"items":{"type":"string"},"type":"array"}],"description":"GitHub
         repository or list of repositories (max 10) in owner/repo format."},"question":{"description":"The
@@ -195,31 +202,38 @@ interactions:
         documentation about a GitHub repository.","input_schema":{"properties":{"repoName":{"description":"GitHub
         repository in owner/repo format (e.g. \"facebook/react\").","type":"string"}},"required":["repoName"],"type":"object"}},{"name":"read_wiki_structure","description":"Get
         a list of documentation topics for a GitHub repository.","input_schema":{"properties":{"repoName":{"description":"GitHub
-        repository in owner/repo format (e.g. \"facebook/react\").","type":"string"}},"required":["repoName"],"type":"object"}}]},{"type":"mcp_tool_use","id":"mcptoolu_01TonLsNBShHDbbxAELpeTrC","name":"ask_wiki_question","input":{"repoName":"braintrustdata/braintrust-sdk-python","question":"What
-        language is the SDK written in?"},"server_name":"braintrust-test"},{"type":"mcp_tool_result","tool_use_id":"mcptoolu_01TonLsNBShHDbbxAELpeTrC","is_error":false,"content":[{"type":"text","text":"The
+        repository in owner/repo format (e.g. \"facebook/react\").","type":"string"}},"required":["repoName"],"type":"object"}}]},{"type":"mcp_tool_use","id":"mcptoolu_01NVq2kJVv4BKcrd3HXFdiu9","name":"ask_wiki_question","input":{"repoName":"braintrustdata/braintrust-sdk-python","question":"What
+        language is the SDK written in?"},"server_name":"braintrust-test"},{"type":"mcp_tool_result","tool_use_id":"mcptoolu_01NVq2kJVv4BKcrd3HXFdiu9","is_error":false,"content":[{"type":"text","text":"The
         Braintrust SDK is primarily written in Python.  This is evident from various
-        files within the repository, including the `README.md` which explicitly states
-        \"This repository contains the Python SDK for Braintrust\" , and the presence
-        of numerous Python-specific configuration and source files. \n\nFor example,
-        the `py/setup.py` file is a standard Python setup script used for packaging
-        Python projects, defining the SDK''s name as \"braintrust\" and its dependencies.  Additionally,
-        the GitHub Actions workflow `.github/workflows/py.yaml` is configured to run
-        tests across various Python versions (e.g., \"3.10\", \"3.11\", \"3.12\",
-        \"3.13\") and operating systems, further confirming its Python nature.  The
-        SDK also includes integrations with other Python-based frameworks like LangChain,
-        as seen in `integrations/langchain-py/pyproject.toml`. \n\n## Notes\nThe codebase
-        contains references to other languages in specific contexts, such as `CodeBundleRuntimeContext`
-        in `py/src/braintrust/_generated_types.py` which lists `node`, `browser`,
-        and `quickjs` as possible runtimes.  However, these refer to potential execution
-        environments for code bundles, not the primary language of the Braintrust
-        SDK itself.  The core SDK and its direct integrations are implemented in Python.
-        \n\nWiki pages you might want to explore:\n- [CI/CD and Release (braintrustdata/braintrust-sdk-python)](/wiki/braintrustdata/braintrust-sdk-python#10)\n\nView
-        this search on DeepWiki: https://deepwiki.com/search/what-language-is-the-sdk-writt_e7bfc190-4ecb-468f-aab4-6e2d03638c70\n"}]},{"type":"text","text":"The
-        Braintrust SDK for Python is written in **Python**. The repository explicitly
-        contains the Python SDK for Braintrust, with source files, setup scripts,
-        and test configurations all confirming its Python implementation. The SDK
-        is tested across multiple Python versions (3.10, 3.11, 3.12, 3.13) and includes
-        integrations with Python frameworks like LangChain."}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":2287,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":189,"service_tier":"standard","inference_geo":"not_available","server_tool_use":{"web_search_requests":0,"web_fetch_requests":0}},"diagnostics":null}'
+        files within the repository, including the main `README.md` , the `setup.py`
+        file  which specifies Python as the programming language and its versions,
+        and the numerous Python scripts and configuration files for testing and publishing
+        the SDK .\n\n## Evidence of Python Language\n\n### `README.md`\nThe main `README.md`
+        explicitly states that the repository contains the Python SDK for Braintrust
+        . It also provides quickstart instructions using `pip install` and Python
+        code examples .\n\n### `setup.py`\nThe `py/setup.py` file is a standard Python
+        setup script that defines the package metadata and dependencies . It specifies
+        `Programming Language :: Python :: 3` and `python_requires=\">=3.10.0\"` ,
+        clearly indicating Python as the language.\n\n### GitHub Actions Workflows\nThe
+        GitHub Actions workflows, such as `.github/workflows/py.yaml` , `.github/workflows/publish-py-sdk.yaml`
+        , and `.github/workflows/test-publish-py-sdk.yaml` , are configured to build,
+        test, and publish the Python SDK. These workflows explicitly set up Python
+        environments with specific versions  and execute Python commands .\n\n###
+        Integration Modules\nThe integration modules, such as `integrations/langchain-py`  and
+        `integrations/adk-py` , also specify Python as their programming language
+        and list Python dependencies in their `pyproject.toml` files.   For example,
+        `integrations/langchain-py/src/braintrust_langchain/callbacks.py` imports
+        Python modules and uses Python syntax .\n\n## Notes\nThe codebase also contains
+        shell scripts for various tasks like generating release notes  and pushing
+        release tags , but these are used to manage the Python SDK rather than being
+        the SDK itself. \n\nWiki pages you might want to explore:\n- [CI/CD and Release
+        (braintrustdata/braintrust-sdk-python)](/wiki/braintrustdata/braintrust-sdk-python#10)\n\nView
+        this search on DeepWiki: https://deepwiki.com/search/what-language-is-the-sdk-writt_558d1d0b-ff49-4a9f-bc22-03048682348a\n"}]},{"type":"text","text":"The
+        **Braintrust SDK for Python** is written in **Python**. The SDK requires Python
+        3.10.0 or higher and includes various Python modules, scripts, and configuration
+        files for testing and publishing. There are also Python-based integration
+        modules included in the repository, such as integrations for LangChain and
+        ADK."}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":2379,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":175,"service_tier":"standard","inference_geo":"not_available","server_tool_use":{"web_search_requests":0,"web_fetch_requests":0}},"diagnostics":null}'
     headers:
       anthropic-organization-id:
       - 27796668-7351-40ac-acc4-024aee8995a5
@@ -228,49 +242,49 @@ interactions:
       anthropic-ratelimit-input-tokens-remaining:
       - '9999000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-10-05T14:45:45Z'
+      - '2026-10-13T14:11:10Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-10-05T14:45:45Z'
+      - '2026-10-13T14:11:11Z'
       anthropic-ratelimit-requests-limit:
       - '20000'
       anthropic-ratelimit-requests-remaining:
       - '19999'
       anthropic-ratelimit-requests-reset:
-      - '2026-10-05T14:45:29Z'
+      - '2026-10-13T14:10:38Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
       - '11999000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-10-05T14:45:45Z'
+      - '2026-10-13T14:11:10Z'
       anthropic-workspace-id:
       - wrkspc_018bFG1FgNVWqx5pthtdGTzS
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a45d35d14ee8c45b-YYZ
+      - a49eedc33e738631-YYZ
       connection:
       - keep-alive
       content-length:
-      - '3992'
+      - '4421'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - application/json
       date:
-      - Mon, 05 Oct 2026 14:45:45 GMT
+      - Tue, 13 Oct 2026 14:11:11 GMT
       request-id:
-      - req_011CfjGe5NjpQX4BxP5hkvdc
+      - req_011CfzNTFRvexZCYrgocLeej
       server:
       - cloudflare
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-95bfb4e22edb17e75906a660c7274301-d23dbd487ada6a25-01
+      - 00-6a953e3b8cc10a15d68a3ba22651fc60-bc3867a23ca9d289-01
       transfer-encoding:
       - chunked
       vary:
