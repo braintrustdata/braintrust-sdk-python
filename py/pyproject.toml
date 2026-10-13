@@ -332,8 +332,8 @@ lint = [
     "llama-index-llms-openai",
     "llama-index-embeddings-openai",
     # pydantic-ai's matrix latest requires Python 3.11+, so pylint skips it on
-    # 3.10. Keep a lock-resolved version here so pydantic_ai imports resolve.
-    "pydantic-ai",
+    # 3.10. Use slim to resolve pydantic_ai imports without optional extras.
+    "pydantic-ai-slim>=2.53.0; python_version >= '3.11'",
     # Keep the lint environment's optional SDK dependencies lock-resolved
     # instead of installing the unconstrained [all] extra separately.
     "opentelemetry-api==1.39.1",
@@ -385,7 +385,7 @@ explicit = true
 # ---------------------------------------------------------------------------
 
 [tool.uv]
-exclude-newer = "2026-10-12T06:05:49Z"
+exclude-newer = "2026-10-13T16:16:21Z"
 conflicts = [
     # Groups that pin or transitively require conflicting openai versions.
     [
@@ -412,6 +412,10 @@ conflicts = [
     [
         {group = "test-pydantic-ai-otel-events"},
         {group = "test-livekit-agents"},
+    ],
+    [
+        {group = "lint"},
+        {group = "test-pydantic-ai-otel-events"},
     ],
     [
         {group = "test-pydantic-ai-logfire-constraints"},
