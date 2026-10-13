@@ -319,6 +319,9 @@ lint = [
     "llama-index-core",
     "llama-index-llms-openai",
     "llama-index-embeddings-openai",
+    # pydantic-ai's matrix latest requires Python 3.11+, so pylint skips it on
+    # 3.10. Keep a lock-resolved version here so pydantic_ai imports resolve.
+    "pydantic-ai",
     # Keep the lint environment's optional SDK dependencies lock-resolved
     # instead of installing the unconstrained [all] extra separately.
     "opentelemetry-api==1.39.1",
