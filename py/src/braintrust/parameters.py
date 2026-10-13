@@ -1,5 +1,8 @@
 """Evaluation parameters support for Python SDK."""
 
+# PEP 810: defer these imports until first use on Python 3.15+. Ignored on older versions.
+__lazy_modules__ = {"jsonschema", "jsonschema.exceptions"}
+
 from collections.abc import Mapping
 from copy import deepcopy
 from dataclasses import dataclass

@@ -1,5 +1,8 @@
 """Experimental workflow evaluations with asynchronous provider submissions."""
 
+# PEP 810: defer these imports until first use on Python 3.15+. Ignored on older versions.
+__lazy_modules__ = {"asyncio"}
+
 import asyncio
 import base64
 import dataclasses

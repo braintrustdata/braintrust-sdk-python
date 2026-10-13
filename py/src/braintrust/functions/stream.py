@@ -5,7 +5,10 @@ A Braintrust stream is a wrapper around a generator of `BraintrustStreamChunk`,
 with utility methods to make them easy to log and convert into various formats.
 """
 
-import asyncio
+# PEP 810: defer these imports until first use on Python 3.15+. Ignored on older versions.
+__lazy_modules__ = {"asyncio"}
+
+import asyncio as _asyncio
 import dataclasses
 import json
 from collections.abc import AsyncIterator, Generator, Iterable, Iterator
@@ -112,7 +115,7 @@ class BraintrustStream:
         else:
             self.stream = base_stream
         self._async_iterator: Iterator[BraintrustStreamChunk] | None = None
-        self._pending_async_read: asyncio.Task[BraintrustStreamChunk | object] | None = None
+        self._pending_async_read: _asyncio.Task[BraintrustStreamChunk | object] | None = None
         self._memoized_final_value = _UNSET
 
     def _parse_sse_stream(self, sse_client: SSEClient) -> Generator[BraintrustStreamChunk, None, None]:
@@ -183,7 +186,7 @@ class BraintrustStream:
 
     async def final_value_async(self):
         """Consume the stream asynchronously and return its combined final value."""
-        return await asyncio.to_thread(self.final_value)
+        return await _asyncio.to_thread(self.final_value)
 
     def __iter__(self):
         """
@@ -202,12 +205,12 @@ class BraintrustStream:
             self._async_iterator = iter(self.stream)
             self.stream = self._async_iterator
         if self._pending_async_read is None:
-            self._pending_async_read = asyncio.create_task(asyncio.to_thread(_next_or_end, self._async_iterator))
+            self._pending_async_read = _asyncio.create_task(_asyncio.to_thread(_next_or_end, self._async_iterator))
 
         pending_read = self._pending_async_read
         try:
-            chunk = await asyncio.shield(pending_read)
-        except asyncio.CancelledError:
+            chunk = await _asyncio.shield(pending_read)
+        except _asyncio.CancelledError:
             if pending_read.cancelled():
                 self._pending_async_read = None
             raise

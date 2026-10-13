@@ -1,9 +1,13 @@
+# PEP 810: defer these imports until first use on Python 3.15+. Ignored on older versions.
+__lazy_modules__ = {"asyncio", "tqdm.asyncio", "tqdm.auto"}
+
 import abc
 import asyncio
 import contextvars
 import dataclasses
 import inspect
 import json
+import os
 import re
 import sys
 import threading
@@ -14,7 +18,6 @@ from collections import defaultdict
 from collections.abc import Awaitable, Callable, Coroutine, Iterable, Iterator, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from multiprocessing import cpu_count
 from typing import (
     Any,
     Generic,
@@ -1304,7 +1307,7 @@ def init_experiment(
 class EvalThreadPoolSingleton:
     def __init__(self):
         self._thread_pool = None
-        self._max_workers = cpu_count()
+        self._max_workers = os.cpu_count()
 
     def set_max_workers(self, max_workers):
         assert self._thread_pool is None, "Cannot set max_workers. Thread pool has already been initialized"

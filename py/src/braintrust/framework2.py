@@ -1,9 +1,12 @@
+# PEP 810: defer these imports until first use on Python 3.15+. Ignored on older versions.
+__lazy_modules__ = {"slugify"}
+
 import dataclasses
 import json
 from collections.abc import Callable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, overload
 
-import slugify
+import slugify as _slugify
 from braintrust.logger import _internal_get_global_state, api_conn, login
 
 from .framework import _is_lazy_load, bcolors  # type: ignore
@@ -201,7 +204,7 @@ class ToolBuilder:
                 name = f"Tool {self._task_counter}"
         assert name is not None
         if not slug:
-            slug = slugify.slugify(name)
+            slug = _slugify.slugify(name)
         f = CodeFunction(
             project=self.project,
             handler=handler,
@@ -296,7 +299,7 @@ class PromptBuilder:
         if not name:
             name = f"Prompt {self._task_counter}"
         if not slug:
-            slug = slugify.slugify(name)
+            slug = _slugify.slugify(name)
 
         tool_functions: list[CodeFunction | SavedFunctionId] = []
         raw_tools: list[ToolFunctionDefinition] = []
@@ -363,7 +366,7 @@ class ParametersBuilder:
         metadata: Mapping[str, Any] | None = None,
     ) -> EvalParameters:
         if slug is None or len(slug) == 0:
-            slug = slugify.slugify(name)
+            slug = _slugify.slugify(name)
 
         parameters = CodeParameters(
             project=self.project,
@@ -491,7 +494,7 @@ class ScorerBuilder:
             else:
                 name = f"Scorer {self._task_counter}"
         if slug is None or len(slug) == 0:
-            slug = slugify.slugify(name)
+            slug = _slugify.slugify(name)
 
         if handler is not None:  # code scorer
             assert parameters is not None
@@ -592,7 +595,7 @@ class ClassifierBuilder:
             else:
                 name = f"Classifier {self._task_counter}"
         if slug is None or len(slug) == 0:
-            slug = slugify.slugify(name)
+            slug = _slugify.slugify(name)
 
         f = CodeFunction(
             project=self.project,

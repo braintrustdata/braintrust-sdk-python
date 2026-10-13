@@ -1,4 +1,7 @@
-import asyncio
+# PEP 810: defer these imports until first use on Python 3.15+. Ignored on older versions.
+__lazy_modules__ = {"asyncio"}
+
+import asyncio as _asyncio
 from collections.abc import Sequence
 from typing import Any, Literal, TypedDict, TypeVar, overload
 
@@ -320,7 +323,7 @@ async def invoke_async(
     When ``stream=True``, the returned ``BraintrustStream`` supports ``async for``
     and ``final_value_async()``.
     """
-    return await asyncio.to_thread(
+    return await _asyncio.to_thread(
         invoke,
         function_id=function_id,
         version=version,

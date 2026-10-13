@@ -5,6 +5,9 @@ This module provides the LocalTrace class which allows scorers to access
 spans from the current evaluation task without making server round-trips.
 """
 
+# PEP 810: defer these imports until first use on Python 3.15+. Ignored on older versions.
+__lazy_modules__ = {"asyncio"}
+
 import asyncio
 import math
 from collections.abc import Awaitable, Callable, Mapping

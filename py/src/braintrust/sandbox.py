@@ -1,3 +1,6 @@
+# PEP 810: defer these imports until first use on Python 3.15+. Ignored on older versions.
+__lazy_modules__ = {"slugify"}
+
 import dataclasses
 import sys
 from collections.abc import Sequence

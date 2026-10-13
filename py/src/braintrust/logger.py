@@ -1,4 +1,7 @@
-import asyncio
+# PEP 810: defer these imports until first use on Python 3.15+. Ignored on older versions.
+__lazy_modules__ = {"asyncio"}
+
+import asyncio as _asyncio
 import atexit
 import base64
 import builtins
@@ -25,7 +28,6 @@ from abc import ABC, abstractmethod
 from collections import Counter
 from collections.abc import Callable, Iterator, Mapping, MutableMapping, Sequence
 from functools import partial, wraps
-from multiprocessing import cpu_count
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
@@ -937,7 +939,7 @@ def set_http_adapter(adapter: HTTPAdapter) -> None:
 # Sometimes we'd like to launch network requests concurrently. We provide a
 # thread pool to accomplish this. Use a multiple of number of CPU cores to limit
 # concurrency.
-HTTP_REQUEST_THREAD_POOL = concurrent.futures.ThreadPoolExecutor(max_workers=cpu_count())
+HTTP_REQUEST_THREAD_POOL = concurrent.futures.ThreadPoolExecutor(max_workers=os.cpu_count())
 
 
 def api_conn():
@@ -2202,7 +2204,7 @@ async def load_prompt_async(
         api_key=api_key,
         org_name=org_name,
     )
-    await asyncio.to_thread(lambda: prompt.name)
+    await _asyncio.to_thread(lambda: prompt.name)
     return prompt
 
 

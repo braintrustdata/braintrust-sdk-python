@@ -7,6 +7,9 @@ eviction policy based on file modification times. It provides thread-safe access
 and handles file system errors gracefully.
 """
 
+# PEP 810: defer these imports until first use on Python 3.15+. Ignored on older versions.
+__lazy_modules__ = {"gzip"}
+
 import gzip
 import hashlib
 import json
