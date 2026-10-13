@@ -1,3 +1,4 @@
+import importlib
 import inspect
 import os
 import time
@@ -12,9 +13,6 @@ from wrapt import FunctionWrapper
 
 openrouter = pytest.importorskip("openrouter")
 from openrouter import OpenRouter
-from openrouter.chat import Chat
-from openrouter.embeddings import Embeddings
-from openrouter.responses import Responses
 
 
 PROJECT_NAME = "test-openrouter-sdk"
@@ -249,6 +247,14 @@ async def test_wrap_openrouter_responses_send_async_stream(memory_logger):
 
 
 def test_openrouter_integration_setup_is_idempotent(monkeypatch):
+    # Resolve the classes at call time rather than at module import: openrouter's
+    # lazy sub-SDK loader drops and re-imports a module when CPython < 3.12's import
+    # lock raises a spurious KeyError, which would leave module-level names pointing
+    # at a stale class that setup() never patches.
+    Chat = importlib.import_module("openrouter.chat").Chat
+    Embeddings = importlib.import_module("openrouter.embeddings").Embeddings
+    Responses = importlib.import_module("openrouter.responses").Responses
+
     first_send = inspect.getattr_static(Chat, "send")
     first_generate = inspect.getattr_static(Embeddings, "generate")
     first_responses_send = inspect.getattr_static(Responses, "send")
