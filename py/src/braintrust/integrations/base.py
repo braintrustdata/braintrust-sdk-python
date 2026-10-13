@@ -5,6 +5,7 @@ import importlib.metadata
 import inspect
 import re
 import sys
+import types
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from typing import Any, ClassVar
@@ -622,7 +623,8 @@ class BaseIntegration(ABC):
         for distribution_name in cls.distribution_names:
             try:
                 return importlib.metadata.version(distribution_name)
-            except importlib.metadata.PackageNotFoundError:
+            # FileNotFoundError: Python 3.15's MetadataNotFound for a .dist-info without METADATA.
+            except (importlib.metadata.PackageNotFoundError, FileNotFoundError):
                 continue
         return detect_module_version(module, cls.import_names)
 
@@ -710,11 +712,18 @@ def _import_first_available(import_names: Iterable[str]) -> Any | None:
     return None
 
 
+# PEP 810 (Python 3.15+): modules can hold unreified lazy-import proxies in
+# their ``__dict__``.  google-cloud-discoveryengine's GAPIC ``__init__`` ships
+# its client re-exports this way via ``__lazy_modules__``.
+_LAZY_IMPORT_TYPE = getattr(types, "LazyImportType", None)
+
+
 def _resolve_attr_path(root: Any, path: str) -> Any | None:
     current = root
     for part in path.split("."):
+        parent = current
         try:
-            current = inspect.getattr_static(current, part)
+            current = inspect.getattr_static(parent, part)
         except AttributeError:
             # ``getattr_static`` never invokes a module-level ``__getattr__``,
             # so PEP 562 lazy re-exports look absent.  openai >= 3.16.1 ships
@@ -726,5 +735,12 @@ def _resolve_attr_path(root: Any, path: str) -> Any | None:
             try:
                 current = getattr(current, part)
             except AttributeError:
+                return None
+        if _LAZY_IMPORT_TYPE is not None and type(current) is _LAZY_IMPORT_TYPE:
+            # ``getattr_static`` returns the proxy itself; a plain getattr on
+            # the module reifies it, like any normal access would.
+            try:
+                current = getattr(parent, part)
+            except (AttributeError, ImportError):
                 return None
     return current

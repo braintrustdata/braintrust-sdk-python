@@ -25,7 +25,8 @@ def detect_module_version(module: Any, import_names: tuple[str, ...]) -> str | N
         seen.add(candidate)
         try:
             return importlib.metadata.version(candidate)
-        except importlib.metadata.PackageNotFoundError:
+        # FileNotFoundError: Python 3.15's MetadataNotFound for a .dist-info without METADATA.
+        except (importlib.metadata.PackageNotFoundError, FileNotFoundError):
             continue
 
     version = getattr(module, "__version__", None)

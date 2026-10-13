@@ -280,7 +280,7 @@ test-types = [
 # -- Lint deps -----------------------------------------------------------------
 
 lint = [
-    "pylint==4.0.5",
+    "pylint==4.1.2",
     "pyperf==2.10.0",
     # Packages below are needed so pylint can resolve every SDK import.
     # Versions are unpinned (unless already constrained) so the resolver
@@ -301,14 +301,19 @@ lint = [
     # onnxruntime 1.24.3 dropped cp310 wheels. Constrain the transitive
     # resolution on Python 3.10 so pylint can still build its environment.
     "onnxruntime<1.24; python_version<'3.11'",
-    "dspy",
+    # Python 3.15 markers below: these pull dependencies with no cp315 wheels
+    # whose sdists cannot build yet (fastuuid via litellm, jiter<0.11 via
+    # instructor, livekit-blingfire via livekit-agents).
+    "dspy; python_version<'3.15'",
     "google-adk",
     "google-genai",
     "google-cloud-discoveryengine",
-    "instructor",
-    "litellm>=1.104.2",
-    "livekit-agents>=1.8.5",
-    "livekit-plugins-openai",
+    "instructor; python_version<'3.15'",
+    "litellm>=1.104.2; python_version<'3.15'",
+    # Fork the resolution so 3.15 is not stuck on instructor's jiter<0.11.
+    "jiter>=0.11; python_version>='3.15'",
+    "livekit-agents>=1.8.5; python_version<'3.15'",
+    "livekit-plugins-openai; python_version<'3.15'",
     # Keep these available to pylint without installing CrewAI (whose
     # transitive chromadb versions are unsuitable for shared CI).
     "opentelemetry-instrumentation-openai==0.59.1",
@@ -347,7 +352,7 @@ dev = [
     {include-group = "api-codegen"},
     "nox==2026.2.9",
     "pre-commit==4.6.2",
-    "pylint==4.0.5",
+    "pylint==4.1.2",
     "pyperf==2.10.0",
 ]
 

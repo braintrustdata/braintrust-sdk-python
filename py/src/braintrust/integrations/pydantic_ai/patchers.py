@@ -224,4 +224,5 @@ def wrap_model_classes() -> bool:
     )
     if not ModelClassesPatcher.applies(None, None):
         return False
-    return ClassScanPatcher.patch.__func__(ModelClassesPatcher, None, None)
+    # pylint 4.1 miscounts the explicit cls passed to the unbound classmethod.
+    return ClassScanPatcher.patch.__func__(ModelClassesPatcher, None, None)  # pylint: disable=too-many-function-args

@@ -1,4 +1,40 @@
-from braintrust.integrations.versioning import version_satisfies
+import sys
+import types
+
+import pytest
+from braintrust.integrations.base import BaseIntegration
+from braintrust.integrations.versioning import detect_module_version, version_satisfies
+
+
+@pytest.fixture
+def dist_info_without_metadata(tmp_path, monkeypatch):
+    """A .dist-info left without METADATA, e.g. by an interrupted install."""
+    (tmp_path / "bt_fake_provider-1.0.dist-info").mkdir()
+    monkeypatch.syspath_prepend(str(tmp_path))
+    module = types.ModuleType("bt_fake_provider")
+    module.__version__ = "1.2.3"
+    return module
+
+
+_requires_metadata_not_found = pytest.mark.skipif(
+    sys.version_info < (3, 15), reason="importlib.metadata raises MetadataNotFound on Python 3.15+"
+)
+
+
+@_requires_metadata_not_found
+def test_detect_module_version_falls_back_when_metadata_file_missing(dist_info_without_metadata):
+    assert detect_module_version(dist_info_without_metadata, ("bt_fake_provider",)) == "1.2.3"
+
+
+@_requires_metadata_not_found
+def test_integration_detect_version_falls_back_when_metadata_file_missing(dist_info_without_metadata):
+    class FakeIntegration(BaseIntegration):
+        name = "bt_fake_provider"
+        import_names = ("bt_fake_provider",)
+        distribution_names = ("bt-fake-provider",)
+        patchers = ()
+
+    assert FakeIntegration.detect_version(dist_info_without_metadata) == "1.2.3"
 
 
 def test_version_satisfies_handles_prereleases():

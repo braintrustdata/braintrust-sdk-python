@@ -62,6 +62,47 @@ def test_resolve_attr_path_does_not_invoke_descriptors_on_classes():
     assert isinstance(resolved, property)
 
 
+@pytest.fixture
+def pep810_lazy_package(tmp_path, monkeypatch):
+    """Import a package whose re-exports are PEP 810 lazy imports (Python 3.15+).
+
+    google-cloud-discoveryengine ships its GAPIC ``__init__`` this way: the
+    module ``__dict__`` holds unreified ``types.LazyImportType`` proxies until
+    the names are first loaded.
+    """
+    package_dir = tmp_path / "bt_pep810_sdk"
+    package_dir.mkdir()
+    (package_dir / "__init__.py").write_text(
+        "__lazy_modules__ = {'bt_pep810_sdk.client', 'bt_pep810_sdk.broken'}\n"
+        "from .client import Client\n"
+        "from .broken import Broken\n"
+    )
+    (package_dir / "client.py").write_text("class Client:\n    def create(self):\n        return 'created'\n")
+    (package_dir / "broken.py").write_text("raise ImportError('broken optional dependency')\n")
+    monkeypatch.syspath_prepend(str(tmp_path))
+    for name in ("bt_pep810_sdk", "bt_pep810_sdk.client", "bt_pep810_sdk.broken"):
+        monkeypatch.delitem(sys.modules, name, raising=False)
+
+    module = importlib.import_module("bt_pep810_sdk")
+    assert type(module.__dict__["Client"]) is types.LazyImportType  # pylint: disable=no-member
+    return module
+
+
+@pytest.mark.skipif(sys.version_info < (3, 15), reason="PEP 810 lazy imports require Python 3.15+")
+def test_resolve_attr_path_reifies_pep810_lazy_imports(pep810_lazy_package):
+    client_cls = _resolve_attr_path(pep810_lazy_package, "Client")
+
+    assert inspect.isclass(client_cls)
+    assert client_cls.__module__ == "bt_pep810_sdk.client"
+    assert _resolve_attr_path(pep810_lazy_package, "Client.create") is client_cls.__dict__["create"]
+
+
+@pytest.mark.skipif(sys.version_info < (3, 15), reason="PEP 810 lazy imports require Python 3.15+")
+def test_resolve_attr_path_returns_none_when_pep810_lazy_import_fails(pep810_lazy_package):
+    assert _resolve_attr_path(pep810_lazy_package, "Broken") is None
+    assert _resolve_attr_path(pep810_lazy_package, "Broken.method") is None
+
+
 def test_resolve_attr_path_walks_real_submodules():
     assert _resolve_attr_path(sys.modules["braintrust.integrations.base"], "BasePatcher") is not None
 

@@ -5,16 +5,28 @@ import re
 
 CONSTRAINTS = {
     "test_ai_sdk": {"min_python": "3.12"},
-    "test_litellm": {"versions": {"latest": {"min_python": "3.11"}}},
+    # Python 3.15 gaps below are upstream packaging, not SDK code: dependencies
+    # without cp315 wheels whose sdists cannot build yet (mostly PyO3 < 0.27
+    # extensions such as fastuuid, ormsgpack, jiter 0.10, pydantic-core 2.41),
+    # or packages that declare Requires-Python < 3.15. Drop each cap once the
+    # session installs cleanly on 3.15.
+    "test_litellm": {"versions": {"latest": {"min_python": "3.11", "max_python_exclusive": "3.15"}}},  # fastuuid
     "test_livekit_agents": {"max_python_exclusive": "3.14", "ci_platforms": ["linux"]},
     "test_pipecat": {"min_python": "3.11", "max_python_exclusive": "3.14"},
     "test_agentscope": {"versions": {"latest": {"min_python": "3.11"}}},
-    "test_dspy": {"versions": {"latest": {"min_python": "3.11"}}},
+    "test_dspy": {"max_python_exclusive": "3.15", "versions": {"latest": {"min_python": "3.11"}}},  # fastuuid, pyarrow
     "test_crewai": {"max_python_exclusive": "3.14"},
-    "test_deepagents": {"min_python": "3.11"},
-    "test_transformers": {"versions": {"not_latest": {"max_python_exclusive": "3.13"}}},
-    "test_harbor": {"min_python": "3.12"},
+    "test_deepagents": {"min_python": "3.11", "max_python_exclusive": "3.15"},  # ormsgpack
+    "test_transformers": {
+        "max_python_exclusive": "3.15",  # sentencepiece
+        "versions": {"not_latest": {"max_python_exclusive": "3.13"}},
+    },
+    "test_harbor": {"min_python": "3.12", "max_python_exclusive": "3.15"},  # fastuuid, pyarrow
     "test_otel": {"versions": {"not_latest_below": {"version": "1.28.0", "skip_from_python": "3.14"}}},
+    "test_instructor": {"max_python_exclusive": "3.15"},  # jiter 0.10
+    "test_langchain": {"max_python_exclusive": "3.15"},  # ormsgpack
+    "test_openrouter": {"versions": {"latest": {"max_python_exclusive": "3.15"}}},  # pydantic-core 2.41
+    "test_openai_ddtrace": {"max_python_exclusive": "3.15"},  # ddtrace requires Python < 3.15
 }
 
 

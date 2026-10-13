@@ -103,7 +103,8 @@ def merge_span_origin_context(
 def _sdk_version() -> str:
     try:
         return importlib.metadata.version("braintrust")
-    except importlib.metadata.PackageNotFoundError:
+    # FileNotFoundError: Python 3.15's MetadataNotFound for a .dist-info without METADATA.
+    except (importlib.metadata.PackageNotFoundError, FileNotFoundError):
         return "unknown"
 
 
