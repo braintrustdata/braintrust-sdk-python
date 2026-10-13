@@ -32,6 +32,7 @@ from braintrust import (
 )
 from braintrust.api import BraintrustTransportError
 from braintrust.db_fields import AUDIT_METADATA_FIELD
+from braintrust.functions.stream import BraintrustInvokeError, BraintrustStream
 from braintrust.git_fields import GitMetadataSettings, RepoInfo
 from braintrust.logger import (
     BraintrustState,
@@ -60,6 +61,7 @@ from braintrust.test_helpers import (
 from braintrust.util import AugmentedHTTPError
 from requests import HTTPError
 from requests.exceptions import ConnectionError, SSLError
+from sseclient import SSEClient
 
 
 def test_login_to_state_uses_env_braintrust_api_key(tmp_path, monkeypatch):
@@ -1427,6 +1429,66 @@ def test_span_log_rejects_metadata_that_serializes_to_non_dict(with_memory_logge
     with logger.start_span(name="test_span") as span:
         with pytest.raises(ValueError, match="metadata must be a dictionary or serialize to a dictionary"):
             span.log(metadata=BadMetadata())
+
+
+@pytest.mark.parametrize("consumed_chunks", [0, 1, 2], ids=["flush-first", "partially-consumed", "fully-consumed"])
+@pytest.mark.parametrize(
+    "event, chunks, expected",
+    [
+        ("text_delta", ["Hello", " world"], "Hello world"),
+        ("json_delta", ['{"message":', '"Hello world"}'], {"message": "Hello world"}),
+    ],
+    ids=["text", "json"],
+)
+def test_span_log_snapshots_stream_before_consumption(with_memory_logger, consumed_chunks, event, chunks, expected):
+    reads = []
+
+    def event_source():
+        for chunk in chunks:
+            reads.append(chunk)
+            data = json.dumps(chunk) if event == "text_delta" else chunk
+            yield f"event: {event}\ndata: {data}\n\n".encode()
+
+    stream = BraintrustStream(SSEClient(event_source()))
+    with init_test_logger(__name__).start_span(name="stream") as span:
+        span.log(output=stream)
+        assert reads == []
+
+        iterator = iter(stream)
+        assert [next(iterator).data for _ in range(consumed_chunks)] == chunks[:consumed_chunks]
+        [row] = with_memory_logger.pop()
+        assert row["output"] == expected
+        assert [chunk.data for chunk in iterator] == chunks[consumed_chunks:]
+
+
+def test_traced_returned_stream_survives_consumption_before_flush(with_memory_logger):
+    init_test_logger(__name__)
+
+    @braintrust.traced
+    def response():
+        return BraintrustStream(SSEClient([b'event: text_delta\ndata: "Hello world"\n\n']))
+
+    stream = response()
+    assert [chunk.data for chunk in stream] == ["Hello world"]
+    [row] = with_memory_logger.pop()
+    assert row["output"] == "Hello world"
+
+
+@pytest.mark.parametrize(
+    "payload, error_type, message",
+    [
+        (b'event: error\ndata: "stream failed"\n\n', BraintrustInvokeError, "stream failed"),
+        (b'event: json_delta\ndata: {"incomplete":\n\n', json.JSONDecodeError, "Expecting value"),
+    ],
+    ids=["error-chunk", "invalid-json"],
+)
+def test_span_log_stream_errors_survive_resolution_retries(with_memory_logger, payload, error_type, message):
+    stream = BraintrustStream(SSEClient([payload]))
+    with init_test_logger(__name__).start_span(name="stream") as span:
+        span.log(output=stream)
+        for _ in range(2):
+            with pytest.raises(error_type, match=message):
+                with_memory_logger.pop()
 
 
 def test_span_log_replaces_circular_references(with_memory_logger):

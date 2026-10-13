@@ -5293,7 +5293,9 @@ def split_logging_data(
             # Python has weird semantics with loop variables and lambda functions, so we
             # capture `v` by plugging it through a closure that itself returns the LazyValue
             def make_final_value_callback(v):
-                return LazyValue(lambda: v.copy().final_value(), use_mutex=False)
+                logged_stream = v.copy()
+                # Preserve the log-time position, including when final-value parsing is retried.
+                return LazyValue(lambda: logged_stream.copy().final_value(), use_mutex=False)
 
             lazy_partial_record[k] = make_final_value_callback(v)
         else:
