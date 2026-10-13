@@ -1753,3 +1753,116 @@ class TestEvaluateFilter:
         # Only the "foo" case should pass the filter
         assert len(result.results) == 1
         assert result.results[0].input == "hello"
+
+
+@pytest.mark.parametrize("use_async_eval", [False, True], ids=["Eval", "EvalAsync"])
+@pytest.mark.parametrize(
+    "data_kind", ["iterator", "factory", "awaitable_factory", "async_factory", "awaitable", "async_generator"]
+)
+@pytest.mark.asyncio
+async def test_eval_resolves_data_once(use_async_eval, data_kind):
+    rows = [EvalCase(input=2, expected=4), EvalCase(input=3, expected=6)]
+    calls = []
+    coroutines = []
+
+    def factory():
+        calls.append("factory")
+        return iter(rows)
+
+    async def load_rows():
+        calls.append("await")
+        await asyncio.sleep(0)
+        return iter(rows)
+
+    def awaitable_factory():
+        calls.append("factory")
+        coroutine = load_rows()
+        coroutines.append(coroutine)
+        return coroutine
+
+    async def async_rows():
+        for row in rows:
+            yield row
+
+    if data_kind == "iterator":
+        data = iter(rows)
+    elif data_kind == "factory":
+        data = factory
+    elif data_kind == "awaitable_factory":
+        data = awaitable_factory
+    elif data_kind == "async_factory":
+        data = load_rows
+    elif data_kind == "awaitable":
+        data = load_rows()
+        coroutines.append(data)
+    else:
+        data = async_rows()
+
+    def evaluate():
+        return Eval(
+            "data-resolution",
+            data=data,
+            task=lambda input: input * 2,
+            scores=[],
+            no_send_logs=True,
+            enable_cache=False,
+        )
+
+    try:
+        if use_async_eval:
+            result = await EvalAsync(
+                "data-resolution",
+                data=data,
+                task=lambda input: input * 2,
+                scores=[],
+                no_send_logs=True,
+                enable_cache=False,
+            )
+        else:
+            result = await asyncio.to_thread(evaluate)
+        assert [row.output for row in result.results] == [4, 6]
+        assert (
+            calls
+            == {
+                "iterator": [],
+                "factory": ["factory"],
+                "awaitable_factory": ["factory", "await"],
+                "async_factory": ["await"],
+                "awaitable": ["await"],
+                "async_generator": [],
+            }[data_kind]
+        )
+    finally:
+        for coroutine in coroutines:
+            coroutine.close()
+
+
+@pytest.mark.parametrize("use_factory", [False, True])
+@pytest.mark.asyncio
+async def test_eval_awaitable_data_propagates_error(use_factory):
+    error = RuntimeError("data loading failed")
+    coroutines = []
+
+    async def load_rows():
+        await asyncio.sleep(0)
+        raise error
+
+    def factory():
+        coroutine = load_rows()
+        coroutines.append(coroutine)
+        return coroutine
+
+    try:
+        with pytest.raises(RuntimeError) as caught:
+            await EvalAsync(
+                "data-error",
+                data=factory if use_factory else factory(),
+                task=lambda input: input,
+                scores=[],
+                no_send_logs=True,
+                enable_cache=False,
+            )
+        assert caught.value is error
+    finally:
+        for coroutine in coroutines:
+            coroutine.close()

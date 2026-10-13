@@ -2001,6 +2001,9 @@ async def _run_evaluator_internal_impl(
     if inspect.isfunction(data_iterator) or inspect.isroutine(data_iterator):
         data_iterator = data_iterator()
 
+    if inspect.isawaitable(data_iterator):
+        data_iterator = await data_iterator
+
     if not inspect.isasyncgen(data_iterator):
 
         async def to_async(it):
