@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from urllib.parse import urljoin
 
 from braintrust.env import BraintrustEnv
+from braintrust.span_customizer import _get_span_customizers
 from braintrust.span_origin import SpanOriginEnvironment, detect_environment, merge_span_origin_context
 
 
@@ -132,6 +133,10 @@ class AISpanProcessor:
     Only filtered spans and root spans will be forwarded to the inner processor.
     This dramatically reduces telemetry volume while preserving important observability.
 
+    This filter does not run Braintrust span customizers. Wrap OtelExporter
+    instead of a generic OTLPSpanExporter to customize Braintrust exports,
+    or use BraintrustSpanProcessor for the complete pipeline.
+
     Example:
         > processor = AISpanProcessor(BatchSpanProcessor(OTLPSpanExporter()))
         > provider = TracerProvider()
@@ -209,6 +214,9 @@ class AISpanProcessor:
 class OtelExporter(OTLPSpanExporter):
     """
     A subclass of OTLPSpanExporter configured for Braintrust.
+
+    Runs the registered Braintrust span customizers before OTLP serialization.
+    Generic OTLPSpanExporter instances do not run these hooks.
 
     For most use cases, consider using the Processor class instead, which provides
     a more convenient all-in-one interface.
@@ -303,6 +311,11 @@ class OtelExporter(OTLPSpanExporter):
 
     def export(self, spans):
         self._ensure_api_key()
+        customizers = _get_span_customizers()
+        if customizers:
+            from .span_customizer import customize_otel_span
+
+            spans = [customize_otel_span(span, customizers) for span in spans]
         return super().export(spans)
 
     def force_flush(self, timeout_millis=30000):

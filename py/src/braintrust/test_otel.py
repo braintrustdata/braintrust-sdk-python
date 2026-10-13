@@ -1256,3 +1256,610 @@ def test_otel_inject_extracted_by_native():
         with logger.start_span(name="native", parent=parent) as span:
             assert span.root_span_id == format(trace_id, "032x")
             assert span.span_parents == [format(span_id, "016x")]
+
+
+@pytest.fixture
+def customized_otlp_receiver(monkeypatch):
+    if not OTEL_INSTALLED:
+        pytest.skip("OpenTelemetry SDK not installed")
+    from braintrust import set_span_customizers
+    from google.protobuf import symbol_database
+    from opentelemetry.proto.collector.trace.v1 import trace_service_pb2
+
+    request_type = symbol_database.Default().GetSymbol(
+        f"{trace_service_pb2.DESCRIPTOR.package}.ExportTraceServiceRequest"
+    )
+
+    monkeypatch.setattr("braintrust.span_customizer._failure_logged", False)
+    requests = []
+
+    def receive(method, path, body, headers):
+        request = request_type()
+        request.ParseFromString(body)
+        requests.append(request)
+        return 200, {}, b""
+
+    set_span_customizers(None)
+    try:
+        with scripted_server(receive) as (url, _):
+            yield url, requests
+    finally:
+        set_span_customizers(None)
+
+
+def _wire_spans(requests):
+    return [
+        (resource, scope, span)
+        for request in requests
+        for resource in request.resource_spans
+        for scope in resource.scope_spans
+        for span in scope.spans
+    ]
+
+
+def _sensitive_otel_spans():
+    from opentelemetry.sdk.resources import Resource
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+    from opentelemetry.trace import Link, Status, StatusCode
+
+    memory = InMemorySpanExporter()
+    provider = TracerProvider(resource=Resource({"private.resource": "secret"}), shutdown_on_exit=False)
+    provider.add_span_processor(SimpleSpanProcessor(memory))
+    tracer = provider.get_tracer("private.scope", "private.version", schema_url="private.schema")
+    with tracer.start_as_current_span("private.parent") as parent:
+        with tracer.start_as_current_span(
+            "private.child", links=[Link(parent.get_span_context(), {"private.link": "secret"})]
+        ) as child:
+            child.set_attributes(
+                {
+                    "braintrust.parent": "experiment_id:destination",
+                    "braintrust.input_json": '"private.input"',
+                    "private.array": ["first", "second"],
+                }
+            )
+            child.add_event("private.event", {"private.event": "secret"}, timestamp=123)
+            child.set_status(Status(StatusCode.ERROR, "private.status"))
+    spans = memory.get_finished_spans()
+    provider.shutdown()
+    return spans
+
+
+@pytest.mark.parametrize("replacement", [False, True])
+def test_otel_customizers_real_http_snapshot_replacement_and_identity(customized_otlp_receiver, replacement):
+    from braintrust import SpanCustomizer, set_span_customizers
+    from braintrust.otel import OtelExporter
+
+    url, requests = customized_otlp_receiver
+    spans = _sensitive_otel_spans()
+    seen = []
+
+    class Redact(SpanCustomizer):
+        def on_span_export(self, data):
+            assert type(data) is dict
+            # Direct exporters don't add provenance, with or without customizers.
+            assert "braintrust.context_json" not in data["attributes"]
+            seen.append(data["name"])
+            data["context"]["span_id"] = 1
+            data["context"]["trace_id"] = 2
+            if data["parent"]:
+                data["parent"]["span_id"] = 3
+            data["start_time"] = 4
+            data["end_time"] = 5
+            data["attributes"]["braintrust.parent"] = "project_name:wrong"
+            if "private.array" in data["attributes"]:
+                data["attributes"]["private.array"][0] = "safe"
+                data["events"][0]["attributes"].clear()
+                data["links"][0]["attributes"].clear()
+            data["resource"]["attributes"].clear()
+            data["instrumentation_scope"]["name"] = "safe.scope"
+            if replacement:
+                return {"name": "redacted", "attributes": {"safe": True}}
+            data["name"] = "redacted"
+            data["attributes"] = {"safe": True}
+            data["events"] = []
+            data["links"] = []
+            data.pop("status")
+            data.pop("resource")
+            data.pop("instrumentation_scope")
+            return data
+
+    class Observe(SpanCustomizer):
+        def on_span_export(self, data):
+            original = spans[len(observed)]
+            assert data["context"]["span_id"] == original.context.span_id
+            assert data["start_time"] == original.start_time
+            observed.append(data)
+            return data
+
+    observed = []
+    set_span_customizers([Redact(), Observe()])
+    exporter = OtelExporter(url=url, api_key="test")
+    try:
+        exporter.export(spans)
+    finally:
+        exporter.shutdown()
+    assert seen == ["private.child", "private.parent"]
+    assert len(observed) == 2
+    for (resource, scope, wire), original in zip(_wire_spans(requests), spans):
+        assert wire.name == "redacted"
+        assert wire.span_id == original.context.span_id.to_bytes(8, "big")
+        assert wire.trace_id == original.context.trace_id.to_bytes(16, "big")
+        assert wire.parent_span_id == (original.parent.span_id.to_bytes(8, "big") if original.parent else b"")
+        assert (wire.start_time_unix_nano, wire.end_time_unix_nano) == (original.start_time, original.end_time)
+        assert not wire.events and not wire.links and not wire.status.message
+        assert not resource.resource.attributes and not scope.scope.name
+        attrs = {attr.key: attr.value for attr in wire.attributes}
+        assert attrs["safe"].bool_value
+        assert "braintrust.context_json" not in attrs
+        if original.parent:
+            assert attrs["braintrust.parent"].string_value == "experiment_id:destination"
+    child = spans[0]
+    assert child.name == "private.child"
+    assert child.attributes["private.array"] == ("first", "second")
+    assert child.events[0].attributes["private.event"] == "secret"
+    assert child.links[0].attributes["private.link"] == "secret"
+    assert child.resource.attributes["private.resource"] == "secret"
+    assert child.instrumentation_scope.name == "private.scope"
+
+
+@pytest.mark.parametrize(
+    "failure",
+    [
+        "exception",
+        "base_exception",
+        "none",
+        "coroutine",
+        "attributes",
+        "attribute_value",
+        "integer_overflow",
+        "invalid_utf8_key",
+        "event",
+        "link",
+        "null_link_context",
+        "status",
+        "resource",
+        "scope",
+        "link_trace_state",
+        "name",
+        "cycle",
+    ],
+)
+def test_otel_customizer_fail_closed_real_http_mixed_batch(customized_otlp_receiver, caplog, failure):
+    import logging
+
+    from braintrust import SpanCustomizer, set_span_customizers
+    from braintrust.otel import OtelExporter
+    from braintrust.span_customizer import _customize_span_export
+
+    url, requests = customized_otlp_receiver
+    spans = _sensitive_otel_spans()
+    calls = []
+
+    async def asynchronous():
+        return {}
+
+    class Break(SpanCustomizer):
+        def on_span_export(self, data):
+            if data.get("name") == "private.parent":
+                return {"name": "healthy"}
+            data["name"] = "private.partial"
+            if failure == "exception":
+                raise ValueError("private.exception")
+            if failure == "base_exception":
+                raise GeneratorExit("private.exception")
+            if failure == "none":
+                return None
+            if failure == "coroutine":
+                return asynchronous()
+            if failure == "cycle":
+                data["attributes"] = data
+            else:
+                key, value = {
+                    "attributes": ("attributes", []),
+                    "attribute_value": ("attributes", {"private": object()}),
+                    "integer_overflow": ("attributes", {"private": 2**64}),
+                    "invalid_utf8_key": ("attributes", {"private\ud800": "secret"}),
+                    "event": ("events", [{"name": "private", "timestamp": -1}]),
+                    "link": ("links", [{"context": {"trace_id": -1, "span_id": 1}}]),
+                    "null_link_context": ("links", [{"context": None}]),
+                    "status": ("status", {"status_code": 999, "description": "private"}),
+                    "resource": ("resource", {"attributes": {"private": object()}}),
+                    "scope": ("instrumentation_scope", {"attributes": {"private": object()}}),
+                    "link_trace_state": (
+                        "links",
+                        [{"context": {"trace_id": 1, "span_id": 1, "trace_state": {"private": "secret,"}}}],
+                    ),
+                    "name": ("name", {}),
+                }[failure]
+                data[key] = value
+            return data
+
+    class Observe(SpanCustomizer):
+        def on_span_export(self, data):
+            calls.append(data["name"])
+            return data
+
+    set_span_customizers([Break(), Observe()])
+    exporter = OtelExporter(url=url, api_key="test")
+    with caplog.at_level(logging.ERROR):
+        try:
+            exporter.export(spans)
+            exporter.export(spans)
+            # Native and OTel share the same once-only diagnostic budget.
+            _customize_span_export({"id": "row"}, [Break()])
+        finally:
+            exporter.shutdown()
+    assert calls == ["healthy", "healthy"]
+    assert len(caplog.records) == 1
+    assert "private" not in caplog.text
+    assert len(requests) == 2
+    for request in requests:
+        assert len(request.resource_spans) == 1
+        encoded = request.SerializeToString()
+        assert b"private" not in encoded and b"secret" not in encoded
+        records = _wire_spans([request])
+        assert len(records) == 2
+        for resource, scope, wire in records:
+            assert not resource.resource.attributes and not resource.schema_url
+            assert not scope.scope.name and not scope.scope.version and not scope.schema_url
+            assert not wire.events and not wire.links and not wire.status.message
+            if wire.name == "healthy":
+                continue
+            assert not wire.name and not wire.trace_state
+            assert wire.span_id == spans[0].context.span_id.to_bytes(8, "big")
+            assert wire.trace_id == spans[0].context.trace_id.to_bytes(16, "big")
+            assert wire.parent_span_id == spans[0].parent.span_id.to_bytes(8, "big")
+            assert (wire.start_time_unix_nano, wire.end_time_unix_nano) == (spans[0].start_time, spans[0].end_time)
+            assert {a.key: a.value.string_value for a in wire.attributes} == {
+                "braintrust.parent": "experiment_id:destination",
+                "braintrust.context_json": '{"customizer_error":true}',
+            }
+
+
+@pytest.mark.parametrize("compat", [False, True])
+def test_otel_processor_customizes_after_filter_once_without_mutating_other_exporters(
+    customized_otlp_receiver, monkeypatch, compat
+):
+    from braintrust import SpanCustomizer, set_span_customizers
+    from braintrust.otel import BraintrustSpanProcessor
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+
+    monkeypatch.setenv("BRAINTRUST_OTEL_COMPAT", str(compat).lower())
+    url, requests = customized_otlp_receiver
+    seen = []
+
+    class Redact(SpanCustomizer):
+        def on_span_export(self, data):
+            seen.append(data["name"])
+            assert "span_origin" in json.loads(data["attributes"]["braintrust.context_json"])
+            return {"name": "redacted"}
+
+    set_span_customizers([Redact()])
+    provider = TracerProvider(shutdown_on_exit=False)
+    provider.add_span_processor(
+        BraintrustSpanProcessor(
+            api_key="test",
+            api_url=url,
+            SpanProcessor=SimpleSpanProcessor,
+            filter_ai_spans=True,
+        )
+    )
+    other = InMemorySpanExporter()
+    provider.add_span_processor(SimpleSpanProcessor(other))
+    tracer = provider.get_tracer(__name__)
+    with tracer.start_as_current_span("gen_ai.root"):
+        tracer.start_span("gen_ai.child").end()
+        tracer.start_span("filtered").end()
+    provider.shutdown()
+    assert seen == ["gen_ai.child", "gen_ai.root"]
+    assert [wire.name for _, _, wire in _wire_spans(requests)] == ["redacted", "redacted"]
+    assert [span.name for span in other.get_finished_spans()] == ["gen_ai.child", "filtered", "gen_ai.root"]
+
+
+def test_otel_customizer_preserves_successful_snapshot_content(customized_otlp_receiver):
+    from braintrust import SpanCustomizer, set_span_customizers
+    from braintrust.otel import OtelExporter
+
+    url, requests = customized_otlp_receiver
+    spans = _sensitive_otel_spans()
+
+    class Customize(SpanCustomizer):
+        def on_span_export(self, data):
+            if data["events"]:
+                data["events"][0]["name"] = "safe.event"
+                data["events"][0]["attributes"] = {"safe.event": True}
+                data["links"][0]["attributes"] = {"safe.link": True}
+                data["status"]["description"] = "safe.status"
+            data["resource"]["attributes"] = {"safe.resource": "value"}
+            data["instrumentation_scope"]["name"] = "safe.scope"
+            return data
+
+    set_span_customizers([Customize()])
+    exporter = OtelExporter(url=url, api_key="test")
+    try:
+        exporter.export(spans)
+    finally:
+        exporter.shutdown()
+    resource, scope, child = _wire_spans(requests)[0]
+    assert child.name == "private.child"
+    assert child.events[0].name == "safe.event" and child.events[0].time_unix_nano == 123
+    assert child.events[0].attributes[0].value.bool_value
+    assert child.links[0].attributes[0].value.bool_value
+    assert child.status.message == "safe.status"
+    assert resource.resource.attributes[0].key == "safe.resource"
+    assert scope.scope.name == "safe.scope"
+
+
+@pytest.mark.parametrize("experiment", [False, True])
+def test_customizers_cover_native_and_otel_compat_roots_and_children(
+    customized_otlp_receiver, monkeypatch, experiment
+):
+    from braintrust import SpanCustomizer, set_span_customizers
+    from braintrust.logger import _internal_with_memory_background_logger
+    from braintrust.otel import BraintrustSpanProcessor
+    from braintrust.test_helpers import init_test_exp, init_test_logger
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+
+    monkeypatch.setenv("BRAINTRUST_OTEL_COMPAT", "true")
+    url, requests = customized_otlp_receiver
+    shapes = set()
+
+    class Redact(SpanCustomizer):
+        def on_span_export(self, data):
+            if "attributes" in data:
+                shapes.add("otel")
+                data["attributes"].pop("braintrust.input_json", None)
+            else:
+                shapes.add("native")
+                data.pop("input", None)
+            return data
+
+    set_span_customizers([Redact()])
+    provider = TracerProvider(shutdown_on_exit=False)
+    provider.add_span_processor(
+        BraintrustSpanProcessor(api_key="test", api_url=url, SpanProcessor=SimpleSpanProcessor)
+    )
+    tracer = provider.get_tracer(__name__)
+    try:
+        with _internal_with_memory_background_logger() as memory:
+            owner = init_test_exp("customized", "project") if experiment else init_test_logger("customized")
+            with owner.start_span(name="native.root", input="private") as root:
+                with root.start_span(name="native.child", input="private"):
+                    with tracer.start_as_current_span("otel.root", attributes={"braintrust.input_json": '"private"'}):
+                        tracer.start_span("otel.child", attributes={"braintrust.input_json": '"private"'}).end()
+            rows = memory.pop()
+    finally:
+        provider.shutdown()
+    assert shapes == {"native", "otel"}
+    assert len(rows) == 2 and all("input" not in row for row in rows)
+    wires = _wire_spans(requests)
+    assert len(wires) == 2
+    assert all("braintrust.input_json" not in {a.key for a in wire.attributes} for _, _, wire in wires)
+
+
+def test_otel_noop_customizer_exports_same_request_as_no_customizers(customized_otlp_receiver):
+    from http import HTTPStatus
+
+    from braintrust import SpanCustomizer, set_span_customizers
+    from braintrust.otel import OtelExporter
+    from opentelemetry import trace as otel_trace
+    from opentelemetry.sdk.resources import Resource
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+    from opentelemetry.trace import NonRecordingSpan, SpanContext, TraceFlags, TraceState
+
+    url, requests = customized_otlp_receiver
+
+    class Label(str):
+        pass
+
+    class Measure(float):
+        pass
+
+    class Binary(bytes):
+        pass
+
+    # Newer SDKs keep None, bytes, mappings, and mixed arrays. Older SDKs keep None
+    # inside arrays, which their encoders can't send and skip without customizers.
+    attributes = {
+        "none": None,
+        "bytes": b"value",
+        "mapping": {"nested": {"value": 1}},
+        "mixed": [1, "two"],
+        "none_in_array": ["one", None],
+        "string": "value",
+        "http.status_code": HTTPStatus.OK,
+        "label": Label("value"),
+        "measure": Measure(1.5),
+        "binary_subclass": Binary(b"value"),
+        "status_array": [HTTPStatus.OK, HTTPStatus.NOT_FOUND],
+    }
+
+    memory = InMemorySpanExporter()
+    provider = TracerProvider(resource=Resource({"service.name": "svc", "mapping": {"a": 1}}), shutdown_on_exit=False)
+    provider.add_span_processor(SimpleSpanProcessor(memory))
+    tracer = provider.get_tracer("scope", "1.0")
+    remote = SpanContext(
+        trace_id=1, span_id=2, is_remote=True, trace_flags=TraceFlags(1), trace_state=TraceState([("k", "v")])
+    )
+    with tracer.start_as_current_span("root", context=otel_trace.set_span_in_context(NonRecordingSpan(remote))):
+        with tracer.start_as_current_span("child") as child:
+            for key, value in attributes.items():
+                child.set_attribute(key, value)
+            child.add_event("event", {"mapping": {"a": 1}} if "mapping" in attributes else {"a": 1})
+    spans = memory.get_finished_spans()
+    provider.shutdown()
+
+    class Noop(SpanCustomizer):
+        def on_span_export(self, data):
+            assert data["context"]["trace_state"] == {"k": "v"}
+            return data
+
+    exporter = OtelExporter(url=url, api_key="test")
+    try:
+        exporter.export(spans)
+        set_span_customizers([Noop()])
+        exporter.export(spans)
+    finally:
+        exporter.shutdown()
+    assert "none_in_array" in spans[0].attributes
+    baseline, customized = requests
+    assert len(customized.resource_spans) == 1
+    assert customized == baseline
+
+
+@pytest.mark.parametrize("field", ["resource", "instrumentation_scope"])
+def test_otel_customizer_preserves_encoder_valid_metadata(customized_otlp_receiver, caplog, field):
+    from braintrust import SpanCustomizer, set_span_customizers
+    from braintrust.otel import OtelExporter
+    from opentelemetry.sdk.trace.export import SpanExportResult
+    from opentelemetry.sdk.util.instrumentation import InstrumentationScope
+
+    scope_attributes_supported = hasattr(InstrumentationScope, "attributes")
+    if field == "instrumentation_scope" and not scope_attributes_supported:
+        pytest.skip("This OTel encoder does not export scope attributes")
+
+    url, requests = customized_otlp_receiver
+    spans = _sensitive_otel_spans()
+    attributes = {"mixed": [1, "two"]}
+    if scope_attributes_supported:
+        attributes["nested"] = {"value": "safe"}
+
+    class Customize(SpanCustomizer):
+        def on_span_export(self, data):
+            # Dictionary insertion order must not split equivalent OTLP groups.
+            data[field]["attributes"] = dict(reversed(attributes.items())) if data["parent"] else attributes
+            return data
+
+    set_span_customizers([Customize()])
+    exporter = OtelExporter(url=url, api_key="test")
+    try:
+        assert exporter.export(spans) == SpanExportResult.SUCCESS
+    finally:
+        exporter.shutdown()
+
+    assert not caplog.records
+    assert len(requests) == 1
+    assert len(requests[0].resource_spans) == 1
+    assert len(requests[0].resource_spans[0].scope_spans) == 1
+    records = _wire_spans(requests)
+    assert len(records) == 2
+    for resource, scope, wire in records:
+        assert wire.name in {"private.child", "private.parent"}
+        metadata = resource.resource if field == "resource" else scope.scope
+        attrs = {attribute.key: attribute.value for attribute in metadata.attributes}
+        assert set(attrs) == set(attributes)
+        mixed = attrs["mixed"].array_value.values
+        assert len(mixed) == 2
+        assert mixed[0].int_value == 1
+        assert mixed[1].string_value == "two"
+        if scope_attributes_supported:
+            nested = attrs["nested"].kvlist_value.values
+            assert len(nested) == 1
+            assert nested[0].key == "value"
+            assert nested[0].value.string_value == "safe"
+    assert spans[0].resource.attributes["private.resource"] == "secret"
+
+
+@pytest.mark.parametrize("field", ["resource", "instrumentation_scope"])
+def test_otel_customizer_groups_equal_metadata_without_merging_distinct_values(customized_otlp_receiver, field):
+    from braintrust import SpanCustomizer, set_span_customizers
+    from braintrust.otel import OtelExporter
+    from opentelemetry.sdk.resources import Resource
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor, SpanExportResult
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+    from opentelemetry.sdk.util.instrumentation import InstrumentationScope
+
+    url, requests = customized_otlp_receiver
+    variants = {
+        "same-a": {"schema_url": "safe"},
+        "same-b": {"schema_url": "safe"},
+        "schema": {"schema_url": "different"},
+    }
+    if field == "resource" or hasattr(InstrumentationScope, "attributes"):
+        variants.update(
+            {
+                "bool": {"schema_url": "safe", "attributes": {"value": True}},
+                "int": {"schema_url": "safe", "attributes": {"value": 1}},
+                "float": {"schema_url": "safe", "attributes": {"value": 1.0}},
+                "array": {"schema_url": "safe", "attributes": {"value": [1]}},
+            }
+        )
+    if field == "instrumentation_scope":
+        variants.update({"name": {"name": "different"}, "version": {"version": "2"}})
+
+    memory = InMemorySpanExporter()
+    provider = TracerProvider(resource=Resource({}), shutdown_on_exit=False)
+    provider.add_span_processor(SimpleSpanProcessor(memory))
+    tracer = provider.get_tracer("source", "1")
+    for name in variants:
+        tracer.start_span(name).end()
+    provider.shutdown()
+
+    class Customize(SpanCustomizer):
+        def on_span_export(self, data):
+            data[field] = variants[data["name"]]
+            return data
+
+    set_span_customizers([Customize()])
+    exporter = OtelExporter(url=url, api_key="test")
+    try:
+        assert exporter.export(memory.get_finished_spans()) == SpanExportResult.SUCCESS
+    finally:
+        exporter.shutdown()
+
+    assert len(requests) == 1
+    if field == "resource":
+        groups = [
+            frozenset(span.name for scope in resource.scope_spans for span in scope.spans)
+            for resource in requests[0].resource_spans
+        ]
+    else:
+        assert len(requests[0].resource_spans) == 1
+        groups = [frozenset(span.name for span in scope.spans) for scope in requests[0].resource_spans[0].scope_spans]
+    assert len(groups) == len(variants) - 1
+    assert set(groups) == {frozenset({"same-a", "same-b"})} | {
+        frozenset({name}) for name in variants if name not in {"same-a", "same-b"}
+    }
+
+
+def test_otel_customizer_unexportable_span_strips_only_that_span(customized_otlp_receiver, caplog):
+    import logging
+
+    from braintrust import SpanCustomizer, set_span_customizers
+    from braintrust.otel import OtelExporter, _SpanWithAttributes
+    from opentelemetry.sdk.trace.export import SpanExportResult
+
+    url, requests = customized_otlp_receiver
+    healthy, original = _sensitive_otel_spans()
+    broken = _SpanWithAttributes(original, {**original.attributes, "private": object()})
+    calls = []
+
+    class Observe(SpanCustomizer):
+        def on_span_export(self, data):
+            calls.append(data["name"])
+            return data
+
+    set_span_customizers([Observe()])
+    exporter = OtelExporter(url=url, api_key="test")
+    with caplog.at_level(logging.ERROR):
+        try:
+            assert exporter.export([healthy, broken]) == SpanExportResult.SUCCESS
+        finally:
+            exporter.shutdown()
+    assert calls == ["private.child"]
+    assert len(caplog.records) == 1 and "private" not in caplog.text
+    wires = {wire.span_id: wire for _, _, wire in _wire_spans(requests)}
+    assert wires[healthy.context.span_id.to_bytes(8, "big")].name == "private.child"
+    stripped = wires[original.context.span_id.to_bytes(8, "big")]
+    assert not stripped.name
+    assert {a.key: a.value.string_value for a in stripped.attributes} == {
+        "braintrust.context_json": '{"customizer_error":true}'
+    }

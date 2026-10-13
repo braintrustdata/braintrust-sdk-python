@@ -95,37 +95,15 @@ def test_registration_rejects_misconfigured_customizers(invalid):
     assert _customize_span_export({"id": "row", "output": "secret"}) == {"id": "row", "output": "valid"}
 
 
-def test_registration_rejected_in_otel_compat_mode(monkeypatch, caplog):
-    # Keep auto-instrumentation independent of optional provider libraries.
+def test_registration_supported_in_otel_compat_mode(monkeypatch, caplog):
     monkeypatch.setattr("braintrust.auto._instrument_integration", lambda _module, _class: False)
-    valid = _Valid()
-    set_span_customizers([valid])
     monkeypatch.setenv("BRAINTRUST_OTEL_COMPAT", "true")
-    with caplog.at_level(logging.ERROR, logger="braintrust"):
-        # A different hook makes replacement of the previous registration observable.
-        set_span_customizers([SpanCustomizer()])
-        assert len(caplog.records) == 1
-        assert caplog.records[0].levelno == logging.ERROR
-        assert _customize_span_export({"output": "secret"}) == {"output": "valid"}
-
-        auto_instrument(span_customizers=[SpanCustomizer()])
-        assert len(caplog.records) == 2
-        assert caplog.records[1].levelno == logging.ERROR
-        # Record processing must neither replace the previous hooks nor repeat the diagnostic.
-        for output in ("first", "second"):
-            assert _customize_span_export({"output": output}) == {"output": "valid"}
-        assert len(caplog.records) == 2
-
-        # Both clearing forms remain silent, including through auto_instrument.
-        auto_instrument(span_customizers=[])
-        assert _customize_span_export({"output": "secret"}) == {"output": "secret"}
-        monkeypatch.setenv("BRAINTRUST_OTEL_COMPAT", "false")
-        set_span_customizers([valid])
-        assert _customize_span_export({"output": "secret"}) == {"output": "valid"}
-        monkeypatch.setenv("BRAINTRUST_OTEL_COMPAT", "true")
-        set_span_customizers(None)
-        assert _customize_span_export({"output": "secret"}) == {"output": "secret"}
-        assert len(caplog.records) == 2
+    set_span_customizers([SpanCustomizer()])
+    auto_instrument(span_customizers=[_Valid()])
+    assert _customize_span_export({"output": "secret"}) == {"output": "valid"}
+    auto_instrument(span_customizers=[])
+    assert _customize_span_export({"output": "secret"}) == {"output": "secret"}
+    assert not caplog.records
 
 
 def test_duck_typed_customizers_are_accepted():
