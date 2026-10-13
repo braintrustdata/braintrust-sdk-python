@@ -1,4 +1,8 @@
+import base64
+from pathlib import Path
+
 import pytest
+from braintrust import Attachment
 from braintrust.integrations.litellm.tracing import _parse_metrics_from_usage as parse_litellm_usage
 from braintrust.integrations.openai.tracing import _decisions_input, _decisions_output
 from braintrust.integrations.openai.tracing import _parse_metrics_from_usage as parse_openai_usage
@@ -23,6 +27,50 @@ DECISIONS_QUESTIONS = [
     },
     {"type": "predicate", "instructions": "Does the customer like the product?"},
 ]
+
+
+def decisions_image_input():
+    image = (Path(__file__).parent.parent / "fixtures" / "test-image.png").read_bytes()
+    return [
+        {
+            "role": "user",
+            "content": [
+                {"type": "input_text", "text": DECISIONS_INPUT},
+                {
+                    "type": "input_image",
+                    "image_url": "data:image/png;base64," + base64.b64encode(image).decode(),
+                    "detail": "low",
+                },
+            ],
+        }
+    ]
+
+
+def assert_decisions_image_span(spans, response, messages):
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["span_attributes"]["type"] == "decision"
+    image = span["input"]["state"][0]["content"][1]
+    attachment = image["image_url"]["url"]
+    assert isinstance(attachment, Attachment)
+    original = messages[0]["content"][1]
+    assert original["type"] == "input_image"
+    assert original["detail"] == "low"
+    assert attachment.data == base64.b64decode(original["image_url"].split(",", 1)[1])
+    assert attachment.reference["content_type"] == "image/png"
+    assert attachment.reference["filename"] == "image.png"
+    assert span["input"]["state"] == [
+        {
+            **messages[0],
+            "content": [
+                messages[0]["content"][0],
+                {"type": "image_url", "image_url": {"url": attachment, "detail": "low"}},
+            ],
+        }
+    ]
+    assert span["output"]["answers"] == [
+        {"id": "positive", "type": "boolean", "probability": response.answers[0].probability}
+    ]
 
 
 def assert_decisions_span(spans, response, *, name, model, instrumentation, start=None, end=None):

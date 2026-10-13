@@ -21,7 +21,9 @@ from braintrust.integrations.test_decisions import (
     DECISIONS_INPUT,
     DECISIONS_MODEL,
     DECISIONS_QUESTIONS,
+    assert_decisions_image_span,
     assert_decisions_span,
+    decisions_image_input,
 )
 from braintrust.integrations.test_utils import assert_metrics_are_valid, verify_autoinstrument_script
 from braintrust.integrations.utils import _try_to_dict
@@ -257,6 +259,25 @@ async def test_openai_decisions_iterable_input(memory_logger, is_async):
     assert spans[0]["output"]["answers"] == [
         {"id": "positive", "type": "boolean", "probability": response.answers[0].probability}
     ]
+
+
+@sync_async
+@pytest.mark.asyncio
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "query", "body"])
+async def test_openai_decisions_image(memory_logger, is_async):
+    if not version_satisfies(openai.__version__, ">=3.26.0"):
+        pytest.skip("Decisions requires OpenAI >=3.26.0")
+
+    messages = decisions_image_input()
+    client = wrap_openai(_client(is_async))
+    response = await _call(
+        is_async,
+        client.decisions.create,
+        model=DECISIONS_MODEL,
+        input=messages,
+        questions=DECISIONS_QUESTIONS[:1],
+    )
+    assert_decisions_image_span(memory_logger.pop(), response, messages)
 
 
 @sync_async

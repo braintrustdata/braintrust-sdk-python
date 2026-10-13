@@ -1,0 +1,79 @@
+interactions:
+- request:
+    body: '{"model":"gpt-6-luna","input":[{"role":"user","type":"message","content":[{"type":"input_text","text":"The
+      customer says: I love this product!"},{"type":"input_image","image_url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAFElEQVR42mP4z8DwnxjMMKqQvgoBksPHOXvuG4oAAAAASUVORK5CYII=","detail":"low"}]}],"questions":[{"type":"predicate","name":"positive","instructions":"Is
+      the sentiment positive?"}]}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '424'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - litellm/1.105.0
+    method: POST
+    uri: https://api.openai.com/v1/decisions
+  response:
+    body:
+      string: '{"model":"gpt-6-luna","answers":[{"type":"predicate","name":"positive","probability":1.0}],"usage":{"input_tokens":164,"input_tokens_details":{"cached_tokens":0,"cache_write_tokens":0},"output_tokens":0,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":164}}'
+    headers:
+      access-control-allow-origin:
+      - '*'
+      access-control-expose-headers:
+      - x-request-id,retry-after,server-timing-total
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a4a0e0868aa48ea1-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '270'
+      content-type:
+      - application/json
+      date:
+      - Tue, 13 Oct 2026 19:51:06 GMT
+      openai-processing-ms:
+      - '60'
+      server:
+      - cloudflare
+      server-timing-total:
+      - '60.500'
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - origin, access-control-request-method, access-control-request-headers
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '180000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '179999835'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_068b966cce534bdf911aa85c410110f2
+    status:
+      code: 200
+      message: OK
+version: 1

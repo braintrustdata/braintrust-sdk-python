@@ -12,7 +12,9 @@ from braintrust.integrations.test_decisions import (
     DECISIONS_INPUT,
     DECISIONS_MODEL,
     DECISIONS_QUESTIONS,
+    assert_decisions_image_span,
     assert_decisions_span,
+    decisions_image_input,
 )
 from braintrust.integrations.test_utils import (
     assert_metrics_are_valid,
@@ -309,6 +311,24 @@ def test_litellm_decisions_metrics(memory_logger, is_async):
         start=start,
         end=end,
     )
+
+
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "query", "body"])
+@sync_async
+def test_litellm_decisions_image(memory_logger, is_async):
+    if not version_satisfies(detect_module_version(litellm, ("litellm",)), ">=1.105.0"):
+        pytest.skip("Decisions requires LiteLLM >=1.105.0")
+
+    messages = decisions_image_input()
+    response = _run(
+        is_async,
+        litellm.decisions,
+        litellm.adecisions,
+        model=f"openai/{DECISIONS_MODEL}",
+        input=messages,
+        questions=DECISIONS_QUESTIONS[:1],
+    )
+    assert_decisions_image_span(memory_logger.pop(), response, messages)
 
 
 @pytest.mark.vcr

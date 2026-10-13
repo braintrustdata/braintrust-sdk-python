@@ -279,6 +279,17 @@ def _process_attachments_in_input(input_data: Any) -> Any:
         return [_process_attachments_in_input(item) for item in input_data]
 
     if isinstance(input_data, dict):
+        if input_data.get("type") == "input_image" and isinstance(input_data.get("image_url"), str):
+            resolved = _materialize_attachment(input_data["image_url"])
+            if resolved is None:
+                return input_data
+            image_part = dict(input_data)
+            image_part["type"] = "image_url"
+            image_part["image_url"] = {"url": resolved.attachment}
+            if "detail" in image_part:
+                image_part["image_url"]["detail"] = image_part.pop("detail")
+            return image_part
+
         if (
             input_data.get("type") == "image_url"
             and isinstance(input_data.get("image_url"), dict)
@@ -2073,6 +2084,7 @@ def _decision_choice_keys(question: dict[str, Any]) -> dict[tuple[type, Any], st
 
 def _decisions_input(state: Any, questions: Any) -> dict[str, Any]:
     try:
+        state = _process_attachments_in_input(state)
         if isinstance(questions, Mapping):
             return _question_span_input(state, questions)
         questions = [_try_to_dict(question) for question in questions]
@@ -2166,9 +2178,7 @@ def _decisions_span_params(params: dict[str, Any]) -> dict[str, Any]:
     return merge_dicts(
         ret,
         {
-            "input": _decisions_input(
-                _process_attachments_in_input(params.get("input")), params.get("questions") or []
-            ),
+            "input": _decisions_input(params.get("input"), params.get("questions") or []),
             "metadata": _filter_metadata(params, ("model",)),
         },
     )
