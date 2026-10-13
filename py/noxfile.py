@@ -554,6 +554,7 @@ PYDANTIC_AI_WRAP_OPENAI_VERSIONS = _get_matrix_versions("pydantic-ai-wrap-openai
 @nox.session()
 @nox.parametrize("version", PYDANTIC_AI_INTEGRATION_VERSIONS, ids=PYDANTIC_AI_INTEGRATION_VERSIONS)
 def test_pydantic_ai_integration(session, version):
+    _skip_if_incompatible(session)
     _install_test_deps(session)
     # Pydantic AI 1.10.0 imports opentelemetry._events, removed in opentelemetry-api 1.40.
     constraint_group = "test-pydantic-ai-otel-events" if version == "1.10.0" else None
@@ -565,6 +566,7 @@ def test_pydantic_ai_integration(session, version):
 @nox.parametrize("version", PYDANTIC_AI_INTEGRATION_VERSIONS, ids=PYDANTIC_AI_INTEGRATION_VERSIONS)
 def test_pydantic_ai_logfire(session, version):
     """Test pydantic_ai + logfire coexistence (issue #1324)."""
+    _skip_if_incompatible(session)
     _install_test_deps(session, "test-pydantic-ai-logfire")
     _install_matrix_dep(session, "pydantic-ai-integration", version, "test-pydantic-ai-logfire-constraints")
     _run_tests(session, f"{INTEGRATION_DIR}/pydantic_ai/test_pydantic_ai_logfire.py", version=version)
@@ -574,6 +576,7 @@ def test_pydantic_ai_logfire(session, version):
 @nox.parametrize("version", PYDANTIC_AI_WRAP_OPENAI_VERSIONS, ids=PYDANTIC_AI_WRAP_OPENAI_VERSIONS)
 def test_pydantic_ai_wrap_openai(session, version):
     """Test pydantic_ai with wrap_openai() approach - supports older versions."""
+    _skip_if_incompatible(session)
     _install_test_deps(session)
     # These versions import opentelemetry._events, removed in opentelemetry-api 1.40.
     constraint_group = "test-pydantic-ai-otel-events" if version in {"0.1.9", "1.0.1"} else None
@@ -920,6 +923,7 @@ def pylint(session):
         "agentscope": (3, 11),
         "harbor": (3, 12),
         "pipecat-ai": (3, 11),
+        "pydantic-ai-integration": (3, 11),
     }
     for package in _VENDOR_TABLE:
         if sys.version_info[:2] < minimum_python.get(package, (3, 10)):
