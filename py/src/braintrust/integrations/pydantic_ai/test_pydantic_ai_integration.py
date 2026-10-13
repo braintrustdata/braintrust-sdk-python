@@ -2160,6 +2160,8 @@ def _assert_conversation_input(spans, conversation, output, method):
 )
 async def test_agent_with_conversation(memory_logger, method):
     """Conversation history is captured on every async agent wrapper span."""
+    # Python 3.10 lint uses an older SDK; the version gate excludes it at runtime.
+    # pylint: disable=unexpected-keyword-arg
     agent = Agent(MODEL, name="conversation-agent", model_settings=ModelSettings(max_tokens=50))
     first_result = await agent.run("My name is Ada. Reply with just my name.")
     conversation = first_result.conversation
@@ -2191,6 +2193,8 @@ async def test_agent_with_conversation(memory_logger, method):
 )
 def test_agent_with_conversation_sync(memory_logger, method):
     """Conversation history is captured on every sync agent wrapper span."""
+    # Python 3.10 lint uses an older SDK; the version gate excludes it at runtime.
+    # pylint: disable=unexpected-keyword-arg
     agent = Agent(MODEL, name="conversation-agent", model_settings=ModelSettings(max_tokens=50))
     first_result = agent.run_sync("My name is Ada. Reply with just my name.")
     conversation = first_result.conversation
