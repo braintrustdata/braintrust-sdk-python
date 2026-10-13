@@ -210,9 +210,9 @@ def load_backfill_snapshot(job_dir: str | Path) -> tuple[JobSnapshot, Any]:
     from harbor.models.trial.result import TrialResult
 
     directory = Path(job_dir).expanduser().resolve()
-    config = JobConfig.model_validate_json((directory / "config.json").read_text())
-    lock = JobLock.model_validate_json((directory / "lock.json").read_text())
-    job_result = JobResult.model_validate_json((directory / "result.json").read_text())
+    config = JobConfig.model_validate_json((directory / "config.json").read_text(encoding="utf-8"))
+    lock = JobLock.model_validate_json((directory / "lock.json").read_text(encoding="utf-8"))
+    job_result = JobResult.model_validate_json((directory / "result.json").read_text(encoding="utf-8"))
     results: list[Any] = []
     result_paths = {
         result_path.parent: result_path
@@ -221,7 +221,7 @@ def load_backfill_snapshot(job_dir: str | Path) -> tuple[JobSnapshot, Any]:
     }
     for result_path in result_paths.values():
         try:
-            trial_result = TrialResult.model_validate_json(result_path.read_text())
+            trial_result = TrialResult.model_validate_json(result_path.read_text(encoding="utf-8"))
             # A job directory may be moved before backfill. Resolve trial files
             # relative to the directory being backfilled, not the old jobs_dir.
             trial_result.config.trials_dir = directory
@@ -245,7 +245,7 @@ def load_backfill_snapshot(job_dir: str | Path) -> tuple[JobSnapshot, Any]:
     for result in results:
         trial_lock_path = trial_directory(result) / "lock.json"
         if trial_lock_path.exists():
-            trial_lock = TrialLock.model_validate_json(trial_lock_path.read_text())
+            trial_lock = TrialLock.model_validate_json(trial_lock_path.read_text(encoding="utf-8"))
         else:
             candidates = lock_by_name.get(result.task_name) or []
             trial_lock = candidates.pop(0) if candidates else None

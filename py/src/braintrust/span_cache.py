@@ -172,7 +172,7 @@ class SpanCache:
             self._cache_file_path = os.path.join(tempfile.gettempdir(), f"braintrust-span-cache-{unique_id}.jsonl")
 
             # Create the file
-            with open(self._cache_file_path, "w") as f:
+            with open(self._cache_file_path, "w", encoding="utf-8") as f:
                 pass
 
             self._initialized = True
@@ -239,7 +239,7 @@ class SpanCache:
             return
 
         try:
-            with open(self._cache_file_path, "a") as f:
+            with open(self._cache_file_path, "a", encoding="utf-8") as f:
                 for record in self._write_buffer:
                     f.write(json.dumps(record.to_dict()) + "\n")
             self._write_buffer.clear()
@@ -280,7 +280,7 @@ class SpanCache:
         # Read from disk if initialized
         if self._initialized and self._cache_file_path and os.path.exists(self._cache_file_path):
             try:
-                with open(self._cache_file_path, "r") as f:
+                with open(self._cache_file_path, "r", encoding="utf-8") as f:
                     for line in f:
                         line = line.strip()
                         if not line:

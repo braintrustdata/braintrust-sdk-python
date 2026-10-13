@@ -12,7 +12,9 @@ try:
     import orjson
 
     _HAS_ORJSON = True
-except ImportError:
+# Not just ImportError: orjson 3.12.0 raises SystemError on import under
+# Python 3.15's `-X lazy_imports=all`.
+except Exception:
     _HAS_ORJSON = False
 
 

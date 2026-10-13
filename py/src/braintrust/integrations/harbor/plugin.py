@@ -829,7 +829,7 @@ class HarborPlugin:
         extra_instructions: list[str] = []
         for path in getattr(result.config, "extra_instruction_paths", []) or []:
             try:
-                extra_instructions.append(Path(path).read_text())
+                extra_instructions.append(Path(path).read_text(encoding="utf-8"))
             except OSError:
                 continue
         if extra_instructions:
@@ -1029,7 +1029,7 @@ class HarborPlugin:
         }
         path = self._snapshot.job_dir / "braintrust-sync.json"
         temp_path = path.with_suffix(".json.tmp")
-        temp_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+        temp_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         os.replace(temp_path, path)
         self._manifest = manifest
 
@@ -1037,7 +1037,7 @@ class HarborPlugin:
     def _load_manifest(job_dir: Path) -> dict[str, Any]:
         path = job_dir / "braintrust-sync.json"
         try:
-            data = json.loads(path.read_text())
+            data = json.loads(path.read_text(encoding="utf-8"))
             return data if isinstance(data, dict) else {}
         except (OSError, json.JSONDecodeError):
             return {}
@@ -1085,7 +1085,7 @@ class HarborPlugin:
         }
         path = snapshot.job_dir / "braintrust-sync.json"
         temp_path = path.with_suffix(".json.tmp")
-        temp_path.write_text(json.dumps(manifest, indent=2, sort_keys=True, default=str) + "\n")
+        temp_path.write_text(json.dumps(manifest, indent=2, sort_keys=True, default=str) + "\n", encoding="utf-8")
         os.replace(temp_path, path)
         self._manifest = manifest
 

@@ -164,7 +164,7 @@ def load_specs(
         if providers is not None and provider_dir not in providers:
             continue
 
-        with open(yaml_path) as f:
+        with open(yaml_path, encoding="utf-8") as f:
             data = yaml.load(f, Loader=loader_cls)  # noqa: S506 — intentional, custom loader
 
         spec = LlmSpanSpec.from_dict(data, source_path=yaml_path)

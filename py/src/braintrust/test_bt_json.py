@@ -2,10 +2,13 @@
 # pyright: reportUnknownArgumentType=false
 # pyright: reportPrivateUsage=false
 import json
+import subprocess
+import sys
 import warnings
 from typing import Any
 from unittest import TestCase
 
+import pytest
 from braintrust.bt_json import bt_dumps, bt_safe_deep_copy
 from braintrust.logger import Attachment, ExternalAttachment
 from braintrust.test_helpers import with_memory_logger  # noqa: F401
@@ -690,3 +693,43 @@ class TestBTJsonAttachments(TestCase):
         # bt_dumps succeeds because the circular ref was sanitized
         json_str = bt_dumps(result)
         self.assertIn("<circular reference>", json_str)
+
+
+_BROKEN_ORJSON_SCRIPT = """
+import importlib.abc
+import sys
+
+class BrokenOrjson(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname == "orjson" or fullname.startswith("orjson."):
+            raise SystemError("simulated orjson import failure")
+        return None
+
+sys.meta_path.insert(0, BrokenOrjson())
+from braintrust.bt_json import _HAS_ORJSON, bt_dumps
+
+assert not _HAS_ORJSON
+print(bt_dumps({"b": 1, "a": "\u00e9t\u00e9"}))
+"""
+
+
+@pytest.mark.parametrize(
+    "lazy_imports",
+    [
+        False,
+        pytest.param(
+            True,
+            marks=pytest.mark.skipif(sys.version_info < (3, 15), reason="global lazy imports require Python 3.15+"),
+        ),
+    ],
+)
+def test_bt_json_falls_back_to_json_when_orjson_import_fails(lazy_imports):
+    # orjson 3.12.0 raises SystemError (not ImportError) on import under
+    # Python 3.15's `-X lazy_imports=all`.
+    flags = ["-X", "lazy_imports=all"] if lazy_imports else []
+    result = subprocess.run(
+        [sys.executable, *flags, "-c", _BROKEN_ORJSON_SCRIPT], check=False, capture_output=True, text=True
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout) == {"a": "\u00e9t\u00e9", "b": 1}

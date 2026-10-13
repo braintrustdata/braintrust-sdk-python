@@ -31,7 +31,7 @@ def _pkg_install_arg(pkg) -> str | None:
         dist = importlib.metadata.distribution(pkg)
         direct_url = dist._path / "direct_url.json"  # type: ignore
         if direct_url.exists():
-            with open(direct_url) as f:
+            with open(direct_url, encoding="utf-8") as f:
                 j = json.loads(f.read())
                 if "url" in j:
                     return j["url"]

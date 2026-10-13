@@ -9,6 +9,7 @@ import json
 import logging
 import operator
 import os
+import subprocess
 import sys
 import threading
 import time
@@ -3670,3 +3671,30 @@ def test_proxy_conn_base_url(proxy_url, expected_base_url):
     state = BraintrustState()
     state.proxy_url = proxy_url
     assert state.proxy_conn().base_url == expected_base_url
+
+
+_WRITE_PAYLOAD_SCRIPT = """
+import sys
+import warnings
+
+from braintrust.logger import _HTTPBackgroundLogger
+
+warnings.simplefilter("error", EncodingWarning)
+_HTTPBackgroundLogger._write_payload_to_dir(payload_dir=sys.argv[1], payload='{"input":"\u4f60\u597d \u00e9t\u00e9"}')
+"""
+
+
+def test_write_payload_to_dir_uses_utf8(tmp_path):
+    # orjson output keeps non-ASCII characters, so the dump must not depend on
+    # the locale encoding (e.g. cp1252 on Windows before Python 3.15).
+    result = subprocess.run(
+        [sys.executable, "-X", "warn_default_encoding", "-c", _WRITE_PAYLOAD_SCRIPT, str(tmp_path)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stderr == ""
+    [payload_file] = tmp_path.iterdir()
+    assert payload_file.read_text(encoding="utf-8") == '{"input":"\u4f60\u597d \u00e9t\u00e9"}'
