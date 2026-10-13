@@ -49,6 +49,7 @@ _CHAT_METADATA_KEYS = (
     "temperature",
     "top_p",
     "max_tokens",
+    "min_tokens",
     "stop",
     "random_seed",
     "response_format",
@@ -56,6 +57,12 @@ _CHAT_METADATA_KEYS = (
     "tool_choice",
     "presence_penalty",
     "frequency_penalty",
+    "repetition_penalty",
+    "top_k",
+    "logprobs",
+    "top_logprobs",
+    "prompt_logprobs",
+    "top_prompt_logprobs",
     "n",
     "prediction",
     "parallel_tool_calls",
@@ -68,6 +75,7 @@ _AGENTS_METADATA_KEYS = (
     "agent_id",
     "service_tier",
     "max_tokens",
+    "min_tokens",
     "stop",
     "random_seed",
     "response_format",
@@ -75,6 +83,12 @@ _AGENTS_METADATA_KEYS = (
     "tool_choice",
     "presence_penalty",
     "frequency_penalty",
+    "repetition_penalty",
+    "top_k",
+    "logprobs",
+    "top_logprobs",
+    "prompt_logprobs",
+    "top_prompt_logprobs",
     "n",
     "prediction",
     "parallel_tool_calls",
@@ -783,6 +797,10 @@ def _aggregate_completion_events(items: list[Any]) -> dict[str, Any]:
                 },
             )
             message = accumulated["message"]
+            for key in ("logprobs", "prompt_logprobs"):
+                logprobs = _normalized_mistral_dict(_get_value(choice, key))
+                if logprobs is not None:
+                    accumulated.setdefault(key, {"content": []})["content"].extend(logprobs.get("content") or [])
             delta = getattr(choice, "delta", None)
             if delta is None:
                 continue
