@@ -2781,6 +2781,7 @@ SpanType: TypeAlias = Literal[
     'preprocessor',
     'classifier',
     'review',
+    'decision',
     'question',
     'log',
 ]
