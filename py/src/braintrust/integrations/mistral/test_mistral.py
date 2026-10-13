@@ -43,6 +43,8 @@ except ImportError:
 PROJECT_NAME = "test-mistral-sdk"
 CHAT_MODEL = "mistral-small-latest"
 AGENT_MODEL = CHAT_MODEL
+# This model supports logprobs and the additional sampling parameters.
+LOGPROBS_MODEL = "zai-glm-5-3"
 EMBEDDING_MODEL = "mistral-embed"
 FIM_MODEL = "codestral-latest"
 OCR_MODEL = "mistral-ocr-latest"
@@ -155,10 +157,10 @@ def mistral_client(request, monkeypatch):
     return wrap_mistral(_get_client())
 
 
-def _completion_params(method):
+def _completion_params(method, *, stream=False):
     if "logprobs" not in inspect.signature(method).parameters:
         return {}
-    return {
+    params = {
         "logprobs": True,
         "top_logprobs": 2,
         "prompt_logprobs": True,
@@ -167,6 +169,11 @@ def _completion_params(method):
         "repetition_penalty": 1.1,
         "top_k": 20,
     }
+    if stream:
+        # This model only returns prompt probabilities for non-streamed calls.
+        del params["prompt_logprobs"]
+        del params["top_prompt_logprobs"]
+    return params
 
 
 def _assert_completion_params(span, params):
@@ -180,7 +187,7 @@ def _assert_completion_logprobs(span, response):
         assert hasattr(expected, "content") and expected.content, (
             f"Expected populated {key}; re-record this cassette with Mistral 3.2.0."
         )
-        assert span["output"][0][key] == expected.model_dump(mode="python", by_alias=True)
+        assert span["output"][0][key] == expected.model_dump(exclude_none=True)
 
 
 def _weather_tool():
@@ -206,12 +213,12 @@ def _assert_ocr_metrics_are_valid(metrics, start, end):
 
 
 @contextmanager
-def _temporary_agent(client):
+def _temporary_agent(client, *, model=AGENT_MODEL):
     manager = getattr(getattr(client, "beta", None), "agents", None)
     assert manager is not None, "Mistral beta.agents is required for agent tests"
 
     agent = manager.create(
-        model=AGENT_MODEL,
+        model=model,
         name=f"braintrust-test-agent-{int(time.time() * 1000)}",
         instructions="You are concise. Keep responses under five words.",
     )
@@ -230,11 +237,12 @@ def test_wrap_mistral_chat_complete_sync(memory_logger):
 
     client = wrap_mistral(_get_client())
     params = _completion_params(client.chat.complete)
+    model = LOGPROBS_MODEL if params else CHAT_MODEL
     start = time.time()
     response = client.chat.complete(
-        model=CHAT_MODEL,
+        model=model,
         messages=[{"role": "user", "content": "What is 2+2? Reply with just the number."}],
-        max_tokens=10,
+        max_tokens=256 if params else 10,
         **params,
     )
     end = time.time()
@@ -248,7 +256,7 @@ def test_wrap_mistral_chat_complete_sync(memory_logger):
     assert span["context"]["span_origin"]["instrumentation"]["name"] == "mistral-auto"
     assert span["input"] == [{"role": "user", "content": "What is 2+2? Reply with just the number."}]
     assert span["metadata"]["provider"] == "mistral"
-    assert span["metadata"]["model"] == CHAT_MODEL
+    assert span["metadata"]["model"] == model
     _assert_completion_params(span, params)
     if params:
         _assert_completion_logprobs(span, response)
@@ -310,12 +318,13 @@ def test_wrap_mistral_chat_stream_sync(memory_logger):
     assert not memory_logger.pop()
 
     client = wrap_mistral(_get_client())
-    params = _completion_params(client.chat.stream)
+    params = _completion_params(client.chat.stream, stream=True)
+    model = LOGPROBS_MODEL if params else CHAT_MODEL
     start = time.time()
     with client.chat.stream(
-        model=CHAT_MODEL,
+        model=model,
         messages=[{"role": "user", "content": "What is 5+5? Reply with just the number."}],
-        max_tokens=10,
+        max_tokens=256 if params else 10,
         **params,
     ) as stream:
         chunks = list(stream)
@@ -323,10 +332,12 @@ def test_wrap_mistral_chat_stream_sync(memory_logger):
 
     assert chunks
     streamed_text = "".join(
-        choice.delta.content or ""
+        content
+        if isinstance(content := choice.delta.content, str)
+        else "".join(getattr(part, "text", "") for part in content or [])
         for chunk in chunks
         for choice in (chunk.data.choices or [])
-        if getattr(choice, "delta", None) is not None and isinstance(choice.delta.content, str)
+        if getattr(choice, "delta", None) is not None
     )
     assert "10" in streamed_text
 
@@ -334,20 +345,19 @@ def test_wrap_mistral_chat_stream_sync(memory_logger):
     assert len(spans) == 1
     span = spans[0]
     assert span["metadata"]["provider"] == "mistral"
-    assert span["metadata"]["model"] == CHAT_MODEL
+    assert span["metadata"]["model"] == model
     assert span["metadata"]["stream"] == True
     _assert_completion_params(span, params)
     if params:
-        for key in ("logprobs", "prompt_logprobs"):
-            expected_content = [
-                token.model_dump(mode="python", by_alias=True)
-                for chunk in chunks
-                for choice in chunk.data.choices
-                if hasattr(logprobs := getattr(choice, key), "content")
-                for token in logprobs.content
-            ]
-            assert expected_content, f"Expected populated {key}; re-record this cassette with Mistral 3.2.0."
-            assert span["output"][0][key]["content"] == expected_content
+        expected_content = [
+            token.model_dump(mode="python", by_alias=True)
+            for chunk in chunks
+            for choice in chunk.data.choices
+            if hasattr(logprobs := choice.logprobs, "content")
+            for token in logprobs.content
+        ]
+        assert expected_content, "Expected populated logprobs; re-record this cassette with Mistral 3.2.0."
+        assert span["output"][0]["logprobs"]["content"] == expected_content
     assert span["metrics"]["time_to_first_token"] >= 0
     assert "10" in str(span["output"])
     assert_metrics_are_valid(span["metrics"], start, end)
@@ -577,12 +587,12 @@ def test_wrap_mistral_agents_complete_sync(memory_logger):
 
     client = wrap_mistral(_get_client())
     params = _completion_params(client.agents.complete)
-    with _temporary_agent(client) as agent_id:
+    with _temporary_agent(client, model=LOGPROBS_MODEL if params else AGENT_MODEL) as agent_id:
         start = time.time()
         response = client.agents.complete(
             agent_id=agent_id,
             messages=[{"role": "user", "content": "What is 8+1? Reply with just the number."}],
-            max_tokens=10,
+            max_tokens=256 if params else 10,
             **params,
         )
         end = time.time()

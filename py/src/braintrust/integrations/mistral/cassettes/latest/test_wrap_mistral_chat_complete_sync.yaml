@@ -1,27 +1,151 @@
 interactions:
 - request:
-    body: '{"model":"mistral-small-latest","messages":[{"content":"What is 2+2? Reply
-      with just the number.","role":"user"}],"max_tokens":10,"stream":false}'
+    body: '{"model":"zai-glm-5-3","messages":[{"content":"What is 2+2? Reply with
+      just the number.","role":"user"}],"max_tokens":256,"stream":false,"min_tokens":1,"repetition_penalty":1.1,"top_k":20,"logprobs":true,"top_logprobs":2,"prompt_logprobs":true,"top_prompt_logprobs":2}'
     headers:
       accept:
       - application/json
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
-      - '145'
+      - '268'
       content-type:
       - application/json
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.9.0
+      - mistral-client-python/3.2.0
     method: POST
     uri: https://api.mistral.ai/v1/chat/completions
   response:
     body:
-      string: '{"id":"3cc9fec7b43a4465afd589cb3ad74192","created":1785860145,"model":"mistral-small-latest","usage":{"prompt_tokens":28,"total_tokens":30,"completion_tokens":2,"prompt_tokens_details":{"cached_tokens":0},"service_tier":"standard"},"object":"chat.completion","choices":[{"index":0,"finish_reason":"stop","message":{"role":"assistant","tool_calls":null,"content":"4"}}]}'
+      string: '{"id":"4078d421d467439ba16718dd36c4ac23","created":1791905192,"model":"zai-glm-5-3","usage":{"prompt_tokens":25,"total_tokens":78,"completion_tokens":53,"prompt_tokens_details":{"cached_tokens":0}},"object":"chat.completion","choices":[{"index":0,"finish_reason":"stop","message":{"role":"assistant","index":0,"content":[{"type":"thinking","thinking":[{"type":"text","text":"The
+        user asks \"What is 2+2?\" and wants me to reply with just the number.\n\n2+2
+        = 4\n\nThey explicitly asked for just the number, so I should respond with
+        only \"4\" without any additional text."}],"closed":true},{"type":"text","text":"4"}]},"logprobs":{"content":[{"token":"The","logprob":-0.0167945995926857,"bytes":[84,104,101],"token_id":-1,"top_logprobs":[{"token":"The","logprob":-0.0167945995926857,"bytes":[84,104,101],"token_id":-1},{"token":"This","logprob":-4.141794681549072,"bytes":[84,104,105,115],"token_id":-1}]},{"token":"
+        user","logprob":-0.004732123576104641,"bytes":[32,117,115,101,114],"token_id":-1,"top_logprobs":[{"token":"
+        user","logprob":-0.004732123576104641,"bytes":[32,117,115,101,114],"token_id":-1},{"token":"
+        question","logprob":-5.379732131958008,"bytes":[32,113,117,101,115,116,105,111,110],"token_id":-1}]},{"token":"
+        asks","logprob":-1.4847524166107178,"bytes":[32,97,115,107,115],"token_id":-1,"top_logprobs":[{"token":"
+        asks","logprob":-1.4847524166107178,"bytes":[32,97,115,107,115],"token_id":-1},{"token":"
+        is","logprob":-0.3597524166107178,"bytes":[32,105,115],"token_id":-1}]},{"token":"
+        \"","logprob":-1.2936851978302002,"bytes":[32,34],"token_id":-1,"top_logprobs":[{"token":"
+        \"","logprob":-1.2936851978302002,"bytes":[32,34],"token_id":-1},{"token":"
+        a","logprob":-0.6686851978302002,"bytes":[32,97],"token_id":-1}]},{"token":"What","logprob":-0.0002317160106031224,"bytes":[87,104,97,116],"token_id":-1,"top_logprobs":[{"token":"What","logprob":-0.0002317160106031224,"bytes":[87,104,97,116],"token_id":-1},{"token":"2","logprob":-8.500231742858887,"bytes":[50],"token_id":-1}]},{"token":"
+        is","logprob":-1.9073468138230965e-06,"bytes":[32,105,115],"token_id":-1,"top_logprobs":[{"token":"
+        is","logprob":-1.9073468138230965e-06,"bytes":[32,105,115],"token_id":-1},{"token":"
+        ","logprob":-13.625001907348633,"bytes":[32],"token_id":-1}]},{"token":" ","logprob":-8.344646857949556e-07,"bytes":[32],"token_id":-1,"top_logprobs":[{"token":"
+        ","logprob":-8.344646857949556e-07,"bytes":[32],"token_id":-1},{"token":"
+        the","logprob":-14.500000953674316,"bytes":[32,116,104,101],"token_id":-1}]},{"token":"2","logprob":-2.7418097943154862e-06,"bytes":[50],"token_id":-1,"top_logprobs":[{"token":"2","logprob":-2.7418097943154862e-06,"bytes":[50],"token_id":-1},{"token":"4","logprob":-14.43750286102295,"bytes":[52],"token_id":-1}]},{"token":"+","logprob":-1.9073468138230965e-06,"bytes":[43],"token_id":-1,"top_logprobs":[{"token":"+","logprob":-1.9073468138230965e-06,"bytes":[43],"token_id":-1},{"token":"
+        +","logprob":-13.500001907348633,"bytes":[32,43],"token_id":-1}]},{"token":"2","logprob":-2.0265558760002023e-06,"bytes":[50],"token_id":-1,"top_logprobs":[{"token":"2","logprob":-2.0265558760002023e-06,"bytes":[50],"token_id":-1},{"token":"?\"","logprob":-14.562501907348633,"bytes":[63,34],"token_id":-1}]},{"token":"?\"","logprob":-1.2238450050354004,"bytes":[63,34],"token_id":-1,"top_logprobs":[{"token":"?\"","logprob":-1.2238450050354004,"bytes":[63,34],"token_id":-1},{"token":"?","logprob":-0.34884506464004517,"bytes":[63],"token_id":-1}]},{"token":"
+        and","logprob":-0.0008503158460371196,"bytes":[32,97,110,100],"token_id":-1,"top_logprobs":[{"token":"
+        and","logprob":-0.0008503158460371196,"bytes":[32,97,110,100],"token_id":-1},{"token":"
+        with","logprob":-7.375850200653076,"bytes":[32,119,105,116,104],"token_id":-1}]},{"token":"
+        wants","logprob":-1.280053734779358,"bytes":[32,119,97,110,116,115],"token_id":-1,"top_logprobs":[{"token":"
+        wants","logprob":-1.280053734779358,"bytes":[32,119,97,110,116,115],"token_id":-1},{"token":"
+        explicitly","logprob":-0.9050537347793579,"bytes":[32,101,120,112,108,105,99,105,116,108,121],"token_id":-1}]},{"token":"
+        me","logprob":-0.43099257349967957,"bytes":[32,109,101],"token_id":-1,"top_logprobs":[{"token":"
+        me","logprob":-0.43099257349967957,"bytes":[32,109,101],"token_id":-1},{"token":"
+        just","logprob":-1.055992603302002,"bytes":[32,106,117,115,116],"token_id":-1}]},{"token":"
+        to","logprob":-2.3841855067985307e-07,"bytes":[32,116,111],"token_id":-1,"top_logprobs":[{"token":"
+        to","logprob":-2.3841855067985307e-07,"bytes":[32,116,111],"token_id":-1},{"token":"
+        \"","logprob":-15.75,"bytes":[32,34],"token_id":-1}]},{"token":" reply","logprob":-0.0007908792467787862,"bytes":[32,114,101,112,108,121],"token_id":-1,"top_logprobs":[{"token":"
+        reply","logprob":-0.0007908792467787862,"bytes":[32,114,101,112,108,121],"token_id":-1},{"token":"
+        \"","logprob":-7.250791072845459,"bytes":[32,34],"token_id":-1}]},{"token":"
+        with","logprob":-2.3841830625315197e-06,"bytes":[32,119,105,116,104],"token_id":-1,"top_logprobs":[{"token":"
+        with","logprob":-2.3841830625315197e-06,"bytes":[32,119,105,116,104],"token_id":-1},{"token":"
+        \"","logprob":-13.000001907348633,"bytes":[32,34],"token_id":-1}]},{"token":"
+        just","logprob":-2.777537883957848e-05,"bytes":[32,106,117,115,116],"token_id":-1,"top_logprobs":[{"token":"
+        just","logprob":-2.777537883957848e-05,"bytes":[32,106,117,115,116],"token_id":-1},{"token":"
+        \"","logprob":-10.500027656555176,"bytes":[32,34],"token_id":-1}]},{"token":"
+        the","logprob":-1.5258672647178173e-05,"bytes":[32,116,104,101],"token_id":-1,"top_logprobs":[{"token":"
+        the","logprob":-1.5258672647178173e-05,"bytes":[32,116,104,101],"token_id":-1},{"token":"
+        a","logprob":-11.125015258789062,"bytes":[32,97],"token_id":-1}]},{"token":"
+        number","logprob":-3.814689989667386e-06,"bytes":[32,110,117,109,98,101,114],"token_id":-1,"top_logprobs":[{"token":"
+        number","logprob":-3.814689989667386e-06,"bytes":[32,110,117,109,98,101,114],"token_id":-1},{"token":"
+        answer","logprob":-12.750003814697266,"bytes":[32,97,110,115,119,101,114],"token_id":-1}]},{"token":".\n\n","logprob":-0.5235103368759155,"bytes":[46,10,10],"token_id":-1,"top_logprobs":[{"token":".\n\n","logprob":-0.5235103368759155,"bytes":[46,10,10],"token_id":-1},{"token":".","logprob":-0.8985103368759155,"bytes":[46],"token_id":-1}]},{"token":"2","logprob":-0.11548171937465668,"bytes":[50],"token_id":-1,"top_logprobs":[{"token":"2","logprob":-0.11548171937465668,"bytes":[50],"token_id":-1},{"token":"The","logprob":-2.4904816150665283,"bytes":[84,104,101],"token_id":-1}]},{"token":"+","logprob":-0.043050725013017654,"bytes":[43],"token_id":-1,"top_logprobs":[{"token":"+","logprob":-0.043050725013017654,"bytes":[43],"token_id":-1},{"token":"
+        +","logprob":-3.168050765991211,"bytes":[32,43],"token_id":-1}]},{"token":"2","logprob":-1.311301275563892e-06,"bytes":[50],"token_id":-1,"top_logprobs":[{"token":"2","logprob":-1.311301275563892e-06,"bytes":[50],"token_id":-1},{"token":"4","logprob":-14.625000953674316,"bytes":[52],"token_id":-1}]},{"token":"
+        =","logprob":-0.003689507720991969,"bytes":[32,61],"token_id":-1,"top_logprobs":[{"token":"
+        =","logprob":-0.003689507720991969,"bytes":[32,61],"token_id":-1},{"token":"=","logprob":-5.628689289093018,"bytes":[61],"token_id":-1}]},{"token":"
+        ","logprob":-4.172316494077677e-06,"bytes":[32],"token_id":-1,"top_logprobs":[{"token":"
+        ","logprob":-4.172316494077677e-06,"bytes":[32],"token_id":-1},{"token":"</think>","logprob":-13.500003814697266,"bytes":[60,47,116,104,105,110,107,62],"token_id":-1}]},{"token":"4","logprob":-0.00017045476124621928,"bytes":[52],"token_id":-1,"top_logprobs":[{"token":"4","logprob":-0.00017045476124621928,"bytes":[52],"token_id":-1},{"token":"5","logprob":-9.625170707702637,"bytes":[53],"token_id":-1}]},{"token":"\n\n","logprob":-0.19981855154037476,"bytes":[10,10],"token_id":-1,"top_logprobs":[{"token":"\n\n","logprob":-0.19981855154037476,"bytes":[10,10],"token_id":-1},{"token":".\n\n","logprob":-2.0748186111450195,"bytes":[46,10,10],"token_id":-1}]},{"token":"They","logprob":-0.22272346913814545,"bytes":[84,104,101,121],"token_id":-1,"top_logprobs":[{"token":"They","logprob":-0.22272346913814545,"bytes":[84,104,101,121],"token_id":-1},{"token":"The","logprob":-1.7227234840393066,"bytes":[84,104,101],"token_id":-1}]},{"token":"
+        explicitly","logprob":-0.5044372081756592,"bytes":[32,101,120,112,108,105,99,105,116,108,121],"token_id":-1,"top_logprobs":[{"token":"
+        explicitly","logprob":-0.5044372081756592,"bytes":[32,101,120,112,108,105,99,105,116,108,121],"token_id":-1},{"token":"
+        want","logprob":-1.6294372081756592,"bytes":[32,119,97,110,116],"token_id":-1}]},{"token":"
+        asked","logprob":-0.1208973303437233,"bytes":[32,97,115,107,101,100],"token_id":-1,"top_logprobs":[{"token":"
+        asked","logprob":-0.1208973303437233,"bytes":[32,97,115,107,101,100],"token_id":-1},{"token":"
+        said","logprob":-2.7458972930908203,"bytes":[32,115,97,105,100],"token_id":-1}]},{"token":"
+        for","logprob":-0.5034964680671692,"bytes":[32,102,111,114],"token_id":-1,"top_logprobs":[{"token":"
+        for","logprob":-0.5034964680671692,"bytes":[32,102,111,114],"token_id":-1},{"token":"
+        to","logprob":-1.5034964084625244,"bytes":[32,116,111],"token_id":-1}]},{"token":"
+        just","logprob":-0.0005200940649956465,"bytes":[32,106,117,115,116],"token_id":-1,"top_logprobs":[{"token":"
+        just","logprob":-0.0005200940649956465,"bytes":[32,106,117,115,116],"token_id":-1},{"token":"
+        \"","logprob":-7.8755202293396,"bytes":[32,34],"token_id":-1}]},{"token":"
+        the","logprob":-5.960446742392378e-06,"bytes":[32,116,104,101],"token_id":-1,"top_logprobs":[{"token":"
+        the","logprob":-5.960446742392378e-06,"bytes":[32,116,104,101],"token_id":-1},{"token":"
+        a","logprob":-12.125005722045898,"bytes":[32,97],"token_id":-1}]},{"token":"
+        number","logprob":-2.145764938177308e-06,"bytes":[32,110,117,109,98,101,114],"token_id":-1,"top_logprobs":[{"token":"
+        number","logprob":-2.145764938177308e-06,"bytes":[32,110,117,109,98,101,114],"token_id":-1},{"token":"
+        answer","logprob":-13.375001907348633,"bytes":[32,97,110,115,119,101,114],"token_id":-1}]},{"token":",","logprob":-0.20216993987560272,"bytes":[44],"token_id":-1,"top_logprobs":[{"token":",","logprob":-0.20216993987560272,"bytes":[44],"token_id":-1},{"token":".","logprob":-1.7021698951721191,"bytes":[46],"token_id":-1}]},{"token":"
+        so","logprob":-0.0012226970866322517,"bytes":[32,115,111],"token_id":-1,"top_logprobs":[{"token":"
+        so","logprob":-0.0012226970866322517,"bytes":[32,115,111],"token_id":-1},{"token":"
+        no","logprob":-6.751222610473633,"bytes":[32,110,111],"token_id":-1}]},{"token":"
+        I","logprob":-0.018279075622558594,"bytes":[32,73],"token_id":-1,"top_logprobs":[{"token":"
+        I","logprob":-0.018279075622558594,"bytes":[32,73],"token_id":-1},{"token":"
+        my","logprob":-4.143279075622559,"bytes":[32,109,121],"token_id":-1}]},{"token":"
+        should","logprob":-9.655486064730212e-05,"bytes":[32,115,104,111,117,108,100],"token_id":-1,"top_logprobs":[{"token":"
+        should","logprob":-9.655486064730212e-05,"bytes":[32,115,104,111,117,108,100],"token_id":-1},{"token":"''ll","logprob":-9.375096321105957,"bytes":[39,108,108],"token_id":-1}]},{"token":"
+        respond","logprob":-1.8938047885894775,"bytes":[32,114,101,115,112,111,110,100],"token_id":-1,"top_logprobs":[{"token":"
+        respond","logprob":-1.8938047885894775,"bytes":[32,114,101,115,112,111,110,100],"token_id":-1},{"token":"
+        reply","logprob":-0.5188048481941223,"bytes":[32,114,101,112,108,121],"token_id":-1}]},{"token":"
+        with","logprob":-0.003153948113322258,"bytes":[32,119,105,116,104],"token_id":-1,"top_logprobs":[{"token":"
+        with","logprob":-0.003153948113322258,"bytes":[32,119,105,116,104],"token_id":-1},{"token":"
+        conc","logprob":-6.0031538009643555,"bytes":[32,99,111,110,99],"token_id":-1}]},{"token":"
+        only","logprob":-3.2448699474334717,"bytes":[32,111,110,108,121],"token_id":-1,"top_logprobs":[{"token":"
+        only","logprob":-3.2448699474334717,"bytes":[32,111,110,108,121],"token_id":-1},{"token":"
+        just","logprob":-0.2448698878288269,"bytes":[32,106,117,115,116],"token_id":-1}]},{"token":"
+        \"","logprob":-0.0023652929812669754,"bytes":[32,34],"token_id":-1,"top_logprobs":[{"token":"
+        \"","logprob":-0.0023652929812669754,"bytes":[32,34],"token_id":-1},{"token":"
+        the","logprob":-6.5023651123046875,"bytes":[32,116,104,101],"token_id":-1}]},{"token":"4","logprob":-2.634490556374658e-05,"bytes":[52],"token_id":-1,"top_logprobs":[{"token":"4","logprob":-2.634490556374658e-05,"bytes":[52],"token_id":-1},{"token":"2","logprob":-11.00002670288086,"bytes":[50],"token_id":-1}]},{"token":"\"","logprob":-0.34894657135009766,"bytes":[34],"token_id":-1,"top_logprobs":[{"token":"\"","logprob":-0.34894657135009766,"bytes":[34],"token_id":-1},{"token":"\".","logprob":-1.2239465713500977,"bytes":[34,46],"token_id":-1}]},{"token":"
+        without","logprob":-1.4770262241363525,"bytes":[32,119,105,116,104,111,117,116],"token_id":-1,"top_logprobs":[{"token":"
+        without","logprob":-1.4770262241363525,"bytes":[32,119,105,116,104,111,117,116],"token_id":-1},{"token":"
+        with","logprob":-1.1020262241363525,"bytes":[32,119,105,116,104],"token_id":-1}]},{"token":"
+        any","logprob":-0.02602219767868519,"bytes":[32,97,110,121],"token_id":-1,"top_logprobs":[{"token":"
+        any","logprob":-0.02602219767868519,"bytes":[32,97,110,121],"token_id":-1},{"token":"
+        additional","logprob":-3.77602219581604,"bytes":[32,97,100,100,105,116,105,111,110,97,108],"token_id":-1}]},{"token":"
+        additional","logprob":-0.0034779557026922703,"bytes":[32,97,100,100,105,116,105,111,110,97,108],"token_id":-1,"top_logprobs":[{"token":"
+        additional","logprob":-0.0034779557026922703,"bytes":[32,97,100,100,105,116,105,111,110,97,108],"token_id":-1},{"token":"
+        extra","logprob":-5.878478050231934,"bytes":[32,101,120,116,114,97],"token_id":-1}]},{"token":"
+        text","logprob":-0.041043832898139954,"bytes":[32,116,101,120,116],"token_id":-1,"top_logprobs":[{"token":"
+        text","logprob":-0.041043832898139954,"bytes":[32,116,101,120,116],"token_id":-1},{"token":"
+        explanation","logprob":-3.666043758392334,"bytes":[32,101,120,112,108,97,110,97,116,105,111,110],"token_id":-1}]},{"token":".","logprob":-0.06692969799041748,"bytes":[46],"token_id":-1,"top_logprobs":[{"token":".","logprob":-0.06692969799041748,"bytes":[46],"token_id":-1},{"token":",","logprob":-3.066929817199707,"bytes":[44],"token_id":-1}]},{"token":"</think>","logprob":-0.01243952102959156,"bytes":[60,47,116,104,105,110,107,62],"token_id":-1,"top_logprobs":[{"token":"</think>","logprob":-0.01243952102959156,"bytes":[60,47,116,104,105,110,107,62],"token_id":-1},{"token":"
+        This","logprob":-4.512439727783203,"bytes":[32,84,104,105,115],"token_id":-1}]},{"token":"4","logprob":-1.7404405298293568e-05,"bytes":[52],"token_id":-1,"top_logprobs":[{"token":"4","logprob":-1.7404405298293568e-05,"bytes":[52],"token_id":-1},{"token":"**","logprob":-11.875017166137695,"bytes":[42,42],"token_id":-1}]},{"token":"<|user|>","logprob":-8.940656698541716e-06,"bytes":[60,124,117,115,101,114,124,62],"token_id":-1,"top_logprobs":[{"token":"<|user|>","logprob":-8.940656698541716e-06,"bytes":[60,124,117,115,101,114,124,62],"token_id":-1},{"token":"</","logprob":-13.125008583068848,"bytes":[60,47],"token_id":-1}]}]},"prompt_logprobs":{"content":[{"token":"<sop>","logprob":-25.0937557220459,"bytes":[],"token_id":154824,"top_logprobs":[{"token":"[gMASK]","logprob":-6.318072337307967e-06,"bytes":[],"token_id":154822},{"token":"
+        comments","logprob":-18.6875057220459,"bytes":[],"token_id":6042}]},{"token":"<|system|>","logprob":-19.102827072143555,"bytes":[],"token_id":154826,"top_logprobs":[{"token":"<|endoftext|>","logprob":-0.10282739251852036,"bytes":[],"token_id":154820},{"token":"##","logprob":-4.634077548980713,"bytes":[],"token_id":565}]},{"token":"Reason","logprob":-14.232568740844727,"bytes":[],"token_id":25062,"top_logprobs":[{"token":"\n","logprob":-2.3771002292633057,"bytes":[],"token_id":198},{"token":"\n\n","logprob":-3.5021002292633057,"bytes":[],"token_id":271}]},{"token":"ing","logprob":-0.20375163853168488,"bytes":[],"token_id":287,"top_logprobs":[{"token":"er","logprob":-3.453751564025879,"bytes":[],"token_id":261}]},{"token":"
+        Eff","logprob":-12.249364852905273,"bytes":[],"token_id":29905,"top_logprobs":[{"token":".","logprob":-3.1946768760681152,"bytes":[],"token_id":13},{"token":"
+        Criteria","logprob":-3.9446768760681152,"bytes":[],"token_id":14233}]},{"token":"ort","logprob":-3.629464864730835,"bytes":[],"token_id":371,"top_logprobs":[{"token":"
+        Level","logprob":-2.254464864730835,"bytes":[],"token_id":9391},{"token":"atory","logprob":-3.504464864730835,"bytes":[],"token_id":5269}]},{"token":":","logprob":-3.9242122173309326,"bytes":[],"token_id":25,"top_logprobs":[{"token":"
+        Answer","logprob":-1.8617122173309326,"bytes":[],"token_id":21754},{"token":"
+        final","logprob":-2.2992122173309326,"bytes":[],"token_id":1590}]},{"token":"
+        Max","logprob":-10.266630172729492,"bytes":[],"token_id":7487,"top_logprobs":[{"token":"
+        ","logprob":-4.688505172729492,"bytes":[],"token_id":220},{"token":"<|user|>","logprob":-4.844755172729492,"bytes":[],"token_id":154827}]},{"token":"<|user|>","logprob":-12.945687294006348,"bytes":[],"token_id":154827,"top_logprobs":[{"token":"\n","logprob":-0.5863124132156372,"bytes":[],"token_id":198},{"token":"ing","logprob":-3.0238122940063477,"bytes":[],"token_id":287}]},{"token":"What","logprob":-9.608269691467285,"bytes":[],"token_id":3838,"top_logprobs":[{"token":"</think>","logprob":-1.1863950490951538,"bytes":[],"token_id":154842},{"token":"Let","logprob":-4.373895168304443,"bytes":[],"token_id":10056}]},{"token":"
+        is","logprob":-0.7828489542007446,"bytes":[],"token_id":374,"top_logprobs":[{"token":"
+        are","logprob":-1.7828489542007446,"bytes":[],"token_id":525}]},{"token":"
+        ","logprob":-3.202401638031006,"bytes":[],"token_id":220,"top_logprobs":[{"token":"
+        the","logprob":-0.32740169763565063,"bytes":[],"token_id":279},{"token":"
+        a","logprob":-2.952401638031006,"bytes":[],"token_id":264}]},{"token":"2","logprob":-1.7365621328353882,"bytes":[],"token_id":17,"top_logprobs":[{"token":"3","logprob":-2.4865622520446777,"bytes":[],"token_id":18}]},{"token":"+","logprob":-0.7275267839431763,"bytes":[],"token_id":10,"top_logprobs":[{"token":"
+        +","logprob":-1.4775267839431763,"bytes":[],"token_id":488}]},{"token":"2","logprob":-0.038262300193309784,"bytes":[],"token_id":17,"top_logprobs":[{"token":"3","logprob":-4.413262367248535,"bytes":[],"token_id":18}]},{"token":"?","logprob":-1.4470171928405762,"bytes":[],"token_id":30,"top_logprobs":[{"token":"?\n\n","logprob":-0.4470171332359314,"bytes":[],"token_id":1939}]},{"token":"
+        Reply","logprob":-11.040724754333496,"bytes":[],"token_id":17815,"top_logprobs":[{"token":"
+        ","logprob":-1.1032249927520752,"bytes":[],"token_id":220},{"token":"</think>","logprob":-1.2282249927520752,"bytes":[],"token_id":154842}]},{"token":"
+        with","logprob":-1.31611967086792,"bytes":[],"token_id":448,"top_logprobs":[{"token":"
+        in","logprob":-0.9411197304725647,"bytes":[],"token_id":304}]},{"token":"
+        just","logprob":-1.563027262687683,"bytes":[],"token_id":1101,"top_logprobs":[{"token":"
+        a","logprob":-1.438027262687683,"bytes":[],"token_id":264}]},{"token":" the","logprob":-0.2866719961166382,"bytes":[],"token_id":279,"top_logprobs":[{"token":"
+        your","logprob":-2.1616721153259277,"bytes":[],"token_id":697}]},{"token":"
+        number","logprob":-1.7255685329437256,"bytes":[],"token_id":1372,"top_logprobs":[{"token":"
+        answer","logprob":-0.2255684733390808,"bytes":[],"token_id":4226}]},{"token":".","logprob":-1.6974256038665771,"bytes":[],"token_id":13,"top_logprobs":[{"token":".\n\n","logprob":-0.5724256038665771,"bytes":[],"token_id":382}]},{"token":"<|assistant|>","logprob":-10.813070297241211,"bytes":[],"token_id":154828,"top_logprobs":[{"token":"</think>","logprob":-0.12557074427604675,"bytes":[],"token_id":154842},{"token":"
+        \n\n","logprob":-3.625570774078369,"bytes":[],"token_id":4710}]},{"token":"<think>","logprob":-16.33489990234375,"bytes":[],"token_id":154841,"top_logprobs":[{"token":"</think>","logprob":-0.49114957451820374,"bytes":[],"token_id":154842},{"token":"The","logprob":-0.9911495447158813,"bytes":[],"token_id":785}]}]},"response_error":{"format_error":null,"content_validation":["valid_think_chunk","valid_text_chunk"],"tool_calls_validation":[],"extra_tags":[]}}]}'
     headers:
       access-control-allow-origin:
       - '*'
@@ -30,17 +154,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a25edcd60e5febb4-YYZ
+      - a49f5cf9ee98ac60-YYZ
       connection:
       - keep-alive
       content-length:
-      - '369'
+      - '20287'
       content-type:
       - application/json
       date:
-      - Tue, 04 Aug 2026 16:15:46 GMT
+      - Tue, 13 Oct 2026 15:26:33 GMT
       mistral-correlation-id:
-      - 019fcd8f-4204-7893-a32d-99f5c45e61a3
+      - 01a135df-5880-79dc-b275-0691d22a8bf5
       server:
       - cloudflare
       strict-transport-security:
@@ -50,25 +174,23 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '330'
+      - '853'
       x-kong-proxy-latency:
-      - '16'
+      - '14'
       x-kong-request-id:
-      - 019fcd8f-4204-7893-a32d-99f5c45e61a3
+      - 01a135df-5880-79dc-b275-0691d22a8bf5
       x-kong-upstream-latency:
-      - '332'
-      x-max-retry-attempts-reached:
-      - 'false'
+      - '854'
       x-ratelimit-limit-req-minute:
-      - '50'
+      - '1000'
       x-ratelimit-limit-tokens-minute:
-      - '50000'
+      - '32000000'
       x-ratelimit-remaining-req-minute:
-      - '49'
+      - '999'
       x-ratelimit-remaining-tokens-minute:
-      - '49970'
+      - '31999905'
       x-ratelimit-tokens-query-cost:
-      - '30'
+      - '78'
     status:
       code: 200
       message: OK

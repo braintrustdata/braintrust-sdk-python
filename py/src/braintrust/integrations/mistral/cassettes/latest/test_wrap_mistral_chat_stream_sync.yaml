@@ -1,33 +1,141 @@
 interactions:
 - request:
-    body: '{"model":"mistral-small-latest","messages":[{"content":"What is 5+5? Reply
-      with just the number.","role":"user"}],"max_tokens":10,"stream":true}'
+    body: '{"model":"zai-glm-5-3","messages":[{"content":"What is 5+5? Reply with
+      just the number.","role":"user"}],"max_tokens":256,"stream":true,"min_tokens":1,"repetition_penalty":1.1,"top_k":20,"logprobs":true,"top_logprobs":2}'
     headers:
       accept:
       - text/event-stream
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
-      - '144'
+      - '220'
       content-type:
       - application/json
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.9.0
+      - mistral-client-python/3.2.0
     method: POST
     uri: https://api.mistral.ai/v1/chat/completions#stream
   response:
     body:
-      string: 'data: {"id":"b33b8bffce0c4169974d421ab833ef9c","object":"chat.completion.chunk","created":1785860147,"model":"mistral-small-latest","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
+      string: 'data: {"id":"a354dc28022641a3acbe3583e61f26aa","object":"chat.completion.chunk","created":1791905272,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
 
 
-        data: {"id":"b33b8bffce0c4169974d421ab833ef9c","object":"chat.completion.chunk","created":1785860147,"model":"mistral-small-latest","choices":[{"index":0,"delta":{"content":"1"},"finish_reason":null}],"p":"abcde"}
+        data: {"id":"a354dc28022641a3acbe3583e61f26aa","object":"chat.completion.chunk","created":1791905273,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"role":"assistant","index":0,"content":""},"finish_reason":null,"logprobs":null}]}
 
 
-        data: {"id":"b33b8bffce0c4169974d421ab833ef9c","object":"chat.completion.chunk","created":1785860147,"model":"mistral-small-latest","choices":[{"index":0,"delta":{"content":"0"},"finish_reason":"stop"}],"usage":{"prompt_tokens":28,"total_tokens":31,"completion_tokens":3,"prompt_tokens_details":{"cached_tokens":0},"service_tier":"standard"},"p":"abcdefghijklm"}
+        data: {"id":"a354dc28022641a3acbe3583e61f26aa","object":"chat.completion.chunk","created":1791905273,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"index":0,"content":[{"type":"thinking","thinking":[{"type":"text","text":"The"}],"closed":true}]},"finish_reason":null,"logprobs":{"content":[{"token":"The","logprob":-0.05786751210689545,"bytes":[84,104,101],"token_id":-1,"top_logprobs":[{"token":"The","logprob":-0.05786751210689545,"bytes":[84,104,101],"token_id":-1},{"token":"This","logprob":-2.9328675270080566,"bytes":[84,104,105,115],"token_id":-1}]}]}}]}
+
+
+        data: {"id":"a354dc28022641a3acbe3583e61f26aa","object":"chat.completion.chunk","created":1791905273,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"index":0,"content":[{"type":"thinking","thinking":[{"type":"text","text":"
+        user is asking a simple math question and wants just the number as a reply.\n\n5
+        + 5 = 10\n\nThey asked me to reply with just the number, so I should give
+        a very concise response."}],"closed":true},{"type":"text","text":"10"}]},"finish_reason":null,"logprobs":{"content":[{"token":"
+        user","logprob":-0.00208850996568799,"bytes":[32,117,115,101,114],"token_id":-1,"top_logprobs":[{"token":"
+        user","logprob":-0.00208850996568799,"bytes":[32,117,115,101,114],"token_id":-1},{"token":"
+        question","logprob":-6.25208854675293,"bytes":[32,113,117,101,115,116,105,111,110],"token_id":-1}]},{"token":"
+        is","logprob":-0.4995725750923157,"bytes":[32,105,115],"token_id":-1,"top_logprobs":[{"token":"
+        is","logprob":-0.4995725750923157,"bytes":[32,105,115],"token_id":-1},{"token":"
+        asks","logprob":-1.249572515487671,"bytes":[32,97,115,107,115],"token_id":-1}]},{"token":"
+        asking","logprob":-0.00003540453326422721,"bytes":[32,97,115,107,105,110,103],"token_id":-1,"top_logprobs":[{"token":"
+        asking","logprob":-0.00003540453326422721,"bytes":[32,97,115,107,105,110,103],"token_id":-1},{"token":"
+        asked","logprob":-10.625035285949707,"bytes":[32,97,115,107,101,100],"token_id":-1}]},{"token":"
+        a","logprob":-0.12166183441877365,"bytes":[32,97],"token_id":-1,"top_logprobs":[{"token":"
+        a","logprob":-0.12166183441877365,"bytes":[32,97],"token_id":-1},{"token":"
+        what","logprob":-2.996661901473999,"bytes":[32,119,104,97,116],"token_id":-1}]},{"token":"
+        simple","logprob":-0.012226044200360775,"bytes":[32,115,105,109,112,108,101],"token_id":-1,"top_logprobs":[{"token":"
+        simple","logprob":-0.012226044200360775,"bytes":[32,115,105,109,112,108,101],"token_id":-1},{"token":"
+        very","logprob":-4.512226104736328,"bytes":[32,118,101,114,121],"token_id":-1}]},{"token":"
+        math","logprob":-0.8302291631698608,"bytes":[32,109,97,116,104],"token_id":-1,"top_logprobs":[{"token":"
+        math","logprob":-0.8302291631698608,"bytes":[32,109,97,116,104],"token_id":-1},{"token":"
+        arithmetic","logprob":-0.5802291631698608,"bytes":[32,97,114,105,116,104,109,101,116,105,99],"token_id":-1}]},{"token":"
+        question","logprob":-0.00008105902816168964,"bytes":[32,113,117,101,115,116,105,111,110],"token_id":-1,"top_logprobs":[{"token":"
+        question","logprob":-0.00008105902816168964,"bytes":[32,113,117,101,115,116,105,111,110],"token_id":-1},{"token":"
+        problem","logprob":-9.500081062316895,"bytes":[32,112,114,111,98,108,101,109],"token_id":-1}]},{"token":"
+        and","logprob":-2.9305837154388428,"bytes":[32,97,110,100],"token_id":-1,"top_logprobs":[{"token":"
+        and","logprob":-2.9305837154388428,"bytes":[32,97,110,100],"token_id":-1},{"token":":","logprob":-0.055583830922842026,"bytes":[58],"token_id":-1}]},{"token":"
+        wants","logprob":-1.0025783777236938,"bytes":[32,119,97,110,116,115],"token_id":-1,"top_logprobs":[{"token":"
+        wants","logprob":-1.0025783777236938,"bytes":[32,119,97,110,116,115],"token_id":-1},{"token":"
+        explicitly","logprob":-0.5025783777236938,"bytes":[32,101,120,112,108,105,99,105,116,108,121],"token_id":-1}]},{"token":"
+        just","logprob":-0.02939765527844429,"bytes":[32,106,117,115,116],"token_id":-1,"top_logprobs":[{"token":"
+        just","logprob":-0.02939765527844429,"bytes":[32,106,117,115,116],"token_id":-1},{"token":"
+        me","logprob":-3.65439772605896,"bytes":[32,109,101],"token_id":-1}]},{"token":"
+        the","logprob":-0.0004895919119007885,"bytes":[32,116,104,101],"token_id":-1,"top_logprobs":[{"token":"
+        the","logprob":-0.0004895919119007885,"bytes":[32,116,104,101],"token_id":-1},{"token":"
+        a","logprob":-7.625489711761475,"bytes":[32,97],"token_id":-1}]},{"token":"
+        number","logprob":-0.000013112935448589269,"bytes":[32,110,117,109,98,101,114],"token_id":-1,"top_logprobs":[{"token":"
+        number","logprob":-0.000013112935448589269,"bytes":[32,110,117,109,98,101,114],"token_id":-1},{"token":"
+        answer","logprob":-11.37501335144043,"bytes":[32,97,110,115,119,101,114],"token_id":-1}]},{"token":"
+        as","logprob":-0.13183175027370453,"bytes":[32,97,115],"token_id":-1,"top_logprobs":[{"token":"
+        as","logprob":-0.13183175027370453,"bytes":[32,97,115],"token_id":-1},{"token":".","logprob":-2.131831645965576,"bytes":[46],"token_id":-1}]},{"token":"
+        a","logprob":-0.35278069972991943,"bytes":[32,97],"token_id":-1,"top_logprobs":[{"token":"
+        a","logprob":-0.35278069972991943,"bytes":[32,97],"token_id":-1},{"token":"
+        the","logprob":-1.2277806997299194,"bytes":[32,116,104,101],"token_id":-1}]},{"token":"
+        reply","logprob":-0.06201007962226868,"bytes":[32,114,101,112,108,121],"token_id":-1,"top_logprobs":[{"token":"
+        reply","logprob":-0.06201007962226868,"bytes":[32,114,101,112,108,121],"token_id":-1},{"token":"
+        response","logprob":-2.8120100498199463,"bytes":[32,114,101,115,112,111,110,115,101],"token_id":-1}]},{"token":".\n\n","logprob":-2.127352476119995,"bytes":[46,10,10],"token_id":-1,"top_logprobs":[{"token":".\n\n","logprob":-2.127352476119995,"bytes":[46,10,10],"token_id":-1},{"token":".","logprob":-0.12735237181186676,"bytes":[46],"token_id":-1}]},{"token":"5","logprob":-0.001841517398133874,"bytes":[53],"token_id":-1,"top_logprobs":[{"token":"5","logprob":-0.001841517398133874,"bytes":[53],"token_id":-1},{"token":"10","logprob":-7.2518415451049805,"bytes":[49,48],"token_id":-1}]},{"token":"
+        +","logprob":-0.7576091885566711,"bytes":[32,43],"token_id":-1,"top_logprobs":[{"token":"
+        +","logprob":-0.7576091885566711,"bytes":[32,43],"token_id":-1},{"token":"+","logprob":-0.6326091885566711,"bytes":[43],"token_id":-1}]},{"token":"
+        ","logprob":0.0,"bytes":[32],"token_id":-1,"top_logprobs":[{"token":" ","logprob":0.0,"bytes":[32],"token_id":-1},{"token":"
+        (","logprob":-18.4375,"bytes":[32,40],"token_id":-1}]},{"token":"5","logprob":-0.000016212332411669195,"bytes":[53],"token_id":-1,"top_logprobs":[{"token":"5","logprob":-0.000016212332411669195,"bytes":[53],"token_id":-1},{"token":"4","logprob":-12.625016212463379,"bytes":[52],"token_id":-1}]},{"token":"
+        =","logprob":-1.5497195136049413e-6,"bytes":[32,61],"token_id":-1,"top_logprobs":[{"token":"
+        =","logprob":-1.5497195136049413e-6,"bytes":[32,61],"token_id":-1},{"token":"
+        +","logprob":-14.250001907348633,"bytes":[32,43],"token_id":-1}]},{"token":"
+        ","logprob":-4.410734163684538e-6,"bytes":[32],"token_id":-1,"top_logprobs":[{"token":"
+        ","logprob":-4.410734163684538e-6,"bytes":[32],"token_id":-1},{"token":"</think>","logprob":-13.000004768371582,"bytes":[60,47,116,104,105,110,107,62],"token_id":-1}]},{"token":"10","logprob":-0.000027179348762729205,"bytes":[49,48],"token_id":-1,"top_logprobs":[{"token":"10","logprob":-0.000027179348762729205,"bytes":[49,48],"token_id":-1},{"token":"102","logprob":-12.37502670288086,"bytes":[49,48,50],"token_id":-1}]},{"token":"\n\n","logprob":-0.5239465236663818,"bytes":[10,10],"token_id":-1,"top_logprobs":[{"token":"\n\n","logprob":-0.5239465236663818,"bytes":[10,10],"token_id":-1},{"token":"</think>","logprob":-0.8989465236663818,"bytes":[60,47,116,104,105,110,107,62],"token_id":-1}]},{"token":"They","logprob":-0.08969248086214066,"bytes":[84,104,101,121],"token_id":-1,"top_logprobs":[{"token":"They","logprob":-0.08969248086214066,"bytes":[84,104,101,121],"token_id":-1},{"token":"The","logprob":-2.7146925926208496,"bytes":[84,104,101],"token_id":-1}]},{"token":"
+        asked","logprob":-0.7079316973686218,"bytes":[32,97,115,107,101,100],"token_id":-1,"top_logprobs":[{"token":"
+        asked","logprob":-0.7079316973686218,"bytes":[32,97,115,107,101,100],"token_id":-1},{"token":"
+        explicitly","logprob":-0.8329316973686218,"bytes":[32,101,120,112,108,105,99,105,116,108,121],"token_id":-1}]},{"token":"
+        me","logprob":-0.4203052818775177,"bytes":[32,109,101],"token_id":-1,"top_logprobs":[{"token":"
+        me","logprob":-0.4203052818775177,"bytes":[32,109,101],"token_id":-1},{"token":"
+        for","logprob":-1.2953052520751953,"bytes":[32,102,111,114],"token_id":-1}]},{"token":"
+        to","logprob":-1.1920922133867862e-6,"bytes":[32,116,111],"token_id":-1,"top_logprobs":[{"token":"
+        to","logprob":-1.1920922133867862e-6,"bytes":[32,116,111],"token_id":-1},{"token":"
+        not","logprob":-14.250000953674316,"bytes":[32,110,111,116],"token_id":-1}]},{"token":"
+        reply","logprob":-0.0018458010163158178,"bytes":[32,114,101,112,108,121],"token_id":-1,"top_logprobs":[{"token":"
+        reply","logprob":-0.0018458010163158178,"bytes":[32,114,101,112,108,121],"token_id":-1},{"token":"
+        \"","logprob":-6.376845836639404,"bytes":[32,34],"token_id":-1}]},{"token":"
+        with","logprob":-2.50339189733495e-6,"bytes":[32,119,105,116,104],"token_id":-1,"top_logprobs":[{"token":"
+        with","logprob":-2.50339189733495e-6,"bytes":[32,119,105,116,104],"token_id":-1},{"token":"
+        \"","logprob":-12.87500286102295,"bytes":[32,34],"token_id":-1}]},{"token":"
+        just","logprob":-0.00009667406266089529,"bytes":[32,106,117,115,116],"token_id":-1,"top_logprobs":[{"token":"
+        just","logprob":-0.00009667406266089529,"bytes":[32,106,117,115,116],"token_id":-1},{"token":"
+        \"","logprob":-9.250096321105957,"bytes":[32,34],"token_id":-1}]},{"token":"
+        the","logprob":-7.152555099310121e-7,"bytes":[32,116,104,101],"token_id":-1,"top_logprobs":[{"token":"
+        the","logprob":-7.152555099310121e-7,"bytes":[32,116,104,101],"token_id":-1},{"token":"
+        a","logprob":-15.125000953674316,"bytes":[32,97],"token_id":-1}]},{"token":"
+        number","logprob":-8.344646857949556e-7,"bytes":[32,110,117,109,98,101,114],"token_id":-1,"top_logprobs":[{"token":"
+        number","logprob":-8.344646857949556e-7,"bytes":[32,110,117,109,98,101,114],"token_id":-1},{"token":"number","logprob":-15.500000953674316,"bytes":[110,117,109,98,101,114],"token_id":-1}]},{"token":",","logprob":-0.12697488069534302,"bytes":[44],"token_id":-1,"top_logprobs":[{"token":",","logprob":-0.12697488069534302,"bytes":[44],"token_id":-1},{"token":".","logprob":-2.1269748210906982,"bytes":[46],"token_id":-1}]},{"token":"
+        so","logprob":-0.00005006664650863968,"bytes":[32,115,111],"token_id":-1,"top_logprobs":[{"token":"
+        so","logprob":-0.00005006664650863968,"bytes":[32,115,111],"token_id":-1},{"token":"
+        and","logprob":-11.000049591064453,"bytes":[32,97,110,100],"token_id":-1}]},{"token":"
+        I","logprob":-0.006945987697690725,"bytes":[32,73],"token_id":-1,"top_logprobs":[{"token":"
+        I","logprob":-0.006945987697690725,"bytes":[32,73],"token_id":-1},{"token":"
+        my","logprob":-5.131946086883545,"bytes":[32,109,121],"token_id":-1}]},{"token":"
+        should","logprob":-0.0006308949086815119,"bytes":[32,115,104,111,117,108,100],"token_id":-1,"top_logprobs":[{"token":"
+        should","logprob":-0.0006308949086815119,"bytes":[32,115,104,111,117,108,100],"token_id":-1},{"token":"''ll","logprob":-7.375630855560303,"bytes":[39,108,108],"token_id":-1}]},{"token":"
+        give","logprob":-4.385343551635742,"bytes":[32,103,105,118,101],"token_id":-1,"top_logprobs":[{"token":"
+        give","logprob":-4.385343551635742,"bytes":[32,103,105,118,101],"token_id":-1},{"token":"
+        just","logprob":-0.13534371554851532,"bytes":[32,106,117,115,116],"token_id":-1}]},{"token":"
+        a","logprob":-0.480926513671875,"bytes":[32,97],"token_id":-1,"top_logprobs":[{"token":"
+        a","logprob":-0.480926513671875,"bytes":[32,97],"token_id":-1},{"token":"
+        just","logprob":-1.480926513671875,"bytes":[32,106,117,115,116],"token_id":-1}]},{"token":"
+        very","logprob":-0.7497419714927673,"bytes":[32,118,101,114,121],"token_id":-1,"top_logprobs":[{"token":"
+        very","logprob":-0.7497419714927673,"bytes":[32,118,101,114,121],"token_id":-1},{"token":"
+        minimal","logprob":-0.8747419714927673,"bytes":[32,109,105,110,105,109,97,108],"token_id":-1}]},{"token":"
+        concise","logprob":-0.6476334929466248,"bytes":[32,99,111,110,99,105,115,101],"token_id":-1,"top_logprobs":[{"token":"
+        concise","logprob":-0.6476334929466248,"bytes":[32,99,111,110,99,105,115,101],"token_id":-1},{"token":"
+        brief","logprob":-1.1476335525512695,"bytes":[32,98,114,105,101,102],"token_id":-1}]},{"token":"
+        response","logprob":-1.5031237602233887,"bytes":[32,114,101,115,112,111,110,115,101],"token_id":-1,"top_logprobs":[{"token":"
+        response","logprob":-1.5031237602233887,"bytes":[32,114,101,115,112,111,110,115,101],"token_id":-1},{"token":"
+        answer","logprob":-0.25312376022338867,"bytes":[32,97,110,115,119,101,114],"token_id":-1}]},{"token":".","logprob":-0.1319911926984787,"bytes":[46],"token_id":-1,"top_logprobs":[{"token":".","logprob":-0.1319911926984787,"bytes":[46],"token_id":-1},{"token":":","logprob":-2.131991147994995,"bytes":[58],"token_id":-1}]},{"token":"</think>","logprob":-0.012163864448666573,"bytes":[60,47,116,104,105,110,107,62],"token_id":-1,"top_logprobs":[{"token":"</think>","logprob":-0.012163864448666573,"bytes":[60,47,116,104,105,110,107,62],"token_id":-1},{"token":"
+        No","logprob":-5.5121636390686035,"bytes":[32,78,111],"token_id":-1}]},{"token":"10","logprob":-0.00012194366718176752,"bytes":[49,48],"token_id":-1,"top_logprobs":[{"token":"10","logprob":-0.00012194366718176752,"bytes":[49,48],"token_id":-1},{"token":"**","logprob":-9.1251220703125,"bytes":[42,42],"token_id":-1}]},{"token":"<|user|>","logprob":-6.794906312279636e-6,"bytes":[60,124,117,115,101,114,124,62],"token_id":-1,"top_logprobs":[{"token":"<|user|>","logprob":-6.794906312279636e-6,"bytes":[60,124,117,115,101,114,124,62],"token_id":-1},{"token":"<tool_call>","logprob":-13.250006675720215,"bytes":[60,116,111,111,108,95,99,97,108,108,62],"token_id":-1}]}]}}]}
+
+
+        data: {"id":"a354dc28022641a3acbe3583e61f26aa","object":"chat.completion.chunk","created":1791905273,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"index":0,"content":""},"finish_reason":"stop","logprobs":null,"response_error":{"format_error":null,"content_validation":["valid_think_chunk","valid_text_chunk"],"tool_calls_validation":[],"extra_tags":[]}}],"usage":{"prompt_tokens":25,"total_tokens":72,"completion_tokens":47,"prompt_tokens_details":{"cached_tokens":0}}}
 
 
         data: [DONE]
@@ -42,15 +150,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a25edce15c2bebb6-YYZ
+      - a49f5eef4f34e930-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Tue, 04 Aug 2026 16:15:48 GMT
+      - Tue, 13 Oct 2026 15:27:53 GMT
       mistral-correlation-id:
-      - 019fcd8f-490e-79e9-a077-425db1b649b6
+      - 01a135e0-91ce-7b68-99e3-4beca3f958e2
       server:
       - cloudflare
       strict-transport-security:
@@ -60,15 +168,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '467'
+      - '870'
       x-kong-proxy-latency:
-      - '13'
+      - '37'
       x-kong-request-id:
-      - 019fcd8f-490e-79e9-a077-425db1b649b6
+      - 01a135e0-91ce-7b68-99e3-4beca3f958e2
       x-kong-upstream-latency:
-      - '468'
-      x-max-retry-attempts-reached:
-      - 'false'
+      - '871'
     status:
       code: 200
       message: OK
