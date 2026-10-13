@@ -3,6 +3,12 @@
 from collections.abc import Mapping
 from typing import Any
 
+from braintrust.integrations.question import (
+    _ANSWER_FIELDS,
+    _QUESTION_FIELDS,
+    _question_span_input,
+    _question_span_output,
+)
 from braintrust.integrations.utils import _log_and_end_span, _log_error_and_end_span
 from braintrust.logger import start_span as _bt_start_span
 from braintrust.span_types import SpanTypeAttribute
@@ -10,8 +16,6 @@ from braintrust.span_types import SpanTypeAttribute
 
 _INSTRUMENTATION = "typesafe"
 _MISSING = object()
-_QUESTION_FIELDS = ("type", "instructions", "criteria")
-_ANSWER_FIELDS = ("type", "noul", "choice", "score", "confidence", "legend", "probabilities")
 
 
 def start_span(*args, **kwargs):
@@ -44,12 +48,6 @@ def _answer_payload(value: Any) -> dict[str, Any]:
     return _tagged_payload(value, _ANSWER_FIELDS, type_suffix="Answer")
 
 
-def _items_with_ids(values: Any, payload_fn) -> Any:
-    if not isinstance(values, Mapping):
-        return values
-    return [{**payload_fn(value), "id": identifier} for identifier, value in values.items()]
-
-
 def _call_value(args: Any, kwargs: dict[str, Any], name: str, position: int) -> Any:
     if name in kwargs:
         return kwargs[name]
@@ -74,10 +72,9 @@ def _request_parts(instance: Any, args: Any, kwargs: dict[str, Any]) -> tuple[An
 
 
 def _span_input(state: Any, questions: Any) -> dict[str, Any]:
-    return {
-        "state": state,
-        "questions": _items_with_ids(questions, _question_payload),
-    }
+    if isinstance(questions, Mapping):
+        questions = {identifier: _question_payload(value) for identifier, value in questions.items()}
+    return _question_span_input(state, questions)
 
 
 def _token_metrics(response: Any) -> dict[str, int]:
@@ -96,10 +93,12 @@ def _token_metrics(response: Any) -> dict[str, int]:
 
 def _log_response(span: Any, response: Any) -> None:
     answers = getattr(response, "answers", None)
+    if isinstance(answers, Mapping):
+        answers = {identifier: _answer_payload(value) for identifier, value in answers.items()}
     response_model = getattr(response, "model", None)
     _log_and_end_span(
         span,
-        output={"answers": _items_with_ids(answers, _answer_payload)},
+        output=_question_span_output(answers),
         metrics=_token_metrics(response),
         metadata={"model": response_model} if isinstance(response_model, str) else None,
     )

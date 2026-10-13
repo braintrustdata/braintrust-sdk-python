@@ -17,8 +17,15 @@ from braintrust.integrations.openai.tracing import (
     _materialize_logged_file_input,
     _process_attachments_in_chat_output,
 )
+from braintrust.integrations.test_decisions import (
+    DECISIONS_INPUT,
+    DECISIONS_MODEL,
+    DECISIONS_QUESTIONS,
+    assert_decisions_span,
+)
 from braintrust.integrations.test_utils import assert_metrics_are_valid, verify_autoinstrument_script
 from braintrust.integrations.utils import _try_to_dict
+from braintrust.integrations.versioning import version_satisfies
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import assert_dict_matches, init_test_logger
 from openai import AsyncOpenAI
@@ -183,6 +190,73 @@ async def test_unwrapped_client_emits_no_spans(memory_logger, is_async, vcr_cass
 
     assert response.choices[0].message.content
     assert not memory_logger.pop()
+
+
+@sync_async
+@pytest.mark.asyncio
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "query", "body"])
+async def test_openai_decisions_metrics(memory_logger, is_async):
+    if not version_satisfies(openai.__version__, ">=3.26.0"):
+        pytest.skip("Decisions requires OpenAI >=3.26.0")
+
+    client = wrap_openai(wrap_openai(_client(is_async)))
+    questions = [dict(question) for question in DECISIONS_QUESTIONS]
+    choices = iter(DECISIONS_QUESTIONS[1]["choices"])
+    levels = iter(DECISIONS_QUESTIONS[2]["levels"])
+    questions[1]["choices"] = choices
+    questions[2]["levels"] = levels
+    start = time.time()
+    response = await _call(
+        is_async,
+        client.decisions.create,
+        model=DECISIONS_MODEL,
+        input=DECISIONS_INPUT,
+        questions=iter(questions),
+        safety_identifier="do-not-log-this-identifier",
+    )
+    end = time.time()
+
+    assert questions[1]["choices"] is choices
+    assert questions[2]["levels"] is levels
+    assert_decisions_span(
+        memory_logger.pop(),
+        response,
+        name="openai.decisions.create",
+        model=DECISIONS_MODEL,
+        instrumentation="openai-auto",
+        start=start,
+        end=end,
+    )
+    with pytest.raises(TypeError, match="required keyword-only arguments"):
+        await _call(is_async, client.decisions.create, model=DECISIONS_MODEL)
+
+
+@sync_async
+@pytest.mark.asyncio
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "query", "body"])
+async def test_openai_decisions_iterable_input(memory_logger, is_async):
+    if not version_satisfies(openai.__version__, ">=3.26.0"):
+        pytest.skip("Decisions requires OpenAI >=3.26.0")
+
+    messages = [{"role": "user", "content": [{"type": "input_text", "text": DECISIONS_INPUT}]}]
+    content = iter(messages[0]["content"])
+    request_messages = [{**messages[0], "content": content}]
+    client = wrap_openai(_client(is_async))
+    response = await _call(
+        is_async,
+        client.decisions.create,
+        model=DECISIONS_MODEL,
+        input=iter(request_messages),
+        questions=DECISIONS_QUESTIONS[:1],
+    )
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    assert request_messages[0]["content"] is content
+    assert spans[0]["input"]["state"] == messages
+    assert spans[0]["output"]["answers"] == [
+        {"id": "positive", "type": "boolean", "probability": response.answers[0].probability}
+    ]
 
 
 @sync_async

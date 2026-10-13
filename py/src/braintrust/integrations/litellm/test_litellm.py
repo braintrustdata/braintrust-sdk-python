@@ -8,10 +8,17 @@ import pytest
 from braintrust import Attachment, logger
 from braintrust.conftest import get_vcr_config
 from braintrust.integrations.litellm import patch_litellm
+from braintrust.integrations.test_decisions import (
+    DECISIONS_INPUT,
+    DECISIONS_MODEL,
+    DECISIONS_QUESTIONS,
+    assert_decisions_span,
+)
 from braintrust.integrations.test_utils import (
     assert_metrics_are_valid,
     verify_autoinstrument_script,
 )
+from braintrust.integrations.versioning import detect_module_version, version_satisfies
 from braintrust.test_helpers import assert_dict_matches, init_test_logger
 
 
@@ -272,6 +279,36 @@ def test_litellm_completion_streaming(memory_logger, is_async):
     assert span["metadata"]["provider"] == "openai"
     assert TEST_PROMPT in str(span["input"])
     assert "24" in str(span["output"]) or "twenty-four" in str(span["output"]).lower()
+
+
+@pytest.mark.vcr
+@sync_async
+def test_litellm_decisions_metrics(memory_logger, is_async):
+    if not version_satisfies(detect_module_version(litellm, ("litellm",)), ">=1.105.0"):
+        pytest.skip("Decisions requires LiteLLM >=1.105.0")
+
+    model = f"openai/{DECISIONS_MODEL}"
+    start = time.time()
+    response = _run(
+        is_async,
+        litellm.decisions,
+        litellm.adecisions,
+        model,
+        DECISIONS_INPUT,
+        DECISIONS_QUESTIONS,
+        safety_identifier="do-not-log-this-identifier",
+    )
+    end = time.time()
+
+    assert_decisions_span(
+        memory_logger.pop(),
+        response,
+        name="Decision",
+        model=model,
+        instrumentation="litellm-auto",
+        start=start,
+        end=end,
+    )
 
 
 @pytest.mark.vcr

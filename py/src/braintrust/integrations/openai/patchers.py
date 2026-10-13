@@ -13,6 +13,7 @@ from .tracing import (
     _audio_translation_create_wrapper,
     _chat_completion_create_wrapper,
     _chat_completion_parse_wrapper,
+    _decisions_create_wrapper,
     _embedding_create_wrapper,
     _image_create_variation_wrapper,
     _image_edit_wrapper,
@@ -437,6 +438,31 @@ class _WrapResponsesRaw(CompositeFunctionWrapperPatcher):
 
 
 # ---------------------------------------------------------------------------
+# Decisions (OpenAI >= 3.26.0)
+# ---------------------------------------------------------------------------
+
+_dec_create_sync, _dec_create_async, _wrap_dec_create = _make_method_patchers(
+    name_prefix="openai.decisions.create",
+    target_module="openai.resources.decisions",
+    sync_class="Decisions",
+    async_class="AsyncDecisions",
+    method="create",
+    wrapper=_decisions_create_wrapper,
+    wrap_name="openai.wrap.decisions.create",
+)
+
+
+class DecisionsPatcher(CompositeFunctionWrapperPatcher):
+    name = "openai.decisions"
+    sub_patchers = (_dec_create_sync, _dec_create_async)
+
+
+class _WrapDecisions(CompositeFunctionWrapperPatcher):
+    name = "openai.wrap.decisions"
+    sub_patchers = (_wrap_dec_create,)
+
+
+# ---------------------------------------------------------------------------
 # Resource mapping — single source of truth for wrap_openai.
 #
 # Each entry is (client_attr_path, instance_patcher).  ``wrap_openai``
@@ -458,6 +484,7 @@ _WRAP_TARGETS: tuple[tuple[str, type[CompositeFunctionWrapperPatcher]], ...] = (
     ("audio.translations", _WrapAudioTranslations),
     ("images", _WrapImages),
     ("responses", _WrapResponses),
+    ("decisions", _WrapDecisions),
     ("responses.with_raw_response", _WrapResponsesRaw),
     ("beta.chat.completions", _WrapChatCompletions),
 )

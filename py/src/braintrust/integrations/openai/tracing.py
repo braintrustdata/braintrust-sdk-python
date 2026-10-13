@@ -5,10 +5,12 @@ import base64
 import binascii
 import inspect
 import json
+import logging
 import time
 from collections.abc import Callable, Iterable, Mapping
 from typing import Any
 
+from braintrust.integrations.question import _question_span_input, _question_span_output
 from braintrust.integrations.utils import (
     _extract_audio_output,
     _infer_audio_mime_type,
@@ -26,6 +28,7 @@ from braintrust.logger import start_span as _bt_start_span
 
 
 _INSTRUMENTATION = "openai-auto"
+_log = logging.getLogger(__name__)
 
 
 def start_span(*args, **kwargs):
@@ -2038,6 +2041,174 @@ class EmbeddingWrapper(BaseWrapper):
         )
 
 
+def _decision_question_ids(questions: list[dict[str, Any]]) -> list[str]:
+    names = {question.get("name") for question in questions if isinstance(question.get("name"), str)}
+    used: set[str] = set()
+    ids = []
+    for index, question in enumerate(questions):
+        identifier = question.get("name")
+        if not isinstance(identifier, str) or not identifier or identifier in used:
+            identifier = f"question_{index}"
+            while identifier in names or identifier in used:
+                identifier += "_"
+        used.add(identifier)
+        ids.append(identifier)
+    return ids
+
+
+def _decision_choice_keys(question: dict[str, Any]) -> dict[tuple[type, Any], str]:
+    choices = question.get("choices", [])
+    string_values = {choice["value"] for choice in choices if isinstance(choice.get("value"), str)}
+    keys = {}
+    for choice in choices:
+        value = choice["value"]
+        key = value
+        if isinstance(value, bool):
+            key = str(value).lower()
+            while key in string_values:
+                key = f"boolean:{key}"
+        keys[type(value), value] = key
+    return keys
+
+
+def _decisions_input(state: Any, questions: Any) -> dict[str, Any]:
+    try:
+        if isinstance(questions, Mapping):
+            return _question_span_input(state, questions)
+        questions = [_try_to_dict(question) for question in questions]
+        normalized = []
+        for identifier, question in zip(_decision_question_ids(questions), questions):
+            kind = question.get("type")
+            payload = {
+                "id": identifier,
+                "type": "boolean" if kind == "predicate" else kind,
+                "instructions": question.get("instructions"),
+            }
+            if kind == "choice":
+                keys = _decision_choice_keys(question)
+                payload["criteria"] = {
+                    keys[type(choice["value"]), choice["value"]]: choice.get("description")
+                    for choice in question.get("choices", [])
+                }
+            elif kind == "score":
+                payload["criteria"] = [
+                    {key: level[key] for key in ("label", "description") if key in level}
+                    for level in question.get("levels", [])
+                ]
+            normalized.append(payload)
+        return _question_span_input(state, normalized)
+    except Exception:
+        _log.debug("Failed to normalize Decisions questions", exc_info=True)
+        return {"state": state, "questions": []}
+
+
+def _decisions_output(answers: Any, questions: Any) -> dict[str, Any]:
+    try:
+        if isinstance(answers, Mapping):
+            return _question_span_output(answers)
+        questions = [_try_to_dict(question) for question in questions]
+        normalized = []
+        # OpenAI guarantees answer order, including refusals and unnamed questions.
+        # Use the request's IDs so all answers remain linked to their questions.
+        for identifier, question, answer in zip(_decision_question_ids(questions), questions, answers or []):
+            answer = _try_to_dict(answer)
+            if not isinstance(answer, dict):
+                continue
+            kind = answer.get("type")
+            payload = {"id": identifier, "type": "boolean" if kind == "predicate" else kind}
+            for key in ("probability", "score", "confidence"):
+                if key in answer:
+                    payload[key] = answer[key]
+            if kind == "choice":
+                keys = _decision_choice_keys(question)
+                if "choice" in answer:
+                    value = answer["choice"]
+                    payload["choice"] = keys.get((type(value), value), str(value))
+                if "probabilities" in answer:
+                    payload["probabilities"] = {
+                        keys.get((type(item["value"]), item["value"]), str(item["value"])): item["probability"]
+                        for item in answer["probabilities"]
+                    }
+            elif kind == "score" and "probabilities" in answer:
+                payload["probabilities"] = {
+                    str(item["value"]): item["probability"] for item in answer["probabilities"]
+                }
+                payload["legend"] = {str(item["value"]): item["label"] for item in answer["probabilities"]}
+            normalized.append(payload)
+        return _question_span_output(normalized)
+    except Exception:
+        _log.debug("Failed to normalize Decisions answers", exc_info=True)
+        return {"answers": []}
+
+
+def _materialize_decision_items(values: Any, nested_fields: tuple[str, ...]) -> Any:
+    if not isinstance(values, Iterable) or isinstance(values, (str, bytes, Mapping)):
+        return values
+    # Logging and the SDK must see the same values without consuming a caller's
+    # iterators twice or replacing fields on their objects.
+    items = []
+    for item in values:
+        if isinstance(item, Mapping):
+            item = dict(item)
+            for field in nested_fields:
+                nested = item.get(field)
+                if isinstance(nested, Iterable) and not isinstance(nested, (list, str, bytes, Mapping)):
+                    item[field] = list(nested)
+        items.append(item)
+    return items
+
+
+def _decisions_span_params(params: dict[str, Any]) -> dict[str, Any]:
+    ret = params.pop("span_info", {})
+    for field, nested_fields in (("questions", ("choices", "levels")), ("input", ("content",))):
+        if field in params:
+            params[field] = _materialize_decision_items(params[field], nested_fields)
+    return merge_dicts(
+        ret,
+        {
+            "input": _decisions_input(
+                _process_attachments_in_input(params.get("input")), params.get("questions") or []
+            ),
+            "metadata": _filter_metadata(params, ("model",)),
+        },
+    )
+
+
+def _log_decisions_response(span: Span, response: Any, questions: Any):
+    response = _try_to_dict(response)
+    if isinstance(response, dict):
+        span.log(
+            output=_decisions_output(response.get("answers"), questions or []),
+            metrics=_parse_metrics_from_usage(response.get("usage")),
+        )
+
+
+def _decisions_create_wrapper(wrapped, instance, args, kwargs):
+    if _is_async_callable(wrapped):
+
+        async def call():
+            with start_span(
+                **merge_dicts(
+                    dict(name="openai.decisions.create", span_attributes={"type": SpanTypeAttribute.QUESTION}),
+                    _decisions_span_params(kwargs),
+                )
+            ) as span:
+                response = await wrapped(*args, **kwargs)
+                _log_decisions_response(span, response, kwargs.get("questions"))
+                return response
+
+        return call()
+    with start_span(
+        **merge_dicts(
+            dict(name="openai.decisions.create", span_attributes={"type": SpanTypeAttribute.QUESTION}),
+            _decisions_span_params(kwargs),
+        )
+    ) as span:
+        response = wrapped(*args, **kwargs)
+        _log_decisions_response(span, response, kwargs.get("questions"))
+        return response
+
+
 class ModerationWrapper(BaseWrapper):
     _metadata_params = _MODERATION_METADATA_PARAMS
 
@@ -2308,11 +2479,15 @@ TOKEN_PREFIX_MAP = {
 
 
 def _parse_metrics_from_usage(usage: Any) -> dict[str, Any]:
-    return _parse_openai_usage_metrics(
+    metrics = _parse_openai_usage_metrics(
         usage,
         token_name_map=TOKEN_NAME_MAP,
         token_prefix_map=TOKEN_PREFIX_MAP,
     )
+    cache_write_tokens = metrics.pop("prompt_cache_write_tokens", None)
+    if cache_write_tokens is not None:
+        metrics.setdefault("prompt_cache_creation_tokens", cache_write_tokens)
+    return metrics
 
 
 def prettify_params(params: dict[str, Any]) -> dict[str, Any]:

@@ -6,6 +6,7 @@ from braintrust.integrations.base import FunctionWrapperPatcher
 
 from .tracing import (
     _acompletion_wrapper_async,
+    _adecisions_wrapper_async,
     _aembedding_wrapper_async,
     _aimage_generation_wrapper_async,
     _amoderation_wrapper_async,
@@ -15,6 +16,7 @@ from .tracing import (
     _atext_completion_wrapper_async,
     _atranscription_wrapper_async,
     _completion_wrapper,
+    _decisions_wrapper,
     _embedding_wrapper,
     _image_generation_wrapper,
     _moderation_wrapper,
@@ -65,6 +67,18 @@ class LiteLLMAresponsesPatcher(FunctionWrapperPatcher):
     name = "litellm.aresponses"
     target_path = "aresponses"
     wrapper = _aresponses_wrapper_async
+
+
+class LiteLLMDecisionsPatcher(FunctionWrapperPatcher):
+    name = "litellm.decisions"
+    target_path = "decisions"
+    wrapper = _decisions_wrapper
+
+
+class LiteLLMAdecisionsPatcher(FunctionWrapperPatcher):
+    name = "litellm.adecisions"
+    target_path = "adecisions"
+    wrapper = _adecisions_wrapper_async
 
 
 class LiteLLMImageGenerationPatcher(FunctionWrapperPatcher):
@@ -150,6 +164,8 @@ _ALL_LITELLM_PATCHERS = (
     LiteLLMATextCompletionPatcher,
     LiteLLMResponsesPatcher,
     LiteLLMAresponsesPatcher,
+    LiteLLMDecisionsPatcher,
+    LiteLLMAdecisionsPatcher,
     LiteLLMImageGenerationPatcher,
     LiteLLMAimageGenerationPatcher,
     LiteLLMEmbeddingPatcher,

@@ -1,9 +1,18 @@
 """Test auto_instrument for LiteLLM."""
 
+import asyncio
+
 import litellm
 from braintrust.auto import auto_instrument
 from braintrust.integrations.litellm import LiteLLMIntegration
+from braintrust.integrations.test_decisions import (
+    DECISIONS_INPUT,
+    DECISIONS_MODEL,
+    DECISIONS_QUESTIONS,
+    assert_decisions_span,
+)
 from braintrust.integrations.test_utils import autoinstrument_test_context
+from braintrust.integrations.versioning import detect_module_version, version_satisfies
 
 
 # 1. Verify not patched initially
@@ -33,5 +42,23 @@ with autoinstrument_test_context("test_auto_litellm", integration="litellm") as 
     assert len(spans) == 1, f"Expected 1 span, got {len(spans)}"
     span = spans[0]
     assert span["metadata"]["provider"] == "openai"
+
+if version_satisfies(detect_module_version(litellm, ("litellm",)), ">=1.105.0"):
+    with autoinstrument_test_context("test_litellm_decisions_metrics[async]", integration="litellm") as memory_logger:
+        response = asyncio.run(
+            litellm.adecisions(
+                model=f"openai/{DECISIONS_MODEL}",
+                input=DECISIONS_INPUT,
+                questions=DECISIONS_QUESTIONS,
+                safety_identifier="do-not-log-this-identifier",
+            )
+        )
+        assert_decisions_span(
+            memory_logger.pop(),
+            response,
+            name="Decision",
+            model=f"openai/{DECISIONS_MODEL}",
+            instrumentation="litellm-auto",
+        )
 
 print("SUCCESS")

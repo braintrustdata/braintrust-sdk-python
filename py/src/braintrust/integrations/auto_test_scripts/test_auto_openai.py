@@ -1,11 +1,19 @@
 """Test auto_instrument for OpenAI."""
 
+import asyncio
 import inspect
 
 import openai
 from braintrust import wrap_openai
 from braintrust.auto import auto_instrument
+from braintrust.integrations.test_decisions import (
+    DECISIONS_INPUT,
+    DECISIONS_MODEL,
+    DECISIONS_QUESTIONS,
+    assert_decisions_span,
+)
 from braintrust.integrations.test_utils import autoinstrument_test_context
+from braintrust.integrations.versioning import version_satisfies
 from wrapt import FunctionWrapper
 
 
@@ -15,6 +23,10 @@ def _is_braintrust_wrapped(resource) -> bool:
 
 
 resources = [openai.resources.chat.completions.Completions]
+if version_satisfies(openai.__version__, ">=3.26.0"):
+    from openai.resources.decisions import AsyncDecisions, Decisions
+
+    resources.extend((Decisions, AsyncDecisions))
 try:
     from openai.resources.beta.agents.sessions.sessions import Sessions
 
@@ -65,5 +77,24 @@ with autoinstrument_test_context("test_openai_responses_metrics[sync]", integrat
     assert spans[0]["span_attributes"]["name"] == "openai.responses.create"
     assert spans[0]["metrics"]["prompt_tokens"] == response.usage.input_tokens
     assert spans[0]["metrics"]["completion_tokens"] == response.usage.output_tokens
+
+if version_satisfies(openai.__version__, ">=3.26.0"):
+    with autoinstrument_test_context("test_openai_decisions_metrics[async]", integration="openai") as memory_logger:
+        client = wrap_openai(wrap_openai(openai.AsyncOpenAI()))
+        response = asyncio.run(
+            client.decisions.create(
+                model=DECISIONS_MODEL,
+                input=DECISIONS_INPUT,
+                questions=DECISIONS_QUESTIONS,
+                safety_identifier="do-not-log-this-identifier",
+            )
+        )
+        assert_decisions_span(
+            memory_logger.pop(),
+            response,
+            name="openai.decisions.create",
+            model=DECISIONS_MODEL,
+            instrumentation="openai-auto",
+        )
 
 print("SUCCESS")

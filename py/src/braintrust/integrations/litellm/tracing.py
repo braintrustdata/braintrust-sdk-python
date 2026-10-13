@@ -7,6 +7,7 @@ from functools import lru_cache
 from types import TracebackType
 from typing import Any
 
+from braintrust.integrations.openai.tracing import _decisions_input, _decisions_output
 from braintrust.integrations.utils import (
     _extract_audio_output,
     _materialize_attachment,
@@ -340,6 +341,53 @@ async def _aresponses_wrapper_async(wrapped, instance, args, kwargs):
     finally:
         if should_end:
             span.end()
+
+
+def _decisions_span_payload(args, kwargs):
+    # Decisions accepts model, input and questions positionally as well as by keyword.
+    params = dict(zip(("model", "input", "questions"), args))
+    params.update(kwargs)
+    return merge_dicts(
+        params.get("span_info", {}),
+        {
+            "input": _decisions_input(params.get("state", params.get("input")), params.get("questions") or []),
+            "metadata": _build_span_metadata({}, params.get("model")),
+        },
+    )
+
+
+def _decisions_wrapper(wrapped, instance, args, kwargs):
+    with start_span(
+        **merge_dicts(
+            dict(name="Decision", span_attributes={"type": SpanTypeAttribute.QUESTION}),
+            _decisions_span_payload(args, kwargs),
+        )
+    ) as span:
+        response = wrapped(*args, **kwargs)
+        span.log(
+            output=_decisions_output(
+                _get_field(response, "answers"), kwargs.get("questions", args[2] if len(args) > 2 else [])
+            ),
+            metrics=_parse_metrics_from_usage(_get_field(response, "usage")),
+        )
+        return response
+
+
+async def _adecisions_wrapper_async(wrapped, instance, args, kwargs):
+    with start_span(
+        **merge_dicts(
+            dict(name="Decision", span_attributes={"type": SpanTypeAttribute.QUESTION}),
+            _decisions_span_payload(args, kwargs),
+        )
+    ) as span:
+        response = await wrapped(*args, **kwargs)
+        span.log(
+            output=_decisions_output(
+                _get_field(response, "answers"), kwargs.get("questions", args[2] if len(args) > 2 else [])
+            ),
+            metrics=_parse_metrics_from_usage(_get_field(response, "usage")),
+        )
+        return response
 
 
 def _image_attachment_from_base64(
