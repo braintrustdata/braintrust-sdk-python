@@ -17,14 +17,14 @@ CONSTRAINTS = {
     "test_pydantic_ai_integration": {"versions": {"latest": {"min_python": "3.11"}}},
     "test_pydantic_ai_logfire": {"versions": {"latest": {"min_python": "3.11"}}},
     "test_pydantic_ai_wrap_openai": {"versions": {"latest": {"min_python": "3.11"}}},
-    "test_dspy": {"max_python_exclusive": "3.15", "versions": {"latest": {"min_python": "3.11"}}},  # fastuuid, pyarrow
+    "test_dspy": {"versions": {"latest": {"min_python": "3.11", "max_python_exclusive": "3.15"}}},  # fastuuid
     "test_crewai": {"max_python_exclusive": "3.14"},
     "test_deepagents": {"min_python": "3.11", "max_python_exclusive": "3.15"},  # ormsgpack
     "test_transformers": {
         "max_python_exclusive": "3.15",  # sentencepiece
         "versions": {"not_latest": {"max_python_exclusive": "3.13"}},
     },
-    "test_harbor": {"min_python": "3.12", "max_python_exclusive": "3.15"},  # fastuuid, pyarrow
+    "test_harbor": {"min_python": "3.12", "max_python_exclusive": "3.15"},  # fastuuid
     "test_otel": {"versions": {"not_latest_below": {"version": "1.28.0", "skip_from_python": "3.14"}}},
     "test_instructor": {"max_python_exclusive": "3.15"},  # jiter 0.10
     "test_langchain": {"max_python_exclusive": "3.15"},  # ormsgpack
