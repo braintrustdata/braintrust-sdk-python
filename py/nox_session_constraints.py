@@ -14,6 +14,9 @@ CONSTRAINTS = {
     "test_livekit_agents": {"max_python_exclusive": "3.14", "ci_platforms": ["linux"]},
     "test_pipecat": {"min_python": "3.11", "max_python_exclusive": "3.14"},
     "test_agentscope": {"versions": {"latest": {"min_python": "3.11"}}},
+    "test_pydantic_ai_integration": {"versions": {"latest": {"min_python": "3.11"}}},
+    "test_pydantic_ai_logfire": {"versions": {"latest": {"min_python": "3.11"}}},
+    "test_pydantic_ai_wrap_openai": {"versions": {"latest": {"min_python": "3.11"}}},
     "test_dspy": {"max_python_exclusive": "3.15", "versions": {"latest": {"min_python": "3.11"}}},  # fastuuid, pyarrow
     "test_crewai": {"max_python_exclusive": "3.14"},
     "test_deepagents": {"min_python": "3.11", "max_python_exclusive": "3.15"},  # ormsgpack

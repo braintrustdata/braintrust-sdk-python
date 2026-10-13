@@ -36,7 +36,7 @@ interactions:
     uri: https://api.openai.com/v1/moderations
   response:
     body:
-      string: "{\n  \"id\": \"modr-3283\",\n  \"model\": \"omni-moderation-latest\",\n
+      string: "{\n  \"id\": \"modr-4689\",\n  \"model\": \"omni-moderation-latest\",\n
         \ \"results\": [\n    {\n      \"flagged\": false,\n      \"categories\":
         {\n        \"harassment\": false,\n        \"harassment/threatening\": false,\n
         \       \"sexual\": false,\n        \"hate\": false,\n        \"hate/threatening\":
@@ -66,14 +66,16 @@ interactions:
     headers:
       Access-Control-Expose-Headers:
       - CF-Ray
+      Alt-Svc:
+      - h3=":443"; ma=86400
       CF-RAY:
-      - a45d361cbf02c85f-YYZ
+      - a49eed210ab6e3ce-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Mon, 05 Oct 2026 14:45:40 GMT
+      - Tue, 13 Oct 2026 14:10:10 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -82,20 +84,18 @@ interactions:
       - chunked
       X-Content-Type-Options:
       - nosniff
-      alt-svc:
-      - h3=":443"; ma=86400
+      X-Request-ID:
+      - req_be5308648c27418896d0a8df6d084b46
       cf-cache-status:
       - DYNAMIC
       content-length:
       - '1971'
       openai-processing-ms:
-      - '37'
+      - '40'
       openai-version:
       - '2020-10-01'
       x-openai-proxy-wasm:
       - v0.1
-      x-request-id:
-      - req_99b0cdc0e9194aa19a06b9f51e6113e8
     status:
       code: 200
       message: OK
