@@ -5562,6 +5562,7 @@ class Dataset(ObjectFetcher[DatasetEvent]):
             )
 
         self.state.global_bg_logger().log(LazyValue(compute_args, use_mutex=False))
+        self._clear_cache()
         return id
 
     def summarize(self, summarize_data: bool = True) -> "DatasetSummary":
