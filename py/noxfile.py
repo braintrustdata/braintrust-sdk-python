@@ -944,6 +944,10 @@ def pylint(session):
     unlintable_integrations = set()
     for package in _VENDOR_TABLE:
         if sys.version_info[:2] < minimum_python.get(package, (3, 10)):
+            if package == "pydantic-ai-integration":
+                # pydantic-ai-slim is not installed on Python 3.10, so pylint
+                # cannot resolve imports in this integration or its example.
+                unlintable_integrations.add("pydantic_ai")
             continue
         max_python, integration = maximum_python_exclusive.get(package, (None, None))
         if max_python and sys.version_info[:2] >= max_python:
