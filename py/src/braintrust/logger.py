@@ -840,39 +840,50 @@ class BraintrustState:
         api_key = _require_api_key(api_key)
         org_name = _get_org_name(org_name)
         key = (app_url, api_key, org_name, id(_http_adapter))
-        with self._client_lock:
-            if generation != self._login_generation:
-                raise RuntimeError("Login cancelled by a reset.")
-            if not force_login and self.logged_in:
-                self.login(app_url=app_url, api_key=api_key, org_name=org_name)
-                return
-            pending = self._pending_logins.get(key) if not force_login else None
-            if pending is None:
-                pending = concurrent.futures.Future()
+        while True:
+            recheck_login = False
+            with self._client_lock:
+                if generation != self._login_generation:
+                    raise RuntimeError("Login cancelled by a reset.")
+                if not force_login and self.logged_in:
+                    self.login(app_url=app_url, api_key=api_key, org_name=org_name)
+                    return
+                pending = self._pending_logins.get(key) if not force_login else None
                 previous = self._login_queue_tail
-                self._login_queue_tail = pending
-                self._pending_logins[key] = pending
-                self._login_requests.add(pending)
+                if not force_login and pending is None and previous is not None:
+                    pending = previous
+                    recheck_login = True
+                elif pending is None:
+                    pending = concurrent.futures.Future()
+                    self._login_queue_tail = pending
+                    self._pending_logins[key] = pending
+                    self._login_requests.add(pending)
 
-                def cleanup(request):
-                    with self._client_lock:
-                        self._login_requests.discard(request)
-                        if self._pending_logins.get(key) is request:
-                            self._pending_logins.pop(key)
-                        if self._login_queue_tail is request:
-                            self._login_queue_tail = None
+                    def cleanup(request):
+                        with self._client_lock:
+                            self._login_requests.discard(request)
+                            if self._pending_logins.get(key) is request:
+                                self._pending_logins.pop(key)
+                            if self._login_queue_tail is request:
+                                self._login_queue_tail = None
 
-                pending.add_done_callback(cleanup)
-                self._start_request(
-                    pending,
-                    lambda: login_to_state(app_url=app_url, api_key=api_key, org_name=org_name),
-                    timeout=_LOGIN_TIMEOUT_SECONDS,
-                    label="login",
-                    previous=previous,
-                    on_success=self.copy_state,
-                    on_discard=lambda state: state._client.close() if state._client is not None else None,
-                )
-        pending.result()
+                    pending.add_done_callback(cleanup)
+                    self._start_request(
+                        pending,
+                        lambda: login_to_state(app_url=app_url, api_key=api_key, org_name=org_name),
+                        timeout=_LOGIN_TIMEOUT_SECONDS,
+                        label="login",
+                        previous=previous,
+                        on_success=self.copy_state,
+                        on_discard=lambda state: state._client.close() if state._client is not None else None,
+                    )
+            if recheck_login:
+                # Validate against the preceding login's credentials on success;
+                # a failed predecessor leaves this caller free to try its own.
+                pending.exception()
+            else:
+                pending.result()
+                return
 
     def _start_request(
         self,

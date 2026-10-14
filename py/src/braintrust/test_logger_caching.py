@@ -39,16 +39,18 @@ def _observe_request_waiters(state, count):
 
     def start(future, *args, **kwargs):
         result = future.result
+        exception = future.exception
 
-        def wait(*args, **kwargs):
+        def wait(method, *args, **kwargs):
             nonlocal waiting
             with lock:
                 waiting += 1
                 if waiting == count:
                     joined.set()
-            return result(*args, **kwargs)
+            return method(*args, **kwargs)
 
-        future.result = wait
+        future.result = lambda *args, **kwargs: wait(result, *args, **kwargs)
+        future.exception = lambda *args, **kwargs: wait(exception, *args, **kwargs)
         return start_request(future, *args, **kwargs)
 
     return patch.object(state, "_start_request", side_effect=start), joined
@@ -237,11 +239,59 @@ def test_login_shares_cold_requests_and_preserves_forced_logins():
         assert request.call_count == 3
 
 
-def _wait_until(predicate):
-    deadline = logger.time.monotonic() + 5
-    while not predicate():
-        assert logger.time.monotonic() < deadline
-        threading.Event().wait(0.001)
+@pytest.mark.parametrize(
+    ("changed_param", "changed_value", "conflicts"),
+    [
+        pytest.param("api_key", "second", True, id="api-key"),
+        pytest.param("org_name", "second", True, id="organization"),
+        pytest.param("app_url", "https://second.example.com", True, id="app-url"),
+        pytest.param("org_name", None, False, id="reuse-active-org"),
+    ],
+)
+@pytest.mark.parametrize("force_login", [False, True], ids=["non-forced", "forced"])
+def test_queued_login_requires_force_to_switch_credentials(
+    changed_param, changed_value, conflicts, force_login, monkeypatch
+):
+    monkeypatch.delenv("BRAINTRUST_ORG_NAME", raising=False)
+    state = BraintrustState()
+    first_options = {"api_key": logger.TEST_API_KEY, "org_name": "first-org", "app_url": "https://first.example.com"}
+    second_options = {**first_options, changed_param: changed_value}
+    first_state = logger.login_to_state(**first_options)
+    second_state = logger.login_to_state(
+        api_key=logger.TEST_API_KEY, org_name=second_options["org_name"], app_url=second_options["app_url"]
+    )
+    second_state.login_token = second_options["api_key"]
+    entered = threading.Event()
+    release = threading.Event()
+
+    def login(**options):
+        if options == first_options:
+            entered.set()
+            assert release.wait(5)
+            return first_state
+        return second_state
+
+    observe, joined = _observe_request_waiters(state, 2)
+    with observe, patch.object(logger, "login_to_state", side_effect=login) as request:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            first = pool.submit(state.login, **first_options)
+            assert entered.wait(5)
+            second = pool.submit(state.login, **second_options, force_login=force_login)
+            assert joined.wait(5)
+            release.set()
+            first.result(5)
+            if force_login or not conflicts:
+                second.result(5)
+            else:
+                with pytest.raises(Exception, match="force_login=True"):
+                    second.result(5)
+        assert request.call_count == (2 if force_login else 1)
+    expected = second_state if force_login else first_state
+    assert (state.app_url, state.login_token, state.org_name) == (
+        expected.app_url,
+        expected.login_token,
+        expected.org_name,
+    )
 
 
 def test_login_shares_failure_and_retries_later():
@@ -269,7 +319,8 @@ def test_login_shares_failure_and_retries_later():
     assert state.logged_in
 
 
-def test_reset_cancels_pending_and_queued_logins():
+@pytest.mark.parametrize("force_login", [False, True], ids=["non-forced", "forced"])
+def test_reset_cancels_pending_and_queued_logins(force_login):
     state = BraintrustState()
     old_state = logger.login_to_state(api_key=logger.TEST_API_KEY, org_name="old")
     new_state = logger.login_to_state(api_key=logger.TEST_API_KEY, org_name="new")
@@ -283,11 +334,14 @@ def test_reset_cancels_pending_and_queued_logins():
 
     observe, discarded = _observe_discard(state)
     with observe, patch.object(logger, "login_to_state", side_effect=blocked) as request:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+        observe_waiters, joined = _observe_request_waiters(state, 2)
+        with observe_waiters, concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
             first = pool.submit(state.login, api_key=logger.TEST_API_KEY)
             assert entered.wait(5)
-            queued = pool.submit(state.login, api_key=logger.TEST_API_KEY, force_login=True)
-            _wait_until(lambda: len(state._login_requests) == 2)
+            queued = pool.submit(
+                state.login, api_key=logger.TEST_API_KEY, org_name="queued-org", force_login=force_login
+            )
+            assert joined.wait(5)
             state.reset_login_info()
             for result in (first, queued):
                 with pytest.raises(RuntimeError, match="cancelled by a reset"):
@@ -301,9 +355,10 @@ def test_reset_cancels_pending_and_queued_logins():
     assert request.call_count == 2
 
 
-def test_failed_login_does_not_block_queued_forced_login():
+@pytest.mark.parametrize("force_login", [False, True], ids=["non-forced", "forced"])
+def test_failed_login_does_not_block_queued_login(force_login):
     state = BraintrustState()
-    logged_in = logger.login_to_state(api_key=logger.TEST_API_KEY)
+    logged_in = logger.login_to_state(api_key=logger.TEST_API_KEY, org_name="retry-org")
     entered = threading.Event()
     release = threading.Event()
 
@@ -318,11 +373,14 @@ def test_failed_login_does_not_block_queued_forced_login():
             return fail(**kwargs) if request.call_count == 1 else logged_in
 
         request.side_effect = dispatch
-        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+        observe, joined = _observe_request_waiters(state, 2)
+        with observe, concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
             first = pool.submit(state.login, api_key=logger.TEST_API_KEY)
             assert entered.wait(5)
-            second = pool.submit(state.login, api_key=logger.TEST_API_KEY, force_login=True)
-            _wait_until(lambda: len(state._login_requests) == 2)
+            second = pool.submit(
+                state.login, api_key=logger.TEST_API_KEY, org_name="retry-org", force_login=force_login
+            )
+            assert joined.wait(5)
             release.set()
             with pytest.raises(ValueError, match="login failed"):
                 first.result(5)
