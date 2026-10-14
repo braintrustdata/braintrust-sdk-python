@@ -1215,6 +1215,54 @@ async def test_error_score_handler_exception_does_not_abort_eval():
     assert results["ok"].scores == {"exact_match": 1.0}
 
 
+@pytest.mark.asyncio
+async def test_error_score_handler_mutating_unhandled_scores_does_not_affect_other_rows():
+    """Mutating the unhandled_scores list passed to the handler must not change which scorers run on later rows."""
+
+    async def task(input_value):
+        if input_value.startswith("task_error"):
+            raise ValueError("task failed")
+        return input_value
+
+    def exact_match(output, expected):
+        return 1.0 if output == expected else 0.0
+
+    def picky(output):
+        return 1.0
+
+    seen = []
+
+    def consuming_handler(root_span, data, unhandled_scores):
+        seen.append(list(unhandled_scores))
+        scores = {}
+        while unhandled_scores:
+            scores[unhandled_scores.pop()] = 0
+        return scores
+
+    evaluator = Evaluator(
+        project_name="test-project",
+        eval_name="test-error-score-handler-mutation",
+        data=[
+            EvalCase(input="task_error_1", expected="task_error_1"),
+            EvalCase(input="ok", expected="ok"),
+            EvalCase(input="task_error_2", expected="task_error_2"),
+        ],
+        task=task,
+        scores=[exact_match, picky],
+        experiment_name=None,
+        metadata=None,
+        max_concurrency=1,
+        error_score_handler=consuming_handler,
+    )
+
+    result = await run_evaluator(experiment=None, evaluator=evaluator, position=None, filters=[])
+
+    results = {r.input: r for r in result.results}
+    assert results["ok"].scores == {"exact_match": 1.0, "picky": 1.0}
+    assert results["task_error_2"].scores == {"exact_match": 0, "picky": 0}
+    assert seen == [["exact_match", "picky"], ["exact_match", "picky"]]
+
+
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_scorer_spans_have_purpose_attribute(with_memory_logger, with_simulate_login):

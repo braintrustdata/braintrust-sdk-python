@@ -1705,7 +1705,7 @@ async def _run_evaluator_internal_impl(
         error = None
         exc_info = None
         scores = {}
-        unhandled_scores = scorer_names
+        unhandled_scores = list(scorer_names)
         classifications = {}
         tags = datum.tags
 
