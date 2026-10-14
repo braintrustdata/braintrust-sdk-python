@@ -20,7 +20,6 @@ from .framework import (
     Evaluator,
     Filter,
     _call_user_fn_args,
-    _copy_containers,
     await_or_run,
     evaluate_filter,
     parse_filters,
@@ -1446,32 +1445,26 @@ async def test_hooks_tags_append(with_memory_logger, with_simulate_login, simple
     assert root_span[0].get("tags") == expected_tags
 
 
-@pytest.mark.parametrize("use_trials", [False, True], ids=["shared-row-data", "trials"])
+@pytest.mark.parametrize("use_trials", [False, True], ids=["shared-row-tags", "trials"])
 @pytest.mark.parametrize("initial_tags", [None, ["seed"], ("seed",), {"seed"}], ids=["none", "list", "tuple", "set"])
-def test_hook_mutations_are_isolated_per_evaluation(with_memory_logger, use_trials, initial_tags):
+def test_hooks_tags_mutation_is_isolated_per_evaluation(with_memory_logger, use_trials, initial_tags):
     original_tags = copy.copy(initial_tags)
     base_tags = list(initial_tags or [])
-    metadata = {"ctx": {"seen": []}}
-    expected = ["seed"]
     inputs = ["row"] if use_trials else ["first", "second"]
 
     def task(input, hooks):
-        own = f"{input}:{hooks.trial_index}"
-        hooks.tags.append(own)
-        hooks.metadata["ctx"]["seen"].append(own)
-        hooks.expected.append(own)
-        return own
+        own_tag = f"{input}:{hooks.trial_index}"
+        hooks.tags.append(own_tag)
+        return own_tag
 
-    def isolation(output, expected, metadata, tags):
-        return float(
-            tags == [*base_tags, output] and metadata["ctx"]["seen"] == [output] and expected == ["seed", output]
-        )
+    def tag_isolation(output, tags):
+        return float(tags == [*base_tags, output])
 
     result = Eval(
-        "isolated-hook-mutations",
-        data=[EvalCase(input=value, expected=expected, metadata=metadata, tags=initial_tags) for value in inputs],
+        "isolated-hook-tags",
+        data=[EvalCase(input=value, tags=initial_tags) for value in inputs],
         task=task,
-        scores=[isolation],
+        scores=[tag_isolation],
         trial_count=2 if use_trials else 1,
         max_concurrency=1,
         no_send_logs=True,
@@ -1479,31 +1472,9 @@ def test_hook_mutations_are_isolated_per_evaluation(with_memory_logger, use_tria
     )
 
     assert [row.error for row in result.results] == [None, None]
-    for row in result.results:
-        assert row.tags == [*base_tags, row.output]
-        assert row.metadata["ctx"]["seen"] == [row.output]
-        assert row.expected == ["seed", row.output]
-        assert row.scores["isolation"] == 1.0
+    assert [row.tags for row in result.results] == [[*base_tags, row.output] for row in result.results]
+    assert [row.scores["tag_isolation"] for row in result.results] == [1.0, 1.0]
     assert initial_tags == original_tags
-    assert metadata == {"ctx": {"seen": []}}
-    assert expected == ["seed"]
-
-
-def test_copy_containers_copies_dicts_and_lists_only():
-    leaf = object()
-    shared = [1]
-    value = {"nested": {"items": [shared, shared]}, "leaf": leaf, "tuple": (shared,)}
-    value["self"] = value
-
-    copied = _copy_containers(value)
-
-    assert copied is not value
-    assert copied["nested"] is not value["nested"]
-    assert copied["nested"]["items"][0] is not shared
-    assert copied["nested"]["items"][0] is copied["nested"]["items"][1]
-    assert copied["self"] is copied
-    assert copied["leaf"] is leaf
-    assert copied["tuple"] is value["tuple"]
 
 
 @pytest.mark.asyncio

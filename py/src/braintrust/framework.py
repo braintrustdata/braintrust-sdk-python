@@ -1219,32 +1219,6 @@ def evaluate_filter(object, filter: Filter):
     return filter.pattern.match(serialize_json_with_plain_string(key)) is not None
 
 
-def _copy_containers(value: Any, memo: dict[int, Any] | None = None) -> Any:
-    """Recursively copy plain dicts and lists so one evaluation's mutations don't leak into another.
-
-    Other objects are shared rather than deep-copied, since they may be expensive or impossible to copy.
-    """
-    value_type = type(value)
-    if value_type is not dict and value_type is not list:
-        return value
-    if memo is None:
-        memo = {}
-    if id(value) in memo:
-        return memo[id(value)]
-    # Only recurse into containers, so plain values skip the extra call.
-    if value_type is dict:
-        copied_dict: dict[Any, Any] = {}
-        memo[id(value)] = copied_dict
-        for k, v in value.items():
-            copied_dict[k] = _copy_containers(v, memo) if type(v) is dict or type(v) is list else v
-        return copied_dict
-    copied_list: list[Any] = []
-    memo[id(value)] = copied_list
-    for v in value:
-        copied_list.append(_copy_containers(v, memo) if type(v) is dict or type(v) is list else v)
-    return copied_list
-
-
 class DictEvalHooks(dict[str, Any]):
     def __init__(
         self,
@@ -1734,8 +1708,7 @@ async def _run_evaluator_internal_impl(
         if isinstance(datum, dict):
             datum = EvalCase.from_dict(datum)
 
-        metadata = _copy_containers({**(datum.metadata or {})})
-        expected = _copy_containers(datum.expected)
+        metadata = {**(datum.metadata or {})}
         output = None
         error = None
         exc_info = None
@@ -1770,7 +1743,7 @@ async def _run_evaluator_internal_impl(
             name="eval",
             span_attributes={"type": SpanTypeAttribute.EVAL},
             input=datum.input,
-            expected=expected,
+            expected=datum.expected,
             tags=tags,
             **({"origin": origin} if origin is not None else {}),
         )
@@ -1805,7 +1778,7 @@ async def _run_evaluator_internal_impl(
 
                 hooks = DictEvalHooks(
                     metadata,
-                    expected=expected,
+                    expected=datum.expected,
                     trial_index=trial_index,
                     tags=tags,
                     report_progress=report_progress,
@@ -1903,7 +1876,7 @@ async def _run_evaluator_internal_impl(
 
                 scorer_kwargs = {
                     "input": datum.input,
-                    "expected": expected,
+                    "expected": datum.expected,
                     "metadata": metadata,
                     "output": output,
                     "trace": trace,
@@ -1990,7 +1963,7 @@ async def _run_evaluator_internal_impl(
 
         return EvalResult(
             input=datum.input,
-            expected=expected,
+            expected=datum.expected,
             metadata=metadata,
             tags=tags,
             output=output,
