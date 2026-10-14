@@ -875,7 +875,7 @@ class BraintrustState:
                         label="login",
                         previous=previous,
                         on_success=self.copy_state,
-                        on_discard=lambda state: state._client.close() if state._client is not None else None,
+                        on_discard=_close_login_state,
                     )
             if recheck_login:
                 # Validate against the preceding login's credentials on success;
@@ -909,6 +909,9 @@ class BraintrustState:
                     future.set_exception(TimeoutError(f"Braintrust {label} timed out after {timeout:g} seconds."))
 
         def run():
+            timer = threading.Timer(timeout, expire)
+            timer.daemon = True
+            timer.start()
             if previous is not None:
                 try:
                     previous.result()
@@ -916,10 +919,8 @@ class BraintrustState:
                     pass
             with self._client_lock:
                 if future.done():
+                    timer.cancel()
                     return
-            timer = threading.Timer(timeout, expire)
-            timer.daemon = True
-            timer.start()
             try:
                 value = compute()
                 with self._client_lock:
@@ -2635,6 +2636,13 @@ def _authenticated_api_conn(api_url: str, api_key: str) -> HTTPConnection:
 def _login_loader_client(options: _LoaderLoginOptions) -> BraintrustClient:
     client, _ = _login_with_api_key(app_url=options.app_url, api_key=options.api_key, org_name=options.org_name)
     return client
+
+
+def _close_login_state(state: BraintrustState) -> None:
+    """Close resources created for a login result that can no longer be published."""
+    for resource in (state._client, state._api_conn, state._app_conn, state._proxy_conn):
+        if resource is not None:
+            resource.close()
 
 
 def login_to_state(

@@ -425,8 +425,12 @@ def test_stalled_requests_timeout_and_allow_retry(project_state, monkeypatch, ki
 
     if kind == "login":
         old_state = logger.login_to_state(api_key=logger.TEST_API_KEY, org_name="old")
+        old_state._client = MagicMock()
+        old_state._api_conn = MagicMock()
+        old_state._app_conn = MagicMock()
+        old_state._proxy_conn = MagicMock()
         state.reset_login_info()
-        monkeypatch.setattr(logger, "_LOGIN_TIMEOUT_SECONDS", 0.05)
+        monkeypatch.setattr(logger, "_LOGIN_TIMEOUT_SECONDS", 0.5)
         target = patch.object(logger, "login_to_state", side_effect=blocked)
         invoke = lambda: state.login(api_key=logger.TEST_API_KEY)
     else:
@@ -447,5 +451,9 @@ def test_stalled_requests_timeout_and_allow_retry(project_state, monkeypatch, ki
         assert discarded.wait(5)
     if kind == "login":
         assert state.org_name == "new"
+        old_state._client.close.assert_called_once()
+        old_state._api_conn.close.assert_called_once()
+        old_state._app_conn.close.assert_called_once()
+        old_state._proxy_conn.close.assert_called_once()
     else:
         assert invoke().project.id == "project-id"
