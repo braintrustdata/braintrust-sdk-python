@@ -1733,6 +1733,7 @@ async def _run_evaluator_internal_impl(
             datum = EvalCase.from_dict(datum)
 
         metadata = _copy_containers({**(datum.metadata or {})})
+        expected = _copy_containers(datum.expected)
         output = None
         error = None
         exc_info = None
@@ -1767,7 +1768,7 @@ async def _run_evaluator_internal_impl(
             name="eval",
             span_attributes={"type": SpanTypeAttribute.EVAL},
             input=datum.input,
-            expected=datum.expected,
+            expected=expected,
             tags=tags,
             **({"origin": origin} if origin is not None else {}),
         )
@@ -1802,7 +1803,7 @@ async def _run_evaluator_internal_impl(
 
                 hooks = DictEvalHooks(
                     metadata,
-                    expected=datum.expected,
+                    expected=expected,
                     trial_index=trial_index,
                     tags=tags,
                     report_progress=report_progress,
@@ -1900,7 +1901,7 @@ async def _run_evaluator_internal_impl(
 
                 scorer_kwargs = {
                     "input": datum.input,
-                    "expected": datum.expected,
+                    "expected": expected,
                     "metadata": metadata,
                     "output": output,
                     "trace": trace,
@@ -1987,7 +1988,7 @@ async def _run_evaluator_internal_impl(
 
         return EvalResult(
             input=datum.input,
-            expected=datum.expected,
+            expected=expected,
             metadata=metadata,
             tags=tags,
             output=output,

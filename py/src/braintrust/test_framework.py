@@ -1561,6 +1561,36 @@ def test_hooks_nested_metadata_mutation_is_isolated_per_evaluation(with_memory_l
     assert shared_metadata == {"ctx": {"seen": []}}
 
 
+@pytest.mark.parametrize("use_trials", [False, True], ids=["shared-row-expected", "trials"])
+def test_hooks_expected_mutation_is_isolated_per_evaluation(with_memory_logger, use_trials):
+    shared_expected = ["a"]
+    inputs = ["row"] if use_trials else ["first", "second"]
+
+    def task(input, hooks):
+        hooks.expected.append(f"{input}:{hooks.trial_index}")
+        return list(hooks.expected)
+
+    def expected_isolation(output, expected):
+        return float(expected == output)
+
+    result = Eval(
+        "isolated-hook-expected",
+        data=[EvalCase(input=value, expected=shared_expected) for value in inputs],
+        task=task,
+        scores=[expected_isolation],
+        trial_count=2 if use_trials else 1,
+        max_concurrency=1,
+        no_send_logs=True,
+        enable_cache=False,
+    )
+
+    assert [row.error for row in result.results] == [None, None]
+    assert [len(row.output) for row in result.results] == [2, 2]
+    assert [row.scores["expected_isolation"] for row in result.results] == [1.0, 1.0]
+    assert [row.expected for row in result.results] == [row.output for row in result.results]
+    assert shared_expected == ["a"]
+
+
 @pytest.mark.parametrize("tags", [["a"], ("a",), {"a"}], ids=["list", "tuple", "set"])
 def test_dict_eval_hooks_copies_tags(tags):
     original = type(tags)(tags)
