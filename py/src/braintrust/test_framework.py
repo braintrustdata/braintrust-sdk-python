@@ -1263,6 +1263,40 @@ async def test_error_score_handler_mutating_unhandled_scores_does_not_affect_oth
     assert seen == [["exact_match", "picky"], ["exact_match", "picky"]]
 
 
+@pytest.mark.asyncio
+async def test_error_score_handler_logs_before_root_span_ends(with_memory_logger, with_simulate_login):
+    """Error scores are logged to the root span before it ends, not as a late write after metrics.end."""
+
+    async def task(input_value):
+        raise ValueError("task failed")
+
+    def exact_match(output, expected):
+        return 1.0 if output == expected else 0.0
+
+    evaluator = Evaluator(
+        project_name="test-project",
+        eval_name="test-error-score-handler-span-end",
+        data=[EvalCase(input="task_error", expected="task_error")],
+        task=task,
+        scores=[exact_match],
+        experiment_name=None,
+        metadata=None,
+        summarize_scores=False,
+        error_score_handler=default_error_score_handler,
+    )
+    experiment = init_test_exp("test-error-score-handler-span-end", "test-project")
+
+    await run_evaluator(experiment=experiment, evaluator=evaluator, position=None, filters=[])
+
+    # Inspect the raw, unmerged writes so their order is visible.
+    records = [record for item in with_memory_logger.logs if (record := item.get()) is not None]
+    root_records = [record for record in records if not record["span_parents"]]
+    score_index = next(i for i, record in enumerate(root_records) if record.get("scores"))
+    end_index = next(i for i, record in enumerate(root_records) if record.get("metrics", {}).get("end"))
+    assert root_records[score_index]["scores"] == {"exact_match": 0}
+    assert score_index < end_index
+
+
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_scorer_spans_have_purpose_attribute(with_memory_logger, with_simulate_login):

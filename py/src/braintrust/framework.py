@@ -1953,12 +1953,13 @@ async def _run_evaluator_internal_impl(
                 # so just capture the stack trace here.
                 exc_info = traceback.format_exc()
 
-        error_scores = {}
-        if evaluator.error_score_handler is not None and unhandled_scores:
-            try:
-                error_scores = evaluator.error_score_handler(root_span, datum, unhandled_scores) or {}
-            except Exception as e:
-                eprint(f"Error score handler failed for scorers: {', '.join(unhandled_scores)}", e)
+            # Run inside the root span so error scores the handler logs land before the span ends.
+            error_scores = {}
+            if evaluator.error_score_handler is not None and unhandled_scores:
+                try:
+                    error_scores = evaluator.error_score_handler(root_span, datum, unhandled_scores) or {}
+                except Exception as e:
+                    eprint(f"Error score handler failed for scorers: {', '.join(unhandled_scores)}", e)
 
         return EvalResult(
             input=datum.input,
