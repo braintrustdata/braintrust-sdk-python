@@ -8,6 +8,7 @@ import builtins
 import concurrent.futures
 import contextlib
 import contextvars
+import copy
 import dataclasses
 import datetime
 import hashlib
@@ -25,7 +26,7 @@ import traceback
 import types
 import uuid
 from abc import ABC, abstractmethod
-from collections import Counter
+from collections import Counter, OrderedDict
 from collections.abc import Callable, Iterator, Mapping, MutableMapping, Sequence
 from functools import partial, wraps
 from types import TracebackType
@@ -578,6 +579,23 @@ class _LoaderLoginEntry(Generic[_LoaderResource]):
             conn.close()
 
 
+_LOGIN_TIMEOUT_SECONDS = 30.0
+_PROJECT_LOOKUP_TIMEOUT_SECONDS = 30.0
+_PROJECT_CACHE_TTL_SECONDS = 15 * 60
+_PROJECT_CACHE_MAX_SIZE = 1000
+_RequestResult = TypeVar("_RequestResult")
+_LoginKey = tuple[str, str, str | None, int]
+_ProjectCacheKey = tuple[str | None, str | None, str | None, str, str, str | None]
+
+
+@dataclasses.dataclass
+class _ProjectMetadataEntry:
+    future: "concurrent.futures.Future[OrgProjectMetadata]" = dataclasses.field(
+        default_factory=concurrent.futures.Future
+    )
+    expires_at: float = float("inf")
+
+
 class BraintrustState:
     def __init__(self):
         self.id = str(uuid.uuid4())
@@ -608,6 +626,11 @@ class BraintrustState:
         self._context_manager = None
         self._context_manager_lock = threading.Lock()
         self._client_lock = threading.RLock()
+        self._project_metadata_cache: OrderedDict[_ProjectCacheKey, _ProjectMetadataEntry] = OrderedDict()
+        self._pending_logins: dict[_LoginKey, concurrent.futures.Future[BraintrustState]] = {}
+        self._login_requests: set[concurrent.futures.Future[BraintrustState]] = set()
+        self._login_queue_tail: concurrent.futures.Future[BraintrustState] | None = None
+        self._login_generation = 0
 
         def default_get_api_conn():
             self.login()
@@ -662,6 +685,17 @@ class BraintrustState:
         self._otel_flush_callback: Any | None = None
 
     def reset_login_info(self):
+        with self._client_lock:
+            self._reset_login_info()
+
+    def _reset_login_info(self):
+        self._login_generation += 1
+        for request in list(self._login_requests):
+            if not request.done():
+                request.set_exception(RuntimeError("Login cancelled by a reset."))
+        self._pending_logins.clear()
+        self._login_queue_tail = None
+        self._project_metadata_cache.clear()
         self._loader_api_client_cache.clear()
 
         self.app_url: str | None = None
@@ -743,6 +777,11 @@ class BraintrustState:
 
     def copy_state(self, other: "BraintrustState"):
         """Copy login information from another BraintrustState instance."""
+        with self._client_lock:
+            self._copy_state(other)
+
+    def _copy_state(self, other: "BraintrustState"):
+        self._project_metadata_cache.clear()
         self._loader_api_client_cache.clear()
         self.__dict__.update(
             {
@@ -761,6 +800,11 @@ class BraintrustState:
                     "_last_otel_setting",
                     "_context_manager_lock",
                     "_client_lock",
+                    "_project_metadata_cache",
+                    "_pending_logins",
+                    "_login_requests",
+                    "_login_queue_tail",
+                    "_login_generation",
                     "_loader_api_client_cache",
                 )
             }
@@ -774,6 +818,7 @@ class BraintrustState:
         force_login: bool = False,
     ) -> None:
         with self._client_lock:
+            generation = self._login_generation
             if not force_login and self.logged_in:
                 # We have already logged in. If any provided login inputs disagree
                 # with our existing settings, raise an Exception warning the user to
@@ -790,23 +835,109 @@ class BraintrustState:
                 check_updated_param("org_name", org_name, self.org_name)
                 return
 
-            state = login_to_state(
-                app_url=app_url,
-                api_key=api_key,
-                org_name=org_name,
-            )
-            self.copy_state(state)
+        # Resolve credentials outside the lock; dotenv discovery can perform I/O.
+        app_url = _get_app_url(app_url)
+        api_key = _require_api_key(api_key)
+        org_name = _get_org_name(org_name)
+        key = (app_url, api_key, org_name, id(_http_adapter))
+        with self._client_lock:
+            if generation != self._login_generation:
+                raise RuntimeError("Login cancelled by a reset.")
+            if not force_login and self.logged_in:
+                self.login(app_url=app_url, api_key=api_key, org_name=org_name)
+                return
+            pending = self._pending_logins.get(key) if not force_login else None
+            if pending is None:
+                pending = concurrent.futures.Future()
+                previous = self._login_queue_tail
+                self._login_queue_tail = pending
+                self._pending_logins[key] = pending
+                self._login_requests.add(pending)
+
+                def cleanup(request):
+                    with self._client_lock:
+                        self._login_requests.discard(request)
+                        if self._pending_logins.get(key) is request:
+                            self._pending_logins.pop(key)
+                        if self._login_queue_tail is request:
+                            self._login_queue_tail = None
+
+                pending.add_done_callback(cleanup)
+                self._start_request(
+                    pending,
+                    lambda: login_to_state(app_url=app_url, api_key=api_key, org_name=org_name),
+                    timeout=_LOGIN_TIMEOUT_SECONDS,
+                    label="login",
+                    previous=previous,
+                    on_success=self.copy_state,
+                    on_discard=lambda state: state._client.close() if state._client is not None else None,
+                )
+        pending.result()
+
+    def _start_request(
+        self,
+        future: "concurrent.futures.Future[_RequestResult]",
+        compute: "Callable[[], _RequestResult]",
+        *,
+        timeout: float,
+        label: str,
+        previous: "concurrent.futures.Future[_RequestResult] | None" = None,
+        on_success: "Callable[[_RequestResult], None] | None" = None,
+        on_discard: "Callable[[_RequestResult], None] | None" = None,
+    ) -> None:
+        """Bound shared requests, including adapters that ignore HTTP timeouts.
+
+        A daemon worker lets callers recover from a stalled custom adapter. Late
+        results cannot publish login state or replace newer cache entries.
+        Future completion and state changes always hold the same lock.
+        """
+
+        def expire():
+            with self._client_lock:
+                if not future.done():
+                    future.set_exception(TimeoutError(f"Braintrust {label} timed out after {timeout:g} seconds."))
+
+        def run():
+            if previous is not None:
+                try:
+                    previous.result()
+                except BaseException:
+                    pass
+            with self._client_lock:
+                if future.done():
+                    return
+            timer = threading.Timer(timeout, expire)
+            timer.daemon = True
+            timer.start()
+            try:
+                value = compute()
+                with self._client_lock:
+                    if future.done():
+                        if on_discard is not None:
+                            on_discard(value)
+                        return
+                    if on_success is not None:
+                        on_success(value)
+                    future.set_result(value)
+            except BaseException as exc:
+                with self._client_lock:
+                    if not future.done():
+                        future.set_exception(exc)
+            finally:
+                timer.cancel()
+
+        ctx = contextvars.copy_context()
+        threading.Thread(target=lambda: ctx.run(run), name=f"braintrust-{label}", daemon=True).start()
 
     def api_client(self) -> BraintrustOpenApiClient:
         """Return the lazily bootstrapped OpenAPI client."""
 
         if self._client is None:
-            with self._client_lock:
-                if self._client is None:
-                    self.login()
-        if self._client is None:
-            raise RuntimeError("Braintrust API client was not initialized during login")
-        return self._client.openapi
+            self.login()
+        with self._client_lock:
+            if self._client is None:
+                raise RuntimeError("Braintrust API client was not initialized during login")
+            return self._client.openapi
 
     def app_conn(self):
         if not self._app_conn:
@@ -919,6 +1050,9 @@ def set_http_adapter(adapter: HTTPAdapter) -> None:
 
     global _http_adapter
 
+    if _http_adapter is not adapter:
+        with _state._client_lock:
+            _state._project_metadata_cache.clear()
     _http_adapter = adapter
 
     if _state._app_conn:
@@ -1908,25 +2042,63 @@ def _compute_logger_metadata(
     state = state or _state
     state.login()
     org_id = state.org_id
-    if project_id is None:
-        body: _CreateProjectRequest = {"name": project_name or GLOBAL_PROJECT, "org_name": state.org_name}
-        if project_group_name is not None:
-            body["project_group_name"] = project_group_name
-        response = state.api_client().projects.post_project(body=body)
-        return OrgProjectMetadata(
-            org_id=org_id,
-            project=ObjectMetadata(id=response["id"], name=response["name"], full_info=dict(response)),
-        )
-    elif project_name is None:
-        response = state.api_client().projects.get_project_id(project_id)
-        return OrgProjectMetadata(
-            org_id=org_id,
-            project=ObjectMetadata(id=response["id"], name=response["name"], full_info=dict(response)),
-        )
-    else:
+    if project_id is not None and project_name is not None:
         return OrgProjectMetadata(
             org_id=org_id, project=ObjectMetadata(id=project_id, name=project_name, full_info=dict())
         )
+
+    with state._client_lock:
+        if not state.logged_in:
+            raise RuntimeError("Project lookup cancelled by a login reset.")
+        org_id = state.org_id
+        key = (
+            state.app_url,
+            org_id,
+            state.login_token,
+            "name" if project_id is None else "id",
+            project_name or GLOBAL_PROJECT if project_id is None else project_id,
+            project_group_name if project_id is None else None,
+        )
+        cache = state._project_metadata_cache
+        entry = cache.get(key)
+        if entry is None or time.monotonic() >= entry.expires_at:
+            # Capture the client and organization together so a forced login cannot
+            # redirect an already-started lookup to another credential or organization.
+            api_client = state.api_client()
+            org_name = state.org_name
+            entry = _ProjectMetadataEntry()
+            cache[key] = entry
+            cache.move_to_end(key)
+            if len(cache) > _PROJECT_CACHE_MAX_SIZE:
+                cache.popitem(last=False)
+
+            def compute():
+                if project_id is None:
+                    body: _CreateProjectRequest = {"name": project_name or GLOBAL_PROJECT, "org_name": org_name}
+                    if project_group_name is not None:
+                        body["project_group_name"] = project_group_name
+                    response = api_client.projects.post_project(body=body)
+                else:
+                    response = api_client.projects.get_project_id(project_id)
+                return OrgProjectMetadata(
+                    org_id=org_id,
+                    project=ObjectMetadata(id=response["id"], name=response["name"], full_info=dict(response)),
+                )
+
+            def complete(request):
+                with state._client_lock:
+                    if request.exception() is None:
+                        entry.expires_at = time.monotonic() + _PROJECT_CACHE_TTL_SECONDS
+                    elif cache.get(key) is entry:
+                        cache.pop(key)
+
+            entry.future.add_done_callback(complete)
+            state._start_request(
+                entry.future, compute, timeout=_PROJECT_LOOKUP_TIMEOUT_SECONDS, label="project lookup"
+            )
+        else:
+            cache.move_to_end(key)
+    return copy.deepcopy(entry.future.result())
 
 
 def init_logger(
@@ -2354,9 +2526,6 @@ def load_parameters(
     return parameters
 
 
-login_lock = threading.RLock()
-
-
 def login(
     app_url: str | None = None,
     api_key: str | None = None,
@@ -2378,9 +2547,7 @@ def login(
 
     global _state
 
-    # Only permit one thread to login at a time
-    with login_lock:
-        _state.login(app_url=app_url, api_key=api_key, org_name=org_name, force_login=force_login)
+    _state.login(app_url=app_url, api_key=api_key, org_name=org_name, force_login=force_login)
 
 
 def register_otel_flush(callback: Any) -> None:

@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 from braintrust import init_logger
 from braintrust.api import BraintrustClient
@@ -31,6 +33,17 @@ def test_projects_end_to_end_with_real_backend(api_key):
         looked_up_logger = init_logger(project_id=created["id"], state=state, set_current=False)
         assert registered_logger.id == created["id"]
         assert looked_up_logger.project.name == project_name
+
+        # Separate loggers share resolved project metadata without another HTTP
+        # request. Keep this on the real API path using the existing cassette.
+        with patch.object(
+            state._client.transport, "request_json", wraps=state._client.transport.request_json
+        ) as request:
+            another_registered = init_logger(project=project_name, state=state, set_current=False)
+            another_looked_up = init_logger(project_id=created["id"], state=state, set_current=False)
+            assert another_registered.id == registered_logger.id
+            assert another_looked_up.project.name == looked_up_logger.project.name
+            request.assert_not_called()
 
         deleted = client.openapi.projects.delete_project_id(created["id"])
 
