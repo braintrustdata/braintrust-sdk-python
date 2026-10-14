@@ -1478,6 +1478,36 @@ def test_hooks_tags_mutation_is_isolated_per_evaluation(with_memory_logger, use_
 
 
 @pytest.mark.asyncio
+async def test_hooks_tags_are_kept_when_task_raises(with_memory_logger, with_simulate_login):
+    def task(input, hooks):
+        hooks.tags.append("failed-step")
+        raise ValueError("task failed")
+
+    evaluator = Evaluator(
+        project_name="test-project",
+        eval_name="test-evaluator",
+        data=[EvalCase(input="row", tags=["seed"])],
+        task=task,
+        scores=[],
+        experiment_name=None,
+        metadata=None,
+        summarize_scores=False,
+    )
+
+    result = await run_evaluator(
+        experiment=init_test_exp("test-evaluator", "test-project"),
+        evaluator=evaluator,
+        position=None,
+        filters=[],
+    )
+
+    assert isinstance(result.results[0].error, ValueError)
+    assert result.results[0].tags == ["seed", "failed-step"]
+    root_spans = [log for log in with_memory_logger.pop() if not log["span_parents"]]
+    assert [span.get("tags") for span in root_spans] == [["seed", "failed-step"]]
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("tags", ["prod", {"prod": True}], ids=["str", "dict"])
 async def test_non_sequence_eval_case_tags_are_rejected(with_memory_logger, with_simulate_login, tags):
     evaluator = Evaluator(

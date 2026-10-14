@@ -1760,6 +1760,7 @@ async def _run_evaluator_internal_impl(
             # In most cases this will be a no-op span, but if the parent is set, it will use that ctx.
             root_span = start_span(state=state, **base_event)
 
+        hooks = None
         with root_span:
             try:
 
@@ -1954,7 +1955,10 @@ async def _run_evaluator_internal_impl(
                     root_span.log(metadata=metadata, tags=tags)
             except Exception as e:
                 exc_type, exc_value, tb = sys.exc_info()
-                root_span.log(error=stringify_exception(exc_type, exc_value, tb))
+                if hooks is not None:
+                    # Keep tags the task added before it failed.
+                    tags = hooks.tags if hooks.tags else None
+                root_span.log(error=stringify_exception(exc_type, exc_value, tb), tags=tags)
 
                 error = e
                 # Python3.10 has a different set of arguments to format_exception than earlier versions,
