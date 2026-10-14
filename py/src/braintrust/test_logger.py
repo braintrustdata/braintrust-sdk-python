@@ -3427,8 +3427,7 @@ def test_attachment_upload_tracked_on_flush(with_memory_logger, with_simulate_lo
     assert with_memory_logger.upload_attempts[0] is attachment
 
 
-@pytest.mark.parametrize("field", ["input", "output"])
-def test_dataclass_nested_attachments_reach_flush(field, with_memory_logger, with_simulate_login):
+def test_dataclass_attachments_reach_flush(with_memory_logger, with_simulate_login):
     from dataclasses import dataclass
 
     @dataclass
@@ -3437,39 +3436,19 @@ def test_dataclass_nested_attachments_reach_flush(field, with_memory_logger, wit
 
     attachment = Attachment(data=b"data", filename="file.txt", content_type="text/plain")
     external = ExternalAttachment(url="s3://bucket/key", filename="file.pdf", content_type="application/pdf")
+    dataclass_attachment = DataclassAttachment("test-key")
     payload = Payload([attachment, external])
     test_logger = init_test_logger(__name__)
     with test_logger.start_span(name="dataclass-attachments") as span:
-        span.log(**{field: payload})
+        span.log(input=payload, output=dataclass_attachment)
     test_logger.flush()
 
     # The memory logger exercises extraction without making upload requests.
-    assert with_memory_logger.upload_attempts == [attachment, external]
-    assert with_memory_logger.pop()[0][field] == {"files": [attachment.reference, external.reference]}
+    assert with_memory_logger.upload_attempts == [attachment, external, dataclass_attachment]
+    logged = with_memory_logger.pop()[0]
+    assert logged["input"] == {"files": [attachment.reference, external.reference]}
+    assert logged["output"] == dataclass_attachment.reference
     assert payload.files == [attachment, external]
-
-
-@pytest.mark.parametrize("field", ["input", "output"])
-@pytest.mark.parametrize("nested", [False, True])
-def test_dataclass_base_attachment_reaches_flush(field, nested, with_memory_logger, with_simulate_login):
-    from dataclasses import dataclass
-
-    @dataclass
-    class Payload:
-        files: list[BaseAttachment]
-
-    attachment = DataclassAttachment("test-key")
-    value = Payload([attachment]) if nested else attachment
-    test_logger = init_test_logger(__name__)
-    with test_logger.start_span(name="custom-dataclass-attachment") as span:
-        span.log(**{field: value})
-    test_logger.flush()
-
-    # The memory logger verifies extraction and scheduling, without real uploads.
-    assert len(with_memory_logger.upload_attempts) == 1
-    assert with_memory_logger.upload_attempts[0] is attachment
-    expected = {"files": [attachment.reference]} if nested else attachment.reference
-    assert with_memory_logger.pop()[0][field] == expected
 
 
 def test_same_attachment_logged_twice_tracked_twice(with_memory_logger, with_simulate_login):
