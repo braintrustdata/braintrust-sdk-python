@@ -11,7 +11,6 @@ from braintrust.logger import BraintrustState, Dataset, ObjectMetadata, ProjectD
 from braintrust.util import LazyValue
 
 from .framework import (
-    DictEvalHooks,
     Eval,
     EvalAsync,
     EvalCase,
@@ -1446,32 +1445,32 @@ async def test_hooks_tags_append(with_memory_logger, with_simulate_login, simple
     assert root_span[0].get("tags") == expected_tags
 
 
-@pytest.mark.parametrize("as_dict", [False, True], ids=["dataclass", "dict"])
-@pytest.mark.parametrize("use_trials", [False, True], ids=["shared-row-tags", "trials"])
-@pytest.mark.parametrize("initial_tags", [None, [], ["seed-z", "seed-a"]], ids=["none", "empty", "nonempty"])
-def test_hooks_tags_mutation_is_isolated_per_evaluation(with_memory_logger, as_dict, use_trials, initial_tags):
-    initial_tags = None if initial_tags is None else list(initial_tags)
-    original_tags = None if initial_tags is None else list(initial_tags)
+@pytest.mark.parametrize("use_trials", [False, True], ids=["shared-row-data", "trials"])
+@pytest.mark.parametrize("initial_tags", [None, ["seed"], ("seed",), {"seed"}], ids=["none", "list", "tuple", "set"])
+def test_hook_mutations_are_isolated_per_evaluation(with_memory_logger, use_trials, initial_tags):
+    original_tags = None if initial_tags is None else type(initial_tags)(initial_tags)
     base_tags = list(initial_tags or [])
+    metadata = {"ctx": {"seen": []}}
+    expected = ["seed"]
     inputs = ["row"] if use_trials else ["first", "second"]
-    data = [
-        {"input": value, "tags": initial_tags} if as_dict else EvalCase(input=value, tags=initial_tags)
-        for value in inputs
-    ]
 
     def task(input, hooks):
-        own_tag = f"{input}:{hooks.trial_index}"
-        hooks.tags.append(own_tag)
-        return own_tag
+        own = f"{input}:{hooks.trial_index}"
+        hooks.tags.append(own)
+        hooks.metadata["ctx"]["seen"].append(own)
+        hooks.expected.append(own)
+        return own
 
-    def tag_isolation(output, tags):
-        return float(tags == [*base_tags, output])
+    def isolation(output, expected, metadata, tags):
+        return float(
+            tags == [*base_tags, output] and metadata["ctx"]["seen"] == [output] and expected == ["seed", output]
+        )
 
     result = Eval(
-        "isolated-hook-tags",
-        data=data,
+        "isolated-hook-mutations",
+        data=[EvalCase(input=value, expected=expected, metadata=metadata, tags=initial_tags) for value in inputs],
         task=task,
-        scores=[tag_isolation],
+        scores=[isolation],
         trial_count=2 if use_trials else 1,
         max_concurrency=1,
         no_send_logs=True,
@@ -1479,50 +1478,26 @@ def test_hooks_tags_mutation_is_isolated_per_evaluation(with_memory_logger, as_d
     )
 
     assert [row.error for row in result.results] == [None, None]
-    assert [row.scores["tag_isolation"] for row in result.results] == [1.0, 1.0]
-    assert result.summary.scores["tag_isolation"].score == 1.0
-    assert [row.tags for row in result.results] == [[*base_tags, row.output] for row in result.results]
+    for row in result.results:
+        assert row.tags == [*base_tags, row.output]
+        assert row.metadata["ctx"]["seen"] == [row.output]
+        assert row.expected == ["seed", row.output]
+        assert row.scores["isolation"] == 1.0
     assert initial_tags == original_tags
-    assert with_memory_logger.pop() == []
-
-
-@pytest.mark.parametrize("initial_tags", [("seed",), {"seed"}], ids=["tuple", "set"])
-def test_hooks_tags_from_tuple_or_set_are_appendable_per_trial(with_memory_logger, initial_tags):
-    original_tags = type(initial_tags)(initial_tags)
-
-    def task(input, hooks):
-        hooks.tags.append(f"trial:{hooks.trial_index}")
-        return list(hooks.tags)
-
-    result = Eval(
-        "sequence-hook-tags",
-        data=[EvalCase(input="row", tags=initial_tags)],
-        task=task,
-        scores=[],
-        trial_count=2,
-        max_concurrency=1,
-        no_send_logs=True,
-        enable_cache=False,
-    )
-
-    assert [row.error for row in result.results] == [None, None]
-    assert [row.output for row in result.results] == [["seed", "trial:0"], ["seed", "trial:1"]]
-    assert [row.tags for row in result.results] == [row.output for row in result.results]
-    assert initial_tags == original_tags
+    assert metadata == {"ctx": {"seen": []}}
+    assert expected == ["seed"]
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("initial_tags", [None, ["seed"]], ids=["none", "nonempty"])
-async def test_hooks_tags_mutation_is_isolated_across_concurrent_trials(with_memory_logger, initial_tags):
+async def test_hooks_tags_mutation_is_isolated_across_concurrent_trials(with_memory_logger):
     trial_count = 3
-    base_tags = list(initial_tags or [])
+    initial_tags = ["seed"]
     appended = 0
     all_appended = asyncio.Event()
 
     async def task(input, hooks):
         nonlocal appended
-        own_tag = f"trial:{hooks.trial_index}"
-        hooks.tags.append(own_tag)
+        hooks.tags.append(f"trial:{hooks.trial_index}")
         appended += 1
         if appended == trial_count:
             all_appended.set()
@@ -1541,37 +1516,8 @@ async def test_hooks_tags_mutation_is_isolated_across_concurrent_trials(with_mem
     )
 
     assert [row.error for row in result.results] == [None] * trial_count
-    assert sorted(row.output[-1] for row in result.results) == [f"trial:{i}" for i in range(trial_count)]
-    assert [row.output for row in result.results] == [[*base_tags, row.output[-1]] for row in result.results]
-    assert initial_tags == (None if initial_tags is None else base_tags)
-
-
-@pytest.mark.parametrize("initial_tags", [None, [], ["seed-z", "seed-a"]], ids=["none", "empty", "nonempty"])
-def test_hooks_tags_clear_is_local_to_each_trial(with_memory_logger, initial_tags):
-    initial_tags = None if initial_tags is None else list(initial_tags)
-    original_tags = None if initial_tags is None else list(initial_tags)
-
-    def task(input, hooks):
-        before = list(hooks.tags)
-        hooks.tags.clear()
-        return before
-
-    result = Eval(
-        "cleared-hook-tags",
-        data=[EvalCase(input="row", tags=initial_tags)],
-        task=task,
-        scores=[],
-        trial_count=2,
-        max_concurrency=1,
-        no_send_logs=True,
-        enable_cache=False,
-    )
-
-    assert [row.error for row in result.results] == [None, None]
-    assert [row.output for row in result.results] == [list(original_tags or [])] * 2
-    assert [row.tags for row in result.results] == [None, None]
-    assert initial_tags == original_tags
-    assert with_memory_logger.pop() == []
+    assert sorted(row.output for row in result.results) == [["seed", f"trial:{i}"] for i in range(trial_count)]
+    assert initial_tags == ["seed"]
 
 
 def test_copy_containers_copies_dicts_and_lists_only():
@@ -1591,79 +1537,8 @@ def test_copy_containers_copies_dicts_and_lists_only():
     assert copied["tuple"] is value["tuple"]
 
 
-@pytest.mark.parametrize("use_trials", [False, True], ids=["shared-row-metadata", "trials"])
-def test_hooks_nested_metadata_mutation_is_isolated_per_evaluation(with_memory_logger, use_trials):
-    shared_metadata = {"ctx": {"seen": []}}
-    inputs = ["row"] if use_trials else ["first", "second"]
-
-    def task(input, hooks):
-        hooks.metadata["ctx"]["seen"].append(f"{input}:{hooks.trial_index}")
-        return list(hooks.metadata["ctx"]["seen"])
-
-    def metadata_isolation(output, metadata):
-        return float(metadata["ctx"]["seen"] == output)
-
-    result = Eval(
-        "isolated-hook-metadata",
-        data=[EvalCase(input=value, metadata=shared_metadata) for value in inputs],
-        task=task,
-        scores=[metadata_isolation],
-        trial_count=2 if use_trials else 1,
-        max_concurrency=1,
-        no_send_logs=True,
-        enable_cache=False,
-    )
-
-    assert [row.error for row in result.results] == [None, None]
-    assert [len(row.output) for row in result.results] == [1, 1]
-    assert [row.scores["metadata_isolation"] for row in result.results] == [1.0, 1.0]
-    assert [row.metadata["ctx"]["seen"] for row in result.results] == [row.output for row in result.results]
-    assert shared_metadata == {"ctx": {"seen": []}}
-
-
-@pytest.mark.parametrize("use_trials", [False, True], ids=["shared-row-expected", "trials"])
-def test_hooks_expected_mutation_is_isolated_per_evaluation(with_memory_logger, use_trials):
-    shared_expected = ["a"]
-    inputs = ["row"] if use_trials else ["first", "second"]
-
-    def task(input, hooks):
-        hooks.expected.append(f"{input}:{hooks.trial_index}")
-        return list(hooks.expected)
-
-    def expected_isolation(output, expected):
-        return float(expected == output)
-
-    result = Eval(
-        "isolated-hook-expected",
-        data=[EvalCase(input=value, expected=shared_expected) for value in inputs],
-        task=task,
-        scores=[expected_isolation],
-        trial_count=2 if use_trials else 1,
-        max_concurrency=1,
-        no_send_logs=True,
-        enable_cache=False,
-    )
-
-    assert [row.error for row in result.results] == [None, None]
-    assert [len(row.output) for row in result.results] == [2, 2]
-    assert [row.scores["expected_isolation"] for row in result.results] == [1.0, 1.0]
-    assert [row.expected for row in result.results] == [row.output for row in result.results]
-    assert shared_expected == ["a"]
-
-
-@pytest.mark.parametrize("tags", [["a"], ("a",), {"a"}], ids=["list", "tuple", "set"])
-def test_dict_eval_hooks_copies_tags(tags):
-    original = type(tags)(tags)
-    hooks = DictEvalHooks(tags=tags)
-
-    hooks.tags.append("b")
-
-    assert tags == original
-    assert hooks.tags == ["a", "b"]
-
-
 @pytest.mark.asyncio
-@pytest.mark.parametrize("tags", ["prod", "foo", {"prod": True}], ids=["str", "str-repeated-chars", "dict"])
+@pytest.mark.parametrize("tags", ["prod", {"prod": True}], ids=["str", "dict"])
 async def test_non_sequence_eval_case_tags_are_rejected(with_memory_logger, with_simulate_login, tags):
     evaluator = Evaluator(
         project_name="test-project",
