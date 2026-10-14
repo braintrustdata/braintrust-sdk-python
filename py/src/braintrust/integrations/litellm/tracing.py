@@ -7,7 +7,7 @@ from functools import lru_cache
 from types import TracebackType
 from typing import Any
 
-from braintrust.integrations.openai.tracing import _decisions_input, _decisions_output
+from braintrust.integrations.openai.tracing import _decisions_input, _decisions_output, _process_attachments_in_input
 from braintrust.integrations.utils import (
     _extract_audio_output,
     _materialize_attachment,
@@ -862,7 +862,7 @@ def _update_span_payload_from_params(params: dict[str, Any], input_key: str = "i
 
     return merge_dicts(
         span_info_d,
-        {"input": input_data, "metadata": metadata},
+        {"input": _process_attachments_in_input(input_data), "metadata": metadata},
     )
 
 

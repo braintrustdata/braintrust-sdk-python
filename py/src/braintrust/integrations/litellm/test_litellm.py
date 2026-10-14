@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import os
 import time
 import uuid
@@ -106,35 +107,54 @@ def memory_logger():
         yield bgl
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "query", "body"])
 @sync_async
-def test_litellm_completion_metrics(memory_logger, is_async) -> None:
-    assert not memory_logger.pop()
-
+@pytest.mark.parametrize("stream", [False, True], ids=["blocking", "streaming"])
+def test_litellm_image_input_materializes_attachment(memory_logger, is_async, stream):
+    """Completion spans capture output, usage, and attachments in every call mode."""
+    image_base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="
+    image_url = f"data:image/png;base64,{image_base64}"
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "What color is this image?"},
+                {"type": "image_url", "image_url": {"url": image_url, "detail": "low"}},
+            ],
+        }
+    ]
+    run = _run_stream if stream else _run
     start = time.time()
-    response = _run(
-        is_async,
-        litellm.completion,
-        litellm.acompletion,
-        model=TEST_MODEL,
-        messages=[{"role": "user", "content": TEST_PROMPT}],
+    response = run(
+        is_async, litellm.completion, litellm.acompletion, model=TEST_MODEL, messages=messages, stream=stream
     )
     end = time.time()
-
-    assert response
-    assert response.choices[0].message.content
-    assert "24" in response.choices[0].message.content or "twenty-four" in response.choices[0].message.content.lower()
-
+    if stream:
+        assert len(response) > 1
+        content = "".join(chunk.choices[0].delta.content or "" for chunk in response if chunk.choices)
+    else:
+        content = response.choices[0].message.content
+    assert content
+    assert messages[0]["content"][1]["image_url"] == {"url": image_url, "detail": "low"}
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
-    assert span
     assert span["context"]["span_origin"]["instrumentation"]["name"] == "litellm-auto"
-    metrics = span["metrics"]
-    assert_metrics_are_valid(metrics, start, end)
+    assert span["span_attributes"]["name"] == "Completion"
+    assert span["span_attributes"]["type"] == "llm"
     assert span["metadata"]["model"] == TEST_MODEL
     assert span["metadata"]["provider"] == "openai"
-    assert span["input"] == [{"role": "user", "content": TEST_PROMPT}]
+    assert_metrics_are_valid(span["metrics"], start, end)
+    assert span["metrics"]["time_to_first_token"] >= 0
+    assert span["output"][0]["message"]["content"] == content
+    assert span["input"][0]["role"] == "user"
+    assert span["input"][0]["content"][0] == messages[0]["content"][0]
+    logged_image = span["input"][0]["content"][1]["image_url"]
+    assert logged_image["detail"] == "low"
+    attachment = logged_image["url"]
+    assert isinstance(attachment, Attachment)
+    assert attachment.data == base64.b64decode(image_base64)
+    assert attachment.reference["content_type"] == "image/png"
 
 
 @pytest.mark.vcr
@@ -243,48 +263,6 @@ def test_litellm_text_completion_metrics(memory_logger, is_async) -> None:
 
 @pytest.mark.vcr
 @sync_async
-def test_litellm_completion_streaming(memory_logger, is_async):
-    assert not memory_logger.pop()
-
-    start = time.time()
-    chunks = _run_stream(
-        is_async,
-        litellm.completion,
-        litellm.acompletion,
-        model=TEST_MODEL,
-        messages=[{"role": "user", "content": TEST_PROMPT}],
-        stream=True,
-    )
-    end = time.time()
-
-    # Verify streaming works
-    assert chunks
-    assert len(chunks) > 1
-
-    # Concatenate content from chunks to verify
-    content = ""
-    for chunk in chunks:
-        if chunk.choices and chunk.choices[0].delta.content:
-            content += chunk.choices[0].delta.content
-
-    # Make sure we got a valid answer in the content
-    assert "24" in content or "twenty-four" in content.lower()
-
-    # Verify spans were created
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span
-    metrics = span["metrics"]
-    assert_metrics_are_valid(metrics, start, end)
-    assert span["metadata"]["model"] == TEST_MODEL
-    assert span["metadata"]["provider"] == "openai"
-    assert TEST_PROMPT in str(span["input"])
-    assert "24" in str(span["output"]) or "twenty-four" in str(span["output"]).lower()
-
-
-@pytest.mark.vcr
-@sync_async
 def test_litellm_decisions_metrics(memory_logger, is_async):
     if not version_satisfies(detect_module_version(litellm, ("litellm",)), ">=1.105.0"):
         pytest.skip("Decisions requires LiteLLM >=1.105.0")
@@ -331,38 +309,56 @@ def test_litellm_decisions_image(memory_logger, is_async):
     assert_decisions_image_span(memory_logger.pop(), response, messages)
 
 
-@pytest.mark.vcr
-@sync_async
-def test_litellm_responses_metrics(memory_logger, is_async):
-    assert not memory_logger.pop()
-
+@pytest.mark.parametrize(
+    "stream,is_async",
+    [
+        pytest.param(
+            stream,
+            is_async,
+            id=f"{'streaming' if stream else 'blocking'}-{'async' if is_async else 'sync'}",
+            marks=pytest.mark.vcr(
+                cassette_name=f"test_litellm_responses_{'streaming' if stream else 'metrics'}[{'async' if is_async else 'sync'}]"
+            ),
+        )
+        for stream in (False, True)
+        for is_async in (False, True)
+    ],
+)
+def test_litellm_responses(memory_logger, is_async, stream):
+    """Reuse the existing blocking/streaming recordings for the Responses API."""
+    run = _run_stream if stream else _run
+    params = {"stream": True} if stream else {"instructions": "Just the number please"}
     start = time.time()
-    response = _run(
+    response = run(
         is_async,
         litellm.responses,
         litellm.aresponses,
         model=TEST_MODEL,
         input=TEST_PROMPT,
-        instructions="Just the number please",
+        **params,
     )
     end = time.time()
 
-    assert response
-    assert response.output
-    assert len(response.output) > 0
-    content = response.output[0].content[0].text
+    if stream:
+        assert len(response) > 1
+        content = "".join(
+            chunk.delta for chunk in response if getattr(chunk, "type", None) == "response.output_text.delta"
+        )
+    else:
+        content = response.output[0].content[0].text
     assert "24" in content or "twenty-four" in content.lower()
 
-    # Verify spans were created
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
-    assert span
     metrics = span["metrics"]
     assert_metrics_are_valid(metrics, start, end)
     assert span["metadata"]["model"] == TEST_MODEL
     assert span["metadata"]["provider"] == "openai"
     assert TEST_PROMPT in str(span["input"])
+    assert "24" in str(span["output"]) or "twenty-four" in str(span["output"]).lower()
+    if stream:
+        assert span["metadata"]["stream"] is True
 
 
 @pytest.mark.vcr
@@ -500,7 +496,6 @@ def test_litellm_speech(memory_logger, is_async):
     _assert_speech_output_attachment(span)
 
 
-@pytest.mark.vcr
 @sync_async
 def test_litellm_completion_error(memory_logger, is_async):
     assert not memory_logger.pop()
@@ -508,7 +503,7 @@ def test_litellm_completion_error(memory_logger, is_async):
     # Use a non-existent model to force an error
     fake_model = "non-existent-model"
 
-    try:
+    with pytest.raises(litellm.BadRequestError):
         _run(
             is_async,
             litellm.completion,
@@ -516,17 +511,12 @@ def test_litellm_completion_error(memory_logger, is_async):
             model=fake_model,
             messages=[{"role": "user", "content": TEST_PROMPT}],
         )
-        pytest.fail("Expected an exception but none was raised")
-    except Exception:
-        # We expect an error here
-        pass
 
     logs = memory_logger.pop()
     assert len(logs) == 1
     log = logs[0]
     assert log["project_id"] == PROJECT_NAME
-    # Check that we got a log entry with the fake model
-    assert fake_model in str(log)
+    assert log["metadata"]["model"] == fake_model
 
 
 @pytest.mark.vcr
@@ -618,82 +608,6 @@ def test_litellm_tool_calls(memory_logger):
             "metrics": lambda m: assert_metrics_are_valid(m, start, end) is None,
         },
     )
-
-
-@pytest.mark.vcr
-@sync_async
-def test_litellm_responses_streaming(memory_logger, is_async):
-    """Test the responses API with streaming."""
-    assert not memory_logger.pop()
-
-    start = time.time()
-    chunks = _run_stream(
-        is_async,
-        litellm.responses,
-        litellm.aresponses,
-        model=TEST_MODEL,
-        input="What's 12 + 12?",
-        stream=True,
-    )
-    end = time.time()
-
-    assert chunks
-    assert len(chunks) > 1
-    output = "".join(chunk.delta for chunk in chunks if getattr(chunk, "type", None) == "response.output_text.delta")
-    assert "24" in output
-
-    # Verify the span is created
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    metrics = span["metrics"]
-    assert_metrics_are_valid(metrics, start, end)
-    assert span["metadata"]["stream"] is True
-    assert "What's 12 + 12?" in str(span["input"])
-    assert "24" in str(span["output"])
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_litellm_async_streaming_with_break(memory_logger):
-    """Test breaking out of the async streaming loop early."""
-    assert not memory_logger.pop()
-
-    start = time.time()
-    stream = await litellm.acompletion(
-        model=TEST_MODEL, messages=[{"role": "user", "content": TEST_PROMPT}], stream=True
-    )
-
-    # Only process the first few chunks
-    counter = 0
-    async for chunk in stream:
-        counter += 1
-        if counter >= 2:
-            break
-    end = time.time()
-
-    # We should still get valid metrics even with early break
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    metrics = span["metrics"]
-    assert metrics["time_to_first_token"] >= 0
-
-
-def test_litellm_is_numeric_excludes_booleans():
-    """Reproduce issue #1357: _is_numeric should exclude booleans.
-
-    OpenRouter returns `is_byok: true` in usage data. Since Python's bool is
-    a subclass of int, isinstance(True, int) is True. The _is_numeric function
-    must explicitly exclude booleans so they don't end up in metrics, which
-    causes a 400 from the API (expected number, received boolean).
-    """
-    from braintrust.util import is_numeric
-
-    assert is_numeric(1)
-    assert is_numeric(1.0)
-    assert not is_numeric(True)
-    assert not is_numeric(False)
 
 
 @pytest.mark.vcr

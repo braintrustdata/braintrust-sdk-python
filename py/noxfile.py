@@ -632,6 +632,7 @@ def test_dspy(session, version):
     # on Python 3.10 due to unresolved Pydantic forward references.
     _skip_if_incompatible(session)
     _install_test_deps(session)
+    _install_group_locked(session, "test-dspy")
     if version == LATEST:
         # DSPy only lower-bounds LiteLLM, whose 1.92.0 release lacks Windows
         # and Python 3.14 wheels. Preinstall our portable matrix pin so DSPy's

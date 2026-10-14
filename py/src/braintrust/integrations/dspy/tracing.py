@@ -1,12 +1,15 @@
 """DSPy-specific callback, span creation, and metadata extraction."""
 
+import logging
 from typing import Any
 
+from braintrust.integrations.utils import _materialize_attachment
 from braintrust.logger import start_span as _bt_start_span
 from braintrust.span_types import SpanTypeAttribute
 
 
 _INSTRUMENTATION = "dspy-auto"
+_log = logging.getLogger(__name__)
 
 _LM_METADATA_PARAM_ALLOWLIST = ("temperature", "max_tokens", "top_p", "top_k", "stop")
 _EVALUATE_METADATA_ALLOWLIST = ("accuracy", "score", "total", "correct")
@@ -29,12 +32,65 @@ def _extract_provider(instance: Any, model: Any) -> str | None:
 
 
 try:
+    from dspy import Example, Image
     from dspy.utils.callback import BaseCallback
+    from pydantic import BaseModel
 
     _HAS_DSPY = True
 except ImportError:
     _HAS_DSPY = False
     BaseCallback = object  # type: ignore[assignment,misc]
+
+
+def _process_images(value: Any) -> Any:
+    """Materialize images before DSPy/Pydantic serializers turn them into prompt strings.
+
+    Walk raw model and Example fields so nested images remain recognizable.
+    Only the logged copy changes; provider inputs and outputs stay intact.
+    """
+    try:
+        return _process_images_impl(value)
+    except Exception:
+        _log.debug("Failed to materialize DSPy images", exc_info=True)
+        return value
+
+
+def _process_images_impl(value: Any) -> Any:
+    if isinstance(value, Image):
+        url = value.url
+        if isinstance(url, str) and url.startswith("data:image/"):
+            resolved = _materialize_attachment(url)
+            if resolved is not None:
+                return {"image_url": {"url": resolved.attachment}}
+        return value
+    if isinstance(value, str) and value.startswith("data:image/"):
+        resolved = _materialize_attachment(value)
+        return resolved.attachment if resolved is not None else value
+    if isinstance(value, (list, tuple)):
+        converted = [_process_images(item) for item in value]
+        if all(item is original for item, original in zip(converted, value)):
+            return value
+        return tuple(converted) if isinstance(value, tuple) else converted
+    if isinstance(value, Example):
+        # toDict() serializes nested Pydantic fields in DSPy >= 3.4.
+        return {key: _process_images(item) for key, item in value.items()}
+    if isinstance(value, BaseModel):
+        # dict(model) exposes raw values instead of invoking field serializers.
+        fields = dict(value)
+        converted_fields = _process_images(fields)
+        if converted_fields is fields:
+            return value
+        changed = {key for key in fields if converted_fields[key] is not fields[key]}
+        result = value.model_dump(exclude=changed, exclude_none=True)
+        model_fields = type(value).model_fields
+        result.update(
+            (key, converted_fields[key]) for key in changed if key not in model_fields or not model_fields[key].exclude
+        )
+        return result
+    if isinstance(value, dict):
+        converted_dict = {key: _process_images(item) for key, item in value.items()}
+        return value if all(converted_dict[key] is item for key, item in value.items()) else converted_dict
+    return value
 
 
 class BraintrustDSpyCallback(BaseCallback):
@@ -137,7 +193,7 @@ class BraintrustDSpyCallback(BaseCallback):
 
         span = start_span(
             name="dspy.lm",
-            input=inputs,
+            input=_process_images(inputs),
             metadata=metadata,
         )
         span.set_current()
@@ -166,7 +222,7 @@ class BraintrustDSpyCallback(BaseCallback):
             if exception:
                 log_data["error"] = exception
             if outputs is not None:
-                log_data["output"] = outputs
+                log_data["output"] = _process_images(outputs)
             if metrics:
                 log_data["metrics"] = metrics
 
@@ -252,7 +308,7 @@ class BraintrustDSpyCallback(BaseCallback):
         span = start_span(
             name=f"dspy.module.{cls_name}",
             type=SpanTypeAttribute.TASK,
-            input=inputs,
+            input=_process_images(inputs),
             metadata={"module_class": module_name},
         )
         span.set_current()
@@ -287,7 +343,7 @@ class BraintrustDSpyCallback(BaseCallback):
         span = start_span(
             name=span_name,
             type=SpanTypeAttribute.TASK,
-            input=inputs,
+            input=_process_images(inputs),
             metadata=metadata,
         )
         span.set_current()
@@ -377,7 +433,7 @@ class BraintrustDSpyCallback(BaseCallback):
         span = start_span(
             name=tool_name,
             type=SpanTypeAttribute.TOOL,
-            input=inputs,
+            input=_process_images(inputs),
         )
         span.set_current()
         self._spans[call_id] = span
@@ -420,7 +476,7 @@ class BraintrustDSpyCallback(BaseCallback):
         span = start_span(
             name="dspy.evaluate",
             type=SpanTypeAttribute.TASK,
-            input=inputs,
+            input=_process_images(inputs),
             metadata=metadata,
         )
         span.set_current()
@@ -448,7 +504,7 @@ class BraintrustDSpyCallback(BaseCallback):
             if exception:
                 log_data["error"] = exception
             if outputs is not None:
-                log_data["output"] = outputs
+                log_data["output"] = _process_images(outputs)
                 if isinstance(outputs, dict):
                     metadata: dict[str, Any] = {}
                     for key in _EVALUATE_METADATA_ALLOWLIST:

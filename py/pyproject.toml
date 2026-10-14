@@ -141,6 +141,11 @@ test-litellm = [
     "orjson==3.12.0; python_version>='3.15'",
 ]
 
+test-dspy = [
+    # DSPy 2.6 requires Pillow to format image inputs but does not install it.
+    "pillow==12.3.0",
+]
+
 test-agno = [
     {include-group = "test"},
     "openai==2.31.0",

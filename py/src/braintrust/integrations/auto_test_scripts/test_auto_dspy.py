@@ -1,7 +1,7 @@
 """Test auto_instrument for DSPy.
 
 Note: This test focuses on patching behavior only. Span verification for DSPy
-is done in test_dspy.py::test_dspy_callback which uses pytest-vcr (supports httpx).
+is done in test_dspy.py::test_dspy_images_materialize_attachments which uses pytest-vcr (supports httpx).
 The standalone VCR in test_utils doesn't capture httpx used by litellm/dspy.
 """
 
