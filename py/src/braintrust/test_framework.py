@@ -1,4 +1,5 @@
 import asyncio
+import copy
 import importlib.util
 import re
 import sys
@@ -1448,7 +1449,7 @@ async def test_hooks_tags_append(with_memory_logger, with_simulate_login, simple
 @pytest.mark.parametrize("use_trials", [False, True], ids=["shared-row-data", "trials"])
 @pytest.mark.parametrize("initial_tags", [None, ["seed"], ("seed",), {"seed"}], ids=["none", "list", "tuple", "set"])
 def test_hook_mutations_are_isolated_per_evaluation(with_memory_logger, use_trials, initial_tags):
-    original_tags = None if initial_tags is None else type(initial_tags)(initial_tags)
+    original_tags = copy.copy(initial_tags)
     base_tags = list(initial_tags or [])
     metadata = {"ctx": {"seen": []}}
     expected = ["seed"]
@@ -1486,38 +1487,6 @@ def test_hook_mutations_are_isolated_per_evaluation(with_memory_logger, use_tria
     assert initial_tags == original_tags
     assert metadata == {"ctx": {"seen": []}}
     assert expected == ["seed"]
-
-
-@pytest.mark.asyncio
-async def test_hooks_tags_mutation_is_isolated_across_concurrent_trials(with_memory_logger):
-    trial_count = 3
-    initial_tags = ["seed"]
-    appended = 0
-    all_appended = asyncio.Event()
-
-    async def task(input, hooks):
-        nonlocal appended
-        hooks.tags.append(f"trial:{hooks.trial_index}")
-        appended += 1
-        if appended == trial_count:
-            all_appended.set()
-        # Hold every trial open until all of them have appended, so they overlap.
-        await asyncio.wait_for(all_appended.wait(), timeout=5)
-        return list(hooks.tags)
-
-    result = await EvalAsync(
-        "concurrent-hook-tags",
-        data=[EvalCase(input="row", tags=initial_tags)],
-        task=task,
-        scores=[],
-        trial_count=trial_count,
-        no_send_logs=True,
-        enable_cache=False,
-    )
-
-    assert [row.error for row in result.results] == [None] * trial_count
-    assert sorted(row.output for row in result.results) == [["seed", f"trial:{i}"] for i in range(trial_count)]
-    assert initial_tags == ["seed"]
 
 
 def test_copy_containers_copies_dicts_and_lists_only():

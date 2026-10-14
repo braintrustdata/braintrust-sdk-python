@@ -1231,15 +1231,17 @@ def _copy_containers(value: Any, memo: dict[int, Any] | None = None) -> Any:
         memo = {}
     if id(value) in memo:
         return memo[id(value)]
+    # Only recurse into containers, so plain values skip the extra call.
     if value_type is dict:
         copied_dict: dict[Any, Any] = {}
         memo[id(value)] = copied_dict
         for k, v in value.items():
-            copied_dict[k] = _copy_containers(v, memo)
+            copied_dict[k] = _copy_containers(v, memo) if type(v) is dict or type(v) is list else v
         return copied_dict
     copied_list: list[Any] = []
     memo[id(value)] = copied_list
-    copied_list.extend(_copy_containers(v, memo) for v in value)
+    for v in value:
+        copied_list.append(_copy_containers(v, memo) if type(v) is dict or type(v) is list else v)
     return copied_list
 
 
@@ -1266,7 +1268,7 @@ class DictEvalHooks(dict[str, Any]):
             # Copy so hook mutations don't leak into the caller's tags.
             self.update({"tags": list(tags)})
         else:
-            # Leave other values as-is so span tag validation rejects them.
+            # Leave other values as-is instead of splitting a string or dict into tags.
             self.update({"tags": tags})
 
         self._report_progress = report_progress
