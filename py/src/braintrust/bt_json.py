@@ -3,7 +3,7 @@ import json
 import math
 import warnings
 from collections.abc import Callable, Mapping
-from functools import cache, partial
+from functools import cache
 from typing import Any, NamedTuple, cast, overload
 
 
@@ -17,20 +17,30 @@ except ImportError:
     _HAS_ORJSON = False
 
 
+class _LoggerTypes(NamedTuple):
+    Span: type
+    Experiment: type
+    Dataset: type
+    Logger: type
+    BaseAttachment: type
+    ReadonlyAttachment: type
+
+
 @cache
-def _logger_types() -> tuple[type, ...]:
+def _logger_types() -> _LoggerTypes:
     # Imported lazily to avoid circular imports, and cached because `_to_bt_safe` runs per logged value.
     from braintrust.logger import BaseAttachment, Dataset, Experiment, Logger, ReadonlyAttachment, Span
 
-    return Span, Experiment, Dataset, Logger, BaseAttachment, ReadonlyAttachment
+    return _LoggerTypes(Span, Experiment, Dataset, Logger, BaseAttachment, ReadonlyAttachment)
 
 
-def _to_bt_safe(v: Any, copy_dataclass_field: Callable[[Any], Any] | None = None) -> Any:
+def _to_bt_safe(v: Any, copy_dataclass_field: Callable[[Any, int], Any] | None = None, depth: int = 0) -> Any:
     """
     Converts the object to a Braintrust-safe representation (i.e. Attachment objects are safe (specially handled by background logger)).
 
-    `copy_dataclass_field` converts dataclass field values. `bt_safe_deep_copy` passes its own walker so
-    fields share its cycle and depth tracking; without it, the dataclass starts a new `bt_safe_deep_copy`.
+    `copy_dataclass_field(value, depth)` converts dataclass field values. `bt_safe_deep_copy` passes its own
+    walker and the fields' depth so they share its cycle and depth tracking; without it, the dataclass
+    starts a new `bt_safe_deep_copy`.
     """
     # Fast path: check primitives via type identity before hitting
     # isinstance checks against abstract classes or Pydantic model_dump.
@@ -72,7 +82,7 @@ def _to_bt_safe(v: Any, copy_dataclass_field: Callable[[Any], Any] | None = None
     if dataclasses.is_dataclass(v) and not isinstance(v, type):
         if copy_dataclass_field is None:
             return bt_safe_deep_copy(v)
-        return _dataclass_to_dict(v, copy_dataclass_field)
+        return _dataclass_to_dict(v, copy_dataclass_field, depth)
 
     # Pydantic model classes (not instances) with model_json_schema
     if isinstance(v, type) and hasattr(v, "model_json_schema") and callable(cast(Any, v).model_json_schema):
@@ -110,14 +120,14 @@ def _to_bt_safe(v: Any, copy_dataclass_field: Callable[[Any], Any] | None = None
     return bt_loads(bt_dumps(v, encoder=_str_encoder))
 
 
-def _dataclass_to_dict(v: Any, copy_field: Callable[[Any], Any]) -> dict[str, Any]:
+def _dataclass_to_dict(v: Any, copy_field: Callable[[Any, int], Any], depth: int) -> dict[str, Any]:
     # Use manual field iteration instead of dataclasses.asdict() because
     # asdict() deep-copies values, which breaks objects like Attachment
     # that contain non-copyable items (thread locks, file handles, etc.)
     result = {}
     for f in dataclasses.fields(v):
         try:
-            result[f.name] = copy_field(getattr(v, f.name))
+            result[f.name] = copy_field(getattr(v, f.name), depth)
         except Exception:
             # Keep the other fields (and any attachments in them) when one can't be read.
             result[f.name] = f"<non-sanitizable: {type(v).__name__}.{f.name}>"
@@ -204,7 +214,7 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
             try:
                 # Dataclass fields go back through this walker so nested attachments keep
                 # their identity and share its cycle/depth tracking.
-                return _to_bt_safe(v, partial(_deep_copy_object, depth=depth + 1))
+                return _to_bt_safe(v, _deep_copy_object, depth + 1)
             except Exception:
                 return f"<non-sanitizable: {type(v).__name__}>"
         finally:
@@ -224,15 +234,12 @@ def _to_json_safe(obj: Any) -> Any:
     """
     Handler for non-JSON-serializable objects. Returns a string representation of the object.
     """
-    # avoid circular imports
-    from braintrust.logger import BaseAttachment
-
     try:
         v = _to_bt_safe(obj)
 
         # JSON-safe representation of Attachment objects are their reference.
         # If we get this object at this point, we have to assume someone has already uploaded the attachment!
-        if isinstance(v, BaseAttachment):
+        if isinstance(v, _logger_types().BaseAttachment):
             v = v.reference
 
         return v

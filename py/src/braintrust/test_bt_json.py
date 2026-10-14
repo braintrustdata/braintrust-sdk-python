@@ -49,29 +49,37 @@ def test_dataclass_nested_attachments():
     }
 
 
-@pytest.mark.parametrize("kind", ["span", "experiment", "dataset", "logger", "attachment", "readonly-attachment"])
-def test_dataclass_sdk_objects_keep_special_handling(kind):
+@pytest.mark.parametrize(
+    "base_name,placeholder",
+    [("_NoopSpan", "<span>"), ("Experiment", "<experiment>"), ("Dataset", "<dataset>"), ("Logger", "<logger>")],
+)
+def test_dataclass_sdk_object_subclasses_keep_placeholder(base_name, placeholder):
     from braintrust import logger
 
-    if kind == "attachment":
-        obj = expected = DataclassAttachment("test-key")
-    elif kind == "readonly-attachment":
-        obj = _DataclassReadonlyAttachment(DataclassAttachment("test-key").reference)
-        expected = obj.reference
-    else:
-        base = {
-            "span": logger._NoopSpan,
-            "experiment": logger.Experiment,
-            "dataset": logger.Dataset,
-            "logger": logger.Logger,
-        }
-        # The `secret` field must never be copied into logged events.
-        obj = dataclasses.make_dataclass("DataclassObject", [("secret", str, "token")], bases=(base[kind],))()
-        expected = f"<{kind}>"
+    # The `secret` field must never be copied into logged events.
+    obj = dataclasses.make_dataclass(
+        "DataclassObject", [("secret", str, "token")], bases=(getattr(logger, base_name),)
+    )()
 
     assert bt_safe_deep_copy({"direct": obj, "nested": _Payload([obj])}) == {
-        "direct": expected,
-        "nested": {"value": [expected]},
+        "direct": placeholder,
+        "nested": {"value": [placeholder]},
+    }
+
+
+def test_dataclass_attachment_subclasses_keep_special_handling():
+    attachment = DataclassAttachment("test-key")
+    reference = {
+        "type": "braintrust_attachment",
+        "key": "readonly-key",
+        "filename": "a.txt",
+        "content_type": "text/plain",
+    }
+    readonly = _DataclassReadonlyAttachment(reference)
+
+    assert bt_safe_deep_copy({"direct": [attachment, readonly], "nested": _Payload([attachment, readonly])}) == {
+        "direct": [attachment, reference],
+        "nested": {"value": [attachment, reference]},
     }
 
 
