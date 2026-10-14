@@ -1710,7 +1710,8 @@ async def _run_evaluator_internal_impl(
         exc_info = None
         scores = {}
         classifications = {}
-        tags = list(datum.tags) if datum.tags is not None else None
+        # Copy so hook mutations stay local to this trial. Leave other values as-is so validation rejects them.
+        tags = list(datum.tags) if isinstance(datum.tags, (list, tuple, set)) else datum.tags
 
         event_dataset = (
             experiment.dataset if experiment else evaluator.data if isinstance(evaluator.data, Dataset) else None

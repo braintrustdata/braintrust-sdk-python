@@ -1513,6 +1513,29 @@ def test_hooks_tags_clear_is_local_to_each_trial(with_memory_logger, initial_tag
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("tags", ["prod", "foo", {"prod": True}], ids=["str", "str-repeated-chars", "dict"])
+async def test_non_sequence_eval_case_tags_are_rejected(with_memory_logger, with_simulate_login, tags):
+    evaluator = Evaluator(
+        project_name="test-project",
+        eval_name="test-evaluator",
+        data=[EvalCase(input="row", tags=tags)],
+        task=lambda input: input,
+        scores=[],
+        experiment_name=None,
+        metadata=None,
+        summarize_scores=False,
+    )
+
+    with pytest.raises(ValueError, match="tags must be a list, set, or tuple of strings"):
+        await run_evaluator(
+            experiment=init_test_exp("test-evaluator", "test-project"),
+            evaluator=evaluator,
+            position=None,
+            filters=[],
+        )
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("tags", "expected_tags"),
     [(None, None), ([], None), (["chocolate", "vanilla", "strawberry"], ["chocolate", "vanilla", "strawberry"])],
