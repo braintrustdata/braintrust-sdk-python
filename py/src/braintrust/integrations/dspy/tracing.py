@@ -1,5 +1,6 @@
 """DSPy-specific callback, span creation, and metadata extraction."""
 
+import json
 import logging
 from typing import Any
 
@@ -10,6 +11,8 @@ from braintrust.span_types import SpanTypeAttribute
 
 _INSTRUMENTATION = "dspy-auto"
 _log = logging.getLogger(__name__)
+_CUSTOM_TYPE_START = "<<CUSTOM-TYPE-START-IDENTIFIER>>"
+_CUSTOM_TYPE_END = "<<CUSTOM-TYPE-END-IDENTIFIER>>"
 
 _LM_METADATA_PARAM_ALLOWLIST = ("temperature", "max_tokens", "top_p", "top_k", "stop")
 _EVALUATE_METADATA_ALLOWLIST = ("accuracy", "score", "total", "correct")
@@ -34,7 +37,7 @@ def _extract_provider(instance: Any, model: Any) -> str | None:
 try:
     from dspy import Example, Image
     from dspy.utils.callback import BaseCallback
-    from pydantic import BaseModel, RootModel
+    from pydantic import BaseModel
 
     _HAS_DSPY = True
 except ImportError:
@@ -43,9 +46,9 @@ except ImportError:
 
 
 def _process_images(value: Any) -> Any:
-    """Materialize images before DSPy/Pydantic serializers turn them into prompt strings.
+    """Materialize images in DSPy values while preserving Pydantic serialization.
 
-    Walk raw model and Example fields so nested images remain recognizable.
+    Honor Pydantic serializers, then materialize their image representations.
     Only the logged copy changes; provider inputs and outputs stay intact.
     """
     try:
@@ -56,16 +59,25 @@ def _process_images(value: Any) -> Any:
 
 
 def _process_images_impl(value: Any) -> Any:
-    if isinstance(value, Image):
-        url = value.url
-        if isinstance(url, str) and url.startswith("data:image/"):
-            resolved = _materialize_attachment(url)
-            if resolved is not None:
-                return {"image_url": {"url": resolved.attachment}}
-        return value
     if isinstance(value, str) and value.startswith("data:image/"):
         resolved = _materialize_attachment(value)
         return resolved.attachment if resolved is not None else value
+    if isinstance(value, str) and value.startswith(_CUSTOM_TYPE_START) and value.endswith(_CUSTOM_TYPE_END):
+        # DSPy serializes nested Image fields as reserved prompt strings.
+        # Decode the complete wrapper after the user's serializers have run,
+        # so omitted fields stay omitted and custom output shapes survive.
+        parts = json.loads(value[len(_CUSTOM_TYPE_START) : -len(_CUSTOM_TYPE_END)])
+        if isinstance(parts, list):
+            converted_parts = _process_images(parts)
+            if converted_parts is not parts:
+                if (
+                    len(converted_parts) == 1
+                    and isinstance(converted_parts[0], dict)
+                    and converted_parts[0].get("type") == "image_url"
+                ):
+                    return converted_parts[0]
+                return converted_parts
+        return value
     if isinstance(value, (list, tuple)):
         converted = [_process_images(item) for item in value]
         if all(item is original for item, original in zip(converted, value)):
@@ -74,31 +86,16 @@ def _process_images_impl(value: Any) -> Any:
     if isinstance(value, Example):
         # toDict() serializes nested Pydantic fields in DSPy >= 3.4.
         return {key: _process_images(item) for key, item in value.items()}
-    if isinstance(value, RootModel):
-        converted_root = _process_images(value.root)
-        return value if converted_root is value.root else converted_root
     if isinstance(value, BaseModel):
-        # dict(model) exposes raw values instead of invoking field serializers.
-        fields = dict(value)
-        converted_fields = _process_images(fields)
-        if converted_fields is fields:
+        serialized = value.model_dump(exclude_none=True)
+        converted_model = _process_images(serialized)
+        if converted_model is serialized:
             return value
-        changed = {key for key in fields if converted_fields[key] is not fields[key]}
-        result = value.model_dump(exclude=changed, exclude_none=True)
-        model_fields = type(value).model_fields
-        if not isinstance(result, dict):
-            # Plain model serializers can ignore exclude=changed and return
-            # lists/scalars containing inline images. Log the converted raw
-            # fields in that case, respecting explicit field exclusions.
-            return {
-                key: item
-                for key, item in converted_fields.items()
-                if item is not None and (key not in model_fields or not model_fields[key].exclude)
-            }
-        result.update(
-            (key, converted_fields[key]) for key in changed if key not in model_fields or not model_fields[key].exclude
-        )
-        return result
+        # DSPy 2.6 serializes Image as {"url": ...}; later versions use the
+        # reserved prompt wrapper handled above. Normalize only this SDK type.
+        if type(value) is Image and isinstance(converted_model, dict) and set(converted_model) == {"url"}:
+            return {"image_url": converted_model}
+        return converted_model
     if isinstance(value, dict):
         converted_dict = {key: _process_images(item) for key, item in value.items()}
         return value if all(converted_dict[key] is item for key, item in value.items()) else converted_dict

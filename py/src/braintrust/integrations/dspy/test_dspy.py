@@ -30,6 +30,7 @@ LM_KWARGS = {"engine": "litellm"} if "engine" in inspect.signature(dspy.LM.__ini
 def test_dspy_image_conversion_preserves_other_model_serializers():
     class Page(BaseModel):
         image: dspy.Image
+        redacted_image: dspy.Image
         number: int
         secret: str = Field(exclude=True)
 
@@ -37,11 +38,17 @@ def test_dspy_image_conversion_preserves_other_model_serializers():
         def serialize_number(self, number):
             return f"page-{number}"
 
+        @field_serializer("redacted_image")
+        def redact_image(self, image):
+            return "[redacted]"
+
     image = dspy.Image(url="data:image/png;base64,aW1hZ2U=")
-    page = Page(image=image, number=2, secret="private")
+    page = Page(image=image, redacted_image=image, number=2, secret="private")
     converted = _process_images(page)
-    assert isinstance(converted["image"]["image_url"]["url"], Attachment)
+    logged_image = converted["image"].get("image_url", converted["image"])
+    assert isinstance(logged_image["url"], Attachment)
     assert converted["number"] == "page-2"
+    assert converted["redacted_image"] == "[redacted]"
     assert "secret" not in converted
     assert page.image is image
 
@@ -59,7 +66,7 @@ def test_dspy_image_conversion_preserves_unmaterialized_images(url):
     cassette_name="test_dspy_images_materialize_attachments",
     match_on=["method", "scheme", "host", "port", "path", "query", "body"],
 )
-@pytest.mark.parametrize("model_kind", ["model", "root", "list", "scalar"])
+@pytest.mark.parametrize("model_kind", ["model", "root", "list", "scalar", "dict", "redacted"])
 def test_dspy_images_materialize_attachments(memory_logger, model_kind):
     """Images stay out of inline logs throughout a real DSPy/LiteLLM call."""
     image_base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="
@@ -72,10 +79,17 @@ def test_dspy_images_materialize_attachments(memory_logger, model_kind):
     class SerializedPage(BaseModel):
         page: Page
         secret: str = Field(default="private", exclude=True)
+        private_notes: str = "serializer-hidden-value"
 
         @model_serializer(mode="plain")
         def serialize(self):
-            return [self.page] if model_kind == "list" else self.page.image.url
+            if model_kind == "list":
+                return [self.page]
+            if model_kind == "dict":
+                return {"visible": self.page}
+            if model_kind == "redacted":
+                return "[redacted]"
+            return self.page.image.url
 
     # DSPy 2.6 supports direct image fields, but does not expand images nested
     # in Pydantic fields into message content parts.
@@ -112,7 +126,7 @@ def test_dspy_images_materialize_attachments(memory_logger, model_kind):
     page = Page(number=2, image=dspy.Image(url=image_url))
     if model_kind == "root":
         page = RootModel[list[Page]]([page])
-    elif model_kind in ("list", "scalar"):
+    elif model_kind in ("list", "scalar", "dict", "redacted"):
         page = SerializedPage(page=page)
     with dspy.context(lm=lm, callbacks=[BraintrustDSpyCallback()]):
         result = DescribePages()(image=image, page=page)
@@ -152,20 +166,25 @@ def test_dspy_images_materialize_attachments(memory_logger, model_kind):
         assert spans[name]["span_parents"][0] in span_ids
 
     def assert_image(value):
-        attachment = value["image_url"]["url"]
+        attachment = value.get("image_url", value)["url"]
         assert isinstance(attachment, Attachment)
         assert attachment.data == base64.b64decode(image_base64)
         assert attachment.reference["content_type"] == "image/png"
 
     def assert_page(value):
-        if model_kind == "root":
+        if model_kind in ("root", "list"):
             assert len(value) == 1
             value = value[0]
-        elif model_kind in ("list", "scalar"):
-            # Non-mapping serializers are logged using their raw fields so
-            # attachments survive, while explicitly excluded fields stay out.
-            assert "secret" not in value
-            value = value["page"]
+        elif model_kind == "dict":
+            assert set(value) == {"visible"}
+            value = value["visible"]
+        elif model_kind == "scalar":
+            assert isinstance(value, Attachment)
+            assert value.data == base64.b64decode(image_base64)
+            return
+        elif model_kind == "redacted":
+            assert value == "[redacted]"
+            return
         assert value["number"] == 2
         assert_image(value["image"])
 
@@ -203,6 +222,7 @@ def test_dspy_images_materialize_attachments(memory_logger, model_kind):
     serialized = bt_dumps(spans)
     assert image_base64 not in serialized
     assert "CUSTOM-TYPE" not in serialized
+    assert "serializer-hidden-value" not in serialized
 
 
 @pytest.fixture
