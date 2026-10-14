@@ -48,6 +48,7 @@ from braintrust.prompt_cache.lru_cache import LRUCache
 from braintrust.prompt_cache.parameters_cache import ParametersCache
 from braintrust.prompt_cache.prompt_cache import PromptCache
 from braintrust.test_helpers import (
+    DataclassAttachment,
     assert_dict_matches,
     assert_logged_out,
     init_test_exp,
@@ -3454,33 +3455,10 @@ def test_dataclass_base_attachment_reaches_flush(field, nested, with_memory_logg
     from dataclasses import dataclass
 
     @dataclass
-    class CustomAttachment(BaseAttachment):
-        key: str
-
-        @property
-        def reference(self):
-            return {
-                "type": "braintrust_attachment",
-                "key": self.key,
-                "filename": "file.txt",
-                "content_type": "text/plain",
-            }
-
-        @property
-        def data(self):
-            return b"data"
-
-        def upload(self):
-            raise AssertionError("The memory logger must not perform real uploads")
-
-        def debug_info(self):
-            return {"key": self.key}
-
-    @dataclass
     class Payload:
         files: list[BaseAttachment]
 
-    attachment = CustomAttachment("test-key")
+    attachment = DataclassAttachment("test-key")
     value = Payload([attachment]) if nested else attachment
     test_logger = init_test_logger(__name__)
     with test_logger.start_span(name="custom-dataclass-attachment") as span:

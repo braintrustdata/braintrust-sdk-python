@@ -3,6 +3,7 @@ import json
 import math
 import warnings
 from collections.abc import Callable, Mapping
+from functools import cache, partial
 from typing import Any, NamedTuple, cast, overload
 
 
@@ -16,9 +17,20 @@ except ImportError:
     _HAS_ORJSON = False
 
 
-def _to_bt_safe(v: Any) -> Any:
+@cache
+def _logger_types() -> tuple[type, ...]:
+    # Imported lazily to avoid circular imports, and cached because `_to_bt_safe` runs per logged value.
+    from braintrust.logger import BaseAttachment, Dataset, Experiment, Logger, ReadonlyAttachment, Span
+
+    return Span, Experiment, Dataset, Logger, BaseAttachment, ReadonlyAttachment
+
+
+def _to_bt_safe(v: Any, copy_dataclass_field: Callable[[Any], Any] | None = None) -> Any:
     """
     Converts the object to a Braintrust-safe representation (i.e. Attachment objects are safe (specially handled by background logger)).
+
+    `copy_dataclass_field` converts dataclass field values. `bt_safe_deep_copy` passes its own walker so
+    fields share its cycle and depth tracking; without it, the dataclass starts a new `bt_safe_deep_copy`.
     """
     # Fast path: check primitives via type identity before hitting
     # isinstance checks against abstract classes or Pydantic model_dump.
@@ -37,8 +49,7 @@ def _to_bt_safe(v: Any) -> Any:
     if isinstance(v, (int, str)):
         return v
 
-    # avoid circular imports
-    from braintrust.logger import BaseAttachment, Dataset, Experiment, Logger, ReadonlyAttachment, Span
+    Span, Experiment, Dataset, Logger, BaseAttachment, ReadonlyAttachment = _logger_types()
 
     if isinstance(v, Span):
         return "<span>"
@@ -59,7 +70,9 @@ def _to_bt_safe(v: Any) -> Any:
         return v.reference
 
     if dataclasses.is_dataclass(v) and not isinstance(v, type):
-        return bt_safe_deep_copy(v)
+        if copy_dataclass_field is None:
+            return bt_safe_deep_copy(v)
+        return _dataclass_to_dict(v, copy_dataclass_field)
 
     # Pydantic model classes (not instances) with model_json_schema
     if isinstance(v, type) and hasattr(v, "model_json_schema") and callable(cast(Any, v).model_json_schema):
@@ -95,6 +108,20 @@ def _to_bt_safe(v: Any) -> Any:
 
     # We pass `encoder=_str_encoder` since we've already tried converting rich objects to json safe objects.
     return bt_loads(bt_dumps(v, encoder=_str_encoder))
+
+
+def _dataclass_to_dict(v: Any, copy_field: Callable[[Any], Any]) -> dict[str, Any]:
+    # Use manual field iteration instead of dataclasses.asdict() because
+    # asdict() deep-copies values, which breaks objects like Attachment
+    # that contain non-copyable items (thread locks, file handles, etc.)
+    result = {}
+    for f in dataclasses.fields(v):
+        try:
+            result[f.name] = copy_field(getattr(v, f.name))
+        except Exception:
+            # Keep the other fields (and any attachments in them) when one can't be read.
+            result[f.name] = f"<non-sanitizable: {type(v).__name__}.{f.name}>"
+    return result
 
 
 @overload
@@ -152,88 +179,36 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
         if depth >= max_depth:
             return "<max depth exceeded>"
 
-        # Fast path for dict (the most common container in log data).
-        # Uses type identity instead of isinstance(v, Mapping) which is slow.
-        if tv is dict:
-            obj_id = id(v)
-            if obj_id in visited:
-                return "<circular reference>"
-            visited_add(obj_id)
-            try:
-                result = {}
-                for k in v:
-                    if type(k) is str:
-                        key_str = k
-                    else:
-                        try:
-                            key_str = str(k)
-                        except Exception:
-                            key_str = f"<non-stringifiable-key: {type(k).__name__}>"
-                    result[key_str] = _deep_copy_object(v[k], depth + 1)
-                return result
-            finally:
-                visited_discard(obj_id)
-        elif tv is list or tv is tuple:
-            obj_id = id(v)
-            if obj_id in visited:
-                return "<circular reference>"
-            visited_add(obj_id)
-            try:
-                return [_deep_copy_object(x, depth + 1) for x in v]
-            finally:
-                visited_discard(obj_id)
-        # Slow path for non-builtin Mapping/set types.
-        elif isinstance(v, Mapping):
-            obj_id = id(v)
-            if obj_id in visited:
-                return "<circular reference>"
-            visited_add(obj_id)
-            try:
-                result = {}
-                for k in v:
-                    if type(k) is str:
-                        key_str = k
-                    else:
-                        try:
-                            key_str = str(k)
-                        except Exception:
-                            key_str = f"<non-stringifiable-key: {type(k).__name__}>"
-                    result[key_str] = _deep_copy_object(v[k], depth + 1)
-                return result
-            finally:
-                visited_discard(obj_id)
-        elif isinstance(v, set):
-            obj_id = id(v)
-            if obj_id in visited:
-                return "<circular reference>"
-            visited_add(obj_id)
-            try:
-                return [_deep_copy_object(x, depth + 1) for x in v]
-            finally:
-                visited_discard(obj_id)
-
+        obj_id = id(v)
+        if obj_id in visited:
+            return "<circular reference>"
+        visited_add(obj_id)
         try:
-            if dataclasses.is_dataclass(v) and not isinstance(v, type):
-                # Attachment subclasses may also be dataclasses. Keep their
-                # specialized handling instead of copying their fields.
-                from braintrust.logger import BaseAttachment, ReadonlyAttachment
+            # Fast paths for builtin containers (the most common values in log data).
+            # Type identity checks avoid the slow isinstance(v, Mapping) for them.
+            if tv is dict or (tv is not list and tv is not tuple and isinstance(v, Mapping)):
+                result = {}
+                for k in v:
+                    if type(k) is str:
+                        key_str = k
+                    else:
+                        try:
+                            key_str = str(k)
+                        except Exception:
+                            key_str = f"<non-stringifiable-key: {type(k).__name__}>"
+                    result[key_str] = _deep_copy_object(v[k], depth + 1)
+                return result
+            if tv is list or tv is tuple or isinstance(v, set):
+                return [_deep_copy_object(x, depth + 1) for x in v]
 
-                if isinstance(v, (BaseAttachment, ReadonlyAttachment)):
-                    return _to_bt_safe(v)
-                obj_id = id(v)
-                if obj_id in visited:
-                    return "<circular reference>"
-                visited_add(obj_id)
-                try:
-                    # Share the container traversal so nested attachments retain
-                    # their identity and dataclass fields honor cycle/depth limits.
-                    # dataclasses.asdict() would try to deepcopy attachment locks.
-                    return {f.name: _deep_copy_object(getattr(v, f.name), depth + 1) for f in dataclasses.fields(v)}
-                finally:
-                    visited_discard(obj_id)
-            return _to_bt_safe(v)
-        except Exception:
-            return f"<non-sanitizable: {type(v).__name__}>"
+            try:
+                # Dataclass fields go back through this walker so nested attachments keep
+                # their identity and share its cycle/depth tracking.
+                return _to_bt_safe(v, partial(_deep_copy_object, depth=depth + 1))
+            except Exception:
+                return f"<non-sanitizable: {type(v).__name__}>"
+        finally:
+            visited_discard(obj_id)
 
     return _deep_copy_object(obj)
 

@@ -9,7 +9,7 @@ from unittest import TestCase
 import pytest
 from braintrust.bt_json import bt_dumps, bt_safe_deep_copy
 from braintrust.logger import Attachment, ExternalAttachment
-from braintrust.test_helpers import with_memory_logger  # noqa: F401
+from braintrust.test_helpers import DataclassAttachment, with_memory_logger  # noqa: F401
 
 
 @pytest.mark.parametrize("shape", ["direct", "list", "dict", "tuple", "dataclass", "dataclass-in-list"])
@@ -38,30 +38,7 @@ def test_dataclass_nested_attachments(shape):
 def test_dataclass_attachment_types_keep_special_handling(kind, shape):
     from dataclasses import dataclass
 
-    from braintrust.logger import BaseAttachment, ReadonlyAttachment
-
-    @dataclass
-    class CustomAttachment(BaseAttachment):
-        key: str
-
-        @property
-        def reference(self):
-            return {
-                "type": "braintrust_attachment",
-                "key": self.key,
-                "filename": "file.txt",
-                "content_type": "text/plain",
-            }
-
-        @property
-        def data(self):
-            return b"data"
-
-        def upload(self):
-            raise AssertionError("Serialization must not upload attachments")
-
-        def debug_info(self):
-            return {"key": self.key}
+    from braintrust.logger import ReadonlyAttachment
 
     @dataclass
     class CustomReadonlyAttachment(ReadonlyAttachment):
@@ -74,7 +51,7 @@ def test_dataclass_attachment_types_keep_special_handling(kind, shape):
     class Payload:
         value: Any
 
-    attachment = CustomAttachment("test-key")
+    attachment = DataclassAttachment("test-key")
     if kind == "readonly":
         attachment = CustomReadonlyAttachment(attachment.reference)
     expected = attachment if kind == "base" else attachment.reference
@@ -131,19 +108,54 @@ def test_dataclass_json_container_fields():
     assert json.loads(bt_dumps(payload)) == {"value": {"items": [1, None, "text"], "nested": {"enabled": True}}}
 
 
-def test_dataclass_unreadable_field_is_non_sanitizable():
-    from dataclasses import dataclass
+def test_dataclass_unreadable_field_keeps_readable_fields():
+    from dataclasses import dataclass, field
 
     @dataclass
     class Payload:
-        value: int
+        files: list[Any]
+        value: int = 0
+        unset: int = field(init=False)
 
         def __getattribute__(self, name):
             if name == "value":
                 raise RuntimeError("Cannot read field")
             return super().__getattribute__(name)
 
-    assert bt_safe_deep_copy(Payload(1)) == "<non-sanitizable: Payload>"
+    attachment = Attachment(data=b"data", filename="file.txt", content_type="text/plain")
+
+    assert bt_safe_deep_copy(Payload([attachment])) == {
+        "files": [attachment],
+        "value": "<non-sanitizable: Payload.value>",
+        "unset": "<non-sanitizable: Payload.unset>",
+    }
+
+
+@pytest.mark.parametrize("nested", [False, True])
+@pytest.mark.parametrize(
+    "base_name,placeholder",
+    [("_NoopSpan", "<span>"), ("Experiment", "<experiment>"), ("Dataset", "<dataset>"), ("Logger", "<logger>")],
+)
+def test_dataclass_logger_object_subclass_keeps_placeholder(base_name, placeholder, nested):
+    from dataclasses import dataclass, make_dataclass
+
+    from braintrust import logger
+
+    # Field values of these SDK objects must never be copied into logged events.
+    DataclassObject = make_dataclass(
+        "DataclassObject", [("secret", str, "token")], bases=(getattr(logger, base_name),)
+    )
+
+    @dataclass
+    class Payload:
+        value: Any
+
+    obj = DataclassObject()
+    original = Payload([obj]) if nested else obj
+    expected = {"value": [placeholder]} if nested else placeholder
+
+    assert bt_safe_deep_copy(original) == expected
+    assert json.loads(bt_dumps(original)) == expected
 
 
 class TestBTJson(TestCase):
