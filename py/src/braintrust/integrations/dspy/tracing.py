@@ -34,7 +34,7 @@ def _extract_provider(instance: Any, model: Any) -> str | None:
 try:
     from dspy import Example, Image
     from dspy.utils.callback import BaseCallback
-    from pydantic import BaseModel
+    from pydantic import BaseModel, RootModel
 
     _HAS_DSPY = True
 except ImportError:
@@ -74,6 +74,9 @@ def _process_images_impl(value: Any) -> Any:
     if isinstance(value, Example):
         # toDict() serializes nested Pydantic fields in DSPy >= 3.4.
         return {key: _process_images(item) for key, item in value.items()}
+    if isinstance(value, RootModel):
+        converted_root = _process_images(value.root)
+        return value if converted_root is value.root else converted_root
     if isinstance(value, BaseModel):
         # dict(model) exposes raw values instead of invoking field serializers.
         fields = dict(value)
@@ -83,6 +86,15 @@ def _process_images_impl(value: Any) -> Any:
         changed = {key for key in fields if converted_fields[key] is not fields[key]}
         result = value.model_dump(exclude=changed, exclude_none=True)
         model_fields = type(value).model_fields
+        if not isinstance(result, dict):
+            # Plain model serializers can ignore exclude=changed and return
+            # lists/scalars containing inline images. Log the converted raw
+            # fields in that case, respecting explicit field exclusions.
+            return {
+                key: item
+                for key, item in converted_fields.items()
+                if item is not None and (key not in model_fields or not model_fields[key].exclude)
+            }
         result.update(
             (key, converted_fields[key]) for key in changed if key not in model_fields or not model_fields[key].exclude
         )

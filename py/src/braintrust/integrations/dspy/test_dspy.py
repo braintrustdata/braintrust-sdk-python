@@ -16,7 +16,7 @@ from braintrust.integrations.dspy.tracing import _process_images
 from braintrust.integrations.litellm import patch_litellm
 from braintrust.integrations.test_utils import run_in_subprocess, verify_autoinstrument_script
 from braintrust.test_helpers import init_test_logger
-from pydantic import BaseModel, Field, field_serializer
+from pydantic import BaseModel, Field, RootModel, field_serializer, model_serializer
 
 
 PROJECT_NAME = "test-dspy-app"
@@ -51,10 +51,16 @@ def test_dspy_image_conversion_preserves_unmaterialized_images(url):
     image = dspy.Image(url=url)
     assert _process_images(image) is image
     assert _process_images({"image": image, "url": url}) == {"image": image, "url": url}
+    model = RootModel[list[dspy.Image]]([image])
+    assert _process_images(model) is model
 
 
-@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "query", "body"])
-def test_dspy_images_materialize_attachments(memory_logger):
+@pytest.mark.vcr(
+    cassette_name="test_dspy_images_materialize_attachments",
+    match_on=["method", "scheme", "host", "port", "path", "query", "body"],
+)
+@pytest.mark.parametrize("model_kind", ["model", "root", "list", "scalar"])
+def test_dspy_images_materialize_attachments(memory_logger, model_kind):
     """Images stay out of inline logs throughout a real DSPy/LiteLLM call."""
     image_base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="
     image_url = f"data:image/png;base64,{image_base64}"
@@ -62,6 +68,14 @@ def test_dspy_images_materialize_attachments(memory_logger):
     class Page(BaseModel):
         number: int
         image: dspy.Image
+
+    class SerializedPage(BaseModel):
+        page: Page
+        secret: str = Field(default="private", exclude=True)
+
+        @model_serializer(mode="plain")
+        def serialize(self):
+            return [self.page] if model_kind == "list" else self.page.image.url
 
     # DSPy 2.6 supports direct image fields, but does not expand images nested
     # in Pydantic fields into message content parts.
@@ -81,20 +95,32 @@ def test_dspy_images_materialize_attachments(memory_logger):
             self.predict = dspy.Predict(describe)
 
         def forward(self, image, page):
-            result = self.predict(image=image, page=page if nested_images else page.image)
+            # The outer module accepts several model shapes, while every case
+            # sends the same request to the provider and reuses its recording.
+            if isinstance(page, RootModel):
+                predictor_page = page.root[0]
+            elif isinstance(page, SerializedPage):
+                predictor_page = page.page
+            else:
+                predictor_page = page
+            result = self.predict(image=image, page=predictor_page if nested_images else predictor_page.image)
             return dspy.Prediction(answer=result.answer, image=image, page=page)
 
     patch_litellm()
     lm = dspy.LM(MODEL, cache=False, **LM_KWARGS)
     image = dspy.Image(url=image_url)
     page = Page(number=2, image=dspy.Image(url=image_url))
+    if model_kind == "root":
+        page = RootModel[list[Page]]([page])
+    elif model_kind in ("list", "scalar"):
+        page = SerializedPage(page=page)
     with dspy.context(lm=lm, callbacks=[BraintrustDSpyCallback()]):
         result = DescribePages()(image=image, page=page)
 
     assert result.answer
     assert result.image is image
     assert result.page is page
-    assert image.url == page.image.url == image_url
+    assert image.url == image_url
     spans = {span["span_attributes"]["name"]: span for span in memory_logger.pop()}
 
     for name in ("dspy.module.DescribePages", "dspy.module.Predict"):
@@ -131,17 +157,31 @@ def test_dspy_images_materialize_attachments(memory_logger):
         assert attachment.data == base64.b64decode(image_base64)
         assert attachment.reference["content_type"] == "image/png"
 
+    def assert_page(value):
+        if model_kind == "root":
+            assert len(value) == 1
+            value = value[0]
+        elif model_kind in ("list", "scalar"):
+            # Non-mapping serializers are logged using their raw fields so
+            # attachments survive, while explicitly excluded fields stay out.
+            assert "secret" not in value
+            value = value["page"]
+        assert value["number"] == 2
+        assert_image(value["image"])
+
     for name in ("dspy.module.DescribePages", "dspy.module.Predict"):
         inputs = spans[name]["input"]
         inputs = inputs.get("kwargs", inputs)
         assert_image(inputs["image"])
-        if nested_images or name == "dspy.module.DescribePages":
+        if name == "dspy.module.DescribePages":
+            assert_page(inputs["page"])
+        elif nested_images:
             assert_image(inputs["page"]["image"])
             assert inputs["page"]["number"] == 2
         else:
             assert_image(inputs["page"])
     assert_image(spans["dspy.module.DescribePages"]["output"]["image"])
-    assert_image(spans["dspy.module.DescribePages"]["output"]["page"]["image"])
+    assert_page(spans["dspy.module.DescribePages"]["output"]["page"])
     assert_image(spans["dspy.adapter.format"]["input"]["inputs"]["image"])
     logged_page = spans["dspy.adapter.format"]["input"]["inputs"]["page"]
     assert_image(logged_page["image"] if nested_images else logged_page)
