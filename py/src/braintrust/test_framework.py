@@ -1486,6 +1486,41 @@ def test_hooks_tags_mutation_is_isolated_per_evaluation(with_memory_logger, as_d
     assert with_memory_logger.pop() == []
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize("initial_tags", [None, ["seed"]], ids=["none", "nonempty"])
+async def test_hooks_tags_mutation_is_isolated_across_concurrent_trials(with_memory_logger, initial_tags):
+    trial_count = 3
+    base_tags = list(initial_tags or [])
+    appended = 0
+    all_appended = asyncio.Event()
+
+    async def task(input, hooks):
+        nonlocal appended
+        own_tag = f"trial:{hooks.trial_index}"
+        hooks.tags.append(own_tag)
+        appended += 1
+        if appended == trial_count:
+            all_appended.set()
+        # Hold every trial open until all of them have appended, so they overlap.
+        await asyncio.wait_for(all_appended.wait(), timeout=5)
+        return list(hooks.tags)
+
+    result = await EvalAsync(
+        "concurrent-hook-tags",
+        data=[EvalCase(input="row", tags=initial_tags)],
+        task=task,
+        scores=[],
+        trial_count=trial_count,
+        no_send_logs=True,
+        enable_cache=False,
+    )
+
+    assert [row.error for row in result.results] == [None] * trial_count
+    assert sorted(row.output[-1] for row in result.results) == [f"trial:{i}" for i in range(trial_count)]
+    assert [row.output for row in result.results] == [[*base_tags, row.output[-1]] for row in result.results]
+    assert initial_tags == (None if initial_tags is None else base_tags)
+
+
 @pytest.mark.parametrize("initial_tags", [None, [], ["seed-z", "seed-a"]], ids=["none", "empty", "nonempty"])
 def test_hooks_tags_clear_is_local_to_each_trial(with_memory_logger, initial_tags):
     initial_tags = None if initial_tags is None else list(initial_tags)
