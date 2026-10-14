@@ -1486,6 +1486,31 @@ def test_hooks_tags_mutation_is_isolated_per_evaluation(with_memory_logger, as_d
     assert with_memory_logger.pop() == []
 
 
+@pytest.mark.parametrize("initial_tags", [("seed",), {"seed"}], ids=["tuple", "set"])
+def test_hooks_tags_from_tuple_or_set_are_appendable_per_trial(with_memory_logger, initial_tags):
+    original_tags = type(initial_tags)(initial_tags)
+
+    def task(input, hooks):
+        hooks.tags.append(f"trial:{hooks.trial_index}")
+        return list(hooks.tags)
+
+    result = Eval(
+        "sequence-hook-tags",
+        data=[EvalCase(input="row", tags=initial_tags)],
+        task=task,
+        scores=[],
+        trial_count=2,
+        max_concurrency=1,
+        no_send_logs=True,
+        enable_cache=False,
+    )
+
+    assert [row.error for row in result.results] == [None, None]
+    assert [row.output for row in result.results] == [["seed", "trial:0"], ["seed", "trial:1"]]
+    assert [row.tags for row in result.results] == [row.output for row in result.results]
+    assert initial_tags == original_tags
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("initial_tags", [None, ["seed"]], ids=["none", "nonempty"])
 async def test_hooks_tags_mutation_is_isolated_across_concurrent_trials(with_memory_logger, initial_tags):
