@@ -1710,7 +1710,7 @@ async def _run_evaluator_internal_impl(
         exc_info = None
         scores = {}
         classifications = {}
-        tags = datum.tags
+        tags = list(datum.tags) if datum.tags is not None else None
 
         event_dataset = (
             experiment.dataset if experiment else evaluator.data if isinstance(evaluator.data, Dataset) else None

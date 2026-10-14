@@ -1444,6 +1444,74 @@ async def test_hooks_tags_append(with_memory_logger, with_simulate_login, simple
     assert root_span[0].get("tags") == expected_tags
 
 
+@pytest.mark.parametrize("as_dict", [False, True], ids=["dataclass", "dict"])
+@pytest.mark.parametrize("use_trials", [False, True], ids=["shared-row-tags", "trials"])
+@pytest.mark.parametrize("initial_tags", [None, [], ["seed-z", "seed-a"]], ids=["none", "empty", "nonempty"])
+def test_hooks_tags_mutation_is_isolated_per_evaluation(with_memory_logger, as_dict, use_trials, initial_tags):
+    initial_tags = None if initial_tags is None else list(initial_tags)
+    original_tags = None if initial_tags is None else list(initial_tags)
+    base_tags = list(initial_tags or [])
+    inputs = ["row"] if use_trials else ["first", "second"]
+    data = [
+        {"input": value, "tags": initial_tags} if as_dict else EvalCase(input=value, tags=initial_tags)
+        for value in inputs
+    ]
+
+    def task(input, hooks):
+        own_tag = f"{input}:{hooks.trial_index}"
+        hooks.tags.append(own_tag)
+        return own_tag
+
+    def tag_isolation(output, tags):
+        return float(tags == [*base_tags, output])
+
+    result = Eval(
+        "isolated-hook-tags",
+        data=data,
+        task=task,
+        scores=[tag_isolation],
+        trial_count=2 if use_trials else 1,
+        max_concurrency=1,
+        no_send_logs=True,
+        enable_cache=False,
+    )
+
+    assert [row.error for row in result.results] == [None, None]
+    assert [row.scores["tag_isolation"] for row in result.results] == [1.0, 1.0]
+    assert result.summary.scores["tag_isolation"].score == 1.0
+    assert [row.tags for row in result.results] == [[*base_tags, row.output] for row in result.results]
+    assert initial_tags == original_tags
+    assert with_memory_logger.pop() == []
+
+
+@pytest.mark.parametrize("initial_tags", [None, [], ["seed-z", "seed-a"]], ids=["none", "empty", "nonempty"])
+def test_hooks_tags_clear_is_local_to_each_trial(with_memory_logger, initial_tags):
+    initial_tags = None if initial_tags is None else list(initial_tags)
+    original_tags = None if initial_tags is None else list(initial_tags)
+
+    def task(input, hooks):
+        before = list(hooks.tags)
+        hooks.tags.clear()
+        return before
+
+    result = Eval(
+        "cleared-hook-tags",
+        data=[EvalCase(input="row", tags=initial_tags)],
+        task=task,
+        scores=[],
+        trial_count=2,
+        max_concurrency=1,
+        no_send_logs=True,
+        enable_cache=False,
+    )
+
+    assert [row.error for row in result.results] == [None, None]
+    assert [row.output for row in result.results] == [list(original_tags or [])] * 2
+    assert [row.tags for row in result.results] == [None, None]
+    assert initial_tags == original_tags
+    assert with_memory_logger.pop() == []
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("tags", "expected_tags"),
