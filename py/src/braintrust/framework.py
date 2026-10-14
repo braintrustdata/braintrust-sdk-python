@@ -1219,6 +1219,30 @@ def evaluate_filter(object, filter: Filter):
     return filter.pattern.match(serialize_json_with_plain_string(key)) is not None
 
 
+def _copy_containers(value: Any, memo: dict[int, Any] | None = None) -> Any:
+    """Recursively copy plain dicts and lists so one evaluation's mutations don't leak into another.
+
+    Other objects are shared rather than deep-copied, since they may be expensive or impossible to copy.
+    """
+    value_type = type(value)
+    if value_type is not dict and value_type is not list:
+        return value
+    if memo is None:
+        memo = {}
+    if id(value) in memo:
+        return memo[id(value)]
+    if value_type is dict:
+        copied_dict: dict[Any, Any] = {}
+        memo[id(value)] = copied_dict
+        for k, v in value.items():
+            copied_dict[k] = _copy_containers(v, memo)
+        return copied_dict
+    copied_list: list[Any] = []
+    memo[id(value)] = copied_list
+    copied_list.extend(_copy_containers(v, memo) for v in value)
+    return copied_list
+
+
 class DictEvalHooks(dict[str, Any]):
     def __init__(
         self,
@@ -1708,7 +1732,7 @@ async def _run_evaluator_internal_impl(
         if isinstance(datum, dict):
             datum = EvalCase.from_dict(datum)
 
-        metadata = {**(datum.metadata or {})}
+        metadata = _copy_containers({**(datum.metadata or {})})
         output = None
         error = None
         exc_info = None

@@ -20,6 +20,7 @@ from .framework import (
     Evaluator,
     Filter,
     _call_user_fn_args,
+    _copy_containers,
     await_or_run,
     evaluate_filter,
     parse_filters,
@@ -1511,6 +1512,53 @@ def test_hooks_tags_clear_is_local_to_each_trial(with_memory_logger, initial_tag
     assert [row.tags for row in result.results] == [None, None]
     assert initial_tags == original_tags
     assert with_memory_logger.pop() == []
+
+
+def test_copy_containers_copies_dicts_and_lists_only():
+    leaf = object()
+    shared = [1]
+    value = {"nested": {"items": [shared, shared]}, "leaf": leaf, "tuple": (shared,)}
+    value["self"] = value
+
+    copied = _copy_containers(value)
+
+    assert copied is not value
+    assert copied["nested"] is not value["nested"]
+    assert copied["nested"]["items"][0] is not shared
+    assert copied["nested"]["items"][0] is copied["nested"]["items"][1]
+    assert copied["self"] is copied
+    assert copied["leaf"] is leaf
+    assert copied["tuple"] is value["tuple"]
+
+
+@pytest.mark.parametrize("use_trials", [False, True], ids=["shared-row-metadata", "trials"])
+def test_hooks_nested_metadata_mutation_is_isolated_per_evaluation(with_memory_logger, use_trials):
+    shared_metadata = {"ctx": {"seen": []}}
+    inputs = ["row"] if use_trials else ["first", "second"]
+
+    def task(input, hooks):
+        hooks.metadata["ctx"]["seen"].append(f"{input}:{hooks.trial_index}")
+        return list(hooks.metadata["ctx"]["seen"])
+
+    def metadata_isolation(output, metadata):
+        return float(metadata["ctx"]["seen"] == output)
+
+    result = Eval(
+        "isolated-hook-metadata",
+        data=[EvalCase(input=value, metadata=shared_metadata) for value in inputs],
+        task=task,
+        scores=[metadata_isolation],
+        trial_count=2 if use_trials else 1,
+        max_concurrency=1,
+        no_send_logs=True,
+        enable_cache=False,
+    )
+
+    assert [row.error for row in result.results] == [None, None]
+    assert [len(row.output) for row in result.results] == [1, 1]
+    assert [row.scores["metadata_isolation"] for row in result.results] == [1.0, 1.0]
+    assert [row.metadata["ctx"]["seen"] for row in result.results] == [row.output for row in result.results]
+    assert shared_metadata == {"ctx": {"seen": []}}
 
 
 @pytest.mark.parametrize("tags", [["a"], ("a",), {"a"}], ids=["list", "tuple", "set"])
