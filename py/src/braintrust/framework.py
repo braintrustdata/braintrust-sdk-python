@@ -1705,7 +1705,7 @@ async def _run_evaluator_internal_impl(
         error = None
         exc_info = None
         scores = {}
-        unhandled_scores = list(scorer_names)
+        unhandled_scores = scorer_names
         classifications = {}
         tags = datum.tags
 
@@ -1957,7 +1957,8 @@ async def _run_evaluator_internal_impl(
             error_scores = {}
             if evaluator.error_score_handler is not None and unhandled_scores:
                 try:
-                    error_scores = evaluator.error_score_handler(root_span, datum, unhandled_scores) or {}
+                    # Pass a copy so a handler that mutates its argument can't change scorer_names.
+                    error_scores = evaluator.error_score_handler(root_span, datum, list(unhandled_scores)) or {}
                 except Exception as e:
                     eprint(f"Error score handler failed for scorers: {', '.join(unhandled_scores)}", e)
 

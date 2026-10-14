@@ -1180,12 +1180,13 @@ async def test_error_score_handler_gets_all_scorers_for_each_failed_row():
     evaluator = _error_score_evaluator(["scorer_error", "task_error_1", "ok", "task_error_2"], consuming_handler)
     result = await run_evaluator(experiment=None, evaluator=evaluator, position=None, filters=[])
 
-    results = {r.input: r for r in result.results}
     assert seen == [["picky"], ["exact_match", "picky"], ["exact_match", "picky"]]
-    assert results["scorer_error"].scores == {"exact_match": 1.0, "picky": 0}
-    assert results["task_error_1"].scores == {"exact_match": 0, "picky": 0}
-    assert results["ok"].scores == {"exact_match": 1.0, "picky": 1.0}
-    assert results["task_error_2"].scores == {"exact_match": 0, "picky": 0}
+    assert {r.input: r.scores for r in result.results} == {
+        "scorer_error": {"exact_match": 1.0, "picky": 0},
+        "task_error_1": {"exact_match": 0, "picky": 0},
+        "ok": {"exact_match": 1.0, "picky": 1.0},
+        "task_error_2": {"exact_match": 0, "picky": 0},
+    }
 
 
 @pytest.mark.asyncio
