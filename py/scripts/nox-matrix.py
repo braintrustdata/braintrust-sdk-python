@@ -12,9 +12,9 @@ Usage:
 import argparse
 import json
 import platform
-import re
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 
@@ -180,18 +180,18 @@ def main() -> None:
     if args.output_durations is None:
         sys.exit(subprocess.run(cmd).returncode)
 
-    # Stream output while capturing session durations
-    durations: dict[str, int] = {}
-    duration_re = re.compile(r"nox > Session (\S+) was successful in (\d+) seconds\.")
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
-    assert process.stdout is not None
-    for line in process.stdout:
-        sys.stdout.write(line)
-        sys.stdout.flush()
-        m = duration_re.search(line)
-        if m:
-            durations[m.group(1)] = int(m.group(2))
-    process.wait()
+    # Nox formats longer durations as "a minute", etc. Its JSON report
+    # always contains seconds, independent of the human-readable log format.
+    with tempfile.TemporaryDirectory() as tmp:
+        report_path = Path(tmp) / "nox-report.json"
+        process = subprocess.run([*cmd, "--report", str(report_path)])
+        with open(report_path) as f:
+            report = json.load(f)
+        durations = {
+            session["name"]: round(session["duration"])
+            for session in report["sessions"]
+            if session["result"] == "success"
+        }
 
     args.output_durations.parent.mkdir(parents=True, exist_ok=True)
     with open(args.output_durations, "w") as f:
