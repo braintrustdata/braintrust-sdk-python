@@ -11,6 +11,7 @@ from braintrust.logger import BraintrustState, Dataset, ObjectMetadata, ProjectD
 from braintrust.util import LazyValue
 
 from .framework import (
+    DictEvalHooks,
     Eval,
     EvalAsync,
     EvalCase,
@@ -1510,6 +1511,17 @@ def test_hooks_tags_clear_is_local_to_each_trial(with_memory_logger, initial_tag
     assert [row.tags for row in result.results] == [None, None]
     assert initial_tags == original_tags
     assert with_memory_logger.pop() == []
+
+
+@pytest.mark.parametrize("tags", [["a"], ("a",), {"a"}], ids=["list", "tuple", "set"])
+def test_dict_eval_hooks_copies_tags(tags):
+    original = type(tags)(tags)
+    hooks = DictEvalHooks(tags=tags)
+
+    hooks.tags.append("b")
+
+    assert tags == original
+    assert hooks.tags == ["a", "b"]
 
 
 @pytest.mark.asyncio

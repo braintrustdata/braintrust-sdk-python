@@ -1236,10 +1236,14 @@ class DictEvalHooks(dict[str, Any]):
             self.update({"expected": expected})
         self.update({"trial_index": trial_index})
         self._span = None
-        if tags is not None:
-            self.update({"tags": tags})
-        else:
+        if tags is None:
             self.update({"tags": []})
+        elif isinstance(tags, (list, tuple, set)):
+            # Copy so hook mutations don't leak into the caller's tags.
+            self.update({"tags": list(tags)})
+        else:
+            # Leave other values as-is so span tag validation rejects them.
+            self.update({"tags": tags})
 
         self._report_progress = report_progress
         self._parameters = parameters
@@ -1710,8 +1714,7 @@ async def _run_evaluator_internal_impl(
         exc_info = None
         scores = {}
         classifications = {}
-        # Copy so hook mutations stay local to this trial. Leave other values as-is so validation rejects them.
-        tags = list(datum.tags) if isinstance(datum.tags, (list, tuple, set)) else datum.tags
+        tags = datum.tags
 
         event_dataset = (
             experiment.dataset if experiment else evaluator.data if isinstance(evaluator.data, Dataset) else None
