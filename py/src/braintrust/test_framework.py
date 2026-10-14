@@ -285,6 +285,62 @@ async def test_run_evaluator_basic():
     assert result.summary.scores["exact_match"].score == 1.0
 
 
+@pytest.mark.parametrize("is_async", [False, True], ids=["Eval", "EvalAsync"])
+@pytest.mark.parametrize("outcome", ["task_error", "scorer_error", "success"])
+@pytest.mark.parametrize("handler_result", ["score", "none", "default"])
+def test_eval_error_score_handler(is_async, outcome, handler_result):
+    calls = []
+
+    def task(input):
+        if outcome == "task_error":
+            raise ValueError("task failed")
+        return input
+
+    def accuracy(output):
+        if outcome == "scorer_error":
+            raise ValueError("scorer failed")
+        return 1.0
+
+    def error_score_handler(_span, datum, unhandled_scores):
+        calls.append((datum.input, list(unhandled_scores)))
+        if handler_result == "none":
+            return None
+        return {name: 0.0 for name in unhandled_scores}
+
+    kwargs = {} if handler_result == "default" else {"error_score_handler": error_score_handler}
+    evaluate = EvalAsync if is_async else Eval
+    result = evaluate(
+        "test-error-score-handler",
+        data=[EvalCase(input=1)],
+        task=task,
+        scores=[accuracy],
+        no_send_logs=True,
+        enable_cache=False,
+        **kwargs,
+    )
+    if is_async:
+        result = asyncio.run(result)
+
+    expected_calls = [(1, ["accuracy"])] if outcome != "success" and handler_result != "default" else []
+    assert calls == expected_calls
+    assert len(result.results) == 1
+    row = result.results[0]
+    if outcome == "success":
+        assert row.scores == {"accuracy": 1.0}
+    elif handler_result == "score":
+        assert row.scores == {"accuracy": 0.0}
+    else:
+        assert row.scores == {}
+
+    if outcome == "task_error":
+        assert isinstance(row.error, ValueError)
+        assert str(row.error) == "task failed"
+    else:
+        assert row.error is None
+    if outcome == "scorer_error":
+        assert "accuracy" in row.metadata["scorer_errors"]
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("trigger", ["event", "caller"])
 async def test_eval_async_cancellation_stops_queued_trials_and_drains_running_task(trigger):

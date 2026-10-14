@@ -957,6 +957,7 @@ async def EvalAsync(
         base_experiment_id=base_experiment_id,
         git_metadata_settings=git_metadata_settings,
         repo_info=repo_info,
+        error_score_handler=error_score_handler,
         description=description,
         summarize_scores=summarize_scores,
         no_send_logs=no_send_logs,
