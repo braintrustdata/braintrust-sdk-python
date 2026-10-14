@@ -1135,13 +1135,11 @@ async def test_per_input_trial_count_with_dict_data():
     assert input_3_trials == [0]
 
 
-@pytest.mark.asyncio
-@pytest.mark.parametrize("first_input", ["ok", "scorer_error"])
-async def test_error_score_handler_scores_each_failed_row_independently(first_input):
-    """A failed task gets error scores for every scorer, regardless of how earlier rows finished."""
+def _error_score_evaluator(inputs, error_score_handler, **kwargs):
+    """Rows named "task_error*" fail in the task; the "picky" scorer fails on "scorer_error" rows."""
 
     async def task(input_value):
-        if input_value == "task_error":
+        if input_value.startswith("task_error"):
             raise ValueError("task failed")
         return input_value
 
@@ -1153,83 +1151,23 @@ async def test_error_score_handler_scores_each_failed_row_independently(first_in
             raise ValueError("scorer failed")
         return 1.0
 
-    evaluator = Evaluator(
+    return Evaluator(
         project_name="test-project",
         eval_name="test-error-score-handler",
-        data=[
-            EvalCase(input=first_input, expected=first_input),
-            EvalCase(input="task_error", expected="task_error"),
-        ],
+        data=[EvalCase(input=i, expected=i) for i in inputs],
         task=task,
         scores=[exact_match, picky],
         experiment_name=None,
         metadata=None,
         max_concurrency=1,
-        error_score_handler=default_error_score_handler,
+        error_score_handler=error_score_handler,
+        **kwargs,
     )
-
-    result = await run_evaluator(experiment=None, evaluator=evaluator, position=None, filters=[])
-
-    failed = next(r for r in result.results if r.input == "task_error")
-    assert isinstance(failed.error, ValueError)
-    assert failed.scores == {"exact_match": 0, "picky": 0}
 
 
 @pytest.mark.asyncio
-async def test_error_score_handler_exception_does_not_abort_eval():
-    """An error score handler that raises only loses that row's error scores; the rest of the eval still runs."""
-
-    async def task(input_value):
-        if input_value == "task_error":
-            raise ValueError("task failed")
-        return input_value
-
-    def exact_match(output, expected):
-        return 1.0 if output == expected else 0.0
-
-    def broken_handler(root_span, data, unhandled_scores):
-        raise KeyError("handler failed")
-
-    evaluator = Evaluator(
-        project_name="test-project",
-        eval_name="test-error-score-handler-raises",
-        data=[
-            EvalCase(input="task_error", expected="task_error"),
-            EvalCase(input="ok", expected="ok"),
-        ],
-        task=task,
-        scores=[exact_match],
-        experiment_name=None,
-        metadata=None,
-        max_concurrency=1,
-        error_score_handler=broken_handler,
-    )
-
-    result = await run_evaluator(experiment=None, evaluator=evaluator, position=None, filters=[])
-
-    results = {r.input: r for r in result.results}
-    assert set(results) == {"task_error", "ok"}
-    assert isinstance(results["task_error"].error, ValueError)
-    assert results["task_error"].scores == {}
-    assert results["ok"].error is None
-    assert results["ok"].scores == {"exact_match": 1.0}
-
-
-@pytest.mark.asyncio
-async def test_error_score_handler_mutating_unhandled_scores_does_not_affect_other_rows():
-    """Mutating the unhandled_scores list passed to the handler must not change which scorers run on later rows."""
-
-    async def task(input_value):
-        if input_value.startswith("task_error"):
-            raise ValueError("task failed")
-        return input_value
-
-    def exact_match(output, expected):
-        return 1.0 if output == expected else 0.0
-
-    def picky(output):
-        return 1.0
-
+async def test_error_score_handler_gets_all_scorers_for_each_failed_row():
+    """Each row gets the names of exactly the scorers it is missing, regardless of earlier rows or handler mutations."""
     seen = []
 
     def consuming_handler(root_span, data, unhandled_scores):
@@ -1239,53 +1177,38 @@ async def test_error_score_handler_mutating_unhandled_scores_does_not_affect_oth
             scores[unhandled_scores.pop()] = 0
         return scores
 
-    evaluator = Evaluator(
-        project_name="test-project",
-        eval_name="test-error-score-handler-mutation",
-        data=[
-            EvalCase(input="task_error_1", expected="task_error_1"),
-            EvalCase(input="ok", expected="ok"),
-            EvalCase(input="task_error_2", expected="task_error_2"),
-        ],
-        task=task,
-        scores=[exact_match, picky],
-        experiment_name=None,
-        metadata=None,
-        max_concurrency=1,
-        error_score_handler=consuming_handler,
-    )
-
+    evaluator = _error_score_evaluator(["scorer_error", "task_error_1", "ok", "task_error_2"], consuming_handler)
     result = await run_evaluator(experiment=None, evaluator=evaluator, position=None, filters=[])
 
     results = {r.input: r for r in result.results}
+    assert seen == [["picky"], ["exact_match", "picky"], ["exact_match", "picky"]]
+    assert results["scorer_error"].scores == {"exact_match": 1.0, "picky": 0}
+    assert results["task_error_1"].scores == {"exact_match": 0, "picky": 0}
     assert results["ok"].scores == {"exact_match": 1.0, "picky": 1.0}
     assert results["task_error_2"].scores == {"exact_match": 0, "picky": 0}
-    assert seen == [["exact_match", "picky"], ["exact_match", "picky"]]
+
+
+@pytest.mark.asyncio
+async def test_error_score_handler_exception_does_not_abort_eval():
+    """An error score handler that raises only loses that row's error scores; the rest of the eval still runs."""
+
+    def broken_handler(root_span, data, unhandled_scores):
+        raise KeyError("handler failed")
+
+    evaluator = _error_score_evaluator(["task_error", "ok"], broken_handler)
+    result = await run_evaluator(experiment=None, evaluator=evaluator, position=None, filters=[])
+
+    results = {r.input: r for r in result.results}
+    assert isinstance(results["task_error"].error, ValueError)
+    assert results["task_error"].scores == {}
+    assert results["ok"].scores == {"exact_match": 1.0, "picky": 1.0}
 
 
 @pytest.mark.asyncio
 async def test_error_score_handler_logs_before_root_span_ends(with_memory_logger, with_simulate_login):
     """Error scores are logged to the root span before it ends, not as a late write after metrics.end."""
-
-    async def task(input_value):
-        raise ValueError("task failed")
-
-    def exact_match(output, expected):
-        return 1.0 if output == expected else 0.0
-
-    evaluator = Evaluator(
-        project_name="test-project",
-        eval_name="test-error-score-handler-span-end",
-        data=[EvalCase(input="task_error", expected="task_error")],
-        task=task,
-        scores=[exact_match],
-        experiment_name=None,
-        metadata=None,
-        summarize_scores=False,
-        error_score_handler=default_error_score_handler,
-    )
+    evaluator = _error_score_evaluator(["task_error"], default_error_score_handler, summarize_scores=False)
     experiment = init_test_exp("test-error-score-handler-span-end", "test-project")
-
     await run_evaluator(experiment=experiment, evaluator=evaluator, position=None, filters=[])
 
     # Inspect the raw, unmerged writes so their order is visible.
@@ -1293,7 +1216,7 @@ async def test_error_score_handler_logs_before_root_span_ends(with_memory_logger
     root_records = [record for record in records if not record["span_parents"]]
     score_index = next(i for i, record in enumerate(root_records) if record.get("scores"))
     end_index = next(i for i, record in enumerate(root_records) if record.get("metrics", {}).get("end"))
-    assert root_records[score_index]["scores"] == {"exact_match": 0}
+    assert root_records[score_index]["scores"] == {"exact_match": 0, "picky": 0}
     assert score_index < end_index
 
 
