@@ -930,18 +930,16 @@ _MANAGED_AGENTS_RESULT_REF_KEYS = {
 
 
 def _normalize_anthropic_data(value: Any) -> Any:
-    converted = _try_to_dict(value)
-    if converted is not None:
-        value = converted
-
-    if isinstance(value, tuple):
-        value = list(value)
-
+    if value is None or isinstance(value, (str, int, float, bool, bytes)):
+        return value
     if isinstance(value, list):
         return [_normalize_anthropic_data(item) for item in value]
-
     if isinstance(value, dict):
         return {key: _normalize_anthropic_data(item) for key, item in value.items()}
+
+    converted = _try_to_dict(value)
+    if converted is not None:
+        return _normalize_anthropic_data(converted)
 
     return value
 
@@ -951,11 +949,11 @@ def _normalize_anthropic_input(value: Any) -> Any:
 
 
 def _managed_agents_model_name(value: Any) -> str | None:
-    value = _normalize_anthropic_data(value)
     if isinstance(value, str):
         return value
-    if isinstance(value, dict) and isinstance(value.get("id"), str):
-        return value["id"]
+    model_id = value.get("id") if isinstance(value, dict) else getattr(value, "id", None)
+    if isinstance(model_id, str):
+        return model_id
     return None
 
 
@@ -1014,7 +1012,7 @@ def _extract_managed_agents_result_metrics_and_metadata(result: Any) -> tuple[di
 
 
 def _log_managed_agents_result_to_span(result: Any, span, output_factory=None) -> None:
-    output = output_factory(result) if output_factory is not None else _normalize_anthropic_data(result)
+    output = output_factory(result) if output_factory is not None else result
     metrics, metadata = _extract_managed_agents_result_metrics_and_metadata(result)
 
     span_log_kwargs = {}
@@ -1481,12 +1479,13 @@ def _log_server_tool_spans(content: Any, parent_span) -> None:
     pairs: list[tuple[dict[str, Any] | None, dict[str, Any] | None]] = []
 
     for item in content:
-        item = _try_to_dict(item)
-        if not isinstance(item, dict):
-            continue
-
-        item_type = item.get("type")
+        item_type = getattr(item, "type", None)
+        if item_type is None and isinstance(item, dict):
+            item_type = item.get("type")
         if item_type in _SERVER_TOOL_USE_TYPES:
+            item = _try_to_dict(item)
+            if not isinstance(item, dict):
+                continue
             call_id = item.get("id")
             if isinstance(call_id, str):
                 calls_by_id[call_id] = item
@@ -1498,6 +1497,10 @@ def _log_server_tool_spans(content: Any, parent_span) -> None:
             continue
 
         if not _is_server_tool_result_type(item_type):
+            continue
+
+        item = _try_to_dict(item)
+        if not isinstance(item, dict):
             continue
 
         tool_use_id = item.get("tool_use_id")
