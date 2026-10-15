@@ -143,12 +143,12 @@ def _handle_completion_streaming(
         async def async_gen() -> AsyncGenerator[Any, None]:
             try:
                 first = True
-                all_results: list[dict[str, Any]] = []
+                all_results: list[Any] = []
                 async for item in raw_response:
                     if first:
                         span.log(metrics={"time_to_first_token": time.time() - start_time})
                         first = False
-                    all_results.append(_try_to_dict(item))
+                    all_results.append(item)
                     yield item
 
                 span.log(**_postprocess_completion_streaming_results(all_results))
@@ -161,12 +161,12 @@ def _handle_completion_streaming(
         def sync_gen() -> Generator[Any, None, None]:
             try:
                 first = True
-                all_results: list[dict[str, Any]] = []
+                all_results: list[Any] = []
                 for item in raw_response:
                     if first:
                         span.log(metrics={"time_to_first_token": time.time() - start_time})
                         first = False
-                    all_results.append(_try_to_dict(item))
+                    all_results.append(item)
                     yield item
 
                 span.log(**_postprocess_completion_streaming_results(all_results))
@@ -633,7 +633,7 @@ async def _atranscription_wrapper_async(wrapped, instance, args, kwargs):
 # ---------------------------------------------------------------------------
 
 
-def _postprocess_completion_streaming_results(all_results: list[dict[str, Any]]) -> dict[str, Any]:
+def _postprocess_completion_streaming_results(all_results: list[Any]) -> dict[str, Any]:
     """Process streaming results to extract final response."""
     role = None
     content = None
@@ -643,51 +643,61 @@ def _postprocess_completion_streaming_results(all_results: list[dict[str, Any]])
     metrics: dict[str, float] = {}
 
     for result in all_results:
-        usage = result.get("usage")
+        usage = _get_field(result, "usage")
         if usage:
             metrics.update(_parse_metrics_from_usage(usage))
 
-        choices = result["choices"]
+        choices = _get_field(result, "choices", [])
         if not choices:
             continue
         choice = choices[0]
-        if choice.get("finish_reason") is not None:
-            finish_reason = choice.get("finish_reason")
-        if choice.get("text") is not None:
-            text = (text or "") + choice.get("text")
+        choice_finish_reason = _get_field(choice, "finish_reason")
+        if choice_finish_reason is not None:
+            finish_reason = choice_finish_reason
+        choice_text = _get_field(choice, "text")
+        if choice_text is not None:
+            text = (text or "") + choice_text
             continue
 
-        delta = choice.get("delta")
+        delta = _get_field(choice, "delta")
         if not delta:
             continue
 
-        if role is None and delta.get("role") is not None:
-            role = delta.get("role")
+        delta_role = _get_field(delta, "role")
+        if role is None and delta_role is not None:
+            role = delta_role
 
-        if delta.get("finish_reason") is not None:
-            finish_reason = delta.get("finish_reason")
+        delta_finish_reason = _get_field(delta, "finish_reason")
+        if delta_finish_reason is not None:
+            finish_reason = delta_finish_reason
 
-        if delta.get("content") is not None:
-            content = (content or "") + delta.get("content")
+        delta_content = _get_field(delta, "content")
+        if delta_content is not None:
+            content = (content or "") + delta_content
 
-        if delta.get("tool_calls") is not None:
-            delta_tool_calls = delta.get("tool_calls")
+        delta_tool_calls = _get_field(delta, "tool_calls")
+        if delta_tool_calls is not None:
             if not delta_tool_calls:
                 continue
             tool_delta = delta_tool_calls[0]
+            function_delta = _get_field(tool_delta, "function")
+            function_arguments = _get_field(function_delta, "arguments")
 
-            # pylint: disable=unsubscriptable-object
-            if not tool_calls or (tool_delta.get("id") and tool_calls[-1]["id"] != tool_delta.get("id")):
+            if not tool_calls or (
+                _get_field(tool_delta, "id") and tool_calls[-1]["id"] != _get_field(tool_delta, "id")
+            ):
                 tool_calls = (tool_calls or []) + [
                     {
-                        "id": tool_delta.get("id"),
-                        "type": tool_delta.get("type"),
-                        "function": tool_delta.get("function"),
+                        "id": _get_field(tool_delta, "id"),
+                        "type": _get_field(tool_delta, "type"),
+                        "function": {
+                            "name": _get_field(function_delta, "name"),
+                            "arguments": function_arguments or "",
+                        },
                     }
                 ]
             else:
-                # pylint: disable=unsubscriptable-object
-                tool_calls[-1]["function"]["arguments"] += delta["tool_calls"][0]["function"]["arguments"]
+                tool_calls[-1]["function"]["arguments"] += function_arguments or ""
 
     if text is not None:
         output = [{"index": 0, "text": text, "logprobs": None, "finish_reason": finish_reason}]
@@ -753,7 +763,7 @@ def _postprocess_responses_streaming_results(all_results: list[Any]) -> dict[str
                     current_content["annotations"] = []
                 if annotation_index == len(current_content["annotations"]):
                     current_content["annotations"].append({})
-                current_content["annotations"][annotation_index] = _try_to_dict(result.annotation)
+                current_content["annotations"][annotation_index] = result.annotation
 
     return {
         "metrics": metrics,
