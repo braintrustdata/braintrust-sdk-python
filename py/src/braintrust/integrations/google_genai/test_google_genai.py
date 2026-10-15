@@ -1009,6 +1009,16 @@ def test_interaction_materialization_only_converts_multimodal_payloads():
     assert materialized["media"]["image_url"]["url"] is materialized["media"]["data"]
 
 
+def test_interaction_materialization_preserves_pydantic_model_classes():
+    from braintrust.integrations.google_genai.tracing import _materialize_interaction_value
+    from pydantic import BaseModel
+
+    class ResponseFormat(BaseModel):
+        answer: str
+
+    assert _materialize_interaction_value(ResponseFormat) is ResponseFormat
+
+
 GROUNDING_MODEL = (
     "gemini-2.5-flash" if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest" else "gemini-2.0-flash-001"
 )

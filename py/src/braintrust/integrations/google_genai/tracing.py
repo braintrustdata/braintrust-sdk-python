@@ -212,7 +212,7 @@ def _materialize_interaction_value(value: Any) -> Any:
             field.name: _materialize_interaction_value(getattr(value, field.name))
             for field in dataclasses.fields(value)
         }
-    if hasattr(value, "model_dump"):
+    if hasattr(value, "model_dump") and not isinstance(value, type):
         try:
             return _materialize_interaction_value(value.model_dump(exclude_none=True))
         except TypeError:
