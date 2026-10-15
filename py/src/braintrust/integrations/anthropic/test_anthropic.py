@@ -182,8 +182,7 @@ def memory_logger():
         yield bgl
 
 
-def test_log_message_to_span_includes_stop_reason_and_stop_sequence():
-    span = unittest.mock.MagicMock()
+def test_log_message_to_span_includes_stop_reason_and_stop_sequence(memory_logger):
     message = SimpleNamespace(
         role="assistant",
         content=[{"type": "text", "text": "done"}],
@@ -203,28 +202,27 @@ def test_log_message_to_span_includes_stop_reason_and_stop_sequence():
         },
     )
 
-    _log_message_to_span(message, span, time_to_first_token=0.123)
+    with logger.start_span(name="message") as span:
+        _log_message_to_span(message, span, time_to_first_token=0.123)
 
-    span.log.assert_called_once_with(
-        output={
-            "role": "assistant",
-            "content": [{"type": "text", "text": "done"}],
-            "model": MODEL,
-            "stop_reason": "stop_sequence",
-            "stop_sequence": "DONE",
-        },
-        metrics={
-            "prompt_tokens": 11.0,
-            "completion_tokens": 7.0,
-            "prompt_cached_tokens": 0.0,
-            "prompt_cache_creation_tokens": 0.0,
-            "server_tool_use_web_search_requests": 2.0,
-            "server_tool_use_web_fetch_requests": 1.0,
-            "tokens": 18.0,
-            "time_to_first_token": 0.123,
-        },
-        metadata={},
-    )
+    (span,) = memory_logger.pop()
+    assert span["output"] == {
+        "role": "assistant",
+        "content": [{"type": "text", "text": "done"}],
+        "model": MODEL,
+        "stop_reason": "stop_sequence",
+        "stop_sequence": "DONE",
+    }
+    assert {k: v for k, v in span["metrics"].items() if k not in ("start", "end")} == {
+        "prompt_tokens": 11.0,
+        "completion_tokens": 7.0,
+        "prompt_cached_tokens": 0.0,
+        "prompt_cache_creation_tokens": 0.0,
+        "server_tool_use_web_search_requests": 2.0,
+        "server_tool_use_web_fetch_requests": 1.0,
+        "tokens": 18.0,
+        "time_to_first_token": 0.123,
+    }
 
 
 class _ToDictOnly:
@@ -1797,35 +1795,36 @@ class TestBatchesCreateSpans:
 class TestBatchesResultsSpans:
     """Tests verifying that batches.results() produces correct spans.
 
-    Mocked because the batch results API requires a completed batch, and batches
-    can take up to 24 hours to finish processing.
+    Batches can take up to 24 hours to finish, so the success test reads the
+    results of an already-ended batch (such as one left by TestBatchesCreateSpans)
+    instead of creating one.
     """
 
+    @pytest.mark.vcr
     @pytest.mark.asyncio
     # The sync case passes the batch id positionally and the async case by keyword,
     # covering both argument-extraction paths.
-    @pytest.mark.parametrize(
-        "is_async,batches_class,positional",
-        [(False, "Batches", True), (True, "AsyncBatches", False)],
-        ids=["sync", "async"],
-    )
-    async def test_batches_results_produces_span(self, memory_logger, is_async, batches_class, positional):
+    @pytest.mark.parametrize("is_async,positional", [(False, True), (True, False)], ids=["sync", "async"])
+    async def test_batches_results_produces_span(self, memory_logger, is_async, positional):
         assert not memory_logger.pop()
 
+        batch_id = next(
+            b.id
+            for b in _get_client().messages.batches.list(limit=20).data
+            if b.processing_status == "ended" and b.request_counts.succeeded
+        )
         client = wrap_anthropic(_get_async_client() if is_async else _get_client())
-        mock_decoder = unittest.mock.MagicMock()
-        with unittest.mock.patch(
-            f"anthropic.resources.messages.batches.{batches_class}.results",
-            return_value=mock_decoder,
-        ):
-            if positional:
-                result = client.messages.batches.results("msgbatch_abc123")
-            else:
-                result = client.messages.batches.results(message_batch_id="msgbatch_abc123")
-            if is_async:
-                result = await result
+        if positional:
+            result = client.messages.batches.results(batch_id)
+        else:
+            result = client.messages.batches.results(message_batch_id=batch_id)
+        if is_async:
+            result = await result
+            entries = [entry async for entry in result]
+        else:
+            entries = list(result)
 
-        assert result is mock_decoder
+        assert any(entry.result.type == "succeeded" for entry in entries)
 
         spans = memory_logger.pop()
         assert len(spans) == 1
@@ -1833,7 +1832,7 @@ class TestBatchesResultsSpans:
         assert span["span_attributes"]["name"] == "anthropic.messages.batches.results"
         assert span["span_attributes"]["type"] == "task"
         assert span["metadata"]["provider"] == "anthropic"
-        assert span["input"]["message_batch_id"] == "msgbatch_abc123"
+        assert span["input"]["message_batch_id"] == batch_id
         assert span["output"]["type"] == "jsonl_stream"
 
     def test_sync_batches_results_logs_error_on_failure(self, memory_logger):
