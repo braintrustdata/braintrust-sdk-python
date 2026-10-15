@@ -11,7 +11,6 @@ from functools import lru_cache
 from itertools import chain
 from typing import Any
 
-from braintrust.bt_json import bt_safe_deep_copy
 from braintrust.integrations.utils import _materialize_attachment
 from braintrust.logger import start_span as _bt_start_span
 
@@ -110,7 +109,7 @@ def _serialize_part(part: Any) -> Any:
         return result
 
     # Try standard serialization methods
-    return bt_safe_deep_copy(part)
+    return part
 
 
 @lru_cache(maxsize=128)
@@ -222,8 +221,9 @@ def _capture_llm_request_input(llm_request: Any) -> Any:
         )
     if config:
         captured["config"] = _capture_config(config)
-    if hasattr(llm_request, "live_connect_config"):
-        captured["live_connect_config"] = getattr(llm_request, "live_connect_config", None)
+    live_connect_config = getattr(llm_request, "live_connect_config", None)
+    if live_connect_config:
+        captured["live_connect_config"] = live_connect_config
 
     return captured or llm_request
 
@@ -415,14 +415,12 @@ async def _workflow_tool_node_run_impl_wrapper(wrapped: Any, instance: Any, args
     tool_args = node_input
     if hasattr(tool_args, "parts"):
         tool_args = "".join(getattr(part, "text", "") or "" for part in (tool_args.parts or []))
-    if hasattr(tool_args, "model_dump"):
-        tool_args = tool_args.model_dump()
     if isinstance(tool_args, str):
         try:
             tool_args = json.loads(tool_args)
         except json.JSONDecodeError:
             pass
-    if not isinstance(tool_args, dict):
+    if not isinstance(tool_args, dict) and not hasattr(tool_args, "model_dump"):
         tool_args = {}
 
     async def _trace():
