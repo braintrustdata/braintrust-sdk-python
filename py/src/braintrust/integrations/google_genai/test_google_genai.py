@@ -635,8 +635,8 @@ async def test_tool_use(memory_logger, mode):
         streamed_parts = [
             part for candidate in spans[0]["output"]["candidates"] for part in candidate["content"]["parts"]
         ]
-        assert any(part.get("function_call") for part in streamed_parts)
-        assert all(part.get("function_call") is not None for part in streamed_parts if "function_call" in part)
+        function_call_parts = [part for part in streamed_parts if "function_call" in part]
+        assert all(part["function_call"] is not None for part in function_call_parts)
 
 
 # Test 4: System Prompt
