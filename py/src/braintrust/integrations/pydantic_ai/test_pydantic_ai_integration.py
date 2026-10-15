@@ -1923,7 +1923,13 @@ def test_shape_message_and_response_pass_through_when_no_binary():
 
     from braintrust.integrations.pydantic_ai.tracing import _shape_message, _shape_model_response
 
-    message = SimpleNamespace(kind="request", state="complete", parts=["hello"])
+    message = SimpleNamespace(
+        kind="request",
+        state="complete",
+        instructions="Be concise.",
+        parts=[SimpleNamespace(part_kind="system-prompt", content="Use the supplied context."), "hello"],
+        new_pydantic_ai_field="preserve me",
+    )
     assert _shape_message(message) is message
 
     response = SimpleNamespace(
@@ -1934,6 +1940,56 @@ def test_shape_message_and_response_pass_through_when_no_binary():
         parts=["done"],
     )
     assert _shape_model_response(response) is response
+
+
+def test_conversation_messages_serialize_same_with_or_without_adapter_dump():
+    """Raw Pydantic AI messages log the same structure as adapter-dumped messages."""
+    from braintrust.bt_json import bt_safe_deep_copy
+    from braintrust.integrations.pydantic_ai.tracing import _shape_messages
+    from pydantic_ai.messages import (
+        ModelMessagesTypeAdapter,
+        ModelRequest,
+        ModelResponse,
+        SystemPromptPart,
+        TextPart,
+        ToolCallPart,
+        UserPromptPart,
+    )
+
+    messages = [
+        ModelRequest(
+            instructions="Be concise.",
+            parts=[
+                SystemPromptPart(content="Use the supplied context."),
+                UserPromptPart(content="Find the current weather."),
+            ],
+        ),
+        ModelResponse(
+            parts=[
+                TextPart(content="I will check."),
+                ToolCallPart(tool_name="weather", args={"city": "Toronto"}, tool_call_id="call_1"),
+            ]
+        ),
+    ]
+
+    raw_shape = bt_safe_deep_copy(_shape_messages(messages))
+    dumped_shape = bt_safe_deep_copy(_shape_messages(ModelMessagesTypeAdapter.dump_python(messages)))
+
+    assert raw_shape == dumped_shape
+
+    def assert_same_key_sets(raw, dumped):
+        if isinstance(raw, dict):
+            assert isinstance(dumped, dict)
+            assert raw.keys() == dumped.keys()
+            for key in raw:
+                assert_same_key_sets(raw[key], dumped[key])
+        elif isinstance(raw, list):
+            assert isinstance(dumped, list)
+            assert len(raw) == len(dumped)
+            for raw_item, dumped_item in zip(raw, dumped):
+                assert_same_key_sets(raw_item, dumped_item)
+
+    assert_same_key_sets(raw_shape, dumped_shape)
 
 
 def test_v2_model_provider_inference():

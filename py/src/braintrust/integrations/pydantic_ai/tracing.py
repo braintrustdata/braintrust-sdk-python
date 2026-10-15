@@ -1171,13 +1171,9 @@ def _shape_message(message: Any) -> Any:
     parts = _field_value(message, "parts")
     if not parts:
         return message
-    has_prompt_data = _field_value(message, "instructions") not in (_MISSING, None, "") or any(
-        _field_value(part, "part_kind") == "system-prompt" for part in parts
-    )
-    if not has_prompt_data and not any(_has_binary_leaf(part) for part in parts):
-        # Let Braintrust's serializer preserve every top-level field. It does not recurse
-        # into dataclasses nested in a list, so prompt-bearing parts have to be shaped
-        # here or they reach the span as repr strings; binary leaves need materializing.
+    if not any(_has_binary_leaf(part) for part in parts):
+        # Let Braintrust's serializer preserve every field unless binary content needs
+        # materializing. In particular, this keeps newer pydantic_ai fields intact.
         return message
     return _shape_object(
         message, fields=_MESSAGE_FIELDS, overrides={"parts": [_shape_content_part(part) for part in parts]}
@@ -1573,16 +1569,12 @@ def _build_agent_input_and_metadata(args: Any, kwargs: Any, instance: Any) -> tu
     conversation = kwargs.get("conversation")
     if conversation is not None:
         try:
-            from pydantic_ai.messages import ModelMessagesTypeAdapter
-
-            # Nested message parts otherwise serialize as repr strings.
-            messages = ModelMessagesTypeAdapter.dump_python(_field_value(conversation, "messages"))
             # Use the existing normalizer fields after delegated kwargs have logged their None defaults.
             input_data.update(
                 _shape_object(
                     conversation,
                     fields=("conversation_id",),
-                    overrides={"message_history": _shape_messages(messages)},
+                    overrides={"message_history": _shape_messages(_field_value(conversation, "messages"))},
                 )
             )
         except Exception as e:
