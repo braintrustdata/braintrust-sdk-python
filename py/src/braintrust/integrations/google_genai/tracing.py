@@ -1033,7 +1033,7 @@ def _aggregate_interaction_events(
             None,
         )
         if error_event is not None:
-            metadata["stream_error"] = _materialize_interaction_value(error_event.error)
+            metadata["stream_error"] = error_event.error
         return {"events": _materialize_interaction_value(events)}, clean_nones(metrics), metadata
 
     final_outputs_list = _serialize_interaction_outputs(final_interaction)
