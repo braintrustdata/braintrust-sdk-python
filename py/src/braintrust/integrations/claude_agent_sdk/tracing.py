@@ -66,6 +66,7 @@ class _ActiveToolSpan:
     raw_name: str
     display_name: str
     input: Any
+    dispatch_key: tuple[str, str]
     tool_use_id: str | None = None
     parent_tool_use_id: str | None = None
     handler_active: bool = False
@@ -356,10 +357,11 @@ class ToolSpanTracker:
                 raw_name=parsed_tool_name.raw_name,
                 display_name=parsed_tool_name.display_name,
                 input=tool_input,
+                dispatch_key=_make_dispatch_key(parsed_tool_name.display_name, tool_input),
                 tool_use_id=tool_use_id,
                 parent_tool_use_id=message_parent_tool_use_id,
             )
-            dispatch_key = _make_dispatch_key(parsed_tool_name.display_name, tool_input)
+            dispatch_key = self._active_spans[tool_use_id].dispatch_key
             self._dispatch_queues.setdefault(dispatch_key, collections.deque()).append(tool_use_id)
 
     def finish_tool_spans(self, message: Any) -> None:
@@ -458,7 +460,7 @@ class ToolSpanTracker:
         self._completed_span_exports[tool_use_id] = active_tool_span.span.export()
 
         # Remove from dispatch queue so stale entries don't accumulate.
-        dispatch_key = _make_dispatch_key(active_tool_span.display_name, active_tool_span.input)
+        dispatch_key = active_tool_span.dispatch_key
         queue = self._dispatch_queues.get(dispatch_key)
         if queue:
             try:
@@ -668,6 +670,7 @@ class _AgentContext:
     llm_span: Any | None = None
     llm_parent_export: str | None = None
     llm_output: list[dict[str, Any]] | None = None
+    llm_output_logged: bool = False
     llm_message_id: str | None = None
     next_llm_start: float | None = None
     task_span: Any | None = None
@@ -985,7 +988,6 @@ class ContextTracker:
         ctx: _AgentContext,
     ) -> tuple[dict[str, Any] | None, bool]:
         """Start one LLM span per provider message ID and merge its snapshots."""
-        current_message = _serialize_assistant_message(message)
         message_id = getattr(message, "message_id", None)
         if not isinstance(message_id, str):
             message_id = self._latest_partial_message_id_by_parent.get(getattr(message, "parent_tool_use_id", None))
@@ -1001,15 +1003,18 @@ class ContextTracker:
             ctx.llm_span
             and same_provider_message
             and ctx.llm_parent_export == parent_export
-            and current_message is not None
+            and hasattr(message, "content")
         ):
+            current_message = _serialize_assistant_message(message)
+            if current_message is None:
+                return None, False
             merged = _merge_assistant_messages(
                 ctx.llm_output[0] if ctx.llm_output else None,
                 current_message,
             )
             if merged is not None:
                 ctx.llm_output = [merged]
-                ctx.llm_span.log(output=ctx.llm_output)
+                ctx.llm_output_logged = False
             self._log_assistant_usage(message, ctx, message_id)
             return merged, True
 
@@ -1032,6 +1037,8 @@ class ContextTracker:
         ctx.llm_span = span
         ctx.llm_parent_export = parent_export
         ctx.llm_output = [final_content] if final_content is not None else None
+        # start_span already logged this initial output; later merges mark it dirty.
+        ctx.llm_output_logged = True
         ctx.llm_message_id = message_id if isinstance(message_id, str) else None
         ctx.next_llm_start = None
         self._log_assistant_usage(message, ctx, ctx.llm_message_id)
@@ -1059,9 +1066,13 @@ class ContextTracker:
 
     def _mark_output_usage_unknown(self, ctx: _AgentContext) -> None:
         """Mark missing output only once an LLM span is finalized."""
-        if ctx.llm_span is None or ctx.llm_message_id in self._final_output_usage_message_ids:
+        if ctx.llm_span is None:
             return
-        ctx.llm_span.log(metadata={"usage_output_tokens_unknown": True})
+        if ctx.llm_output is not None and not ctx.llm_output_logged:
+            ctx.llm_span.log(output=ctx.llm_output)
+            ctx.llm_output_logged = True
+        if ctx.llm_message_id not in self._final_output_usage_message_ids:
+            ctx.llm_span.log(metadata={"usage_output_tokens_unknown": True})
 
     def _process_task_event(self, message: Any, agent_span_export: str | None) -> None:
         """Handle TaskStarted / TaskProgress / TaskNotification system messages."""
@@ -1538,11 +1549,16 @@ def _create_llm_span_for_messages(
     model = getattr(last_message, "model", None)
     input_messages = _build_llm_input(prompt, conversation_history)
 
-    outputs: list[dict[str, Any]] = []
-    for msg in messages:
-        if hasattr(msg, "content"):
-            content = _serialize_content_blocks(msg.content)
-            outputs.append({"content": content, "role": "assistant"})
+    serialized_messages = [
+        {
+            "content": _serialize_content_blocks(msg.content),
+            "role": "assistant",
+        }
+        if hasattr(msg, "content")
+        else None
+        for msg in messages
+    ]
+    outputs = [serialized for serialized in serialized_messages if serialized is not None]
 
     metadata: dict[str, Any] = {"provider": "anthropic"}
     if model:
@@ -1559,11 +1575,8 @@ def _create_llm_span_for_messages(
     )
 
     # Return final message content for conversation history and the span
-    if hasattr(last_message, "content"):
-        content = _serialize_content_blocks(last_message.content)
-        return {"content": content, "role": "assistant"}, llm_span
-
-    return None, llm_span
+    final_content = serialized_messages[-1] if serialized_messages else None
+    return final_content, llm_span
 
 
 def _serialize_assistant_message(message: Any) -> dict[str, Any] | None:
