@@ -631,6 +631,12 @@ async def test_tool_use(memory_logger, mode):
     spans = memory_logger.pop()
     assert len(spans) >= 1
     _assert_tool_use_span(spans[0], start, end)
+    if mode in {"stream", "async_stream"}:
+        streamed_parts = [
+            part for candidate in spans[0]["output"]["candidates"] for part in candidate["content"]["parts"]
+        ]
+        assert any(part.get("function_call") for part in streamed_parts)
+        assert all(part.get("function_call") is not None for part in streamed_parts if "function_call" in part)
 
 
 # Test 4: System Prompt
@@ -1017,6 +1023,27 @@ def test_interaction_materialization_preserves_pydantic_model_classes():
         answer: str
 
     assert _materialize_interaction_value(ResponseFormat) is ResponseFormat
+
+
+def test_generate_content_stream_preserves_code_execution_parts():
+    from types import SimpleNamespace
+
+    from braintrust.integrations.google_genai.tracing import _aggregate_generate_content_chunks
+
+    parts = [
+        types.Part(executable_code=types.ExecutableCode(code="print(1)", language="PYTHON")),
+        types.Part(code_execution_result=types.CodeExecutionResult(outcome="OUTCOME_OK", output="1")),
+    ]
+    candidate = types.Candidate(content=types.Content(parts=parts, role="model"))
+    chunk = SimpleNamespace(candidates=[candidate], usage_metadata=None)
+
+    output, _, _ = _aggregate_generate_content_chunks([chunk], time.time())
+
+    streamed_parts = output["candidates"][0]["content"]["parts"]
+    assert streamed_parts == [
+        {"executable_code": parts[0].executable_code},
+        {"code_execution_result": parts[1].code_execution_result},
+    ]
 
 
 GROUNDING_MODEL = (

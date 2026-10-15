@@ -687,11 +687,11 @@ def _aggregate_generate_content_chunks(
                                     thought_text += part.text
                                 else:
                                     text += part.text
-                            elif hasattr(part, "function_call"):
+                            elif getattr(part, "function_call", None) is not None:
                                 other_parts.append({"function_call": part.function_call})
-                            elif hasattr(part, "code_execution_result"):
+                            elif getattr(part, "code_execution_result", None) is not None:
                                 other_parts.append({"code_execution_result": part.code_execution_result})
-                            elif hasattr(part, "executable_code"):
+                            elif getattr(part, "executable_code", None) is not None:
                                 other_parts.append({"executable_code": part.executable_code})
 
     aggregated = {}
