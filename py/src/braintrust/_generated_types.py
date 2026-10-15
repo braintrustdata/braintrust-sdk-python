@@ -3107,6 +3107,7 @@ class ViewDataSearch(TypedDict):
 
 
 class ViewOptionsViewOptionsOptions(TypedDict):
+    filterScope: NotRequired[Literal['span', 'trace'] | None]
     spanType: NotRequired[Literal['range', 'frame'] | None]
     rangeValue: NotRequired[str | None]
     frameStart: NotRequired[str | None]
