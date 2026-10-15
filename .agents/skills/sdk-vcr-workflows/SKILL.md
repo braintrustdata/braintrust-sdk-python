@@ -184,6 +184,31 @@ Bad reasons to re-record:
 
 If a cassette diff is large, verify that the behavioral change is truly intended before keeping it.
 
+## When Recording Fails
+
+Live recording fails for reasons unrelated to the SDK change. Handle each case so a failed recording does not destroy a good cassette or leave a bad one behind.
+
+- **Missing or invalid API key (401/403, auth errors):** stop and ask the user for a working key. Never hand-write or edit a cassette to stand in for a recording.
+- **Quota or rate limits (429, 402 "no remaining credits"):** a cassette that captured an error response is worse than the old one. Delete only the cassettes that captured the error, wait or ask for another key, then refill them with the default `once` mode.
+- **Retired models or upstream drift:** if the live API no longer returns what the test asserts (a retired model returns 404, a moderation block, a search result that no longer appears, a different stop reason), keep the old cassette with `git checkout` and tell the user. Do not loosen the assertion just to get a recording.
+- **Hand-authored cassettes:** some cassettes are hand-edited to force a scenario such as a validation retry. Never re-record them; restore them with `git checkout`.
+
+### Restore from git vs. re-record
+
+- Restore from git when the cassette is hand-authored, upstream behavior drifted, or the provider is unusable locally (no key, no quota). The old cassette still matches the request the SDK sends.
+- Re-record when the SDK's request shape intentionally changed, or when the new pin changes the wire format and playback fails.
+- If some tests in a directory may fail to record, record without deleting the directory first, so failed tests keep their old cassettes. If a test fails partway through, `git checkout` its cassette, because a partial refresh can leave truncated files.
+- After any refresh, run `git status` on the cassette directory and look for ` D` entries (cassettes deleted but never recreated).
+
+### Traps that silently lose cassettes
+
+- **Skipped sessions record nothing.** If a session skips on your Python version (see `_skip_if_incompatible` and the constraints in `py/noxfile.py`), deleting its cassettes first destroys them. Run nox from a compatible interpreter instead.
+- **Multi-file sessions stop at the first failing file.** After a partial failure, re-run in `once` mode to fill the files that later test files never recorded.
+- **Shared cassette names under `--vcr-record=all`.** When several parametrizations share a cassette name, later cases read an earlier case's response. Delete only those cassettes and re-run in `once` mode, so the first case of each name records and the rest replay.
+- **Hangs.** Tests that drive long-lived live sessions can hang while recording. Exclude them with `-k "not <test>"` and keep their old cassettes.
+
+For the current list of provider-specific cases (which tests to never re-record, known retired models, sessions coupled to another provider's pin), see `.agents/skills/sdk-dependency-updates/references/session-mapping.md`.
+
 ## Narrow Recording Strategy
 
 When you need new traffic, record the smallest thing possible:

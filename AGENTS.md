@@ -32,6 +32,8 @@ Use this file as the default playbook for work in this repository.
    - This includes bugs in tracing/span shaping that happen after the SDK returns a real provider payload. If the behavior depends on the provider's actual response shape, treat it as VCR-first work, not mock-first work.
    - Be actively skeptical of mock/fake tests for provider integrations. Do not reach for mocks just because they are faster or easier to write.
    - Avoid mocks/fakes unless the code is purely local or there is no practical cassette-based option.
+   - Hand-written stand-ins for provider or framework objects count as fakes, even without `unittest.mock`: a plain function posing as a tool, a stub client or transport, or a dict/object built by hand to look like a provider response. Use the library's real classes (for example its built-in tools and real clients) and drive them with cassettes.
+   - Never use `MagicMock`/`Mock` in provider integration tests (`py/src/braintrust/integrations/<provider>/test_*.py`). Shared helper unit tests such as `integrations/test_utils.py` are purely local and exempt. A narrow `monkeypatch` to inject an error path that recordings cannot provoke is still allowed.
 
 7. **Do not assume optional provider packages are installed.**
    - Rely on the active nox session to install what it needs.
