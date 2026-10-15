@@ -188,6 +188,32 @@ class TestInstructorOpenAISpans:
         for k in ("tokens", "prompt_tokens", "completion_tokens", "total_tokens"):
             assert k not in parent_metrics
 
+    @pytest.mark.vcr
+    def test_instructor_openai_create_partial_logs_final_snapshot(self, setup_logger, memory_logger):
+        """Partial snapshots are yielded to callers, but only the final one is logged."""
+        from braintrust import wrap_openai
+
+        client = wrap_openai(_make_openai_client())
+        patched = instructor.from_openai(client, mode=instructor.Mode.TOOLS)
+
+        result = list(
+            patched.chat.completions.create_partial(
+                model="gpt-4o-mini",
+                response_model=Person,
+                max_retries=3,
+                messages=[{"role": "user", "content": "Extract Grace, age 45."}],
+            )
+        )
+        assert len(result) > 1, "create_partial should yield progressive snapshots"
+        assert _dump(result[-1]) == {"name": "Grace", "age": 45}
+
+        spans = _all_spans(memory_logger)
+        task_spans = find_spans_by_type(spans, SpanTypeAttribute.TASK)
+        assert len(task_spans) == 1
+        parent = task_spans[0]
+        assert parent["span_attributes"]["name"] == "instructor.create_partial"
+        assert _dump(parent["output"]) == _dump(result[-1])
+
 
 class TestInstructorAutoInstrumentSubprocess:
     """auto_instrument() must instrument Instructor in a fresh subprocess too."""

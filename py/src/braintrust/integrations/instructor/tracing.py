@@ -14,8 +14,8 @@ Parent span shape:
 - ``name``  : ``instructor.create`` (or ``.create_with_completion`` etc.)
 - ``input`` : ``{"response_model": <name>, "mode": <str>, "messages": [...]}``
 - ``output``: the extracted Pydantic model (or list of models for
-  iterable/partial helpers).  This is Instructor's product and is not
-  present on any provider child span.
+  iterable helpers). Partial helpers log only their final snapshot. This is
+  Instructor's product and is not present on any provider child span.
 - ``metadata``: ``model``, ``provider``, ``response_model`` (class name),
   ``mode``, ``max_retries``, ``retry_count``, ``validation_errors``.  The
   ``model`` / ``provider`` pair carries attribution for the framework span
@@ -310,7 +310,7 @@ def _make_async_wrapper(span_name: str):
     return _wrapper
 
 
-def _make_sync_iterable_wrapper(span_name: str):
+def _make_sync_iterable_wrapper(span_name: str, *, final_only: bool = False):
     def _wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
         response_model = _extract_response_model(args, kwargs)
         max_retries = kwargs.get("max_retries", 3)
@@ -328,7 +328,11 @@ def _make_sync_iterable_wrapper(span_name: str):
                 try:
                     result = wrapped(*args, **kwargs)
                     for item in result:
-                        output.append(_extract_output(item))
+                        extracted = _extract_output(item)
+                        if final_only:
+                            output = extracted
+                        else:
+                            output.append(extracted)
                         yield item
                 except Exception as exc:
                     span.log(
@@ -360,7 +364,7 @@ def _make_sync_iterable_wrapper(span_name: str):
     return _wrapper
 
 
-def _make_async_iterable_wrapper(span_name: str):
+def _make_async_iterable_wrapper(span_name: str, *, final_only: bool = False):
     def _wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
         response_model = _extract_response_model(args, kwargs)
         max_retries = kwargs.get("max_retries", 3)
@@ -380,7 +384,11 @@ def _make_async_iterable_wrapper(span_name: str):
                     if inspect.isawaitable(result):
                         result = await result
                     async for item in result:
-                        output.append(_extract_output(item))
+                        extracted = _extract_output(item)
+                        if final_only:
+                            output = extracted
+                        else:
+                            output.append(extracted)
                         yield item
                 except Exception as exc:
                     span.log(
@@ -416,10 +424,10 @@ def _make_async_iterable_wrapper(span_name: str):
 # patcher targets in ``patchers.py``.
 _create_wrapper = _make_sync_wrapper("instructor.create")
 _create_with_completion_wrapper = _make_sync_wrapper("instructor.create_with_completion")
-_create_partial_wrapper = _make_sync_iterable_wrapper("instructor.create_partial")
+_create_partial_wrapper = _make_sync_iterable_wrapper("instructor.create_partial", final_only=True)
 _create_iterable_wrapper = _make_sync_iterable_wrapper("instructor.create_iterable")
 
 _async_create_wrapper = _make_async_wrapper("instructor.create")
 _async_create_with_completion_wrapper = _make_async_wrapper("instructor.create_with_completion")
-_async_create_partial_wrapper = _make_async_iterable_wrapper("instructor.create_partial")
+_async_create_partial_wrapper = _make_async_iterable_wrapper("instructor.create_partial", final_only=True)
 _async_create_iterable_wrapper = _make_async_iterable_wrapper("instructor.create_iterable")
