@@ -192,9 +192,9 @@ class BraintrustTracingProcessor(tracing.TracingProcessor):
         if span.span_data.response is not None:
             data["output"] = span.span_data.response.output
         if span.span_data.response is not None:
-            data["metadata"] = span.span_data.response.metadata or {}
+            data["metadata"] = dict(span.span_data.response.metadata or {})
             data["metadata"].update(
-                span.span_data.response.model_dump(exclude={"input", "output", "metadata", "usage"})
+                span.span_data.response.model_dump(exclude={"input", "output", "metadata", "usage"}, exclude_none=True)
             )
 
         data["metrics"] = {}

@@ -79,15 +79,28 @@ def test_tracing_processor_trace_spans(memory_logger):
 
 @pytest.mark.asyncio
 @pytest.mark.vcr
-async def test_openai_agents_integration_setup_creates_spans(memory_logger):
+async def test_openai_agents_integration_setup_creates_spans(memory_logger, monkeypatch):
     import agents
     from agents import Agent
     from agents.run import AgentRunner
+    from braintrust.integrations.openai_agents import tracing
 
     assert not memory_logger.pop()
 
     assert OpenAIAgentsIntegration.setup() is True
     assert agents.tracing.get_trace_provider()._disabled is False
+
+    response_metadata = []
+    response_log_data = tracing.BraintrustTracingProcessor._response_log_data
+
+    def capture_response_metadata(self, span):
+        response = span.span_data.response
+        if response is not None:
+            response.metadata["user"] = "preserve-me"
+            response_metadata.append((response.metadata, dict(response.metadata or {})))
+        return response_log_data(self, span)
+
+    monkeypatch.setattr(tracing.BraintrustTracingProcessor, "_response_log_data", capture_response_metadata)
 
     agent = Agent(name="test-agent", model=TEST_MODEL, instructions=TEST_AGENT_INSTRUCTIONS)
     result = await AgentRunner().run(agent, TEST_PROMPT)
@@ -115,6 +128,15 @@ async def test_openai_agents_integration_setup_creates_spans(memory_logger):
     assert any(metrics.get("tokens") is not None for metrics in llm_metrics)
     assert any(metrics.get("prompt_cached_tokens") == 0 for metrics in llm_metrics)
     assert any(metrics.get("completion_reasoning_tokens") == 0 for metrics in llm_metrics)
+
+    assert response_metadata
+    for metadata, original_metadata in response_metadata:
+        assert metadata == original_metadata
+
+    response_spans = [span for span in llm_spans if span.get("span_attributes", {}).get("name") == "Response"]
+    assert response_spans
+    assert any(span.get("metadata", {}).get("user") == "preserve-me" for span in response_spans)
+    assert all(value is not None for span in response_spans for value in span.get("metadata", {}).values())
 
     # v0.14.0+ produces TaskSpanData and TurnSpanData wrapping agent runs. The
     # tracing processor must give them proper names, metadata, and usage
