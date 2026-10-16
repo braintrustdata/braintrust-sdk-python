@@ -2884,6 +2884,7 @@ class TestExperimentGeneratedAPI(TestCase):
         api_client.experiments.post_experiment_id_fetch.side_effect = [
             {"events": [first_event], "cursor": "next-page"},
             {"events": [second_event]},
+            {"events": [second_event]},
         ]
         metadata = ProjectExperimentMetadata(
             project=ObjectMetadata(id="test-project-id", name="test-project", full_info={}),
@@ -2891,7 +2892,10 @@ class TestExperimentGeneratedAPI(TestCase):
         )
         experiment = Experiment(LazyValue(lambda: metadata, use_mutex=False), state=mock_state)
 
-        events = list(experiment.fetch(batch_size=1))
+        iterator = experiment.fetch(batch_size=1)
+        events = [next(iterator)]
+        experiment._clear_cache()
+        events.extend(iterator)
 
         assert [event["id"] for event in events] == ["first-event", "second-event"]
         assert api_client.experiments.post_experiment_id_fetch.call_args_list == [
@@ -2899,6 +2903,28 @@ class TestExperimentGeneratedAPI(TestCase):
             call("test-experiment-id", body={"limit": 1, "cursor": "next-page"}),
         ]
         mock_state.api_conn.assert_not_called()
+        assert list(experiment.fetch(batch_size=1)) == [second_event]
+        assert api_client.experiments.post_experiment_id_fetch.call_count == 3
+
+
+@pytest.mark.parametrize("initial_rows", [[], ["first"]])
+def test_object_iterator_keeps_exhausted_snapshot(initial_rows):
+    fetch = MagicMock(side_effect=[initial_rows, ["new"]])
+    iterator = logger.ObjectIterator(fetch)
+    fetch.assert_not_called()
+    assert list(iterator) == initial_rows
+    with pytest.raises(StopIteration):
+        next(iterator)
+    fetch.assert_called_once()
+
+
+def test_object_iterator_retries_failed_initial_fetch():
+    fetch = MagicMock(side_effect=[RuntimeError("fetch failed"), ["row"]])
+    iterator = logger.ObjectIterator(fetch)
+    with pytest.raises(RuntimeError, match="fetch failed"):
+        next(iterator)
+    assert list(iterator) == ["row"]
+    assert fetch.call_count == 2
 
 
 class TestLoggerProjectGroup(TestCase):
@@ -3173,6 +3199,80 @@ class TestDatasetGeneratedAPI(TestCase):
             ],
         )
         mock_state.api_conn.assert_not_called()
+
+    def test_dataset_delete_invalidates_fetched_records(self):
+        mock_state = MagicMock()
+        fetch = mock_state.api_client.return_value.datasets.post_dataset_id_fetch
+        deleted = {"id": "deleted-row", "expected": "obsolete"}
+        retained = {"id": "retained-row", "expected": "current"}
+        fetch.side_effect = [
+            {"events": [deleted, retained]},
+            {"events": [retained]},
+        ]
+        metadata = logger.ProjectDatasetMetadata(
+            project=logger.ObjectMetadata(id="test-project-id", name="test-project", full_info={}),
+            dataset=logger.ObjectMetadata(id="test-dataset-id", name="test-dataset", full_info={}),
+        )
+        dataset = logger.Dataset(
+            lazy_metadata=LazyValue(lambda: metadata, use_mutex=False),
+            legacy=False,
+            state=mock_state,
+        )
+
+        self.assertEqual(list(dataset), [deleted, retained])
+        self.assertEqual(list(dataset), [deleted, retained])
+        self.assertEqual(fetch.call_count, 1)
+
+        self.assertEqual(dataset.delete("deleted-row"), "deleted-row")
+        background_logger = mock_state.global_bg_logger.return_value
+        background_logger.log.assert_called_once()
+        tombstone = background_logger.log.call_args.args[0].get()
+        self.assertEqual(tombstone["id"], "deleted-row")
+        self.assertEqual(tombstone["dataset_id"], "test-dataset-id")
+        self.assertIs(tombstone["_object_delete"], True)
+        self.assertIsInstance(tombstone["created"], str)
+
+        dataset.flush()
+        background_logger.flush.assert_called_once()
+        self.assertEqual(list(dataset), [retained])
+        self.assertEqual(fetch.call_count, 2)
+        self.assertEqual(list(dataset), [retained])
+        self.assertEqual(fetch.call_count, 2)
+
+    def test_dataset_delete_during_iteration_preserves_snapshot(self):
+        mock_state = MagicMock()
+        fetch = mock_state.api_client.return_value.datasets.post_dataset_id_fetch
+        rows = [{"id": str(index), "expected": index} for index in range(4)]
+        fetch.side_effect = lambda *args, **kwargs: {"events": list(rows)}
+        metadata = logger.ProjectDatasetMetadata(
+            project=logger.ObjectMetadata(id="test-project-id", name="test-project", full_info={}),
+            dataset=logger.ObjectMetadata(id="test-dataset-id", name="test-dataset", full_info={}),
+        )
+        dataset = logger.Dataset(
+            lazy_metadata=LazyValue(lambda: metadata, use_mutex=False), legacy=False, state=mock_state
+        )
+        background_logger = mock_state.global_bg_logger.return_value
+        pending_deletes = []
+        background_logger.log.side_effect = lambda event: pending_deletes.append(event.get()["id"])
+
+        def flush_deletes():
+            rows[:] = [row for row in rows if row["id"] not in pending_deletes]
+            pending_deletes.clear()
+
+        background_logger.flush.side_effect = flush_deletes
+        iterator = iter(dataset)
+        fetch.assert_not_called()
+        visited = []
+        for row in iterator:
+            visited.append(row["id"])
+            dataset.delete(row["id"])
+            dataset.flush()
+
+        self.assertEqual(visited, ["0", "1", "2", "3"])
+        self.assertEqual(rows, [])
+        self.assertEqual(fetch.call_count, 1)
+        self.assertEqual(list(dataset), [])
+        self.assertEqual(fetch.call_count, 2)
 
     def test_dataset_summary_uses_generated_resource_and_configured_public_url(self):
         mock_state = MagicMock()
