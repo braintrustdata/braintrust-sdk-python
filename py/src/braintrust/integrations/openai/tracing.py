@@ -840,8 +840,9 @@ class ChatCompletionWrapper:
                     tool_call = tool_calls_by_index.get(tool_index)
                 else:
                     tool_call = tool_calls[-1] if tool_calls else None
-                # A new id always opens a new call, even under an index already in use.
-                if tool_call is not None and tool_id and tool_call["id"] and tool_call["id"] != tool_id:
+                # A new id always opens a new call, even under an index already in use
+                # and even when the call there arrived without an id.
+                if tool_call is not None and tool_id and tool_call["id"] != tool_id:
                     tool_call = None
 
                 if tool_call is None:

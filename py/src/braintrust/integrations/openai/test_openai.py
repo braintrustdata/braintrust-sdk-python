@@ -2466,6 +2466,27 @@ class TestZAICompatibleOpenAI:
         assert message["tool_calls"][1]["function"] == {"name": "get_time", "arguments": '{"tz": "CET"}'}
         assert not memory_logger.pop()
 
+    def test_chat_completion_streaming_call_with_id_after_call_without_id_under_reused_index(self, memory_logger):
+        """A call that arrives without an id is not merged into the next call that has one."""
+        assert not memory_logger.pop()
+
+        all_results = [
+            _tool_call_chunk(
+                [_tool_call_delta(0, name="get_weather", arguments='{"city": "Paris"}')],
+                role="assistant",
+            ),
+            _tool_call_chunk([_tool_call_delta(0, call_id="call_2", name="get_time", arguments='{"tz": "CET"}')]),
+            _tool_call_chunk([], finish_reason="tool_calls"),
+        ]
+
+        wrapper = ChatCompletionWrapper(None, None)
+        message = wrapper._postprocess_streaming_results(all_results)["output"][0]["message"]
+
+        assert [tool_call["id"] for tool_call in message["tool_calls"]] == [None, "call_2"]
+        assert message["tool_calls"][0]["function"] == {"name": "get_weather", "arguments": '{"city": "Paris"}'}
+        assert message["tool_calls"][1]["function"] == {"name": "get_time", "arguments": '{"tz": "CET"}'}
+        assert not memory_logger.pop()
+
     def test_chat_completion_streaming_audio_is_materialized_as_attachment(self, memory_logger):
         assert not memory_logger.pop()
 
