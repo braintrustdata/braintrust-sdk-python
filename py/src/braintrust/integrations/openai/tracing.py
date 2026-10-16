@@ -755,6 +755,7 @@ class ChatCompletionWrapper:
         refusal = None
         audio: dict[str, Any] | None = None
         tool_calls: list[Any] | None = None
+        tool_calls_by_index: dict[int, dict[str, Any]] = {}
         finish_reason = None
         logprobs_content: list[Any] | None = None
         logprobs_refusal: list[Any] | None = None
@@ -829,34 +830,36 @@ class ChatCompletionWrapper:
                 if delta_audio_expires_at is not None:
                     audio["expires_at"] = delta_audio_expires_at
 
-            if _get_attr_or_item(delta, "tool_calls") is not None:
-                delta_tool_calls = _get_attr_or_item(delta, "tool_calls")
-                if not delta_tool_calls:
-                    continue
-                tool_delta = delta_tool_calls[0]
-
-                # pylint: disable=unsubscriptable-object
+            # One delta can carry several calls, and a fragment continues the call
+            # with its `index`; providers that omit `index` continue the last call.
+            for tool_delta in _get_attr_or_item(delta, "tool_calls") or []:
                 tool_id = _get_attr_or_item(tool_delta, "id")
-                if not tool_calls or (tool_id and tool_calls[-1]["id"] != tool_id):
-                    function_arg = _get_attr_or_item(tool_delta, "function")
-                    tool_calls = (tool_calls or []) + [
-                        {
-                            "id": tool_id,
-                            "type": _get_attr_or_item(tool_delta, "type"),
-                            "function": {
-                                "name": _get_attr_or_item(function_arg, "name"),
-                                "arguments": _get_attr_or_item(function_arg, "arguments") or "",
-                            },
-                        }
-                    ]
+                tool_index = _get_attr_or_item(tool_delta, "index")
+                function_arg = _get_attr_or_item(tool_delta, "function")
+                if tool_index is not None:
+                    tool_call = tool_calls_by_index.get(tool_index)
                 else:
-                    # pylint: disable=unsubscriptable-object
-                    # append to existing tool call
-                    function_arg = _get_attr_or_item(tool_delta, "function")
+                    tool_call = tool_calls[-1] if tool_calls else None
+                # A new id always opens a new call, even under an index already in use.
+                if tool_call is not None and tool_id and tool_call["id"] and tool_call["id"] != tool_id:
+                    tool_call = None
+
+                if tool_call is None:
+                    tool_call = {
+                        "id": tool_id,
+                        "type": _get_attr_or_item(tool_delta, "type"),
+                        "function": {
+                            "name": _get_attr_or_item(function_arg, "name"),
+                            "arguments": _get_attr_or_item(function_arg, "arguments") or "",
+                        },
+                    }
+                    tool_calls = (tool_calls or []) + [tool_call]
+                    if tool_index is not None:
+                        tool_calls_by_index[tool_index] = tool_call
+                else:
                     args = _get_attr_or_item(function_arg, "arguments") or ""
                     if isinstance(args, str):
-                        # pylint: disable=unsubscriptable-object
-                        tool_calls[-1]["function"]["arguments"] += args
+                        tool_call["function"]["arguments"] += args
 
         processed_audio = (
             _process_chat_completion_audio(audio, audio_format=audio_format) if audio is not None else None

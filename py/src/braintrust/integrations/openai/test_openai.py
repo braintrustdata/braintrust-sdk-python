@@ -2268,6 +2268,29 @@ def test_wrap_openai_and_setup_use_same_wrappers():
     )
 
 
+def _tool_call_delta(index, *, call_id=None, name=None, arguments=None):
+    function = {key: value for key, value in (("name", name), ("arguments", arguments)) if value is not None}
+    delta = {"index": index, "function": function}
+    if call_id is not None:
+        delta.update(id=call_id, type="function")
+    return delta
+
+
+def _tool_call_chunk(tool_calls, *, role=None, finish_reason=None):
+    delta = {"tool_calls": tool_calls} if tool_calls else {}
+    if role is not None:
+        delta["role"] = role
+    return openai.types.chat.ChatCompletionChunk.model_validate(
+        {
+            "id": "chatcmpl-1",
+            "object": "chat.completion.chunk",
+            "created": 0,
+            "model": "gemini-3.5-flash",
+            "choices": [{"index": 0, "delta": delta, "finish_reason": finish_reason}],
+        }
+    )
+
+
 class TestZAICompatibleOpenAI:
     """Tests for validating some ZAI compatibility with OpenAI wrapper."""
 
@@ -2365,6 +2388,82 @@ class TestZAICompatibleOpenAI:
         assert tool_call["function"]["arguments"] == '{"city": "New York"}'
 
         # No spans should be generated from this unit test
+        assert not memory_logger.pop()
+
+    def test_chat_completion_streaming_parallel_tool_calls_in_one_chunk(self, memory_logger):
+        """Several tool calls in one delta (Gemini's OpenAI-compatible API, Together, vLLM) are all kept."""
+        assert not memory_logger.pop()
+
+        all_results = [
+            _tool_call_chunk(
+                [
+                    _tool_call_delta(0, call_id="call_1", name="get_weather", arguments='{"city": "Paris"}'),
+                    _tool_call_delta(1, call_id="call_2", name="get_weather", arguments='{"city": "Rome"}'),
+                ],
+                role="assistant",
+            ),
+            _tool_call_chunk([], finish_reason="tool_calls"),
+        ]
+
+        wrapper = ChatCompletionWrapper(None, None)
+        message = wrapper._postprocess_streaming_results(all_results)["output"][0]["message"]
+
+        assert message["tool_calls"] == [
+            {
+                "id": "call_1",
+                "type": "function",
+                "function": {"name": "get_weather", "arguments": '{"city": "Paris"}'},
+            },
+            {"id": "call_2", "type": "function", "function": {"name": "get_weather", "arguments": '{"city": "Rome"}'}},
+        ]
+        assert not memory_logger.pop()
+
+    def test_chat_completion_streaming_interleaved_tool_call_arguments(self, memory_logger):
+        """Argument fragments go to the call named by their index, not to the last call opened."""
+        assert not memory_logger.pop()
+
+        all_results = [
+            _tool_call_chunk(
+                [_tool_call_delta(0, call_id="call_1", name="get_weather", arguments="")], role="assistant"
+            ),
+            _tool_call_chunk([_tool_call_delta(1, call_id="call_2", name="get_time", arguments="")]),
+            _tool_call_chunk([_tool_call_delta(0, arguments='{"city": ')]),
+            _tool_call_chunk([_tool_call_delta(1, arguments='{"tz": ')]),
+            _tool_call_chunk([_tool_call_delta(0, arguments='"Paris"}'), _tool_call_delta(1, arguments='"CET"}')]),
+            _tool_call_chunk([], finish_reason="tool_calls"),
+        ]
+
+        wrapper = ChatCompletionWrapper(None, None)
+        message = wrapper._postprocess_streaming_results(all_results)["output"][0]["message"]
+
+        assert message["tool_calls"] == [
+            {
+                "id": "call_1",
+                "type": "function",
+                "function": {"name": "get_weather", "arguments": '{"city": "Paris"}'},
+            },
+            {"id": "call_2", "type": "function", "function": {"name": "get_time", "arguments": '{"tz": "CET"}'}},
+        ]
+        assert not memory_logger.pop()
+
+    def test_chat_completion_streaming_new_tool_call_id_under_reused_index(self, memory_logger):
+        """Some providers send every call at index 0; a new id still starts a new call."""
+        assert not memory_logger.pop()
+
+        all_results = [
+            _tool_call_chunk(
+                [_tool_call_delta(0, call_id="call_1", name="get_weather", arguments='{"city": "Paris"}')],
+                role="assistant",
+            ),
+            _tool_call_chunk([_tool_call_delta(0, call_id="call_2", name="get_time", arguments='{"tz": "CET"}')]),
+            _tool_call_chunk([], finish_reason="tool_calls"),
+        ]
+
+        wrapper = ChatCompletionWrapper(None, None)
+        message = wrapper._postprocess_streaming_results(all_results)["output"][0]["message"]
+
+        assert [tool_call["id"] for tool_call in message["tool_calls"]] == ["call_1", "call_2"]
+        assert message["tool_calls"][1]["function"] == {"name": "get_time", "arguments": '{"tz": "CET"}'}
         assert not memory_logger.pop()
 
     def test_chat_completion_streaming_audio_is_materialized_as_attachment(self, memory_logger):
