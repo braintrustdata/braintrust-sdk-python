@@ -1064,6 +1064,52 @@ def test_prompt_build_non_strict_renders_missing_variables_as_empty():
     assert result["messages"][0]["content"] == "Hello John, please help with "
 
 
+@pytest.mark.parametrize("strict", [False, True])
+@pytest.mark.parametrize(
+    ("file_template", "variables", "expected_file"),
+    [
+        pytest.param(
+            {"file_id": "{{report_file_id}}"},
+            {"report_file_id": "file-uploaded-report"},
+            {"file_id": "file-uploaded-report"},
+            id="uploaded-file",
+        ),
+        pytest.param(
+            {"file_data": "{{report_data}}", "filename": "{{report_name}}"},
+            {"report_data": "data:application/pdf;base64,JVBERi0=", "report_name": "report.pdf"},
+            {"file_data": "data:application/pdf;base64,JVBERi0=", "filename": "report.pdf"},
+            id="inline-file",
+        ),
+    ],
+)
+def test_prompt_build_with_file_content_parts(file_template, variables, expected_file, strict):
+    content = [
+        {"type": "text", "text": "Summarize this report."},
+        {"type": "file", "file": file_template},
+    ]
+    original_content = copy.deepcopy(content)
+    prompt = Prompt.from_prompt_data(
+        "summarize-report",
+        PromptData(
+            prompt=PromptChatBlock(messages=[PromptMessage(role="user", content=content)]),
+            options={"model": "gpt-4.1"},
+        ),
+    )
+
+    result = prompt.build(strict=strict, **variables)
+
+    assert result["messages"] == [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "Summarize this report."},
+                {"type": "file", "file": expected_file},
+            ],
+        }
+    ]
+    assert content == original_content
+
+
 def test_render_message_with_file_content_parts():
     """Test render_message with mixed text, image, and file content parts including all file fields."""
     message = PromptMessage(
