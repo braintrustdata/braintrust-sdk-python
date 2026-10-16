@@ -90,7 +90,7 @@ def _process_images_impl(value: Any) -> Any:
         serialized = value.model_dump(exclude_none=True)
         converted_model = _process_images(serialized)
         if converted_model is serialized:
-            return value
+            return serialized
         # DSPy 2.6 serializes Image as {"url": ...}; later versions use the
         # reserved prompt wrapper handled above. Normalize only this SDK type.
         if type(value) is Image and isinstance(converted_model, dict) and set(converted_model) == {"url"}:

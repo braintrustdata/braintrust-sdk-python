@@ -56,10 +56,12 @@ def test_dspy_image_conversion_preserves_other_model_serializers():
 @pytest.mark.parametrize("url", ["https://example.com/page.png", "data:image/png;base64,not base64!"])
 def test_dspy_image_conversion_preserves_unmaterialized_images(url):
     image = dspy.Image(url=url)
-    assert _process_images(image) is image
-    assert _process_images({"image": image, "url": url}) == {"image": image, "url": url}
+    assert _process_images({"image": image, "url": url}) == {
+        "image": image.model_dump(exclude_none=True),
+        "url": url,
+    }
     model = RootModel[list[dspy.Image]]([image])
-    assert _process_images(model) is model
+    assert _process_images(model) == model.model_dump(exclude_none=True)
 
 
 @pytest.mark.vcr(
