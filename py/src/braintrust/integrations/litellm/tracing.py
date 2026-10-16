@@ -3,6 +3,7 @@
 import logging
 import time
 from collections.abc import AsyncGenerator, Generator
+from dataclasses import dataclass
 from functools import lru_cache
 from types import TracebackType
 from typing import Any
@@ -26,6 +27,15 @@ from braintrust.util import clean_nones, is_numeric, merge_dicts
 _INSTRUMENTATION = "litellm-auto"
 
 _log = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class _CompletionStreamChunk:
+    """Keep the provider chunk while snapshotting only fields used for logging."""
+
+    raw: Any
+    metrics: dict[str, Any]
+    choices: list[dict[str, Any]]
 
 
 def start_span(*args, **kwargs):
@@ -143,12 +153,12 @@ def _handle_completion_streaming(
         async def async_gen() -> AsyncGenerator[Any, None]:
             try:
                 first = True
-                all_results: list[Any] = []
+                all_results: list[_CompletionStreamChunk] = []
                 async for item in raw_response:
                     if first:
                         span.log(metrics={"time_to_first_token": time.time() - start_time})
                         first = False
-                    all_results.append(item)
+                    all_results.append(_snapshot_completion_stream_chunk(item))
                     yield item
 
                 span.log(**_postprocess_completion_streaming_results(all_results))
@@ -161,12 +171,12 @@ def _handle_completion_streaming(
         def sync_gen() -> Generator[Any, None, None]:
             try:
                 first = True
-                all_results: list[Any] = []
+                all_results: list[_CompletionStreamChunk] = []
                 for item in raw_response:
                     if first:
                         span.log(metrics={"time_to_first_token": time.time() - start_time})
                         first = False
-                    all_results.append(item)
+                    all_results.append(_snapshot_completion_stream_chunk(item))
                     yield item
 
                 span.log(**_postprocess_completion_streaming_results(all_results))
@@ -633,19 +643,58 @@ async def _atranscription_wrapper_async(wrapped, instance, args, kwargs):
 # ---------------------------------------------------------------------------
 
 
-def _postprocess_completion_streaming_results(all_results: list[Any]) -> dict[str, Any]:
+def _snapshot_completion_stream_chunk(item: Any) -> _CompletionStreamChunk:
+    """Capture the small subset of a chunk used by aggregation, before yielding it."""
+    usage = _get_field(item, "usage")
+    metrics = _parse_metrics_from_usage(usage) if usage else {}
+
+    choices = []
+    for choice in _get_field(item, "choices", []):
+        delta = _get_field(choice, "delta")
+        delta_snapshot = None
+        if delta:
+            tool_calls = _get_field(delta, "tool_calls")
+            delta_snapshot = {
+                "role": _get_field(delta, "role"),
+                "finish_reason": _get_field(delta, "finish_reason"),
+                "content": _get_field(delta, "content"),
+                "tool_calls": [
+                    {
+                        "id": _get_field(tool_call, "id"),
+                        "type": _get_field(tool_call, "type"),
+                        "function": {
+                            "name": _get_field(_get_field(tool_call, "function"), "name"),
+                            "arguments": _get_field(_get_field(tool_call, "function"), "arguments"),
+                        },
+                    }
+                    for tool_call in tool_calls or []
+                ]
+                if tool_calls is not None
+                else None,
+            }
+
+        choices.append(
+            {
+                "finish_reason": _get_field(choice, "finish_reason"),
+                "text": _get_field(choice, "text"),
+                "delta": delta_snapshot,
+            }
+        )
+
+    return _CompletionStreamChunk(raw=item, metrics=metrics, choices=choices)
+
+
+def _postprocess_completion_streaming_results(all_results: list[_CompletionStreamChunk]) -> dict[str, Any]:
     """Process streaming results to extract final response."""
     role = None
     content = None
     text = None
-    tool_calls: list[Any] | None = None
+    tool_calls: list[dict[str, Any]] = []
     finish_reason = None
     metrics: dict[str, float] = {}
 
     for result in all_results:
-        usage = _get_field(result, "usage")
-        if usage:
-            metrics.update(_parse_metrics_from_usage(usage))
+        metrics.update(_get_field(result, "metrics", {}))
 
         choices = _get_field(result, "choices", [])
         if not choices:
@@ -686,7 +735,7 @@ def _postprocess_completion_streaming_results(all_results: list[Any]) -> dict[st
             if not tool_calls or (
                 _get_field(tool_delta, "id") and tool_calls[-1]["id"] != _get_field(tool_delta, "id")
             ):
-                tool_calls = (tool_calls or []) + [
+                tool_calls.append(
                     {
                         "id": _get_field(tool_delta, "id"),
                         "type": _get_field(tool_delta, "type"),
@@ -695,7 +744,7 @@ def _postprocess_completion_streaming_results(all_results: list[Any]) -> dict[st
                             "arguments": function_arguments or "",
                         },
                     }
-                ]
+                )
             else:
                 tool_calls[-1]["function"]["arguments"] += function_arguments or ""
 
@@ -705,7 +754,7 @@ def _postprocess_completion_streaming_results(all_results: list[Any]) -> dict[st
         output = [
             {
                 "index": 0,
-                "message": {"role": role, "content": content, "tool_calls": tool_calls},
+                "message": {"role": role, "content": content, "tool_calls": tool_calls or None},
                 "logprobs": None,
                 "finish_reason": finish_reason,
             }

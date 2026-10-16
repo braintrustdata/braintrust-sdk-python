@@ -86,6 +86,33 @@ def _run_stream(is_async, sync_fn, async_fn, *args, **kwargs):
     return list(sync_fn(*args, **kwargs))
 
 
+def _run_stream_mutating_chunks(is_async, sync_fn, async_fn, *args, **kwargs):
+    """Drain a stream while mutating each yielded content delta after capture."""
+    if is_async:
+
+        async def _drain():
+            stream = await async_fn(*args, **kwargs)
+            chunks = []
+            content = []
+            async for chunk in stream:
+                chunks.append(chunk)
+                if chunk.choices and chunk.choices[0].delta.content:
+                    content.append(chunk.choices[0].delta.content)
+                    chunk.choices[0].delta.content = "mutated by consumer"
+            return chunks, "".join(content)
+
+        return asyncio.run(_drain())
+
+    chunks = []
+    content = []
+    for chunk in sync_fn(*args, **kwargs):
+        chunks.append(chunk)
+        if chunk.choices and chunk.choices[0].delta.content:
+            content.append(chunk.choices[0].delta.content)
+            chunk.choices[0].delta.content = "mutated by consumer"
+    return chunks, "".join(content)
+
+
 def _assert_speech_output_attachment(span) -> None:
     assert span["output"]["type"] == "audio"
     assert span["output"]["audio_size_bytes"] > 0
@@ -123,15 +150,15 @@ def test_litellm_image_input_materializes_attachment(memory_logger, is_async, st
             ],
         }
     ]
-    run = _run_stream if stream else _run
+    run = _run_stream_mutating_chunks if stream else _run
     start = time.time()
     response = run(
         is_async, litellm.completion, litellm.acompletion, model=TEST_MODEL, messages=messages, stream=stream
     )
     end = time.time()
     if stream:
+        response, content = response
         assert len(response) > 1
-        content = "".join(chunk.choices[0].delta.content or "" for chunk in response if chunk.choices)
     else:
         content = response.choices[0].message.content
     assert content
