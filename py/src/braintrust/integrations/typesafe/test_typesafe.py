@@ -1,11 +1,14 @@
 import os
+from pathlib import Path
 
 import pytest
-from braintrust import logger
+import typesafe_sdk
+from braintrust import Attachment, logger
 from braintrust.integrations.test_utils import assert_metrics_are_valid, verify_autoinstrument_script
 from braintrust.integrations.typesafe import setup_typesafe, wrap_typesafe
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import init_test_logger
+from pydantic import BaseModel
 from typesafe_sdk import AsyncTypeSafeClient, Choice, Noul, Score, TypeSafeClient, TypeSafeError
 
 
@@ -126,3 +129,129 @@ async def test_setup_typesafe_system_one_async(memory_logger):
 
 def test_auto_instrument_typesafe_subprocess():
     verify_autoinstrument_script("test_auto_typesafe.py")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("is_async", [False, True], ids=["sync", "async"])
+@pytest.mark.vcr
+async def test_typesafe_boxes_and_images(memory_logger, is_async):
+    if not hasattr(typesafe_sdk, "Box"):
+        pytest.skip("Box and Image require TypeSafe SDK >=0.7.5")
+
+    class CustomImage(typesafe_sdk.Image):
+        pass
+
+    class CustomAnswers(BaseModel):
+        bounds: typesafe_sdk.BoxAnswer
+        present: typesafe_sdk.NoulAnswer
+        category: typesafe_sdk.ChoiceAnswer
+        size: typesafe_sdk.ScoreAnswer
+
+    class CustomResponse(BaseModel):
+        model: str
+        usage: typesafe_sdk.Usage
+        answers: CustomAnswers
+
+    image_file = Path(__file__).parents[2] / "fixtures" / "decision-box.png"
+    image = CustomImage(image_file)
+    state = {"photos/~": [image], "description": "A test image"}
+    questions = {
+        "bounds": typesafe_sdk.Box(instructions="The main object in `photos/~[0]`"),
+        "present": Noul(instructions="Is there a main object in the image?"),
+        "category": Choice(instructions="What is in the image?", criteria={"object": None, "text": None}),
+        "size": Score(instructions="How much of the image is occupied?", criteria=["little", "most"]),
+    }
+    assert setup_typesafe()
+    client_type = AsyncTypeSafeClient if is_async else TypeSafeClient
+    client = client_type(api_key=os.environ["TYPESAFE_API_KEY"], compression=False)
+    kwargs = dict(
+        model="jev-1.14.0",
+        state=state,
+        questions=questions,
+        extra_headers={"TypeSafe-Danger-Zone-Images": "true"},
+    )
+    if is_async:
+        kwargs["response_model"] = CustomResponse
+        async with client:
+            response = await client.system_one(**kwargs)
+        assert isinstance(response, CustomResponse)
+        assert isinstance(response.answers, CustomAnswers)
+        response_answers = {identifier: getattr(response.answers, identifier) for identifier in questions}
+    else:
+        with client:
+            response = client.system_one(**kwargs)
+        response_answers = response.answers
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    _assert_span(span, question_ids=list(questions))
+    assert span["metadata"]["model"] == "jev-1.14.0"
+    attachment = span["input"]["state"]["photos/~"][0]
+    assert isinstance(attachment, Attachment)
+    assert attachment.data == image_file.read_bytes()
+    assert attachment.reference["content_type"] == "image/png"
+    assert state["photos/~"][0] is image
+    assert span["input"]["questions"][0] == {
+        "id": "bounds",
+        "type": "box",
+        "instructions": questions["bounds"].instructions,
+    }
+    answers = {answer["id"]: answer for answer in span["output"]["answers"]}
+    assert answers["bounds"] == {
+        "id": "bounds",
+        "type": "box",
+        "box": response_answers["bounds"].box.model_dump(),
+        "confidence": response_answers["bounds"].confidence,
+        "image_path": "/state/photos~1~0/0",
+    }
+    assert answers["present"]["noul"] == response_answers["present"].noul
+    assert answers["size"]["score"] == response_answers["size"].score
+    assert "scores" not in span
+    assert "classifications" not in span
+
+
+@pytest.mark.vcr
+def test_typesafe_nested_image_assets(memory_logger):
+    if not hasattr(typesafe_sdk, "Box"):
+        pytest.skip("Box and Image require TypeSafe SDK >=0.7.5")
+
+    image_file = Path(__file__).parents[2] / "fixtures" / "decision-box.png"
+    image = typesafe_sdk.Image(image_file)
+    state = {"photos": ["image", "inspect image_2"]}
+    questions = {
+        # IDs are text, even when they happen to match an asset reference.
+        "image_2": typesafe_sdk.Box(instructions={"image": image, "target": "The black square"}),
+        "match": Choice(instructions="Choose the matching image", criteria={"square": image, "none": None}),
+    }
+    assert setup_typesafe()
+    with TypeSafeClient(api_key=os.environ["TYPESAFE_API_KEY"], compression=False) as client:
+        response = client.system_one(
+            model="jev-1.14.0",
+            state=state,
+            questions=questions,
+            assets={"image": image, "image_2": image},
+            extra_headers={"TypeSafe-Danger-Zone-Images": "true"},
+        )
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    _assert_span(span, question_ids=list(questions))
+    captured = span["input"]
+    photos = captured["state"]["photos"]
+    assert photos[1] == ["inspect ", photos[0]]
+    images = [
+        photos[0],
+        photos[1][1],
+        captured["questions"][0]["instructions"]["image"],
+        captured["questions"][1]["criteria"]["square"],
+    ]
+    assert all(isinstance(item, Attachment) and item.data == image_file.read_bytes() for item in images)
+    answers = {answer["id"]: answer for answer in span["output"]["answers"]}
+    assert answers["image_2"]["box"] == response.answers["image_2"].box.model_dump()
+    # Multiple image occurrences have no structured selector in TypeSafe;
+    # instruction text must not be used to guess their association.
+    assert "image_path" not in answers["image_2"]
+    assert state == {"photos": ["image", "inspect image_2"]}
+    assert questions["image_2"].instructions == {"image": image, "target": "The black square"}

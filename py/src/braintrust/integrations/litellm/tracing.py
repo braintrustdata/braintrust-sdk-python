@@ -367,16 +367,19 @@ def _decisions_span_payload(args, kwargs):
 
 
 def _decisions_wrapper(wrapped, instance, args, kwargs):
+    payload = _decisions_span_payload(args, kwargs)
     with start_span(
         **merge_dicts(
             dict(name="Decision", span_attributes={"type": SpanTypeAttribute.DECISION}),
-            _decisions_span_payload(args, kwargs),
+            payload,
         )
     ) as span:
         response = wrapped(*args, **kwargs)
         span.log(
             output=_decisions_output(
-                _get_field(response, "answers"), kwargs.get("questions", args[2] if len(args) > 2 else [])
+                _get_field(response, "answers"),
+                kwargs.get("questions", args[2] if len(args) > 2 else []),
+                payload.get("input"),
             ),
             metrics=_parse_metrics_from_usage(_get_field(response, "usage")),
         )
@@ -384,16 +387,19 @@ def _decisions_wrapper(wrapped, instance, args, kwargs):
 
 
 async def _adecisions_wrapper_async(wrapped, instance, args, kwargs):
+    payload = _decisions_span_payload(args, kwargs)
     with start_span(
         **merge_dicts(
             dict(name="Decision", span_attributes={"type": SpanTypeAttribute.DECISION}),
-            _decisions_span_payload(args, kwargs),
+            payload,
         )
     ) as span:
         response = await wrapped(*args, **kwargs)
         span.log(
             output=_decisions_output(
-                _get_field(response, "answers"), kwargs.get("questions", args[2] if len(args) > 2 else [])
+                _get_field(response, "answers"),
+                kwargs.get("questions", args[2] if len(args) > 2 else []),
+                payload.get("input"),
             ),
             metrics=_parse_metrics_from_usage(_get_field(response, "usage")),
         )

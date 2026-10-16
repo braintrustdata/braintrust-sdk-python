@@ -6,6 +6,8 @@ from braintrust import Attachment
 from braintrust.integrations.litellm.tracing import _parse_metrics_from_usage as parse_litellm_usage
 from braintrust.integrations.openai.tracing import _decisions_input, _decisions_output
 from braintrust.integrations.openai.tracing import _parse_metrics_from_usage as parse_openai_usage
+from braintrust.integrations.question import _question_span_input
+from braintrust.integrations.typesafe.tracing import _image_payload
 from braintrust.test_helpers import assert_dict_matches
 
 
@@ -195,13 +197,98 @@ def test_decisions_refusals_and_allowlists():
 
 
 def test_decisions_system_one_maps_match_typesafe_structure():
-    questions = {"positive": {"type": "noul", "instructions": "Is this positive?", "secret": "omit"}}
-    answers = {"positive": {"type": "noul", "noul": 0.9, "secret": "omit"}}
+    questions = {"present": {"type": "noul", "instructions": "Is the target present?", "secret": "omit"}}
+    answers = {"present": {"type": "noul", "noul": 0.01, "secret": "omit"}}
+    box = {"top": 0, "bottom": 1, "left": 0.123456789, "right": 0.9}
+    for identifier, optional_fields in (
+        ("zero", {"confidence": 0}),
+        ("null", {"confidence": None}),
+        ("absent", {}),
+    ):
+        questions[identifier] = {"type": "box", "instructions": {"target": "label"}}
+        answers[identifier] = {"type": "box", "box": box, "image_path": "/state/photos/1", **optional_fields}
+    # Map keys link answers to questions, independently of return order.
+    answers = dict(reversed(answers.items()))
     assert _decisions_input("state", questions) == {
         "state": "state",
-        "questions": [{"id": "positive", "type": "noul", "instructions": "Is this positive?"}],
+        "questions": [
+            {"id": "present", "type": "noul", "instructions": "Is the target present?"},
+            *({"id": identifier, **questions[identifier]} for identifier in ("zero", "null", "absent")),
+        ],
     }
-    assert _decisions_output(answers, questions) == {"answers": [{"id": "positive", "type": "noul", "noul": 0.9}]}
+    assert _decisions_output(answers, questions) == {
+        "answers": [
+            *({"id": identifier, **answers[identifier]} for identifier in ("absent", "null", "zero")),
+            {"id": "present", "type": "noul", "noul": 0.01},
+        ]
+    }
+
+
+@pytest.mark.parametrize("name", ["present", None], ids=["named", "unnamed"])
+def test_decisions_named_answers_match_questions_when_reordered(name):
+    questions = [
+        {"type": "box", "name": "bounds", "instructions": "The target"},
+        {"type": "predicate", "instructions": "Is it present?", **({"name": name} if name else {})},
+    ]
+    box = {"top": -0.1, "bottom": 0, "left": 0.8, "right": 0.2}
+    assert _decisions_output(
+        [{"type": "predicate", "name": name, "probability": 0.01}, {"type": "box", "name": "bounds", "box": box}],
+        questions,
+    ) == {
+        "answers": [
+            {"id": name or "question_1", "type": "boolean", "probability": 0.01},
+            {"id": "bounds", "type": "box", "box": box},
+        ]
+    }
+
+
+def test_decisions_nested_media_and_existing_references():
+    image = decisions_image_input()[0]["content"][1]["image_url"]
+    reference = {"type": "external_attachment", "url": "https://example.com/image.png", "content_type": "image/png"}
+    questions = {"bounds": {"type": "box", "instructions": {"image": image, "text": "target"}}}
+    span_input = _decisions_input({"photos": [reference, image], "remote": "https://example.com/a.png"}, questions)
+    assert span_input["state"]["photos"][0] == reference
+    assert isinstance(span_input["state"]["photos"][1], Attachment)
+    assert isinstance(span_input["questions"][0]["instructions"]["image"], Attachment)
+    assert span_input["state"]["remote"] == "https://example.com/a.png"
+    assert questions["bounds"]["instructions"]["image"] == image
+
+
+def test_decisions_media_transform_handles_serialized_images():
+    data_url = decisions_image_input()[0]["content"][1]["image_url"]
+    image = {"type": "image", "format": "png", "data_base64": data_url.split(",", 1)[1]}
+    questions = {"bounds": {"type": "box", "instructions": "The target"}}
+    span_input = _question_span_input({"photo": image}, questions, media_transform=_image_payload)
+    attachment = span_input["state"]["photo"]
+    assert isinstance(attachment, Attachment)
+    assert attachment.data == base64.b64decode(image["data_base64"])
+    box = {"top": 0, "bottom": 1, "left": 0, "right": 1}
+    assert _decisions_output({"bounds": {"type": "box", "box": box}}, questions, span_input) == {
+        "answers": [{"id": "bounds", "type": "box", "box": box, "image_path": "/state/photo"}]
+    }
+    assert image["data_base64"] == data_url.split(",", 1)[1]
+
+
+def test_decisions_media_failure_keeps_entire_payload(monkeypatch):
+    image = decisions_image_input()[0]["content"][1]["image_url"]
+    from braintrust.integrations import question
+
+    materialize = question._materialize_attachment
+    calls = 0
+
+    def fail_second(value):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise RuntimeError("conversion failed")
+        return materialize(value)
+
+    monkeypatch.setattr(question, "_materialize_attachment", fail_second)
+    questions = {"bounds": {"type": "box", "instructions": {"image": image}}}
+    assert _question_span_input({"image": image}, questions) == {
+        "state": {"image": image},
+        "questions": [{"id": "bounds", **questions["bounds"]}],
+    }
 
 
 @pytest.mark.parametrize("parse_usage", (parse_openai_usage, parse_litellm_usage), ids=("openai", "litellm"))
