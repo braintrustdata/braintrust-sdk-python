@@ -1563,12 +1563,12 @@ class TestAutoInstrumentAnthropic:
         verify_autoinstrument_script("test_auto_anthropic.py")
 
 
-def _make_batch_requests():
+def _make_batch_requests(model=MODEL):
     return [
         {
             "custom_id": "req-1",
             "params": {
-                "model": MODEL,
+                "model": model,
                 "max_tokens": 100,
                 "messages": [{"role": "user", "content": "What is 2+2?"}],
             },
@@ -1576,7 +1576,7 @@ def _make_batch_requests():
         {
             "custom_id": "req-2",
             "params": {
-                "model": MODEL,
+                "model": model,
                 "max_tokens": 100,
                 "messages": [{"role": "user", "content": "What is 3+3?"}],
             },
@@ -1677,9 +1677,9 @@ class TestBatchesCreateSpans:
 class TestBatchesResultsSpans:
     """Tests verifying that batches.results() produces correct spans.
 
-    Batches can take up to 24 hours to finish, so the success test reads the
-    results of an already-ended batch (such as one left by TestBatchesCreateSpans)
-    instead of creating one.
+    The success test creates its own small batch and polls until it ends, so the
+    cassette only ever contains this suite's requests. Small batches usually end
+    within a few minutes; polls only sleep while recording.
     """
 
     @pytest.mark.vcr
@@ -1687,14 +1687,20 @@ class TestBatchesResultsSpans:
     # The sync case passes the batch id positionally and the async case by keyword,
     # covering both argument-extraction paths.
     @pytest.mark.parametrize("is_async,positional", [(False, True), (True, False)], ids=["sync", "async"])
-    async def test_batches_results_produces_span(self, memory_logger, is_async, positional):
-        assert not memory_logger.pop()
+    async def test_batches_results_produces_span(self, memory_logger, vcr_cassette, is_async, positional):
+        raw_client = _get_client()
+        # On older SDK versions MODEL is the retired LEGACY_MODEL, whose batch requests now error.
+        batch = raw_client.messages.batches.create(requests=_make_batch_requests(LATEST_MODEL))
+        deadline = time.time() + 15 * 60
+        while batch.processing_status != "ended":
+            assert time.time() < deadline, f"batch {batch.id} did not end within 15 minutes"
+            if not vcr_cassette.write_protected:
+                time.sleep(10)
+            batch = raw_client.messages.batches.retrieve(batch.id)
+        batch_id = batch.id
+        # Drop setup spans: test_setup_creates_spans may have auto-instrumented the raw client.
+        memory_logger.pop()
 
-        batch_id = next(
-            b.id
-            for b in _get_client().messages.batches.list(limit=20).data
-            if b.processing_status == "ended" and b.request_counts.succeeded
-        )
         client = wrap_anthropic(_get_async_client() if is_async else _get_client())
         if positional:
             result = client.messages.batches.results(batch_id)
@@ -1706,6 +1712,7 @@ class TestBatchesResultsSpans:
         else:
             entries = list(result)
 
+        assert {entry.custom_id for entry in entries} == {"req-1", "req-2"}
         assert any(entry.result.type == "succeeded" for entry in entries)
 
         spans = memory_logger.pop()

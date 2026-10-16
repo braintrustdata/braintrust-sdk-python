@@ -1,6 +1,8 @@
 interactions:
 - request:
-    body: ''
+    body: '{"requests":[{"custom_id":"req-1","params":{"model":"claude-haiku-4-5-20251001","max_tokens":100,"messages":[{"role":"user","content":"What
+      is 2+2?"}]}},{"custom_id":"req-2","params":{"model":"claude-haiku-4-5-20251001","max_tokens":100,"messages":[{"role":"user","content":"What
+      is 3+3?"}]}}]}'
     headers:
       accept:
       - application/json
@@ -10,6 +12,8 @@ interactions:
       - '2023-06-01'
       connection:
       - keep-alive
+      content-length:
+      - '294'
       content-type:
       - application/json
       host:
@@ -36,36 +40,40 @@ interactions:
       - 3.14.7
       x-stainless-timeout:
       - NOT_GIVEN
-    method: GET
-    uri: https://api.anthropic.com/v1/messages/batches?limit=20
+    method: POST
+    uri: https://api.anthropic.com/v1/messages/batches
   response:
     body:
-      string: '{"data":[{"id":"msgbatch_01L3D4bE1Az6hx1ncR3Rnrtb","type":"message_batch","processing_status":"ended","request_counts":{"processing":0,"succeeded":1,"errored":1,"canceled":0,"expired":0},"ended_at":"2026-10-13T14:14:11.936150+00:00","created_at":"2026-10-13T14:13:04.327686+00:00","expires_at":"2026-10-14T14:13:04.327686+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":"https://api.anthropic.com/v1/messages/batches/msgbatch_01L3D4bE1Az6hx1ncR3Rnrtb/results"},{"id":"msgbatch_01KzeShw7Gj5agoUTAX1Vot1","type":"message_batch","processing_status":"ended","request_counts":{"processing":0,"succeeded":2,"errored":0,"canceled":0,"expired":0},"ended_at":"2026-10-13T14:15:21.254145+00:00","created_at":"2026-10-13T14:13:02.931761+00:00","expires_at":"2026-10-14T14:13:02.931761+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":"https://api.anthropic.com/v1/messages/batches/msgbatch_01KzeShw7Gj5agoUTAX1Vot1/results"},{"id":"msgbatch_01NcX8qVZkngRf91bmqLT2Di","type":"message_batch","processing_status":"ended","request_counts":{"processing":0,"succeeded":2,"errored":0,"canceled":0,"expired":0},"ended_at":"2026-10-13T14:15:24.517255+00:00","created_at":"2026-10-13T14:13:02.383039+00:00","expires_at":"2026-10-14T14:13:02.383039+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":"https://api.anthropic.com/v1/messages/batches/msgbatch_01NcX8qVZkngRf91bmqLT2Di/results"},{"id":"msgbatch_013Wmi7D8aWqoQQYhU7Ytgkp","type":"message_batch","processing_status":"ended","request_counts":{"processing":0,"succeeded":2,"errored":0,"canceled":0,"expired":0},"ended_at":"2026-10-13T14:14:12.597173+00:00","created_at":"2026-10-13T14:13:01.791614+00:00","expires_at":"2026-10-14T14:13:01.791614+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":"https://api.anthropic.com/v1/messages/batches/msgbatch_013Wmi7D8aWqoQQYhU7Ytgkp/results"},{"id":"msgbatch_0169YCB226H2M463dzjYN6M1","type":"message_batch","processing_status":"ended","request_counts":{"processing":0,"succeeded":2,"errored":0,"canceled":0,"expired":0},"ended_at":"2026-10-13T14:14:12.437619+00:00","created_at":"2026-10-13T14:13:01.100268+00:00","expires_at":"2026-10-14T14:13:01.100268+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":"https://api.anthropic.com/v1/messages/batches/msgbatch_0169YCB226H2M463dzjYN6M1/results"},{"id":"msgbatch_01RsUoV7kbBRRLfni75RsWwi","type":"message_batch","processing_status":"ended","request_counts":{"processing":0,"succeeded":2,"errored":0,"canceled":0,"expired":0},"ended_at":"2026-10-05T14:49:15.806341+00:00","created_at":"2026-10-05T14:46:14.859457+00:00","expires_at":"2026-10-06T14:46:14.859457+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":"https://api.anthropic.com/v1/messages/batches/msgbatch_01RsUoV7kbBRRLfni75RsWwi/results"},{"id":"msgbatch_01JzZDAwU8KcBffqmbEARDsC","type":"message_batch","processing_status":"ended","request_counts":{"processing":0,"succeeded":2,"errored":0,"canceled":0,"expired":0},"ended_at":"2026-10-05T14:49:15.770064+00:00","created_at":"2026-10-05T14:46:14.334977+00:00","expires_at":"2026-10-06T14:46:14.334977+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":"https://api.anthropic.com/v1/messages/batches/msgbatch_01JzZDAwU8KcBffqmbEARDsC/results"},{"id":"msgbatch_01MgMy3YBXJzLACzkXHPAZ6f","type":"message_batch","processing_status":"ended","request_counts":{"processing":0,"succeeded":1,"errored":1,"canceled":0,"expired":0},"ended_at":"2026-10-05T14:49:15.606253+00:00","created_at":"2026-10-05T14:46:13.834387+00:00","expires_at":"2026-10-06T14:46:13.834387+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":"https://api.anthropic.com/v1/messages/batches/msgbatch_01MgMy3YBXJzLACzkXHPAZ6f/results"},{"id":"msgbatch_01JaWuVexbG4wJCF3iro6KZu","type":"message_batch","processing_status":"ended","request_counts":{"processing":0,"succeeded":2,"errored":0,"canceled":0,"expired":0},"ended_at":"2026-10-05T14:49:11.603223+00:00","created_at":"2026-10-05T14:46:13.138721+00:00","expires_at":"2026-10-06T14:46:13.138721+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":"https://api.anthropic.com/v1/messages/batches/msgbatch_01JaWuVexbG4wJCF3iro6KZu/results"},{"id":"msgbatch_019i144JfYnpw7oPiVX2S5de","type":"message_batch","processing_status":"ended","request_counts":{"processing":0,"succeeded":2,"errored":0,"canceled":0,"expired":0},"ended_at":"2026-10-05T14:49:16.553792+00:00","created_at":"2026-10-05T14:46:12.633772+00:00","expires_at":"2026-10-06T14:46:12.633772+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":"https://api.anthropic.com/v1/messages/batches/msgbatch_019i144JfYnpw7oPiVX2S5de/results"},{"id":"msgbatch_01M4EWsdQs76sxKkG4zSjvqc","type":"message_batch","processing_status":"ended","request_counts":{"processing":0,"succeeded":2,"errored":0,"canceled":0,"expired":0},"ended_at":"2026-09-28T19:01:08.329624+00:00","created_at":"2026-09-28T18:58:03.418159+00:00","expires_at":"2026-09-29T18:58:03.418159+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":"https://api.anthropic.com/v1/messages/batches/msgbatch_01M4EWsdQs76sxKkG4zSjvqc/results"},{"id":"msgbatch_01E8u6bka33UNmw9FweyixXK","type":"message_batch","processing_status":"ended","request_counts":{"processing":0,"succeeded":2,"errored":0,"canceled":0,"expired":0},"ended_at":"2026-09-28T19:01:05.256400+00:00","created_at":"2026-09-28T18:58:02.996709+00:00","expires_at":"2026-09-29T18:58:02.996709+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":"https://api.anthropic.com/v1/messages/batches/msgbatch_01E8u6bka33UNmw9FweyixXK/results"},{"id":"msgbatch_01Rq2zeeXyruQCG1hnLwEyY6","type":"message_batch","processing_status":"ended","request_counts":{"processing":0,"succeeded":1,"errored":1,"canceled":0,"expired":0},"ended_at":"2026-09-28T19:01:01.401982+00:00","created_at":"2026-09-28T18:58:02.495926+00:00","expires_at":"2026-09-29T18:58:02.495926+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":"https://api.anthropic.com/v1/messages/batches/msgbatch_01Rq2zeeXyruQCG1hnLwEyY6/results"},{"id":"msgbatch_01C88UZkTz6HvkqWTyHoyPv1","type":"message_batch","processing_status":"ended","request_counts":{"processing":0,"succeeded":2,"errored":0,"canceled":0,"expired":0},"ended_at":"2026-09-28T19:01:01.130785+00:00","created_at":"2026-09-28T18:58:01.679487+00:00","expires_at":"2026-09-29T18:58:01.679487+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":"https://api.anthropic.com/v1/messages/batches/msgbatch_01C88UZkTz6HvkqWTyHoyPv1/results"},{"id":"msgbatch_01MeELNBVJ5KA8qmB1NjL6UX","type":"message_batch","processing_status":"ended","request_counts":{"processing":0,"succeeded":2,"errored":0,"canceled":0,"expired":0},"ended_at":"2026-09-28T19:01:00.544788+00:00","created_at":"2026-09-28T18:58:01.180445+00:00","expires_at":"2026-09-29T18:58:01.180445+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":"https://api.anthropic.com/v1/messages/batches/msgbatch_01MeELNBVJ5KA8qmB1NjL6UX/results"},{"id":"msgbatch_01Spq1x8wEydiAfMwWjg58Sz","type":"message_batch","processing_status":"ended","request_counts":{"processing":0,"succeeded":2,"errored":0,"canceled":0,"expired":0},"ended_at":"2026-09-22T14:48:39.611229+00:00","created_at":"2026-09-22T14:46:06.900407+00:00","expires_at":"2026-09-23T14:46:06.900407+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":"https://api.anthropic.com/v1/messages/batches/msgbatch_01Spq1x8wEydiAfMwWjg58Sz/results"},{"id":"msgbatch_01TmSLWF6cuv3Zn7cnWt82Nz","type":"message_batch","processing_status":"ended","request_counts":{"processing":0,"succeeded":2,"errored":0,"canceled":0,"expired":0},"ended_at":"2026-09-22T14:48:39.499024+00:00","created_at":"2026-09-22T14:46:06.560933+00:00","expires_at":"2026-09-23T14:46:06.560933+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":"https://api.anthropic.com/v1/messages/batches/msgbatch_01TmSLWF6cuv3Zn7cnWt82Nz/results"},{"id":"msgbatch_01EW6PbW5GYjaQ1JYVzgUGvs","type":"message_batch","processing_status":"ended","request_counts":{"processing":0,"succeeded":1,"errored":1,"canceled":0,"expired":0},"ended_at":"2026-09-22T14:48:53.287767+00:00","created_at":"2026-09-22T14:46:06.123258+00:00","expires_at":"2026-09-23T14:46:06.123258+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":"https://api.anthropic.com/v1/messages/batches/msgbatch_01EW6PbW5GYjaQ1JYVzgUGvs/results"},{"id":"msgbatch_01XEoQtbFiFSSeGdksGJy8ym","type":"message_batch","processing_status":"ended","request_counts":{"processing":0,"succeeded":2,"errored":0,"canceled":0,"expired":0},"ended_at":"2026-09-22T14:48:42.894349+00:00","created_at":"2026-09-22T14:46:04.999953+00:00","expires_at":"2026-09-23T14:46:04.999953+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":"https://api.anthropic.com/v1/messages/batches/msgbatch_01XEoQtbFiFSSeGdksGJy8ym/results"},{"id":"msgbatch_01HAiGquZZbJdXWg2X26gvFn","type":"message_batch","processing_status":"ended","request_counts":{"processing":0,"succeeded":2,"errored":0,"canceled":0,"expired":0},"ended_at":"2026-09-22T14:48:54.277668+00:00","created_at":"2026-09-22T14:46:04.686187+00:00","expires_at":"2026-09-23T14:46:04.686187+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":"https://api.anthropic.com/v1/messages/batches/msgbatch_01HAiGquZZbJdXWg2X26gvFn/results"}],"has_more":true,"first_id":"msgbatch_01L3D4bE1Az6hx1ncR3Rnrtb","last_id":"msgbatch_01HAiGquZZbJdXWg2X26gvFn"}'
+      string: '{"id":"msgbatch_01UeR6U8emQcTKwcotaBF3AG","type":"message_batch","processing_status":"in_progress","request_counts":{"processing":2,"succeeded":0,"errored":0,"canceled":0,"expired":0},"ended_at":null,"created_at":"2026-10-16T00:18:17.083948+00:00","expires_at":"2026-10-17T00:18:17.083948+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":null}'
     headers:
       anthropic-organization-id:
       - 27796668-7351-40ac-acc4-024aee8995a5
+      anthropic-ratelimit-batch-requests-limit:
+      - '500000'
+      anthropic-ratelimit-batch-requests-remaining:
+      - '499998'
       anthropic-workspace-id:
       - wrkspc_018bFG1FgNVWqx5pthtdGTzS
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a4b2b355ec5ed8d9-YYZ
+      - a4b2e2a6eb640702-YYZ
       connection:
       - keep-alive
       content-length:
-      - '9539'
+      - '361'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - application/json
       date:
-      - Thu, 15 Oct 2026 23:45:58 GMT
+      - Fri, 16 Oct 2026 00:18:17 GMT
       request-id:
-      - req_011Cg4uwr3Bgop4191Dasajr
+      - req_011Cg4xQiH6fP1ALowQUy2nJ
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=139
+      - x-originResponse;dur=298
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
@@ -115,10 +123,10 @@ interactions:
       x-stainless-timeout:
       - NOT_GIVEN
     method: GET
-    uri: https://api.anthropic.com/v1/messages/batches/msgbatch_01L3D4bE1Az6hx1ncR3Rnrtb
+    uri: https://api.anthropic.com/v1/messages/batches/msgbatch_01UeR6U8emQcTKwcotaBF3AG
   response:
     body:
-      string: '{"id":"msgbatch_01L3D4bE1Az6hx1ncR3Rnrtb","type":"message_batch","processing_status":"ended","request_counts":{"processing":0,"succeeded":1,"errored":1,"canceled":0,"expired":0},"ended_at":"2026-10-13T14:14:11.936150+00:00","created_at":"2026-10-13T14:13:04.327686+00:00","expires_at":"2026-10-14T14:13:04.327686+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":"https://api.anthropic.com/v1/messages/batches/msgbatch_01L3D4bE1Az6hx1ncR3Rnrtb/results"}'
+      string: '{"id":"msgbatch_01UeR6U8emQcTKwcotaBF3AG","type":"message_batch","processing_status":"in_progress","request_counts":{"processing":2,"succeeded":0,"errored":0,"canceled":0,"expired":0},"ended_at":null,"created_at":"2026-10-16T00:18:17.083948+00:00","expires_at":"2026-10-17T00:18:17.083948+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":null}'
     headers:
       anthropic-organization-id:
       - 27796668-7351-40ac-acc4-024aee8995a5
@@ -127,7 +135,807 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a4b2b3577a890426-YYZ
+      - a4b2e2e89c1e0c69-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '361'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Fri, 16 Oct 2026 00:18:27 GMT
+      request-id:
+      - req_011Cg4xRVBaVNbfvCjpVdmCY
+      retry-after:
+      - '10'
+      server:
+      - cloudflare
+      server-timing:
+      - x-originResponse;dur=127
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2023-06-01'
+      connection:
+      - keep-alive
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 0.48.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 0.48.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+      x-stainless-timeout:
+      - NOT_GIVEN
+    method: GET
+    uri: https://api.anthropic.com/v1/messages/batches/msgbatch_01UeR6U8emQcTKwcotaBF3AG
+  response:
+    body:
+      string: '{"id":"msgbatch_01UeR6U8emQcTKwcotaBF3AG","type":"message_batch","processing_status":"in_progress","request_counts":{"processing":2,"succeeded":0,"errored":0,"canceled":0,"expired":0},"ended_at":null,"created_at":"2026-10-16T00:18:17.083948+00:00","expires_at":"2026-10-17T00:18:17.083948+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":null}'
+    headers:
+      anthropic-organization-id:
+      - 27796668-7351-40ac-acc4-024aee8995a5
+      anthropic-workspace-id:
+      - wrkspc_018bFG1FgNVWqx5pthtdGTzS
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a4b2e328bed79113-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '361'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Fri, 16 Oct 2026 00:18:37 GMT
+      request-id:
+      - req_011Cg4xSF1pDE1gSsseMqvSE
+      retry-after:
+      - '10'
+      server:
+      - cloudflare
+      server-timing:
+      - x-originResponse;dur=102
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2023-06-01'
+      connection:
+      - keep-alive
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 0.48.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 0.48.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+      x-stainless-timeout:
+      - NOT_GIVEN
+    method: GET
+    uri: https://api.anthropic.com/v1/messages/batches/msgbatch_01UeR6U8emQcTKwcotaBF3AG
+  response:
+    body:
+      string: '{"id":"msgbatch_01UeR6U8emQcTKwcotaBF3AG","type":"message_batch","processing_status":"in_progress","request_counts":{"processing":2,"succeeded":0,"errored":0,"canceled":0,"expired":0},"ended_at":null,"created_at":"2026-10-16T00:18:17.083948+00:00","expires_at":"2026-10-17T00:18:17.083948+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":null}'
+    headers:
+      anthropic-organization-id:
+      - 27796668-7351-40ac-acc4-024aee8995a5
+      anthropic-workspace-id:
+      - wrkspc_018bFG1FgNVWqx5pthtdGTzS
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a4b2e368a849aa71-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '361'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Fri, 16 Oct 2026 00:18:47 GMT
+      request-id:
+      - req_011Cg4xSzj7NvVa6PbT9Yxat
+      retry-after:
+      - '10'
+      server:
+      - cloudflare
+      server-timing:
+      - x-originResponse;dur=126
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2023-06-01'
+      connection:
+      - keep-alive
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 0.48.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 0.48.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+      x-stainless-timeout:
+      - NOT_GIVEN
+    method: GET
+    uri: https://api.anthropic.com/v1/messages/batches/msgbatch_01UeR6U8emQcTKwcotaBF3AG
+  response:
+    body:
+      string: '{"id":"msgbatch_01UeR6U8emQcTKwcotaBF3AG","type":"message_batch","processing_status":"in_progress","request_counts":{"processing":2,"succeeded":0,"errored":0,"canceled":0,"expired":0},"ended_at":null,"created_at":"2026-10-16T00:18:17.083948+00:00","expires_at":"2026-10-17T00:18:17.083948+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":null}'
+    headers:
+      anthropic-organization-id:
+      - 27796668-7351-40ac-acc4-024aee8995a5
+      anthropic-workspace-id:
+      - wrkspc_018bFG1FgNVWqx5pthtdGTzS
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a4b2e3a92f41aacd-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '361'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Fri, 16 Oct 2026 00:18:58 GMT
+      request-id:
+      - req_011Cg4xTmAp96px3RpYWQUww
+      retry-after:
+      - '10'
+      server:
+      - cloudflare
+      server-timing:
+      - x-originResponse;dur=213
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2023-06-01'
+      connection:
+      - keep-alive
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 0.48.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 0.48.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+      x-stainless-timeout:
+      - NOT_GIVEN
+    method: GET
+    uri: https://api.anthropic.com/v1/messages/batches/msgbatch_01UeR6U8emQcTKwcotaBF3AG
+  response:
+    body:
+      string: '{"id":"msgbatch_01UeR6U8emQcTKwcotaBF3AG","type":"message_batch","processing_status":"in_progress","request_counts":{"processing":2,"succeeded":0,"errored":0,"canceled":0,"expired":0},"ended_at":null,"created_at":"2026-10-16T00:18:17.083948+00:00","expires_at":"2026-10-17T00:18:17.083948+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":null}'
+    headers:
+      anthropic-organization-id:
+      - 27796668-7351-40ac-acc4-024aee8995a5
+      anthropic-workspace-id:
+      - wrkspc_018bFG1FgNVWqx5pthtdGTzS
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a4b2e3e9ca1e4b56-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '361'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Fri, 16 Oct 2026 00:19:08 GMT
+      request-id:
+      - req_011Cg4xUX7zTvznC9bpbS2EM
+      retry-after:
+      - '10'
+      server:
+      - cloudflare
+      server-timing:
+      - x-originResponse;dur=93
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2023-06-01'
+      connection:
+      - keep-alive
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 0.48.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 0.48.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+      x-stainless-timeout:
+      - NOT_GIVEN
+    method: GET
+    uri: https://api.anthropic.com/v1/messages/batches/msgbatch_01UeR6U8emQcTKwcotaBF3AG
+  response:
+    body:
+      string: '{"id":"msgbatch_01UeR6U8emQcTKwcotaBF3AG","type":"message_batch","processing_status":"in_progress","request_counts":{"processing":2,"succeeded":0,"errored":0,"canceled":0,"expired":0},"ended_at":null,"created_at":"2026-10-16T00:18:17.083948+00:00","expires_at":"2026-10-17T00:18:17.083948+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":null}'
+    headers:
+      anthropic-organization-id:
+      - 27796668-7351-40ac-acc4-024aee8995a5
+      anthropic-workspace-id:
+      - wrkspc_018bFG1FgNVWqx5pthtdGTzS
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a4b2e429ba65aaf4-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '361'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Fri, 16 Oct 2026 00:19:18 GMT
+      request-id:
+      - req_011Cg4xVGrH2uiyArkSte45m
+      retry-after:
+      - '10'
+      server:
+      - cloudflare
+      server-timing:
+      - x-originResponse;dur=123
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2023-06-01'
+      connection:
+      - keep-alive
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 0.48.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 0.48.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+      x-stainless-timeout:
+      - NOT_GIVEN
+    method: GET
+    uri: https://api.anthropic.com/v1/messages/batches/msgbatch_01UeR6U8emQcTKwcotaBF3AG
+  response:
+    body:
+      string: '{"id":"msgbatch_01UeR6U8emQcTKwcotaBF3AG","type":"message_batch","processing_status":"in_progress","request_counts":{"processing":2,"succeeded":0,"errored":0,"canceled":0,"expired":0},"ended_at":null,"created_at":"2026-10-16T00:18:17.083948+00:00","expires_at":"2026-10-17T00:18:17.083948+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":null}'
+    headers:
+      anthropic-organization-id:
+      - 27796668-7351-40ac-acc4-024aee8995a5
+      anthropic-workspace-id:
+      - wrkspc_018bFG1FgNVWqx5pthtdGTzS
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a4b2e469be985163-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '361'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Fri, 16 Oct 2026 00:19:29 GMT
+      request-id:
+      - req_011Cg4xW2dJ445wgyCeCTWaG
+      retry-after:
+      - '10'
+      server:
+      - cloudflare
+      server-timing:
+      - x-originResponse;dur=108
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2023-06-01'
+      connection:
+      - keep-alive
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 0.48.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 0.48.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+      x-stainless-timeout:
+      - NOT_GIVEN
+    method: GET
+    uri: https://api.anthropic.com/v1/messages/batches/msgbatch_01UeR6U8emQcTKwcotaBF3AG
+  response:
+    body:
+      string: '{"id":"msgbatch_01UeR6U8emQcTKwcotaBF3AG","type":"message_batch","processing_status":"in_progress","request_counts":{"processing":2,"succeeded":0,"errored":0,"canceled":0,"expired":0},"ended_at":null,"created_at":"2026-10-16T00:18:17.083948+00:00","expires_at":"2026-10-17T00:18:17.083948+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":null}'
+    headers:
+      anthropic-organization-id:
+      - 27796668-7351-40ac-acc4-024aee8995a5
+      anthropic-workspace-id:
+      - wrkspc_018bFG1FgNVWqx5pthtdGTzS
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a4b2e4a9cadcaae5-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '361'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Fri, 16 Oct 2026 00:19:39 GMT
+      request-id:
+      - req_011Cg4xWnT33ezaeYVuezT3W
+      retry-after:
+      - '10'
+      server:
+      - cloudflare
+      server-timing:
+      - x-originResponse;dur=157
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2023-06-01'
+      connection:
+      - keep-alive
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 0.48.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 0.48.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+      x-stainless-timeout:
+      - NOT_GIVEN
+    method: GET
+    uri: https://api.anthropic.com/v1/messages/batches/msgbatch_01UeR6U8emQcTKwcotaBF3AG
+  response:
+    body:
+      string: '{"id":"msgbatch_01UeR6U8emQcTKwcotaBF3AG","type":"message_batch","processing_status":"in_progress","request_counts":{"processing":2,"succeeded":0,"errored":0,"canceled":0,"expired":0},"ended_at":null,"created_at":"2026-10-16T00:18:17.083948+00:00","expires_at":"2026-10-17T00:18:17.083948+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":null}'
+    headers:
+      anthropic-organization-id:
+      - 27796668-7351-40ac-acc4-024aee8995a5
+      anthropic-workspace-id:
+      - wrkspc_018bFG1FgNVWqx5pthtdGTzS
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a4b2e4ea8a57ac75-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '361'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Fri, 16 Oct 2026 00:19:49 GMT
+      request-id:
+      - req_011Cg4xXYkJYxcaBHtTywgnZ
+      retry-after:
+      - '10'
+      server:
+      - cloudflare
+      server-timing:
+      - x-originResponse;dur=115
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2023-06-01'
+      connection:
+      - keep-alive
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 0.48.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 0.48.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+      x-stainless-timeout:
+      - NOT_GIVEN
+    method: GET
+    uri: https://api.anthropic.com/v1/messages/batches/msgbatch_01UeR6U8emQcTKwcotaBF3AG
+  response:
+    body:
+      string: '{"id":"msgbatch_01UeR6U8emQcTKwcotaBF3AG","type":"message_batch","processing_status":"in_progress","request_counts":{"processing":2,"succeeded":0,"errored":0,"canceled":0,"expired":0},"ended_at":null,"created_at":"2026-10-16T00:18:17.083948+00:00","expires_at":"2026-10-17T00:18:17.083948+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":null}'
+    headers:
+      anthropic-organization-id:
+      - 27796668-7351-40ac-acc4-024aee8995a5
+      anthropic-workspace-id:
+      - wrkspc_018bFG1FgNVWqx5pthtdGTzS
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a4b2e52a7a2335ae-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '361'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Fri, 16 Oct 2026 00:19:59 GMT
+      request-id:
+      - req_011Cg4xYJUqtKi5ZRkbYqH27
+      retry-after:
+      - '10'
+      server:
+      - cloudflare
+      server-timing:
+      - x-originResponse;dur=145
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2023-06-01'
+      connection:
+      - keep-alive
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 0.48.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 0.48.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+      x-stainless-timeout:
+      - NOT_GIVEN
+    method: GET
+    uri: https://api.anthropic.com/v1/messages/batches/msgbatch_01UeR6U8emQcTKwcotaBF3AG
+  response:
+    body:
+      string: '{"id":"msgbatch_01UeR6U8emQcTKwcotaBF3AG","type":"message_batch","processing_status":"ended","request_counts":{"processing":0,"succeeded":2,"errored":0,"canceled":0,"expired":0},"ended_at":"2026-10-16T00:20:09.136628+00:00","created_at":"2026-10-16T00:18:17.083948+00:00","expires_at":"2026-10-17T00:18:17.083948+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":"https://api.anthropic.com/v1/messages/batches/msgbatch_01UeR6U8emQcTKwcotaBF3AG/results"}'
+    headers:
+      anthropic-organization-id:
+      - 27796668-7351-40ac-acc4-024aee8995a5
+      anthropic-workspace-id:
+      - wrkspc_018bFG1FgNVWqx5pthtdGTzS
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a4b2e56abc20ac57-YYZ
       connection:
       - keep-alive
       content-length:
@@ -137,13 +945,91 @@ interactions:
       content-type:
       - application/json
       date:
-      - Thu, 15 Oct 2026 23:45:59 GMT
+      - Fri, 16 Oct 2026 00:20:10 GMT
       request-id:
-      - req_011Cg4uwsDP5duxEdtLaEDc4
+      - req_011Cg4xZ4QnVFPNakEfBU5WF
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=133
+      - x-originResponse;dur=113
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2023-06-01'
+      connection:
+      - keep-alive
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 0.48.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 0.48.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+      x-stainless-timeout:
+      - NOT_GIVEN
+    method: GET
+    uri: https://api.anthropic.com/v1/messages/batches/msgbatch_01UeR6U8emQcTKwcotaBF3AG
+  response:
+    body:
+      string: '{"id":"msgbatch_01UeR6U8emQcTKwcotaBF3AG","type":"message_batch","processing_status":"ended","request_counts":{"processing":0,"succeeded":2,"errored":0,"canceled":0,"expired":0},"ended_at":"2026-10-16T00:20:09.136628+00:00","created_at":"2026-10-16T00:18:17.083948+00:00","expires_at":"2026-10-17T00:18:17.083948+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":"https://api.anthropic.com/v1/messages/batches/msgbatch_01UeR6U8emQcTKwcotaBF3AG/results"}'
+    headers:
+      anthropic-organization-id:
+      - 27796668-7351-40ac-acc4-024aee8995a5
+      anthropic-workspace-id:
+      - wrkspc_018bFG1FgNVWqx5pthtdGTzS
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a4b2e56c4ac0aa9b-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '470'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Fri, 16 Oct 2026 00:20:10 GMT
+      request-id:
+      - req_011Cg4xZ5Wm2NboQpVUgxHRt
+      server:
+      - cloudflare
+      server-timing:
+      - x-originResponse;dur=175
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
@@ -193,12 +1079,16 @@ interactions:
       x-stainless-timeout:
       - NOT_GIVEN
     method: GET
-    uri: https://api.anthropic.com/v1/messages/batches/msgbatch_01L3D4bE1Az6hx1ncR3Rnrtb/results
+    uri: https://api.anthropic.com/v1/messages/batches/msgbatch_01UeR6U8emQcTKwcotaBF3AG/results
   response:
     body:
-      string: "{\"custom_id\":\"req-2\",\"result\":{\"type\":\"errored\",\"error\":{\"type\":\"error\",\"error\":{\"details\":null,\"type\":\"not_found_error\",\"message\":\"model:
-        claude-3-5-haiku-latest\"},\"request_id\":null}}}\n{\"custom_id\":\"req-1\",\"result\":{\"type\":\"succeeded\",\"message\":{\"model\":\"claude-haiku-4-5-20251001\",\"id\":\"msg_011CfzNg2nH624Un8D5VxjZh\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"#
-        Hello! \U0001F44B\\n\\nHow can I help you today?\"}],\"container\":null,\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":8,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"output_tokens\":17,\"service_tier\":\"batch\",\"inference_geo\":\"not_available\"},\"diagnostics\":null}}}\n"
+      string: '{"custom_id":"req-2","result":{"type":"succeeded","message":{"model":"claude-haiku-4-5-20251001","id":"msg_011Cg4xTcLVavt94SJvzedfH","type":"message","role":"assistant","content":[{"type":"text","text":"3
+        + 3 = 6"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":14,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":13,"service_tier":"batch","inference_geo":"not_available","speed":"standard"},"diagnostics":null}}}
+
+        {"custom_id":"req-1","result":{"type":"succeeded","message":{"model":"claude-haiku-4-5-20251001","id":"msg_011Cg4xTaV87gFkzXdytA1jU","type":"message","role":"assistant","content":[{"type":"text","text":"2
+        + 2 = 4"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":14,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":13,"service_tier":"batch","inference_geo":"not_available","speed":"standard"},"diagnostics":null}}}
+
+        '
     headers:
       anthropic-organization-id:
       - 27796668-7351-40ac-acc4-024aee8995a5
@@ -207,23 +1097,23 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a4b2b35918540426-YYZ
+      - a4b2e56ddc54aa9b-YYZ
       connection:
       - keep-alive
       content-disposition:
-      - attachment; filename*=utf-8''msgbatch_01L3D4bE1Az6hx1ncR3Rnrtb_results.jsonl
+      - attachment; filename*=utf-8''msgbatch_01UeR6U8emQcTKwcotaBF3AG_results.jsonl
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - application/x-jsonl
       date:
-      - Thu, 15 Oct 2026 23:45:59 GMT
+      - Fri, 16 Oct 2026 00:20:10 GMT
       request-id:
-      - req_011Cg4uwtL6YKkQYQAFsmmvs
+      - req_011Cg4xZ6ZWi6Te7nLMLCwqa
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=229
+      - x-originResponse;dur=186
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
