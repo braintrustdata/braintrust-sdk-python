@@ -595,6 +595,12 @@ def _choices_output(response: Any, *, audio_format: str | None) -> Any:
     return _process_attachments_in_chat_output(dumped, audio_format=audio_format)
 
 
+def _get_attr_or_item(value: Any, key: str, default: Any = None) -> Any:
+    if isinstance(value, Mapping):
+        return value.get(key, default)
+    return getattr(value, key, default)
+
+
 class ChatCompletionWrapper:
     def __init__(self, create_fn: Callable[..., Any] | None, acreate_fn: Callable[..., Any] | None):
         self.create_fn = create_fn
@@ -633,7 +639,7 @@ class ChatCompletionWrapper:
                                     }
                                 )
                                 first = False
-                            all_results.append(_try_to_dict(item))
+                            all_results.append(item)
                             yield item
 
                         span.log(**self._postprocess_streaming_results(all_results, audio_format=audio_format))
@@ -696,7 +702,7 @@ class ChatCompletionWrapper:
                                     }
                                 )
                                 first = False
-                            all_results.append(_try_to_dict(item))
+                            all_results.append(item)
                             yield item
 
                         span.log(**self._postprocess_streaming_results(all_results, audio_format=audio_format))
@@ -740,7 +746,7 @@ class ChatCompletionWrapper:
     @classmethod
     def _postprocess_streaming_results(
         cls,
-        all_results: list[dict[str, Any]],
+        all_results: list[Any],
         *,
         audio_format: str | None = None,
     ) -> dict[str, Any]:
@@ -757,91 +763,97 @@ class ChatCompletionWrapper:
         metadata: dict[str, Any] = {}
         for result in all_results:
             metadata.update(_extract_moderation_metadata(result))
-            usage = result.get("usage")
+            usage = _get_attr_or_item(result, "usage")
             if usage:
                 metrics.update(_parse_metrics_from_usage(usage))
 
-            choices = result["choices"]
+            choices = _get_attr_or_item(result, "choices", []) or []
             if not choices:
                 continue
 
             choice = choices[0]
-            fr = choice.get("finish_reason")
+            fr = _get_attr_or_item(choice, "finish_reason")
             if fr is not None:
                 finish_reason = fr
 
-            choice_logprobs = choice.get("logprobs")
+            choice_logprobs = _get_attr_or_item(choice, "logprobs")
             if choice_logprobs is not None:
                 saw_logprobs = True
 
-                chunk_content_logprobs = choice_logprobs.get("content")
+                chunk_content_logprobs = _get_attr_or_item(choice_logprobs, "content")
                 if chunk_content_logprobs is not None:
                     if logprobs_content is None:
                         logprobs_content = []
                     logprobs_content.extend(chunk_content_logprobs)
 
-                chunk_refusal_logprobs = choice_logprobs.get("refusal")
+                chunk_refusal_logprobs = _get_attr_or_item(choice_logprobs, "refusal")
                 if chunk_refusal_logprobs is not None:
                     if logprobs_refusal is None:
                         logprobs_refusal = []
                     logprobs_refusal.extend(chunk_refusal_logprobs)
 
-            delta = choice.get("delta")
+            delta = _get_attr_or_item(choice, "delta")
             if not delta:
                 continue
 
-            if role is None and delta.get("role") is not None:
-                role = delta.get("role")
+            if role is None and _get_attr_or_item(delta, "role") is not None:
+                role = _get_attr_or_item(delta, "role")
 
-            if delta.get("content") is not None:
-                content = (content or "") + delta.get("content")
+            if _get_attr_or_item(delta, "content") is not None:
+                content = (content or "") + _get_attr_or_item(delta, "content")
 
-            if delta.get("refusal") is not None:
-                refusal = (refusal or "") + delta.get("refusal")
+            if _get_attr_or_item(delta, "refusal") is not None:
+                refusal = (refusal or "") + _get_attr_or_item(delta, "refusal")
 
-            delta_audio = delta.get("audio")
-            if isinstance(delta_audio, dict):
+            # Some OpenAI versions expose this Pydantic extra as a raw dict;
+            # newer versions model it as an object.
+            delta_audio = _get_attr_or_item(delta, "audio")
+            if isinstance(delta_audio, dict) or hasattr(delta_audio, "transcript"):
                 if audio is None:
                     audio = {}
 
-                if delta_audio.get("id") is not None:
-                    audio["id"] = delta_audio.get("id")
-                if delta_audio.get("transcript") is not None:
-                    audio["transcript"] = (audio.get("transcript") or "") + delta_audio.get("transcript")
-                if delta_audio.get("data") is not None:
-                    delta_audio_data = delta_audio.get("data")
+                delta_audio_id = _get_attr_or_item(delta_audio, "id")
+                if delta_audio_id is not None:
+                    audio["id"] = delta_audio_id
+                delta_audio_transcript = _get_attr_or_item(delta_audio, "transcript")
+                if delta_audio_transcript is not None:
+                    audio["transcript"] = (audio.get("transcript") or "") + delta_audio_transcript
+                delta_audio_data = _get_attr_or_item(delta_audio, "data")
+                if delta_audio_data is not None:
                     decoded_audio = _decode_chat_completion_audio_chunk(delta_audio_data)
                     if decoded_audio is not None:
                         audio["_decoded_data"] = (audio.get("_decoded_data") or b"") + decoded_audio
                     else:
                         audio["data"] = (audio.get("data") or "") + delta_audio_data
-                if delta_audio.get("expires_at") is not None:
-                    audio["expires_at"] = delta_audio.get("expires_at")
+                delta_audio_expires_at = _get_attr_or_item(delta_audio, "expires_at")
+                if delta_audio_expires_at is not None:
+                    audio["expires_at"] = delta_audio_expires_at
 
-            if delta.get("tool_calls") is not None:
-                delta_tool_calls = delta.get("tool_calls")
+            if _get_attr_or_item(delta, "tool_calls") is not None:
+                delta_tool_calls = _get_attr_or_item(delta, "tool_calls")
                 if not delta_tool_calls:
                     continue
                 tool_delta = delta_tool_calls[0]
 
                 # pylint: disable=unsubscriptable-object
-                if not tool_calls or (tool_delta.get("id") and tool_calls[-1]["id"] != tool_delta.get("id")):
-                    function_arg = tool_delta.get("function", {})
+                tool_id = _get_attr_or_item(tool_delta, "id")
+                if not tool_calls or (tool_id and tool_calls[-1]["id"] != tool_id):
+                    function_arg = _get_attr_or_item(tool_delta, "function")
                     tool_calls = (tool_calls or []) + [
                         {
-                            "id": tool_delta.get("id"),
-                            "type": tool_delta.get("type"),
+                            "id": tool_id,
+                            "type": _get_attr_or_item(tool_delta, "type"),
                             "function": {
-                                "name": function_arg.get("name"),
-                                "arguments": function_arg.get("arguments") or "",
+                                "name": _get_attr_or_item(function_arg, "name"),
+                                "arguments": _get_attr_or_item(function_arg, "arguments") or "",
                             },
                         }
                     ]
                 else:
                     # pylint: disable=unsubscriptable-object
                     # append to existing tool call
-                    function_arg = tool_delta.get("function", {})
-                    args = function_arg.get("arguments") or ""
+                    function_arg = _get_attr_or_item(tool_delta, "function")
+                    args = _get_attr_or_item(function_arg, "arguments") or ""
                     if isinstance(args, str):
                         # pylint: disable=unsubscriptable-object
                         tool_calls[-1]["function"]["arguments"] += args
@@ -1087,13 +1099,15 @@ def _maybe_parse_json_string(value: Any) -> Any:
 
 
 def _serialize_response_output_items(value: Any) -> list[dict[str, Any]]:
-    serialized = _try_to_dict(value)
-    if serialized is None:
+    if value is None:
         return []
 
-    items = serialized if isinstance(serialized, list) else [serialized]
+    items = value if isinstance(value, Iterable) and not isinstance(value, (str, bytes, Mapping)) else [value]
     serialized_items = []
     for item in items:
+        item_type = getattr(item, "type", item.get("type") if isinstance(item, Mapping) else None)
+        if item_type not in _RESPONSE_TOOL_ITEM_INPUT_KEYS:
+            continue
         item_dict = _try_to_dict(item)
         if isinstance(item_dict, dict):
             serialized_items.append(item_dict)
@@ -1172,9 +1186,6 @@ def _response_tool_span_metadata(item: dict[str, Any]) -> dict[str, Any] | None:
 
 def _log_response_tool_spans(output: Any, *, parent_export: str | None) -> None:
     for item in _serialize_response_output_items(output):
-        if item.get("type") not in _RESPONSE_TOOL_ITEM_INPUT_KEYS:
-            continue
-
         span_args = {
             "name": _response_tool_span_name(item),
             "type": SpanTypeAttribute.TOOL,
@@ -1293,13 +1304,7 @@ def _agent_tool_span_name(item: Any) -> str:
 
 
 def _agent_tool_span_data(item: Any, keys: tuple[str, ...]) -> Any:
-    values = clean_nones(
-        {
-            key: _try_to_dict(value) if key in {"request", "response"} else value
-            for key in keys
-            if (value := getattr(item, key, None)) is not None
-        }
-    )
+    values = clean_nones({key: value for key in keys if (value := getattr(item, key, None)) is not None})
     if not values:
         return None
     if keys == ("arguments",):
@@ -1729,7 +1734,6 @@ class ResponseWrapper:
         output = []
 
         for result in all_results:
-            response_dict = None
             usage = getattr(result, "usage", None)
             if (
                 not usage
@@ -1737,8 +1741,7 @@ class ResponseWrapper:
                 and result.type == "response.completed"
                 and hasattr(result, "response")
             ):
-                response_dict = _try_to_dict(result.response)
-                metadata.update(_extract_moderation_metadata(response_dict))
+                metadata.update(_extract_moderation_metadata(result.response))
                 # Handle summaries from completed response if present
                 if hasattr(result.response, "output") and result.response.output:
                     output_by_id = {item.get("id"): item for item in output if item.get("id")}
@@ -1766,9 +1769,7 @@ class ResponseWrapper:
 
             if result.type == "response.completed":
                 if hasattr(result, "response") and hasattr(result.response, "output"):
-                    if response_dict is None:
-                        response_dict = _try_to_dict(result.response)
-                    metadata.update(_extract_moderation_metadata(response_dict))
+                    metadata.update(_extract_moderation_metadata(result.response))
                     return {
                         "metrics": metrics,
                         "metadata": metadata,
@@ -1812,7 +1813,7 @@ class ResponseWrapper:
                             # Fill any gaps in the annotations array
                             while len(current_content["annotations"]) <= annotation_index:
                                 current_content["annotations"].append({})
-                            current_content["annotations"][annotation_index] = _try_to_dict(result.annotation)
+                            current_content["annotations"][annotation_index] = result.annotation
 
         return {
             "metrics": metrics,
@@ -1912,8 +1913,7 @@ class BaseWrapper(abc.ABC):
             else:
                 raw_response = create_response
 
-            log_response = _try_to_dict(raw_response)
-            self.process_output(log_response, span)
+            self.process_output(raw_response, span)
             return raw_response
 
     async def acreate(self, *args: Any, **kwargs: Any) -> Any:
@@ -1930,8 +1930,7 @@ class BaseWrapper(abc.ABC):
                 log_headers(create_response, span)
             else:
                 raw_response = create_response
-            log_response = _try_to_dict(raw_response)
-            self.process_output(log_response, span)
+            self.process_output(raw_response, span)
             return raw_response
 
     _metadata_params: tuple[str, ...] = ()
@@ -2041,14 +2040,16 @@ class EmbeddingWrapper(BaseWrapper):
     def __init__(self, create_fn: Callable[..., Any] | None, acreate_fn: Callable[..., Any] | None):
         super().__init__(create_fn, acreate_fn, "Embedding")
 
-    def process_output(self, response: dict[str, Any], span: Span):
-        usage = response.get("usage")
+    def process_output(self, response: Any, span: Span):
+        usage = getattr(response, "usage", None)
         metrics = _parse_metrics_from_usage(usage)
+        data = getattr(response, "data", None)
+        embedding = getattr(data[0], "embedding")
         span.log(
             metrics=metrics,
             # TODO: Add a flag to control whether to log the full embedding vector,
             # possibly w/ JSON compression.
-            output={"embedding_length": len(response["data"][0]["embedding"])},
+            output={"embedding_length": len(embedding)},
         )
 
 
@@ -2227,7 +2228,7 @@ class ModerationWrapper(BaseWrapper):
 
     def process_output(self, response: Any, span: Span):
         span.log(
-            output=response["results"],
+            output=response.results,
         )
 
 
@@ -2369,14 +2370,13 @@ class TranscriptionWrapper(_AudioFileWrapper):
                 try:
                     for item in raw_response:
                         event_time = time.time()
-                        event = _try_to_dict(item)
-                        if first_token_time is None and self._stream_event_type(event) in {
+                        if first_token_time is None and self._stream_event_type(item) in {
                             "transcript.text.delta",
                             "transcript.text.done",
                         }:
                             first_token_time = event_time
                         last_event_time = event_time
-                        all_results.append(event)
+                        all_results.append(item)
                         yield item
                 finally:
                     finalize()
@@ -2425,14 +2425,13 @@ class TranscriptionWrapper(_AudioFileWrapper):
                 try:
                     async for item in raw_response:
                         event_time = time.time()
-                        event = _try_to_dict(item)
-                        if first_token_time is None and self._stream_event_type(event) in {
+                        if first_token_time is None and self._stream_event_type(item) in {
                             "transcript.text.delta",
                             "transcript.text.done",
                         }:
                             first_token_time = event_time
                         last_event_time = event_time
-                        all_results.append(event)
+                        all_results.append(item)
                         yield item
                 finally:
                     finalize()
@@ -2445,10 +2444,9 @@ class TranscriptionWrapper(_AudioFileWrapper):
 
     def process_output(self, response: Any, span: Span):
         metrics = {}
-        if isinstance(response, dict):
-            usage = response.get("usage")
-            if usage:
-                metrics = _parse_metrics_from_usage(usage)
+        usage = getattr(response, "usage", None)
+        if usage:
+            metrics = _parse_metrics_from_usage(usage)
         span.log(metrics=metrics, output=self._extract_text(response))
 
 

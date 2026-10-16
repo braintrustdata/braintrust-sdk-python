@@ -793,8 +793,13 @@ async def test_openai_chat_stream_helper(memory_logger, is_async):
 
 
 @pytest.mark.vcr
-def test_openai_chat_streaming_sync_preserves_logprobs(memory_logger):
+def test_openai_chat_streaming_sync_preserves_logprobs(memory_logger, monkeypatch):
     assert not memory_logger.pop()
+
+    def unexpected_serialization(_value):
+        raise AssertionError("stream chunks should be passed through without serialization")
+
+    monkeypatch.setattr("braintrust.integrations.openai.tracing._try_to_dict", unexpected_serialization)
 
     client = wrap_openai(openai.OpenAI())
     stream = client.chat.completions.create(
@@ -835,6 +840,7 @@ def test_openai_chat_streaming_sync_preserves_logprobs(memory_logger):
     assert output_choice["logprobs"] is not None
     assert output_choice["logprobs"]["content"]
     assert "OK" in "".join(entry["token"] for entry in output_choice["logprobs"]["content"])
+    assert all("bytes" not in entry or entry["bytes"] is not None for entry in output_choice["logprobs"]["content"])
 
 
 @pytest.mark.vcr
@@ -1948,8 +1954,13 @@ async def test_openai_audio_transcription(memory_logger, is_async):
 @sync_async
 @pytest.mark.asyncio
 @pytest.mark.vcr
-async def test_openai_audio_transcription_streaming(memory_logger, is_async):
+async def test_openai_audio_transcription_streaming(memory_logger, is_async, monkeypatch):
     assert not memory_logger.pop()
+
+    def unexpected_serialization(_value):
+        raise AssertionError("transcription events should be passed through without serialization")
+
+    monkeypatch.setattr("braintrust.integrations.openai.tracing._try_to_dict", unexpected_serialization)
 
     client = wrap_openai(_client(is_async))
     start = time.time()
