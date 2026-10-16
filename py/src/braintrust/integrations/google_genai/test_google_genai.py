@@ -1025,18 +1025,29 @@ def test_generate_content_stream_preserves_code_execution_parts():
     from braintrust.integrations.google_genai.tracing import _aggregate_generate_content_chunks
 
     parts = [
+        types.Part(text="before "),
         types.Part(executable_code=types.ExecutableCode(code="print(1)", language="PYTHON")),
+        types.Part(text=" between "),
         types.Part(code_execution_result=types.CodeExecutionResult(outcome="OUTCOME_OK", output="1")),
+        types.Part(text=" after"),
     ]
-    candidate = types.Candidate(content=types.Content(parts=parts, role="model"))
-    chunk = SimpleNamespace(candidates=[candidate], usage_metadata=None)
+    chunks = [
+        SimpleNamespace(
+            candidates=[types.Candidate(content=types.Content(parts=[part], role="model"))],
+            usage_metadata=None,
+        )
+        for part in parts
+    ]
 
-    output, _, _ = _aggregate_generate_content_chunks([chunk], time.time())
+    output, _, _ = _aggregate_generate_content_chunks(chunks, time.time())
 
     streamed_parts = output["candidates"][0]["content"]["parts"]
     assert streamed_parts == [
-        {"executable_code": parts[0].executable_code},
-        {"code_execution_result": parts[1].code_execution_result},
+        {"text": "before "},
+        {"executable_code": parts[1].executable_code},
+        {"text": " between "},
+        {"code_execution_result": parts[3].code_execution_result},
+        {"text": " after"},
     ]
 
 

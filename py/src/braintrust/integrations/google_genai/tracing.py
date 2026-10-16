@@ -668,11 +668,10 @@ def _aggregate_generate_content_chunks(
         return {}, metrics, None
 
     text = ""
-    thought_text = ""
-    other_parts = []
     usage_metadata = None
     last_response = None
     candidate_fields: list[dict[str, Any]] = []
+    candidate_parts: list[list[dict[str, Any]]] = []
 
     for chunk in chunks:
         last_response = chunk
@@ -684,6 +683,8 @@ def _aggregate_generate_content_chunks(
             for candidate_index, candidate in enumerate(chunk.candidates):
                 while len(candidate_fields) <= candidate_index:
                     candidate_fields.append({})
+                    candidate_parts.append([])
+                parts = candidate_parts[candidate_index]
                 for field_name in type(candidate).model_fields:
                     if field_name == "content":
                         continue
@@ -695,31 +696,29 @@ def _aggregate_generate_content_chunks(
                     if hasattr(candidate.content, "parts") and candidate.content.parts:
                         for part in candidate.content.parts:
                             if hasattr(part, "text") and part.text:
-                                if hasattr(part, "thought") and part.thought:
-                                    thought_text += part.text
-                                else:
+                                is_thought = bool(getattr(part, "thought", None))
+                                if not is_thought:
                                     text += part.text
+                                if parts and "text" in parts[-1] and bool(parts[-1].get("thought")) == is_thought:
+                                    parts[-1]["text"] += part.text
+                                elif is_thought:
+                                    parts.append({"text": part.text, "thought": True})
+                                else:
+                                    parts.append({"text": part.text})
                             elif getattr(part, "function_call", None) is not None:
-                                other_parts.append({"function_call": part.function_call})
+                                parts.append({"function_call": part.function_call})
                             elif getattr(part, "code_execution_result", None) is not None:
-                                other_parts.append({"code_execution_result": part.code_execution_result})
+                                parts.append({"code_execution_result": part.code_execution_result})
                             elif getattr(part, "executable_code", None) is not None:
-                                other_parts.append({"executable_code": part.executable_code})
+                                parts.append({"executable_code": part.executable_code})
 
     aggregated = {}
 
-    parts = []
-    if thought_text:
-        parts.append({"text": thought_text, "thought": True})
-    if text:
-        parts.append({"text": text})
-    parts.extend(other_parts)
-
-    if parts and last_response and hasattr(last_response, "candidates"):
+    if any(candidate_parts) and last_response and hasattr(last_response, "candidates"):
         candidates = []
         for candidate_index, _candidate in enumerate(last_response.candidates):
             candidate_dict = dict(candidate_fields[candidate_index])
-            candidate_dict["content"] = {"parts": parts, "role": "model"}
+            candidate_dict["content"] = {"parts": candidate_parts[candidate_index], "role": "model"}
             candidates.append(candidate_dict)
 
         aggregated["candidates"] = candidates
