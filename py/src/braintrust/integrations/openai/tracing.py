@@ -2041,10 +2041,10 @@ class EmbeddingWrapper(BaseWrapper):
         super().__init__(create_fn, acreate_fn, "Embedding")
 
     def process_output(self, response: Any, span: Span):
-        usage = getattr(response, "usage", None)
+        usage = _get_attr_or_item(response, "usage")
         metrics = _parse_metrics_from_usage(usage)
-        data = getattr(response, "data", None)
-        embedding = getattr(data[0], "embedding")
+        data = _get_attr_or_item(response, "data")
+        embedding = _get_attr_or_item(data[0], "embedding")
         span.log(
             metrics=metrics,
             # TODO: Add a flag to control whether to log the full embedding vector,
@@ -2228,7 +2228,7 @@ class ModerationWrapper(BaseWrapper):
 
     def process_output(self, response: Any, span: Span):
         span.log(
-            output=response.results,
+            output=_get_attr_or_item(response, "results"),
         )
 
 
@@ -2444,7 +2444,7 @@ class TranscriptionWrapper(_AudioFileWrapper):
 
     def process_output(self, response: Any, span: Span):
         metrics = {}
-        usage = getattr(response, "usage", None)
+        usage = _get_attr_or_item(response, "usage")
         if usage:
             metrics = _parse_metrics_from_usage(usage)
         span.log(metrics=metrics, output=self._extract_text(response))

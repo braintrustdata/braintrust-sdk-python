@@ -14,6 +14,8 @@ from braintrust.integrations.openai import OpenAIIntegration
 from braintrust.integrations.openai.tracing import (
     RAW_RESPONSE_HEADER,
     ChatCompletionWrapper,
+    EmbeddingWrapper,
+    ModerationWrapper,
     _materialize_logged_file_input,
     _process_attachments_in_chat_output,
 )
@@ -672,6 +674,30 @@ async def test_openai_embeddings(memory_logger, is_async):
     assert span["metadata"]["model"] == "text-embedding-ada-002"
     assert span["metadata"]["provider"] == "openai"
     assert "This is a test" in str(span["input"])
+
+
+def test_openai_embedding_mapping_response(memory_logger):
+    wrapper = EmbeddingWrapper(
+        lambda: {"data": [{"embedding": [0.1, 0.2]}], "usage": {"prompt_tokens": 2}},
+        None,
+    )
+
+    wrapper.create()
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    assert spans[0]["output"] == {"embedding_length": 2}
+
+
+def test_openai_moderation_mapping_response(memory_logger):
+    response_results = [{"flagged": False, "categories": {"violence": False}}]
+    wrapper = ModerationWrapper(lambda: {"results": response_results}, None)
+
+    wrapper.create()
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    assert spans[0]["output"] == response_results
 
 
 @pytest.mark.vcr
