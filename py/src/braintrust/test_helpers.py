@@ -60,9 +60,12 @@ def with_simulate_login():
 
 
 @pytest.fixture
-def with_memory_logger():
+def with_memory_logger(monkeypatch):
     logger._state.reset_parent_state()
     with logger._internal_with_memory_background_logger() as bgl:
+        # The override is thread-local. Worker threads need the same fallback
+        # so they cannot start HTTP uploads that outlive the test and race VCR.
+        monkeypatch.setattr(logger._state, "_global_bg_logger", LazyValue(lambda: bgl, use_mutex=False))
         yield bgl
     # Clean up global state to prevent test contamination
     logger._state.reset_parent_state()

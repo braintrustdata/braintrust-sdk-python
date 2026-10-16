@@ -308,17 +308,12 @@ async def test_to_thread_preserves_context(test_logger, with_memory_logger):
     test_logger.flush()
     logs = with_memory_logger.pop()
 
-    # SURPRISING: Even to_thread() loses logger context (logger is a ContextVar too!)
-    # Only parent span is logged
-    # However, to_thread() DOES preserve span parent context
-    assert len(logs) >= 1
-
-    # If both spans logged (logger context preserved), verify parent chain
-    if len(logs) == 2:
-        parent_log = next(l for l in logs if l["span_attributes"]["name"] == "parent")
-        worker_log = next(l for l in logs if l["span_attributes"]["name"] == "to_thread_worker")
-        assert worker_log["root_span_id"] == parent_log["root_span_id"]
-        assert parent_log["span_id"] in worker_log.get("span_parents", [])
+    # The memory logger must capture worker-thread exports as well as the parent.
+    assert len(logs) == 2
+    parent_log = next(l for l in logs if l["span_attributes"]["name"] == "parent")
+    worker_log = next(l for l in logs if l["span_attributes"]["name"] == "to_thread_worker")
+    assert worker_log["root_span_id"] == parent_log["root_span_id"]
+    assert parent_log["span_id"] in worker_log.get("span_parents", [])
 
 
 # ============================================================================

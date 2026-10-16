@@ -2484,7 +2484,7 @@ def reset_id_generator_state(monkeypatch):
     monkeypatch.delenv("BRAINTRUST_LEGACY_IDS", raising=False)
 
 
-def test_span_with_otel_ids_export_import(reset_id_generator_state, monkeypatch):
+def test_span_with_otel_ids_export_import(with_memory_logger, reset_id_generator_state, monkeypatch):
     """Test that actual Span objects with OTEL IDs can export and be used as parent context."""
     init_test_logger(__name__)
     monkeypatch.setenv("BRAINTRUST_OTEL_COMPAT", "true")
@@ -2502,7 +2502,7 @@ def test_span_with_otel_ids_export_import(reset_id_generator_state, monkeypatch)
         assert imported.root_span_id == span.root_span_id
 
 
-def test_span_with_uuid_ids_share_root_span_id(reset_id_generator_state, monkeypatch):
+def test_span_with_uuid_ids_share_root_span_id(with_memory_logger, reset_id_generator_state, monkeypatch):
     """Test that legacy UUID generators share span_id as root_span_id for backwards compatibility."""
     monkeypatch.setenv("BRAINTRUST_LEGACY_IDS", "true")
     init_test_logger(__name__)
@@ -2908,6 +2908,9 @@ class TestLoggerProjectGroup(TestCase):
         metadata_patch.start()
         self.addCleanup(metadata_patch.stop)
         self.state = logger.login_to_state(api_key=logger.TEST_API_KEY)
+        # These tests use a separate state, so the global memory override does
+        # not apply. Keep their span exports local too.
+        self.state._global_bg_logger = LazyValue(logger._MemoryBackgroundLogger, use_mutex=True)
         self.state.org_name = "test-org"
         api_client = MagicMock()
         client_patch = patch.object(self.state, "api_client", return_value=api_client)

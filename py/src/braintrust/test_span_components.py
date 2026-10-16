@@ -10,6 +10,7 @@ import pytest
 from braintrust.id_gen import OTELIDGenerator
 from braintrust.span_identifier_v3 import SpanComponentsV3, SpanObjectTypeV3
 from braintrust.span_identifier_v4 import SpanComponentsV4
+from braintrust.test_helpers import with_memory_logger  # noqa: F401 # type: ignore[reportUnusedImport]
 
 
 class TestSpanComponentsV3:
@@ -346,7 +347,7 @@ class TestExportFormatSelection:
     BRAINTRUST_LEGACY_IDS) serialize as V3.
     """
 
-    def test_export_format_based_on_env_variable(self):
+    def test_export_format_based_on_env_variable(self, with_memory_logger):
         """Test that export format follows the legacy-UUID opt-out flag."""
         from braintrust.test_helpers import init_test_logger, preserve_env_vars
 
@@ -374,7 +375,7 @@ class TestExportFormatSelection:
             assert SpanComponentsV4.from_str(export_v3_mode) is not None
             assert SpanComponentsV4.from_str(export_v4_mode) is not None
 
-    def test_export_uses_v4_by_default(self):
+    def test_export_uses_v4_by_default(self, with_memory_logger):
         """Test that export uses V4 format by default (no env vars set)."""
         from braintrust.test_helpers import init_test_logger, preserve_env_vars
 
