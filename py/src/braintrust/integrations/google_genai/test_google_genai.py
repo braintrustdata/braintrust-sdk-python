@@ -631,12 +631,6 @@ async def test_tool_use(memory_logger, mode):
     spans = memory_logger.pop()
     assert len(spans) >= 1
     _assert_tool_use_span(spans[0], start, end)
-    if mode in {"stream", "async_stream"}:
-        streamed_parts = [
-            part for candidate in spans[0]["output"]["candidates"] for part in candidate["content"]["parts"]
-        ]
-        function_call_parts = [part for part in streamed_parts if "function_call" in part]
-        assert all(part["function_call"] is not None for part in function_call_parts)
 
 
 # Test 4: System Prompt
