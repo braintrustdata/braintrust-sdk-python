@@ -207,8 +207,6 @@ Live recording fails for reasons unrelated to the SDK change. Handle each case s
 - **Shared cassette names under `--vcr-record=all`.** When several parametrizations share a cassette name, later cases read an earlier case's response. Delete only those cassettes and re-run in `once` mode, so the first case of each name records and the rest replay.
 - **Hangs.** Tests that drive long-lived live sessions can hang while recording. Exclude them with `-k "not <test>"` and keep their old cassettes.
 
-For the current list of provider-specific cases (which tests to never re-record, known retired models, sessions coupled to another provider's pin), see `.agents/skills/sdk-dependency-updates/references/session-mapping.md`.
-
 ## Narrow Recording Strategy
 
 When you need new traffic, record the smallest thing possible:

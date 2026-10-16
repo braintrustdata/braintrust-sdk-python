@@ -124,8 +124,6 @@ When several matrix keys share a directory, delete and refresh that directory on
 
 ### 6. Re-record only when justified
 
-Before deleting anything, check the "Provider-specific re-record gotchas" in [references/session-mapping.md](./references/session-mapping.md). Some cassettes must be restored from git rather than re-recorded, and some sessions record nothing on your Python version.
-
 For cassette refresh work, delete the affected `latest` directory first so stale responses are not silently reused:
 
 ```bash
