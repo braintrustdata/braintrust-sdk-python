@@ -1051,6 +1051,75 @@ def test_generate_content_stream_preserves_code_execution_parts():
     ]
 
 
+@pytest.mark.vcr
+def test_generate_content_stream_code_execution_part_order(memory_logger):
+    assert not memory_logger.pop()
+
+    client = Client()
+    model = "gemini-2.5-flash"
+    chunks = list(
+        client.models.generate_content_stream(
+            model=model,
+            contents=(
+                "Use the code execution tool to calculate 17 * 19. Include one short sentence before the code, "
+                "then give the answer after the code execution result."
+            ),
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(code_execution=types.ToolCodeExecution())],
+                temperature=0,
+                max_output_tokens=200,
+            ),
+        )
+    )
+
+    raw_parts = [
+        part
+        for chunk in chunks
+        for candidate in getattr(chunk, "candidates", None) or []
+        if candidate.index in (None, 0)
+        for part in (getattr(getattr(candidate, "content", None), "parts", None) or [])
+    ]
+    raw_part_kinds = []
+    for part in raw_parts:
+        field = next(
+            (
+                field
+                for field in ("text", "executable_code", "code_execution_result", "function_call")
+                if getattr(part, field, None) is not None
+            ),
+            None,
+        )
+        if field is None:
+            continue
+        kind = "thought" if field == "text" and getattr(part, "thought", None) else field
+        if kind in {"text", "thought"} and raw_part_kinds and raw_part_kinds[-1] == kind:
+            continue
+        raw_part_kinds.append(kind)
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    logged_parts = spans[0]["output"]["candidates"][0]["content"]["parts"]
+    logged_part_kinds = []
+    for part in logged_parts:
+        field = next(
+            (
+                field
+                for field in ("text", "executable_code", "code_execution_result", "function_call")
+                if field in part
+            ),
+            None,
+        )
+        if field is None:
+            continue
+        kind = "thought" if field == "text" and part.get("thought") else field
+        if kind in {"text", "thought"} and logged_part_kinds and logged_part_kinds[-1] == kind:
+            continue
+        logged_part_kinds.append(kind)
+
+    assert {"text", "executable_code", "code_execution_result"}.issubset(raw_part_kinds)
+    assert logged_part_kinds == raw_part_kinds
+
+
 GROUNDING_MODEL = (
     "gemini-2.5-flash" if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest" else "gemini-2.0-flash-001"
 )
