@@ -18,6 +18,8 @@ pytest.importorskip("temporalio")
 import braintrust
 import temporalio.activity
 import temporalio.api.common.v1
+import temporalio.api.enums.v1
+import temporalio.api.workflowservice.v1
 import temporalio.converter
 import temporalio.testing
 import temporalio.worker
@@ -273,7 +275,7 @@ class TestAutoInstrumentation:
 
 
 @pytest_asyncio.fixture(scope="function")
-async def temporal_env():
+async def temporal_env(request):
     """Create a Temporal test environment.
 
     If ``BRAINTRUST_TEMPORAL_TEST_SERVER_DIR`` is set, point the SDK's binary
@@ -283,13 +285,19 @@ async def temporal_env():
     limits CI runners). When the var is unset (the local default), the SDK
     falls back to its built-in temp-dir download behavior.
     """
+    local_server = getattr(request, "param", None) == "local"
     kwargs: dict[str, Any] = {}
     cache_dir = os.environ.get("BRAINTRUST_TEMPORAL_TEST_SERVER_DIR")
     if cache_dir:
         os.makedirs(cache_dir, exist_ok=True)
         kwargs["download_dest_dir"] = cache_dir
-        kwargs["test_server_download_ttl"] = timedelta(days=365)
-    async with await temporalio.testing.WorkflowEnvironment.start_time_skipping(**kwargs) as env:
+        kwargs["dev_server_download_ttl" if local_server else "test_server_download_ttl"] = timedelta(days=365)
+    start_environment = (
+        temporalio.testing.WorkflowEnvironment.start_local
+        if local_server
+        else temporalio.testing.WorkflowEnvironment.start_time_skipping
+    )
+    async with await start_environment(**kwargs) as env:
         yield env
 
 
@@ -367,6 +375,13 @@ class TestBraintrustPluginIntegration:
         assert len(activity_spans) == 2
         workflow_span = workflow_spans[0]
         assert workflow_span["context"]["span_origin"]["instrumentation"]["name"] == "temporal-auto"
+        if "original_execution_run_id" in temporalio.workflow.Info.__annotations__:
+            assert (
+                workflow_span["metadata"]["temporal.original_execution_run_id"]
+                == workflow_span["metadata"]["temporal.run_id"]
+            )
+        else:
+            assert "temporal.original_execution_run_id" not in workflow_span["metadata"]
         assert all(
             span["context"]["span_origin"]["instrumentation"]["name"] == "temporal-auto" for span in activity_spans
         )
@@ -376,6 +391,74 @@ class TestBraintrustPluginIntegration:
             client_spans = _spans_named(spans, "test.client_replay_operation")
             assert len(client_spans) == 1
             assert workflow_span["root_span_id"] == client_spans[0]["root_span_id"]
+
+    @pytest.mark.skipif(
+        "original_execution_run_id" not in temporalio.workflow.Info.__annotations__,
+        reason="Temporal version does not expose original_execution_run_id",
+    )
+    @pytest.mark.parametrize("temporal_env", ["local"], indirect=True)
+    @pytest.mark.asyncio
+    async def test_plugin_workflow_metadata_preserves_original_run_id_after_reset(self, temporal_env, memory_logger):
+        task_queue = f"test-queue-reset-{uuid.uuid4()}"
+        workflow_id = f"test-workflow-reset-{uuid.uuid4()}"
+        async with Worker(
+            temporal_env.client,
+            task_queue=task_queue,
+            workflows=[ReplayAfterSignalWorkflow],
+            activities=[simple_activity],
+            max_cached_workflows=0,
+            plugins=[BraintrustPlugin(logger=memory_logger)],
+        ):
+            handle = await temporal_env.client.start_workflow(
+                ReplayAfterSignalWorkflow.run,
+                TaskInput(value=10),
+                id=workflow_id,
+                task_queue=task_queue,
+            )
+            await _wait_for_workflow_state(handle, "waiting")
+            original_run_id = (await handle.describe()).run_id
+            history = await handle.fetch_history()
+            workflow_task_finish_event_id = next(
+                event.event_id
+                for event in history.events
+                if event.event_type == temporalio.api.enums.v1.EventType.EVENT_TYPE_WORKFLOW_TASK_COMPLETED
+            )
+            await temporal_env.client.service_client.workflow_service.reset_workflow_execution(
+                temporalio.api.workflowservice.v1.ResetWorkflowExecutionRequest(
+                    namespace=temporal_env.client.namespace,
+                    workflow_execution=temporalio.api.common.v1.WorkflowExecution(
+                        workflow_id=workflow_id,
+                        run_id=original_run_id,
+                    ),
+                    reason="metadata test",
+                    workflow_task_finish_event_id=workflow_task_finish_event_id,
+                    request_id=str(uuid.uuid4()),
+                    identity="braintrust-reset-test",
+                )
+            )
+            reset_handle = temporal_env.client.get_workflow_handle(workflow_id)
+            await _wait_for_workflow_state(reset_handle, "waiting")
+            reset_run_id = (await reset_handle.describe()).run_id
+            await reset_handle.signal(ReplayAfterSignalWorkflow.continue_workflow)
+            assert await reset_handle.result() == 30
+
+        braintrust.flush()
+        spans = memory_logger.pop()
+        workflow_spans = _spans_named(spans, "temporal.workflow.ReplayAfterSignalWorkflow")
+        activity_spans = _spans_named(spans, "temporal.activity.simple_activity")
+        assert original_run_id != reset_run_id
+        assert {span["metadata"]["temporal.run_id"] for span in workflow_spans} == {
+            original_run_id,
+            reset_run_id,
+        }
+        assert all(
+            span["metadata"]["temporal.original_execution_run_id"] == original_run_id for span in workflow_spans
+        )
+        assert len({span["span_id"] for span in workflow_spans}) == 2
+        assert all(
+            any(workflow_span["span_id"] in span.get("span_parents", []) for workflow_span in workflow_spans)
+            for span in activity_spans
+        )
 
     @pytest.mark.parametrize(
         "workflow,input_value,expected_result,expected_span_counts,expected_activity_errors",
