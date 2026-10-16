@@ -17,6 +17,7 @@ from braintrust.integrations.anthropic._utils import _try_to_dict, extract_anthr
 from braintrust.integrations.anthropic.tracing import (
     TracedMessageStream,
     _log_message_to_span,
+    _normalize_anthropic_input,
 )
 from braintrust.integrations.test_utils import verify_autoinstrument_script
 from braintrust.span_types import SpanTypeAttribute
@@ -938,6 +939,34 @@ def test_anthropic_messages_create_with_image_attachment_input(memory_logger):
     assert image_block["image_url"]["url"].reference["content_type"] == "image/png"
     assert image_block["image_url"]["url"].reference["filename"] == "image.png"
     assert PNG_BASE64 not in str(span["input"])
+
+
+def test_managed_agents_input_materializes_attachments_inside_tuples():
+    normalized = _normalize_anthropic_input(
+        {
+            "events": (
+                {
+                    "type": "user.message",
+                    "content": (
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": "image/png",
+                                "data": PNG_BASE64,
+                            },
+                        },
+                    ),
+                },
+            ),
+        }
+    )
+
+    event = normalized["events"][0]
+    image_block = event["content"][0]
+    assert isinstance(image_block["image_url"]["url"], Attachment)
+    assert "data" not in image_block["source"]
+    assert PNG_BASE64 not in str(normalized)
 
 
 @pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path"])

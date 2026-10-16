@@ -932,6 +932,8 @@ _MANAGED_AGENTS_RESULT_REF_KEYS = {
 def _normalize_anthropic_data(value: Any) -> Any:
     if value is None or isinstance(value, (str, int, float, bool, bytes)):
         return value
+    if isinstance(value, tuple):
+        value = list(value)
     if isinstance(value, list):
         return [_normalize_anthropic_data(item) for item in value]
     if isinstance(value, dict):
