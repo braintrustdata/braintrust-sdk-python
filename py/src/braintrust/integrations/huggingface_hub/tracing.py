@@ -25,6 +25,7 @@ Span shape:
 
 import logging
 import time
+from collections.abc import Mapping
 from typing import Any, Protocol
 
 from braintrust.integrations.utils import (
@@ -197,7 +198,7 @@ def _build_request_metadata(
 
 
 def _extract_response_metadata(result: Any) -> dict[str, Any]:
-    if result is None:
+    if not isinstance(result, Mapping):
         return {}
     metadata: dict[str, Any] = {}
     for key in _RESPONSE_METADATA_KEYS:
@@ -215,7 +216,7 @@ def _extract_response_metadata(result: Any) -> dict[str, Any]:
 
 def _parse_usage_metrics(result: Any) -> dict[str, float]:
     """Extract token usage from a chat or text-generation response."""
-    if result is None:
+    if not isinstance(result, Mapping):
         return {}
 
     usage = result.get("usage")
@@ -279,7 +280,7 @@ def _chat_output(result: Any) -> Any:
     Keeps tool calls, logprobs, multiple choices, and any future fields
     available to consumers without extra normalization.
     """
-    if result is None:
+    if not isinstance(result, Mapping):
         return None
     choices = result.get("choices")
     return choices if isinstance(choices, list) else None
@@ -291,10 +292,10 @@ def _text_generation_output(result: Any) -> Any:
     ``details=False`` returns a plain ``str``; ``details=True`` returns a
     ``TextGenerationOutput``. Wrap both into a stable-shape dict.
     """
-    if result is None:
-        return None
     if isinstance(result, str):
         return {"generated_text": result}
+    if not isinstance(result, Mapping):
+        return None
     generated_text = result.get("generated_text")
     if isinstance(generated_text, str):
         return {"generated_text": generated_text}
@@ -709,7 +710,7 @@ def _text_generation_extra_metadata(details: Any) -> dict[str, Any]:
     Shared by the non-streaming and streaming code paths so the two stay in
     sync when new ``details`` fields are added.
     """
-    if details is None:
+    if not isinstance(details, Mapping):
         return {}
     metadata: dict[str, Any] = {}
     finish_reason = details.get("finish_reason")
@@ -722,7 +723,7 @@ def _text_generation_extra_metadata(details: Any) -> dict[str, Any]:
 
 
 def _log_text_generation_result(span, start_time: float, result: Any) -> None:
-    details = result.get("details") if isinstance(result, dict) else None
+    details = result.get("details") if isinstance(result, Mapping) else None
     metrics = {
         **_timing_metrics(start_time, time.time()),
         **_text_generation_metrics(details),
