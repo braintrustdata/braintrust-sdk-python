@@ -332,6 +332,28 @@ def test_wrap_bedrock_converse_normalizes_tool_config_and_output(memory_logger):
 
 
 @pytest.mark.vcr
+def test_wrap_bedrock_converse_stream_parses_tool_input(memory_logger):
+    assert not memory_logger.pop()
+    client = wrap_bedrock(_bedrock_client())
+
+    response = client.converse_stream(**_converse_tool_kwargs(CONVERSE_STREAM_MODEL))
+    tool_input = ""
+    for event in response["stream"]:
+        delta = event.get("contentBlockDelta", {}).get("delta", {})
+        if "toolUse" in delta:
+            tool_input += delta["toolUse"]["input"]
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    content = spans[0]["output"][0]["content"]
+    tool_uses = [block for block in content if block.get("type") == "tool_use"]
+    assert tool_uses, f"expected a tool_use block in {content!r}"
+    # Same shape as the non-streamed converse output: the streamed JSON string is parsed.
+    assert tool_uses[0]["input"] == json.loads(tool_input)
+    assert isinstance(tool_uses[0]["input"], dict)
+
+
+@pytest.mark.vcr
 def test_wrap_bedrock_converse_with_image_input_materializes_attachment(memory_logger):
     assert not memory_logger.pop()
     client = wrap_bedrock(_bedrock_client())

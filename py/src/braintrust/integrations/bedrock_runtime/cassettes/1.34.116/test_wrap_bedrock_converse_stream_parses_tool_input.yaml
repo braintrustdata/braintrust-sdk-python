@@ -1,0 +1,61 @@
+interactions:
+- request:
+    body: '{"messages": [{"role": "user", "content": [{"text": "What''s the weather
+      in Paris? Use the tool."}]}], "inferenceConfig": {"maxTokens": 200, "temperature":
+      0}, "toolConfig": {"tools": [{"toolSpec": {"name": "get_weather", "description":
+      "Get the current weather for a city.", "inputSchema": {"json": {"type": "object",
+      "properties": {"city": {"type": "string", "description": "City name"}}, "required":
+      ["city"]}}}}], "toolChoice": {"tool": {"name": "get_weather"}}}}'
+    headers:
+      Content-Length:
+      - '466'
+      Content-Type:
+      - !!binary |
+        YXBwbGljYXRpb24vanNvbg==
+      User-Agent:
+      - !!binary |
+        Qm90bzMvMS40My4xMTEgbWQvQm90b2NvcmUjMS40My4xMTEgdWEvMi4xIG9zL2xpbnV4IzYuNi44
+        Ny4yLW1pY3Jvc29mdC1zdGFuZGFyZC1XU0wyIG1kL2FyY2gjeDg2XzY0IGxhbmcvcHl0aG9uIzMu
+        MTQuOCBtZC9weWltcGwjQ1B5dGhvbiBtL0QsWixiLG4sMyBjZmcvcmV0cnktbW9kZSNsZWdhY3kg
+        Qm90b2NvcmUvMS40My4xMTE=
+    method: POST
+    uri: https://bedrock-runtime.us-east-1.amazonaws.com/model/us.amazon.nova-lite-v1%3A0/converse-stream
+  response:
+    body:
+      string: !!binary |
+        AAAAsQAAAFLN4M4VCzpldmVudC10eXBlBwAMbWVzc2FnZVN0YXJ0DTpjb250ZW50LXR5cGUHABBh
+        cHBsaWNhdGlvbi9qc29uDTptZXNzYWdlLXR5cGUHAAVldmVudHsicCI6ImFiY2RlZmdoaWprbG1u
+        b3BxcnN0dXZ3eHl6QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVoiLCJyb2xlIjoiYXNzaXN0YW50
+        In3DJvYkAAAA5gAAAFc3uSlBCzpldmVudC10eXBlBwARY29udGVudEJsb2NrU3RhcnQNOmNvbnRl
+        bnQtdHlwZQcAEGFwcGxpY2F0aW9uL2pzb24NOm1lc3NhZ2UtdHlwZQcABWV2ZW50eyJjb250ZW50
+        QmxvY2tJbmRleCI6MCwicCI6ImFiY2RlZmdoaSIsInN0YXJ0Ijp7InRvb2xVc2UiOnsibmFtZSI6
+        ImdldF93ZWF0aGVyIiwidG9vbFVzZUlkIjoidG9vbHVzZV9od0tPMkljSkdLSzRSTWxlSndZblRt
+        In19fWPJlGIAAADEAAAAV4y4VSULOmV2ZW50LXR5cGUHABFjb250ZW50QmxvY2tEZWx0YQ06Y29u
+        dGVudC10eXBlBwAQYXBwbGljYXRpb24vanNvbg06bWVzc2FnZS10eXBlBwAFZXZlbnR7ImNvbnRl
+        bnRCbG9ja0luZGV4IjowLCJkZWx0YSI6eyJ0b29sVXNlIjp7ImlucHV0Ijoie1wiY2l0eVwiOlwi
+        UGFyaXNcIn0ifX0sInAiOiJhYmNkZWZnaGlqIn3jnRuKAAAArAAAAFZS/Vk/CzpldmVudC10eXBl
+        BwAQY29udGVudEJsb2NrU3RvcA06Y29udGVudC10eXBlBwAQYXBwbGljYXRpb24vanNvbg06bWVz
+        c2FnZS10eXBlBwAFZXZlbnR7ImNvbnRlbnRCbG9ja0luZGV4IjowLCJwIjoiYWJjZGVmZ2hpamts
+        bW5vcHFyc3R1dnd4eXpBQkNERUZHSElKS0xNTiJ9MZDPXQAAAJMAAABR7+jjyws6ZXZlbnQtdHlw
+        ZQcAC21lc3NhZ2VTdG9wDTpjb250ZW50LXR5cGUHABBhcHBsaWNhdGlvbi9qc29uDTptZXNzYWdl
+        LXR5cGUHAAVldmVudHsicCI6ImFiY2RlZmdoaWprbG1ub3BxciIsInN0b3BSZWFzb24iOiJ0b29s
+        X3VzZSJ9FcGaWgAAAQkAAABOMgoCKgs6ZXZlbnQtdHlwZQcACG1ldGFkYXRhDTpjb250ZW50LXR5
+        cGUHABBhcHBsaWNhdGlvbi9qc29uDTptZXNzYWdlLXR5cGUHAAVldmVudHsibWV0cmljcyI6eyJs
+        YXRlbmN5TXMiOjY3N30sInAiOiJhYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ekFCQ0RFRkdISUpL
+        TE1OT1BRUlNUVVZXWCIsInVzYWdlIjp7ImlucHV0VG9rZW5zIjo0MTEsIm91dHB1dFRva2VucyI6
+        MTYsInNlcnZlclRvb2xVc2FnZSI6e30sInRvdGFsVG9rZW5zIjo0Mjd9fRkMP4U=
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/vnd.amazon.eventstream
+      Date:
+      - Sat, 17 Oct 2026 22:49:01 GMT
+      Transfer-Encoding:
+      - chunked
+      x-amzn-RequestId:
+      - 5ceccdfb-1053-424c-b3d8-050a251c63bd
+    status:
+      code: 200
+      message: OK
+version: 1
