@@ -45,7 +45,7 @@ class SerializableDataClass:
                     if t == type(None) and v is None:
                         filtered[k] = None
                         break
-                    if isinstance(t, type) and issubclass(t, SerializableDataClass) and v is not None:
+                    if isinstance(t, type) and issubclass(t, SerializableDataClass) and isinstance(v, dict):
                         try:
                             filtered[k] = t.from_dict_deep(v)
                             break
