@@ -1,0 +1,39 @@
+interactions:
+- request:
+    body: '{"messages": [{"role": "user", "content": [{"text": "Summarize this document."},
+      {"document": {"format": "pdf", "name": "tiny-pdf", "source": {"bytes": "JVBERi0xLjEKMSAwIG9iajw8L1R5cGUvQ2F0YWxvZy9QYWdlcyAyIDAgUj4+ZW5kb2JqCjIgMCBvYmo8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDE+PmVuZG9iagozIDAgb2JqPDwvVHlwZS9QYWdlL1BhcmVudCAyIDAgUi9NZWRpYUJveFswIDAgOCA4XT4+ZW5kb2JqCnhyZWYKMCA0CjAwMDAwMDAwMDAgNjU1MzUgZgowMDAwMDAwMDEwIDAwMDAwIG4KMDAwMDAwMDA1MyAwMDAwMCBuCjAwMDAwMDAwOTYgMDAwMDAgbgp0cmFpbGVyPDwvU2l6ZSA0L1Jvb3QgMSAwIFI+PgpzdGFydHhyZWYKMTQ0CiUlRU9G"}}}]}],
+      "inferenceConfig": {"maxTokens": 40, "temperature": 0}}'
+    headers:
+      Content-Length:
+      - '609'
+      Content-Type:
+      - !!binary |
+        YXBwbGljYXRpb24vanNvbg==
+      User-Agent:
+      - !!binary |
+        Qm90bzMvMS40My4xMTIgbWQvQm90b2NvcmUjMS40My4xMTIgdWEvMi4xIG9zL2xpbnV4IzYuNi44
+        Ny4yLW1pY3Jvc29mdC1zdGFuZGFyZC1XU0wyIG1kL2FyY2gjeDg2XzY0IGxhbmcvcHl0aG9uIzMu
+        MTQuOCBtZC9weWltcGwjQ1B5dGhvbiBtL2IsRCxaIGNmZy9yZXRyeS1tb2RlI2xlZ2FjeSBCb3Rv
+        Y29yZS8xLjQzLjExMg==
+    method: POST
+    uri: https://bedrock-runtime.us-east-1.amazonaws.com/model/us.amazon.nova-lite-v1%3A0/converse
+  response:
+    body:
+      string: '{"message":"The security token included in the request is invalid."}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '68'
+      Content-Type:
+      - application/json
+      Date:
+      - Sun, 18 Oct 2026 05:27:53 GMT
+      x-amzn-ErrorType:
+      - UnrecognizedClientException:http://internal.amazon.com/coral/com.amazon.coral.service/
+      x-amzn-RequestId:
+      - a73087e1-da8c-4111-933b-f9ce27b246d4
+    status:
+      code: 403
+      message: Forbidden
+version: 1

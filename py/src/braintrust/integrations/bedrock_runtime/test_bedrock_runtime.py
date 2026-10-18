@@ -290,6 +290,14 @@ def _converse_tool_kwargs(model_id=CONVERSE_MODEL):
 
 
 @pytest.mark.vcr
+def test_parse_streamed_tool_input_keeps_input_the_decoder_rejects():
+    from braintrust.integrations.bedrock_runtime.tracing import _parse_streamed_tool_input
+
+    assert _parse_streamed_tool_input('{"city": "Par') == '{"city": "Par'
+    deeply_nested = "[" * 100_000 + "]" * 100_000
+    assert _parse_streamed_tool_input(deeply_nested) == deeply_nested
+
+
 def test_wrap_bedrock_converse_normalizes_tool_config_and_output(memory_logger):
     assert not memory_logger.pop()
     client = wrap_bedrock(_bedrock_client())

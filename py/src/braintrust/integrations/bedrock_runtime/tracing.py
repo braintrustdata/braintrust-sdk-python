@@ -566,8 +566,9 @@ def _parse_streamed_tool_input(text: str) -> Any:
         return {}
     try:
         return json.loads(text)
-    except ValueError:
-        # e.g. cut off by maxTokens: keep what was streamed
+    except (ValueError, RecursionError):
+        # e.g. cut off by maxTokens, or nested deeper than the decoder allows:
+        # keep what was streamed
         return text
 
 
