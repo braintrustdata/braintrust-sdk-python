@@ -1,7 +1,12 @@
-"""Setuptools build hooks: keep colocated tests out of the wheel."""
+"""In-tree PEP 517 backend: setuptools, minus colocated tests in the wheel.
+
+pyproject.toml loads this module via ``backend-path``, which requires the
+backend itself to live in the tree, so it re-exports ``setuptools.build_meta``.
+"""
 
 import fnmatch
 
+from setuptools.build_meta import *  # noqa: F403
 from setuptools.command.build_py import build_py as _build_py
 
 
