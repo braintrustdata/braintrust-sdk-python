@@ -1,11 +1,14 @@
 import os
 import shutil
+import subprocess
+import sys
 import tempfile
 import threading
 import time
 import unittest
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
+from unittest.mock import patch
 
 from braintrust import prompt
 from braintrust.prompt_cache import disk_cache
@@ -100,6 +103,113 @@ class TestDiskCache(unittest.TestCase):
         with self.assertRaises(KeyError):
             cache.get("existing")
         self.assertEqual(len(os.listdir(self.cache_dir)), 1)
+
+    def test_retries_windows_sharing_violations(self):
+        self.cache.set("key", {"version": 1})
+        replace = os.replace
+        sharing_violation = PermissionError("The file is in use")
+        sharing_violation.winerror = 32
+        calls = 0
+
+        def replace_after_reader_closes(source, destination):
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                raise sharing_violation
+            return replace(source, destination)
+
+        with patch.object(disk_cache.os, "replace", side_effect=replace_after_reader_closes):
+            self.cache.set("key", {"version": 2})
+
+        self.assertEqual(self.cache.get("key"), {"version": 2})
+        self.assertEqual(calls, 2)
+        self.assertEqual(len(os.listdir(self.cache_dir)), 1)
+
+    def test_permanent_replace_error_preserves_previous_entry(self):
+        self.cache.set("key", {"version": 1})
+        with patch.object(disk_cache.os, "replace", side_effect=PermissionError("Permission denied")) as replace:
+            self.cache.set("key", {"version": 2})
+
+        self.assertEqual(self.cache.get("key"), {"version": 1})
+        self.assertEqual(replace.call_count, 1)
+        self.assertEqual(len(os.listdir(self.cache_dir)), 1)
+
+    @unittest.skipUnless(os.name == "nt", "Windows file sharing behavior")
+    def test_replacement_overlaps_an_open_windows_reader(self):
+        started = threading.Event()
+        release = threading.Event()
+
+        def deserialize(value):
+            if value == "old":
+                started.set()
+                assert release.wait(timeout=5)
+            return value
+
+        cache = disk_cache.DiskCache[str](self.cache_dir, deserializer=deserialize, log_warnings=False)
+        cache.set("key", "old")
+        replace = os.replace
+
+        def replace_and_release_reader(source, destination):
+            try:
+                return replace(source, destination)
+            except PermissionError:
+                release.set()
+                raise
+
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            read = executor.submit(cache.get, "key")
+            try:
+                self.assertTrue(started.wait(timeout=5))
+                with patch.object(disk_cache.os, "replace", side_effect=replace_and_release_reader):
+                    cache.set("key", "new")
+            finally:
+                release.set()
+                self.assertEqual(read.result(timeout=5), "old")
+
+        self.assertEqual(cache.get("key"), "new")
+
+    def test_persistent_windows_sharing_violation_is_bounded(self):
+        self.cache.set("key", {"version": 1})
+        sharing_violation = PermissionError("The file is in use")
+        sharing_violation.winerror = 32
+        with patch.object(disk_cache.os, "replace", side_effect=sharing_violation) as replace:
+            self.cache.set("key", {"version": 2})
+
+        self.assertEqual(self.cache.get("key"), {"version": 1})
+        self.assertEqual(replace.call_count, 5)
+        self.assertEqual(len(os.listdir(self.cache_dir)), 1)
+
+    def test_reaps_old_staging_files_left_by_an_interrupted_process(self):
+        # Exit in the serializer, after the temporary gzip file has been opened.
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "import os, sys; from braintrust.prompt_cache.disk_cache import DiskCache; "
+                "DiskCache(sys.argv[1], serializer=lambda value: os._exit(0)).set('key', 'value')",
+                self.cache_dir,
+            ],
+            check=True,
+            capture_output=True,
+            timeout=10,
+        )
+        self.assertEqual(result.returncode, 0)
+        staging_files = os.listdir(self.cache_dir)
+        self.assertEqual(len(staging_files), 1)
+        orphan = os.path.join(self.cache_dir, staging_files[0])
+        old_time = time.time() - 2 * 24 * 60 * 60
+        os.utime(orphan, (old_time, old_time))
+        with tempfile.NamedTemporaryFile(dir=self.cache_dir, prefix=".braintrust-cache-", delete=False) as active:
+            active_path = active.name
+
+        # Cleanup also applies to unbounded caches and leaves recent writers alone.
+        cache = disk_cache.DiskCache[str](self.cache_dir)
+        cache.set("new", "value")
+
+        self.assertEqual(cache.get("new"), "value")
+        self.assertFalse(os.path.exists(orphan))
+        self.assertTrue(os.path.exists(active_path))
+        self.assertEqual(len(os.listdir(self.cache_dir)), 2)
 
     def test_keys_with_invalid_paths(self):
         data = {"1": "2"}

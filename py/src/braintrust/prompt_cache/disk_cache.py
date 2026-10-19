@@ -16,6 +16,7 @@ import json
 import logging
 import os
 import tempfile
+import time
 from collections.abc import Callable
 from typing import Any, Generic, TypeVar
 
@@ -25,6 +26,8 @@ T = TypeVar("T")
 
 log = logging.getLogger(__name__)
 _TEMP_PREFIX = ".braintrust-cache-"
+_TEMP_MAX_AGE = 24 * 60 * 60
+_TEMP_CLEANUP_INTERVAL = 60 * 60
 
 
 class DiskCache(Generic[T]):
@@ -74,6 +77,7 @@ class DiskCache(Generic[T]):
         self._deserializer = deserializer
         self._log_warnings = log_warnings
         self._mkdirs = mkdirs
+        self._last_temp_cleanup: float | None = None
 
     def _get_entry_path(self, key: str) -> str:
         """Gets the file path for a cache entry."""
@@ -133,6 +137,7 @@ class DiskCache(Generic[T]):
             # (permissions, etc wouldn't work on github actions on windows)
             if self._mkdirs:
                 os.makedirs(self._dir, exist_ok=True)
+            self._cleanup_temporary_files()
             file_path = self._get_entry_path(key)
 
             with tempfile.NamedTemporaryFile(dir=self._dir, prefix=_TEMP_PREFIX, delete=False) as temporary:
@@ -142,7 +147,15 @@ class DiskCache(Generic[T]):
                         value = self._serializer(value)
                     f.write(json.dumps(value).encode("utf-8"))
 
-            os.replace(temporary_path, file_path)
+            for attempt in range(5):
+                try:
+                    os.replace(temporary_path, file_path)
+                    break
+                except PermissionError as e:
+                    # Windows readers can briefly deny replacement of an open file.
+                    if getattr(e, "winerror", None) not in (5, 32, 33) or attempt == 4:
+                        raise
+                    time.sleep(0.01 * 2**attempt)
             temporary_path = None
 
             self._evict_if_full()
@@ -154,6 +167,22 @@ class DiskCache(Generic[T]):
             if temporary_path is not None:
                 try:
                     os.unlink(temporary_path)
+                except OSError:
+                    pass
+
+    def _cleanup_temporary_files(self):
+        now = time.time()
+        if self._last_temp_cleanup is not None and now - self._last_temp_cleanup < _TEMP_CLEANUP_INTERVAL:
+            return
+        self._last_temp_cleanup = now
+        # A killed writer cannot run its finally block. Allow a day for active writes,
+        # then reap abandoned staging files, including for unbounded caches.
+        for name in os.listdir(self._dir):
+            if name.startswith(_TEMP_PREFIX):
+                path = os.path.join(self._dir, name)
+                try:
+                    if os.path.getmtime(path) < now - _TEMP_MAX_AGE:
+                        os.unlink(path)
                 except OSError:
                     pass
 
