@@ -652,6 +652,7 @@ GOOGLE_ADK_VERSIONS = _get_matrix_versions("google-adk")
 @nox.session()
 @nox.parametrize("version", GOOGLE_ADK_VERSIONS, ids=GOOGLE_ADK_VERSIONS)
 def test_google_adk(session, version):
+    _skip_if_incompatible(session)
     _install_test_deps(session)
     _install_matrix_dep(session, "google-adk", version, "test-sqlalchemy-2-0")
     _run_tests(session, f"{INTEGRATION_DIR}/adk/test_adk.py", version=version)
@@ -916,6 +917,7 @@ def pylint(session):
     minimum_python = {
         "ai-sdk": (3, 12),
         "agentscope": (3, 11),
+        "google-adk": (3, 11),
         "harbor": (3, 12),
         "pipecat-ai": (3, 11),
         "pydantic-ai-integration": (3, 11),
