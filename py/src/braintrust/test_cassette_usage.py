@@ -161,13 +161,24 @@ def test_checker_maps_integrations_to_nox_sessions(checker, tmp_path):
 
             def test_gamma(session):
                 _run_tests(session, f"{INTEGRATION_DIR}/gamma/test_gamma.py")
+
+            _register_matrix_sessions(
+                [
+                    {"name": "test_alpha_table", "tests": f"{INTEGRATION_DIR}/alpha/test_table.py"},
+                    {
+                        "name": "test_beta_table",
+                        "tests": [f"{INTEGRATION_DIR}/beta/test_one.py", f"{INTEGRATION_DIR}/gamma/test_two.py"],
+                    },
+                    {"name": "test_spec_table", "tests": "braintrust/btx", "env": {"PROVIDER": "alpha"}},
+                ]
+            )
             """
         )
     )
 
     assert checker.sessions_by_integration(noxfile) == {
-        "alpha": {"test_alpha", "test_alpha_extra"},
-        "beta": {"test_spec_beta"},
+        "alpha": {"test_alpha", "test_alpha_extra", "test_alpha_table", "test_spec_table"},
+        "beta": {"test_spec_beta", "test_beta_table"},
     }
 
 
