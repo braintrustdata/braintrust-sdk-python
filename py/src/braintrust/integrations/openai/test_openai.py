@@ -16,6 +16,7 @@ from braintrust.integrations.openai.tracing import (
     ChatCompletionWrapper,
     EmbeddingWrapper,
     ModerationWrapper,
+    ResponseWrapper,
     _materialize_logged_file_input,
     _process_attachments_in_chat_output,
 )
@@ -1249,6 +1250,61 @@ async def test_openai_response_streaming_async(memory_logger):
 
     for item in mcp_items:
         assert item in span["output"]
+
+
+@sync_async
+@pytest.mark.asyncio
+@pytest.mark.vcr
+async def test_openai_responses_stream_incomplete(memory_logger, is_async):
+    """Incomplete streams retain final usage/output; failed events use the same contract."""
+    from openai.types.responses import ResponseError, ResponseFailedEvent
+
+    client = wrap_openai(_client(is_async))
+    stream = await _call(
+        is_async,
+        client.responses.create,
+        model=TEST_MODEL,
+        input="Write a long essay about the history of mathematics.",
+        max_output_tokens=16,
+        stream=True,
+    )
+    events = await _drain(is_async, stream)
+    assert events[-1].type == "response.incomplete"
+    response = events[-1].response
+    assert response.incomplete_details.reason == "max_output_tokens"
+    assert response.usage is not None
+    assert response.output
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    metrics = span["metrics"]
+    assert metrics["prompt_tokens"] == response.usage.input_tokens
+    assert metrics["completion_tokens"] == response.usage.output_tokens
+    assert metrics["tokens"] == response.usage.total_tokens
+    assert span["output"] == [item.model_dump(exclude_none=True) for item in response.output]
+
+    # Server failures aren't deterministic. Reuse the recorded response to check
+    # failed-event extraction with and without usage, using real SDK event classes.
+    for usage in (response.usage, None):
+        failed_response = response.model_copy(
+            update={
+                "status": "failed",
+                "incomplete_details": None,
+                "error": ResponseError(code="server_error", message="Injected terminal failure"),
+                "usage": usage,
+            }
+        )
+        failed_event = ResponseFailedEvent(
+            response=failed_response, sequence_number=events[-1].sequence_number, type="response.failed"
+        )
+        result = ResponseWrapper._postprocess_streaming_results([failed_event])
+        assert result["output"] == response.output
+        if usage is None:
+            assert result["metrics"] == {}
+        else:
+            for key in ("prompt_tokens", "completion_tokens", "tokens"):
+                assert result["metrics"][key] == metrics[key]
 
 
 @sync_async

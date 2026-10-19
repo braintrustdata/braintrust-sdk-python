@@ -1738,11 +1738,11 @@ class ResponseWrapper:
             if (
                 not usage
                 and hasattr(result, "type")
-                and result.type == "response.completed"
+                and result.type in ("response.completed", "response.incomplete", "response.failed")
                 and hasattr(result, "response")
             ):
                 metadata.update(_extract_moderation_metadata(result.response))
-                # Handle summaries from completed response if present
+                # Handle summaries from the terminal response if present
                 if hasattr(result.response, "output") and result.response.output:
                     output_by_id = {item.get("id"): item for item in output if item.get("id")}
                     for output_item in result.response.output:
@@ -1767,7 +1767,7 @@ class ResponseWrapper:
                 output.append(item_data)
                 continue
 
-            if result.type == "response.completed":
+            if result.type in ("response.completed", "response.incomplete", "response.failed"):
                 if hasattr(result, "response") and hasattr(result.response, "output"):
                     metadata.update(_extract_moderation_metadata(result.response))
                     return {
