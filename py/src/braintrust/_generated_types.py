@@ -166,6 +166,7 @@ class ApiKey(TypedDict):
 class AsyncScoringControlAsyncScoringControl(TypedDict):
     kind: Literal['score_update']
     token: NotRequired[str | None]
+    triggered_xact_id: NotRequired[str | None]
 
 
 class AsyncScoringControlAsyncScoringControl2(TypedDict):
