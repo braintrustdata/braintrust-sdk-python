@@ -125,12 +125,18 @@ _RESPONSES_REQUEST_KEYS = (
     "stream",
     "metadata",
 )
+# Only present when the request enables the armor / alignment plugins.
+_SAFEGUARD_RESPONSE_KEYS = (
+    "safeguard_results",
+    "alignment",
+)
 _CHAT_RESPONSE_KEYS = (
     "id",
     "object",
     "created",
     "system_fingerprint",
     "service_tier",
+    *_SAFEGUARD_RESPONSE_KEYS,
 )
 _RESPONSES_RESPONSE_KEYS = (
     "id",
@@ -145,6 +151,7 @@ _RESPONSES_RESPONSE_KEYS = (
     "prompt_cache_key",
     "truncation",
     "incomplete_details",
+    *_SAFEGUARD_RESPONSE_KEYS,
 )
 _EMBEDDINGS_RESPONSE_KEYS = (
     "id",
@@ -378,11 +385,10 @@ def _finalize_stream(
     first_token_time: float | None,
 ) -> None:
     if kind == "chat":
-        output, usage = _aggregate_chat_stream(items)
-        metadata = {**request_metadata, **_usage_metadata(usage)}
+        output, usage, response_metadata = _aggregate_chat_stream(items)
     else:
         output, usage, response_metadata = _aggregate_responses_stream(items)
-        metadata = {**request_metadata, **response_metadata, **_usage_metadata(usage)}
+    metadata = {**request_metadata, **response_metadata, **_usage_metadata(usage)}
 
     _log_and_end_span(
         span,
@@ -412,14 +418,20 @@ def _chunk_has_output(item: Any) -> bool:
     return False
 
 
-def _aggregate_chat_stream(chunks: list[Any]) -> tuple[list[dict[str, Any]], Any]:
+def _aggregate_chat_stream(chunks: list[Any]) -> tuple[list[dict[str, Any]], Any, dict[str, Any]]:
     choices: dict[int, dict[str, Any]] = {}
     usage = None
+    response_metadata: dict[str, Any] = {}
 
     for chunk in chunks:
         chunk_usage = getattr(chunk, "usage", None)
         if chunk_usage is not None:
             usage = chunk_usage
+
+        for key in _SAFEGUARD_RESPONSE_KEYS:
+            value = _get_field(chunk, key)
+            if value is not None:
+                response_metadata[key] = value
 
         for choice in getattr(chunk, "choices", []) or []:
             index = int(getattr(choice, "index", 0) or 0)
@@ -481,7 +493,7 @@ def _aggregate_chat_stream(chunks: list[Any]) -> tuple[list[dict[str, Any]], Any
         if not choice["message"].get("tool_calls"):
             choice["message"].pop("tool_calls", None)
         output.append(choice)
-    return output, usage
+    return output, usage, response_metadata
 
 
 def _aggregate_responses_stream(chunks: list[Any]) -> tuple[Any, Any, dict[str, Any]]:
