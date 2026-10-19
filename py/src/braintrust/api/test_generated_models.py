@@ -29,6 +29,7 @@ GENERATED_RESOURCE_NAMES = (
     "prompts",
     "roles",
     "service_tokens",
+    "simulated_users",
     "span_iframes",
     "users",
     "views",
