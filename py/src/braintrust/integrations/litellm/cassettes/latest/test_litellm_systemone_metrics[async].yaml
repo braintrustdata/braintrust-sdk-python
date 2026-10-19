@@ -1,0 +1,78 @@
+interactions:
+- request:
+    body: '{"model":"gpt-6-luna","input":"The customer says: I love this product!","questions":[{"type":"predicate","name":"positive","instructions":"Is
+      the sentiment positive?"}]}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '169'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - litellm/1.106.0
+    method: POST
+    uri: https://api.openai.com/v1/decisions
+  response:
+    body:
+      string: '{"model":"gpt-6-luna","answers":[{"type":"predicate","name":"positive","probability":1.0}],"usage":{"input_tokens":162,"input_tokens_details":{"cached_tokens":0,"cache_write_tokens":0},"output_tokens":0,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":162}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - x-request-id,retry-after,server-timing-total
+      - CF-Ray
+      Alt-Svc:
+      - h3=":443"; ma=86400
+      CF-RAY:
+      - a4d2f3b4ef722523-SJC
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 19 Oct 2026 21:42:19 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - origin, access-control-request-method, access-control-request-headers
+      X-Content-Type-Options:
+      - nosniff
+      X-Request-ID:
+      - req_911029b33a044a1da40b4daac50edeb0
+      cf-cache-status:
+      - DYNAMIC
+      content-length:
+      - '270'
+      openai-processing-ms:
+      - '54'
+      server-timing-total:
+      - '54.312'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '180000000'
+      x-ratelimit-remaining-requests:
+      - '29998'
+      x-ratelimit-remaining-tokens:
+      - '179999676'
+      x-ratelimit-reset-requests:
+      - 4ms
+      x-ratelimit-reset-tokens:
+      - 0s
+    status:
+      code: 200
+      message: OK
+version: 1

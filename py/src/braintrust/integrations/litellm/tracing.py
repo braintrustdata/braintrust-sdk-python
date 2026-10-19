@@ -353,17 +353,51 @@ async def _aresponses_wrapper_async(wrapped, instance, args, kwargs):
             span.end()
 
 
+def _decisions_media(value: Any) -> Any:
+    """Capture OpenAI content parts and LiteLLM base64 media in decision inputs."""
+    media = _try_to_dict(value)
+    if not isinstance(media, dict):
+        return value
+    if media.get("type") in ("input_image", "image_url", "file"):
+        return _process_attachments_in_input(media)
+    data = media.get("base64")
+    mime_type = media.get("content_type")
+    if "data_base64" in media and media.get("format") in ("png", "jpg", "jpeg"):
+        data = media["data_base64"]
+        mime_type = "image/png" if media["format"] == "png" else "image/jpeg"
+    if isinstance(data, str) and isinstance(mime_type, str) and mime_type.startswith(("image/", "audio/", "video/")):
+        resolved = _materialize_attachment(data, mime_type=mime_type)
+        if resolved is not None:
+            return resolved.attachment
+    return value
+
+
 def _decisions_span_payload(args, kwargs):
-    # Decisions accepts model, input and questions positionally as well as by keyword.
+    # Decisions and System One accept model, input/state and questions positionally.
     params = dict(zip(("model", "input", "questions"), args))
     params.update(kwargs)
+    state = params.get("state", params.get("input"))
+    media = {key: params[key] for key in ("images", "assets", "audio", "videos") if params.get(key) is not None}
+    if media:
+        # Keep the complete request state under the decision span's canonical
+        # state field, without overwriting keys in user-supplied JSON state.
+        state = {"state": state, **media}
+    span_input = _decisions_input(state, params.get("questions") or [], media_transform=_decisions_media)
     return merge_dicts(
         params.get("span_info", {}),
         {
-            "input": _decisions_input(params.get("state", params.get("input")), params.get("questions") or []),
+            "input": span_input,
             "metadata": _build_span_metadata({}, params.get("model")),
         },
     )
+
+
+def _decisions_metrics(usage):
+    metrics = _parse_metrics_from_usage(usage)
+    # System One reports input/output counts without total_tokens.
+    if "prompt_tokens" in metrics and "completion_tokens" in metrics:
+        metrics.setdefault("tokens", metrics["prompt_tokens"] + metrics["completion_tokens"])
+    return metrics
 
 
 def _decisions_wrapper(wrapped, instance, args, kwargs):
@@ -381,7 +415,7 @@ def _decisions_wrapper(wrapped, instance, args, kwargs):
                 kwargs.get("questions", args[2] if len(args) > 2 else []),
                 payload.get("input"),
             ),
-            metrics=_parse_metrics_from_usage(_get_field(response, "usage")),
+            metrics=_decisions_metrics(_get_field(response, "usage")),
         )
         return response
 
@@ -401,7 +435,7 @@ async def _adecisions_wrapper_async(wrapped, instance, args, kwargs):
                 kwargs.get("questions", args[2] if len(args) > 2 else []),
                 payload.get("input"),
             ),
-            metrics=_parse_metrics_from_usage(_get_field(response, "usage")),
+            metrics=_decisions_metrics(_get_field(response, "usage")),
         )
         return response
 

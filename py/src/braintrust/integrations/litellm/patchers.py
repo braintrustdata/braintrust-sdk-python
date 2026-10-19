@@ -81,6 +81,18 @@ class LiteLLMAdecisionsPatcher(FunctionWrapperPatcher):
     wrapper = _adecisions_wrapper_async
 
 
+class LiteLLMSystemOnePatcher(FunctionWrapperPatcher):
+    name = "litellm.systemone"
+    target_path = "systemone"
+    wrapper = _decisions_wrapper
+
+
+class LiteLLMASystemOnePatcher(FunctionWrapperPatcher):
+    name = "litellm.asystemone"
+    target_path = "asystemone"
+    wrapper = _adecisions_wrapper_async
+
+
 class LiteLLMImageGenerationPatcher(FunctionWrapperPatcher):
     name = "litellm.image_generation"
     target_path = "image_generation"
@@ -166,6 +178,8 @@ _ALL_LITELLM_PATCHERS = (
     LiteLLMAresponsesPatcher,
     LiteLLMDecisionsPatcher,
     LiteLLMAdecisionsPatcher,
+    LiteLLMSystemOnePatcher,
+    LiteLLMASystemOnePatcher,
     LiteLLMImageGenerationPatcher,
     LiteLLMAimageGenerationPatcher,
     LiteLLMEmbeddingPatcher,

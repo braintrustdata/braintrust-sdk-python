@@ -61,4 +61,22 @@ if version_satisfies(detect_module_version(litellm, ("litellm",)), ">=1.105.0"):
             instrumentation="litellm-auto",
         )
 
+    with autoinstrument_test_context("test_litellm_systemone_metrics[async]", integration="litellm") as memory_logger:
+        response = asyncio.run(
+            litellm.asystemone(
+                f"openai/{DECISIONS_MODEL}",
+                DECISIONS_INPUT,
+                {"positive": {"type": "noul", "instructions": "Is the sentiment positive?"}},
+            )
+        )
+        spans = memory_logger.pop()
+        assert len(spans) == 1
+        span = spans[0]
+        assert span["span_attributes"]["type"] == "decision"
+        assert span["input"]["state"] == DECISIONS_INPUT
+        assert span["output"]["answers"] == [
+            {"id": "positive", "type": "noul", "noul": response.answers["positive"].noul}
+        ]
+        assert span["context"]["span_origin"]["instrumentation"]["name"] == "litellm-auto"
+
 print("SUCCESS")

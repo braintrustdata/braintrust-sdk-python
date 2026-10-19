@@ -269,9 +269,12 @@ def test_decisions_media_transform_handles_serialized_images():
     assert image["data_base64"] == data_url.split(",", 1)[1]
 
 
-def test_decisions_media_failure_keeps_entire_payload(monkeypatch):
+@pytest.mark.parametrize("openai_image", [False, True], ids=["data-url", "litellm-input-image"])
+def test_decisions_media_failure_keeps_entire_payload(monkeypatch, openai_image):
     image = decisions_image_input()[0]["content"][1]["image_url"]
     from braintrust.integrations import question
+    from braintrust.integrations.litellm.tracing import _decisions_media
+    from braintrust.integrations.openai import tracing as openai_tracing
 
     materialize = question._materialize_attachment
     calls = 0
@@ -284,9 +287,17 @@ def test_decisions_media_failure_keeps_entire_payload(monkeypatch):
         return materialize(value)
 
     monkeypatch.setattr(question, "_materialize_attachment", fail_second)
+    monkeypatch.setattr(openai_tracing, "_materialize_attachment", fail_second)
+    state = {"image": {"type": "input_image", "image_url": image} if openai_image else image}
     questions = {"bounds": {"type": "box", "instructions": {"image": image}}}
-    assert _question_span_input({"image": image}, questions) == {
-        "state": {"image": image},
+    span_input = (
+        _decisions_input(state, questions, media_transform=_decisions_media)
+        if openai_image
+        else _question_span_input(state, questions)
+    )
+    assert calls == 2
+    assert span_input == {
+        "state": state,
         "questions": [{"id": "bounds", **questions["bounds"]}],
     }
 
