@@ -1,8 +1,10 @@
 import os
 import shutil
 import tempfile
+import threading
 import time
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 from braintrust import prompt
@@ -23,6 +25,81 @@ class TestDiskCache(unittest.TestCase):
             shutil.rmtree(self.cache_dir, ignore_errors=True)
         except Exception:
             pass
+
+    def test_failed_json_encoding_preserves_previous_entry(self):
+        self.cache.set("key", {"version": 1})
+
+        self.cache.set("key", {"unsupported": {1, 2}})
+
+        self.assertEqual(self.cache.get("key"), {"version": 1})
+        self.assertEqual(os.listdir(self.cache_dir), [os.path.basename(self.cache._get_entry_path("key"))])
+
+    def test_failed_serializer_preserves_previous_entry(self):
+        def serialize(value):
+            if value["version"] == 2:
+                raise ValueError("Cannot serialize this version")
+            return value
+
+        cache = disk_cache.DiskCache[dict](self.cache_dir, serializer=serialize, log_warnings=False)
+        cache.set("key", {"version": 1})
+
+        cache.set("key", {"version": 2})
+
+        self.assertEqual(cache.get("key"), {"version": 1})
+        self.assertEqual(os.listdir(self.cache_dir), [os.path.basename(cache._get_entry_path("key"))])
+
+    def test_read_during_replacement_returns_complete_previous_entry(self):
+        started = threading.Event()
+        release = threading.Event()
+
+        def serialize(value):
+            if value == "new":
+                started.set()
+                assert release.wait(timeout=5)
+            return value
+
+        cache = disk_cache.DiskCache[str](self.cache_dir, serializer=serialize, log_warnings=False)
+        cache.set("key", "old")
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            write = executor.submit(cache.set, "key", "new")
+            try:
+                self.assertTrue(started.wait(timeout=5))
+                self.assertEqual(cache.get("key"), "old")
+            finally:
+                release.set()
+                write.result(timeout=5)
+
+        self.assertEqual(cache.get("key"), "new")
+
+    def test_eviction_does_not_remove_an_in_progress_write(self):
+        started = threading.Event()
+        release = threading.Event()
+
+        def serialize(value):
+            if value == "pending":
+                started.set()
+                assert release.wait(timeout=5)
+            return value
+
+        cache = disk_cache.DiskCache[str](self.cache_dir, max_size=1, serializer=serialize, log_warnings=False)
+        cache.set("existing", "old")
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            write = executor.submit(cache.set, "pending", "pending")
+            try:
+                self.assertTrue(started.wait(timeout=5))
+                cache.set("existing", "updated")
+                self.assertEqual(cache.get("existing"), "updated")
+                # Avoid equal-mtime ties on filesystems with a coarse clock.
+                old_time = time.time() - 60
+                os.utime(cache._get_entry_path("existing"), (old_time, old_time))
+            finally:
+                release.set()
+                write.result(timeout=5)
+
+        self.assertEqual(cache.get("pending"), "pending")
+        with self.assertRaises(KeyError):
+            cache.get("existing")
+        self.assertEqual(len(os.listdir(self.cache_dir)), 1)
 
     def test_keys_with_invalid_paths(self):
         data = {"1": "2"}

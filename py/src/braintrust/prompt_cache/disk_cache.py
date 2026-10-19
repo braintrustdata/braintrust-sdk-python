@@ -15,6 +15,7 @@ import hashlib
 import json
 import logging
 import os
+import tempfile
 from collections.abc import Callable
 from typing import Any, Generic, TypeVar
 
@@ -23,6 +24,7 @@ T = TypeVar("T")
 
 
 log = logging.getLogger(__name__)
+_TEMP_PREFIX = ".braintrust-cache-"
 
 
 class DiskCache(Generic[T]):
@@ -116,14 +118,16 @@ class DiskCache(Generic[T]):
         """
         Stores a value in the cache.
         If the cache is at its maximum size, the least recently used entries will be evicted.
+        Publish the entry only after serialization and compression complete, so concurrent
+        readers see a complete old or new value. Failed writes leave the old entry intact.
 
         Args:
             key: The key to store the value under.
             value: The value to store in the cache.
 
-        Raises:
-            RuntimeError: If there is an error writing to the disk cache.
+        Write errors are logged and ignored.
         """
+        temporary_path: str | None = None
         try:
             # mkdirs exists only to make it easy to simulate cross-platform write errors
             # (permissions, etc wouldn't work on github actions on windows)
@@ -131,22 +135,33 @@ class DiskCache(Generic[T]):
                 os.makedirs(self._dir, exist_ok=True)
             file_path = self._get_entry_path(key)
 
-            with gzip.open(file_path, "wb") as f:
-                if self._serializer is not None:
-                    value = self._serializer(value)
-                f.write(json.dumps(value).encode("utf-8"))
+            with tempfile.NamedTemporaryFile(dir=self._dir, prefix=_TEMP_PREFIX, delete=False) as temporary:
+                temporary_path = temporary.name
+                with gzip.GzipFile(fileobj=temporary, mode="wb") as f:
+                    if self._serializer is not None:
+                        value = self._serializer(value)
+                    f.write(json.dumps(value).encode("utf-8"))
+
+            os.replace(temporary_path, file_path)
+            temporary_path = None
 
             self._evict_if_full()
         except Exception as e:
             # Swallow any cache write errors. Don't crash the app.
             if self._log_warnings:
                 log.warning(f"Failed to write to disk cache: {e}")
+        finally:
+            if temporary_path is not None:
+                try:
+                    os.unlink(temporary_path)
+                except OSError:
+                    pass
 
     def _evict_if_full(self):
         if self._max_size is None or self._max_size <= 0:
             return None
 
-        paths = [os.path.join(self._dir, f) for f in os.listdir(self._dir)]
+        paths = [os.path.join(self._dir, f) for f in os.listdir(self._dir) if not f.startswith(_TEMP_PREFIX)]
         if not paths or len(paths) <= self._max_size:
             return
 
