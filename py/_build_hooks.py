@@ -5,10 +5,14 @@ import fnmatch
 from setuptools.command.build_py import build_py as _build_py
 
 
-_TEST_MODULE_PATTERNS = ("test_*", "_test_*", "conftest", "test_helpers")
+_TEST_MODULE_PATTERNS = ("test_*", "_test_*", "conftest")
+# Public and used by downstream test suites (e.g. with_memory_logger).
+_SHIPPED_MODULES = ("test_helpers",)
 
 
 def _is_test_module(module):
+    if module in _SHIPPED_MODULES:
+        return False
     return any(fnmatch.fnmatch(module, pattern) for pattern in _TEST_MODULE_PATTERNS)
 
 

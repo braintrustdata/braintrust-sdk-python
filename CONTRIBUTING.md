@@ -156,7 +156,6 @@ Common ones include:
 
 - dummy API key setup for VCR-backed tests
 - Braintrust global state reset between tests
-- wheel-mode skipping for VCR tests
 
 The `memory_logger` fixture from `braintrust.test_helpers` is useful for asserting on logged spans without a real Braintrust backend.
 

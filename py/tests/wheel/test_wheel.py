@@ -40,12 +40,17 @@ def test_does_not_ship_tests():
     def is_test_file(path):
         name = path.rsplit("/", 1)[-1]
         return (
-            name.startswith(("test_", "_test_"))
-            or name in ("conftest.py", "test_helpers.py")
+            (name.startswith(("test_", "_test_")) and name != "test_helpers.py")
+            or name == "conftest.py"
             or any(part in path for part in ("/cassettes/", "/type_tests/", "/fixtures/"))
         )
 
     assert [path for path in WHEEL_FILES if is_test_file(path)] == []
+
+
+def test_ships_public_test_helpers():
+    # Downstream test suites import fixtures from braintrust.test_helpers.
+    from braintrust.test_helpers import init_test_logger, with_memory_logger  # noqa: F401
 
 
 def test_all_modules_import():
