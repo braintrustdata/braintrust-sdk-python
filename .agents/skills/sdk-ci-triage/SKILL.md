@@ -39,7 +39,7 @@ Read when relevant:
 - `nox`: provider and core test matrix, sharded through `py/scripts/nox-matrix.py`
 - `adk-py`: reusable workflow for ADK coverage
 - `langchain-py`: reusable workflow for LangChain coverage
-- `upload-wheel`: build wheel sanity check
+- `upload-wheel`: builds the wheel and runs the `test_wheel` smoke tests against it
 
 The most common failure source is still the `nox` matrix job, but `pylint` and `test_types` failures now surface through `static_checks`, not through `nox`.
 
@@ -204,11 +204,14 @@ Reproduce from `py/`:
 
 ```bash
 cd py
-make install-build-deps
+make install-dev
 make build
+make test-wheel
 ```
 
 Remember that build rewrites `py/src/braintrust/version.py` temporarily.
+
+`make test-wheel` runs the `test_wheel` nox session, which runs `py/tests/wheel/test_wheel.py` against the wheel in `dist/`. It is a non-default session (`nox -l` shows it with `- `), so a bare `nox`/`make test` and the sharded `nox` matrix skip it, and it fails if `dist/` has no wheel or more than one. Colocated tests are kept out of the wheel by `py/_build_hooks.py`. If `test_does_not_ship_tests` fails, a new test-only module or data file needs excluding there or in `[tool.setuptools.*]` in `py/pyproject.toml`. If `test_all_modules_import` fails, a shipped module imports a file or module that is missing from the wheel. `braintrust.test_helpers` is deliberately shipped because downstream test suites import it.
 
 ### Reusable workflows (`adk-py`, `langchain-py`)
 
