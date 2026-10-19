@@ -19,13 +19,11 @@ test:
 	uv run nox -x
 
 test-wheel:
-	# This target runs a small set of sanity checks before we release our
-	# build artifact to pypi. We skip running the full test suite because
-	# (a) theoretically it should have been run before (b) it has
-	# integration tests and we don't want to block the release because
-	# some service is down, etc. This decision could be revisited anytime.
+	# Sanity checks (tests/wheel) against the built wheel before we release it
+	# to pypi. The full test suite runs against source in CI; tests are not
+	# shipped in the wheel.
 	# Note: Caller must run 'make build' first.
-	uv run nox -s test_core -- --wheel
+	uv run nox -s test_wheel
 
 test-core:
 	uv run nox -s test_core

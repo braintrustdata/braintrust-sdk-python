@@ -114,8 +114,6 @@ def test_recorder_is_off_without_env_var(tmp_path):
 
 @pytest.fixture
 def checker(tmp_path, monkeypatch):
-    if not _SCRIPT.exists():
-        pytest.skip("scripts/ is not available (wheel mode)")
     spec = importlib.util.spec_from_file_location("check_unused_cassettes", _SCRIPT)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

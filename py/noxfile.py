@@ -6,7 +6,6 @@ works with and without different dependencies. A few commands to check out:
     nox -l                     List all sessions.
     nox -s <session>           Run a specific session.
     nox ... -- --disable-vcr  Run tests without vcrpy.
-    nox ... -- --wheel         Run tests against the wheel in dist.
     nox -h                     Get help.
 """
 
@@ -241,7 +240,7 @@ LIVEKIT_SERVER_SHA256 = {
     "linux_arm64": "6741466bc12e75544338292ab2c1c02c02f3c626568230b5548fffc53e5a87ff",
 }
 ERROR_CODES = tuple(range(1, 256))
-INTERNAL_TEST_FLAGS = {"--wheel", "--disable-vcr"}
+INTERNAL_TEST_FLAGS = {"--disable-vcr"}
 GENERATED_LINT_EXCLUDES = (
     "src/braintrust/_generated_types.py",
     "src/braintrust/generated_types.py",
@@ -831,6 +830,18 @@ sys.exit(1 if any(is_importable(name) for name in {_VENDOR_IMPORT_NAMES!r}) else
 
 
 @nox.session()
+def test_wheel(session):
+    """Sanity check the built wheel in dist/ before release. Run `make build` first."""
+    _session_install(session, _get_braintrust_wheel())
+    _install_group_locked(session, "test")
+    _check_installed_deps(session)
+    test_dir = os.path.abspath("tests/wheel")
+    # Run from a temp dir so nothing from the source tree is importable.
+    with tempfile.TemporaryDirectory() as tmp, session.chdir(tmp):
+        session.run("pytest", test_dir, *session.posargs)
+
+
+@nox.session()
 def test_api_codegen(session):
     """Test the pinned OpenAPI validator and deterministic model generator."""
     _install_test_deps(session)
@@ -981,9 +992,6 @@ def pylint(session):
 
 
 def _install_test_deps(session, *groups):
-    # Choose the way we'll install braintrust ... wheel or source.
-    install_wheel = "--wheel" in session.posargs
-
     # Install braintrust itself. Source installs are editable so that
     # site-packages resolves to src/ instead of holding a copy. A copy goes
     # stale as soon as the session venv is reused (``nox -R``), and anything
@@ -991,18 +999,17 @@ def _install_test_deps(session, *groups):
     # spawned by ``verify_autoinstrument_script`` -- picks up site-packages
     # rather than the source tree, so it would silently exercise the code from
     # whenever the venv was last built.
-    _session_install(session, *([_get_braintrust_wheel()] if install_wheel else ["-e", "."]))
+    _session_install(session, "-e", ".")
 
     # Install base test deps (pytest, pytest-asyncio, pytest-vcr) from the
     # lockfile so transitive deps are pinned and reproducible.
     _install_group_locked(session, "test", *groups)
 
-    # Sanity check braintrust imports from where this mode expects it:
-    # site-packages for a wheel, the source tree for an editable install.
+    # Sanity check braintrust imports from the source tree.
     lines = [
         "import sys, braintrust as b",
         "print(f'Using braintrust from: {b.__file__}')",
-        f"sys.exit(0 if {install_wheel} == ('site-packages' in b.__file__) else 1)",
+        "sys.exit(0 if 'site-packages' not in b.__file__ else 1)",
     ]
     session.run("python", "-c", ";".join(lines))
 
@@ -1060,63 +1067,34 @@ def _run_tests(
     version=None,
     run_from_temp_dir=False,
 ):
-    """Run tests against a wheel or the source code. Paths should be relative and start with braintrust."""
+    """Run tests against the source code. Paths should be relative and start with braintrust."""
     _check_installed_deps(session)
     env = env.copy() if env else {}
     if version:
         env["BRAINTRUST_TEST_PACKAGE_VERSION"] = version
-    wheel_flag = "--wheel" in session.posargs
     common_args = ["--disable-vcr"] if "--disable-vcr" in session.posargs else []
     pytest_posargs = [arg for arg in session.posargs if arg not in INTERNAL_TEST_FLAGS]
 
     test_paths = [test_path] if isinstance(test_path, str) else list(test_path)
     paths_to_ignore = ignore_paths or []
 
-    if not wheel_flag:
-        # Run the tests in the src directory.
-        source_test_paths = [f"src/{path}" for path in test_paths]
-        source_ignore_paths = [f"src/{path}" for path in paths_to_ignore]
-        if run_from_temp_dir:
-            source_test_paths = [os.path.abspath(path) for path in source_test_paths]
-            source_ignore_paths = [os.path.abspath(path) for path in source_ignore_paths]
-        test_args = [
-            "pytest",
-            # Disable the braintrust pytest plugin (registered via pytest11 entry
-            # point) to avoid ImportPathMismatchError when the installed package
-            # and the source tree both contain braintrust/conftest.py.
-            "-p",
-            "no:braintrust",
-            *source_test_paths,
-        ]
-        test_args.extend(f"--ignore={path}" for path in source_ignore_paths)
-        if run_from_temp_dir:
-            with tempfile.TemporaryDirectory() as tmp, session.chdir(tmp):
-                session.run(*test_args, *common_args, *pytest_posargs, env=env)
-        else:
+    source_test_paths = [f"src/{path}" for path in test_paths]
+    source_ignore_paths = [f"src/{path}" for path in paths_to_ignore]
+    if run_from_temp_dir:
+        source_test_paths = [os.path.abspath(path) for path in source_test_paths]
+        source_ignore_paths = [os.path.abspath(path) for path in source_ignore_paths]
+    test_args = [
+        "pytest",
+        # Disable the braintrust pytest plugin (registered via pytest11 entry
+        # point) to avoid ImportPathMismatchError when the installed package
+        # and the source tree both contain braintrust/conftest.py.
+        "-p",
+        "no:braintrust",
+        *source_test_paths,
+    ]
+    test_args.extend(f"--ignore={path}" for path in source_ignore_paths)
+    if run_from_temp_dir:
+        with tempfile.TemporaryDirectory() as tmp, session.chdir(tmp):
             session.run(*test_args, *common_args, *pytest_posargs, env=env)
-        return
-
-    # Running the tests from the wheel involves a bit of gymnastics to ensure we don't import
-    # local modules from the source directory.
-    # First, we need to absolute paths to all the binaries and libs in our venv that we'll see.
-    py = os.path.join(session.bin, "python")
-    site_packages = session.run(py, "-c", "import site; print(site.getsitepackages()[0])", silent=True).strip()
-    abs_test_paths = [os.path.abspath(os.path.join(site_packages, path)) for path in test_paths]
-    pytest_path = os.path.join(session.bin, "pytest")
-
-    ignore_args = []
-    for path in paths_to_ignore:
-        abs_ignore_path = os.path.abspath(os.path.join(site_packages, path))
-        ignore_args.append(f"--ignore={abs_ignore_path}")
-
-    # Lastly, change to a different directory to ensure we don't install local stuff.
-    with tempfile.TemporaryDirectory() as tmp:
-        with session.chdir(tmp):
-            # This env var is used to detect if we're running from the wheel.
-            # It proved very helpful because it's very easy
-            # to accidentally import local modules from the source directory.
-            env["BRAINTRUST_TESTING_WHEEL"] = "1"
-            session.run(pytest_path, *abs_test_paths, *ignore_args, *common_args, *pytest_posargs, env=env)
-
-    # And a final note ... if it's not clear from above, we include test files in our wheel, which
-    # is perhaps not ideal?
+    else:
+        session.run(*test_args, *common_args, *pytest_posargs, env=env)

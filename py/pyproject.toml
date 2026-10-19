@@ -1,6 +1,7 @@
 [build-system]
 requires = ["setuptools>=82.0.1"]
 build-backend = "setuptools.build_meta"
+backend-path = ["."]
 
 [project]
 name = "braintrust"
@@ -84,11 +85,18 @@ all = [
 [tool.setuptools.dynamic]
 version = {attr = "braintrust.version.VERSION"}
 
+[tool.setuptools.cmdclass]
+build_py = "_build_hooks.BuildPy"
+
 [tool.setuptools.packages.find]
 where = ["src"]
+exclude = ["braintrust.type_tests*", "braintrust.fixtures*"]
 
 [tool.setuptools.package-data]
-braintrust = ["py.typed", "fixtures/test-image.png"]
+braintrust = ["py.typed"]
+
+[tool.setuptools.exclude-package-data]
+braintrust = ["fixtures/*", "type_tests/*"]
 
 # ---------------------------------------------------------------------------
 # Dependency groups (PEP 735)
