@@ -829,7 +829,9 @@ sys.exit(1 if any(is_importable(name) for name in {_VENDOR_IMPORT_NAMES!r}) else
     _run_core_tests(session)
 
 
-@nox.session()
+# Not a default session: it needs a wheel from `make build`, so a bare `nox`
+# (`make test`) must not pick it up.
+@nox.session(default=False)
 def test_wheel(session):
     """Sanity check the built wheel in dist/ before release. Run `make build` first."""
     _session_install(session, _get_braintrust_wheel())
