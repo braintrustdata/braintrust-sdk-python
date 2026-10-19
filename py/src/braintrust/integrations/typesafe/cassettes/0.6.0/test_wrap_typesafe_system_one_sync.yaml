@@ -16,29 +16,37 @@ interactions:
       host:
       - api.typesafe.ai
       user-agent:
-      - typesafe-sdk/0.7.0
+      - typesafe-sdk/0.6.0
       x-typesafe-runtime:
       - python/3.14.7 (darwin; arm64)
       x-typesafe-sdk:
-      - typesafe-sdk/0.7.0
+      - typesafe-sdk/0.6.0
     method: POST
     uri: https://api.typesafe.ai/v1/systemone
   response:
     body:
       string: '{"model":"jev-1.13.0","answers":{"positive":{"type":"noul","noul":0.97}},"usage":{"input_tokens":279,"output_tokens":20}}'
     headers:
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a4d15ade589c6c17-PDX
+      connection:
+      - keep-alive
       content-length:
       - '121'
       content-type:
       - application/json
       date:
-      - Tue, 22 Sep 2026 14:45:10 GMT
+      - Mon, 19 Oct 2026 17:03:13 GMT
       server:
-      - istio-envoy
-      x-envoy-upstream-service-time:
-      - '101'
+      - cloudflare
+      transfer-encoding:
+      - chunked
       x-typesafe-request-id:
-      - req_01a0c993ef287b88a5f5929d703f4eb0
+      - req_01a1551e06ff720c9997664496c9313d
     status:
       code: 200
       message: OK

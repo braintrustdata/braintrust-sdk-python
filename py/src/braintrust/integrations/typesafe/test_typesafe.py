@@ -8,7 +8,6 @@ from braintrust.integrations.test_utils import assert_metrics_are_valid, verify_
 from braintrust.integrations.typesafe import setup_typesafe, wrap_typesafe
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import init_test_logger
-from pydantic import BaseModel
 from typesafe_sdk import AsyncTypeSafeClient, Choice, Noul, Score, TypeSafeClient, TypeSafeError
 
 
@@ -137,6 +136,9 @@ def test_auto_instrument_typesafe_subprocess():
 async def test_typesafe_boxes_and_images(memory_logger, is_async):
     if not hasattr(typesafe_sdk, "Box"):
         pytest.skip("Box and Image require TypeSafe SDK >=0.7.5")
+
+    # TypeSafe SDK <0.7 uses msgspec and does not install pydantic.
+    from pydantic import BaseModel
 
     class CustomImage(typesafe_sdk.Image):
         pass
