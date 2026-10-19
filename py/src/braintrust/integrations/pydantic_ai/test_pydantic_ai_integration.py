@@ -1617,6 +1617,68 @@ def test_tool_execution_creates_spans(memory_logger):
     )
 
 
+def _call_tool_once_model(tool_name):
+    """FunctionModel that calls ``tool_name`` once, then answers with text.
+
+    Deferral and tool-error behavior is raised by the local tool function, not
+    shaped by a provider response, so these tests drive the agent with
+    pydantic_ai's FunctionModel instead of a cassette.
+    """
+    from pydantic_ai.messages import ModelResponse, TextPart, ToolCallPart
+    from pydantic_ai.models.function import FunctionModel
+
+    def respond(messages, info):
+        if len(messages) == 1:
+            return ModelResponse(parts=[ToolCallPart(tool_name=tool_name, args={"flow_id": "abc"})])
+        return ModelResponse(parts=[TextPart("done")])
+
+    return FunctionModel(respond)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("exception_name", ["CallDeferred", "ApprovalRequired"])
+async def test_deferred_tool_call_is_not_logged_as_error(memory_logger, exception_name):
+    """CallDeferred and ApprovalRequired are control flow, not tool failures."""
+    from pydantic_ai import DeferredToolRequests, exceptions
+
+    assert not memory_logger.pop()
+
+    agent = Agent(_call_tool_once_model("publish_flow"), output_type=[str, DeferredToolRequests])
+
+    @agent.tool_plain
+    def publish_flow(flow_id: str) -> str:
+        raise getattr(exceptions, exception_name)()
+
+    result = await agent.run("Publish flow abc")
+
+    assert isinstance(result.output, DeferredToolRequests)
+
+    spans = memory_logger.pop()
+    tool_span = next(s for s in spans if s["span_attributes"]["name"] == "publish_flow")
+    assert tool_span["span_attributes"]["type"] == SpanTypeAttribute.TOOL
+    assert tool_span.get("error") is None
+    assert tool_span["output"] == {"deferred": True, "reason": exception_name}
+    assert tool_span["metrics"]["duration"] >= 0
+
+
+@pytest.mark.asyncio
+async def test_tool_exception_is_logged_as_error(memory_logger):
+    assert not memory_logger.pop()
+
+    agent = Agent(_call_tool_once_model("publish_flow"))
+
+    @agent.tool_plain
+    def publish_flow(flow_id: str) -> str:
+        raise RuntimeError("publish failed")
+
+    with pytest.raises(RuntimeError, match="publish failed"):
+        await agent.run("Publish flow abc")
+
+    spans = memory_logger.pop()
+    tool_span = next(s for s in spans if s["span_attributes"]["name"] == "publish_flow")
+    assert "publish failed" in str(tool_span.get("error"))
+
+
 def test_agent_tool_metadata_extraction(memory_logger):
     """Test that agent tools are properly extracted with full schemas in INPUT (not metadata).
 

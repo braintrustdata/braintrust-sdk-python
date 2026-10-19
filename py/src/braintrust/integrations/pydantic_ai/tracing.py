@@ -1,5 +1,6 @@
 import asyncio
 import contextvars
+import functools
 import inspect
 import logging
 import sys
@@ -985,15 +986,38 @@ async def _trace_tool_execution(wrapped: Any, args: Any, kwargs: Any):
     metadata = {"tool_call_id": tool_call_id} if tool_call_id else None
 
     _mark_tool_span_emitted()
+    deferral = None
     with start_span(name=tool_name, type=SpanTypeAttribute.TOOL, input=input_data, metadata=metadata) as tool_span:
         start_time = time.time()
-        result = await wrapped(*args, **kwargs)
+        try:
+            result = await wrapped(*args, **kwargs)
+            output = result
+        except _deferred_tool_exceptions() as exc:
+            # The tool handed the call back to the caller, so log the deferral
+            # as output and re-raise after the span closes without an error.
+            deferral = exc
+            output = {"deferred": True, "reason": type(exc).__name__}
         end_time = time.time()
         tool_span.log(
-            output=result,
+            output=output,
             metrics={"start": start_time, "end": end_time, "duration": end_time - start_time},
         )
-        return result
+    if deferral is not None:
+        raise deferral
+    return result
+
+
+@functools.cache
+def _deferred_tool_exceptions() -> tuple[type[Exception], ...]:
+    """Exceptions pydantic_ai tools raise to defer a call rather than to fail."""
+    try:
+        from pydantic_ai.exceptions import (  # pylint: disable=import-outside-toplevel
+            ApprovalRequired,
+            CallDeferred,
+        )
+    except ImportError:
+        return ()
+    return (CallDeferred, ApprovalRequired)
 
 
 async def _tool_manager_call_function_tool_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
