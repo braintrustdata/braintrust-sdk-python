@@ -17,7 +17,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.55.0
+      - pydantic-ai/2.57.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -27,7 +27,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.29.0
+      - 3.35.1
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -40,18 +40,17 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0c23a2be78117319006ace3bc23c5c87d1aa5b2757de5873a6\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1791900610,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0f46665f537c9ba8006ad64ff4421887d09dc23459022d9a96\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1792430068,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1791900611,\n  \"error\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1792430069,\n  \"error\":
         null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": 200,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"fc_0c23a2be78117319006ace3bc2ac6c87d1beab52cc25631057\",\n
+        \     \"id\": \"fc_0f46665f537c9ba8006ad64ff536b087d0a339fc9d13e441fd\",\n
         \     \"type\": \"function_call\",\n      \"status\": \"completed\",\n      \"arguments\":
-        \"{\\\"answer\\\":25,\\\"explanation\\\":\\\"10 + 15 equals 25 because when
-        you add the two numbers together, you combine their total values.\\\"}\",\n
-        \     \"call_id\": \"call_RLV8Ugu6RL3W3N5nNqKW2mI2\",\n      \"name\": \"final_result\"\n
+        \"{\\\"answer\\\":25,\\\"explanation\\\":\\\"10 plus 15 equals 25.\\\"}\",\n
+        \     \"call_id\": \"call_cd0ZBJqE7qo8Wc0fDc0tbhBh\",\n      \"name\": \"final_result\"\n
         \   }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n
         \ \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
         \"in_memory\",\n  \"reasoning\": {\n    \"context\": null,\n    \"effort\":
@@ -73,8 +72,8 @@ interactions:
         false\n      },\n      \"strict\": true\n    }\n  ],\n  \"top_logprobs\":
         0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\":
         60,\n    \"input_tokens_details\": {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\":
-        0\n    },\n    \"output_tokens\": 32,\n    \"output_tokens_details\": {\n
-        \     \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 92\n  },\n  \"user\":
+        0\n    },\n    \"output_tokens\": 18,\n    \"output_tokens_details\": {\n
+        \     \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 78\n  },\n  \"user\":
         null,\n  \"metadata\": {}\n}"
     headers:
       access-control-expose-headers:
@@ -86,17 +85,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a49eed1cfdfc35ae-YYZ
+      - a4d16b55e99febed-SJC
       connection:
       - keep-alive
       content-length:
-      - '2589'
+      - '2514'
       content-type:
       - application/json
       date:
-      - Tue, 13 Oct 2026 14:10:11 GMT
+      - Mon, 19 Oct 2026 17:14:29 GMT
       openai-processing-ms:
-      - '1001'
+      - '1421'
       openai-version:
       - '2020-10-01'
       server:
@@ -114,13 +113,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29998'
       x-ratelimit-remaining-tokens:
-      - '149999682'
+      - '149999685'
       x-ratelimit-reset-requests:
       - 4ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_5eb67384cd534590bef515907bd1dd37
+      - req_2d81c0635ce8487e946ff45330595556
     status:
       code: 200
       message: OK

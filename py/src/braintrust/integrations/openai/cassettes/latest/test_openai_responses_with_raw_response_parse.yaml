@@ -15,7 +15,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 3.29.0
+      - OpenAI/Python 3.35.1
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +25,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.29.0
+      - 3.35.1
       x-stainless-raw-response:
       - 'true'
       x-stainless-read-timeout:
@@ -40,18 +40,18 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0bacdf69d820399c006ace3bfd5a1087d188cef8099c8ff288\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1791900669,\n  \"status\":
+      string: "{\n  \"id\": \"resp_01ea5275294f7ceb006ad650191a8887d0a9185044e754e952\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1792430105,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1791900669,\n  \"error\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1792430105,\n  \"error\":
         null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_0bacdf69d820399c006ace3bfdb56487d19c20f2d0efcda918\",\n
+        \     \"id\": \"msg_01ea5275294f7ceb006ad65019956487d0a56c19e19d7903d2\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"{\\\"value\\\":24,\\\"reasoning\\\":\\\"Adding
-        12 and 12 together gives us a total of 24.\\\"}\"\n        }\n      ],\n      \"role\":
+        12 and 12 together results in 24.\\\"}\"\n        }\n      ],\n      \"role\":
         \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\":
         0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
         \"in_memory\",\n  \"reasoning\": {\n    \"context\": null,\n    \"effort\":
@@ -73,8 +73,8 @@ interactions:
         \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
         \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 59,\n    \"input_tokens_details\":
         {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 25,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 84\n  },\n  \"user\": null,\n  \"metadata\":
+        \   \"output_tokens\": 22,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        0\n    },\n    \"total_tokens\": 81\n  },\n  \"user\": null,\n  \"metadata\":
         {}\n}"
     headers:
       access-control-expose-headers:
@@ -86,17 +86,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a49eee8efaa071ff-YYZ
+      - a4d16c3c394c1679-SJC
       connection:
       - keep-alive
       content-length:
-      - '2592'
+      - '2583'
       content-type:
       - application/json
       date:
-      - Tue, 13 Oct 2026 14:11:10 GMT
+      - Mon, 19 Oct 2026 17:15:05 GMT
       openai-processing-ms:
-      - '772'
+      - '878'
       openai-version:
       - '2020-10-01'
       server:
@@ -112,15 +112,15 @@ interactions:
       x-ratelimit-limit-tokens:
       - '150000000'
       x-ratelimit-remaining-requests:
-      - '29999'
+      - '29996'
       x-ratelimit-remaining-tokens:
-      - '149999922'
+      - '149999825'
       x-ratelimit-reset-requests:
-      - 2ms
+      - 8ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_312a5cc813bc400aa775158a704e995f
+      - req_a55cdf0bfe33478f8ae20ed1e0b44183
     status:
       code: 200
       message: OK

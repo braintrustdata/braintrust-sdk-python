@@ -17,18 +17,16 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.29.0 gl-python/3.14.7
+      - google-genai-sdk/2.31.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/2.29.0 gl-python/3.14.7
+      - google-genai-sdk/2.31.0 gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"The population of Tokyo Metropolis
-        is estimated to be approximately 14.27 million people as of October 1, 2025.
-        This figure represents about 11.6% of Japan's total population, making Tokyo
-        the most populous prefecture in Japan.\"\n          }\n        ],\n        \"role\":
+        [\n          {\n            \"text\": \"The current population of Tokyo Metropolis
+        is estimated to be approximately \"\n          }\n        ],\n        \"role\":
         \"model\"\n      },\n      \"finishReason\": \"MAX_TOKENS\",\n      \"index\":
         0,\n      \"groundingMetadata\": {\n        \"searchEntryPoint\": {\n          \"renderedContent\":
         \"\\u003cstyle\\u003e\\n.container {\\n  align-items: center;\\n  border-radius:
@@ -93,43 +91,34 @@ interactions:
         \   \\u003c/svg\\u003e\\n    \\u003cdiv class=\\\"gradient-container\\\"\\u003e\\u003cdiv
         class=\\\"gradient\\\"\\u003e\\u003c/div\\u003e\\u003c/div\\u003e\\n  \\u003c/div\\u003e\\n
         \ \\u003cdiv class=\\\"carousel\\\"\\u003e\\n    \\u003ca class=\\\"chip\\\"
-        href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFtLWgXLEXCfm7wI1kJZyZkR65d2pssWpoU77Y2ivpVGXj-1sAel0UBYOLldc-_mU7tjQkcr89bSYMABSQORUlPwzxMDJmzW2Bd998_S5FI_N44jxeUxqCt39wf09VlfLNJInBgvEudLKqZqhWRUwBbHiqB6rS5_9odaawWcp91Wrl-O1YvaX4eM2K8IWxQXfzRv50T4Odq\\\"\\u003eTokyo
-        population 2026\\u003c/a\\u003e\\n    \\u003ca class=\\\"chip\\\" href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQH1_d_EBiPftCL8FzGEJotF7g_kt4ldeHYYp6QwgwoNL-Kn66wk1QiDX8G5DAbqbQ9J0o3Xb7tuSiosVcrh5Kt-W0Q16gZLB3CdqrPgYvh0hnNxgX31ugndG011nu2vlIw-VYd8pfDgYbY-kXSQsE1pgR5W09z4MaiE3ypfQb-JHGKhq_bTgff9GxoFFRMKqUDc9bqSVk5gcvz5VQ7e7nwzcHkF\\\"\\u003ecurrent
-        population of Tokyo Japan\\u003c/a\\u003e\\n  \\u003c/div\\u003e\\n\\u003c/div\\u003e\\n\"\n
-        \       },\n        \"groundingChunks\": [\n          {\n            \"web\":
-        {\n              \"uri\": \"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHuDxrGPg-dLgb_7dEHc7-PR2lhhEbjLwWAyMODA8L7EHcFi1UWpxmck4LghtgFVf1iPJtlBSXLHn75a8CEMSW3HUTPkRdNYv16RDGVpiEy5xGkXHKyXXZ1X4DcjNJypQC1kFFIi4D69H8Q2rRt4Gcv\",\n
-        \             \"title\": \"tokyo.lg.jp\"\n            }\n          }\n        ],\n
-        \       \"groundingSupports\": [\n          {\n            \"segment\": {\n
-        \             \"endIndex\": 110,\n              \"text\": \"The population
-        of Tokyo Metropolis is estimated to be approximately 14.27 million people
-        as of October 1, 2025\"\n            },\n            \"groundingChunkIndices\":
-        [\n              0\n            ]\n          },\n          {\n            \"segment\":
-        {\n              \"startIndex\": 112,\n              \"endIndex\": 226,\n
-        \             \"text\": \"This figure represents about 11.6% of Japan's total
-        population, making Tokyo the most populous prefecture in Japan\"\n            },\n
-        \           \"groundingChunkIndices\": [\n              0\n            ]\n
-        \         }\n        ],\n        \"webSearchQueries\": [\n          \"current
-        population of Tokyo Japan\",\n          \"Tokyo population 2026\"\n        ]\n
-        \     }\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\": 11,\n
-        \   \"candidatesTokenCount\": 81,\n    \"totalTokenCount\": 486,\n    \"promptTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 11\n
-        \     }\n    ],\n    \"toolUsePromptTokenCount\": 100,\n    \"toolUsePromptTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 100\n
-        \     }\n    ],\n    \"thoughtsTokenCount\": 294,\n    \"serviceTier\": \"standard\"\n
-        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"4TvOao3MMOSf-8YPidekqAU\"\n}\n"
+        href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGPbSq6wBFLztdocZauTXEDgT_B5vX0wDhjmXHRxeWJQ5ulyk4UR6IJEZubxegPrNITBSWoIWGCX5aJcdDUgwan23PG4xjptimLbQ-0y2YifVjUkfDvZ8CkbsDqi1l4tdm73uqwIqDqoDjgksJ9OTmQos1jBltNOEJxvM97lo5nz70MNNreB-8t8_1yjRaC04ibjB9pEfAyKBDRcXPa\\\"\\u003eTokyo
+        population estimates\\u003c/a\\u003e\\n    \\u003ca class=\\\"chip\\\" href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGYyGHa0921ry9oQSBgnVfmxYz3SPM1AmpGgUsOw6asjwnEh4G_fJYceIgnTRkf0ZoH3giF9SvqoJBE-2JJC52stuLR_hG6AUkGrbKsn3DWzW3WcxP4pTEIf6CGeNRk2r0-qIcGQe11Ljpk5OqOw0yWKK65b832o9EYub-dV1Iw1Rn8lLnUJiNPmavJeblsix460VzE4TfrG3VRw7MDzinw_Xua_bs=\\\"\\u003ecurrent
+        population of Tokyo, Japan\\u003c/a\\u003e\\n    \\u003ca class=\\\"chip\\\"
+        href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQF3GmHi9U_WcM5UGUnUSMbC1JJIfXhKlOnFswzbowQEn-ZAcYRapQhB-_drVT21N6SR3VDoMRGolXCGR0yDE39pyrBBvTOZr-70NjHJC0hJv_DYGSzAXM8r9GtX8a8TEF3lXHD0mbBivTPreq3zkUcv1GyV2Qhhr26wXu8IrUuhPI9qmtC_fIfF-uK8PLfIFMTQVyFgyKZlgg==\\\"\\u003eTokyo
+        population 2026\\u003c/a\\u003e\\n  \\u003c/div\\u003e\\n\\u003c/div\\u003e\\n\"\n
+        \       },\n        \"webSearchQueries\": [\n          \"current population
+        of Tokyo, Japan\",\n          \"Tokyo population 2026\",\n          \"Tokyo
+        population estimates\"\n        ]\n      }\n    }\n  ],\n  \"usageMetadata\":
+        {\n    \"promptTokenCount\": 11,\n    \"candidatesTokenCount\": 42,\n    \"totalTokenCount\":
+        445,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
+        \       \"tokenCount\": 11\n      }\n    ],\n    \"toolUsePromptTokenCount\":
+        75,\n    \"toolUsePromptTokensDetails\": [\n      {\n        \"modality\":
+        \"TEXT\",\n        \"tokenCount\": 75\n      }\n    ],\n    \"thoughtsTokenCount\":
+        317,\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash\",\n
+        \ \"responseId\": \"KVDWas-3CvOl_uMPis_DuQg\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '7750'
+      - '6952'
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Tue, 13 Oct 2026 14:10:44 GMT
+      - Mon, 19 Oct 2026 17:15:24 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=3175
+      - gfet4t7; dur=3125
       transfer-encoding:
       - chunked
       vary:
