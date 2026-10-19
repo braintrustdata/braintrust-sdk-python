@@ -207,8 +207,18 @@ test-deepagents = [
 
 test-livekit-agents = [
     {include-group = "test"},
-    "livekit-plugins-openai",
-    "livekit-plugins-silero",
+    # Floors keep the lock on the matrix ``latest`` line; without them uv keeps
+    # older 1.3.x plugins, which pull livekit-agents back to 1.3.x.
+    "livekit-plugins-openai>=1.8.8",
+    "livekit-plugins-silero>=1.8.8",
+]
+
+test-livekit-agents-1-3 = [
+    {include-group = "test"},
+    # Pin the agents package so the plugins do not pull a newer 1.3.x.
+    "livekit-agents==1.3.1",
+    "livekit-plugins-openai==1.3.1",
+    "livekit-plugins-silero==1.3.1",
     # livekit-agents 1.3.x imports opentelemetry.sdk._logs.LogData, removed in newer SDKs.
     # This is a LiveKit runtime compatibility constraint, not a Braintrust OTel integration dependency.
     "opentelemetry-sdk<1.39",
@@ -409,6 +419,7 @@ conflicts = [
         {group = "test-llamaindex-0-13"},
         {group = "test-instructor"},
         {group = "test-livekit-agents"},
+        {group = "test-livekit-agents-1-3"},
         {group = "lint"},
     ],
     # opentelemetry-sdk version conflicts (google-adk/livekit vs logfire).
@@ -416,10 +427,12 @@ conflicts = [
         {group = "lint"},
         {group = "test-pydantic-ai-logfire"},
         {group = "test-livekit-agents"},
+        {group = "test-livekit-agents-1-3"},
     ],
     [
         {group = "test-pydantic-ai-otel-events"},
         {group = "test-livekit-agents"},
+        {group = "test-livekit-agents-1-3"},
     ],
     [
         {group = "lint"},
@@ -428,6 +441,7 @@ conflicts = [
     [
         {group = "test-pydantic-ai-logfire-constraints"},
         {group = "test-livekit-agents"},
+        {group = "test-livekit-agents-1-3"},
     ],
     [
         {group = "test-llamaindex"},
