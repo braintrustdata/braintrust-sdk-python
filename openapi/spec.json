@@ -349,6 +349,21 @@
         "type": "string",
         "description": "Filter search results to within a particular organization"
       },
+      "OrgId": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Identify the organization to list API keys for"
+      },
+      "CreatedAfter": {
+        "type": "string",
+        "format": "date-time",
+        "description": "Include API keys created at or after this timestamp"
+      },
+      "CreatedBefore": {
+        "type": "string",
+        "format": "date-time",
+        "description": "Include API keys created at or before this timestamp"
+      },
       "Ids": {
         "anyOf": [
           {
@@ -970,6 +985,7 @@
           "preprocessor",
           "classifier",
           "review",
+          "decision",
           "question",
           "log",
           null
@@ -5339,7 +5355,6 @@
               "type": "string",
               "format": "uuid"
             },
-            "maxItems": 10000,
             "description": "Sorted ids of active projects in this project group"
           }
         },
@@ -6060,9 +6075,10 @@
               "harness": {
                 "type": "string",
                 "enum": [
-                  "codex",
                   "native",
-                  "claude-code"
+                  "codex",
+                  "claude-code",
+                  "pi"
                 ],
                 "description": "Required when saving a Loop automation. Currently only Codex is supported."
               },
@@ -10321,6 +10337,237 @@
                 "title": "topic_map"
               }
             ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "simulation"
+                ]
+              },
+              "config": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "initiator": {
+                        "type": "string",
+                        "enum": [
+                          "agent",
+                          "simulated_user"
+                        ],
+                        "default": "agent",
+                        "description": "Who speaks first in the conversation"
+                      },
+                      "timeout_seconds": {
+                        "type": "integer",
+                        "minimum": 15,
+                        "maximum": 3600,
+                        "default": 600,
+                        "description": "Maximum conversation duration in seconds"
+                      },
+                      "modality": {
+                        "type": "string",
+                        "enum": [
+                          "voice"
+                        ],
+                        "default": "voice"
+                      },
+                      "agent": {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "livekit"
+                                ]
+                              },
+                              "server_url": {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "The WebSocket URL of the LiveKit project hosting the agent"
+                              },
+                              "agent_name": {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "The name of the LiveKit agent to dispatch"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "server_url",
+                              "agent_name"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "phone"
+                                ]
+                              },
+                              "phone_number": {
+                                "type": "string",
+                                "pattern": "^\\+[1-9]\\d{7,14}$"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "phone_number"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "sip"
+                                ]
+                              },
+                              "uri": {
+                                "type": "string",
+                                "pattern": "^sips?:[^\\s]+$"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "uri"
+                            ],
+                            "additionalProperties": false
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "agent"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "initiator": {
+                        "type": "string",
+                        "enum": [
+                          "agent",
+                          "simulated_user"
+                        ],
+                        "default": "agent",
+                        "description": "Who speaks first in the conversation"
+                      },
+                      "timeout_seconds": {
+                        "type": "integer",
+                        "minimum": 15,
+                        "maximum": 3600,
+                        "default": 600,
+                        "description": "Maximum conversation duration in seconds"
+                      },
+                      "modality": {
+                        "type": "string",
+                        "enum": [
+                          "text"
+                        ]
+                      },
+                      "agent": {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "livekit"
+                                ]
+                              },
+                              "server_url": {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "The WebSocket URL of the LiveKit project hosting the agent"
+                              },
+                              "agent_name": {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "The name of the LiveKit agent to dispatch"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "server_url",
+                              "agent_name"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "acp"
+                                ]
+                              },
+                              "command": {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "Executable for the ACP agent subprocess, communicating over stdio"
+                              },
+                              "args": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                },
+                                "default": [],
+                                "description": "Arguments passed to the executable without shell interpretation"
+                              },
+                              "cwd": {
+                                "type": "string",
+                                "pattern": "^(?:\\/|[A-Za-z]:[\\\\/]|\\\\\\\\)",
+                                "description": "Absolute working directory for the ACP session on the execution host"
+                              },
+                              "permissions": {
+                                "type": "string",
+                                "enum": [
+                                  "deny"
+                                ],
+                                "default": "deny",
+                                "description": "Deny ACP permission requests; this does not sandbox the subprocess"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "command",
+                              "cwd"
+                            ],
+                            "additionalProperties": false
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "modality",
+                      "agent"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "config"
+            ],
+            "additionalProperties": false,
+            "description": "A task function that runs a conversation between an agent and a simulated user.",
+            "title": "simulation"
           }
         ]
       },
@@ -10777,6 +11024,237 @@
             ]
           },
           {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "simulation"
+                ]
+              },
+              "config": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "initiator": {
+                        "type": "string",
+                        "enum": [
+                          "agent",
+                          "simulated_user"
+                        ],
+                        "default": "agent",
+                        "description": "Who speaks first in the conversation"
+                      },
+                      "timeout_seconds": {
+                        "type": "integer",
+                        "minimum": 15,
+                        "maximum": 3600,
+                        "default": 600,
+                        "description": "Maximum conversation duration in seconds"
+                      },
+                      "modality": {
+                        "type": "string",
+                        "enum": [
+                          "voice"
+                        ],
+                        "default": "voice"
+                      },
+                      "agent": {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "livekit"
+                                ]
+                              },
+                              "server_url": {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "The WebSocket URL of the LiveKit project hosting the agent"
+                              },
+                              "agent_name": {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "The name of the LiveKit agent to dispatch"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "server_url",
+                              "agent_name"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "phone"
+                                ]
+                              },
+                              "phone_number": {
+                                "type": "string",
+                                "pattern": "^\\+[1-9]\\d{7,14}$"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "phone_number"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "sip"
+                                ]
+                              },
+                              "uri": {
+                                "type": "string",
+                                "pattern": "^sips?:[^\\s]+$"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "uri"
+                            ],
+                            "additionalProperties": false
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "agent"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "initiator": {
+                        "type": "string",
+                        "enum": [
+                          "agent",
+                          "simulated_user"
+                        ],
+                        "default": "agent",
+                        "description": "Who speaks first in the conversation"
+                      },
+                      "timeout_seconds": {
+                        "type": "integer",
+                        "minimum": 15,
+                        "maximum": 3600,
+                        "default": 600,
+                        "description": "Maximum conversation duration in seconds"
+                      },
+                      "modality": {
+                        "type": "string",
+                        "enum": [
+                          "text"
+                        ]
+                      },
+                      "agent": {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "livekit"
+                                ]
+                              },
+                              "server_url": {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "The WebSocket URL of the LiveKit project hosting the agent"
+                              },
+                              "agent_name": {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "The name of the LiveKit agent to dispatch"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "server_url",
+                              "agent_name"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "acp"
+                                ]
+                              },
+                              "command": {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "Executable for the ACP agent subprocess, communicating over stdio"
+                              },
+                              "args": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                },
+                                "default": [],
+                                "description": "Arguments passed to the executable without shell interpretation"
+                              },
+                              "cwd": {
+                                "type": "string",
+                                "pattern": "^(?:\\/|[A-Za-z]:[\\\\/]|\\\\\\\\)",
+                                "description": "Absolute working directory for the ACP session on the execution host"
+                              },
+                              "permissions": {
+                                "type": "string",
+                                "enum": [
+                                  "deny"
+                                ],
+                                "default": "deny",
+                                "description": "Deny ACP permission requests; this does not sandbox the subprocess"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "command",
+                              "cwd"
+                            ],
+                            "additionalProperties": false
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "modality",
+                      "agent"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "config"
+            ],
+            "additionalProperties": false,
+            "description": "A task function that runs a conversation between an agent and a simulated user.",
+            "title": "simulation"
+          },
+          {
             "type": "null"
           }
         ]
@@ -11030,6 +11508,13 @@
               "options": {
                 "type": "object",
                 "properties": {
+                  "filterScope": {
+                    "type": "string",
+                    "enum": [
+                      "span",
+                      "trace"
+                    ]
+                  },
                   "spanType": {
                     "type": "string",
                     "nullable": true,
@@ -11768,7 +12253,7 @@
                     "token_name": {
                       "type": "string",
                       "nullable": true,
-                      "description": "Optional name of an initial service token to create for the new service account. This is a narrow compatibility carve-out only on PATCH /v1/organization/members. When this field is set, the request must be authenticated with a service token that has organization-owner permissions, not a user API key."
+                      "description": "Optional name of an initial service token to create for the new service account. When set, authenticate with a UI session or service token, not a user API key. The caller must own the organization or the project group specified by invite_users.project_group_id."
                     },
                     "token_expires_in_seconds": {
                       "type": "integer",
@@ -11818,6 +12303,12 @@
                 "type": "string",
                 "nullable": true,
                 "description": "Singular form of group_names"
+              },
+              "project_group_id": {
+                "type": "string",
+                "nullable": true,
+                "format": "uuid",
+                "description": "Grants new service accounts read access to this project group. Required when a project-group Owner creates service accounts."
               }
             },
             "description": "Users to invite to the organization"
@@ -12461,6 +12952,150 @@
             "description": "Textual description of the dataset snapshot"
           }
         }
+      },
+      "SimulatedUserVoiceConfig": {
+        "type": "object",
+        "properties": {
+          "voice_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "language": {
+            "type": "string",
+            "minLength": 1
+          },
+          "accent": {
+            "type": "string",
+            "minLength": 1
+          },
+          "speaking_rate": {
+            "type": "number",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          }
+        },
+        "required": [
+          "voice_id"
+        ],
+        "additionalProperties": false
+      },
+      "SimulatedUser": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the simulated user"
+          },
+          "_xact_id": {
+            "type": "string",
+            "description": "Legacy transaction id. Not returned by simulated user CRUD."
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the project that the simulated user belongs under"
+          },
+          "org_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the organization"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Name of the simulated user"
+          },
+          "created": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "Date of simulated user creation"
+          },
+          "instructions": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The simulated user's role, scenario, and behavior"
+          },
+          "goal": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The simulated user's objective, used to decide when to end the conversation"
+          },
+          "voice_config": {
+            "$ref": "#/components/schemas/SimulatedUserVoiceConfig"
+          }
+        },
+        "required": [
+          "id",
+          "project_id",
+          "org_id",
+          "name",
+          "instructions",
+          "voice_config"
+        ]
+      },
+      "AppLimit": {
+        "type": "integer",
+        "nullable": true,
+        "minimum": 0,
+        "maximum": 1000,
+        "default": 100,
+        "description": "Limit the number of objects to return"
+      },
+      "CreateSimulatedUser": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Name of the simulated user"
+          },
+          "instructions": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The simulated user's role, scenario, and behavior"
+          },
+          "goal": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The simulated user's objective, used to decide when to end the conversation"
+          },
+          "voice_config": {
+            "$ref": "#/components/schemas/SimulatedUserVoiceConfig"
+          }
+        },
+        "required": [
+          "name",
+          "instructions",
+          "voice_config"
+        ],
+        "additionalProperties": false
+      },
+      "PatchSimulatedUser": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Name of the simulated user"
+          },
+          "instructions": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The simulated user's role, scenario, and behavior"
+          },
+          "goal": {
+            "type": "string",
+            "nullable": true,
+            "minLength": 1,
+            "description": "The simulated user's objective. Set to null to clear it."
+          },
+          "voice_config": {
+            "$ref": "#/components/schemas/SimulatedUserVoiceConfig"
+          }
+        },
+        "additionalProperties": false
       },
       "Environment": {
         "type": "object",
@@ -13770,6 +14405,36 @@
         "required": false,
         "description": "Filter search results to within a particular organization",
         "name": "org_name",
+        "in": "query",
+        "allowReserved": true
+      },
+      "OrgId": {
+        "schema": {
+          "$ref": "#/components/schemas/OrgId"
+        },
+        "required": false,
+        "description": "Identify the organization to list API keys for",
+        "name": "org_id",
+        "in": "query",
+        "allowReserved": true
+      },
+      "CreatedAfter": {
+        "schema": {
+          "$ref": "#/components/schemas/CreatedAfter"
+        },
+        "required": false,
+        "description": "Include API keys created at or after this timestamp",
+        "name": "created_after",
+        "in": "query",
+        "allowReserved": true
+      },
+      "CreatedBefore": {
+        "schema": {
+          "$ref": "#/components/schemas/CreatedBefore"
+        },
+        "required": false,
+        "description": "Include API keys created at or before this timestamp",
+        "name": "created_before",
         "in": "query",
         "allowReserved": true
       },
@@ -31322,6 +31987,212 @@
         }
       }
     },
+    "/v1/organization/api_keys": {
+      "get": {
+        "operationId": "getOrganizationApiKeys",
+        "tags": [
+          "Organizations"
+        ],
+        "description": "List all API keys associated with users in an organization, sorted by creation date with the newest keys first. An organization-scoped API key determines the organization; otherwise, provide `org_id`. If `org_id` does not match the organization-scoped key's organization, or the caller is not an owner of the organization, no keys are returned. Responses include key metadata only; key secrets are never returned. To list service tokens, use `GET /v1/service_token`.",
+        "summary": "List organization API keys",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppLimitWithDefaultParam"
+          },
+          {
+            "$ref": "#/components/parameters/StartingAfter"
+          },
+          {
+            "$ref": "#/components/parameters/EndingBefore"
+          },
+          {
+            "$ref": "#/components/parameters/Ids"
+          },
+          {
+            "$ref": "#/components/parameters/ApiKeyName"
+          },
+          {
+            "$ref": "#/components/parameters/OrgId"
+          },
+          {
+            "$ref": "#/components/parameters/CreatedAfter"
+          },
+          {
+            "$ref": "#/components/parameters/CreatedBefore"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns a list of api_key objects",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "objects": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ApiKey"
+                      },
+                      "description": "A list of api_key objects"
+                    }
+                  },
+                  "required": [
+                    "objects"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request was unacceptable, often due to missing a required parameter",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid API key provided",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The API key doesn’t have permissions to perform the request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests hit the API too quickly. We recommend an exponential backoff of your requests",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Braintrust's end. (These are rare.)",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "options": {
+        "operationId": "optionsOrganizationApiKeys",
+        "description": "Enable CORS",
+        "summary": "Enable CORS (`/v1/organization/api_keys`)",
+        "security": [],
+        "tags": [
+          "CORS"
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for CORS method",
+            "headers": {
+              "Access-Control-Allow-Credentials": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Access-Control-Allow-Headers": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Access-Control-Allow-Methods": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Access-Control-Max-Age": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {}
+          },
+          "400": {
+            "description": "The request was unacceptable, often due to missing a required parameter",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/api_key": {
       "get": {
         "operationId": "getApiKey",
@@ -31824,7 +32695,7 @@
           {}
         ],
         "operationId": "postServiceToken",
-        "description": "Create a new service token.\n\nWhen calling this endpoint, you must authenticate using a service token that has organization-owner permissions. User API keys cannot be used.",
+        "description": "Create a new service token.\n\nAuthenticate with a service token. A service token whose service account is an organization owner can create tokens for any service account. A service token whose service account holds the Owner role on a project group can create tokens for a service account in the same organization when the target account has a permission grant on a project group it owns. The calling service account must also hold all of the target account's permissions in the organization; otherwise the request returns 403. User API keys cannot be used.",
         "summary": "Create service_token",
         "requestBody": {
           "description": "Any desired information about the new service_token object",
@@ -32227,7 +33098,7 @@
         "tags": [
           "ServiceTokens"
         ],
-        "description": "List out all service tokens. They are sorted by creation date, with the most recently-created tokens coming first.\n\nTo create a service token, visit [**Settings > Service tokens**](https://www.braintrust.dev/app/~/configuration/org/service-tokens) as an organization owner, or call [`POST /v1/service_token`](https://www.braintrust.dev/docs/api-reference/servicetokens/create-service_token) and authenticate with a service token that has organization-owner permissions.",
+        "description": "List out all service tokens. They are sorted by creation date, with the most recently-created tokens coming first.\n\nTo create a service token, visit [**Settings > Service tokens**](https://www.braintrust.dev/app/~/configuration/org/service-tokens) as an organization owner or an Owner of an active project group in the organization, or call [`POST /v1/service_token`](https://www.braintrust.dev/docs/api-reference/servicetokens/create-service_token) with a service token. Results include only service tokens you can manage.",
         "summary": "List service_tokens",
         "security": [
           {
@@ -36302,6 +37173,821 @@
           {
             "$ref": "#/components/parameters/DatasetSnapshotIdParam"
           }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for CORS method",
+            "headers": {
+              "Access-Control-Allow-Credentials": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Access-Control-Allow-Headers": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Access-Control-Allow-Methods": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Access-Control-Max-Age": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {}
+          },
+          "400": {
+            "description": "The request was unacceptable, often due to missing a required parameter",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/project/{project_id}/simulated_user": {
+      "get": {
+        "operationId": "listSimulatedUsers",
+        "summary": "List simulated users",
+        "description": "List simulated users in a project, ordered by UUID. Requires project read permission.",
+        "tags": [
+          "Simulated users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "project_id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "maxItems": 1000
+                }
+              ]
+            },
+            "required": false,
+            "name": "ids",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "simulated_user_name",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "$ref": "#/components/schemas/AppLimit"
+            },
+            "required": false,
+            "description": "Limit the number of objects to return",
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "$ref": "#/components/parameters/StartingAfter"
+          },
+          {
+            "$ref": "#/components/parameters/EndingBefore"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The matching simulated users",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "objects": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SimulatedUser"
+                      }
+                    }
+                  },
+                  "required": [
+                    "objects"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request was unacceptable, often due to missing a required parameter",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid API key provided",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The API key doesn’t have permissions to perform the request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests hit the API too quickly. We recommend an exponential backoff of your requests",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Braintrust's end. (These are rare.)",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createSimulatedUser",
+        "summary": "Create simulated user",
+        "description": "Create a simulated user with a new UUID. Display names may repeat. Requires project update permission.",
+        "tags": [
+          "Simulated users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "project_id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSimulatedUser"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The simulated user, including its stable UUID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulatedUser"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request was unacceptable, often due to missing a required parameter",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid API key provided",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The API key doesn’t have permissions to perform the request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests hit the API too quickly. We recommend an exponential backoff of your requests",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Braintrust's end. (These are rare.)",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "options": {
+        "operationId": "optionsSimulatedUsers",
+        "description": "Enable CORS",
+        "summary": "Enable CORS (`/v1/project/{project_id}/simulated_user`)",
+        "security": [],
+        "tags": [
+          "CORS"
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for CORS method",
+            "headers": {
+              "Access-Control-Allow-Credentials": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Access-Control-Allow-Headers": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Access-Control-Allow-Methods": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Access-Control-Max-Age": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {}
+          },
+          "400": {
+            "description": "The request was unacceptable, often due to missing a required parameter",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/project/{project_id}/simulated_user/{id}": {
+      "get": {
+        "operationId": "getSimulatedUser",
+        "summary": "Get simulated user",
+        "description": "Retrieve a simulated user by its UUID within the specified project. Requires project read permission.",
+        "tags": [
+          "Simulated users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "project_id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The simulated user, including its stable UUID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulatedUser"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request was unacceptable, often due to missing a required parameter",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid API key provided",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The API key doesn’t have permissions to perform the request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests hit the API too quickly. We recommend an exponential backoff of your requests",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Braintrust's end. (These are rare.)",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patchSimulatedUser",
+        "summary": "Update simulated user",
+        "description": "Update an existing simulated user while preserving its UUID. Supplied voice_config replaces the entire voice configuration. Set goal to null to clear it. Requires project update permission and project read permission because the response includes the stored simulated user.",
+        "tags": [
+          "Simulated users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "project_id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchSimulatedUser"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The simulated user, including its stable UUID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulatedUser"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request was unacceptable, often due to missing a required parameter",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid API key provided",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The API key doesn’t have permissions to perform the request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests hit the API too quickly. We recommend an exponential backoff of your requests",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Braintrust's end. (These are rare.)",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteSimulatedUser",
+        "summary": "Delete simulated user",
+        "description": "Delete an existing simulated user in the specified project. Requires project update permission and project read permission because the response includes the stored simulated user.",
+        "tags": [
+          "Simulated users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "project_id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The simulated user, including its stable UUID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulatedUser"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request was unacceptable, often due to missing a required parameter",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid API key provided",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The API key doesn’t have permissions to perform the request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests hit the API too quickly. We recommend an exponential backoff of your requests",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Braintrust's end. (These are rare.)",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "options": {
+        "operationId": "optionsSimulatedUser",
+        "description": "Enable CORS",
+        "summary": "Enable CORS (`/v1/project/{project_id}/simulated_user/{id}`)",
+        "security": [],
+        "tags": [
+          "CORS"
         ],
         "responses": {
           "200": {
