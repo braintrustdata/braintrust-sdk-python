@@ -12,12 +12,14 @@ from braintrust.workflow_eval import (
     WorkflowBatchTask,
     WorkflowEval,
     WorkflowEvalMemoryStore,
+    WorkflowEvalResult,
     WorkflowScorer,
     WorkflowScorerItem,
     WorkflowScorerResult,
     WorkflowSubmissionCompletionPoll,
     WorkflowSubmissionContext,
     WorkflowSubmissionPoll,
+    WorkflowSwitchableScorerConfig,
     WorkflowTask,
     WorkflowTaskItem,
     WorkflowTaskResult,
@@ -119,6 +121,36 @@ batch_workflow_eval: WorkflowEval[str, int, str] = define_workflow_eval(
     task=batch_task,
     scores=[batch_score],
 )
+
+
+async def async_instant_score(input: str, output: int, expected: str | None = None) -> int:
+    assert input
+    return int(str(output) == expected)
+
+
+switchable_config: WorkflowSwitchableScorerConfig[str, int, str] = {
+    "instant": async_instant_score,
+    "batch": WorkflowBatchScorer(
+        name="named-judge",
+        batching=WorkflowBatchingOptions(max_size=10),
+        submit=submit_batch_score,
+        completion=WorkflowSubmissionCompletionPoll(poll_submission),
+        collect=collect_batch_score,
+    ),
+}
+switchable_workflow_eval: WorkflowEval[str, int, str] = define_workflow_eval(
+    "project",
+    store=WorkflowEvalMemoryStore(),
+    data=[EvalCase(id="case", input="input")],
+    task=task,
+    switchable_scores={"named-judge": switchable_config},
+)
+
+
+async def change_mode(result: WorkflowEvalResult) -> WorkflowEvalResult:
+    return await switchable_workflow_eval.set_inference_mode(
+        result.run_id, scorer="named-judge", mode="instant", pending="race"
+    )
 
 
 @pytest.mark.asyncio
