@@ -1,0 +1,75 @@
+interactions:
+- request:
+    body: '{"max_tokens":16,"messages":[{"role":"user","content":"hi"}],"model":"claude-haiku-4-5-20251001","stream":true}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2023-06-01'
+      connection:
+      - keep-alive
+      content-length:
+      - '111'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 1.16.0
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - Linux
+      x-stainless-package-version:
+      - 1.16.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.12.15
+      x-stainless-timeout:
+      - NOT_GIVEN
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: '{"type":"error","error":{"type":"authentication_error","message":"invalid
+        x-api-key"},"request_id":"req_011CgEDPUuC2rTGyj3oNjLGF"}'
+    headers:
+      cache-control:
+      - no-store
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a4db2dc05a155c70-MIA
+      connection:
+      - keep-alive
+      content-length:
+      - '130'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Tue, 20 Oct 2026 21:40:03 GMT
+      request-id:
+      - req_011CgEDPUuC2rTGyj3oNjLGF
+      server:
+      - cloudflare
+      x-robots-tag:
+      - none
+      x-should-retry:
+      - 'false'
+    status:
+      code: 401
+      message: Unauthorized
+version: 1

@@ -241,7 +241,12 @@ class Messages(Wrapper):
     def __trace_stream(self, stream_func, *args, **kwargs):
         span = _start_span("anthropic.messages.stream", kwargs)
         request_start_time = time.time()
-        s = stream_func(*args, **kwargs)
+        try:
+            s = stream_func(*args, **kwargs)
+        except Exception as e:
+            span.log(error=e)
+            span.end()
+            raise
         return TracedMessageStreamManager(s, span, request_start_time)
 
 

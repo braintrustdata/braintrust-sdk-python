@@ -1740,3 +1740,24 @@ class TestBatchesResultsSpans:
         span = spans[0]
         assert span["span_attributes"]["name"] == "anthropic.messages.batches.results"
         assert "results fetch failed" in span["error"]
+
+
+@pytest.mark.vcr
+def test_anthropic_sync_create_stream_logs_error_and_ends_span(memory_logger):
+    # A request that the API rejects (here: an invalid API key, a 401) must end the span with
+    # the error, as it does for the non-streaming call and for the async client.
+    assert not memory_logger.pop()
+
+    client = wrap_anthropic(anthropic.Anthropic(api_key="invalid-key-for-error-cassette"))
+    with pytest.raises(anthropic.AuthenticationError):
+        client.messages.create(
+            model=MODEL,
+            max_tokens=16,
+            messages=[{"role": "user", "content": "hi"}],
+            stream=True,
+        )
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    assert spans[0]["span_attributes"]["name"] == "anthropic.messages.stream"
+    assert spans[0]["error"]
