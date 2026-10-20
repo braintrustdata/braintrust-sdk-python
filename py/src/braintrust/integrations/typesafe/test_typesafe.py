@@ -6,6 +6,7 @@ import typesafe_sdk
 from braintrust import Attachment, logger
 from braintrust.integrations.test_utils import assert_metrics_are_valid, verify_autoinstrument_script
 from braintrust.integrations.typesafe import setup_typesafe, wrap_typesafe
+from braintrust.integrations.typesafe.tracing import _span_input
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import init_test_logger
 from typesafe_sdk import AsyncTypeSafeClient, Choice, Noul, Score, TypeSafeClient, TypeSafeError
@@ -133,7 +134,8 @@ def test_auto_instrument_typesafe_subprocess():
 @pytest.mark.asyncio
 @pytest.mark.parametrize("is_async", [False, True], ids=["sync", "async"])
 @pytest.mark.vcr
-async def test_typesafe_boxes_and_images(memory_logger, is_async):
+async def test_typesafe_boxes_and_images(memory_logger, is_async, monkeypatch):
+    monkeypatch.setenv("BRAINTRUST_CAPTURE_ATTACHMENTS", "true")
     if not hasattr(typesafe_sdk, "Box"):
         pytest.skip("Box and Image require TypeSafe SDK >=0.7.5")
 
@@ -213,8 +215,21 @@ async def test_typesafe_boxes_and_images(memory_logger, is_async):
     assert "classifications" not in span
 
 
+def test_typesafe_images_are_omitted_by_default(monkeypatch):
+    if not hasattr(typesafe_sdk, "Image"):
+        pytest.skip("Image requires TypeSafe SDK >=0.7.5")
+
+    monkeypatch.delenv("BRAINTRUST_CAPTURE_ATTACHMENTS", raising=False)
+    image = typesafe_sdk.Image(Path(__file__).parents[2] / "fixtures" / "decision-box.png")
+
+    span_input = _span_input({"photo": image}, {}, {})
+
+    assert span_input["state"]["photo"] == "<omitted>"
+
+
 @pytest.mark.vcr
-def test_typesafe_nested_image_assets(memory_logger):
+def test_typesafe_nested_image_assets(memory_logger, monkeypatch):
+    monkeypatch.setenv("BRAINTRUST_CAPTURE_ATTACHMENTS", "true")
     if not hasattr(typesafe_sdk, "Box"):
         pytest.skip("Box and Image require TypeSafe SDK >=0.7.5")
 
