@@ -24,6 +24,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
+    "certifi>=2026.10.19",
     "requests",
     "chevron",
     "tqdm",
@@ -51,7 +52,7 @@ braintrust = "braintrust.wrappers.pytest_plugin.plugin"
 braintrust = "braintrust.integrations.harbor:HarborPlugin"
 
 [project.optional-dependencies]
-cli = ["boto3", "python-dotenv", "uv", "starlette", "uvicorn"]
+cli = ["boto3", "python-dotenv", "uv>=0.13.4", "starlette", "uvicorn"]
 # TODO: remove the doc extra in the next major version.
 doc = []
 openai-agents = ["openai-agents"]
@@ -78,7 +79,7 @@ all = [
     "python-dotenv",
     "starlette",
     "temporalio>=1.19.0; python_version>='3.10'",
-    "uv",
+    "uv>=0.13.4",
     "uvicorn",
 ]
 
@@ -299,7 +300,7 @@ test-cli = [
     "httpx==0.28.1",
     "python-dotenv",
     "starlette",
-    "uv",
+    "uv>=0.13.4",
     "uvicorn",
 ]
 
@@ -411,7 +412,7 @@ explicit = true
 # ---------------------------------------------------------------------------
 
 [tool.uv]
-exclude-newer = "2026-10-19T06:03:00Z"
+exclude-newer = "2026-10-20T19:24:36Z"
 conflicts = [
     # Groups that pin or transitively require conflicting openai versions.
     [
