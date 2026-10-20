@@ -10130,7 +10130,8 @@
               "null"
             ],
             "enum": [
-              "patterns"
+              "patterns",
+              "dashboard"
             ],
             "description": "The product surface that created and manages the automation"
           },
@@ -10397,6 +10398,36 @@
                   "xhigh",
                   "max"
                 ]
+              },
+              "target": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "dashboard"
+                    ]
+                  },
+                  "id": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "overview"
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "type",
+                  "id"
+                ],
+                "description": "The object this automation writes to or maintains"
               }
             },
             "required": [
