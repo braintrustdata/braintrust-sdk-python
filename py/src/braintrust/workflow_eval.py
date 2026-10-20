@@ -1264,7 +1264,8 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
             raise ValueError(f"Unknown workflow scorer {scorer_name!r}")
         if not isinstance(scorer, _SwitchableScorer):
             raise ValueError(f"Scorer {scorer_name!r} does not support inference mode changes")
-        lease_key = self._key(run_id, "inference-mode-lease", scorer_name)
+        # The mode map is one run record, so serialize updates across all scorers.
+        lease_key = self._key(run_id, "inference-mode-lease")
         lease_value = uuid.uuid4().hex.encode("ascii")
         while not await self.store.acquire_lease(lease_key, lease_value, 30_000):
             await asyncio.sleep(0.01)
@@ -1866,16 +1867,23 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
         if await self._read(run_id, result_kind, item_id) is None:
             if not await self._claim(run_id, f"score:{name}:{item_id}"):
                 return
-            task_result = await self._required(run_id, "task-result", item_id)
-            fn = scorer.eval_async if hasattr(scorer, "eval_async") else scorer
-            trace = await self._trace_for_case(run, item_id)
-            raw = await call_user_fn(
-                asyncio.get_running_loop(),
-                fn,
-                **_scorer_args(case, task_result),
-                trace=trace,
-            )
-            await self._accept_score(run_id, name, item_id, _json_value(raw))
+            active_key = self._key(run_id, _stage_kind("score-attempt-active", name), item_id)
+            active_value = uuid.uuid4().hex.encode("ascii")
+            if not await self.store.acquire_lease(active_key, active_value, _BATCH_LEASE_TTL_MS):
+                return
+            try:
+                task_result = await self._required(run_id, "task-result", item_id)
+                fn = scorer.eval_async if hasattr(scorer, "eval_async") else scorer
+                trace = await self._trace_for_case(run, item_id)
+                raw = await call_user_fn(
+                    asyncio.get_running_loop(),
+                    fn,
+                    **_scorer_args(case, task_result),
+                    trace=trace,
+                )
+                await self._accept_score(run_id, name, item_id, _json_value(raw))
+            finally:
+                await self.store.release_lease(active_key, active_value)
         await self._log_score(run, case, name)
 
     async def _log_score(self, run: Mapping[str, Any], case: dict[str, Any], name: str) -> None:
@@ -2060,7 +2068,13 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
                         if error is None:
                             complete = False
                         else:
-                            await self._log_score_error(run, case, name, error)
+                            active_attempt = await self.store.read(
+                                self._key(run_id, _stage_kind("score-attempt-active", name), item_id)
+                            )
+                            if active_attempt is None:
+                                await self._log_score_error(run, case, name, error)
+                            else:
+                                complete = False
                 else:
                     await self._log_score(run, case, name)
             else:
@@ -2084,9 +2098,15 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
             return await self.status(run_id)
         if experiment is None and not run["no_send_logs"]:
             experiment = self._experiment(run)
-        resolved_scores = [
-            score() if inspect.isclass(score) and is_scorer(score) else score for score in self.config.scores
-        ]
+        resolved_scores = []
+        for score in self.config.scores:
+            if isinstance(score, _SwitchableScorer):
+                instant = score.instant
+                if inspect.isclass(instant) and is_scorer(instant):
+                    score = dataclasses.replace(score, instant=instant())
+            elif inspect.isclass(score) and is_scorer(score):
+                score = score()
+            resolved_scores.append(score)
         scorer_names = [
             score.name
             if isinstance(score, (WorkflowScorer, WorkflowBatchScorer, _SwitchableScorer))

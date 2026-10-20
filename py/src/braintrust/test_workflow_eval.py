@@ -108,6 +108,116 @@ async def test_switchable_scores_resume_uses_persisted_mode():
 
 
 @pytest.mark.asyncio
+async def test_concurrent_mode_changes_for_different_scorers_are_preserved():
+    class YieldingStore(WorkflowEvalMemoryStore):
+        async def read(self, key):
+            value = await super().read(key)
+            await asyncio.sleep(0)
+            return value
+
+    store = YieldingStore()
+
+    def batch(name):
+        return WorkflowBatchScorer(
+            name=name,
+            batching=WorkflowBatchingOptions(max_size=1),
+            submit=lambda _items, context: {"id": context.submission_id},
+            completion=WorkflowSubmissionCompletionPoll(lambda *_: WorkflowSubmissionPoll(status="pending")),
+            collect=lambda *_: [],
+        )
+
+    evaluation = define_workflow_eval(
+        "concurrent-mode-changes",
+        store=store,
+        data=[{"id": "case", "input": "x"}],
+        task=lambda input: input,
+        switchable_scores={name: {"instant": lambda **_: 1, "batch": batch(name)} for name in ("judge-a", "judge-b")},
+    )
+    started = await evaluation.start(no_send_logs=True)
+
+    await asyncio.gather(
+        evaluation.set_inference_mode(started.run_id, scorer="judge-a", mode="instant"),
+        evaluation.set_inference_mode(started.run_id, scorer="judge-b", mode="instant"),
+    )
+
+    runner = workflow_eval_module._WorkflowEvalRunner(evaluation._config)
+    run = await runner._required(started.run_id, "run")
+    assert run["inference_modes"] == {"judge-a": "instant", "judge-b": "instant"}
+
+
+@pytest.mark.asyncio
+async def test_race_does_not_finalize_batch_failure_while_instant_attempt_is_active():
+    instant_started = asyncio.Event()
+    allow_instant_to_finish = asyncio.Event()
+    batch_submission_id = []
+
+    async def instant(output, **_kwargs):
+        instant_started.set()
+        await allow_instant_to_finish.wait()
+        return 1
+
+    def submit_batch(_items, context):
+        batch_submission_id.append(context.submission_id)
+        return {"external_id": context.submission_id}
+
+    batch = WorkflowBatchScorer(
+        name="judge",
+        batching=WorkflowBatchingOptions(max_size=1),
+        submit=submit_batch,
+        completion=WorkflowSubmissionCompletionWebhook(lambda submission, _context: submission["external_id"]),
+        collect=lambda *_: [WorkflowBatchItemResult(custom_id="item-0", error="batch failed")],
+    )
+    evaluation = define_workflow_eval(
+        "race-active-attempt",
+        store=WorkflowEvalMemoryStore(),
+        data=[{"id": "case", "input": "x"}],
+        task=lambda input: input,
+        switchable_scores={"judge": {"instant": instant, "batch": batch}},
+    )
+    started = await evaluation.start(no_send_logs=True)
+    promotion = asyncio.create_task(
+        evaluation.set_inference_mode(started.run_id, scorer="judge", mode="instant", pending="race")
+    )
+    await instant_started.wait()
+
+    during_race = await evaluation.process_submission_result(started.run_id, external_id=batch_submission_id[0])
+    assert during_race.status == "waiting"
+
+    allow_instant_to_finish.set()
+    completed = await promotion
+    assert completed.status == "completed"
+
+
+@pytest.mark.asyncio
+async def test_switchable_instant_scorer_classes_are_instantiated():
+    class Judge:
+        called = False
+
+        def eval_async(self, output, **_kwargs):
+            self.called = True
+            return 1
+
+    batch = WorkflowBatchScorer(
+        name="judge",
+        batching=WorkflowBatchingOptions(max_size=1),
+        submit=lambda _items, context: {"id": context.submission_id},
+        completion=WorkflowSubmissionCompletionPoll(lambda *_: WorkflowSubmissionPoll(status="pending")),
+        collect=lambda *_: [],
+    )
+    evaluation = define_workflow_eval(
+        "class-switchable-scorer",
+        store=WorkflowEvalMemoryStore(),
+        data=[{"id": "case", "input": "x"}],
+        task=lambda input: input,
+        switchable_scores={"judge": {"instant": Judge, "batch": batch, "mode": "instant"}},
+    )
+
+    result = await evaluation.start(no_send_logs=True)
+
+    assert result.status == "completed"
+
+
+@pytest.mark.asyncio
 async def test_switchable_scores_mapping_normalizes_and_uses_mapping_key():
     calls = []
     submitted_batches = []
