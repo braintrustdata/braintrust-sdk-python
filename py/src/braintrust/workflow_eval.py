@@ -13,9 +13,9 @@ import threading
 import time
 import uuid
 from collections.abc import AsyncIterable, Awaitable, Callable, Iterable, Mapping, Sequence
-from typing import Any, Generic, Literal, Protocol, TypedDict, TypeVar, cast
+from typing import Any, Generic, Literal, Protocol, TypeVar, cast
 
-from typing_extensions import NotRequired
+from typing_extensions import NotRequired, TypedDict
 
 from .bt_json import bt_dumps, bt_loads
 from .env import BraintrustEnv
