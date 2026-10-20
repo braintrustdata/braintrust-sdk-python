@@ -756,10 +756,7 @@ class ContextTracker:
     def cleanup(self) -> None:
         """End all open LLM spans, TASK spans, and TOOL spans; clear thread-local."""
         for ctx in self._contexts.values():
-            if ctx.llm_span:
-                self._mark_output_usage_unknown(ctx)
-                ctx.llm_span.end()
-                ctx.llm_span = None
+            self._end_llm_span(ctx)
             if ctx.task_span:
                 ctx.task_span.end()
                 ctx.task_span = None
@@ -1003,6 +1000,7 @@ class ContextTracker:
             ctx = self._contexts.get(str(tool_use_id)) if tool_use_id is not None else None
             if ctx is None or not ctx.task_synthesized or ctx.task_span is None:
                 continue
+            self._end_llm_span(ctx)
             ctx.task_span.end()
             ctx.task_span = None
             self._task_order = [k for k in self._task_order if k != tool_use_id]
@@ -1118,6 +1116,14 @@ class ContextTracker:
         _, metadata = extract_anthropic_usage(raw_message_usage, include_output=False)
         ctx.llm_span.log(metrics=metrics or None, metadata=metadata or None)
 
+    def _end_llm_span(self, ctx: _AgentContext) -> None:
+        """Finalize a context's open LLM span, e.g. before its parent TASK span ends."""
+        if ctx.llm_span is None:
+            return
+        self._mark_output_usage_unknown(ctx)
+        ctx.llm_span.end()
+        ctx.llm_span = None
+
     def _mark_output_usage_unknown(self, ctx: _AgentContext) -> None:
         """Mark missing output only once an LLM span is finalized."""
         if ctx.llm_span is None:
@@ -1160,6 +1166,7 @@ class ContextTracker:
                 ctx.task_span.log(**update)
 
         if message_type == MessageClassName.TASK_NOTIFICATION:
+            self._end_llm_span(ctx)
             ctx.task_span.end()
             ctx.task_span = None
             self._task_order = [k for k in self._task_order if k != tool_use_id_str]
