@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
@@ -42,6 +43,11 @@ def _resolve_cassettes_dir() -> Path:
 
 
 CASSETTES_DIR = _resolve_cassettes_dir()
+
+# Timeouts for test synchronization waits. Replay is effectively instant;
+# a live recording waits on real model calls.
+REPLAY_WAIT_TIMEOUT_S = 1.0
+RECORD_WAIT_TIMEOUT_S = 120.0
 
 
 def get_record_mode() -> str:
@@ -227,6 +233,10 @@ _SENSITIVE_QUERY_PARAM_RE = re.compile(
 )
 
 
+def _is_result_message(message: Any) -> bool:
+    return isinstance(message, dict) and message.get("type") == "result"
+
+
 def _is_mcp_tool_call(message: Any) -> bool:
     request = message.get("request") if isinstance(message, dict) else None
     mcp_message = request.get("message") if isinstance(request, dict) else None
@@ -334,6 +344,14 @@ class ClaudeAgentSdkCassetteTransport(Transport):
         if self._recording:
             assert self._delegate is not None
             await self._delegate.close()
+            if not any(event["op"] == "read" and _is_result_message(event["payload"]) for event in self._events):
+                # A run that fails or hangs mid-recording would otherwise leave a
+                # truncated cassette that "once" mode replays from then on.
+                warnings.warn(
+                    f"Not saving cassette {self._cassette_name}: the recording has no result message",
+                    stacklevel=2,
+                )
+                return
             payload = {
                 "sdk_version": getattr(claude_agent_sdk, "__version__", "unknown"),
                 "cassette_name": self._cassette_name,
@@ -346,6 +364,11 @@ class ClaudeAgentSdkCassetteTransport(Transport):
 
     def is_ready(self) -> bool:
         return self._ready
+
+    @property
+    def wait_timeout(self) -> float:
+        """Timeout for waits on this transport's gates, sized for replay or live recording."""
+        return REPLAY_WAIT_TIMEOUT_S if self._should_replay() else RECORD_WAIT_TIMEOUT_S
 
     async def wait_for_mcp_tool_call(self) -> None:
         """Wait until replay delivers a local MCP ``tools/call`` request."""

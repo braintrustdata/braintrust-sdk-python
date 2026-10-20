@@ -1,0 +1,603 @@
+{
+  "cassette_name": "test_multiple_bundled_subagents_keep_outer_orchestration_separate",
+  "events": [
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "request": {
+            "hooks": null,
+            "subtype": "initialize"
+          },
+          "request_id": "req_1_a9a95074",
+          "type": "control_request"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "response": {
+          "request_id": "req_1_a9a95074",
+          "response": {
+            "account": {
+              "apiKeySource": "ANTHROPIC_API_KEY",
+              "tokenSource": "claude.ai"
+            },
+            "available_output_styles": [],
+            "commands": [],
+            "models": []
+          },
+          "subtype": "success"
+        },
+        "type": "control_response"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "message": {
+            "content": "Launch two bundled general-purpose subagents for two independent tasks. Start both Agent tool calls before waiting on either result if the tool API allows it. The first delegated subagent must use Bash and Read on release_notes_alpha.md and return only 'alpha:<version> | <owner>'. The second delegated subagent must use Bash and Read on release_notes_beta.md and return only 'beta:<version> | <owner>'. If either agent runs in the background, use TaskOutput with block=true to wait for each result. Do not finish while either task is still running. After both delegated agents finish, reply with exactly two lines in that same order. Do not answer directly without using both subagents.",
+            "role": "user"
+          },
+          "parent_tool_use_id": null,
+          "session_id": "default",
+          "type": "user"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "agents": [
+          "general-purpose",
+          "statusline-setup",
+          "Explore",
+          "Plan"
+        ],
+        "apiKeySource": "ANTHROPIC_API_KEY",
+        "claude_code_version": "2.0.72",
+        "cwd": "<REDACTED_CWD>",
+        "mcp_servers": [],
+        "model": "claude-haiku-4-5-20251001",
+        "output_style": "default",
+        "permissionMode": "bypassPermissions",
+        "plugins": [],
+        "session_id": "b2675c82-6c83-4937-a42f-2786d1d80109",
+        "skills": [],
+        "slash_commands": [
+          "compact",
+          "context",
+          "cost",
+          "init",
+          "pr-comments",
+          "release-notes",
+          "review",
+          "security-review"
+        ],
+        "subtype": "init",
+        "tools": [
+          "Task",
+          "TaskOutput",
+          "Bash",
+          "Glob",
+          "Grep",
+          "ExitPlanMode",
+          "Read",
+          "Edit",
+          "Write",
+          "NotebookEdit",
+          "WebFetch",
+          "TodoWrite",
+          "WebSearch",
+          "KillShell",
+          "AskUserQuestion",
+          "Skill",
+          "SlashCommand",
+          "EnterPlanMode"
+        ],
+        "type": "system",
+        "uuid": "2489cc21-e036-41fd-b966-289f58562765"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "container": null,
+          "content": [
+            {
+              "text": "I'll launch two general-purpose subagents to handle these independent tasks in parallel.",
+              "type": "text"
+            }
+          ],
+          "context_management": null,
+          "diagnostics": null,
+          "id": "msg_011CgDyfaC1FAbuuevesfX3i",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 481
+            },
+            "cache_creation_input_tokens": 481,
+            "cache_read_input_tokens": 14781,
+            "inference_geo": "not_available",
+            "input_tokens": 3,
+            "output_tokens": 4,
+            "service_tier": "standard",
+            "speed": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "b2675c82-6c83-4937-a42f-2786d1d80109",
+        "type": "assistant",
+        "uuid": "78f5993a-6a5f-4eda-8ff5-c80a7392a329"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "container": null,
+          "content": [
+            {
+              "caller": {
+                "type": "direct"
+              },
+              "id": "toolu_01DKvtbQB6PQr5GUmWwYmNmh",
+              "input": {
+                "description": "Extract alpha version and owner",
+                "prompt": "Read the file release_notes_alpha.md and extract the version and owner information. Return ONLY the result in this exact format: 'alpha:<version> | <owner>'",
+                "run_in_background": true,
+                "subagent_type": "general-purpose"
+              },
+              "name": "Task",
+              "type": "tool_use"
+            }
+          ],
+          "context_management": null,
+          "diagnostics": null,
+          "id": "msg_011CgDyfaC1FAbuuevesfX3i",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 481
+            },
+            "cache_creation_input_tokens": 481,
+            "cache_read_input_tokens": 14781,
+            "inference_geo": "not_available",
+            "input_tokens": 3,
+            "output_tokens": 4,
+            "service_tier": "standard",
+            "speed": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "b2675c82-6c83-4937-a42f-2786d1d80109",
+        "type": "assistant",
+        "uuid": "1a9efb39-0942-469f-a14c-6cb6b23ba80f"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "container": null,
+          "content": [
+            {
+              "caller": {
+                "type": "direct"
+              },
+              "id": "toolu_01LSfdqwPpftEByGD72gMmJa",
+              "input": {
+                "description": "Extract beta version and owner",
+                "prompt": "Read the file release_notes_beta.md and extract the version and owner information. Return ONLY the result in this exact format: 'beta:<version> | <owner>'",
+                "run_in_background": true,
+                "subagent_type": "general-purpose"
+              },
+              "name": "Task",
+              "type": "tool_use"
+            }
+          ],
+          "context_management": null,
+          "diagnostics": null,
+          "id": "msg_011CgDyfaC1FAbuuevesfX3i",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": "tool_use",
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 481
+            },
+            "cache_creation_input_tokens": 481,
+            "cache_read_input_tokens": 14781,
+            "inference_geo": "not_available",
+            "input_tokens": 3,
+            "output_tokens": 308,
+            "service_tier": "standard",
+            "speed": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "b2675c82-6c83-4937-a42f-2786d1d80109",
+        "type": "assistant",
+        "uuid": "2cbaffbd-4c6c-4dc8-ab1e-e85483404262"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "content": [
+                {
+                  "text": "Async agent launched successfully.\nagentId: a3293f9 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).\nThe agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:\n- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status\n- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).",
+                  "type": "text"
+                }
+              ],
+              "tool_use_id": "toolu_01DKvtbQB6PQr5GUmWwYmNmh",
+              "type": "tool_result"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "b2675c82-6c83-4937-a42f-2786d1d80109",
+        "tool_use_result": {
+          "agentId": "a3293f9",
+          "description": "Extract alpha version and owner",
+          "isAsync": true,
+          "outputFile": "<REDACTED_PATH>",
+          "prompt": "Read the file release_notes_alpha.md and extract the version and owner information. Return ONLY the result in this exact format: 'alpha:<version> | <owner>'",
+          "status": "async_launched"
+        },
+        "type": "user",
+        "uuid": "a253b4a0-a50a-4694-aa87-b350e75295da"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "content": [
+                {
+                  "text": "Async agent launched successfully.\nagentId: a137c3d (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).\nThe agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:\n- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status\n- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).",
+                  "type": "text"
+                }
+              ],
+              "tool_use_id": "toolu_01LSfdqwPpftEByGD72gMmJa",
+              "type": "tool_result"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "b2675c82-6c83-4937-a42f-2786d1d80109",
+        "tool_use_result": {
+          "agentId": "a137c3d",
+          "description": "Extract beta version and owner",
+          "isAsync": true,
+          "outputFile": "<REDACTED_PATH>",
+          "prompt": "Read the file release_notes_beta.md and extract the version and owner information. Return ONLY the result in this exact format: 'beta:<version> | <owner>'",
+          "status": "async_launched"
+        },
+        "type": "user",
+        "uuid": "dd289a87-6519-4c76-8d0e-89f7f903d113"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "container": null,
+          "content": [
+            {
+              "text": "Now I'll wait for both agents to complete their tasks using TaskOutput with block=true.",
+              "type": "text"
+            }
+          ],
+          "context_management": null,
+          "diagnostics": null,
+          "id": "msg_011CgDyfoCbCuY5Sxv6TcS3L",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 696
+            },
+            "cache_creation_input_tokens": 696,
+            "cache_read_input_tokens": 15262,
+            "inference_geo": "not_available",
+            "input_tokens": 7,
+            "output_tokens": 1,
+            "service_tier": "standard",
+            "speed": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "b2675c82-6c83-4937-a42f-2786d1d80109",
+        "type": "assistant",
+        "uuid": "208b8f5a-40a1-4b48-a171-89801a631159"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "container": null,
+          "content": [
+            {
+              "caller": {
+                "type": "direct"
+              },
+              "id": "toolu_017pfzjdSD3qbdFcU5utL5gS",
+              "input": {
+                "block": true,
+                "task_id": "a3293f9",
+                "timeout": 30000
+              },
+              "name": "TaskOutput",
+              "type": "tool_use"
+            }
+          ],
+          "context_management": null,
+          "diagnostics": null,
+          "id": "msg_011CgDyfoCbCuY5Sxv6TcS3L",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 696
+            },
+            "cache_creation_input_tokens": 696,
+            "cache_read_input_tokens": 15262,
+            "inference_geo": "not_available",
+            "input_tokens": 7,
+            "output_tokens": 1,
+            "service_tier": "standard",
+            "speed": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "b2675c82-6c83-4937-a42f-2786d1d80109",
+        "type": "assistant",
+        "uuid": "9329d08c-923a-47e0-8ce2-2fc37fbb0466"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "container": null,
+          "content": [
+            {
+              "caller": {
+                "type": "direct"
+              },
+              "id": "toolu_01JsYF9k6GCg81eLWdMizgdU",
+              "input": {
+                "block": true,
+                "task_id": "a137c3d",
+                "timeout": 30000
+              },
+              "name": "TaskOutput",
+              "type": "tool_use"
+            }
+          ],
+          "context_management": null,
+          "diagnostics": null,
+          "id": "msg_011CgDyfoCbCuY5Sxv6TcS3L",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": "tool_use",
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 696
+            },
+            "cache_creation_input_tokens": 696,
+            "cache_read_input_tokens": 15262,
+            "inference_geo": "not_available",
+            "input_tokens": 7,
+            "output_tokens": 153,
+            "service_tier": "standard",
+            "speed": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "b2675c82-6c83-4937-a42f-2786d1d80109",
+        "type": "assistant",
+        "uuid": "71f4effa-953b-4449-980b-f856f3cf412b"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "content": "<retrieval_status>success</retrieval_status>\n\n<task_id>a137c3d</task_id>\n\n<task_type>local_agent</task_type>\n\n<status>completed</status>\n\n<output>\n[Tool: Read] {\"file_path\":\"<REDACTED_PATH>\"}\n[Tool: Read] {\"file_path\":\"<REDACTED_PATH>\"}\n\n--- RESULT ---\nbeta:2026.03.11-beta | sdk-platform-beta\n</output>",
+              "tool_use_id": "toolu_01JsYF9k6GCg81eLWdMizgdU",
+              "type": "tool_result"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "b2675c82-6c83-4937-a42f-2786d1d80109",
+        "tool_use_result": {
+          "retrieval_status": "success",
+          "task": {
+            "description": "Extract beta version and owner",
+            "output": "[Tool: Read] {\"file_path\":\"<REDACTED_PATH>\"}\n[Tool: Read] {\"file_path\":\"<REDACTED_PATH>\"}\n\n--- RESULT ---\nbeta:2026.03.11-beta | sdk-platform-beta\n",
+            "prompt": "Read the file release_notes_beta.md and extract the version and owner information. Return ONLY the result in this exact format: 'beta:<version> | <owner>'",
+            "result": "[Tool: Read] {\"file_path\":\"<REDACTED_PATH>\"}\n[Tool: Read] {\"file_path\":\"<REDACTED_PATH>\"}\n\n--- RESULT ---\nbeta:2026.03.11-beta | sdk-platform-beta\n",
+            "status": "completed",
+            "task_id": "a137c3d",
+            "task_type": "local_agent"
+          }
+        },
+        "type": "user",
+        "uuid": "d1e50b52-2600-4273-b92f-d5452377ee4d"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "content": "<retrieval_status>success</retrieval_status>\n\n<task_id>a3293f9</task_id>\n\n<task_type>local_agent</task_type>\n\n<status>completed</status>\n\n<output>\n[Tool: Read] {\"file_path\":\"<REDACTED_PATH>\"}\n[Tool: Read] {\"file_path\":\"<REDACTED_PATH>\"}\n\n--- RESULT ---\nalpha:2026.03.11-alpha | sdk-platform-alpha\n</output>",
+              "tool_use_id": "toolu_017pfzjdSD3qbdFcU5utL5gS",
+              "type": "tool_result"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "b2675c82-6c83-4937-a42f-2786d1d80109",
+        "tool_use_result": {
+          "retrieval_status": "success",
+          "task": {
+            "description": "Extract alpha version and owner",
+            "output": "[Tool: Read] {\"file_path\":\"<REDACTED_PATH>\"}\n[Tool: Read] {\"file_path\":\"<REDACTED_PATH>\"}\n\n--- RESULT ---\nalpha:2026.03.11-alpha | sdk-platform-alpha\n",
+            "prompt": "Read the file release_notes_alpha.md and extract the version and owner information. Return ONLY the result in this exact format: 'alpha:<version> | <owner>'",
+            "result": "[Tool: Read] {\"file_path\":\"<REDACTED_PATH>\"}\n[Tool: Read] {\"file_path\":\"<REDACTED_PATH>\"}\n\n--- RESULT ---\nalpha:2026.03.11-alpha | sdk-platform-alpha\n",
+            "status": "completed",
+            "task_id": "a3293f9",
+            "task_type": "local_agent"
+          }
+        },
+        "type": "user",
+        "uuid": "561298f5-f949-446e-8233-fbc4dc24fb38"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "container": null,
+          "content": [
+            {
+              "text": "alpha:2026.03.11-alpha | sdk-platform-alpha\nbeta:2026.03.11-beta | sdk-platform-beta",
+              "type": "text"
+            }
+          ],
+          "context_management": null,
+          "diagnostics": null,
+          "id": "msg_011CgDyg6oFohKHMuLtbRZyu",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 772
+            },
+            "cache_creation_input_tokens": 772,
+            "cache_read_input_tokens": 15958,
+            "inference_geo": "not_available",
+            "input_tokens": 7,
+            "output_tokens": 36,
+            "service_tier": "standard",
+            "speed": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "b2675c82-6c83-4937-a42f-2786d1d80109",
+        "type": "assistant",
+        "uuid": "3a0bac8a-0f54-49e3-b78f-64d264c8215c"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "duration_api_ms": 19560,
+        "duration_ms": 10437,
+        "is_error": false,
+        "modelUsage": {
+          "claude-haiku-4-5-20251001": {
+            "cacheCreationInputTokens": 1949,
+            "cacheReadInputTokens": 46001,
+            "contextWindow": 200000,
+            "costUSD": 0.01122235,
+            "inputTokens": 851,
+            "outputTokens": 667,
+            "webSearchRequests": 0
+          },
+          "claude-sonnet-4-5-20250929": {
+            "cacheCreationInputTokens": 22296,
+            "cacheReadInputTokens": 21750,
+            "contextWindow": 200000,
+            "costUSD": 0.10115100000000002,
+            "inputTokens": 982,
+            "outputTokens": 538,
+            "webSearchRequests": 0
+          }
+        },
+        "num_turns": 5,
+        "permission_denials": [],
+        "result": "alpha:2026.03.11-alpha | sdk-platform-alpha\nbeta:2026.03.11-beta | sdk-platform-beta",
+        "session_id": "b2675c82-6c83-4937-a42f-2786d1d80109",
+        "subtype": "success",
+        "total_cost_usd": 0.11237335000000001,
+        "type": "result",
+        "usage": {
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 0,
+            "ephemeral_5m_input_tokens": 1949
+          },
+          "cache_creation_input_tokens": 1949,
+          "cache_read_input_tokens": 46001,
+          "input_tokens": 17,
+          "output_tokens": 497,
+          "server_tool_use": {
+            "web_fetch_requests": 0,
+            "web_search_requests": 0
+          },
+          "service_tier": "standard"
+        },
+        "uuid": "287517ec-8f6c-4e8f-aa02-cbb2ef0dcba4"
+      }
+    }
+  ],
+  "sdk_version": "0.1.18"
+}

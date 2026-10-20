@@ -19,6 +19,7 @@ from braintrust.integrations.claude_agent_sdk._constants import (
     MCP_TOOL_NAME_DELIMITER,
     MCP_TOOL_PREFIX,
     SERIALIZED_CONTENT_TYPE_BY_BLOCK_CLASS,
+    SUBAGENT_TOOL_NAMES,
     SYSTEM_MESSAGE_TYPES,
     TOOL_METADATA,
     BlockClassName,
@@ -578,7 +579,7 @@ def _message_starts_subagent_tool(message: Any) -> bool:
     for block in message.content:
         if type(block).__name__ != BlockClassName.TOOL_USE:
             continue
-        if getattr(block, "name", None) == "Agent":
+        if getattr(block, "name", None) in SUBAGENT_TOOL_NAMES:
             return True
 
     return False
@@ -681,6 +682,9 @@ class _AgentContext:
     next_llm_start: float | None = None
     task_span: Any | None = None
     task_confirmed: bool = False
+    # Older CLIs emit no task_* system messages; the task span is then derived from the subagent tool call.
+    subagent_tool_input: dict[str, Any] | None = None
+    task_synthesized: bool = False
 
 
 class ContextTracker:
@@ -818,6 +822,9 @@ class ContextTracker:
         # ``tool_use`` AssistantMessages back-to-back (merged into one LLM
         # turn) before any ``tool_result`` arrives. In that case the earlier
         # tool spans are still awaiting their results and must not be closed.
+        if incoming_parent is not None:
+            self._maybe_synthesize_task_span(str(incoming_parent), ctx)
+
         if ctx.llm_span and ctx.next_llm_start is not None and self._tool_tracker.has_active_spans:
             self._tool_tracker.cleanup_context(
                 incoming_parent,
@@ -844,6 +851,8 @@ class ContextTracker:
                 self._final_results.append(final_content)
 
     def _handle_user(self, message: Any) -> None:
+        # End synthesized subagent TASK spans before their Agent tool span closes.
+        self._end_synthesized_task_spans(message)
         self._tool_tracker.finish_tool_spans(message)
         has_tool_results = False
         if hasattr(message, "content"):
@@ -954,10 +963,49 @@ class ContextTracker:
         if not hasattr(message, "content"):
             return
         for block in message.content:
-            if type(block).__name__ == BlockClassName.TOOL_USE and getattr(block, "name", None) == "Agent":
+            if type(block).__name__ == BlockClassName.TOOL_USE and getattr(block, "name", None) in SUBAGENT_TOOL_NAMES:
                 tool_use_id = getattr(block, "id", None)
                 if tool_use_id:
-                    self._get_context(str(tool_use_id))
+                    tool_input = getattr(block, "input", None)
+                    self._get_context(str(tool_use_id)).subagent_tool_input = (
+                        tool_input if isinstance(tool_input, dict) else {}
+                    )
+
+    def _maybe_synthesize_task_span(self, tool_use_id: str, ctx: _AgentContext) -> None:
+        """Start a TASK span for a subagent whose CLI emitted no TaskStarted message.
+
+        Claude Code CLIs bundled before 2.1 stream subagent messages tagged with
+        parent_tool_use_id but never emit task_started / task_notification.
+        """
+        if ctx.task_span is not None or ctx.task_confirmed or ctx.subagent_tool_input is None:
+            return
+        tool_input = ctx.subagent_tool_input
+        description = tool_input.get("description")
+        subagent_type = tool_input.get("subagent_type")
+        ctx.task_span = start_span(
+            name=description or subagent_type or f"Task {tool_use_id}",
+            span_attributes={"type": SpanTypeAttribute.TASK},
+            metadata={
+                k: v for k, v in {"tool_use_id": tool_use_id, "task_type": subagent_type}.items() if v is not None
+            },
+            parent=self._tool_tracker.get_span_export(tool_use_id) or self._root_span_export,
+        )
+        ctx.task_confirmed = True
+        ctx.task_synthesized = True
+        self._task_order.append(tool_use_id)
+
+    def _end_synthesized_task_spans(self, message: Any) -> None:
+        """End synthesized TASK spans once the orchestrator receives the subagent's tool result."""
+        for block in getattr(message, "content", None) or ():
+            if type(block).__name__ != BlockClassName.TOOL_RESULT:
+                continue
+            tool_use_id = getattr(block, "tool_use_id", None)
+            ctx = self._contexts.get(str(tool_use_id)) if tool_use_id is not None else None
+            if ctx is None or not ctx.task_synthesized or ctx.task_span is None:
+                continue
+            ctx.task_span.end()
+            ctx.task_span = None
+            self._task_order = [k for k in self._task_order if k != tool_use_id]
 
     def _live_agent_tool_use_ids(self) -> frozenset[str]:
         """Return tool_use_ids of Agent spans that must not be closed yet."""
