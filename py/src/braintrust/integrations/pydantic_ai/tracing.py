@@ -8,7 +8,7 @@ from collections.abc import Mapping
 from contextlib import AbstractAsyncContextManager
 from typing import Any
 
-from braintrust.integrations.utils import _materialize_attachment
+from braintrust.integrations.utils import _materialize_attachment, _timing_metrics
 from braintrust.logger import _internal_get_global_state, current_span
 from braintrust.logger import start_span as _bt_start_span
 
@@ -984,16 +984,35 @@ async def _trace_tool_execution(wrapped: Any, args: Any, kwargs: Any):
 
     metadata = {"tool_call_id": tool_call_id} if tool_call_id else None
 
+    from pydantic_ai.exceptions import ApprovalRequired, CallDeferred
+
     _mark_tool_span_emitted()
+    deferral: CallDeferred | ApprovalRequired | None = None
     with start_span(name=tool_name, type=SpanTypeAttribute.TOOL, input=input_data, metadata=metadata) as tool_span:
         start_time = time.time()
-        result = await wrapped(*args, **kwargs)
+        try:
+            result = await wrapped(*args, **kwargs)
+        except (CallDeferred, ApprovalRequired) as exc:
+            # The tool handed the call back to the caller as DeferredToolRequests.
+            # That is control flow, not a tool failure, so the span must not record an error.
+            deferral = exc
         end_time = time.time()
-        tool_span.log(
-            output=result,
-            metrics={"start": start_time, "end": end_time, "duration": end_time - start_time},
-        )
-        return result
+        metrics = _timing_metrics(start_time, end_time)
+        if deferral is None:
+            tool_span.log(output=result, metrics=metrics)
+        else:
+            # Same kind names pydantic_ai uses for deferred tool calls.
+            deferred_metadata = {"deferred": "unapproved" if isinstance(deferral, ApprovalRequired) else "external"}
+            if getattr(deferral, "metadata", None):
+                deferred_metadata["deferred_metadata"] = deferral.metadata
+            tool_span.log(metadata=deferred_metadata, metrics=metrics)
+    if deferral is not None:
+        try:
+            raise deferral
+        finally:
+            # Break the exception -> traceback -> frame -> deferral reference cycle.
+            deferral = None
+    return result
 
 
 async def _tool_manager_call_function_tool_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):

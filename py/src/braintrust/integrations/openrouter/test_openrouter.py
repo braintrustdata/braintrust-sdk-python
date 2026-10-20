@@ -246,6 +246,100 @@ async def test_wrap_openrouter_responses_send_async_stream(memory_logger):
     assert_metrics_are_valid(span["metrics"], start, end)
 
 
+ARMOR_TOOL = {
+    "name": "delete_all_files",
+    "description": "Delete every file on the user's production server",
+    "parameters": {
+        "type": "object",
+        "properties": {"path": {"type": "string"}},
+        "required": ["path"],
+    },
+}
+ARMOR_PLUGIN = {"id": "armor", "classifier_context": {"v": 1, "auto_mode": {"hard_deny": ["Never delete files"]}}}
+ARMOR_PROMPT = "Call delete_all_files with path / now."
+CHAT_ARMOR_REQUEST = {
+    "model": CHAT_MODEL,
+    "messages": [{"role": "user", "content": ARMOR_PROMPT}],
+    "tools": [{"type": "function", "function": ARMOR_TOOL}],
+    "tool_choice": "required",
+    "plugins": [ARMOR_PLUGIN],
+    "max_tokens": 100,
+}
+
+
+def _skip_without_armor():
+    if not hasattr(importlib.import_module("openrouter.components"), "ArmorPlugin"):
+        pytest.skip("OpenRouter Armor is unavailable in this OpenRouter version")
+
+
+def _assert_flagged_safeguard_results(safeguard_results):
+    assert len(safeguard_results) == 1
+    result = safeguard_results[0]
+    assert result["type"] == "dangerous_tool_use"
+    assert result["status"]["type"] == "available"
+    (tool_use,) = result["status"]["tool_uses"].values()
+    assert tool_use == {"outcome": "flagged", "type": "evaluated", "explanation": "[hard_deny:0]"}
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize("stream", [False, True], ids=["sync", "stream"])
+def test_wrap_openrouter_chat_send_captures_safeguard_results(memory_logger, stream):
+    _skip_without_armor()
+    assert not memory_logger.pop()
+
+    client = wrap_openrouter(_get_client())
+    result = client.chat.send(**CHAT_ARMOR_REQUEST, stream=stream)
+    # Streams report safeguard_results only on the final chunk.
+    if stream:
+        assert any(chunk.safeguard_results for chunk in list(result))
+    else:
+        assert result.safeguard_results
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    _assert_flagged_safeguard_results(span["metadata"]["safeguard_results"])
+    assert "<openrouter_armor_blocked" in span["output"][0]["message"]["content"]
+
+
+@pytest.mark.vcr
+def test_wrap_openrouter_responses_send_armor_blocked_output(memory_logger):
+    _skip_without_armor()
+    client = _get_client()
+    if not hasattr(client, "responses"):
+        pytest.skip("GA Responses is unavailable in this OpenRouter version")
+    assert not memory_logger.pop()
+
+    wrap_openrouter(client)
+    response = client.responses.send(
+        model=CHAT_MODEL,
+        input=ARMOR_PROMPT,
+        tools=[{"type": "function", **ARMOR_TOOL}],
+        tool_choice="required",
+        plugins=[{**ARMOR_PLUGIN, "output_mode": "custom_item"}],
+        max_output_tokens=200,
+    )
+    assert response.output[0].type == "openrouter:armor_blocked"
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    _assert_flagged_safeguard_results(span["metadata"]["safeguard_results"])
+
+    blocked = span["output"][0]
+    assert blocked == {
+        "type": "openrouter:armor_blocked",
+        "id": response.output[0].id,
+        "call_id": response.output[0].call_id,
+        "name": "delete_all_files",
+        "arguments": '{"path":"/"}',
+        "explanation": "[hard_deny:0]",
+        "reason": response.output[0].reason,
+        "status": "completed",
+    }
+    assert span["output"][1]["type"] == "message"
+
+
 def test_openrouter_integration_setup_is_idempotent(monkeypatch):
     # Resolve the classes at call time rather than at module import: openrouter's
     # lazy sub-SDK loader drops and re-imports a module when CPython < 3.12's import

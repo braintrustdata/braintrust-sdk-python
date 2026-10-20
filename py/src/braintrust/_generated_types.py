@@ -166,6 +166,7 @@ class ApiKey(TypedDict):
 class AsyncScoringControlAsyncScoringControl(TypedDict):
     kind: Literal['score_update']
     token: NotRequired[str | None]
+    triggered_xact_id: NotRequired[str | None]
 
 
 class AsyncScoringControlAsyncScoringControl2(TypedDict):
@@ -2071,7 +2072,7 @@ class ProjectGroup(TypedDict):
     """
     member_projects: Sequence[str]
     """
-    Sorted ids of active projects in this project group
+    Sorted ids of active projects in this project group. Modifying membership requires project_group:update on the group.
     """
 
 

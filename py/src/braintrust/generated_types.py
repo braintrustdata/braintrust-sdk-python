@@ -1,4 +1,4 @@
-"""Auto-generated file (content hash 87319a2be5c083ea) -- do not modify"""
+"""Auto-generated file (content hash 4c7189b4e4362aae) -- do not modify"""
 
 from ._generated_types import (
     Acl,

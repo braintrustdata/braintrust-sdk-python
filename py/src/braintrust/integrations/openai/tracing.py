@@ -1738,11 +1738,11 @@ class ResponseWrapper:
             if (
                 not usage
                 and hasattr(result, "type")
-                and result.type == "response.completed"
+                and result.type in ("response.completed", "response.incomplete", "response.failed")
                 and hasattr(result, "response")
             ):
                 metadata.update(_extract_moderation_metadata(result.response))
-                # Handle summaries from completed response if present
+                # Handle summaries from the terminal response if present
                 if hasattr(result.response, "output") and result.response.output:
                     output_by_id = {item.get("id"): item for item in output if item.get("id")}
                     for output_item in result.response.output:
@@ -1767,7 +1767,7 @@ class ResponseWrapper:
                 output.append(item_data)
                 continue
 
-            if result.type == "response.completed":
+            if result.type in ("response.completed", "response.incomplete", "response.failed"):
                 if hasattr(result, "response") and hasattr(result.response, "output"):
                     metadata.update(_extract_moderation_metadata(result.response))
                     return {
@@ -2083,11 +2083,15 @@ def _decision_choice_keys(question: dict[str, Any]) -> dict[tuple[type, Any], st
     return keys
 
 
-def _decisions_input(state: Any, questions: Any) -> dict[str, Any]:
+def _decisions_input(
+    state: Any, questions: Any, *, media_transform: Callable[[Any], Any] | None = None
+) -> dict[str, Any]:
     try:
-        state = _process_attachments_in_input(state)
+        # A provider transform handles media within the shared fallback boundary.
+        if media_transform is None:
+            state = _process_attachments_in_input(state)
         if isinstance(questions, Mapping):
-            return _question_span_input(state, questions)
+            return _question_span_input(state, questions, media_transform=media_transform)
         questions = [_try_to_dict(question) for question in questions]
         normalized = []
         for identifier, question in zip(_decision_question_ids(questions), questions):
@@ -2109,29 +2113,49 @@ def _decisions_input(state: Any, questions: Any) -> dict[str, Any]:
                     for level in question.get("levels", [])
                 ]
             normalized.append(payload)
-        return _question_span_input(state, normalized)
+        return _question_span_input(state, normalized, media_transform=media_transform)
     except Exception:
         _log.debug("Failed to normalize Decisions questions", exc_info=True)
         return {"state": state, "questions": []}
 
 
-def _decisions_output(answers: Any, questions: Any) -> dict[str, Any]:
+def _decisions_output(answers: Any, questions: Any, span_input: Any = None) -> dict[str, Any]:
     try:
         if isinstance(answers, Mapping):
-            return _question_span_output(answers)
+            return _question_span_output(answers, span_input)
         questions = [_try_to_dict(question) for question in questions]
+        identifiers = _decision_question_ids(questions)
+        named_questions = {
+            question["name"]: (identifier, question)
+            for identifier, question in zip(identifiers, questions)
+            if question.get("name") == identifier
+        }
+        answers = [_try_to_dict(answer) for answer in answers or []]
+        named_answer_ids = {
+            answer["name"] for answer in answers if isinstance(answer, dict) and answer.get("name") in named_questions
+        }
+        remaining_questions = iter(
+            (identifier, question)
+            for identifier, question in zip(identifiers, questions)
+            if identifier not in named_answer_ids
+        )
         normalized = []
-        # OpenAI guarantees answer order, including refusals and unnamed questions.
-        # Use the request's IDs so all answers remain linked to their questions.
-        for identifier, question, answer in zip(_decision_question_ids(questions), questions, answers or []):
-            answer = _try_to_dict(answer)
+        # Reserve named matches before pairing the remaining answers and
+        # questions in order, so reordering cannot duplicate a question ID.
+        for answer in answers:
             if not isinstance(answer, dict):
                 continue
+            match = named_questions.pop(answer.get("name"), None)
+            if match is None:
+                match = next(remaining_questions, None)
+            if match is None:
+                continue
+            identifier, question = match
             kind = answer.get("type")
             payload = {"id": identifier, "type": "boolean" if kind == "predicate" else kind}
-            for key in ("probability", "score", "confidence"):
+            for key in ("noul", "probability", "score", "confidence", "box", "image_path"):
                 if key in answer:
-                    payload[key] = answer[key]
+                    payload[key] = _try_to_dict(answer[key]) if key == "box" else answer[key]
             if kind == "choice":
                 keys = _decision_choice_keys(question)
                 if "choice" in answer:
@@ -2148,7 +2172,7 @@ def _decisions_output(answers: Any, questions: Any) -> dict[str, Any]:
                 }
                 payload["legend"] = {str(item["value"]): item["label"] for item in answer["probabilities"]}
             normalized.append(payload)
-        return _question_span_output(normalized)
+        return _question_span_output(normalized, span_input)
     except Exception:
         _log.debug("Failed to normalize Decisions answers", exc_info=True)
         return {"answers": []}
@@ -2185,11 +2209,11 @@ def _decisions_span_params(params: dict[str, Any]) -> dict[str, Any]:
     )
 
 
-def _log_decisions_response(span: Span, response: Any, questions: Any):
+def _log_decisions_response(span: Span, response: Any, questions: Any, span_input: Any):
     response = _try_to_dict(response)
     if isinstance(response, dict):
         span.log(
-            output=_decisions_output(response.get("answers"), questions or []),
+            output=_decisions_output(response.get("answers"), questions or [], span_input),
             metrics=_parse_metrics_from_usage(response.get("usage")),
         )
 
@@ -2198,25 +2222,27 @@ def _decisions_create_wrapper(wrapped, instance, args, kwargs):
     if _is_async_callable(wrapped):
 
         async def call():
+            params = _decisions_span_params(kwargs)
             with start_span(
                 **merge_dicts(
                     dict(name="openai.decisions.create", span_attributes={"type": SpanTypeAttribute.DECISION}),
-                    _decisions_span_params(kwargs),
+                    params,
                 )
             ) as span:
                 response = await wrapped(*args, **kwargs)
-                _log_decisions_response(span, response, kwargs.get("questions"))
+                _log_decisions_response(span, response, kwargs.get("questions"), params.get("input"))
                 return response
 
         return call()
+    params = _decisions_span_params(kwargs)
     with start_span(
         **merge_dicts(
             dict(name="openai.decisions.create", span_attributes={"type": SpanTypeAttribute.DECISION}),
-            _decisions_span_params(kwargs),
+            params,
         )
     ) as span:
         response = wrapped(*args, **kwargs)
-        _log_decisions_response(span, response, kwargs.get("questions"))
+        _log_decisions_response(span, response, kwargs.get("questions"), params.get("input"))
         return response
 
 

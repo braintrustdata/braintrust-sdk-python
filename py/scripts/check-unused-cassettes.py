@@ -161,28 +161,50 @@ def sessions_by_integration(noxfile: pathlib.Path = _NOXFILE) -> dict[str, set[s
     A session reads ``integrations/<name>/cassettes`` when it runs tests under
     ``integrations/<name>/``, or when it passes ``<name>`` as an env value to
     ``_run_tests`` (the btx sessions select their provider's cassettes that way).
+    Sessions are either functions that call ``_run_tests`` or spec dicts passed
+    to ``_register_matrix_sessions`` (with ``tests`` and optional ``env`` keys).
     """
     known = set(integrations_with_cassettes())
     mapping: dict[str, set[str]] = defaultdict(set)
+
+    def add(session: str, test_paths: list[ast.expr], env: ast.expr | None) -> None:
+        prefix = "braintrust/integrations/"
+        for node in test_paths:
+            path = _render_test_path(node)
+            if path and path.startswith(prefix):
+                name = path[len(prefix) :].split("/")[0]
+                if name in known:
+                    mapping[name].add(session)
+        if isinstance(env, ast.Dict):
+            for value in env.values:
+                if isinstance(value, ast.Constant) and value.value in known:
+                    mapping[value.value].add(session)
+
     tree = ast.parse(noxfile.read_text())
-    for func in tree.body:
-        if not isinstance(func, ast.FunctionDef):
-            continue
-        for call in ast.walk(func):
-            if not (isinstance(call, ast.Call) and isinstance(call.func, ast.Name) and call.func.id == "_run_tests"):
-                continue
-            if len(call.args) >= 2:
-                path = _render_test_path(call.args[1])
-                prefix = "braintrust/integrations/"
-                if path and path.startswith(prefix):
-                    name = path[len(prefix) :].split("/")[0]
-                    if name in known:
-                        mapping[name].add(func.name)
-            for keyword in call.keywords:
-                if keyword.arg == "env" and isinstance(keyword.value, ast.Dict):
-                    for value in keyword.value.values:
-                        if isinstance(value, ast.Constant) and value.value in known:
-                            mapping[value.value].add(func.name)
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef):
+            for call in ast.walk(node):
+                if isinstance(call, ast.Call) and isinstance(call.func, ast.Name) and call.func.id == "_run_tests":
+                    env = next((k.value for k in call.keywords if k.arg == "env"), None)
+                    add(node.name, call.args[1:2], env)
+        elif (
+            isinstance(node, ast.Expr)
+            and isinstance(node.value, ast.Call)
+            and isinstance(node.value.func, ast.Name)
+            and node.value.func.id == "_register_matrix_sessions"
+            and node.value.args
+            and isinstance(node.value.args[0], ast.List)
+        ):
+            for spec in node.value.args[0].elts:
+                if not isinstance(spec, ast.Dict):
+                    continue
+                fields = {k.value: v for k, v in zip(spec.keys, spec.values) if isinstance(k, ast.Constant)}
+                name = fields.get("name")
+                if not (isinstance(name, ast.Constant) and isinstance(name.value, str)):
+                    continue
+                tests = fields.get("tests")
+                test_paths = tests.elts if isinstance(tests, (ast.List, ast.Tuple)) else [tests] if tests else []
+                add(name.value, test_paths, fields.get("env"))
     return dict(mapping)
 
 

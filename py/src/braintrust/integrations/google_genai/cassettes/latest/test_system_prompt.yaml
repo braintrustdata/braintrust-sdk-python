@@ -18,41 +18,37 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.29.0 gl-python/3.14.7
+      - google-genai-sdk/2.31.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/2.29.0 gl-python/3.14.7
+      - google-genai-sdk/2.31.0 gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"Ahoy there, matey!  Ye be askin' about
-        the weather, eh? Well, let me tell ye, the seas be a fickle mistress, she
-        be!\\n\\nRight now, the wind be blowin' a fair **breeze**, enough to fill
-        our sails and carry us to treasure. The sky be mostly **clear**, with only
-        a few **fluffy clouds** driftin' by like lost sheep. The sun be shinin' bright,
-        so ye best be wearin' yer trusty eye patch lest it scorch yer barnacles!\\n\\nBut
-        don't ye be gettin' too comfortable! The ocean be known for her sudden tantrums.
-        Keep a weather eye on the horizon, lest a **squall**\"\n          }\n        ],\n
-        \       \"role\": \"model\"\n      },\n      \"finishReason\": \"MAX_TOKENS\",\n
-        \     \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
-        19,\n    \"candidatesTokenCount\": 150,\n    \"totalTokenCount\": 169,\n    \"promptTokensDetails\":
+        [\n          {\n            \"text\": \"Ahoy there, matey! The sky be a fearsome
+        sight today, dark clouds gatherin' like a kraken's tentacles. The wind be
+        howlin' like a banshee, stirrin' up the waves into a frenzy. Best batten down
+        the hatches and hold on tight, for this be no day for sailin' the high seas!\"\n
+        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        19,\n    \"candidatesTokenCount\": 74,\n    \"totalTokenCount\": 93,\n    \"promptTokensDetails\":
         [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 19\n
         \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
-        \"gemini-2.5-flash-lite\",\n  \"responseId\": \"wjvOasWXI8u7jrEP55n30As\"\n}\n"
+        \"gemini-2.5-flash-lite\",\n  \"responseId\": \"CVDWau2HC_ij_uMP-YuQoAg\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '1109'
+      - '817'
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Tue, 13 Oct 2026 14:10:11 GMT
+      - Mon, 19 Oct 2026 17:14:49 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=1013
+      - gfet4t7; dur=625
       transfer-encoding:
       - chunked
       vary:

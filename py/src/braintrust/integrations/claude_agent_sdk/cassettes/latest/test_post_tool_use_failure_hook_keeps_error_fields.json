@@ -1,0 +1,916 @@
+{
+  "cassette_name": "test_post_tool_use_failure_hook_keeps_error_fields",
+  "events": [
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "request": {
+            "hooks": {
+              "PostToolUseFailure": [
+                {
+                  "hookCallbackIds": [
+                    "hook_0"
+                  ],
+                  "matcher": "Bash"
+                }
+              ]
+            },
+            "subtype": "initialize"
+          },
+          "request_id": "req_1_8bf5e84d",
+          "type": "control_request"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "hook_event": "SessionStart",
+        "hook_id": "63df3ed3-a470-409b-a65f-998b81196da1",
+        "hook_name": "SessionStart:startup",
+        "session_id": "8107dacd-909c-4456-aa24-effcbe3d0ca4",
+        "subtype": "hook_started",
+        "type": "system",
+        "uuid": "3d93042c-c544-4e45-a1ad-aa4b64095b8c"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "hook_event": "SessionStart",
+        "hook_id": "fa9fe1aa-6b48-45ea-924e-55051545251b",
+        "hook_name": "SessionStart:startup",
+        "session_id": "8107dacd-909c-4456-aa24-effcbe3d0ca4",
+        "subtype": "hook_started",
+        "type": "system",
+        "uuid": "1eefd1f5-b6d8-4ff9-8e90-1544f6623508"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "exit_code": 0,
+        "hook_event": "SessionStart",
+        "hook_id": "fa9fe1aa-6b48-45ea-924e-55051545251b",
+        "hook_name": "SessionStart:startup",
+        "outcome": "success",
+        "output": "",
+        "session_id": "8107dacd-909c-4456-aa24-effcbe3d0ca4",
+        "stderr": "",
+        "stdout": "",
+        "subtype": "hook_response",
+        "type": "system",
+        "uuid": "5062832a-855c-4db6-8b0a-43c7f71907d8"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "exit_code": 0,
+        "hook_event": "SessionStart",
+        "hook_id": "63df3ed3-a470-409b-a65f-998b81196da1",
+        "hook_name": "SessionStart:startup",
+        "outcome": "success",
+        "output": "",
+        "session_id": "8107dacd-909c-4456-aa24-effcbe3d0ca4",
+        "stderr": "",
+        "stdout": "",
+        "subtype": "hook_response",
+        "type": "system",
+        "uuid": "6fafee01-ff78-4f60-97da-946cf3a1b3e8"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "response": {
+          "pending_permission_requests": [],
+          "pending_user_dialog_requests": [],
+          "request_id": "req_1_8bf5e84d",
+          "response": {
+            "account": {
+              "apiKeySource": "ANTHROPIC_API_KEY",
+              "apiProvider": "firstParty",
+              "tokenSource": "claude.ai"
+            },
+            "agents": [],
+            "available_output_styles": [],
+            "commands": [],
+            "models": []
+          },
+          "subtype": "success"
+        },
+        "type": "control_response"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "message": {
+            "content": "Run exactly this Bash command once and nothing else: exit 7. Do not retry it. Then reply with the word done.",
+            "role": "user"
+          },
+          "parent_tool_use_id": null,
+          "session_id": "default",
+          "type": "user"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "sdk_host_only": true,
+        "session_id": "8107dacd-909c-4456-aa24-effcbe3d0ca4",
+        "state": "running",
+        "subtype": "session_state_changed",
+        "type": "system",
+        "uuid": "82b91af7-0c50-4a15-af50-f1c67e16acbe"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "additional_directories": [],
+        "agents": [
+          "claude",
+          "Explore",
+          "general-purpose",
+          "Plan",
+          "statusline-setup"
+        ],
+        "analytics_disabled": false,
+        "apiKeySource": "ANTHROPIC_API_KEY",
+        "capabilities": [
+          "interrupt_receipt_v1",
+          "interrupt_cancel_queued_v1",
+          "interrupt_send_now_v1",
+          "msg_lifecycle_v1",
+          "request_marker_lists_v1",
+          "sdk_mcp_tools_list_changed",
+          "sdk_mcp_manifests",
+          "mcp_read_resource_v1",
+          "mcp_tool_ui_meta_v1",
+          "ui_surface_v1",
+          "mcp_call_result_not_for_model_v1"
+        ],
+        "claude_code_version": "2.1.301",
+        "cwd": "<REDACTED_CWD>",
+        "fast_mode_disabled_reason": "sdk_opt_in_required",
+        "fast_mode_state": "off",
+        "mcp_servers": [
+          {
+            "name": "linear-server",
+            "source": "local",
+            "status": "connected"
+          }
+        ],
+        "memory_paths": {
+          "auto": "<REDACTED_PATH>"
+        },
+        "messaging_socket_path": "<REDACTED_PATH>",
+        "model": "claude-haiku-4-5-20251001",
+        "original_cwd": "<REDACTED_PATH>",
+        "output_style": "default",
+        "per_turn_effort_active": false,
+        "permissionMode": "bypassPermissions",
+        "plugins": [
+          {
+            "name": "rust-analyzer-lsp",
+            "path": "<REDACTED_PATH>",
+            "source": "rust-analyzer-lsp@claude-plugins-official",
+            "version": "1.0.0"
+          },
+          {
+            "name": "trace-claude-code",
+            "path": "<REDACTED_PATH>",
+            "source": "trace-claude-code@braintrust-claude-plugin",
+            "version": "3.0.3"
+          },
+          {
+            "name": "superset",
+            "path": "<REDACTED_PATH>",
+            "source": "superset@skills-dir",
+            "version": "0.3.0"
+          },
+          {
+            "name": "cc-plugin-sec-default",
+            "path": "builtin",
+            "source": "cc-plugin-sec-default@builtin"
+          },
+          {
+            "name": "cc-plugin-agents-md",
+            "path": "builtin",
+            "source": "cc-plugin-agents-md@builtin"
+          },
+          {
+            "name": "cc-plugin-telemetry",
+            "path": "builtin",
+            "source": "cc-plugin-telemetry@builtin"
+          },
+          {
+            "name": "cc-plugin-plugin-authoring",
+            "path": "builtin",
+            "source": "cc-plugin-plugin-authoring@builtin"
+          }
+        ],
+        "product_feedback_disabled": false,
+        "session_id": "8107dacd-909c-4456-aa24-effcbe3d0ca4",
+        "skills": [
+          "braintrust",
+          "create-braintrust-demo",
+          "commit-message",
+          "sdk-benchmarking",
+          "sdk-ci-triage",
+          "sdk-dependency-updates",
+          "sdk-integrations",
+          "sdk-vcr-workflows",
+          "superset:10x",
+          "superset:automate",
+          "superset:browser",
+          "superset:computer",
+          "superset:contribute",
+          "superset:doctor",
+          "superset:feedback",
+          "superset:integrations",
+          "superset:orchestrate",
+          "superset:page",
+          "superset:plugins",
+          "superset:setup",
+          "superset:standup",
+          "design",
+          "design-sync",
+          "dataviz",
+          "update-config",
+          "verify",
+          "debug",
+          "code-review",
+          "simplify",
+          "batch",
+          "fewer-permission-prompts",
+          "doctor",
+          "loop",
+          "claude-api",
+          "run",
+          "run-skill-generator",
+          "plugin-authoring",
+          "anthropic-skills:braintrust-graph-styles",
+          "anthropic-skills:customer-usage-enterprise-dashie",
+          "anthropic-skills:docx",
+          "anthropic-skills:ghost-note",
+          "anthropic-skills:google-workspace",
+          "anthropic-skills:import-memory",
+          "anthropic-skills:morning",
+          "anthropic-skills:opportunity-deal-review",
+          "anthropic-skills:pdf",
+          "anthropic-skills:pipeline-metric-definitions",
+          "anthropic-skills:pptx",
+          "anthropic-skills:setup",
+          "anthropic-skills:skill-creator",
+          "anthropic-skills:xlsx"
+        ],
+        "slash_commands": [
+          "braintrust",
+          "create-braintrust-demo",
+          "commit-message",
+          "sdk-benchmarking",
+          "sdk-ci-triage",
+          "sdk-dependency-updates",
+          "sdk-integrations",
+          "sdk-vcr-workflows",
+          "superset:superset-automation",
+          "superset:10x",
+          "superset:automate",
+          "superset:browser",
+          "superset:computer",
+          "superset:contribute",
+          "superset:doctor",
+          "superset:feedback",
+          "superset:integrations",
+          "superset:orchestrate",
+          "superset:page",
+          "superset:plugins",
+          "superset:setup",
+          "superset:standup",
+          "design",
+          "design-sync",
+          "dataviz",
+          "update-config",
+          "verify",
+          "debug",
+          "code-review",
+          "simplify",
+          "batch",
+          "fewer-permission-prompts",
+          "doctor",
+          "loop",
+          "claude-api",
+          "run",
+          "run-skill-generator",
+          "plugin-authoring",
+          "advisor",
+          "agents",
+          "auto-mode-setup",
+          "autocompact",
+          "clear",
+          "color",
+          "compact",
+          "config",
+          "output-style",
+          "context",
+          "effort",
+          "fast",
+          "focus",
+          "heapdump",
+          "init",
+          "mcp",
+          "import",
+          "model",
+          "__remote-workflow",
+          "workflow-launch-exec",
+          "reload-plugins",
+          "reload-skills",
+          "rename",
+          "security-review",
+          "usage",
+          "insights",
+          "recap",
+          "skill-doctor",
+          "goal",
+          "design-consent",
+          "design-revoke",
+          "list-agents",
+          "team-onboarding",
+          "anthropic-skills:braintrust-graph-styles",
+          "anthropic-skills:customer-usage-enterprise-dashie",
+          "anthropic-skills:discovery-call-prep",
+          "anthropic-skills:docx",
+          "anthropic-skills:ghost-note",
+          "anthropic-skills:google-workspace",
+          "anthropic-skills:import-memory",
+          "anthropic-skills:meeting-to-linear",
+          "anthropic-skills:morning",
+          "anthropic-skills:opportunity-deal-review",
+          "anthropic-skills:pdf",
+          "anthropic-skills:pipeline-metric-definitions",
+          "anthropic-skills:pipeline-review",
+          "anthropic-skills:pptx",
+          "anthropic-skills:setup",
+          "anthropic-skills:skill-creator",
+          "anthropic-skills:weekly-update",
+          "anthropic-skills:xlsx"
+        ],
+        "subtype": "init",
+        "terminal_slash_commands": [
+          "doctor",
+          "color",
+          "focus",
+          "reload-plugins"
+        ],
+        "tools": [
+          "Task",
+          "Bash",
+          "CronCreate",
+          "CronDelete",
+          "CronList",
+          "DesignSync",
+          "Edit",
+          "EnterWorktree",
+          "ExitWorktree",
+          "ListAgents",
+          "LSP",
+          "Monitor",
+          "NotebookEdit",
+          "PushNotification",
+          "Read",
+          "ReportFindings",
+          "ScheduleWakeup",
+          "SendMessage",
+          "Skill",
+          "TaskCreate",
+          "TaskGet",
+          "TaskList",
+          "TaskStop",
+          "TaskUpdate",
+          "ToolSearch",
+          "WebFetch",
+          "WebSearch",
+          "Write",
+          "mcp__linear-server__create_attachment",
+          "mcp__linear-server__create_attachment_from_upload",
+          "mcp__linear-server__create_initiative_label",
+          "mcp__linear-server__create_issue_label",
+          "mcp__linear-server__delete_attachment",
+          "mcp__linear-server__delete_comment",
+          "mcp__linear-server__delete_customer",
+          "mcp__linear-server__delete_customer_need",
+          "mcp__linear-server__delete_diff_comment",
+          "mcp__linear-server__delete_status_update",
+          "mcp__linear-server__extract_images",
+          "mcp__linear-server__get_agent_skill",
+          "mcp__linear-server__get_attachment",
+          "mcp__linear-server__get_diff",
+          "mcp__linear-server__get_diff_threads",
+          "mcp__linear-server__get_document",
+          "mcp__linear-server__get_initiative",
+          "mcp__linear-server__get_issue",
+          "mcp__linear-server__get_issue_status",
+          "mcp__linear-server__get_milestone",
+          "mcp__linear-server__get_notifications",
+          "mcp__linear-server__get_project",
+          "mcp__linear-server__get_release",
+          "mcp__linear-server__get_release_note",
+          "mcp__linear-server__get_status_updates",
+          "mcp__linear-server__get_team",
+          "mcp__linear-server__get_template",
+          "mcp__linear-server__get_triage_responsibility",
+          "mcp__linear-server__get_user",
+          "mcp__linear-server__get_workspace",
+          "mcp__linear-server__list_agent_skills",
+          "mcp__linear-server__list_comments",
+          "mcp__linear-server__list_custom_views",
+          "mcp__linear-server__list_customer_needs",
+          "mcp__linear-server__list_customers",
+          "mcp__linear-server__list_cycles",
+          "mcp__linear-server__list_diffs",
+          "mcp__linear-server__list_documents",
+          "mcp__linear-server__list_initiative_labels",
+          "mcp__linear-server__list_initiatives",
+          "mcp__linear-server__list_issue_labels",
+          "mcp__linear-server__list_issue_statuses",
+          "mcp__linear-server__list_issues",
+          "mcp__linear-server__list_milestones",
+          "mcp__linear-server__list_project_labels",
+          "mcp__linear-server__list_projects",
+          "mcp__linear-server__list_release_notes",
+          "mcp__linear-server__list_release_pipelines",
+          "mcp__linear-server__list_releases",
+          "mcp__linear-server__list_teams",
+          "mcp__linear-server__list_templates",
+          "mcp__linear-server__list_users",
+          "mcp__linear-server__mark_notification",
+          "mcp__linear-server__merge_diff",
+          "mcp__linear-server__prepare_attachment_upload",
+          "mcp__linear-server__resolve_diff_thread",
+          "mcp__linear-server__restore_initiative_label",
+          "mcp__linear-server__restore_issue_label",
+          "mcp__linear-server__restore_project_label",
+          "mcp__linear-server__retire_initiative_label",
+          "mcp__linear-server__retire_issue_label",
+          "mcp__linear-server__retire_project_label",
+          "mcp__linear-server__save_comment",
+          "mcp__linear-server__save_customer",
+          "mcp__linear-server__save_customer_need",
+          "mcp__linear-server__save_diff_comment",
+          "mcp__linear-server__save_document",
+          "mcp__linear-server__save_initiative",
+          "mcp__linear-server__save_initiative_label",
+          "mcp__linear-server__save_issue",
+          "mcp__linear-server__save_issue_label",
+          "mcp__linear-server__save_milestone",
+          "mcp__linear-server__save_project",
+          "mcp__linear-server__save_project_label",
+          "mcp__linear-server__save_release",
+          "mcp__linear-server__save_release_note",
+          "mcp__linear-server__save_status_update",
+          "mcp__linear-server__search_documentation",
+          "mcp__linear-server__share_issue",
+          "mcp__linear-server__submit_diff_review",
+          "mcp__linear-server__unshare_issue",
+          "mcp__linear-server__update_diff"
+        ],
+        "type": "system",
+        "uuid": "0958c9d4-88f0-4cf6-8942-8d45e40306b3",
+        "view_mode": "default"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "estimated_tokens": 50,
+        "estimated_tokens_delta": 50,
+        "session_id": "8107dacd-909c-4456-aa24-effcbe3d0ca4",
+        "subtype": "thinking_tokens",
+        "type": "system",
+        "uuid": "94912bb0-b824-4afe-8051-0e518729b593"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "estimated_tokens": 150,
+        "estimated_tokens_delta": 100,
+        "session_id": "8107dacd-909c-4456-aa24-effcbe3d0ca4",
+        "subtype": "thinking_tokens",
+        "type": "system",
+        "uuid": "79a3e231-62ba-4f58-abbc-e20588c1bec6"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "estimated_tokens": 250,
+        "estimated_tokens_delta": 100,
+        "session_id": "8107dacd-909c-4456-aa24-effcbe3d0ca4",
+        "subtype": "thinking_tokens",
+        "type": "system",
+        "uuid": "4a4ff831-a985-406b-bb4d-09c7d27cf724"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "estimated_tokens": 410,
+        "estimated_tokens_delta": 160,
+        "session_id": "8107dacd-909c-4456-aa24-effcbe3d0ca4",
+        "subtype": "thinking_tokens",
+        "type": "system",
+        "uuid": "aa9e59e4-a9c7-4e2d-a5ad-43d131c50fe1"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "container": null,
+          "content": [
+            {
+              "signature": "<REDACTED_SIGNATURE>",
+              "thinking": "",
+              "type": "thinking"
+            }
+          ],
+          "context_management": null,
+          "diagnostics": null,
+          "id": "msg_011CgCKytPxJCojGZ54ATBPZ",
+          "input_transformations": [],
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 8849
+            },
+            "cache_creation_input_tokens": 8849,
+            "cache_read_input_tokens": 10312,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 3,
+            "service_tier": "standard",
+            "speed": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "request_id": "req_011CgCKyt6LrZh4tBrjrDN3j",
+        "session_id": "8107dacd-909c-4456-aa24-effcbe3d0ca4",
+        "thinking_display": "updates",
+        "thinking_duration_ms": 3369,
+        "timestamp": "2026-10-19T21:45:23.535Z",
+        "type": "assistant",
+        "uuid": "1583c844-cf1a-43a9-9d67-e3fdc9ee4ba9"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "container": null,
+          "content": [
+            {
+              "caller": {
+                "type": "direct"
+              },
+              "id": "toolu_01RKZcCrxC3T1N2S6N8yuQsr",
+              "input": {
+                "command": "exit 7"
+              },
+              "name": "Bash",
+              "type": "tool_use"
+            }
+          ],
+          "context_management": null,
+          "diagnostics": null,
+          "id": "msg_011CgCKytPxJCojGZ54ATBPZ",
+          "input_transformations": [],
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 8849
+            },
+            "cache_creation_input_tokens": 8849,
+            "cache_read_input_tokens": 10312,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 3,
+            "service_tier": "standard",
+            "speed": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "request_id": "req_011CgCKyt6LrZh4tBrjrDN3j",
+        "session_id": "8107dacd-909c-4456-aa24-effcbe3d0ca4",
+        "timestamp": "2026-10-19T21:45:23.835Z",
+        "type": "assistant",
+        "uuid": "eb3e1c51-10d4-4c98-acdf-df6c47720d6c",
+        "wire_tool_inputs": {
+          "toolu_01RKZcCrxC3T1N2S6N8yuQsr": {
+            "command": "exit 7"
+          }
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "callback_id": "hook_0",
+          "input": {
+            "cwd": "<REDACTED_CWD>",
+            "duration_ms": 418,
+            "error": "Exit code 7",
+            "hook_event_name": "PostToolUseFailure",
+            "is_interrupt": false,
+            "permission_mode": "bypassPermissions",
+            "prompt_id": "143de404-ee68-45a8-9d9c-0e7d63bc1cd9",
+            "session_id": "8107dacd-909c-4456-aa24-effcbe3d0ca4",
+            "tool_input": {
+              "command": "exit 7"
+            },
+            "tool_name": "Bash",
+            "tool_use_id": "toolu_01RKZcCrxC3T1N2S6N8yuQsr",
+            "transcript_path": "<REDACTED_PATH>"
+          },
+          "subtype": "hook_callback",
+          "tool_use_id": "toolu_01RKZcCrxC3T1N2S6N8yuQsr"
+        },
+        "request_id": "958e9845-d6a1-4a83-b267-6d006e900ed1",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "958e9845-d6a1-4a83-b267-6d006e900ed1",
+            "response": {},
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "content": "Exit code 7",
+              "is_error": true,
+              "tool_use_id": "toolu_01RKZcCrxC3T1N2S6N8yuQsr",
+              "type": "tool_result"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8107dacd-909c-4456-aa24-effcbe3d0ca4",
+        "timestamp": "2026-10-19T21:45:24.472Z",
+        "tool_result_meta": [
+          {
+            "id": "toolu_01RKZcCrxC3T1N2S6N8yuQsr",
+            "permission_decision": {
+              "decision": "accept",
+              "reason_type": "mode",
+              "source": "config"
+            }
+          }
+        ],
+        "tool_use_result": "Error: Exit code 7",
+        "type": "user",
+        "uuid": "3b06ba35-301b-4a47-8f2d-5cb75902d8b7"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "container": null,
+          "content": [
+            {
+              "signature": "<REDACTED_SIGNATURE>",
+              "thinking": "",
+              "type": "thinking"
+            }
+          ],
+          "context_management": null,
+          "diagnostics": null,
+          "id": "msg_011CgCKzFtWxrgGSqzHp9P34",
+          "input_transformations": [],
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 1564
+            },
+            "cache_creation_input_tokens": 1564,
+            "cache_read_input_tokens": 19161,
+            "inference_geo": "not_available",
+            "input_tokens": 8,
+            "output_tokens": 1,
+            "service_tier": "standard",
+            "speed": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "request_id": "req_011CgCKzFd942MovoeyjyMsH",
+        "session_id": "8107dacd-909c-4456-aa24-effcbe3d0ca4",
+        "thinking_display": "updates",
+        "thinking_duration_ms": 594,
+        "timestamp": "2026-10-19T21:45:25.592Z",
+        "type": "assistant",
+        "uuid": "fe50b28e-e40e-40be-8922-b503e60ba0a6"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "container": null,
+          "content": [
+            {
+              "text": "done",
+              "type": "text"
+            }
+          ],
+          "context_management": null,
+          "diagnostics": null,
+          "id": "msg_011CgCKzFtWxrgGSqzHp9P34",
+          "input_transformations": [],
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 1564
+            },
+            "cache_creation_input_tokens": 1564,
+            "cache_read_input_tokens": 19161,
+            "inference_geo": "not_available",
+            "input_tokens": 8,
+            "output_tokens": 1,
+            "service_tier": "standard",
+            "speed": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "request_id": "req_011CgCKzFd942MovoeyjyMsH",
+        "session_id": "8107dacd-909c-4456-aa24-effcbe3d0ca4",
+        "timestamp": "2026-10-19T21:45:25.604Z",
+        "type": "assistant",
+        "uuid": "359b3b58-2e36-4c02-87d2-7a1cc56a2bb8"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "api_error_status": null,
+        "duration_api_ms": 6843,
+        "duration_ms": 6674,
+        "fast_mode_disabled_reason": "sdk_opt_in_required",
+        "fast_mode_state": "off",
+        "first_content_frame_ms": 995,
+        "is_error": false,
+        "modelUsage": {
+          "claude-haiku-4-5-20251001": {
+            "cacheCreationInputTokens": 10413,
+            "cacheReadInputTokens": 29473,
+            "canonicalModel": "claude-haiku-4-5",
+            "contextWindow": 200000,
+            "costBasis": "list",
+            "costUSD": 0.018091549999999998,
+            "inputTokens": 18,
+            "maxOutputTokens": 32000,
+            "outputTokens": 422,
+            "provider": "firstParty",
+            "thinkingTokens": 358,
+            "webSearchRequests": 0
+          },
+          "claude-haiku-5-5": {
+            "cacheCreationInputTokens": 0,
+            "cacheReadInputTokens": 0,
+            "canonicalModel": "claude-haiku-5-5",
+            "contextWindow": 1000000,
+            "costBasis": "list",
+            "costUSD": 0.0001297,
+            "inputTokens": 1202,
+            "maxOutputTokens": 128000,
+            "outputTokens": 19,
+            "provider": "firstParty",
+            "thinkingTokens": 0,
+            "webSearchRequests": 0
+          }
+        },
+        "num_turns": 2,
+        "permission_denials": [],
+        "queued_turn_count": 0,
+        "result": "done",
+        "result_index": 0,
+        "safety_stops": 0,
+        "session_id": "8107dacd-909c-4456-aa24-effcbe3d0ca4",
+        "stop_reason": "end_turn",
+        "subagent_stats": {
+          "by_type": {},
+          "completed": 0,
+          "failed": 0,
+          "killed": {
+            "parent": 0,
+            "system": 0,
+            "user": 0
+          },
+          "max_depth": 0,
+          "refused": {
+            "budget": 0,
+            "concurrency_limit": 0,
+            "depth_limit": 0
+          },
+          "requested": {
+            "background": 0,
+            "foreground": 0,
+            "unset": 0
+          },
+          "spawned": 0,
+          "spawned_by_subagents": 0,
+          "started_in_background": 0
+        },
+        "subtype": "success",
+        "terminal_reason": "completed",
+        "time_to_request_ms": 293,
+        "total_cost_usd": 0.018221249999999998,
+        "ttft_ms": 4365,
+        "ttft_stream_ms": 995,
+        "type": "result",
+        "usage": {
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 0,
+            "ephemeral_5m_input_tokens": 10413
+          },
+          "cache_creation_input_tokens": 10413,
+          "cache_read_input_tokens": 29473,
+          "fallback_credit": null,
+          "inference_geo": "not_available",
+          "input_tokens": 18,
+          "iterations": [
+            {
+              "cache_creation": {
+                "ephemeral_1h_input_tokens": 0,
+                "ephemeral_5m_input_tokens": 1564
+              },
+              "cache_creation_input_tokens": 1564,
+              "cache_read_input_tokens": 19161,
+              "input_tokens": 8,
+              "output_tokens": 54,
+              "type": "message"
+            }
+          ],
+          "output_tokens": 422,
+          "output_tokens_details": {
+            "thinking_tokens": 358
+          },
+          "server_tool_use": {
+            "web_fetch_requests": 0,
+            "web_search_requests": 0
+          },
+          "service_tier": "standard",
+          "speed": "standard"
+        },
+        "uuid": "394456f8-9be9-4acd-b73f-22c3d7c6e118"
+      }
+    }
+  ],
+  "sdk_version": "0.2.168"
+}

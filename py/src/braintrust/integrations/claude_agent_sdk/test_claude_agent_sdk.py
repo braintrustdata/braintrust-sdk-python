@@ -618,6 +618,38 @@ def _sdk_version_at_least(version: str) -> bool:
     return parse(getattr(claude_agent_sdk, "__version__", "0")) >= parse(version)
 
 
+# Hook input fields added in newer Claude Code releases that hook spans should keep. Listed
+# independently of tracing's allowlist so the test checks the spec rather than echoing the code.
+_NEW_HOOK_INPUT_FIELDS = ("duration_ms", "prompt_id", "effort", "last_assistant_message", "error", "is_interrupt")
+# First SDK version whose bundled CLI sends the fields above.
+_NEW_HOOK_INPUT_FIELDS_MIN_SDK = "0.2.166"
+
+
+def _hook_spans(spans: list[dict[str, Any]], *event_names: str) -> list[dict[str, Any]]:
+    return [
+        span
+        for span in find_spans_by_type(spans, SpanTypeAttribute.FUNCTION)
+        if span.get("metadata", {}).get("claude_agent_sdk.hook.event_name") in event_names
+    ]
+
+
+def _assert_hook_span_input(raw_input: dict[str, Any], span_input: dict[str, Any], *, sent: tuple[str, ...]) -> None:
+    """Check a hook span keeps the new fields the CLI sent and drops local paths.
+
+    ``sent`` lists fields the CLI must send on newer SDKs, so the check can't pass vacuously.
+    """
+    if _sdk_version_at_least(_NEW_HOOK_INPUT_FIELDS_MIN_SDK):
+        for field in sent:
+            assert field in raw_input, f"Expected the CLI to send {field}, got {sorted(raw_input)}"
+    for field in _NEW_HOOK_INPUT_FIELDS:
+        if field in raw_input:
+            assert span_input.get(field) == raw_input[field], (
+                f"Expected hook span input to keep {field}={raw_input[field]!r}, got {span_input}"
+            )
+    for field in ("cwd", "transcript_path"):
+        assert field not in span_input, f"Expected hook span input to drop {field}, got {span_input}"
+
+
 class CustomAsyncIterable:
     """Custom AsyncIterable class (not a generator) for testing."""
 
@@ -756,18 +788,11 @@ async def test_user_prompt_submit_hook_creates_function_span(memory_logger):
     assert not memory_logger.pop()
     prompt = "Say hello in one short sentence."
 
-    hook_invocations: list[dict[str, Any]] = []
+    hook_inputs: list[dict[str, Any]] = []
 
     async def user_prompt_hook(input_data: Any, tool_use_id: str | None, context: Any) -> dict[str, Any]:
-        del context
-        hook_invocations.append(
-            {
-                "hook_event_name": input_data.get("hook_event_name"),
-                "prompt": input_data.get("prompt"),
-                "tool_use_id": tool_use_id,
-                "transcript_path": input_data.get("transcript_path"),
-            }
-        )
+        del tool_use_id, context
+        hook_inputs.append(dict(input_data))
         return {
             "hookSpecificOutput": {
                 "hookEventName": "UserPromptSubmit",
@@ -799,16 +824,12 @@ async def test_user_prompt_submit_hook_creates_function_span(memory_logger):
                 if type(message).__name__ == "ResultMessage":
                     break
 
-    assert len(hook_invocations) == 1, "Expected the caller's UserPromptSubmit hook exactly once"
+    assert len(hook_inputs) == 1, "Expected the caller's UserPromptSubmit hook exactly once"
 
     spans = memory_logger.pop()
     task_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.TASK), "Claude Agent")
     llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
-    function_spans = [
-        span
-        for span in find_spans_by_type(spans, SpanTypeAttribute.FUNCTION)
-        if span.get("metadata", {}).get("claude_agent_sdk.hook.event_name") == "UserPromptSubmit"
-    ]
+    function_spans = _hook_spans(spans, "UserPromptSubmit")
 
     assert len(function_spans) == 1, f"Expected 1 UserPromptSubmit hook span, got {len(function_spans)}"
 
@@ -818,6 +839,7 @@ async def test_user_prompt_submit_hook_creates_function_span(memory_logger):
     assert hook_span["root_span_id"] == task_span["root_span_id"]
     assert hook_span["input"]["hook_event_name"] == "UserPromptSubmit"
     assert hook_span["input"]["prompt"] == prompt
+    _assert_hook_span_input(hook_inputs[0], hook_span["input"], sent=("prompt_id",))
     assert hook_span["output"]["hookSpecificOutput"]["hookEventName"] == "UserPromptSubmit"
     assert llm_spans, "Expected at least one LLM span for the Claude response"
     for llm_span in llm_spans:
@@ -837,99 +859,14 @@ async def test_user_prompt_submit_hook_creates_function_span(memory_logger):
 
 @pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
 @pytest.mark.asyncio
-async def test_tool_hooks_create_function_spans(memory_logger):
-    assert not memory_logger.pop()
-
-    hook_invocations: list[str] = []
-
-    async def pre_tool_hook(input_data: Any, tool_use_id: str | None, context: Any) -> dict[str, Any]:
-        del context
-        hook_invocations.append(f"pre:{input_data.get('tool_name')}:{tool_use_id}")
-        return {
-            "hookSpecificOutput": {
-                "hookEventName": "PreToolUse",
-                "permissionDecision": "allow",
-                "permissionDecisionReason": "Approved by test hook",
-                "additionalContext": "The hook observed the pending Bash command.",
-            }
-        }
-
-    async def post_tool_hook(input_data: Any, tool_use_id: str | None, context: Any) -> dict[str, Any]:
-        del context
-        hook_invocations.append(f"post:{input_data.get('tool_name')}:{tool_use_id}")
-        return {
-            "hookSpecificOutput": {
-                "hookEventName": "PostToolUse",
-                "additionalContext": "The hook observed the completed Bash command.",
-            }
-        }
-
-    with _patched_claude_sdk(wrap_client=True):
-        options = claude_agent_sdk.ClaudeAgentOptions(
-            model=TEST_MODEL,
-            permission_mode="bypassPermissions",
-            allowed_tools=["Bash"],
-            hooks={
-                "PreToolUse": [
-                    claude_agent_sdk.HookMatcher(matcher="Bash", hooks=[pre_tool_hook]),
-                ],
-                "PostToolUse": [
-                    claude_agent_sdk.HookMatcher(matcher="Bash", hooks=[post_tool_hook]),
-                ],
-            },
-        )
-        transport = make_cassette_transport(
-            cassette_name="test_tool_hooks_create_function_spans",
-            prompt="",
-            options=options,
-        )
-
-        async with claude_agent_sdk.ClaudeSDKClient(options=options, transport=transport) as client:
-            await client.query("Run exactly this Bash command and nothing else: echo 'braintrust hook tracing'")
-            async for message in client.receive_response():
-                if type(message).__name__ == "ResultMessage":
-                    break
-
-    assert any(invocation.startswith("pre:Bash:") for invocation in hook_invocations), (
-        f"Expected a PreToolUse hook invocation for Bash, got {hook_invocations}"
-    )
-    assert any(invocation.startswith("post:Bash:") for invocation in hook_invocations), (
-        f"Expected a PostToolUse hook invocation for Bash, got {hook_invocations}"
-    )
-
-    spans = memory_logger.pop()
-    task_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.TASK), "Claude Agent")
-    hook_spans = [
-        span
-        for span in find_spans_by_type(spans, SpanTypeAttribute.FUNCTION)
-        if span.get("metadata", {}).get("claude_agent_sdk.hook.event_name") in {"PreToolUse", "PostToolUse"}
-    ]
-
-    assert len(hook_spans) == 2, f"Expected 2 tool hook spans, got {len(hook_spans)}"
-
-    hook_span_by_event = {span["metadata"]["claude_agent_sdk.hook.event_name"]: span for span in hook_spans}
-    pre_span = hook_span_by_event["PreToolUse"]
-    post_span = hook_span_by_event["PostToolUse"]
-
-    for hook_span in (pre_span, post_span):
-        # Hook spans are descendants of the task span, so they share a trace.
-        assert hook_span["root_span_id"] == task_span["root_span_id"]
-        assert hook_span["input"]["tool_name"] == "Bash"
-
-    assert pre_span["output"]["hookSpecificOutput"]["hookEventName"] == "PreToolUse"
-    assert post_span["output"]["hookSpecificOutput"]["hookEventName"] == "PostToolUse"
-
-
-@pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
-@pytest.mark.asyncio
 async def test_hook_spans_parent_to_matching_tool_and_final_llm(memory_logger):
     assert not memory_logger.pop()
 
-    hook_events: list[tuple[str | None, str | None]] = []
+    raw_inputs: dict[tuple[str | None, str | None], dict[str, Any]] = {}
 
     async def log_hook_event(input_data: Any, tool_use_id: str | None, context: Any) -> dict[str, Any]:
         del context
-        hook_events.append((input_data.get("hook_event_name"), tool_use_id))
+        raw_inputs[(input_data.get("hook_event_name"), tool_use_id)] = dict(input_data)
         return {}
 
     with _patched_claude_sdk(wrap_client=True):
@@ -964,18 +901,13 @@ async def test_hook_spans_parent_to_matching_tool_and_final_llm(memory_logger):
                 if type(message).__name__ == "ResultMessage":
                     break
 
-    assert any(event_name == "Stop" for event_name, _ in hook_events), (
-        f"Expected a Stop hook invocation, got {hook_events}"
+    assert any(event_name == "Stop" for event_name, _ in raw_inputs), (
+        f"Expected a Stop hook invocation, got {list(raw_inputs)}"
     )
 
     spans = memory_logger.pop()
     tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
     llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
-    hook_spans = [
-        span
-        for span in find_spans_by_type(spans, SpanTypeAttribute.FUNCTION)
-        if span.get("metadata", {}).get("claude_agent_sdk.hook.event_name") in {"PreToolUse", "PostToolUse", "Stop"}
-    ]
 
     tool_span_by_id = {
         span.get("metadata", {}).get("gen_ai.tool.call.id"): span
@@ -983,27 +915,93 @@ async def test_hook_spans_parent_to_matching_tool_and_final_llm(memory_logger):
         if span.get("metadata", {}).get("gen_ai.tool.call.id") is not None
     }
 
-    tool_hook_spans = [
-        span
-        for span in hook_spans
-        if span.get("metadata", {}).get("claude_agent_sdk.hook.event_name") in {"PreToolUse", "PostToolUse"}
-    ]
+    tool_hook_spans = _hook_spans(spans, "PreToolUse", "PostToolUse")
+    assert {"PreToolUse", "PostToolUse"} <= {
+        span["metadata"]["claude_agent_sdk.hook.event_name"] for span in tool_hook_spans
+    }, f"Expected PreToolUse and PostToolUse hook spans, got {list(raw_inputs)}"
     for hook_span in tool_hook_spans:
+        event_name = hook_span["metadata"]["claude_agent_sdk.hook.event_name"]
         tool_use_id = hook_span["metadata"]["claude_agent_sdk.hook.tool_use_id"]
+        assert hook_span["input"]["tool_name"] in {"Bash", "Read"}
+        _assert_hook_span_input(
+            raw_inputs[(event_name, tool_use_id)],
+            hook_span["input"],
+            sent=("prompt_id", "duration_ms") if event_name == "PostToolUse" else ("prompt_id",),
+        )
         parent_tool_span = tool_span_by_id[tool_use_id]
         assert parent_tool_span["span_id"] in hook_span["span_parents"], (
             f"Hook span {hook_span['span_attributes']['name']} for {tool_use_id} should be parented "
             f"to tool span {parent_tool_span['span_id']}, got parents {hook_span['span_parents']}"
         )
 
-    stop_hook_span = next(
-        span for span in hook_spans if span.get("metadata", {}).get("claude_agent_sdk.hook.event_name") == "Stop"
-    )
+    stop_hook_span = next(iter(_hook_spans(spans, "Stop")))
     llm_span_ids = {span["span_id"] for span in llm_spans}
     stop_parent_is_llm = any(pid in llm_span_ids for pid in stop_hook_span["span_parents"])
     assert stop_parent_is_llm, (
         f"Stop hook should be parented to an LLM span, "
         f"got parents {stop_hook_span['span_parents']} (LLM span ids: {llm_span_ids})"
+    )
+
+    _assert_hook_span_input(
+        raw_inputs[("Stop", stop_hook_span["metadata"].get("claude_agent_sdk.hook.tool_use_id"))],
+        stop_hook_span["input"],
+        sent=("prompt_id", "last_assistant_message"),
+    )
+
+
+@pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
+@pytest.mark.asyncio
+async def test_post_tool_use_failure_hook_keeps_error_fields(memory_logger):
+    assert not memory_logger.pop()
+    if not _sdk_version_at_least(_NEW_HOOK_INPUT_FIELDS_MIN_SDK):
+        pytest.skip(
+            f"PostToolUseFailure hook input fields require Claude Agent SDK >= {_NEW_HOOK_INPUT_FIELDS_MIN_SDK}"
+        )
+
+    failure_inputs: list[dict[str, Any]] = []
+
+    async def post_tool_failure_hook(input_data: Any, tool_use_id: str | None, context: Any) -> dict[str, Any]:
+        del tool_use_id, context
+        failure_inputs.append(dict(input_data))
+        return {}
+
+    with _patched_claude_sdk(wrap_client=True):
+        options = claude_agent_sdk.ClaudeAgentOptions(
+            model=TEST_MODEL,
+            permission_mode="bypassPermissions",
+            allowed_tools=["Bash"],
+            max_turns=2,
+            hooks={
+                "PostToolUseFailure": [
+                    claude_agent_sdk.HookMatcher(matcher="Bash", hooks=[post_tool_failure_hook]),
+                ],
+            },
+        )
+        transport = make_cassette_transport(
+            cassette_name="test_post_tool_use_failure_hook_keeps_error_fields",
+            prompt="",
+            options=options,
+        )
+
+        async with claude_agent_sdk.ClaudeSDKClient(options=options, transport=transport) as client:
+            await client.query(
+                "Run exactly this Bash command once and nothing else: exit 7. "
+                "Do not retry it. Then reply with the word done."
+            )
+            async for message in client.receive_response():
+                if type(message).__name__ == "ResultMessage":
+                    break
+
+    assert failure_inputs, "Expected a PostToolUseFailure hook invocation for the failing Bash command"
+
+    spans = memory_logger.pop()
+    failure_spans = _hook_spans(spans, "PostToolUseFailure")
+    assert len(failure_spans) == 1, f"Expected 1 PostToolUseFailure hook span, got {len(failure_spans)}"
+
+    failure_span = failure_spans[0]
+    assert failure_span["input"]["tool_name"] == "Bash"
+    _assert_hook_span_input(
+        failure_inputs[0], failure_span["input"], sent=("error", "is_interrupt", "duration_ms", "prompt_id")
     )
 
 

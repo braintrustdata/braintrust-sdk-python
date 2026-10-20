@@ -1617,6 +1617,114 @@ def test_tool_execution_creates_spans(memory_logger):
     )
 
 
+def _single_tool_span(spans, name):
+    tool_spans = [s for s in spans if s["span_attributes"]["name"] == name]
+    assert len(tool_spans) == 1, f"Expected exactly 1 {name} span, got {len(tool_spans)}"
+    assert tool_spans[0]["span_attributes"]["type"] == SpanTypeAttribute.TOOL
+    return tool_spans[0]
+
+
+def _assert_deferred_tool_span(span, tool_call_id, kind):
+    assert span.get("error") is None
+    assert span.get("output") is None
+    assert span["metadata"]["tool_call_id"] == tool_call_id
+    assert span["metadata"]["deferred"] == kind
+    assert span["metrics"]["duration"] >= 0
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_call_deferred_tool_is_not_logged_as_error(memory_logger):
+    """A tool raising CallDeferred hands the call back to the caller; that is not a tool failure."""
+    from pydantic_ai import DeferredToolRequests
+    from pydantic_ai.exceptions import CallDeferred
+
+    assert not memory_logger.pop()
+
+    # CallDeferred(metadata=...) is only available in newer pydantic_ai versions.
+    supports_metadata = hasattr(CallDeferred(), "metadata")
+
+    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=200), output_type=[str, DeferredToolRequests])
+
+    @agent.tool_plain
+    def run_long_job(job_name: str) -> str:
+        """Start a long-running background job by name."""
+        if supports_metadata:
+            raise CallDeferred(metadata={"job_id": "job-123"})
+        raise CallDeferred()
+
+    result = await agent.run("Start the background job named 'nightly-report'.")
+
+    assert isinstance(result.output, DeferredToolRequests)
+    assert [call.tool_name for call in result.output.calls] == ["run_long_job"]
+
+    tool_span = _single_tool_span(memory_logger.pop(), "run_long_job")
+    _assert_deferred_tool_span(tool_span, result.output.calls[0].tool_call_id, "external")
+    if supports_metadata:
+        assert tool_span["metadata"]["deferred_metadata"] == {"job_id": "job-123"}
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_approval_required_tool_is_not_logged_as_error_and_resumes(memory_logger):
+    """ApprovalRequired defers the call without an error span; the approved re-run logs normal output."""
+    from pydantic_ai import DeferredToolRequests, DeferredToolResults, RunContext
+    from pydantic_ai.exceptions import ApprovalRequired
+
+    assert not memory_logger.pop()
+
+    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=200), output_type=[str, DeferredToolRequests])
+
+    @agent.tool
+    def delete_file(ctx: RunContext[None], path: str) -> str:
+        """Delete the file at the given path."""
+        if not ctx.tool_call_approved:
+            raise ApprovalRequired()
+        return f"Deleted {path}"
+
+    first = await agent.run("Delete the file at /tmp/report.txt.")
+
+    assert isinstance(first.output, DeferredToolRequests)
+    assert [call.tool_name for call in first.output.approvals] == ["delete_file"]
+    tool_call_id = first.output.approvals[0].tool_call_id
+
+    _assert_deferred_tool_span(_single_tool_span(memory_logger.pop(), "delete_file"), tool_call_id, "unapproved")
+
+    second = await agent.run(
+        message_history=first.all_messages(),
+        deferred_tool_results=DeferredToolResults(approvals={tool_call_id: True}),
+    )
+
+    assert isinstance(second.output, str)
+
+    approved_span = _single_tool_span(memory_logger.pop(), "delete_file")
+    assert approved_span.get("error") is None
+    assert approved_span["output"] == "Deleted /tmp/report.txt"
+    assert approved_span["metadata"]["tool_call_id"] == tool_call_id
+    assert "deferred" not in approved_span["metadata"]
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_tool_exception_is_logged_as_error(memory_logger):
+    """Genuine tool failures must still be logged as errors on the tool span."""
+    assert not memory_logger.pop()
+
+    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=200))
+
+    @agent.tool_plain
+    def publish_flow(flow_id: str) -> str:
+        """Publish the flow with the given id."""
+        raise RuntimeError("publish failed")
+
+    with pytest.raises(RuntimeError, match="publish failed"):
+        await agent.run("Publish the flow with id 'abc'.")
+
+    tool_span = _single_tool_span(memory_logger.pop(), "publish_flow")
+    assert "publish failed" in tool_span["error"]
+    assert "deferred" not in tool_span["metadata"]
+
+
 def test_agent_tool_metadata_extraction(memory_logger):
     """Test that agent tools are properly extracted with full schemas in INPUT (not metadata).
 

@@ -17,37 +17,36 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.29.0 gl-python/3.14.7
+      - google-genai-sdk/2.31.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/2.29.0 gl-python/3.14.7
+      - google-genai-sdk/2.31.0 gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"The document is a test PDF that contains
-        only a few sentences. The text in the document says: \\\"This is a test PDF.
-        It contains only a few sentences.\\\"\"\n          }\n        ],\n        \"role\":
+        [\n          {\n            \"text\": \"The document is a **test PDF** and
+        contains **only a few sentences**.\"\n          }\n        ],\n        \"role\":
         \"model\"\n      },\n      \"finishReason\": \"STOP\",\n      \"index\": 0\n
         \   }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\": 265,\n    \"candidatesTokenCount\":
-        34,\n    \"totalTokenCount\": 299,\n    \"promptTokensDetails\": [\n      {\n
+        16,\n    \"totalTokenCount\": 281,\n    \"promptTokensDetails\": [\n      {\n
         \       \"modality\": \"TEXT\",\n        \"tokenCount\": 7\n      },\n      {\n
         \       \"modality\": \"DOCUMENT\",\n        \"tokenCount\": 258\n      }\n
         \   ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n
-        \ \"responseId\": \"uDvOaoOKENC5jrEPsfHn-Qw\"\n}\n"
+        \ \"responseId\": \"AFDWap-TCcnc_uMP6IqlwQg\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '775'
+      - '693'
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Tue, 13 Oct 2026 14:10:01 GMT
+      - Mon, 19 Oct 2026 17:14:40 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=1136
+      - gfet4t7; dur=954
       transfer-encoding:
       - chunked
       vary:

@@ -1,0 +1,56 @@
+interactions:
+- request:
+    body: '{"state":{"message":"I was charged twice. Please refund the duplicate charge
+      today."},"model":"jev-latest","questions":{"category":{"type":"choice","criteria":{"billing":null,"technical":null,"other":null},"instructions":"Which
+      team should handle this?"},"urgency":{"type":"score","criteria":["routine","soon","urgent"],"instructions":"How
+      urgent is this request?"},"duplicate_charge":{"type":"noul","instructions":{"question":"Does
+      the customer report a duplicate charge?"}}}}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '477'
+      content-type:
+      - application/json
+      host:
+      - api.typesafe.ai
+      user-agent:
+      - typesafe-sdk/0.6.0
+      x-typesafe-runtime:
+      - python/3.14.7 (darwin; arm64)
+      x-typesafe-sdk:
+      - typesafe-sdk/0.6.0
+    method: POST
+    uri: https://api.typesafe.ai/v1/systemone
+  response:
+    body:
+      string: '{"model":"jev-1.13.0","answers":{"category":{"type":"choice","choice":"billing","confidence":1.0,"probabilities":{"billing":1.0,"technical":0.0,"other":0.0}},"urgency":{"type":"score","score":1.78,"confidence":0.67,"legend":{"0":"routine","1":"soon","2":"urgent"},"probabilities":{"0":0.0,"1":0.22,"2":0.78}},"duplicate_charge":{"type":"noul","noul":0.99}},"usage":{"input_tokens":370,"output_tokens":70}}'
+    headers:
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a4d15adf3db37803-SJC
+      connection:
+      - keep-alive
+      content-length:
+      - '405'
+      content-type:
+      - application/json
+      date:
+      - Mon, 19 Oct 2026 17:03:13 GMT
+      server:
+      - cloudflare
+      transfer-encoding:
+      - chunked
+      x-typesafe-request-id:
+      - req_01a1551e079b7751863dec249ec06254
+    status:
+      code: 200
+      message: OK
+version: 1

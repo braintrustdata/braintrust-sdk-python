@@ -149,7 +149,7 @@ Before changing provider/integration behavior:
 - CI runs `pylint` and `test_types` via the dedicated `static_checks` workflow job on Ubuntu across the configured Python matrix, not inside the sharded `nox` job.
 - The sharded `nox` workflow excludes `pylint` and `test_types`; use `py/scripts/nox-matrix.py --exclude-session ...` when reproducing shard membership locally.
 - wrapper coverage is split across dedicated nox sessions by provider/version.
-- `test-wheel` is a wheel sanity check and requires a built wheel first.
+- `test-wheel` runs the `test_wheel` nox session (`py/tests/wheel/`) against the built wheel and requires `make build` first. Colocated tests are excluded from the wheel by `py/_build_hooks.py`.
 
 ## Type Tests
 
@@ -204,7 +204,6 @@ Behavior from `py/src/braintrust/conftest.py`:
 
 - local default: `record_mode="once"`
 - CI default: `record_mode="none"`
-- wheel mode skips VCR-marked tests
 - fixtures inject dummy API keys and reset global state
 
 Common commands:

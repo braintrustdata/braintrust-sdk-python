@@ -16,8 +16,6 @@ _SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "nox-matrix.py"
 
 @pytest.mark.parametrize("returncode", [0, 1])
 def test_measured_durations_use_nox_report(tmp_path, monkeypatch, returncode):
-    if not _SCRIPT.exists():
-        pytest.skip("scripts/ is not available (wheel mode)")
     spec = importlib.util.spec_from_file_location("nox_matrix", _SCRIPT)
     matrix = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(matrix)

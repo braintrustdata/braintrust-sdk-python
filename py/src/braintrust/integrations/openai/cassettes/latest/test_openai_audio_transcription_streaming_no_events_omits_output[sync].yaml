@@ -1,10 +1,10 @@
 interactions:
 - request:
     body: !!binary |
-      LS1iMDI4MDZiZDAwZDRiYmQ3NjYzMjU3NjUyMGUxZjhkMQ0KQ29udGVudC1EaXNwb3NpdGlvbjog
-      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0KZ3B0LTRvLXRyYW5zY3JpYmUNCi0tYjAyODA2YmQw
-      MGQ0YmJkNzY2MzI1NzY1MjBlMWY4ZDENCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
-      bmFtZT0ic3RyZWFtIg0KDQp0cnVlDQotLWIwMjgwNmJkMDBkNGJiZDc2NjMyNTc2NTIwZTFmOGQx
+      LS1mYjBlNjBjMjIzN2JhOTM0YzI5NmI2YTZmMTA4ZjU1YQ0KQ29udGVudC1EaXNwb3NpdGlvbjog
+      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0KZ3B0LTRvLXRyYW5zY3JpYmUNCi0tZmIwZTYwYzIy
+      MzdiYTkzNGMyOTZiNmE2ZjEwOGY1NWENCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
+      bmFtZT0ic3RyZWFtIg0KDQp0cnVlDQotLWZiMGU2MGMyMjM3YmE5MzRjMjk2YjZhNmYxMDhmNTVh
       DQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0i
       dGVzdF9hdWRpby53YXYiDQpDb250ZW50LVR5cGU6IGF1ZGlvL3gtd2F2DQoNClJJRkYkfQAAV0FW
       RWZtdCAQAAAAAQABAIA+AAAAfQAAAgAQAGRhdGEAfQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -569,7 +569,7 @@ interactions:
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN
-      Ci0tYjAyODA2YmQwMGQ0YmJkNzY2MzI1NzY1MjBlMWY4ZDEtLQ0K
+      Ci0tZmIwZTYwYzIyMzdiYTkzNGMyOTZiNmE2ZjEwOGY1NWEtLQ0K
     headers:
       accept:
       - application/json
@@ -580,11 +580,11 @@ interactions:
       content-length:
       - '32415'
       content-type:
-      - multipart/form-data; boundary=b02806bd00d4bbd76632576520e1f8d1
+      - multipart/form-data; boundary=fb0e60c2237ba934c296b6a6f108f55a
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 3.29.0
+      - OpenAI/Python 3.35.1
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -594,7 +594,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.29.0
+      - 3.35.1
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -607,9 +607,9 @@ interactions:
     uri: https://api.openai.com/v1/audio/transcriptions
   response:
     body:
-      string: "data: {\"type\":\"transcript.text.delta\",\"delta\":\"They\"}\r\n\r\ndata:
-        {\"type\":\"transcript.text.delta\",\"delta\":\" will\"}\r\n\r\ndata: {\"type\":\"transcript.text.done\",\"text\":\"They
-        will\",\"usage\":{\"type\":\"tokens\",\"total_tokens\":14,\"input_tokens\":10,\"input_token_details\":{\"text_tokens\":0,\"audio_tokens\":10},\"output_tokens\":4}}\r\n\r\ndata:
+      string: "data: {\"type\":\"transcript.text.delta\",\"delta\":\"St\"}\r\n\r\ndata:
+        {\"type\":\"transcript.text.delta\",\"delta\":\"olica\"}\r\n\r\ndata: {\"type\":\"transcript.text.delta\",\"delta\":\".\"}\r\n\r\ndata:
+        {\"type\":\"transcript.text.done\",\"text\":\"Stolica.\",\"usage\":{\"type\":\"tokens\",\"total_tokens\":15,\"input_tokens\":10,\"input_token_details\":{\"text_tokens\":0,\"audio_tokens\":10},\"output_tokens\":5}}\r\n\r\ndata:
         [DONE]\r\n\r\n"
     headers:
       access-control-expose-headers:
@@ -622,15 +622,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a49ef040ee72cbfd-YYZ
+      - a4d16ddada5338c7-SJC
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Tue, 13 Oct 2026 14:12:19 GMT
+      - Mon, 19 Oct 2026 17:16:12 GMT
       openai-processing-ms:
-      - '422'
+      - '771'
       openai-version:
       - '2020-10-01'
       server:
@@ -646,11 +646,11 @@ interactions:
       x-ratelimit-limit-requests:
       - '10000'
       x-ratelimit-remaining-requests:
-      - '9998'
+      - '9996'
       x-ratelimit-reset-requests:
-      - 12ms
+      - 24ms
       x-request-id:
-      - req_1b68b7e4f0fe4633b6a6db5b10d2b42a
+      - req_c13fdf64ef324e0e9d1b394386a833fd
     status:
       code: 200
       message: OK

@@ -1,4 +1,5 @@
 import asyncio
+import importlib.metadata
 import inspect
 import shutil
 import socket
@@ -20,6 +21,7 @@ from braintrust.integrations.livekit_agents.tracing import (
 )
 from braintrust.integrations.test_utils import verify_autoinstrument_script
 from braintrust.test_helpers import init_test_logger
+from packaging.version import Version
 
 
 @pytest.fixture
@@ -448,7 +450,9 @@ def _assert_tts_spans(logs):
 def _assert_vad_endpointing_spans(logs):
     vad_endpointing_logs = _spans_named(logs, "vad_endpointing")
     _assert_any_span(vad_endpointing_logs, lambda log: log.get("metadata", {}).get("silence_duration", 0) > 0)
-    _assert_any_span(vad_endpointing_logs, lambda log: log.get("metadata", {}).get("speech_duration", 0) > 0)
+    # Silero <1.3.4 resets speech_duration to 0 before emitting END_OF_SPEECH.
+    if Version(importlib.metadata.version("livekit-plugins-silero")) >= Version("1.3.4"):
+        _assert_any_span(vad_endpointing_logs, lambda log: log.get("metadata", {}).get("speech_duration", 0) > 0)
     _assert_all_spans(vad_endpointing_logs, lambda log: "duration" not in log.get("metrics", {}))
     _assert_all_spans(vad_endpointing_logs, lambda log: "event_type" not in log.get("metadata", {}))
     _assert_all_spans(vad_endpointing_logs, lambda log: "timestamp" not in log.get("metadata", {}))
@@ -480,9 +484,12 @@ def _assert_stt_spans(logs, speech_text):
     assert "prompt_tokens" not in stt_log.get("metrics", {}), stt_log
     assert "completion_tokens" not in stt_log.get("metrics", {}), stt_log
     compact_livekit_metrics = stt_log.get("metadata", {}).get("livekit_metrics", {})
-    if {"input_audio_tokens", "total_tokens"}.issubset(STTMetrics.model_fields):
+    # LiveKit only reports STT tokens for streamed recognition; the non-streamed
+    # HTTP path emits STTMetrics without usage.
+    streamed_stt_logs = [log for log in stt_logs if log.get("metadata", {}).get("livekit_metrics", {}).get("streamed")]
+    if streamed_stt_logs and {"input_audio_tokens", "total_tokens"}.issubset(STTMetrics.model_fields):
         _assert_any_span(
-            stt_logs,
+            streamed_stt_logs,
             lambda log: all(
                 log.get("metadata", {}).get("livekit_metrics", {}).get(field, 0) > 0
                 for field in ("total_tokens", "input_audio_tokens")

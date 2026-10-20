@@ -53,7 +53,6 @@ Current defaults:
 
 - local default: `record_mode="once"`
 - CI default: `record_mode="none"`
-- wheel mode skips VCR-marked tests
 - fixtures inject dummy API keys and reset global state
 
 ### Per-version cassette directories

@@ -1,14 +1,17 @@
 import asyncio
 import base64
 import os
+import re
 import time
 import uuid
+from pathlib import Path
+from types import SimpleNamespace
 
 import litellm
 import pytest
 from braintrust import Attachment, logger
 from braintrust.conftest import get_vcr_config
-from braintrust.integrations.litellm import patch_litellm
+from braintrust.integrations.litellm import patch_litellm, wrap_litellm
 from braintrust.integrations.test_decisions import (
     DECISIONS_INPUT,
     DECISIONS_MODEL,
@@ -43,6 +46,13 @@ def vcr_config():
     # ~1.7MB blob into every cassette.
     config = get_vcr_config()
     config["ignore_hosts"] = ["openaipublic.blob.core.windows.net"]
+
+    def scrub_cloudflare_account(request):
+        if request.host == "api.cloudflare.com":
+            request.uri = re.sub(r"/accounts/[^/]+/", "/accounts/test-account/", request.uri)
+        return request
+
+    config["before_record_request"] = scrub_cloudflare_account
     return config
 
 
@@ -334,6 +344,200 @@ def test_litellm_decisions_image(memory_logger, is_async):
         questions=DECISIONS_QUESTIONS[:1],
     )
     assert_decisions_image_span(memory_logger.pop(), response, messages)
+
+
+def _assert_decision_media_span(memory_logger, response, model):
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert_dict_matches(span["span_attributes"], {"name": "Decision", "type": "decision"})
+    assert span["metadata"] == {"model": model, "provider": model.split("/", 1)[0]}
+    assert span["context"]["span_origin"]["instrumentation"]["name"] == "litellm-auto"
+    assert span["metrics"]["start"] <= span["metrics"]["end"]
+    assert all(span["metrics"][key] >= 0 for key in ("tokens", "prompt_tokens", "completion_tokens"))
+    assert span["metrics"]["tokens"] == response.usage.input_tokens + response.usage.output_tokens
+    assert span["metrics"]["prompt_tokens"] == response.usage.input_tokens
+    assert span["metrics"]["completion_tokens"] == response.usage.output_tokens
+    return span
+
+
+@pytest.mark.vcr(
+    cassette_name="test_litellm_decisions_media[decisions-sync]",
+    match_on=["method", "scheme", "host", "port", "path", "query", "body"],
+)
+@pytest.mark.parametrize(
+    "is_async,systemone,conversion_fails",
+    [
+        # Exercise each API and call mode; conversion fallback is shared.
+        pytest.param(False, False, False, id="decisions-sync"),
+        pytest.param(True, True, False, id="systemone-async"),
+        pytest.param(False, False, True, id="conversion-failure"),
+    ],
+)
+def test_litellm_decisions_media(memory_logger, monkeypatch, is_async, systemone, conversion_fails):
+    if not version_satisfies(detect_module_version(litellm, ("litellm",)), ">=1.106.0"):
+        pytest.skip("Decision audio and video require LiteLLM >=1.106.0")
+
+    from litellm.types.decisions import DecisionsBase64Video
+
+    if conversion_fails:
+        from braintrust.integrations.litellm import tracing
+
+        materialize = tracing._materialize_attachment
+
+        def fail_video(value, **kwargs):
+            if kwargs.get("mime_type") == "video/mp4":
+                raise RuntimeError("attachment conversion failed")
+            return materialize(value, **kwargs)
+
+        monkeypatch.setattr(tracing, "_materialize_attachment", fail_video)
+
+    audio_bytes = Path(TEST_AUDIO_FILE).read_bytes()
+    video_bytes = (Path(TEST_AUDIO_FILE).parent / "decision-video.mp4").read_bytes()
+    audio_url = "data:audio/wav;base64," + base64.b64encode(audio_bytes).decode()
+    audio = [audio_url]
+    videos = [DecisionsBase64Video(content_type="video/mp4", base64=base64.b64encode(video_bytes).decode())]
+    model = "cloudflare/clef-omni"
+    instructions = "Does the video show a red background?"
+    questions = (
+        {"red": {"type": "noul", "instructions": instructions}}
+        if systemone
+        else [{"type": "predicate", "name": "red", "instructions": instructions}]
+    )
+    # Use the real account only when recording; playback needs no credentials.
+    account_id = os.getenv("CLOUDFLARE_ACCOUNT_ID", "test-account")
+    response = _run(
+        is_async,
+        litellm.systemone if systemone else litellm.decisions,
+        litellm.asystemone if systemone else litellm.adecisions,
+        model,
+        "Inspect the supplied audio and video.",
+        questions,
+        audio=audio,
+        videos=videos,
+        api_base=f"https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run",
+        api_key=os.getenv("CLOUDFLARE_API_TOKEN", "test-cloudflare-key"),
+    )
+    span = _assert_decision_media_span(memory_logger, response, model)
+    assert set(span["input"]) == {"state", "questions"}
+    state = span["input"]["state"]
+    assert state["state"] == "Inspect the supplied audio and video."
+    if conversion_fails:
+        assert state == {
+            "state": "Inspect the supplied audio and video.",
+            "audio": audio,
+            "videos": [video.model_dump() for video in videos],
+        }
+    else:
+        for field, data, content_type in (("audio", audio_bytes, "audio/wav"), ("videos", video_bytes, "video/mp4")):
+            attachment = state[field][0]
+            assert isinstance(attachment, Attachment)
+            assert attachment.data == data
+            assert attachment.reference["content_type"] == content_type
+    kind = "noul" if systemone else "boolean"
+    answer = response.answers["red"].noul if systemone else response.answers[0].probability
+    assert span["input"]["questions"] == [{"id": "red", "type": kind, "instructions": instructions}]
+    assert span["output"] == {"answers": [{"id": "red", "type": kind, "noul" if systemone else "probability": answer}]}
+    assert audio == [audio_url]
+    assert base64.b64decode(videos[0].base64) == video_bytes
+
+
+@pytest.mark.parametrize(
+    "media_kind,systemone,is_async",
+    [
+        pytest.param(
+            media_kind,
+            systemone,
+            is_async,
+            id=f"{media_kind}-{'systemone' if systemone else 'decisions'}-{'async' if is_async else 'sync'}",
+            marks=pytest.mark.vcr(
+                cassette_name=f"test_litellm_decisions_state_media[{cassette_case}]",
+                match_on=["method", "scheme", "host", "port", "path", "query", "body"],
+            ),
+        )
+        for media_kind, systemone, is_async, cassette_case in (
+            ("images", False, False, "images-decisions-sync"),
+            ("assets", False, True, "assets-decisions-async"),
+            ("images", True, True, "images-decisions-sync"),
+            ("assets", True, False, "assets-decisions-async"),
+        )
+    ],
+)
+def test_litellm_decisions_state_media(memory_logger, is_async, systemone, media_kind):
+    if not version_satisfies(detect_module_version(litellm, ("litellm",)), ">=1.106.0"):
+        pytest.skip("Decisions state media forwarding requires LiteLLM >=1.106.0")
+
+    from litellm.types.decisions import DecisionsAsset, DecisionsBase64Image
+
+    image_bytes = (Path(TEST_AUDIO_FILE).parent / "decision-box.png").read_bytes()
+    image_base64 = base64.b64encode(image_bytes).decode()
+    image_url = "data:image/png;base64," + image_base64
+    state = {"description": "Inspect this image: photo"}
+    instructions = "Does the image show a red object?"
+    questions = {"red": {"type": "noul", "instructions": instructions}}
+    if media_kind == "images":
+        model = f"openai/{DECISIONS_MODEL}"
+        media = {"images": [image_url, DecisionsBase64Image(content_type="image/png", base64=image_base64)]}
+        extra_headers = {}
+    else:
+        model = "typesafe/jev-1.14.0"
+        media = {"assets": {"photo": DecisionsAsset(type="image", format="png", data_base64=image_base64)}}
+        extra_headers = {"TypeSafe-Danger-Zone-Images": "true"}
+    response = _run(
+        is_async,
+        litellm.systemone if systemone else litellm.decisions,
+        litellm.asystemone if systemone else litellm.adecisions,
+        model=model,
+        state=state,
+        questions=questions,
+        extra_headers=extra_headers,
+        **media,
+    )
+    span = _assert_decision_media_span(memory_logger, response, model)
+    assert set(span["input"]) == {"state", "questions"}
+    assert span["input"]["state"]["state"] == state
+    captured = span["input"]["state"][media_kind]
+    attachments = captured if media_kind == "images" else captured.values()
+    for attachment in attachments:
+        assert isinstance(attachment, Attachment)
+        assert attachment.data == image_bytes
+        assert attachment.reference["content_type"] == "image/png"
+    assert span["input"]["questions"] == [{"id": "red", "type": "noul", "instructions": instructions}]
+    assert span["output"] == {"answers": [{"id": "red", "type": "noul", "noul": response.answers["red"].noul}]}
+    assert state == {"description": "Inspect this image: photo"}
+    assert questions == {"red": {"type": "noul", "instructions": instructions}}
+    if media_kind == "images":
+        assert media["images"][0] == image_url
+        assert media["images"][1].base64 == image_base64
+    else:
+        assert media["assets"]["photo"].data_base64 == image_base64
+
+
+@pytest.mark.vcr(
+    cassette_name="test_litellm_systemone_metrics[async]",
+    match_on=["method", "scheme", "host", "port", "path", "query", "body"],
+)
+@sync_async
+def test_litellm_systemone_metrics(memory_logger, is_async):
+    if not version_satisfies(detect_module_version(litellm, ("litellm",)), ">=1.105.0"):
+        pytest.skip("System One requires LiteLLM >=1.105.0")
+
+    model = f"openai/{DECISIONS_MODEL}"
+    questions = {"positive": {"type": "noul", "instructions": "Is the sentiment positive?"}}
+    # Wrap the real provider entrypoints without the package-level patch.
+    # Repeating setup must still produce exactly one span.
+    module = SimpleNamespace(systemone=litellm.systemone.__wrapped__, asystemone=litellm.asystemone.__wrapped__)
+    wrap_litellm(module)
+    wrap_litellm(module)
+    response = _run(is_async, module.systemone, module.asystemone, model, DECISIONS_INPUT, questions)
+    span = _assert_decision_media_span(memory_logger, response, model)
+    assert span["input"] == {
+        "state": DECISIONS_INPUT,
+        "questions": [{"id": "positive", **questions["positive"]}],
+    }
+    assert span["output"] == {
+        "answers": [{"id": "positive", "type": "noul", "noul": response.answers["positive"].noul}]
+    }
 
 
 @pytest.mark.parametrize(

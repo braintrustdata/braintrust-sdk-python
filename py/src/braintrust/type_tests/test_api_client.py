@@ -58,6 +58,7 @@ if TYPE_CHECKING:
     openapi_client.project_tags.get_project_tag()
     openapi_client.roles.get_role()
     openapi_client.service_tokens.get_service_token()
+    openapi_client.simulated_users.list_simulated_users("project-id")
     openapi_client.span_iframes.get_span_iframe()
     openapi_client.users.get_user()
     openapi_client.views.get_view_id("view-id", "project", "project-id")

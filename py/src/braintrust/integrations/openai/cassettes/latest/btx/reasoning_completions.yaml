@@ -20,21 +20,22 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EYXXssBzpxym5akue3h8qdrpbKz5V\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1791900808,\n  \"model\": \"o4-mini-2025-04-16\",\n
+      string: "{\n  \"id\": \"chatcmpl-EalGpv3DejXVtt7YXGLNWLzQxciky\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1792430223,\n  \"model\": \"o4-mini-2025-04-16\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"The numbers 2, 6, 12, 20, 30, \u2026
-        are the \u201Cpronic\u201D (or oblong) numbers \u2013 each term is the product
-        of two consecutive integers.  Equivalently you can note the successive differences
-        are 4, 6, 8, 10, \u2026 (increasing by 2), so it\u2019s a quadratic sequence.\\n\\nClosed\u2010form
-        (for n starting at 1):  \\n\u2003a\u2099 = n\xB7(n\u2009+\u20091)  \\nSo  \\n\u2003a\u2081
-        = 1\xB72 = 2  \\n\u2003a\u2082 = 2\xB73 = 6  \\n\u2003a\u2083 = 3\xB74 = 12
-        \ \\n\u2026 and so on.\",\n        \"refusal\": null,\n        \"annotations\":
+        \"assistant\",\n        \"content\": \"The given terms  \\n1st: 2  \\n2nd:
+        6  \\n3rd: 12  \\n4th: 20  \\n5th: 30  \\n\\nhave successive differences 6\u20132=4,
+        12\u20136=6, 20\u201312=8, 30\u201320=10,\u2026 i.e. the differences are the
+        even numbers 4,6,8,10,\u2026\\n\\nEquivalently each term is the product of
+        two consecutive integers:\\n\\na\u2099 = n\xB7(n+1)\\n\\nChecking:\\nn=1 \u2192
+        1\xB72 = 2  \\nn=2 \u2192 2\xB73 = 6  \\nn=3 \u2192 3\xB74 = 12  \\nn=4 \u2192
+        4\xB75 = 20  \\nn=5 \u2192 5\xB76 = 30  \\n\\nSo the n\u1D57\u02B0 term is
+        a\u2099 = n\xB2 + n.\",\n        \"refusal\": null,\n        \"annotations\":
         []\n      },\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\":
-        {\n    \"prompt_tokens\": 41,\n    \"completion_tokens\": 937,\n    \"total_tokens\":
-        978,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\": 0,\n      \"audio_tokens\":
+        {\n    \"prompt_tokens\": 41,\n    \"completion_tokens\": 590,\n    \"total_tokens\":
+        631,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\": 0,\n      \"audio_tokens\":
         0\n    },\n    \"completion_tokens_details\": {\n      \"reasoning_tokens\":
-        768,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\": 0,\n
+        384,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\": 0,\n
         \     \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
         \"default\",\n  \"system_fingerprint\": null\n}\n"
     headers:
@@ -45,13 +46,13 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '1189'
+      - '1219'
       content-type:
       - application/json
       date:
-      - Tue, 13 Oct 2026 14:13:39 GMT
+      - Mon, 19 Oct 2026 17:17:08 GMT
       openai-processing-ms:
-      - '10538'
+      - '4718'
       openai-version:
       - '2020-10-01'
       server:
@@ -71,7 +72,7 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999010'
+      - '149999970'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
