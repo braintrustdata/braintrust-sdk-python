@@ -67,6 +67,7 @@ METADATA_PARAMS = (
     "model",
     "max_tokens",
     "temperature",
+    "speed",
     "top_k",
     "top_p",
     "stop_sequences",
