@@ -254,7 +254,8 @@ def test_decisions_nested_media_and_existing_references():
     assert questions["bounds"]["instructions"]["image"] == image
 
 
-def test_decisions_media_transform_handles_serialized_images():
+def test_decisions_media_transform_handles_serialized_images(monkeypatch):
+    monkeypatch.setenv("BRAINTRUST_CAPTURE_ATTACHMENTS", "true")
     data_url = decisions_image_input()[0]["content"][1]["image_url"]
     image = {"type": "image", "format": "png", "data_base64": data_url.split(",", 1)[1]}
     questions = {"bounds": {"type": "box", "instructions": "The target"}}

@@ -6,6 +6,7 @@ import sys
 from collections.abc import Mapping
 from typing import Any
 
+from braintrust.env import BraintrustEnv
 from braintrust.integrations.question import (
     _ANSWER_FIELDS,
     _QUESTION_FIELDS,
@@ -24,6 +25,7 @@ from braintrust.span_types import SpanTypeAttribute
 
 _INSTRUMENTATION = "typesafe"
 _MISSING = object()
+_OMITTED = "<omitted>"
 
 
 def start_span(*args, **kwargs):
@@ -83,7 +85,18 @@ def _image_payload(value: Any) -> Any:
     # Only interpret TypeSafe's Image objects as files/buffers. Arbitrary JSON
     # strings in the request must never be treated as local paths.
     image_type = getattr(sys.modules.get("typesafe_sdk"), "Image", ())
-    if isinstance(value, image_type):
+    is_typesafe_image = isinstance(value, image_type)
+    is_encoded_image = (
+        isinstance(value, Mapping)
+        and "data_base64" in value
+        and value.get("format") in ("png", "jpg", "jpeg")
+        and isinstance(value["data_base64"], str)
+    )
+    is_data_url = isinstance(value, str) and value.startswith("data:image/")
+    if (is_typesafe_image or is_encoded_image or is_data_url) and not BraintrustEnv.CAPTURE_ATTACHMENTS.get(False):
+        return _OMITTED
+
+    if is_typesafe_image:
         data = value.data
         if isinstance(data, os.PathLike):
             with open(data, "rb") as image_file:
@@ -101,14 +114,13 @@ def _image_payload(value: Any) -> Any:
             resolved = _materialize_attachment(data, mime_type=mime_type)
             if resolved is not None:
                 return resolved.attachment
-    if isinstance(value, Mapping) and "data_base64" in value:
+    if is_encoded_image:
         image_format = value.get("format")
-        if image_format in ("png", "jpg", "jpeg") and isinstance(value["data_base64"], str):
-            resolved = _materialize_attachment(
-                value["data_base64"], mime_type="image/png" if image_format == "png" else "image/jpeg"
-            )
-            if resolved is not None:
-                return resolved.attachment
+        resolved = _materialize_attachment(
+            value["data_base64"], mime_type="image/png" if image_format == "png" else "image/jpeg"
+        )
+        if resolved is not None:
+            return resolved.attachment
     return value
 
 
