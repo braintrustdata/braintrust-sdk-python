@@ -28,6 +28,7 @@ except ImportError:
 from braintrust import logger
 from braintrust.integrations.anthropic._utils import extract_anthropic_usage
 from braintrust.integrations.claude_agent_sdk import setup_claude_agent_sdk
+from braintrust.integrations.claude_agent_sdk._constants import SUBAGENT_TOOL_NAMES
 from braintrust.integrations.claude_agent_sdk._test_transport import _normalize_for_match, make_cassette_transport
 from braintrust.integrations.claude_agent_sdk.tracing import (
     ContextTracker,
@@ -213,8 +214,8 @@ async def test_calculator_with_multiple_operations(memory_logger):
             # Deterministically let local MCP dispatch race ahead of application
             # consumption of the AssistantMessage containing its tool_use block.
             # Before the regression fix, this creates an orphan fallback span.
-            await asyncio.wait_for(transport.wait_for_mcp_tool_call(), timeout=1)
-            await asyncio.wait_for(handler_started.wait(), timeout=1)
+            await asyncio.wait_for(transport.wait_for_mcp_tool_call(), timeout=transport.wait_timeout)
+            await asyncio.wait_for(handler_started.wait(), timeout=transport.wait_timeout)
 
             async for message in client.receive_response():
                 received_messages.append(message)
@@ -282,7 +283,8 @@ async def test_calculator_with_multiple_operations(memory_logger):
         for metric_name in ("prompt_tokens", "completion_tokens", "tokens"):
             if metric_name in llm_span.get("metrics", {}):
                 assert llm_span["metrics"][metric_name] > 0
-    if _sdk_version_at_least("0.1.11"):
+    # Per-call usage metadata comes from AssistantMessage.usage.
+    if _sdk_type_has_field("AssistantMessage", "usage"):
         assert any(llm_span.get("metadata", {}).get("usage_service_tier") == "standard" for llm_span in llm_spans)
     if any("usage_inference_geo" in llm_span.get("metadata", {}) for llm_span in llm_spans):
         assert all(
@@ -367,13 +369,17 @@ async def test_local_mcp_handler_uses_its_own_tracker_with_concurrent_client(mem
                 "What is 15 multiplied by 7? Then subtract 5 from the result. "
                 "You must use the calculator MCP tool for both operations in order; do not calculate directly."
             )
-            await asyncio.wait_for(calculator_transport.wait_for_mcp_tool_call(), timeout=1)
+            await asyncio.wait_for(
+                calculator_transport.wait_for_mcp_tool_call(), timeout=calculator_transport.wait_timeout
+            )
 
             await other_client.query("Say hi")
-            await asyncio.wait_for(other_transport.wait_until_sdk_message_blocked(), timeout=1)
+            await asyncio.wait_for(
+                other_transport.wait_until_sdk_message_blocked(), timeout=other_transport.wait_timeout
+            )
 
             calculator_transport.release_mcp_tool_calls()
-            await asyncio.wait_for(handler_started.wait(), timeout=1)
+            await asyncio.wait_for(handler_started.wait(), timeout=calculator_transport.wait_timeout)
             async for _ in calculator_client.receive_response():
                 pass
 
@@ -397,8 +403,8 @@ async def test_local_mcp_handler_uses_its_own_tracker_with_concurrent_client(mem
 @pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
 @pytest.mark.asyncio
 async def test_query_helper_keeps_options_untouched_and_logs_aggregate_task_usage(memory_logger):
-    if not _sdk_version_at_least("0.1.11"):
-        pytest.skip("The 0.1.10 query() transport lifecycle is incompatible with the client cassette")
+    if not _sdk_type_has_field("ClaudeAgentOptions", "verbatim_prompts"):
+        pytest.skip("ClaudeAgentOptions.verbatim_prompts is not available in this SDK version")
     assert not memory_logger.pop()
     prompt = "Say hello in one short sentence."
 
@@ -453,8 +459,8 @@ async def test_query_helper_keeps_options_untouched_and_logs_aggregate_task_usag
 @pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
 @pytest.mark.asyncio
 async def test_connect_with_prompt_logs_aggregate_task_usage(memory_logger):
-    if not _sdk_version_at_least("0.1.11"):
-        pytest.skip("Transcript usage is not exposed by the older SDK cassette")
+    if not _sdk_version_at_least(_STREAMED_STRING_PROMPT_MIN_SDK):
+        pytest.skip("Older SDKs pass string prompts via --print, which the client cassette cannot replay")
     assert not memory_logger.pop()
     prompt = "Say hello in one short sentence."
 
@@ -600,14 +606,6 @@ def _final_partial_usage(messages: list[Any]) -> list[dict[str, Any]]:
     return [usage_by_message_id[message_id] for message_id in message_order]
 
 
-def _sdk_cassette_name(base: str, *, min_version: str) -> str:
-    """Return base cassette name for SDK >= min_version, else a version-specific variant."""
-    if _sdk_version_at_least(min_version):
-        return base
-    sdk_ver = getattr(claude_agent_sdk, "__version__", "0").replace(".", "_")
-    return f"{base}_sdk_{sdk_ver}"
-
-
 def _sdk_version_at_least(version: str) -> bool:
     if not CLAUDE_SDK_AVAILABLE:
         return False
@@ -623,6 +621,24 @@ def _sdk_version_at_least(version: str) -> bool:
 _NEW_HOOK_INPUT_FIELDS = ("duration_ms", "prompt_id", "effort", "last_assistant_message", "error", "is_interrupt")
 # First SDK version whose bundled CLI sends the fields above.
 _NEW_HOOK_INPUT_FIELDS_MIN_SDK = "0.2.166"
+# First SDK version that sends string prompts over stream-json instead of `--print`,
+# so one-shot query()/connect(prompt) can replay the client-protocol cassettes.
+_STREAMED_STRING_PROMPT_MIN_SDK = "0.1.31"
+# First SDK version that parses the CLI's top-level assistant `error` onto AssistantMessage.error.
+_TOP_LEVEL_ASSISTANT_ERROR_MIN_SDK = "0.1.29"
+
+
+def _is_task_event(message: Any) -> bool:
+    return type(message).__name__ in {"TaskStartedMessage", "TaskProgressMessage", "TaskNotificationMessage"} or (
+        type(message).__name__ == "SystemMessage" and str(getattr(message, "subtype", "")).startswith("task_")
+    )
+
+
+def _sdk_type_has_field(type_name: str, field_name: str) -> bool:
+    """Feature-detect SDK API surface instead of pinning the version that added it."""
+    if not CLAUDE_SDK_AVAILABLE:
+        return False
+    return field_name in {field.name for field in dataclasses.fields(getattr(claude_agent_sdk, type_name))}
 
 
 def _hook_spans(spans: list[dict[str, Any]], *event_names: str) -> list[dict[str, Any]]:
@@ -773,8 +789,8 @@ async def test_agent_error_logged_on_spans(memory_logger):
             f"Root span error should match ResultMessage.result; expected {expected_result!r}, got {root_error!r}"
         )
 
-    # claude-agent-sdk 0.1.10 doesn't parse the top-level `error` field onto AssistantMessage.
-    if assistant_error:
+    if _sdk_version_at_least(_TOP_LEVEL_ASSISTANT_ERROR_MIN_SDK):
+        assert assistant_error, "Cassette must contain an AssistantMessage with error set"
         assert llm_spans, "Expected at least one LLM span"
         llm_errors = [span.get("error") for span in llm_spans if span.get("error")]
         assert llm_errors, (
@@ -1009,8 +1025,6 @@ async def test_post_tool_use_failure_hook_keeps_error_fields(memory_logger):
 @pytest.mark.asyncio
 async def test_bundled_subagent_creates_task_span(memory_logger):
     assert not memory_logger.pop()
-    if not _sdk_version_at_least("0.1.48"):
-        pytest.skip("Bundled subagent task events were not observed on older Claude Agent SDK versions")
 
     with _patched_claude_sdk(wrap_client=True):
         options = claude_agent_sdk.ClaudeAgentOptions(
@@ -1027,6 +1041,7 @@ async def test_bundled_subagent_creates_task_span(memory_logger):
         )
 
         result_message = None
+        received_messages: list[Any] = []
         async with claude_agent_sdk.ClaudeSDKClient(options=options, transport=transport) as client:
             await client.query(
                 "You must delegate this task to the bundled general-purpose agent. "
@@ -1034,9 +1049,12 @@ async def test_bundled_subagent_creates_task_span(memory_logger):
                 "Do not answer directly without using the subagent."
             )
             async for message in client.receive_response():
+                received_messages.append(message)
                 if type(message).__name__ == "ResultMessage":
                     result_message = message
                     break
+    # Older bundled CLIs emit no task_* system messages; task spans then come from the Task tool call.
+    cli_emits_task_events = any(_is_task_event(message) for message in received_messages)
 
     spans = memory_logger.pop()
 
@@ -1047,7 +1065,8 @@ async def test_bundled_subagent_creates_task_span(memory_logger):
     subagent_spans = [s for s in task_spans if s["span_attributes"]["name"] != "Claude Agent"]
     tool_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.TOOL]
     assert subagent_spans, "Expected at least one subagent task span"
-    assert any(s.get("metadata", {}).get("task_id") for s in subagent_spans)
+    if cli_emits_task_events:
+        assert any(s.get("metadata", {}).get("task_id") for s in subagent_spans)
     for subagent_span in subagent_spans:
         # Subagent spans are descendants of the root task span, so they share a
         # trace; the root task ``span_id`` appears in ``span_parents`` below.
@@ -1063,9 +1082,13 @@ async def test_bundled_subagent_creates_task_span(memory_logger):
         else:
             assert root_task_span["span_id"] in parents
 
-    assert root_task_span.get("metadata", {}).get("task_events"), "Expected task events on root task span"
+    if cli_emits_task_events:
+        assert root_task_span.get("metadata", {}).get("task_events"), "Expected task events on root task span"
     assert result_message is not None
-    assert root_task_span.get("metadata", {}).get("model_usage") == _aggregate_model_usage(result_message.model_usage)
+    if _sdk_type_has_field("ResultMessage", "model_usage"):
+        assert root_task_span.get("metadata", {}).get("model_usage") == _aggregate_model_usage(
+            result_message.model_usage
+        )
     assert not {"prompt_tokens", "completion_tokens", "tokens"}.intersection(root_task_span.get("metrics", {}))
 
     llm_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.LLM]
@@ -1083,7 +1106,9 @@ async def test_bundled_subagent_creates_task_span(memory_logger):
     ]
     assert delegated_llm_spans, "Expected at least one delegated LLM span nested under a subagent task span"
     for llm_span in delegated_llm_spans:
-        assert llm_span["metrics"].get("prompt_tokens", 0) > 0
+        # Subagent calls stream no partial messages, so their usage comes only from AssistantMessage.usage.
+        if _sdk_type_has_field("AssistantMessage", "usage"):
+            assert llm_span["metrics"].get("prompt_tokens", 0) > 0
         assert "completion_tokens" not in llm_span["metrics"]
         assert "tokens" not in llm_span["metrics"]
         assert llm_span.get("metadata", {}).get("usage_output_tokens_unknown") is True
@@ -1098,8 +1123,6 @@ async def test_bundled_subagent_creates_task_span(memory_logger):
 @pytest.mark.asyncio
 async def test_multiple_bundled_subagents_keep_outer_orchestration_separate(memory_logger, tmp_path):
     assert not memory_logger.pop()
-    if not _sdk_version_at_least("0.1.48"):
-        pytest.skip("Bundled subagent task events were not observed on older Claude Agent SDK versions")
 
     workspace = tmp_path / "subagent_multi_workspace"
     workspace.mkdir()
@@ -1145,6 +1168,10 @@ async def test_multiple_bundled_subagents_keep_outer_orchestration_separate(memo
                     break
 
     spans = memory_logger.pop()
+    if not any(_is_task_event(message) for message in received_messages) and not any(
+        getattr(message, "parent_tool_use_id", None) for message in received_messages
+    ):
+        pytest.skip("This CLI ran the subagents in the background without streaming their messages or task events")
     task_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.TASK]
     llm_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.LLM]
     tool_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.TOOL]
@@ -1162,7 +1189,9 @@ async def test_multiple_bundled_subagents_keep_outer_orchestration_separate(memo
     outer_llm_spans = [llm_span for llm_span in llm_spans if root_task_span["span_id"] in llm_span["span_parents"]]
     assert outer_llm_spans, "Expected outer orchestration LLM spans under the root task"
 
-    agent_tool_spans = [tool_span for tool_span in tool_spans if tool_span["span_attributes"]["name"] == "Agent"]
+    agent_tool_spans = [
+        tool_span for tool_span in tool_spans if tool_span["span_attributes"]["name"] in SUBAGENT_TOOL_NAMES
+    ]
     assert len(agent_tool_spans) >= 2, f"Expected at least two Agent tool spans, got {len(agent_tool_spans)}"
 
     subagent_span_ids = {subagent_span["span_id"] for subagent_span in subagent_spans}
@@ -1170,471 +1199,26 @@ async def test_multiple_bundled_subagents_keep_outer_orchestration_separate(memo
         assert any(outer_llm_span["span_id"] in agent_tool_span["span_parents"] for outer_llm_span in outer_llm_spans)
         assert not subagent_span_ids.intersection(agent_tool_span["span_parents"])
 
+    # Orchestrator turns taken while background subagents run (TaskOutput polling)
+    # belong to the outer agent, not to whichever subagent task is still open.
+    task_output_spans = [span for span in tool_spans if span["span_attributes"]["name"] == "TaskOutput"]
+    assert task_output_spans, "Expected the orchestrator to poll background subagents with TaskOutput"
+    for task_output_span in task_output_spans:
+        parent_llm = next(span for span in llm_spans if span["span_id"] == task_output_span["span_parents"][0])
+        assert root_task_span["span_id"] in parent_llm["span_parents"], "Orchestrator LLM span nested under a subagent"
+
     delegated_llm_spans = [
         llm_span for llm_span in llm_spans if subagent_span_ids.intersection(llm_span["span_parents"])
     ]
     assert delegated_llm_spans, "Expected delegated LLM spans nested under delegated task spans"
 
-    non_agent_tool_spans = [tool_span for tool_span in tool_spans if tool_span["span_attributes"]["name"] != "Agent"]
+    non_agent_tool_spans = [
+        tool_span for tool_span in tool_spans if tool_span["span_attributes"]["name"] not in SUBAGENT_TOOL_NAMES
+    ]
     assert any(
         any(delegated_llm_span["span_id"] in tool_span["span_parents"] for delegated_llm_span in delegated_llm_spans)
         for tool_span in non_agent_tool_spans
     ), "Expected delegated tool spans to nest under delegated LLM spans"
-
-
-@pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
-@pytest.mark.asyncio
-async def test_five_parallel_bundled_subagents_preserve_task_parenting(memory_logger, tmp_path):
-    assert not memory_logger.pop()
-    if not _sdk_version_at_least("0.1.48"):
-        pytest.skip("Bundled subagent task events were not observed on older Claude Agent SDK versions")
-
-    workspace = tmp_path / "subagent_parenting_workspace"
-    workspace.mkdir()
-    for i in range(5):
-        (workspace / f"note_{i}.txt").write_text(f"label={i}\nowner=owner_{i}\n", encoding="utf-8")
-
-    with _patched_claude_sdk(wrap_client=True):
-        options = claude_agent_sdk.ClaudeAgentOptions(
-            model=TEST_MODEL,
-            cwd=workspace,
-            permission_mode="bypassPermissions",
-            max_turns=20,
-        )
-        transport = make_cassette_transport(
-            cassette_name="test_five_parallel_bundled_subagents_preserve_task_parenting",
-            prompt="",
-            options=options,
-        )
-
-        async with claude_agent_sdk.ClaudeSDKClient(options=options, transport=transport) as client:
-            await client.query(
-                "Use exactly five bundled general-purpose subagents, one for each file note_0.txt through note_4.txt. "
-                "In your first assistant response, emit all five Agent tool calls before waiting for any subagent result. "
-                "Do not emit explanatory text before or between the Agent tool calls if the tool API allows it. "
-                "Each delegated subagent must use Read on exactly its assigned file and return only label=<n> | owner=<owner>. "
-                "After all five finish, reply with exactly five lines in order 0 through 4. "
-                "Do not answer directly without using all five subagents."
-            )
-            async for message in client.receive_response():
-                if type(message).__name__ == "ResultMessage":
-                    break
-
-    spans = memory_logger.pop()
-    task_spans = find_spans_by_type(spans, SpanTypeAttribute.TASK)
-    tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
-
-    root_task_span = find_span_by_name(task_spans, "Claude Agent")
-    subagent_spans = [span for span in task_spans if span.get("metadata", {}).get("tool_use_id")]
-    assert len(subagent_spans) == 5, f"Expected 5 delegated task spans, got {len(subagent_spans)}"
-
-    agent_tool_spans_by_id = {
-        span.get("metadata", {}).get("gen_ai.tool.call.id"): span
-        for span in tool_spans
-        if span["span_attributes"]["name"] == "Agent"
-    }
-    assert len(agent_tool_spans_by_id) == 5, f"Expected 5 Agent tool spans, got {len(agent_tool_spans_by_id)}"
-
-    for subagent_span in subagent_spans:
-        tool_use_id = subagent_span.get("metadata", {}).get("tool_use_id")
-        assert tool_use_id, f"Expected task span metadata to include tool_use_id: {subagent_span}"
-        agent_tool_span = agent_tool_spans_by_id.get(tool_use_id)
-        assert agent_tool_span is not None, f"Missing Agent tool span for tool_use_id={tool_use_id}"
-        assert agent_tool_span["span_id"] in subagent_span["span_parents"]
-        assert root_task_span["span_id"] not in subagent_span["span_parents"]
-        assert agent_tool_span["metrics"]["end"] >= subagent_span["metrics"]["end"]
-
-
-@pytest.mark.asyncio
-async def test_delegated_subagent_llm_and_tool_spans_nest_under_task_span(memory_logger):
-    assert not memory_logger.pop()
-
-    wrapped_client_class = _create_client_wrapper_class(FakeClaudeSDKClient)
-    client = wrapped_client_class()
-    client._WrappedClaudeSDKClient__client.messages = [  # type: ignore[attr-defined]
-        AssistantMessage(
-            content=[
-                ToolUseBlock(
-                    id="call-agent",
-                    name="Agent",
-                    input={"description": "Inspect release notes", "subagent_type": "general-purpose"},
-                )
-            ]
-        ),
-        _task_started(
-            "task-subagent", description="Inspect release notes", uuid="msg-start", tool_use_id="call-agent"
-        ),
-        AssistantMessage(
-            content=[
-                ToolUseBlock(
-                    id="call-read",
-                    name="Read",
-                    input={"file_path": "/tmp/release_notes.md"},
-                )
-            ],
-        ),
-        UserMessage(
-            content=[ToolResultBlock(tool_use_id="call-read", content=[TextBlock("version = 2026.03.11")])],
-        ),
-        _task_done(
-            "task-subagent",
-            summary="Inspection complete",
-            uuid="msg-done",
-            tool_use_id="call-agent",
-            usage={"total_tokens": 42, "tool_uses": 1, "duration_ms": 250},
-        ),
-        UserMessage(
-            content=[ToolResultBlock(tool_use_id="call-agent", content=[TextBlock("2026.03.11 | sdk-platform")])]
-        ),
-        ResultMessage(),
-    ]
-
-    await client.query("Delegate this task.")
-    async for message in client.receive_response():
-        if type(message).__name__ == "ResultMessage":
-            break
-
-    spans = memory_logger.pop()
-    task_spans = find_spans_by_type(spans, SpanTypeAttribute.TASK)
-    llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
-    tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
-
-    subagent_task_span = find_span_by_name(task_spans, "Inspect release notes")
-    agent_tool_span = find_span_by_name(tool_spans, "Agent")
-    read_tool_span = find_span_by_name(tool_spans, "Read")
-
-    assert agent_tool_span["span_id"] in subagent_task_span["span_parents"]
-
-    delegated_llm_spans = [
-        llm_span for llm_span in llm_spans if subagent_task_span["span_id"] in llm_span["span_parents"]
-    ]
-    assert len(delegated_llm_spans) == 1
-
-    delegated_llm_span = delegated_llm_spans[0]
-    assert delegated_llm_span["span_id"] in read_tool_span["span_parents"]
-
-
-@pytest.mark.asyncio
-async def test_multiple_subagent_orchestration_keeps_outer_agent_tool_calls_outside_active_subagent(memory_logger):
-    assert not memory_logger.pop()
-
-    wrapped_client_class = _create_client_wrapper_class(FakeClaudeSDKClient)
-    client = wrapped_client_class()
-    client._WrappedClaudeSDKClient__client.messages = [  # type: ignore[attr-defined]
-        AssistantMessage(
-            content=[
-                TextBlock("Launching the first delegated agent."),
-                ToolUseBlock(
-                    id="call-alpha",
-                    name="Agent",
-                    input={"description": "Read alpha release notes", "subagent_type": "general-purpose"},
-                ),
-            ]
-        ),
-        _task_started(
-            "task-alpha", description="Read alpha release notes", uuid="msg-alpha-start", tool_use_id="call-alpha"
-        ),
-        AssistantMessage(
-            content=[
-                ToolUseBlock(
-                    id="call-beta",
-                    name="Agent",
-                    input={"description": "Read beta release notes", "subagent_type": "general-purpose"},
-                )
-            ]
-        ),
-        _task_started(
-            "task-beta", description="Read beta release notes", uuid="msg-beta-start", tool_use_id="call-beta"
-        ),
-        AssistantMessage(
-            content=[ToolUseBlock(id="read-alpha", name="Read", input={"file_path": "/tmp/release_notes_alpha.md"})],
-            parent_tool_use_id="call-alpha",
-        ),
-        UserMessage(content=[ToolResultBlock(tool_use_id="read-alpha", content=[TextBlock("alpha result")])]),
-        _task_done(
-            "task-alpha",
-            summary="Alpha complete",
-            uuid="msg-alpha-done",
-            tool_use_id="call-alpha",
-            usage={"total_tokens": 11, "tool_uses": 1, "duration_ms": 250},
-        ),
-        AssistantMessage(
-            content=[ToolUseBlock(id="read-beta", name="Read", input={"file_path": "/tmp/release_notes_beta.md"})],
-            parent_tool_use_id="call-beta",
-        ),
-        UserMessage(content=[ToolResultBlock(tool_use_id="read-beta", content=[TextBlock("beta result")])]),
-        _task_done(
-            "task-beta",
-            summary="Beta complete",
-            uuid="msg-beta-done",
-            tool_use_id="call-beta",
-            usage={"total_tokens": 12, "tool_uses": 1, "duration_ms": 300},
-        ),
-        UserMessage(
-            content=[
-                ToolResultBlock(
-                    tool_use_id="call-alpha", content=[TextBlock("alpha:2026.03.11-alpha | sdk-platform-alpha")]
-                ),
-                ToolResultBlock(
-                    tool_use_id="call-beta", content=[TextBlock("beta:2026.03.11-beta | sdk-platform-beta")]
-                ),
-            ]
-        ),
-        ResultMessage(),
-    ]
-
-    await client.query("Launch two delegated subagents.")
-    async for message in client.receive_response():
-        if type(message).__name__ == "ResultMessage":
-            break
-
-    spans = memory_logger.pop()
-    task_spans = find_spans_by_type(spans, SpanTypeAttribute.TASK)
-    llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
-    tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
-
-    root_task_span = find_span_by_name(task_spans, "Claude Agent")
-    alpha_task_span = find_span_by_name(task_spans, "Read alpha release notes")
-    beta_task_span = find_span_by_name(task_spans, "Read beta release notes")
-
-    agent_tool_spans = [span for span in tool_spans if span["span_attributes"]["name"] == "Agent"]
-    assert len(agent_tool_spans) == 2
-
-    outer_llm_spans = [llm_span for llm_span in llm_spans if root_task_span["span_id"] in llm_span["span_parents"]]
-    assert len(outer_llm_spans) == 1, f"Expected a single outer orchestration LLM span, got {len(outer_llm_spans)}"
-    outer_llm_span = outer_llm_spans[0]
-
-    for agent_tool_span in agent_tool_spans:
-        assert outer_llm_span["span_id"] in agent_tool_span["span_parents"]
-        assert alpha_task_span["span_id"] not in agent_tool_span["span_parents"]
-        assert beta_task_span["span_id"] not in agent_tool_span["span_parents"]
-
-    delegated_llm_spans = [
-        llm_span
-        for llm_span in llm_spans
-        if alpha_task_span["span_id"] in llm_span["span_parents"]
-        or beta_task_span["span_id"] in llm_span["span_parents"]
-    ]
-    assert delegated_llm_spans, "Expected delegated LLM spans nested under delegated task spans"
-
-
-@pytest.mark.asyncio
-async def test_relay_user_messages_between_parallel_agent_calls_do_not_split_llm_span(memory_logger):
-    """Relay UserMessages (subagent prompt echoes without ToolResultBlocks) between
-    parallel Agent calls should not create separate outer LLM spans.
-
-    The real Claude Agent SDK emits relay UserMessages between Agent tool calls
-    when subagents are launched concurrently. These relay messages contain only
-    text (the subagent prompt), not ToolResultBlocks. They should not be treated
-    as LLM turn boundaries.
-    """
-    assert not memory_logger.pop()
-
-    wrapped_client_class = _create_client_wrapper_class(FakeClaudeSDKClient)
-    client = wrapped_client_class()
-    client._WrappedClaudeSDKClient__client.messages = [  # type: ignore[attr-defined]
-        # Orchestrator responds with thinking + text + first Agent call
-        AssistantMessage(
-            content=[
-                TextBlock("I'll launch two subagents."),
-                ToolUseBlock(
-                    id="call-alpha",
-                    name="Agent",
-                    input={"description": "Read alpha release notes", "subagent_type": "general-purpose"},
-                ),
-            ]
-        ),
-        # SDK relays the alpha subagent prompt as a UserMessage (no ToolResultBlock)
-        UserMessage(content=[TextBlock("You must use Bash and Read on release_notes_alpha.md...")]),
-        # Orchestrator emits the second Agent call
-        AssistantMessage(
-            content=[
-                ToolUseBlock(
-                    id="call-beta",
-                    name="Agent",
-                    input={"description": "Read beta release notes", "subagent_type": "general-purpose"},
-                )
-            ]
-        ),
-        # SDK relays the beta subagent prompt as a UserMessage (no ToolResultBlock)
-        UserMessage(content=[TextBlock("You must use Bash and Read on release_notes_beta.md...")]),
-        # Task lifecycle events
-        _task_started(
-            "task-alpha", description="Read alpha release notes", uuid="msg-alpha-start", tool_use_id="call-alpha"
-        ),
-        _task_started(
-            "task-beta", description="Read beta release notes", uuid="msg-beta-start", tool_use_id="call-beta"
-        ),
-        # Subagent completions
-        _task_done(
-            "task-alpha",
-            summary="Alpha complete",
-            uuid="msg-alpha-done",
-            tool_use_id="call-alpha",
-            usage={"total_tokens": 11, "tool_uses": 1, "duration_ms": 250},
-        ),
-        _task_done(
-            "task-beta",
-            summary="Beta complete",
-            uuid="msg-beta-done",
-            tool_use_id="call-beta",
-            usage={"total_tokens": 12, "tool_uses": 1, "duration_ms": 300},
-        ),
-        # Final tool results (real turn boundary — has ToolResultBlocks)
-        UserMessage(
-            content=[
-                ToolResultBlock(
-                    tool_use_id="call-alpha", content=[TextBlock("alpha:2026.03.11-alpha | sdk-platform-alpha")]
-                ),
-                ToolResultBlock(
-                    tool_use_id="call-beta", content=[TextBlock("beta:2026.03.11-beta | sdk-platform-beta")]
-                ),
-            ]
-        ),
-        # Final answer
-        AssistantMessage(content=[TextBlock("alpha:2026.03.11-alpha\nbeta:2026.03.11-beta")]),
-        ResultMessage(),
-    ]
-
-    await client.query("Launch two delegated subagents.")
-    async for message in client.receive_response():
-        if type(message).__name__ == "ResultMessage":
-            break
-
-    spans = memory_logger.pop()
-    task_spans = find_spans_by_type(spans, SpanTypeAttribute.TASK)
-    llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
-    tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
-
-    root_task_span = find_span_by_name(task_spans, "Claude Agent")
-
-    # Both Agent tool spans should exist
-    agent_tool_spans = [span for span in tool_spans if span["span_attributes"]["name"] == "Agent"]
-    assert len(agent_tool_spans) == 2, f"Expected 2 Agent tool spans, got {len(agent_tool_spans)}"
-
-    # Both Agent tool spans should share the SAME parent LLM span
-    llm_span_ids = {span["span_id"] for span in llm_spans}
-    alpha_llm_parents = set(agent_tool_spans[0]["span_parents"]).intersection(llm_span_ids)
-    beta_llm_parents = set(agent_tool_spans[1]["span_parents"]).intersection(llm_span_ids)
-    assert alpha_llm_parents == beta_llm_parents, (
-        f"Both Agent tool spans should share the same parent LLM span. "
-        f"Alpha parents: {alpha_llm_parents}, Beta parents: {beta_llm_parents}"
-    )
-
-    # Exactly one outer LLM span should parent both Agent tool calls
-    # (the final-answer LLM span is a separate, expected outer span)
-    orchestration_llm_spans = [
-        llm_span
-        for llm_span in llm_spans
-        if any(llm_span["span_id"] in agent_tool_span["span_parents"] for agent_tool_span in agent_tool_spans)
-    ]
-    assert len(orchestration_llm_spans) == 1, (
-        f"Expected a single orchestration LLM span parenting both Agent tool calls "
-        f"(relay UserMessages without ToolResultBlocks should not split it), "
-        f"got {len(orchestration_llm_spans)}"
-    )
-
-
-@pytest.mark.asyncio
-async def test_agent_tool_spans_encapsulate_child_task_spans(memory_logger):
-    """Agent TOOL spans must end after their child TASK spans, not before.
-
-    The mid-stream tool_tracker.cleanup_context() in the AssistantMessage handler must
-    not close Agent TOOL spans that still have active child TASK spans. Those
-    Agent TOOL spans should only close when their ToolResult arrives.
-    """
-    assert not memory_logger.pop()
-
-    wrapped_client_class = _create_client_wrapper_class(FakeClaudeSDKClient)
-    client = wrapped_client_class()
-    client._WrappedClaudeSDKClient__client.messages = [  # type: ignore[attr-defined]
-        # Orchestrator responds with text + first Agent call
-        AssistantMessage(
-            content=[
-                TextBlock("I'll launch two subagents."),
-                ToolUseBlock(
-                    id="call-alpha",
-                    name="Agent",
-                    input={"description": "Read alpha", "subagent_type": "general-purpose"},
-                ),
-            ]
-        ),
-        # SDK emits TaskStarted immediately after Agent ToolUse (real ordering)
-        _task_started(
-            "task-alpha", description="Read alpha release notes", uuid="msg-alpha-start", tool_use_id="call-alpha"
-        ),
-        # SDK relays the alpha subagent prompt (no ToolResultBlock)
-        UserMessage(content=[TextBlock("Read alpha release notes...")]),
-        # Orchestrator emits the second Agent call
-        AssistantMessage(
-            content=[
-                ToolUseBlock(
-                    id="call-beta",
-                    name="Agent",
-                    input={"description": "Read beta", "subagent_type": "general-purpose"},
-                )
-            ]
-        ),
-        # SDK emits TaskStarted immediately after Agent ToolUse (real ordering)
-        _task_started(
-            "task-beta", description="Read beta release notes", uuid="msg-beta-start", tool_use_id="call-beta"
-        ),
-        # SDK relays the beta subagent prompt (no ToolResultBlock)
-        UserMessage(content=[TextBlock("Read beta release notes...")]),
-        # Both tasks complete
-        _task_done(
-            "task-alpha",
-            summary="Alpha complete",
-            uuid="msg-alpha-done",
-            tool_use_id="call-alpha",
-            usage={"total_tokens": 11, "tool_uses": 1, "duration_ms": 250},
-        ),
-        _task_done(
-            "task-beta",
-            summary="Beta complete",
-            uuid="msg-beta-done",
-            tool_use_id="call-beta",
-            usage={"total_tokens": 12, "tool_uses": 1, "duration_ms": 300},
-        ),
-        # Final tool results (real turn boundary — has ToolResultBlocks)
-        UserMessage(
-            content=[
-                ToolResultBlock(tool_use_id="call-alpha", content=[TextBlock("alpha result")]),
-                ToolResultBlock(tool_use_id="call-beta", content=[TextBlock("beta result")]),
-            ]
-        ),
-        # Final answer
-        AssistantMessage(content=[TextBlock("Done.")]),
-        ResultMessage(),
-    ]
-
-    await client.query("Launch two subagents.")
-    async for message in client.receive_response():
-        if type(message).__name__ == "ResultMessage":
-            break
-
-    spans = memory_logger.pop()
-    task_spans = find_spans_by_type(spans, SpanTypeAttribute.TASK)
-    tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
-
-    agent_tool_spans = [s for s in tool_spans if s["span_attributes"]["name"] == "Agent"]
-    assert len(agent_tool_spans) == 2, f"Expected 2 Agent tool spans, got {len(agent_tool_spans)}"
-
-    child_task_spans = [s for s in task_spans if s["span_attributes"]["name"] != "Claude Agent"]
-    assert len(child_task_spans) == 2, f"Expected 2 child TASK spans, got {len(child_task_spans)}"
-
-    # Each Agent TOOL span must end at or after its child TASK span
-    for agent_span in agent_tool_spans:
-        agent_end = agent_span["metrics"]["end"]
-        # Find child TASK span (parented under this Agent TOOL span)
-        children = [ts for ts in child_task_spans if agent_span["span_id"] in ts.get("span_parents", [])]
-        assert len(children) == 1, (
-            f"Agent span {agent_span['span_id']} should have exactly 1 child TASK span, got {len(children)}"
-        )
-        child_end = children[0]["metrics"]["end"]
-        assert agent_end >= child_end, (
-            f"Agent TOOL span must encapsulate its child TASK span. Agent end={agent_end}, child TASK end={child_end}"
-        )
 
 
 async def _single_message_generator():
@@ -1719,34 +1303,6 @@ class TaskNotificationMessage:
     usage: dict[str, Any] | None = None
 
 
-def _task_started(task_id, *, description, uuid, tool_use_id):
-    return TaskStartedMessage(
-        subtype="task_started",
-        data={"subtype": "task_started", "task_id": task_id},
-        task_id=task_id,
-        description=description,
-        uuid=uuid,
-        session_id="session-123",
-        tool_use_id=tool_use_id,
-        task_type="local_agent",
-    )
-
-
-def _task_done(task_id, *, summary, uuid, tool_use_id, usage):
-    return TaskNotificationMessage(
-        subtype="task_notification",
-        data={"subtype": "task_notification", "task_id": task_id},
-        task_id=task_id,
-        status="completed",
-        output_file="",
-        summary=summary,
-        uuid=uuid,
-        session_id="session-123",
-        tool_use_id=tool_use_id,
-        usage=usage,
-    )
-
-
 class ResultMessage:
     def __init__(
         self,
@@ -1826,8 +1382,8 @@ def _clear_tool_span_tracker() -> None:
         pytest.param(
             "query",
             marks=pytest.mark.skipif(
-                getattr(claude_agent_sdk, "__version__", None) == "0.1.10",
-                reason="the 0.1.10 query cassette covers the client protocol, not one-shot query()",
+                CLAUDE_SDK_AVAILABLE and not _sdk_version_at_least(_STREAMED_STRING_PROMPT_MIN_SDK),
+                reason="older SDKs pass one-shot query() prompts via --print, not the client protocol",
             ),
         ),
     ],
@@ -1867,7 +1423,7 @@ async def test_stream_propagates_genuine_cancellation(memory_logger, entrypoint,
 
 async def _assert_stream_cancellation(response_stream: Any, transport: Any, cancellation: str) -> None:
     read_task = asyncio.create_task(anext(response_stream))
-    await asyncio.wait_for(transport.wait_until_sdk_message_blocked(), timeout=1)
+    await asyncio.wait_for(transport.wait_until_sdk_message_blocked(), timeout=transport.wait_timeout)
     await asyncio.sleep(0)
     assert not read_task.done(), "the replayed SDK message should keep the response read blocked"
 
@@ -2465,15 +2021,17 @@ async def test_concurrent_query_helpers_keep_raw_messages_request_scoped(memory_
         assert setup_claude_agent_sdk(project=PROJECT_NAME, api_key=logger.TEST_API_KEY)
 
         first_task = asyncio.create_task(consume(first_prompt, first_options, first_transport))
-        await asyncio.wait_for(first_transport.wait_until_sdk_message_blocked(), timeout=1)
+        await asyncio.wait_for(first_transport.wait_until_sdk_message_blocked(), timeout=first_transport.wait_timeout)
 
         second_task = asyncio.create_task(consume(second_prompt, second_options, second_transport))
-        await asyncio.wait_for(second_transport.wait_until_sdk_message_blocked(), timeout=1)
+        await asyncio.wait_for(
+            second_transport.wait_until_sdk_message_blocked(), timeout=second_transport.wait_timeout
+        )
 
         first_transport.release_sdk_messages()
-        first_result = await asyncio.wait_for(first_task, timeout=1)
+        first_result = await asyncio.wait_for(first_task, timeout=first_transport.wait_timeout)
         second_transport.release_sdk_messages()
-        second_result = await asyncio.wait_for(second_task, timeout=1)
+        second_result = await asyncio.wait_for(second_task, timeout=second_transport.wait_timeout)
 
     spans = memory_logger.pop()
     task_spans = find_spans_by_type(spans, SpanTypeAttribute.TASK)
@@ -2564,10 +2122,7 @@ async def test_concurrent_subagents_produce_parallel_llm_spans_with_correct_pare
             allowed_tools=["Task", "Bash", "Read"],
         )
         transport = make_cassette_transport(
-            cassette_name=_sdk_cassette_name(
-                "test_concurrent_subagents_produce_parallel_llm_spans_with_correct_parenting",
-                min_version="0.1.11",
-            ),
+            cassette_name="test_concurrent_subagents_produce_parallel_llm_spans_with_correct_parenting",
             prompt="",
             options=options,
         )
@@ -2594,9 +2149,6 @@ async def test_concurrent_subagents_produce_parallel_llm_spans_with_correct_pare
 
     root_task_span = find_span_by_name(task_spans, "Claude Agent")
 
-    if not _sdk_version_at_least("0.1.11"):
-        return
-
     subagent_spans = [span for span in task_spans if span["span_id"] != root_task_span["span_id"]]
     assert len(subagent_spans) == 3, f"Expected 3 delegated task spans, got {len(subagent_spans)}"
     subagent_span_ids = {span["span_id"] for span in subagent_spans}
@@ -2604,8 +2156,24 @@ async def test_concurrent_subagents_produce_parallel_llm_spans_with_correct_pare
     outer_llm_spans = [llm_span for llm_span in llm_spans if root_task_span["span_id"] in llm_span["span_parents"]]
     assert outer_llm_spans, "Expected outer orchestration LLM spans under the root task"
 
-    agent_tool_spans = [tool_span for tool_span in tool_spans if tool_span["span_attributes"]["name"] == "Agent"]
+    agent_tool_spans = [
+        tool_span for tool_span in tool_spans if tool_span["span_attributes"]["name"] in SUBAGENT_TOOL_NAMES
+    ]
     assert len(agent_tool_spans) == 3, f"Expected 3 Agent tool spans, got {len(agent_tool_spans)}"
+    # The three Agent calls come from one orchestrator turn; the relay user messages
+    # the CLI emits between parallel calls must not split it into separate LLM spans.
+    agent_call_llm_ids = {tool_span["span_parents"][0] for tool_span in agent_tool_spans}
+    assert len(agent_call_llm_ids) == 1, f"Expected one orchestrator LLM span, got {len(agent_call_llm_ids)}"
+
+    # Each delegated task hangs off its own Agent tool span and closes before it.
+    agent_tool_spans_by_id = {span.get("metadata", {}).get("gen_ai.tool.call.id"): span for span in agent_tool_spans}
+    for subagent_span in subagent_spans:
+        tool_use_id = subagent_span.get("metadata", {}).get("tool_use_id")
+        agent_tool_span = agent_tool_spans_by_id.get(tool_use_id)
+        assert agent_tool_span is not None, f"Missing Agent tool span for tool_use_id={tool_use_id}"
+        assert agent_tool_span["span_id"] in subagent_span["span_parents"]
+        assert root_task_span["span_id"] not in subagent_span["span_parents"]
+        assert agent_tool_span["metrics"]["end"] >= subagent_span["metrics"]["end"]
 
     delegated_llm_spans = [
         llm_span for llm_span in llm_spans if any(parent in subagent_span_ids for parent in llm_span["span_parents"])
@@ -2645,108 +2213,45 @@ async def test_concurrent_subagents_produce_parallel_llm_spans_with_correct_pare
     for marker in ("task_label=A", "owner=alpha", "task_label=B", "owner=beta", "task_label=C", "owner=gamma"):
         assert any(marker in output for output in read_outputs), f"Missing Read output marker {marker!r}"
 
+    def delegated_parent_ids(tool_span: dict[str, Any]) -> tuple[str, str]:
+        parent_llm = next(span for span in llm_spans if span["span_id"] == tool_span["span_parents"][0])
+        return next(pid for pid in parent_llm["span_parents"] if pid in subagent_span_ids), parent_llm["span_id"]
+
+    # Interleaved subagents keep their own tools: a subagent's Bash and Read share one
+    # delegated task, and sibling subagents never share a parent LLM span.
+    parents_by_label = {}
+    for label in ("A", "B", "C"):
+        read_span = next(span for span in read_spans if f"task_label={label}" in span["output"]["content"])
+        task_id, llm_id = delegated_parent_ids(read_span)
+        bash_span = next(
+            (
+                span
+                for span in bash_spans
+                if span.get("output") is not None and f"bash-{label.lower()}-output" in span["output"]["content"]
+            ),
+            None,
+        )
+        if bash_span is not None:
+            assert delegated_parent_ids(bash_span)[0] == task_id, f"Subagent {label}'s tools should share a task"
+        parents_by_label[label] = (task_id, llm_id)
+    assert len({task_id for task_id, _ in parents_by_label.values()}) == 3, "Subagents should have distinct tasks"
+    assert len({llm_id for _, llm_id in parents_by_label.values()}) == 3, "Sibling subagents should not share an LLM"
+
     first_delegated_llm_by_task = {}
     for llm_span in delegated_llm_spans:
         task_parent_id = next(pid for pid in llm_span["span_parents"] if pid in subagent_span_ids)
         first_delegated_llm_by_task.setdefault(task_parent_id, llm_span)
     assert len(first_delegated_llm_by_task) == 3, "Expected each delegated task to have an LLM span"
+    task_end_by_id = {span["span_id"]: span["metrics"]["end"] for span in subagent_spans}
+    for llm_span in delegated_llm_spans:
+        task_parent_id = next(pid for pid in llm_span["span_parents"] if pid in subagent_span_ids)
+        assert llm_span["metrics"]["end"] <= task_end_by_id[task_parent_id], "Delegated LLM span outlives its task"
 
     for tool_span in bash_spans + read_spans:
         parent_llm = next(span for span in llm_spans if span["span_id"] == tool_span["span_parents"][0])
         if "end" in parent_llm.get("metrics", {}):
             assert tool_span["metrics"]["start"] >= parent_llm["metrics"]["start"], "Tool starts before parent LLM"
             assert tool_span["metrics"]["end"] <= parent_llm["metrics"]["end"], "Tool extends past parent LLM"
-
-
-@pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
-@pytest.mark.asyncio
-async def test_interleaved_subagent_tool_spans_parent_to_correct_llm(memory_logger, tmp_path):
-    """Tool spans from concurrent subagents should stay parented to their own delegated task/LLM lineage."""
-    assert not memory_logger.pop()
-
-    workspace = tmp_path / "interleaved_parenting_workspace"
-    workspace.mkdir()
-    (workspace / "alpha.txt").write_text("alpha_file_contents\n", encoding="utf-8")
-    (workspace / "beta.txt").write_text("beta_file_contents\n", encoding="utf-8")
-
-    with _patched_claude_sdk(wrap_client=True):
-        options = claude_agent_sdk.ClaudeAgentOptions(
-            model=TEST_MODEL,
-            cwd=workspace,
-            permission_mode="bypassPermissions",
-            max_turns=12,
-            allowed_tools=["Task", "Bash", "Read"],
-        )
-        transport = make_cassette_transport(
-            cassette_name=_sdk_cassette_name(
-                "test_interleaved_subagent_tool_output_preserved",
-                min_version="0.1.11",
-            ),
-            prompt="",
-            options=options,
-        )
-
-        async with claude_agent_sdk.ClaudeSDKClient(options=options, transport=transport) as client:
-            await client.query(
-                "Launch two bundled general-purpose subagents for two independent tasks. "
-                "Start both Agent tool calls before waiting on either result if the tool API allows it. "
-                "The first delegated subagent must use Bash to run `echo alpha-bash-output` and then use Read on alpha.txt. "
-                "The second delegated subagent must use Bash to run `echo beta-bash-output` and then use Read on beta.txt. "
-                "Each delegated subagent must return only its file contents after both tool calls complete. "
-                "After both delegated agents finish, reply with exactly two lines in order alpha then beta. "
-                "Do not ask clarifying questions. Do not answer directly without using both subagents."
-            )
-            async for message in client.receive_response():
-                if type(message).__name__ == "ResultMessage":
-                    break
-
-    spans = memory_logger.pop()
-    llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
-    tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
-    task_spans = find_spans_by_type(spans, SpanTypeAttribute.TASK)
-
-    root_task_span = find_span_by_name(task_spans, "Claude Agent")
-
-    if not _sdk_version_at_least("0.1.11"):
-        return
-
-    subagent_spans = [span for span in task_spans if span.get("metadata", {}).get("tool_use_id")]
-    assert len(subagent_spans) >= 2, f"Expected at least 2 delegated task spans, got {len(subagent_spans)}"
-    subagent_span_ids = {span["span_id"] for span in subagent_spans}
-
-    bash_spans = [tool_span for tool_span in tool_spans if tool_span["span_attributes"]["name"] == "Bash"]
-    read_spans = [tool_span for tool_span in tool_spans if tool_span["span_attributes"]["name"] == "Read"]
-
-    def find_tool_span_with_output(spans_by_name: list[dict[str, Any]], marker: str) -> dict[str, Any]:
-        for span in spans_by_name:
-            output = span.get("output")
-            if output is not None and marker in output["content"]:
-                return span
-        raise AssertionError(f"Expected a tool span output containing {marker!r}")
-
-    def delegated_parent_ids(tool_span: dict[str, Any]) -> tuple[str, str]:
-        parent_llm = next(span for span in llm_spans if span["span_id"] == tool_span["span_parents"][0])
-        parent_task_ids = [pid for pid in parent_llm["span_parents"] if pid in subagent_span_ids]
-        assert len(parent_task_ids) == 1, (
-            f"Expected delegated tool span {tool_span['span_attributes']['name']} to have exactly one delegated task parent"
-        )
-        return parent_task_ids[0], parent_llm["span_id"]
-
-    alpha_bash_span = find_tool_span_with_output(bash_spans, "alpha-bash-output")
-    beta_bash_span = find_tool_span_with_output(bash_spans, "beta-bash-output")
-    alpha_read_span = find_tool_span_with_output(read_spans, "alpha_file_contents")
-    beta_read_span = find_tool_span_with_output(read_spans, "beta_file_contents")
-
-    alpha_bash_task_id, alpha_bash_llm_id = delegated_parent_ids(alpha_bash_span)
-    alpha_read_task_id, alpha_read_llm_id = delegated_parent_ids(alpha_read_span)
-    beta_bash_task_id, beta_bash_llm_id = delegated_parent_ids(beta_bash_span)
-    beta_read_task_id, beta_read_llm_id = delegated_parent_ids(beta_read_span)
-
-    assert alpha_bash_task_id == alpha_read_task_id, "Alpha tool spans should stay within the same delegated task"
-    assert beta_bash_task_id == beta_read_task_id, "Beta tool spans should stay within the same delegated task"
-    assert alpha_bash_task_id != beta_bash_task_id, "Alpha and beta tool spans should belong to different tasks"
-    assert alpha_bash_llm_id != beta_bash_llm_id, "Different subagents should not share the same parent LLM span"
-    assert alpha_read_llm_id != beta_read_llm_id, "Different subagents should not share the same parent LLM span"
 
 
 def test_tool_span_tracker_cleanup_preserves_cross_subagent_spans(memory_logger):

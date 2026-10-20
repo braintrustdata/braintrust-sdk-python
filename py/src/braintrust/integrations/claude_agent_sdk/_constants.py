@@ -50,6 +50,8 @@ DEFAULT_TOOL_NAME: Final[str] = "unknown"
 CLAUDE_AGENT_TASK_SPAN_NAME: Final[str] = "Claude Agent"
 CLAUDE_AGENT_RUN_FAILED_ERROR: Final[str] = "Claude Agent run failed"
 ANTHROPIC_MESSAGES_CREATE_SPAN_NAME: Final[str] = "anthropic.messages.create"
+# Bundled Claude Code CLIs before 2.1 (e.g. 2.0.72 in SDK 0.1.18) emit subagent calls as "Task".
+SUBAGENT_TOOL_NAMES: Final[frozenset[str]] = frozenset({"Agent", "Task"})
 
 MCP_TOOL_PREFIX: Final[str] = "mcp__"
 MCP_TOOL_NAME_DELIMITER: Final[str] = "__"

@@ -19,6 +19,7 @@ from braintrust.integrations.claude_agent_sdk._constants import (
     MCP_TOOL_NAME_DELIMITER,
     MCP_TOOL_PREFIX,
     SERIALIZED_CONTENT_TYPE_BY_BLOCK_CLASS,
+    SUBAGENT_TOOL_NAMES,
     SYSTEM_MESSAGE_TYPES,
     TOOL_METADATA,
     BlockClassName,
@@ -571,19 +572,6 @@ def _task_output(message: Any) -> dict[str, Any] | None:
     }
 
 
-def _message_starts_subagent_tool(message: Any) -> bool:
-    if not hasattr(message, "content"):
-        return False
-
-    for block in message.content:
-        if type(block).__name__ != BlockClassName.TOOL_USE:
-            continue
-        if getattr(block, "name", None) == "Agent":
-            return True
-
-    return False
-
-
 def _token_count(value: Any) -> int | None:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         return None
@@ -674,13 +662,15 @@ class _AgentContext:
     """Per-subagent-context state, keyed by parent_tool_use_id (None = orchestrator)."""
 
     llm_span: Any | None = None
-    llm_parent_export: str | None = None
     llm_output: list[dict[str, Any]] | None = None
     llm_output_logged: bool = False
     llm_message_id: str | None = None
     next_llm_start: float | None = None
     task_span: Any | None = None
     task_confirmed: bool = False
+    # Older CLIs emit no task_* system messages; the task span is then derived from the subagent tool call.
+    subagent_tool_input: dict[str, Any] | None = None
+    task_synthesized: bool = False
 
 
 class ContextTracker:
@@ -752,10 +742,7 @@ class ContextTracker:
     def cleanup(self) -> None:
         """End all open LLM spans, TASK spans, and TOOL spans; clear thread-local."""
         for ctx in self._contexts.values():
-            if ctx.llm_span:
-                self._mark_output_usage_unknown(ctx)
-                ctx.llm_span.end()
-                ctx.llm_span = None
+            self._end_llm_span(ctx)
             if ctx.task_span:
                 ctx.task_span.end()
                 ctx.task_span = None
@@ -818,6 +805,9 @@ class ContextTracker:
         # ``tool_use`` AssistantMessages back-to-back (merged into one LLM
         # turn) before any ``tool_result`` arrives. In that case the earlier
         # tool spans are still awaiting their results and must not be closed.
+        if incoming_parent is not None:
+            self._maybe_synthesize_task_span(str(incoming_parent), ctx)
+
         if ctx.llm_span and ctx.next_llm_start is not None and self._tool_tracker.has_active_spans:
             self._tool_tracker.cleanup_context(
                 incoming_parent,
@@ -844,6 +834,8 @@ class ContextTracker:
                 self._final_results.append(final_content)
 
     def _handle_user(self, message: Any) -> None:
+        # End synthesized subagent TASK spans before their Agent tool span closes.
+        self._end_synthesized_task_spans(message)
         self._tool_tracker.finish_tool_spans(message)
         has_tool_results = False
         if hasattr(message, "content"):
@@ -954,10 +946,50 @@ class ContextTracker:
         if not hasattr(message, "content"):
             return
         for block in message.content:
-            if type(block).__name__ == BlockClassName.TOOL_USE and getattr(block, "name", None) == "Agent":
+            if type(block).__name__ == BlockClassName.TOOL_USE and getattr(block, "name", None) in SUBAGENT_TOOL_NAMES:
                 tool_use_id = getattr(block, "id", None)
                 if tool_use_id:
-                    self._get_context(str(tool_use_id))
+                    tool_input = getattr(block, "input", None)
+                    self._get_context(str(tool_use_id)).subagent_tool_input = (
+                        tool_input if isinstance(tool_input, dict) else {}
+                    )
+
+    def _maybe_synthesize_task_span(self, tool_use_id: str, ctx: _AgentContext) -> None:
+        """Start a TASK span for a subagent whose CLI emitted no TaskStarted message.
+
+        Claude Code CLIs bundled before 2.1 stream subagent messages tagged with
+        parent_tool_use_id but never emit task_started / task_notification.
+        """
+        if ctx.task_span is not None or ctx.task_confirmed or ctx.subagent_tool_input is None:
+            return
+        tool_input = ctx.subagent_tool_input
+        description = tool_input.get("description")
+        subagent_type = tool_input.get("subagent_type")
+        ctx.task_span = start_span(
+            name=description or subagent_type or f"Task {tool_use_id}",
+            span_attributes={"type": SpanTypeAttribute.TASK},
+            metadata={
+                k: v for k, v in {"tool_use_id": tool_use_id, "task_type": subagent_type}.items() if v is not None
+            },
+            parent=self._tool_tracker.get_span_export(tool_use_id) or self._root_span_export,
+        )
+        ctx.task_confirmed = True
+        ctx.task_synthesized = True
+        self._task_order.append(tool_use_id)
+
+    def _end_synthesized_task_spans(self, message: Any) -> None:
+        """End synthesized TASK spans once the orchestrator receives the subagent's tool result."""
+        for block in getattr(message, "content", None) or ():
+            if type(block).__name__ != BlockClassName.TOOL_RESULT:
+                continue
+            tool_use_id = getattr(block, "tool_use_id", None)
+            ctx = self._contexts.get(str(tool_use_id)) if tool_use_id is not None else None
+            if ctx is None or not ctx.task_synthesized or ctx.task_span is None:
+                continue
+            self._end_llm_span(ctx)
+            ctx.task_span.end()
+            ctx.task_span = None
+            self._task_order = [k for k in self._task_order if k != tool_use_id]
 
     def _live_agent_tool_use_ids(self) -> frozenset[str]:
         """Return tool_use_ids of Agent spans that must not be closed yet."""
@@ -974,14 +1006,6 @@ class ContextTracker:
         parent_tool_use_id = getattr(message, "parent_tool_use_id", None)
         if parent_tool_use_id is not None:
             ctx = self._contexts.get(str(parent_tool_use_id))
-            if ctx is not None and ctx.task_span is not None:
-                return ctx.task_span.export()
-
-        if _message_starts_subagent_tool(message):
-            return self._root_span_export
-
-        for key in reversed(self._task_order):
-            ctx = self._contexts.get(key)
             if ctx is not None and ctx.task_span is not None:
                 return ctx.task_span.export()
 
@@ -1005,12 +1029,7 @@ class ContextTracker:
             and ctx.next_llm_start is None
         )
 
-        if (
-            ctx.llm_span
-            and same_provider_message
-            and ctx.llm_parent_export == parent_export
-            and hasattr(message, "content")
-        ):
+        if ctx.llm_span and same_provider_message and hasattr(message, "content"):
             current_message = _serialize_assistant_message(message)
             if current_message is None:
                 return None, False
@@ -1041,7 +1060,6 @@ class ContextTracker:
         if span is not None:
             span.log(metrics={"time_to_first_token": max(0.0, first_token_time - resolved_start)})
         ctx.llm_span = span
-        ctx.llm_parent_export = parent_export
         ctx.llm_output = [final_content] if final_content is not None else None
         # start_span already logged this initial output; later merges mark it dirty.
         ctx.llm_output_logged = True
@@ -1069,6 +1087,14 @@ class ContextTracker:
         metrics, _ = extract_anthropic_usage(usage, include_output=has_final_output)
         _, metadata = extract_anthropic_usage(raw_message_usage, include_output=False)
         ctx.llm_span.log(metrics=metrics or None, metadata=metadata or None)
+
+    def _end_llm_span(self, ctx: _AgentContext) -> None:
+        """Finalize a context's open LLM span, e.g. before its parent TASK span ends."""
+        if ctx.llm_span is None:
+            return
+        self._mark_output_usage_unknown(ctx)
+        ctx.llm_span.end()
+        ctx.llm_span = None
 
     def _mark_output_usage_unknown(self, ctx: _AgentContext) -> None:
         """Mark missing output only once an LLM span is finalized."""
@@ -1112,6 +1138,7 @@ class ContextTracker:
                 ctx.task_span.log(**update)
 
         if message_type == MessageClassName.TASK_NOTIFICATION:
+            self._end_llm_span(ctx)
             ctx.task_span.end()
             ctx.task_span = None
             self._task_order = [k for k in self._task_order if k != tool_use_id_str]

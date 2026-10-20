@@ -515,7 +515,9 @@ latest = "pipecat-ai==1.12.0"
 
 [tool.braintrust.matrix.claude-agent-sdk]
 latest = "claude-agent-sdk==0.2.168"
-"0.1.10" = "claude-agent-sdk==0.1.10"
+# The integration still supports >=0.1.10, but 0.1.9-0.1.17 were deleted from
+# PyPI, so 0.1.18 is the oldest installable version we can test against.
+"0.1.18" = "claude-agent-sdk==0.1.18"
 
 [tool.braintrust.matrix.cursor-sdk]
 # 1.0.25 fixes bridge callback tokens that could be parsed as CLI flags while

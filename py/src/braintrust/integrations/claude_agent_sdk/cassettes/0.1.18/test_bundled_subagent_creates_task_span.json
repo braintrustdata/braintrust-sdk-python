@@ -1,0 +1,1542 @@
+{
+  "cassette_name": "test_bundled_subagent_creates_task_span",
+  "events": [
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "request": {
+            "hooks": null,
+            "subtype": "initialize"
+          },
+          "request_id": "req_1_54cffb57",
+          "type": "control_request"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "response": {
+          "request_id": "req_1_54cffb57",
+          "response": {
+            "account": {
+              "apiKeySource": "ANTHROPIC_API_KEY",
+              "tokenSource": "claude.ai"
+            },
+            "available_output_styles": [],
+            "commands": [],
+            "models": []
+          },
+          "subtype": "success"
+        },
+        "type": "control_response"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "message": {
+            "content": "You must delegate this task to the bundled general-purpose agent. Have that agent inspect the current repository and reply with only the repository name. Do not answer directly without using the subagent.",
+            "role": "user"
+          },
+          "parent_tool_use_id": null,
+          "session_id": "default",
+          "type": "user"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "agents": [
+          "general-purpose",
+          "statusline-setup",
+          "Explore",
+          "Plan"
+        ],
+        "apiKeySource": "ANTHROPIC_API_KEY",
+        "claude_code_version": "2.0.72",
+        "cwd": "<REDACTED_CWD>",
+        "mcp_servers": [],
+        "model": "claude-haiku-4-5-20251001",
+        "output_style": "default",
+        "permissionMode": "bypassPermissions",
+        "plugins": [],
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "skills": [],
+        "slash_commands": [
+          "compact",
+          "context",
+          "cost",
+          "init",
+          "pr-comments",
+          "release-notes",
+          "review",
+          "security-review"
+        ],
+        "subtype": "init",
+        "tools": [
+          "Task",
+          "TaskOutput",
+          "Bash",
+          "Glob",
+          "Grep",
+          "ExitPlanMode",
+          "Read",
+          "Edit",
+          "Write",
+          "NotebookEdit",
+          "WebFetch",
+          "TodoWrite",
+          "WebSearch",
+          "KillShell",
+          "AskUserQuestion",
+          "Skill",
+          "SlashCommand",
+          "EnterPlanMode"
+        ],
+        "type": "system",
+        "uuid": "392e5468-d5f8-498c-9f94-22338d236900"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "message": {
+            "container": null,
+            "content": [
+              {
+                "text": "",
+                "type": "text"
+              }
+            ],
+            "diagnostics": null,
+            "id": "msg_011CgDyeg2CkvwKdKPTri9MK",
+            "model": "claude-haiku-4-5-20251001",
+            "role": "assistant",
+            "stop_details": null,
+            "stop_reason": null,
+            "stop_sequence": null,
+            "type": "message",
+            "usage": {
+              "cache_creation": {
+                "ephemeral_1h_input_tokens": 0,
+                "ephemeral_5m_input_tokens": 15141
+              },
+              "cache_creation_input_tokens": 15141,
+              "cache_read_input_tokens": 0,
+              "inference_geo": "not_available",
+              "input_tokens": 3,
+              "output_tokens": 2,
+              "service_tier": "standard",
+              "speed": "standard"
+            }
+          },
+          "type": "message_start"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "7a893b72-bc36-4a1d-8318-4b82d67679f2"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "content_block": {
+            "text": "",
+            "type": "text"
+          },
+          "index": 0,
+          "type": "content_block_start"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "025d8a93-d6b1-41d4-89de-2ba1cd570394"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "text": "I'll",
+            "type": "text_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "a84435b4-f6a3-4e22-8823-be0c0c8c5c60"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "text": " delegate this task to",
+            "type": "text_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "5fb66e33-4453-425a-add7-447624398a72"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "text": " the general",
+            "type": "text_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "356097f3-d40b-442c-8a9f-b3381794754b"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "text": "-purpose agent to",
+            "type": "text_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "e8a54f87-76ec-434d-bca7-4e1afe60db60"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "text": " inspect the repository and",
+            "type": "text_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "72d79904-6a4b-40bc-b741-a4247ba0676f"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "text": " provide the",
+            "type": "text_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "17c63dea-069a-4b34-8391-ab1184887501"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "text": " repository name.",
+            "type": "text_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "6f955005-8fda-478d-bb58-5e4dbee2c94c"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "container": null,
+          "content": [
+            {
+              "text": "I'll delegate this task to the general-purpose agent to inspect the repository and provide the repository name.",
+              "type": "text"
+            }
+          ],
+          "context_management": null,
+          "diagnostics": null,
+          "id": "msg_011CgDyeg2CkvwKdKPTri9MK",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 15141
+            },
+            "cache_creation_input_tokens": 15141,
+            "cache_read_input_tokens": 0,
+            "inference_geo": "not_available",
+            "input_tokens": 3,
+            "output_tokens": 2,
+            "service_tier": "standard",
+            "speed": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "assistant",
+        "uuid": "2d4700f4-9c41-4adf-a7f6-449462b55333"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "index": 0,
+          "type": "content_block_stop"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "53ed78b3-28ae-4828-9db5-48d2b905c3f3"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "content_block": {
+            "caller": {
+              "type": "direct"
+            },
+            "id": "toolu_017deXqtUGE3VQ1B1xBaznRJ",
+            "input": {},
+            "name": "Task",
+            "type": "tool_use"
+          },
+          "index": 1,
+          "type": "content_block_start"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "ea166e59-39d6-44fc-b1f0-3ba1aa9de7ed"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "e3166216-3f38-4221-80e2-a5fbb86b18b2"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "{\"subag",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "35b973c5-e7fa-451f-b559-7e072d4af178"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "ent_typ",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "a63e955f-0565-4401-afc9-5d2bf6b244d1"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "e\": \"ge",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "b93786f7-68c7-430a-87fd-2b7be4cf6e89"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "neral-p",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "9edc985d-f336-4ee4-8a0a-ef8f9e187ae5"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "urpose\"",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "287027f7-5e7a-4398-a0a4-449733a20062"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": ", \"desc",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "696b8a44-63ab-4ba4-9623-bf4c743e2983"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "ription",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "0cf01383-dd8c-46ea-aad4-a9cea60dcce5"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "\": \"Ins",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "1791bdba-9cea-4e77-bd58-638f8a80dc44"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "pect re",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "929789e9-1eef-403e-8bef-d9533eb55fe0"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "positor",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "cf7b874d-2bc0-4f6f-b4cf-845b49e1093c"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "y and r",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "776ef397-9459-480c-a3fc-912c8f8e815e"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "eport n",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "727ff85f-21b0-4e80-bdbc-cfc7886d085a"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "ame\"",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "6e8f18ce-9314-4781-97f2-aef069430af5"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": ", \"prom",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "218ff45b-e8b8-4158-9fa4-6cd992e09ede"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "pt\": \"P",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "7b596c28-060e-4574-979d-d7744a2bc98b"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "lease i",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "0da99fdc-25ab-4cfa-9170-4f0f39e4ec96"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "nspect ",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "04ffd27c-0ab8-4ad7-ae5a-17f5b3456674"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "the cur",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "3d209ff1-d77d-45c9-87c9-db1274fd34d5"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "rent re",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "57542e34-8eb4-4888-94da-d039744ca027"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "positor",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "576803c5-8bc8-4233-a81a-12d55a237c9e"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "y and t",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "4bb666f1-5b0d-4dda-bc3b-d79e1ec5e52d"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "ell me ",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "fe6d9b9b-1200-4aca-b249-eee8200fa6b6"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "only th",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "0e59f0de-352a-4614-978c-b58673768cbf"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "e repos",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "b211e93e-7903-46d0-af4e-dafcb59aec90"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "itory n",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "4fd4a219-eff2-44c3-9c3e-64cf0a98e1a2"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "ame. Do",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "53e4ac46-d761-4fa1-b99c-9d23ea55559f"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": " not pr",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "87c45a40-42df-4cdf-947c-16853d8fb9b2"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "ovide a",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "d417ba2a-5199-48a6-80f0-3721dc823dd9"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "ny othe",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "c405c520-8598-419e-aaf4-54346ac3688a"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "r infor",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "f1d0557c-e3f4-47ff-9ed8-01cd6e4bad37"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "mation ",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "d1947a06-1468-40a8-a1fd-d75a65e868b9"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "- just ",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "0e69caa7-5332-4e4a-bcfb-a1c76dfdb82a"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "the rep",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "7d72d962-bfec-4cdf-8bdf-e411af5b8605"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "ository",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "58a872f0-9930-4867-83bc-40ad0313186f"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": " name.\"}",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "4a60c447-2676-4640-92e1-92ad8432342c"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "container": null,
+          "content": [
+            {
+              "caller": {
+                "type": "direct"
+              },
+              "id": "toolu_017deXqtUGE3VQ1B1xBaznRJ",
+              "input": {
+                "description": "Inspect repository and report name",
+                "prompt": "Please inspect the current repository and tell me only the repository name. Do not provide any other information - just the repository name.",
+                "subagent_type": "general-purpose"
+              },
+              "name": "Task",
+              "type": "tool_use"
+            }
+          ],
+          "context_management": null,
+          "diagnostics": null,
+          "id": "msg_011CgDyeg2CkvwKdKPTri9MK",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 15141
+            },
+            "cache_creation_input_tokens": 15141,
+            "cache_read_input_tokens": 0,
+            "inference_geo": "not_available",
+            "input_tokens": 3,
+            "output_tokens": 141,
+            "service_tier": "standard",
+            "speed": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "assistant",
+        "uuid": "7aa1d286-f675-4142-918f-255200a81d77"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "index": 1,
+          "type": "content_block_stop"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "af5dade6-ebb8-4cbb-a9b1-27987b6881f3"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "container": null,
+            "stop_details": null,
+            "stop_reason": "tool_use",
+            "stop_sequence": null
+          },
+          "type": "message_delta",
+          "usage": {
+            "cache_creation_input_tokens": 15141,
+            "cache_read_input_tokens": 0,
+            "input_tokens": 3,
+            "output_tokens": 141
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "ce4abb53-52d2-4bfb-9b7a-8da011820d52"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "type": "message_stop"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "0235807d-2089-46dc-94b0-7de4a4cb6d46"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "text": "Please inspect the current repository and tell me only the repository name. Do not provide any other information - just the repository name.",
+              "type": "text"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": "toolu_017deXqtUGE3VQ1B1xBaznRJ",
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "user",
+        "uuid": "4eb51791-57f0-4394-bed4-f9f090c4e54d"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "container": null,
+          "content": [
+            {
+              "caller": {
+                "type": "direct"
+              },
+              "id": "toolu_01QsBwVJHEDaHcfnAiaRn2zv",
+              "input": {
+                "command": "basename \"$(git rev-parse --show-toplevel)\"",
+                "description": "Get repository name from git"
+              },
+              "name": "Bash",
+              "type": "tool_use"
+            }
+          ],
+          "context_management": null,
+          "diagnostics": null,
+          "id": "msg_011CgDyenqES5CwSJs6Hq3op",
+          "model": "claude-sonnet-4-5-20250929",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": "tool_use",
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 11982
+            },
+            "cache_creation_input_tokens": 11982,
+            "cache_read_input_tokens": 0,
+            "inference_geo": "not_available",
+            "input_tokens": 3,
+            "output_tokens": 85,
+            "service_tier": "standard",
+            "speed": "standard"
+          }
+        },
+        "parent_tool_use_id": "toolu_017deXqtUGE3VQ1B1xBaznRJ",
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "assistant",
+        "uuid": "e3eea4be-24de-4531-bc15-4d91ada58e91"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "content": "before-implementing-fix-think-288b553b",
+              "is_error": false,
+              "tool_use_id": "toolu_01QsBwVJHEDaHcfnAiaRn2zv",
+              "type": "tool_result"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": "toolu_017deXqtUGE3VQ1B1xBaznRJ",
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "tool_use_result": {
+          "interrupted": false,
+          "isImage": false,
+          "stderr": "",
+          "stdout": "before-implementing-fix-think-288b553b"
+        },
+        "type": "user",
+        "uuid": "bd97bc74-c84e-4bce-ac5a-2499e41eb098"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "container": null,
+          "content": [
+            {
+              "caller": {
+                "type": "direct"
+              },
+              "id": "toolu_01Kt6agZyZafbB5E5C7o5wzZ",
+              "input": {
+                "command": "git remote get-url origin",
+                "description": "Get git remote origin URL"
+              },
+              "name": "Bash",
+              "type": "tool_use"
+            }
+          ],
+          "context_management": null,
+          "diagnostics": null,
+          "id": "msg_011CgDyf1iNiaQPEUTY4nNPW",
+          "model": "claude-sonnet-4-5-20250929",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 107
+            },
+            "cache_creation_input_tokens": 107,
+            "cache_read_input_tokens": 11982,
+            "inference_geo": "not_available",
+            "input_tokens": 6,
+            "output_tokens": 78,
+            "service_tier": "standard",
+            "speed": "standard"
+          }
+        },
+        "parent_tool_use_id": "toolu_017deXqtUGE3VQ1B1xBaznRJ",
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "assistant",
+        "uuid": "b3496f93-aa57-41be-a295-3a42b0776f29"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "content": "git@github.com:braintrustdata/braintrust-sdk-python.git",
+              "is_error": false,
+              "tool_use_id": "toolu_01Kt6agZyZafbB5E5C7o5wzZ",
+              "type": "tool_result"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": "toolu_017deXqtUGE3VQ1B1xBaznRJ",
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "tool_use_result": {
+          "interrupted": false,
+          "isImage": false,
+          "stderr": "",
+          "stdout": "git@github.com:braintrustdata/braintrust-sdk-python.git"
+        },
+        "type": "user",
+        "uuid": "5fb18eec-879d-4be6-8b0b-19986717cd9d"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "content": [
+                {
+                  "text": "braintrust-sdk-python",
+                  "type": "text"
+                },
+                {
+                  "text": "agentId: a36ee3d (for resuming to continue this agent's work if needed)",
+                  "type": "text"
+                }
+              ],
+              "tool_use_id": "toolu_017deXqtUGE3VQ1B1xBaznRJ",
+              "type": "tool_result"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "tool_use_result": {
+          "agentId": "a36ee3d",
+          "content": [
+            {
+              "text": "braintrust-sdk-python",
+              "type": "text"
+            }
+          ],
+          "prompt": "Please inspect the current repository and tell me only the repository name. Do not provide any other information - just the repository name.",
+          "status": "completed",
+          "totalDurationMs": 6892,
+          "totalTokens": 12216,
+          "totalToolUseCount": 2,
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 111
+            },
+            "cache_creation_input_tokens": 111,
+            "cache_read_input_tokens": 12089,
+            "inference_geo": "not_available",
+            "input_tokens": 6,
+            "output_tokens": 10,
+            "service_tier": "standard",
+            "speed": "standard"
+          }
+        },
+        "type": "user",
+        "uuid": "008a2089-a1c0-46f3-b215-515cfa27c907"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "message": {
+            "container": null,
+            "content": [
+              {
+                "text": "br",
+                "type": "text"
+              }
+            ],
+            "diagnostics": null,
+            "id": "msg_011CgDyfJLm7GjmZgpyoxEHu",
+            "model": "claude-haiku-4-5-20251001",
+            "role": "assistant",
+            "stop_details": null,
+            "stop_reason": null,
+            "stop_sequence": null,
+            "type": "message",
+            "usage": {
+              "cache_creation": {
+                "ephemeral_1h_input_tokens": 0,
+                "ephemeral_5m_input_tokens": 180
+              },
+              "cache_creation_input_tokens": 180,
+              "cache_read_input_tokens": 15141,
+              "inference_geo": "not_available",
+              "input_tokens": 5,
+              "output_tokens": 1,
+              "service_tier": "standard",
+              "speed": "standard"
+            }
+          },
+          "type": "message_start"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "3bc02370-f9be-4276-a1e3-64bc109a4ce0"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "content_block": {
+            "text": "",
+            "type": "text"
+          },
+          "index": 0,
+          "type": "content_block_start"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "2dfb046d-7671-45fe-aef7-8534641ec71a"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "text": "br",
+            "type": "text_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "64d6f827-aca5-41f2-b258-379954479d5a"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "text": "aintrust-sdk",
+            "type": "text_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "8f9aa1ae-1f4c-49a1-b4ac-4d4da5a6a34e"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "text": "-python",
+            "type": "text_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "8c6ddc94-b9ee-41df-843c-20175ac69405"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "container": null,
+          "content": [
+            {
+              "text": "braintrust-sdk-python",
+              "type": "text"
+            }
+          ],
+          "context_management": null,
+          "diagnostics": null,
+          "id": "msg_011CgDyfJLm7GjmZgpyoxEHu",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 180
+            },
+            "cache_creation_input_tokens": 180,
+            "cache_read_input_tokens": 15141,
+            "inference_geo": "not_available",
+            "input_tokens": 5,
+            "output_tokens": 10,
+            "service_tier": "standard",
+            "speed": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "assistant",
+        "uuid": "2d690094-ee5f-4937-b9de-6ea75845815a"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "index": 0,
+          "type": "content_block_stop"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "b119cfbd-396c-4c06-b9a0-85687802701b"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "container": null,
+            "stop_details": null,
+            "stop_reason": "end_turn",
+            "stop_sequence": null
+          },
+          "type": "message_delta",
+          "usage": {
+            "cache_creation_input_tokens": 180,
+            "cache_read_input_tokens": 15141,
+            "input_tokens": 5,
+            "output_tokens": 10
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "ba6bfe5e-7f56-4a9e-8882-790182d65606"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "type": "message_stop"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "type": "stream_event",
+        "uuid": "63d83985-5987-41b8-b148-b20280d00860"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "duration_api_ms": 17837,
+        "duration_ms": 11522,
+        "is_error": false,
+        "modelUsage": {
+          "claude-haiku-4-5-20251001": {
+            "cacheCreationInputTokens": 15321,
+            "cacheReadInputTokens": 15141,
+            "contextWindow": 200000,
+            "costUSD": 0.026496350000000002,
+            "inputTokens": 3946,
+            "outputTokens": 377,
+            "webSearchRequests": 0
+          },
+          "claude-sonnet-4-5-20250929": {
+            "cacheCreationInputTokens": 13832,
+            "cacheReadInputTokens": 24071,
+            "contextWindow": 200000,
+            "costUSD": 0.0652203,
+            "inputTokens": 18,
+            "outputTokens": 405,
+            "webSearchRequests": 0
+          }
+        },
+        "num_turns": 2,
+        "permission_denials": [],
+        "result": "braintrust-sdk-python",
+        "session_id": "d3a77f64-c4dc-4111-b94c-9567b58416ca",
+        "subtype": "success",
+        "total_cost_usd": 0.09171665000000001,
+        "type": "result",
+        "usage": {
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 0,
+            "ephemeral_5m_input_tokens": 15321
+          },
+          "cache_creation_input_tokens": 15321,
+          "cache_read_input_tokens": 15141,
+          "input_tokens": 8,
+          "output_tokens": 151,
+          "server_tool_use": {
+            "web_fetch_requests": 0,
+            "web_search_requests": 0
+          },
+          "service_tier": "standard"
+        },
+        "uuid": "ecc2d0fe-e5fe-4091-9e4c-1fc0ff1b0062"
+      }
+    }
+  ],
+  "sdk_version": "0.1.18"
+}

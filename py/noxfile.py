@@ -411,7 +411,8 @@ def test_litellm(session, version):
     _run_tests(session, f"{INTEGRATION_DIR}/litellm/test_litellm.py", version=version)
 
 
-# CLI bundling started in 0.1.10 - older versions require external Claude Code installation
+# CLI bundling started in 0.1.10 - older versions require external Claude Code installation.
+# 0.1.9-0.1.17 were deleted from PyPI, so the oldest matrix entry is 0.1.18.
 CLAUDE_AGENT_SDK_VERSIONS = _get_matrix_versions("claude-agent-sdk")
 
 
@@ -419,8 +420,8 @@ CLAUDE_AGENT_SDK_VERSIONS = _get_matrix_versions("claude-agent-sdk")
 @nox.parametrize("version", CLAUDE_AGENT_SDK_VERSIONS, ids=CLAUDE_AGENT_SDK_VERSIONS)
 def test_claude_agent_sdk(session, version):
     _install_test_deps(session)
-    # Claude Agent SDK 0.1.10 calls Server.list_tools(), which MCP 2 removed.
-    constraint_group = "test-mcp-v1" if version == "0.1.10" else None
+    # Claude Agent SDK 0.1.18 calls Server.list_tools(), which MCP 2 removed.
+    constraint_group = "test-mcp-v1" if version == "0.1.18" else None
     _install_matrix_dep(session, "claude-agent-sdk", version, constraint_group)
     _run_tests(session, f"{INTEGRATION_DIR}/claude_agent_sdk/test_claude_agent_sdk.py", version=version)
 
