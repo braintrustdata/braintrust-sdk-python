@@ -304,6 +304,7 @@ def test_anthropic_beta_messages_create_captures_context_and_usage_metadata(memo
     span = find_span_by_name(memory_logger.pop(), "anthropic.messages.create")
     assert "error" not in span
     assert span["metadata"]["context_management"] == {"edits": [{"type": "clear_thinking_20251015", "keep": "all"}]}
+    assert span["metadata"]["speed"] == "standard"
     assert span["metadata"]["usage_speed"] == response.usage.speed == "standard"
 
 
