@@ -572,19 +572,6 @@ def _task_output(message: Any) -> dict[str, Any] | None:
     }
 
 
-def _message_starts_subagent_tool(message: Any) -> bool:
-    if not hasattr(message, "content"):
-        return False
-
-    for block in message.content:
-        if type(block).__name__ != BlockClassName.TOOL_USE:
-            continue
-        if getattr(block, "name", None) in SUBAGENT_TOOL_NAMES:
-            return True
-
-    return False
-
-
 def _token_count(value: Any) -> int | None:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         return None
@@ -675,7 +662,6 @@ class _AgentContext:
     """Per-subagent-context state, keyed by parent_tool_use_id (None = orchestrator)."""
 
     llm_span: Any | None = None
-    llm_parent_export: str | None = None
     llm_output: list[dict[str, Any]] | None = None
     llm_output_logged: bool = False
     llm_message_id: str | None = None
@@ -1023,14 +1009,6 @@ class ContextTracker:
             if ctx is not None and ctx.task_span is not None:
                 return ctx.task_span.export()
 
-        if _message_starts_subagent_tool(message):
-            return self._root_span_export
-
-        for key in reversed(self._task_order):
-            ctx = self._contexts.get(key)
-            if ctx is not None and ctx.task_span is not None:
-                return ctx.task_span.export()
-
         return self._root_span_export
 
     def _start_or_merge_llm_span(
@@ -1051,12 +1029,7 @@ class ContextTracker:
             and ctx.next_llm_start is None
         )
 
-        if (
-            ctx.llm_span
-            and same_provider_message
-            and ctx.llm_parent_export == parent_export
-            and hasattr(message, "content")
-        ):
+        if ctx.llm_span and same_provider_message and hasattr(message, "content"):
             current_message = _serialize_assistant_message(message)
             if current_message is None:
                 return None, False
@@ -1087,7 +1060,6 @@ class ContextTracker:
         if span is not None:
             span.log(metrics={"time_to_first_token": max(0.0, first_token_time - resolved_start)})
         ctx.llm_span = span
-        ctx.llm_parent_export = parent_export
         ctx.llm_output = [final_content] if final_content is not None else None
         # start_span already logged this initial output; later merges mark it dirty.
         ctx.llm_output_logged = True

@@ -1199,6 +1199,14 @@ async def test_multiple_bundled_subagents_keep_outer_orchestration_separate(memo
         assert any(outer_llm_span["span_id"] in agent_tool_span["span_parents"] for outer_llm_span in outer_llm_spans)
         assert not subagent_span_ids.intersection(agent_tool_span["span_parents"])
 
+    # Orchestrator turns taken while background subagents run (TaskOutput polling)
+    # belong to the outer agent, not to whichever subagent task is still open.
+    task_output_spans = [span for span in tool_spans if span["span_attributes"]["name"] == "TaskOutput"]
+    assert task_output_spans, "Expected the orchestrator to poll background subagents with TaskOutput"
+    for task_output_span in task_output_spans:
+        parent_llm = next(span for span in llm_spans if span["span_id"] == task_output_span["span_parents"][0])
+        assert root_task_span["span_id"] in parent_llm["span_parents"], "Orchestrator LLM span nested under a subagent"
+
     delegated_llm_spans = [
         llm_span for llm_span in llm_spans if subagent_span_ids.intersection(llm_span["span_parents"])
     ]
