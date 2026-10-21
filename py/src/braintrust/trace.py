@@ -317,6 +317,9 @@ class CachedSpanFetcher:
     ):
         self._span_cache: dict[str, list[SpanData]] = {}
         self._all_fetched = False
+        self._fetch_generation = 0
+        self._committed_full_fetch_generation = 0
+        self._span_cache_generations: dict[str, int] = {}
 
         if fetch_fn is not None:
             # Direct fetch function injection (for testing). Like the server, the injected
@@ -396,13 +399,7 @@ class CachedSpanFetcher:
 
         # If no filter requested, fetch everything.
         if not span_type:
-            # A full fetch is authoritative; reset the per-type cache first so a
-            # prior typed fetch's spans are not duplicated by re-fetching them
-            # (_fetch_spans appends).
-            self._span_cache = {}
             await self._fetch_spans(None)
-            if self._span_cache:  # Only cache if we got results
-                self._all_fetched = True
             return self._get_from_cache(None)
 
         # Find which span types we don't have in cache yet.
@@ -417,14 +414,42 @@ class CachedSpanFetcher:
         Spans are filed by the type they report, not the type that was asked for, so a
         requested type that yields nothing leaves no entry and will be asked for again.
         """
+        self._fetch_generation += 1
+        generation = self._fetch_generation
         spans = await self._fetch_fn({"span_type": span_type} if span_type else {}, False)
 
+        fetched: dict[str, list[SpanData]] = {}
         for span in spans:
             span_attrs = span.span_attributes or {}
             span_type_str = span_attrs.get("type", "")
-            if span_type_str not in self._span_cache:
-                self._span_cache[span_type_str] = []
-            self._span_cache[span_type_str].append(span)
+            fetched.setdefault(span_type_str, []).append(span)
+
+        # Commit complete groups without awaiting, so overlapping requests never
+        # append the same spans twice. A failed or cancelled fetch leaves the
+        # previous cache intact. Generations order requests, not server revisions.
+        if span_type is None:
+            if generation < self._committed_full_fetch_generation:
+                return
+            # Replace stale groups, retaining only groups committed by requests
+            # started after this full fetch. An empty full response stays
+            # retriable even when a newer typed response is retained.
+            all_fetched = bool(fetched)
+            cache_generations = dict.fromkeys(fetched, generation)
+            for type_str, cached_generation in self._span_cache_generations.items():
+                if cached_generation > generation:
+                    fetched[type_str] = self._span_cache[type_str]
+                    cache_generations[type_str] = cached_generation
+            self._span_cache = fetched
+            self._span_cache_generations = cache_generations
+            self._all_fetched = all_fetched
+            self._committed_full_fetch_generation = generation
+        else:
+            for type_str, group in fetched.items():
+                if generation > max(
+                    self._committed_full_fetch_generation, self._span_cache_generations.get(type_str, 0)
+                ):
+                    self._span_cache[type_str] = group
+                    self._span_cache_generations[type_str] = generation
 
     def _get_from_cache(self, span_type: list[str] | None) -> list[SpanData]:
         """Read spans back out of the cache, optionally narrowing to some types.
