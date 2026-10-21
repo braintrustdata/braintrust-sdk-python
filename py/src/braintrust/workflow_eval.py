@@ -15,6 +15,8 @@ import uuid
 from collections.abc import AsyncIterable, Awaitable, Callable, Iterable, Mapping, Sequence
 from typing import Any, Generic, Literal, Protocol, TypeVar, cast
 
+from typing_extensions import NotRequired, TypedDict
+
 from .bt_json import bt_dumps, bt_loads
 from .env import BraintrustEnv
 from .framework import (
@@ -242,6 +244,24 @@ class WorkflowBatchScorer(Generic[Input, Output, Expected, SubmissionData]):
     def __post_init__(self) -> None:
         if not self.name:
             raise ValueError("WorkflowBatchScorer name must be a non-empty string")
+
+
+@dataclasses.dataclass(frozen=True)
+class _SwitchableScorer(Generic[Input, Output, Expected, SubmissionData]):
+    """Select between ordinary inference and an existing asynchronous batch scorer."""
+
+    name: str
+    instant: EvalScorer[Input, Output, Expected]
+    batch: WorkflowBatchScorer[Input, Output, Expected, SubmissionData]
+    mode: Literal["batch", "instant"] = "batch"
+
+
+class WorkflowSwitchableScorerConfig(TypedDict, Generic[Input, Output, Expected]):
+    """Mapping configuration accepted by ``define_workflow_eval(switchable_scores=...)``."""
+
+    instant: EvalScorer[Input, Output, Expected]
+    batch: WorkflowBatchScorer[Input, Output, Expected, Any]
+    mode: NotRequired[Literal["batch", "instant"]]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -556,6 +576,7 @@ class _WorkflowEvalConfig(Generic[Input, Output, Expected]):
         EvalScorer[Input, Output, Expected]
         | WorkflowScorer[Input, Output, Expected, Any]
         | WorkflowBatchScorer[Input, Output, Expected, Any]
+        | _SwitchableScorer[Input, Output, Expected, Any]
     ]
     classifiers: Sequence[EvalClassifier[Input, Output, Expected]]
     case_id: Callable[[EvalCase[Input, Expected]], str | Awaitable[str]] | None
@@ -600,6 +621,22 @@ class WorkflowEval(Generic[Input, Output, Expected]):
             run_id, submission_id=submission_id, external_id=external_id
         )
 
+    async def set_inference_mode(
+        self,
+        run_id: str,
+        *,
+        scorer: str,
+        mode: Literal["batch", "instant"],
+        pending: Literal["drain", "race"] = "drain",
+    ) -> WorkflowEvalResult:
+        if mode not in ("batch", "instant"):
+            raise ValueError("mode must be 'batch' or 'instant'")
+        if pending not in ("drain", "race"):
+            raise ValueError("pending must be 'drain' or 'race'")
+        if pending == "race" and mode != "instant":
+            raise ValueError("pending='race' is only supported when switching to instant mode")
+        return await _WorkflowEvalRunner(self._config).set_inference_mode(run_id, scorer, mode, pending)
+
 
 def define_workflow_eval(
     project_name: str,
@@ -615,6 +652,7 @@ def define_workflow_eval(
         | WorkflowBatchScorer[Input, Output, Expected, Any]
     ]
     | None = None,
+    switchable_scores: Mapping[str, WorkflowSwitchableScorerConfig[Input, Output, Expected]] | None = None,
     classifiers: Sequence[EvalClassifier[Input, Output, Expected]] | None = None,
     case_id: Callable[[EvalCase[Input, Expected]], str | Awaitable[str]] | None = None,
     experiment_name: str | None = None,
@@ -637,6 +675,9 @@ def define_workflow_eval(
 
     WorkflowTask and WorkflowScorer submit one case/trial; WorkflowBatchTask and
     WorkflowBatchScorer submit multiple cases/trials in one provider operation.
+    ``switchable_scores`` maps canonical scorer names to ordinary ``instant``
+    scorers and same-named ``WorkflowBatchScorer`` instances. Their initial mode
+    defaults to ``"batch"`` and can be changed per run with ``set_inference_mode``.
     Submission data and collected values must be JSON serializable.
     Scorers and classifiers start once their case's task is persisted and logged.
 
@@ -650,13 +691,51 @@ def define_workflow_eval(
         raise ValueError("trial_count must be a positive integer")
     if not isinstance(max_concurrency, int) or isinstance(max_concurrency, bool) or max_concurrency < 1:
         raise ValueError("max_concurrency must be a positive integer")
+    normalized_scores = list(scores or [])
+    scorer_names: list[str] = []
+    for index, score in enumerate(normalized_scores):
+        name = score.name if isinstance(score, (WorkflowScorer, WorkflowBatchScorer)) else _scorer_name(score, index)
+        if not isinstance(name, str) or not name:
+            raise ValueError("Workflow evaluation scorer names must be non-empty strings")
+        if name in scorer_names:
+            raise ValueError(f"Workflow evaluation scorer names must be unique; found duplicate {name!r}")
+        scorer_names.append(name)
+    if switchable_scores is not None and not isinstance(switchable_scores, Mapping):
+        raise TypeError("switchable_scores must be a mapping of scorer names to configurations")
+    for name, config in (switchable_scores or {}).items():
+        if not isinstance(name, str) or not name:
+            raise ValueError("switchable_scores names must be non-empty strings")
+        if not isinstance(config, Mapping):
+            raise TypeError(f"switchable_scores[{name!r}] must be a mapping")
+        unknown = set(config) - {"instant", "batch", "mode"}
+        if unknown:
+            raise ValueError(
+                f"switchable_scores[{name!r}] has unsupported fields: {sorted(repr(key) for key in unknown)!r}"
+            )
+        if "instant" not in config or "batch" not in config:
+            raise ValueError(f"switchable_scores[{name!r}] requires 'instant' and 'batch'")
+        instant = config["instant"]
+        if not callable(instant) and not hasattr(instant, "eval_async"):
+            raise TypeError(f"switchable_scores[{name!r}]['instant'] must be an ordinary scorer")
+        batch = config["batch"]
+        if not isinstance(batch, WorkflowBatchScorer):
+            raise TypeError(f"switchable_scores[{name!r}]['batch'] must be a WorkflowBatchScorer")
+        if batch.name != name:
+            raise ValueError(f"switchable_scores batch scorer name {batch.name!r} must match mapping key {name!r}")
+        mode = config.get("mode", "batch")
+        if mode not in ("batch", "instant"):
+            raise ValueError(f"switchable_scores[{name!r}]['mode'] must be 'batch' or 'instant'")
+        if name in scorer_names:
+            raise ValueError(f"Workflow evaluation scorer names must be unique; found duplicate {name!r}")
+        scorer_names.append(name)
+        normalized_scores.append(_SwitchableScorer(name=name, instant=instant, batch=batch, mode=mode))
     return WorkflowEval(
         _WorkflowEvalConfig(
             project_name=project_name,
             store=store,
             data=data,
             task=task,
-            scores=list(scores or []),
+            scores=normalized_scores,
             classifiers=list(classifiers or []),
             case_id=case_id,
             experiment_name=experiment_name,
@@ -872,7 +951,7 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
 
     def _uses_submission_processor(self) -> bool:
         return isinstance(self.config.task, (WorkflowTask, WorkflowBatchTask)) or any(
-            isinstance(score, (WorkflowScorer, WorkflowBatchScorer)) for score in self.config.scores
+            isinstance(score, (WorkflowScorer, WorkflowBatchScorer, _SwitchableScorer)) for score in self.config.scores
         )
 
     async def _save_completed(self, run: Mapping[str, Any], summary: ExperimentSummary) -> WorkflowEvalCompletedResult:
@@ -969,6 +1048,10 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
             "parameters": _json_value(validated_parameters),
             "status": "running",
             "case_ids": [],
+            "inference_modes": {
+                score.name: score.mode for score in self.config.scores if isinstance(score, _SwitchableScorer)
+            },
+            "race_inference": [],
         }
         created = await self.store.get_or_set(self._key(run_id, "run"), _json_bytes(run))
         if not created.created:
@@ -1132,9 +1215,12 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
             else next(
                 score
                 for score in self.config.scores
-                if isinstance(score, (WorkflowScorer, WorkflowBatchScorer)) and score.name == submission["scorer_name"]
+                if isinstance(score, (WorkflowScorer, WorkflowBatchScorer, _SwitchableScorer))
+                and score.name == submission["scorer_name"]
             )
         )
+        if isinstance(processor, _SwitchableScorer):
+            processor = processor.batch
         await self._collect_submission(run, submission, processor)
         # Only the completed case needs advancing; other cases can still be pending.
         return await self._advance(run, item_ids=submission.get("item_ids", [submission.get("item_id")]))
@@ -1168,6 +1254,36 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
                     )
         return specs
 
+    async def _accept_score(self, run_id: str, name: str, item_id: str, value: Any) -> None:
+        key = self._key(run_id, _stage_kind("score-result", name), item_id)
+        await self.store.get_or_set(key, _json_bytes(value))
+
+    async def set_inference_mode(self, run_id: str, scorer_name: str, mode: str, pending: str) -> WorkflowEvalResult:
+        scorer = next((s for s in self.config.scores if getattr(s, "name", None) == scorer_name), None)
+        if scorer is None:
+            raise ValueError(f"Unknown workflow scorer {scorer_name!r}")
+        if not isinstance(scorer, _SwitchableScorer):
+            raise ValueError(f"Scorer {scorer_name!r} does not support inference mode changes")
+        # The mode map is one run record, so serialize updates across all scorers.
+        lease_key = self._key(run_id, "inference-mode-lease")
+        lease_value = uuid.uuid4().hex.encode("ascii")
+        while not await self.store.acquire_lease(lease_key, lease_value, 30_000):
+            await asyncio.sleep(0.01)
+        try:
+            run = await self._required(run_id, "run")
+            if run["status"] != "completed":
+                run.setdefault("inference_modes", {}).setdefault(scorer_name, scorer.mode)
+                run["inference_modes"][scorer_name] = mode
+                race_scorers = run.setdefault("race_inference", [])
+                if pending == "race" and scorer_name not in race_scorers:
+                    race_scorers.append(scorer_name)
+                elif pending == "drain" and scorer_name in race_scorers:
+                    race_scorers.remove(scorer_name)
+                await self._write(run_id, "run", run)
+        finally:
+            await self.store.release_lease(lease_key, lease_value)
+        return await self._advance(run)
+
     async def _submission_records(self, run: Mapping[str, Any]) -> list[tuple[dict[str, Any], Any]]:
         records: list[tuple[dict[str, Any], Any]] = []
         seen: set[str] = set()
@@ -1181,8 +1297,10 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
         if isinstance(self.config.task, WorkflowBatchTask):
             batch_processors["task"] = self.config.task
         for scorer in self.config.scores:
-            if isinstance(scorer, WorkflowBatchScorer):
-                batch_processors[f"score:{scorer.name}"] = scorer
+            if isinstance(scorer, (WorkflowBatchScorer, _SwitchableScorer)):
+                batch_processors[f"score:{scorer.name}"] = (
+                    scorer.batch if isinstance(scorer, _SwitchableScorer) else scorer
+                )
         for item_id in run["case_ids"]:
             for stage, processor in batch_processors.items():
                 submission_id = await self._read_batch_link(run["run_id"], stage, item_id)
@@ -1440,9 +1558,7 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
                     item_id,
                 )
             else:
-                await self._write(
-                    run_id, _stage_kind("score-result", submission["scorer_name"]), _json_value(result.score), item_id
-                )
+                await self._accept_score(run_id, submission["scorer_name"], item_id, _json_value(result.score))
             submission["status"] = "complete"
             await self._write_submission(run_id, submission)
         # Replay repairs an interrupted progress update without collecting again.
@@ -1520,12 +1636,7 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
                     result = WorkflowScorerResult(**result)
                 if not isinstance(result, WorkflowScorerResult):
                     raise TypeError("Batch scorer result must be a WorkflowScorerResult")
-                await self._write(
-                    run_id,
-                    _stage_kind("score-result", submission["scorer_name"]),
-                    _json_value(result.score),
-                    item_id,
-                )
+                await self._accept_score(run_id, submission["scorer_name"], item_id, _json_value(result.score))
             else:
                 await self._write(run_id, _stage_kind("score-error", submission["scorer_name"]), error, item_id)
 
@@ -1756,16 +1867,23 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
         if await self._read(run_id, result_kind, item_id) is None:
             if not await self._claim(run_id, f"score:{name}:{item_id}"):
                 return
-            task_result = await self._required(run_id, "task-result", item_id)
-            fn = scorer.eval_async if hasattr(scorer, "eval_async") else scorer
-            trace = await self._trace_for_case(run, item_id)
-            raw = await call_user_fn(
-                asyncio.get_running_loop(),
-                fn,
-                **_scorer_args(case, task_result),
-                trace=trace,
-            )
-            await self._write(run_id, result_kind, _json_value(raw), item_id)
+            active_key = self._key(run_id, _stage_kind("score-attempt-active", name), item_id)
+            active_value = uuid.uuid4().hex.encode("ascii")
+            if not await self.store.acquire_lease(active_key, active_value, _BATCH_LEASE_TTL_MS):
+                return
+            try:
+                task_result = await self._required(run_id, "task-result", item_id)
+                fn = scorer.eval_async if hasattr(scorer, "eval_async") else scorer
+                trace = await self._trace_for_case(run, item_id)
+                raw = await call_user_fn(
+                    asyncio.get_running_loop(),
+                    fn,
+                    **_scorer_args(case, task_result),
+                    trace=trace,
+                )
+                await self._accept_score(run_id, name, item_id, _json_value(raw))
+            finally:
+                await self.store.release_lease(active_key, active_value)
         await self._log_score(run, case, name)
 
     async def _log_score(self, run: Mapping[str, Any], case: dict[str, Any], name: str) -> None:
@@ -1939,6 +2057,26 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
                     await self._log_score_error(run, case, name, error)
                 else:
                     await self._log_score(run, case, name)
+            elif isinstance(scorer, _SwitchableScorer):
+                if await self._read(run_id, _stage_kind("score-result", name), item_id) is None:
+                    if run.get("inference_modes", {}).get(name, scorer.mode) == "instant":
+                        batch_link = await self._read_batch_link(run_id, f"score:{name}", item_id)
+                        if batch_link is None or name in run.get("race_inference", []):
+                            await self._run_ordinary_score(run, case, scorer.instant, name)
+                    if await self._read(run_id, _stage_kind("score-result", name), item_id) is None:
+                        error = await self._read(run_id, _stage_kind("score-error", name), item_id)
+                        if error is None:
+                            complete = False
+                        else:
+                            active_attempt = await self.store.read(
+                                self._key(run_id, _stage_kind("score-attempt-active", name), item_id)
+                            )
+                            if active_attempt is None:
+                                await self._log_score_error(run, case, name, error)
+                            else:
+                                complete = False
+                else:
+                    await self._log_score(run, case, name)
             else:
                 await self._run_ordinary_score(run, case, scorer, name)
             if await self._read(run_id, _stage_kind("score-log", name), item_id) is None:
@@ -1960,11 +2098,19 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
             return await self.status(run_id)
         if experiment is None and not run["no_send_logs"]:
             experiment = self._experiment(run)
-        resolved_scores = [
-            score() if inspect.isclass(score) and is_scorer(score) else score for score in self.config.scores
-        ]
+        resolved_scores = []
+        for score in self.config.scores:
+            if isinstance(score, _SwitchableScorer):
+                instant = score.instant
+                if inspect.isclass(instant) and is_scorer(instant):
+                    score = dataclasses.replace(score, instant=instant())
+            elif inspect.isclass(score) and is_scorer(score):
+                score = score()
+            resolved_scores.append(score)
         scorer_names = [
-            score.name if isinstance(score, (WorkflowScorer, WorkflowBatchScorer)) else _scorer_name(score, index)
+            score.name
+            if isinstance(score, (WorkflowScorer, WorkflowBatchScorer, _SwitchableScorer))
+            else _scorer_name(score, index)
             for index, score in enumerate(resolved_scores)
         ]
         if len(scorer_names) != len(set(scorer_names)):
@@ -1992,7 +2138,10 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
         if errors:
             _raise_callback_errors(errors)
         for scorer in self.config.scores:
-            if isinstance(scorer, WorkflowBatchScorer):
+            if isinstance(scorer, _SwitchableScorer):
+                if run.get("inference_modes", {}).get(scorer.name, scorer.mode) == "batch":
+                    await self._schedule_batch_stage(run, scorer.batch, kind="score")
+            elif isinstance(scorer, WorkflowBatchScorer):
                 await self._schedule_batch_stage(run, scorer, kind="score")
         # Newly submitted batch scorer work is now represented in the waiting
         # count; this pass also logs results collected by webhook/poll calls.
@@ -2072,6 +2221,7 @@ __all__ = [
     "WorkflowBatchScorer",
     "WorkflowBatchTask",
     "WorkflowBatchingOptions",
+    "WorkflowSwitchableScorerConfig",
     "WorkflowSubmissionCompletionPoll",
     "WorkflowSubmissionCompletionWebhook",
     "WorkflowSubmissionContext",
