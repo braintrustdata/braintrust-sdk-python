@@ -560,6 +560,18 @@ def _anthropic_invoke_usage_metrics(model_id: Any, output: Any) -> dict[str, Any
     return metrics
 
 
+def _parse_streamed_tool_input(text: str) -> Any:
+    """Parse streamed tool input into the JSON value the non-streamed converse output has."""
+    if not text:
+        return {}
+    try:
+        return json.loads(text)
+    except (ValueError, RecursionError):
+        # e.g. cut off by maxTokens, or nested deeper than the decoder allows:
+        # keep what was streamed
+        return text
+
+
 class _TracedConverseStream:
     """Wrap a botocore EventStream and log the final span when it drains."""
 
@@ -656,7 +668,7 @@ class _TracedConverseStream:
             block = self._content_blocks.setdefault(idx, {})
             text = "".join(pieces)
             if block.get("type") == "tool_use":
-                block["input"] = text
+                block["input"] = _parse_streamed_tool_input(text)
             else:
                 block["text"] = text
         content = [self._content_blocks[idx] for idx in sorted(self._content_blocks)]
