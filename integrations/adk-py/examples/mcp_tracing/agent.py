@@ -36,7 +36,7 @@ async def main():
     # Create agent with MCP filesystem tools
     agent = LlmAgent(
         name="filesystem_assistant",
-        model="gemini-2.0-flash-exp",
+        model="gemini-3.8-flash",
         instruction="You are a helpful assistant that can read and list files. Be concise in your responses.",
         tools=[
             MCPToolset(

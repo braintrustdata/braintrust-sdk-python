@@ -1,6 +1,6 @@
 # Google GenAI + Braintrust
 
-Calls `braintrust.auto_instrument()` to patch the Google GenAI client, then runs a single `generate_content` call against `gemini-2.0-flash-001`. The trace captures the LLM span with token metrics.
+Calls `braintrust.auto_instrument()` to patch the Google GenAI client, then runs a single `generate_content` call against `gemini-3.8-flash`. The trace captures the LLM span with token metrics.
 
 ## Run
 

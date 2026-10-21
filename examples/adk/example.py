@@ -26,7 +26,7 @@ def get_weather(location: str):
 async def main():
     agent = Agent(
         name="weather_agent",
-        model="gemini-2.0-flash",
+        model="gemini-3.8-flash",
         instruction="You are a helpful weather assistant.",
         tools=[get_weather],
     )
