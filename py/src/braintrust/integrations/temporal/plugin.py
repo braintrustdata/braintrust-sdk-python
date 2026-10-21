@@ -280,6 +280,14 @@ class BraintrustWorkflowInboundInterceptor(temporalio.worker.WorkflowInboundInte
             if logger:
                 info = temporalio.workflow.info()
                 parent = parent_span_context or logger.export()
+                metadata = {
+                    "temporal.workflow_type": info.workflow_type,
+                    "temporal.workflow_id": info.workflow_id,
+                    "temporal.run_id": info.run_id,
+                }
+                original_execution_run_id = getattr(info, "original_execution_run_id", None)
+                if original_execution_run_id is not None:
+                    metadata["temporal.original_execution_run_id"] = original_execution_run_id
                 if temporalio.workflow.patched(_SPAN_CONTEXT_PATCH_ID):
                     ids = _workflow_span_ids(info, parent)
                     if temporalio.workflow.unsafe.is_replaying():
@@ -293,11 +301,7 @@ class BraintrustWorkflowInboundInterceptor(temporalio.worker.WorkflowInboundInte
                             id=ids["row_id"],
                             span_id=ids["span_id"],
                             root_span_id=ids["root_span_id"],
-                            metadata={
-                                "temporal.workflow_type": info.workflow_type,
-                                "temporal.workflow_id": info.workflow_id,
-                                "temporal.run_id": info.run_id,
-                            },
+                            metadata=metadata,
                         )
                         span.set_current()
                         self._parent_span_context = _workflow_span_context(parent, ids)
@@ -307,11 +311,7 @@ class BraintrustWorkflowInboundInterceptor(temporalio.worker.WorkflowInboundInte
                         name=f"temporal.workflow.{info.workflow_type}",
                         type="task",
                         parent=parent_span_context or None,
-                        metadata={
-                            "temporal.workflow_type": info.workflow_type,
-                            "temporal.workflow_id": info.workflow_id,
-                            "temporal.run_id": info.run_id,
-                        },
+                        metadata=metadata,
                     )
                     span.set_current()
                     self._parent_span_context = span.export()
