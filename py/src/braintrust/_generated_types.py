@@ -3403,6 +3403,10 @@ class WindowedAutomationConfig(TypedDict):
     The product surface that created and manages the automation
     """
     status: NotRequired[AutomationStatus | None]
+    continuous: NotRequired[bool | None]
+    """
+    Between scheduled runs, check for accumulated new work. The executor decides how to process it.
+    """
     threshold: NotRequired[WindowedAutomationConfigThreshold | None]
     """
     Optional calculation and lifecycle policy that gate scheduled delivery

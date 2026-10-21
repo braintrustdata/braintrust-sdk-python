@@ -10138,6 +10138,10 @@
           "status": {
             "$ref": "#/components/schemas/AutomationStatus"
           },
+          "continuous": {
+            "type": "boolean",
+            "description": "Between scheduled runs, check for accumulated new work. The executor decides how to process it."
+          },
           "threshold": {
             "type": "object",
             "properties": {
