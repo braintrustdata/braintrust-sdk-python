@@ -5841,7 +5841,11 @@ def render_message(render: Callable[[str], str], message: PromptMessage):
                             **c,
                             "file": {
                                 **c["file"],
-                                "file_data": render(c["file"]["file_data"]),
+                                **(
+                                    {}
+                                    if "file_data" not in c["file"]
+                                    else {"file_data": render(c["file"]["file_data"])}
+                                ),
                                 **({} if "file_id" not in c["file"] else {"file_id": render(c["file"]["file_id"])}),
                                 **({} if "filename" not in c["file"] else {"filename": render(c["file"]["filename"])}),
                             },
