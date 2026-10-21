@@ -55,7 +55,7 @@ async def main(text: str = "hi"):
 
     agent = CustomAgent(
         name="hello_agent",
-        model="gemini-2.0-flash",
+        model="gemini-3.8-flash",
         instruction="Use the appropriate tool based on the user's request. For greetings, use say_hello. For user info requests, use get_user_info.",
         tools=[say_hello, get_user_info],
     )

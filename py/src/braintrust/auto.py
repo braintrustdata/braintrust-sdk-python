@@ -140,7 +140,7 @@ def auto_instrument(
         # Google ADK
         from google.adk import Agent
         from google.adk.runners import Runner
-        agent = Agent(name="my_agent", model="gemini-2.0-flash")
+        agent = Agent(name="my_agent", model="gemini-3.8-flash")
         runner = Runner(agent=agent, app_name="my_app")
 
         # Pydantic AI
@@ -151,7 +151,7 @@ def auto_instrument(
         # Google GenAI
         from google.genai import Client
         client = Client()
-        client.models.generate_content(model="gemini-2.0-flash", contents="Hello!")
+        client.models.generate_content(model="gemini-3.8-flash", contents="Hello!")
         ```
     """
     if span_customizers is not None:

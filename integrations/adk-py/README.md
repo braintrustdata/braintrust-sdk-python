@@ -64,7 +64,7 @@ setup_adk(
 # Create your ADK agent as normal
 agent = LlmAgent(
     tools=[get_weather, get_current_time],
-    model="gemini-2.0-flash-exp",
+    model="gemini-3.8-flash",
     system_instruction="You are a helpful assistant that can check weather and time."
 )
 
@@ -108,7 +108,7 @@ def search_flights(origin: str, destination: str, date: str) -> dict:
 # Create agent with multiple tools
 agent = LlmAgent(
     tools=[get_weather, search_flights],
-    model="gemini-2.0-flash-exp",
+    model="gemini-3.8-flash",
     system_instruction="You are a travel assistant."
 )
 
