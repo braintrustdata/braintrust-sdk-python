@@ -1014,8 +1014,6 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
                 await self._persist_submission_progress(run_id, submission)
                 return
             if submission["status"] == "failed":
-                if not submission.get("batch"):
-                    return
                 lease_key = self._batch_key(run_id, "retry-lease", submission["id"])
                 lease_value = uuid.uuid4().hex.encode()
                 if not await self.store.acquire_lease(lease_key, lease_value, _BATCH_LEASE_TTL_MS):
@@ -1026,14 +1024,16 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
                         return
                     submission = current
                     context = WorkflowSubmissionContext(run_id=run_id, submission_id=submission["id"])
+                    item_ids = submission["item_ids"] if submission.get("batch") else [submission["item_id"]]
                     if submission["kind"] == "task":
-                        values = [
-                            await self._task_item(run, item_id, self._parameters(run))
-                            for item_id in submission["item_ids"]
-                        ]
+                        values = [await self._task_item(run, item_id, self._parameters(run)) for item_id in item_ids]
                     else:
-                        values = [await self._scorer_item(run, item_id) for item_id in submission["item_ids"]]
-                    items = [WorkflowBatchItem(f"item-{index}", value) for index, value in enumerate(values)]
+                        values = [await self._scorer_item(run, item_id) for item_id in item_ids]
+                    items = (
+                        [WorkflowBatchItem(f"item-{index}", value) for index, value in enumerate(values)]
+                        if submission.get("batch")
+                        else values[0]
+                    )
                     completion = processor.completion
                     try:
                         submission_data = _json_value(await self._call(processor.submit, items, context))
@@ -1241,9 +1241,21 @@ class _WorkflowEvalRunner(Generic[Input, Output, Expected]):
         else:
             item = await self._scorer_item(run, spec["item_id"])
         context = WorkflowSubmissionContext(run_id=run_id, submission_id=spec["id"])
-        submission_data = await self._call(processor.submit, item, context)
-        submission_data = _json_value(submission_data)
         completion = processor.completion
+        try:
+            submission_data = _json_value(await self._call(processor.submit, item, context))
+        except Exception:
+            failed = {
+                **spec,
+                "submission_data": None,
+                "external_id": None,
+                "mode": completion.mode,
+                "status": "failed",
+                "attempts": 1,
+            }
+            await self._write_submission(run_id, failed)
+            await self._persist_submission_progress(run_id, failed)
+            raise
         external_id = None
         if isinstance(completion, WorkflowSubmissionCompletionWebhook):
             external_id = await self._call(completion.get_external_id, submission_data, context)

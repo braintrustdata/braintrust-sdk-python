@@ -362,6 +362,38 @@ async def test_failed_poll_raises_and_can_be_retried():
 
 
 @pytest.mark.asyncio
+async def test_failed_submit_is_retried_on_poll():
+    submit_calls = []
+
+    async def submit(item, context):
+        submit_calls.append(context.run_id)
+        if len(submit_calls) == 1:
+            raise RuntimeError("transient submit failure")
+        return {"input": item.input}
+
+    workflow = define_workflow_eval(
+        "project",
+        store=WorkflowEvalMemoryStore(),
+        data=[{"id": "case", "input": 1}],
+        task=WorkflowTask(
+            submit=submit,
+            completion=WorkflowSubmissionCompletionPoll(
+                lambda _submission, _context: WorkflowSubmissionPoll("complete")
+            ),
+            collect=lambda submission, _context: WorkflowTaskResult(output=submission["input"]),
+        ),
+    )
+    with pytest.raises(RuntimeError, match="transient submit failure"):
+        await workflow.start(no_send_logs=True)
+    run_id = submit_calls[0]
+    assert (await workflow.status(run_id)).pending.poll == 1
+
+    assert (await workflow.poll(run_id)).status == "waiting"
+    assert (await workflow.poll(run_id)).status == "completed"
+    assert len(submit_calls) == 2
+
+
+@pytest.mark.asyncio
 async def test_webhook_result_can_be_matched_by_external_id():
     submitted = {}
 
@@ -1324,7 +1356,7 @@ async def test_submission_error_waits_for_independent_submissions():
     with pytest.raises(RuntimeError, match="submission failed"):
         await workflow.start(no_send_logs=True)
     assert calls == [1, 2]
-    assert (await workflow.status(run_ids[0])).pending.poll == 2
+    assert (await workflow.status(run_ids[0])).pending.poll == 3
 
 
 @pytest.mark.asyncio
