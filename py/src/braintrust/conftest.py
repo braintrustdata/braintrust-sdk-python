@@ -33,44 +33,13 @@ def pytest_make_collect_report(collector):
 
 
 def _patch_vcr_aiohttp_stubs():
-    """Patch VCR.py's aiohttp stubs to fix bugs with google-genai >= 1.64.0 and litellm.
+    """Patch VCR.py's aiohttp stubs to decompress gzip response bodies.
 
-    Problems fixed:
-    1. Infinite loop: VCR's MockClientResponse.content is a @property that creates
-       a new MockStream on every access. google-genai reads streaming responses via
-       `while True: await response.content.readline()`, creating a fresh stream each
-       iteration that never reaches EOF. Fix: cache the stream per instance.
-
-    2. Gzip decoding: Cassettes store gzip-compressed response bodies (from
-       Accept-Encoding: gzip). VCR's httpx stubs handle decompression, but the
-       aiohttp stubs return raw gzip bytes, causing UnicodeDecodeError.
-       Fix: decompress gzip in text(), read(), and the content stream.
-
-    3. set_exception: aiohttp's close() sets a ClientConnectionError on the content
-       stream, which then raises on subsequent reads. Fix: no-op set_exception on
-       MockStream.
-
-    4. Body consumed during recording: VCR's record_response() calls
-       `await response.read()` which consumes the real response body. When
-       litellm's aiohttp transport then tries to stream the response, the body
-       is empty. Fix: after reading the body for recording, reset the response's
-       content stream so it can be read again by the caller.
-
-    VCR.py releases with kevin1024/vcrpy#1055 fix 1, 3 and 4 themselves, so the
-    patches for those (including gzip decoding of the content stream) only apply
-    to older releases. Delete them once uv.lock has such a release.
-
-    See: https://github.com/kevin1024/vcrpy/issues/927
+    Cassettes store gzip-compressed response bodies (from Accept-Encoding: gzip).
+    VCR's httpx stubs handle decompression, but the aiohttp stubs return raw gzip
+    bytes, causing UnicodeDecodeError. Fix: decompress gzip in text() and read().
     """
     try:
-        from aiohttp import streams
-
-        # VCR.py imports this aiohttp internals symbol at module import time, but
-        # newer aiohttp releases removed it. Provide a no-op compatibility shim
-        # before importing vcr.stubs.aiohttp_stubs so test collection does not fail.
-        if not hasattr(streams, "AsyncStreamReaderMixin"):
-            setattr(streams, "AsyncStreamReaderMixin", object)
-
         from vcr.stubs import aiohttp_stubs
     except ImportError:
         return
@@ -78,54 +47,13 @@ def _patch_vcr_aiohttp_stubs():
     if getattr(aiohttp_stubs.MockClientResponse, "_bt_patched", False):
         return
 
-    import asyncio
     import gzip
-    import inspect
-
-    from aiohttp import ClientConnectionError, ClientResponse, streams
-    from aiohttp.helpers import TimerNoop
 
     def _decompress_body(body):
         """Decompress gzip body if needed."""
         if body and body[:2] == b"\x1f\x8b":
             return gzip.decompress(body)
         return body
-
-    if "stream_writer" in inspect.signature(ClientResponse.__init__).parameters:
-        # aiohttp 3.13 added a required stream_writer keyword argument to
-        # ClientResponse.__init__. VCR.py's MockClientResponse still calls the
-        # older constructor, so patch it before any cassette playback builds one.
-        class _MockStreamWriter:
-            output_size = 0
-
-        def patched_response_init(self, method, url, request_info=None):
-            super(aiohttp_stubs.MockClientResponse, self).__init__(
-                method=method,
-                url=url,
-                writer=None,
-                continue100=None,
-                timer=TimerNoop(),
-                request_info=request_info,
-                traces=[],
-                loop=asyncio.get_event_loop(),
-                session=None,
-                stream_writer=_MockStreamWriter(),
-            )
-
-        aiohttp_stubs.MockClientResponse.__init__ = patched_response_init
-
-    if not hasattr(aiohttp_stubs.MockStream, "iter_chunked"):
-        # Older aiohttp exposed iter_chunked via AsyncStreamReaderMixin. Since
-        # that mixin is gone, VCR.py's MockStream needs the method directly for
-        # clients that consume aiohttp responses through chunked iteration.
-        async def iter_chunked(self, n):
-            while True:
-                chunk = await self.read(n)
-                if not chunk:
-                    break
-                yield chunk
-
-        aiohttp_stubs.MockStream.iter_chunked = iter_chunked
 
     async def patched_text(self, encoding="utf-8", errors="strict"):
         return _decompress_body(self._body).decode(encoding, errors=errors)
@@ -137,60 +65,6 @@ def _patch_vcr_aiohttp_stubs():
 
     aiohttp_stubs.MockClientResponse.read = patched_read
     aiohttp_stubs.MockClientResponse._bt_patched = True
-
-    if issubclass(aiohttp_stubs.MockStream, streams.StreamReader):
-        # VCR.py with kevin1024/vcrpy#1055 (MockStream is then aiohttp's StreamReader)
-        # fixes 1, 3 and 4 itself, and MockStream() without the body raises there.
-        return
-
-    aiohttp_stubs.MockStream.set_exception = lambda self, exc: None
-
-    @property
-    def cached_content(self):
-        if not hasattr(self, "_cached_content"):
-            stream = aiohttp_stubs.MockStream()  # pylint: disable=no-value-for-parameter
-            stream.feed_data(_decompress_body(self._body))
-            stream.feed_eof()
-            self._cached_content = stream
-        return self._cached_content
-
-    aiohttp_stubs.MockClientResponse.content = cached_content
-
-    # Patch record_response to not consume the response body. VCR's original
-    # implementation calls `await response.read()` which exhausts the body,
-    # making it unavailable for the actual caller (e.g. litellm's aiohttp
-    # transport). We read the body, record it, then reset the content stream
-    # so downstream consumers can still read it.
-    _original_record_response = aiohttp_stubs.record_response
-
-    async def _patched_record_response(cassette, vcr_request, response):
-        try:
-            body_bytes = await response.read()
-        except ClientConnectionError:
-            body_bytes = b""
-
-        vcr_response = {
-            "status": {"code": response.status, "message": response.reason},
-            "headers": aiohttp_stubs._serialize_headers(response.headers),
-            "body": {"string": body_bytes} if body_bytes else {},
-        }
-        cassette.append(vcr_request, vcr_response)
-
-        # Reset the response content stream so the caller can still read it.
-        # aiohttp's ClientResponse stores the payload in response.content which
-        # is a StreamReader. After read() exhausts it, we replace it with a new
-        # stream containing the same data.
-        # Use a limit larger than the captured body so StreamReader.feed_data()
-        # does not try to pause the original aiohttp parser. Large responses
-        # (for example image-generation payloads) can otherwise trip an
-        # assertion inside aiohttp's parser when VCR records the response.
-        stream_limit = max(2**16, len(body_bytes) + 1)
-        new_stream = streams.StreamReader(response._protocol, stream_limit, loop=asyncio.get_event_loop())
-        new_stream.feed_data(body_bytes)
-        new_stream.feed_eof()
-        response.content = new_stream
-
-    aiohttp_stubs.record_response = _patched_record_response
 
 
 _patch_vcr_aiohttp_stubs()
