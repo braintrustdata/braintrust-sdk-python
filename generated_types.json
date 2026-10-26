@@ -8361,6 +8361,10 @@
                   "data": {
                     "type": "array",
                     "items": {}
+                  },
+                  "source_dataset_id": {
+                    "type": "string",
+                    "description": "The saved dataset these rows came from. Its project scopes saved simulated-user references; the caller must have read access to the dataset and source project."
                   }
                 },
                 "required": [
@@ -9620,6 +9624,7 @@
               "scorers",
               "classifiers",
               "logs",
+              "patterns",
               "monitor",
               "for_review_project_log",
               "for_review_experiments",
@@ -10380,12 +10385,12 @@
                   "claude-code",
                   "pi"
                 ],
-                "description": "Required when saving a Loop automation. Currently only Codex is supported."
+                "description": "Required for an explicit model selection. Currently only Codex is supported."
               },
               "model": {
                 "type": "string",
                 "minLength": 1,
-                "description": "Required when saving a Loop automation."
+                "description": "Omit harness, model, and endpoint_name to inherit the organization default provider and its recommended execution settings."
               },
               "endpoint_name": {
                 "type": "string",
