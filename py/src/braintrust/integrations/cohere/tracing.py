@@ -85,6 +85,7 @@ _RERANK_METADATA_KEYS = (
     "max_chunks_per_doc",
     "max_tokens_per_doc",
     "rank_fields",
+    "relevant_spans",
     "priority",
 )
 _AUDIO_TRANSCRIPTION_METADATA_KEYS = (
@@ -337,8 +338,8 @@ def _embed_output(result: Any) -> dict[str, Any] | None:
 def _rerank_output(result: Any) -> list[dict[str, Any]] | None:
     """Return the top-N rerank results (capped at 100) from a rerank response.
 
-    Each result is summarized to ``{index, relevance_score}`` — the document
-    payload (if present via ``return_documents=True``) is dropped on purpose.
+    Each result includes its index, relevance score, and relevant spans when
+    present. The document payload (via ``return_documents=True``) is dropped.
     """
     results = _get_field(result, "results")
     if not isinstance(results, list):
@@ -348,12 +349,16 @@ def _rerank_output(result: Any) -> list[dict[str, Any]] | None:
     for item in results[:100]:
         if item is None:
             continue
-        out.append(
-            {
-                "index": _get_field(item, "index"),
-                "relevance_score": _get_field(item, "relevance_score"),
-            }
-        )
+        entry = {
+            "index": _get_field(item, "index"),
+            "relevance_score": _get_field(item, "relevance_score"),
+        }
+        relevant_spans = _get_field(item, "relevant_spans")
+        if relevant_spans is not None:
+            entry["relevant_spans"] = [
+                {key: _get_field(span, key) for key in ("start", "end", "score")} for span in relevant_spans
+            ]
+        out.append(entry)
     return out
 
 
