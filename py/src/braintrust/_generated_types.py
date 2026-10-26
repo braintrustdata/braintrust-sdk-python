@@ -2508,6 +2508,10 @@ class RunEvalData1(TypedDict):
 
 class RunEvalData2(TypedDict):
     data: Sequence[Any]
+    source_dataset_id: NotRequired[str | None]
+    """
+    The saved dataset these rows came from. Its project scopes saved simulated-user references; the caller must have read access to the dataset and source project.
+    """
 
 
 class RunEvalData3(TypedDict):
@@ -3312,11 +3316,11 @@ class WindowedAutomationConfigLoop(TypedDict):
     """
     harness: NotRequired[Literal['native', 'codex', 'claude-code', 'pi'] | None]
     """
-    Required when saving a Loop automation. Currently only Codex is supported.
+    Required for an explicit model selection. Currently only Codex is supported.
     """
     model: NotRequired[str | None]
     """
-    Required when saving a Loop automation.
+    Omit harness, model, and endpoint_name to inherit the organization default provider and its recommended execution settings.
     """
     endpoint_name: NotRequired[str | None]
     reasoning_effort: NotRequired[
@@ -4663,6 +4667,7 @@ class View(TypedDict):
         'scorers',
         'classifiers',
         'logs',
+        'patterns',
         'monitor',
         'for_review_project_log',
         'for_review_experiments',
