@@ -778,6 +778,9 @@ class TracedMessageThread(Wrapper):
     def tool_runner(self, *args, **kwargs):
         return TracedToolRunner(self.__thread.tool_runner(*args, **kwargs), {**self.__thread.params, **kwargs})
 
+    def update(self, *args, **kwargs):
+        return self.__thread.update(*args, **_with_traced_tools(kwargs))
+
     def fork(self):
         return TracedMessageThread(self.__thread.fork())
 

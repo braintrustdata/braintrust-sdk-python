@@ -1798,10 +1798,14 @@ def _addition_tool(is_async):
         for is_async in (False, True)
     ],
 )
-async def test_anthropic_tool_runner(memory_logger, is_async, streaming, vcr_cassette_name):
+async def test_anthropic_tool_runner(memory_logger, is_async, streaming, vcr_cassette_name, monkeypatch):
     raw_client = _get_async_client() if is_async else _get_client()
     if not hasattr(raw_client.beta.messages, "tool_runner"):
         pytest.skip("Tool runner is unavailable")
+
+    # Older Windows clocks can timestamp every step in a replay identically.
+    timestamp = time.time()
+    monkeypatch.setattr(time, "time", lambda: timestamp)
 
     add = _addition_tool(is_async)
     original_tool_call = add.call
@@ -1860,9 +1864,8 @@ async def test_anthropic_tool_runner(memory_logger, is_async, streaming, vcr_cas
     )
     assert tool_result["tool_use_id"] == tool_use["id"]
     assert tool_result["content"] == "579"
-    assert [
-        span["span_attributes"]["type"] for span in sorted([*llms, *tools], key=lambda s: s["metrics"]["start"])
-    ] == ["llm", "tool", "llm"]
+    # The memory logger preserves span creation order, including timestamp ties.
+    assert [span["span_attributes"]["type"] for span in spans] == ["task", "llm", "tool", "llm"]
     for span in spans:
         assert span["context"]["span_origin"]["instrumentation"]["name"] == "anthropic-auto"
     for span in [*llms, *tools]:
@@ -2271,3 +2274,41 @@ async def test_anthropic_tool_runner_toolset(memory_logger, is_async, fail, vcr_
     else:
         assert "error" not in tool
     assert tool["context"]["span_origin"]["instrumentation"]["name"] == "anthropic-auto"
+
+
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "is_async,vcr_cassette_name",
+    [(False, "test_anthropic_tool_runner[create-sync]"), (True, "test_anthropic_tool_runner[create-async]")],
+    ids=["sync", "async"],
+)
+async def test_anthropic_thread_updated_tools(memory_logger, is_async, vcr_cassette_name):
+    raw_client = _get_async_client() if is_async else _get_client()
+    if not hasattr(raw_client.beta.messages, "thread"):
+        pytest.skip("Message threads are unavailable")
+    client = wrap_anthropic(raw_client)
+    add = _addition_tool(is_async)
+    original_call = add.call
+    thread = client.beta.messages.thread(
+        model=MODEL,
+        max_tokens=256,
+        messages=[{"role": "user", "content": "Use the add tool to calculate 123 + 456. Reply with just the result."}],
+    )
+    # Tools belong to the thread. The SDK does not accept them on tool_runner().
+    with pytest.raises(TypeError, match="unexpected keyword argument 'tools'"):
+        thread.tool_runner(tools=[add])
+    thread.update(tools=[add])
+    runner = thread.tool_runner(max_iterations=3)
+    reply = await runner.until_done() if is_async else runner.until_done()
+    assert "579" in "".join(block.text for block in reply.content if block.type == "text")
+    assert add.call == original_call
+    spans = memory_logger.pop()
+    task = find_span_by_name(spans, "anthropic.messages.tool_runner")
+    assert task["metadata"]["tools"] == [add.to_dict()]
+    tools = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+    assert len(tools) == 1
+    assert tools[0]["span_attributes"]["name"] == "add"
+    assert tools[0]["input"] == {"a": 123, "b": 456}
+    assert tools[0]["output"] == "579"
+    assert tools[0]["span_parents"] == [task["span_id"]]
