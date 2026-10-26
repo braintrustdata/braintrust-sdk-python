@@ -1,6 +1,7 @@
 import asyncio
 import threading
 import time
+from unittest.mock import patch
 
 import pytest
 from braintrust.queue import DEFAULT_QUEUE_SIZE, LogQueue
@@ -32,11 +33,9 @@ def test_log_queue_basic_operations():
 
 @pytest.mark.parametrize("enforce", [False, True])
 def test_log_queue_signals_once_until_drained(enforce):
-    from unittest.mock import patch
-
     queue = LogQueue(maxsize=2)
     queue.enforce_queue_size_limit(enforce)
-    with patch.object(queue._has_items_event, "set", wraps=queue._has_items_event.set) as signal:
+    with patch.object(queue._condition, "notify_all", wraps=queue._condition.notify_all) as signal:
         for item in range(5):
             queue.put(item)
         assert signal.call_count == 1
@@ -46,6 +45,43 @@ def test_log_queue_signals_once_until_drained(enforce):
         queue.put(5)
         assert signal.call_count == 2
         assert queue.wait_for_items(timeout=0)
+
+
+def test_log_queue_batch_deadline_is_not_extended_by_arrivals_or_drops(monkeypatch):
+    now = 0.0
+    monkeypatch.setattr("braintrust.queue.monotonic", lambda: now)
+    queue = LogQueue(maxsize=2)
+    queue.enforce_queue_size_limit(True)
+    queue.put("first")
+    arrivals = iter([(0.4, "second"), (0.8, "third"), (1.0, None)])
+
+    def wake(timeout=None):
+        nonlocal now
+        now, item = next(arrivals)
+        # Simulate a producer running while Condition.wait releases its lock.
+        queue._mutex.release()
+        try:
+            if item is not None:
+                queue.put(item)
+        finally:
+            queue._mutex.acquire()
+
+    with patch.object(queue._condition, "wait", side_effect=wake) as wait:
+        queue.wait_for_batch(min_size=10, max_delay=1)
+
+    assert [c.kwargs["timeout"] for c in wait.call_args_list] == pytest.approx([1, 0.6, 0.2])
+    assert queue.drain_all() == ["second", "third"]
+
+
+def test_log_queue_batch_already_overdue_does_not_wait(monkeypatch):
+    now = 0.0
+    monkeypatch.setattr("braintrust.queue.monotonic", lambda: now)
+    queue = LogQueue(maxsize=10)
+    queue.put("queued during upload")
+    now = 2
+    with patch.object(queue._condition, "wait") as wait:
+        queue.wait_for_batch(min_size=10, max_delay=1)
+    wait.assert_not_called()
 
 
 def test_log_queue_drop_behavior():

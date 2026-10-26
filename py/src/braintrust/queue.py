@@ -1,5 +1,6 @@
 import threading
 from collections import deque
+from time import monotonic
 from typing import TypeVar
 
 from .util import eprint
@@ -31,7 +32,9 @@ class LogQueue:
         self.maxsize = maxsize
         self._mutex = threading.Lock()
         self._queue: deque[T] = deque(maxlen=maxsize)
-        self._has_items_event = threading.Event()
+        self._condition = threading.Condition(self._mutex)
+        self._batch_min_size: int | None = None
+        self._pending_since: float | None = None
         self._total_dropped = 0
         self._enforce_size_limit = False
 
@@ -72,9 +75,11 @@ class LogQueue:
                     self._total_dropped += 1
                 self._queue.append(item)
 
-            # Signal that items are available if queue was not empty before or item was added
             if was_empty:
-                self._has_items_event.set()
+                self._pending_since = monotonic()
+                self._condition.notify_all()
+            elif self._batch_min_size is not None and len(self._queue) >= self._batch_min_size:
+                self._condition.notify_all()
 
         return dropped
 
@@ -92,9 +97,11 @@ class LogQueue:
 
             old_queue = self._queue
             self._queue = deque(maxlen=self.maxsize)
+            self._pending_since = None
 
-            # Clear the event since queue is now empty
-            self._has_items_event.clear()
+            # An explicit flush may drain the queue while the publisher waits.
+            if self._batch_min_size is not None:
+                self._condition.notify_all()
 
         return list(old_queue) if old_queue else []
 
@@ -118,4 +125,26 @@ class LogQueue:
         Returns:
             True if items became available, False if timeout occurred.
         """
-        return self._has_items_event.wait(timeout=timeout)
+        with self._condition:
+            return self._condition.wait_for(lambda: bool(self._queue), timeout=timeout)
+
+    def wait_for_batch(self, min_size: int, max_delay: float) -> None:
+        """Wait for a full batch or the oldest pending row's deadline.
+
+        Used by the single background publisher. New arrivals do not extend
+        the deadline; draining the queue starts a new window for the next row.
+        Like wait_for_items(), the queue may be empty by the time this returns.
+        """
+        with self._condition:
+            self._batch_min_size = min_size
+            try:
+                while True:
+                    if self._pending_since is None:
+                        self._condition.wait()
+                        continue
+                    remaining = self._pending_since + max_delay - monotonic()
+                    if len(self._queue) >= min_size or remaining <= 0:
+                        return
+                    self._condition.wait(timeout=remaining)
+            finally:
+                self._batch_min_size = None

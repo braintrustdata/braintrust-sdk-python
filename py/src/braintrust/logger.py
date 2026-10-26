@@ -1217,6 +1217,27 @@ class _MemoryBackgroundLogger(_BackgroundLogger):
 BACKGROUND_LOGGER_BASE_SLEEP_TIME_S = 1.0
 
 
+def _default_flush_delay_ms() -> float:
+    # Serverless and scale-to-zero platforms can freeze background threads
+    # between invocations, before a delayed flush has a chance to run.
+    serverless = (
+        any(
+            os.environ.get(name)
+            for name in (
+                "VERCEL",
+                "NETLIFY",
+                "AWS_LAMBDA_FUNCTION_NAME",
+                "K_SERVICE",
+                "FUNCTION_TARGET",
+                "FUNCTIONS_WORKER_RUNTIME",
+            )
+        )
+        or os.environ.get("AWS_EXECUTION_ENV", "").startswith("AWS_Lambda_")
+        or os.environ.get("GAE_ENV") == "standard"
+    )
+    return 0.0 if serverless else 1000.0
+
+
 # We should only have one instance of this object in
 # 'BraintrustState._global_bg_logger'. Be careful about spawning multiple
 # instances of this class, because concurrent _BackgroundLoggers will not log to
@@ -1232,6 +1253,9 @@ class _HTTPBackgroundLogger:
         self._max_request_size_lock = threading.Lock()
 
         self.sync_flush = BraintrustEnv.SYNC_FLUSH.get(False)
+        default_flush_delay_ms = _default_flush_delay_ms()
+        flush_delay_ms = BraintrustEnv.FLUSH_DELAY_MS.get(default_flush_delay_ms)
+        self.flush_delay_ms = flush_delay_ms if flush_delay_ms >= 0 else default_flush_delay_ms
         self._max_request_size_override = BraintrustEnv.MAX_REQUEST_SIZE.get(None)
         self.default_batch_size = BraintrustEnv.DEFAULT_BATCH_SIZE.get(100)
         self.num_tries = BraintrustEnv.NUM_RETRIES.get(2) + 1
@@ -1294,8 +1318,9 @@ class _HTTPBackgroundLogger:
 
     def _publisher(self):
         while True:
-            # Wait for some data on the queue before trying to flush.
-            self.queue.wait_for_items()
+            # Batch until the oldest queued row's deadline, or until a full
+            # batch is available. Explicit and atexit flushes bypass this wait.
+            self.queue.wait_for_batch(self.default_batch_size, self.flush_delay_ms / 1000)
 
             while self.sync_flush:
                 time.sleep(0.1)
