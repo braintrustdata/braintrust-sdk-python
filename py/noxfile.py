@@ -946,7 +946,11 @@ def pylint(session):
     unlintable_integrations = set()
     for package in _VENDOR_TABLE:
         if sys.version_info[:2] < minimum_python.get(package, (3, 10)):
-            if package == "pydantic-ai-integration":
+            if package == "google-adk":
+                # ADK is installed only via its matrix pin for lint, and the
+                # latest release requires Python 3.11+.
+                unlintable_integrations.add("adk")
+            elif package == "pydantic-ai-integration":
                 # pydantic-ai-slim is not installed on Python 3.10, so pylint
                 # cannot resolve imports in this integration or its example.
                 unlintable_integrations.add("pydantic_ai")
@@ -985,6 +989,7 @@ def pylint(session):
             for f in files
             if not f.startswith(f"src/{INTEGRATION_DIR}/{integration}/")
             and f != f"src/{INTEGRATION_DIR}/auto_test_scripts/test_auto_{integration}.py"
+            and not f.startswith(f"src/{INTEGRATION_DIR}/auto_test_scripts/test_manual_wrap_{integration}_")
             and not f.startswith(f"../examples/{integration}/")
         ]
     session.run("pylint", "--errors-only", *files)
