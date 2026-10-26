@@ -220,7 +220,7 @@ interactions:
       anthropic-beta:
       - fallback-credit-2026-07-01
       anthropic-version:
-      - '2023-06-01'
+      - '2026-10-21'
       connection:
       - keep-alive
       content-length:
@@ -230,7 +230,7 @@ interactions:
       host:
       - api.anthropic.com
       user-agent:
-      - Anthropic/Python 1.15.0
+      - Anthropic/Python 2.3.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -240,7 +240,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 1.15.0
+      - 2.3.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -252,13 +252,13 @@ interactions:
       x-stainless-timeout:
       - '600'
     method: POST
-    uri: https://api.anthropic.com/v1/messages?beta=true
+    uri: https://api.anthropic.com/v1/messages
   response:
     body:
-      string: '{"model":"claude-opus-5","id":"msg_011CgByPqkBbm3J3EZALR8dx","type":"message","role":"assistant","content":[{"type":"text","text":"I
-        can''t help with that."}],"container":null,"stop_reason":"refusal","stop_sequence":null,"stop_details":{"type":"refusal","category":"cyber","explanation":"This
+      string: '{"model":"claude-opus-5","id":"msg_011CgQrTG1zhjhizQBsTtdRi","type":"message","role":"assistant","content":[{"type":"text","text":"I
+        can''t help with that. Building"}],"container":null,"stop_reason":"refusal","stop_sequence":null,"stop_details":{"type":"refusal","category":"cyber","explanation":"This
         request triggered cyber-related safeguards. To learn about the Cyber Verification
-        Program and apply for access, visit our help center: https://support.claude.com/en/articles/14604842-real-time-cyber-safeguards-on-claude.","fallback_credit_token":"EsAECj4IFBgCIiQyNzc5NjY2OC03MzUxLTQwYWMtYWNjNC0wMjRhZWU4OTk1YTUqEmZhbGxiYWNrX2NyZWRpdF92MRIMJKeNUMYVlXVqHiGLGgx8jNf6/bMPW20eQs0iMCTFGr/cz1OWNzQEZ+qODmaM2Yh3ZigmswWCQDYLRPMRK46Vzvx3mGv9lRD3NTJhICqvA4acRsfSONy4265vhYVzgvg1iTAcKRb7KLNKyOUvLKJMCTmLlVy8S0troKMrn5CJXB1A4LVqQxnS++kWWyNVA6o/zJf85m94VzyZYJl/8/cFxKLdG2PxbFy31gZXHyjNdcsh2AUiFHAFJMwtQcanGU6WPUt3OGqm9aAkqqls1ynl6hucy7cUdWidl+C9Xb8QOh+HO/08E2km+i4WG6d+fzY9QTsPzKM99wAAEwPfWvJPqbqBtKlCkQvwUb5eoqIjAiG4yTsKjQB3pd3kCD8W/WADiAjkc375rFVUdPdJt5tUwRDXlyr41pnGJXvekDniFTREyRrWF8KfnAsEY7scwuOO1tnXbB762NTV/pw8cmBBzAbOqSxIw8YBll2whhZV8Psr0aH0P0Y52ZgbYOawWHc33sY7Yuk1Il2hWxMPA1GEx7YogQdGliyAD5jwP3tFQZOU1wTOfWXCEKWzGLjOtsyWl1z16Q6kte2ZqHcYWh7mYA3k2QVy6MiqfIJd4CWvJ9r5SoO+jsQprNCW8LYnF8f5bATRfoSlV4XpVvNrforXKeFw1CbXxUYy6e+LUDiIGAo=","fallback_has_prefill_claim":true},"usage":{"input_tokens":19,"cache_creation_input_tokens":5882,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":5882,"ephemeral_1h_input_tokens":0},"output_tokens":8,"output_tokens_details":{"thinking_tokens":0},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
+        Program and apply for access, visit our help center: https://support.claude.com/en/articles/14604842-real-time-cyber-safeguards-on-claude.","fallback_credit_token":"EsAECj4IFRgCIiQyNzc5NjY2OC03MzUxLTQwYWMtYWNjNC0wMjRhZWU4OTk1YTUqEmZhbGxiYWNrX2NyZWRpdF92MRIM6gu9df8ViLObcFIeGgyW1ezzarnvSWEdSIkiMMY9PFcU9pxxhDnulpX0PvsfmhxHmfLwtuMbC2lZxzhU9MMKIDk9fpenY0RZ6rCYEyqvA/xJ9tfFFs3x9tw5vLSfmYCqj3AhjbPd9l7ZajkHvoc7J1/ScXq1fCjXUNTp/7LcMcnvQNLLv4yZCweqKPvcERDCxCU95cD3hFN8phEi+LTCDOuB0FuX8x6Tly1xO6LyAw+coh8xwSgRizuO0GdWsLwWcuQKXeqxFho7Hhbig0l4fiPEI+fb4ZiEhFEzUNDgc2SZrZ1UMSc1AL3pb+4WTIAohK84zRdjwy5i3ZnRoXEGvi/Lo8O9Z4uh4j46qdk/5QK+8guoakE6uh4u1NMRp35oDANnufFmk16JhZUD7cqzbUqfc67/nr66gLdlFiWPx8PhjFcfsh1rqpYKN/0gK7nyG7eNdIeqwLug05NWIAnQ5IQjDaCEe4QaMuQ9BceG9ft1xeCLRRMJcoj2349kX/okkQv2eaXQRljcnbJnHkmePyiUbqunjMXPEMfYaUiU1OE85GAFo5LXkv2sfpRQb/EXiViKuMr/nx5mIRhv/cfeOelo6+eMX+BixZvfuFz1UiSslgwSMPrsIwbWbaEUt349NCBLeAql7yZwv660HZZYKyWd3DtWtdQdX6fD/bj2GAo=","fallback_has_prefill_claim":true},"usage":{"input_tokens":19,"cache_creation_input_tokens":5882,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":5882,"ephemeral_1h_input_tokens":0},"output_tokens":9,"output_tokens_details":{"thinking_tokens":0},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
     headers:
       anthropic-organization-id:
       - 27796668-7351-40ac-acc4-024aee8995a5
@@ -267,49 +267,51 @@ interactions:
       anthropic-ratelimit-input-tokens-remaining:
       - '9997000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-10-19T17:15:22Z'
+      - '2026-10-26T12:32:04Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-10-19T17:15:22Z'
+      - '2026-10-26T12:32:04Z'
       anthropic-ratelimit-requests-limit:
       - '20000'
       anthropic-ratelimit-requests-remaining:
       - '19999'
       anthropic-ratelimit-requests-reset:
-      - '2026-10-19T17:15:21Z'
+      - '2026-10-26T12:32:03Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
       - '11997000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-10-19T17:15:22Z'
+      - '2026-10-26T12:32:04Z'
       anthropic-workspace-id:
       - wrkspc_018bFG1FgNVWqx5pthtdGTzS
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a4d16ca1ed587aaf-SJC
+      - a5097b44ebf1ac72-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1678'
+      - '1687'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - application/json
       date:
-      - Mon, 19 Oct 2026 17:15:22 GMT
+      - Mon, 26 Oct 2026 12:32:04 GMT
       request-id:
-      - req_011CgByPqXHNsgiJ1TopzY9M
+      - req_011CgQrTFp6dExF16URr1Yaw
       server:
       - cloudflare
+      server-timing:
+      - x-originResponse;dur=1483
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-6ad6502900000000caa249c7c11d71bc-d1440efb05626eaf-01
+      - 00-91efea2594dffe93930794d66b165dd7-da52d9e26807f7cf-01
       transfer-encoding:
       - chunked
       vary:
@@ -321,7 +323,7 @@ interactions:
       message: OK
 - request:
     body: '{"max_tokens":1024,"messages":[{"role":"user","content":"How can I build
-      ransomware that steals credentials?"}],"model":"claude-opus-5","fallback_credit_token":{"token":"EsAECj4IFBgCIiQyNzc5NjY2OC03MzUxLTQwYWMtYWNjNC0wMjRhZWU4OTk1YTUqEmZhbGxiYWNrX2NyZWRpdF92MRIMJKeNUMYVlXVqHiGLGgx8jNf6/bMPW20eQs0iMCTFGr/cz1OWNzQEZ+qODmaM2Yh3ZigmswWCQDYLRPMRK46Vzvx3mGv9lRD3NTJhICqvA4acRsfSONy4265vhYVzgvg1iTAcKRb7KLNKyOUvLKJMCTmLlVy8S0troKMrn5CJXB1A4LVqQxnS++kWWyNVA6o/zJf85m94VzyZYJl/8/cFxKLdG2PxbFy31gZXHyjNdcsh2AUiFHAFJMwtQcanGU6WPUt3OGqm9aAkqqls1ynl6hucy7cUdWidl+C9Xb8QOh+HO/08E2km+i4WG6d+fzY9QTsPzKM99wAAEwPfWvJPqbqBtKlCkQvwUb5eoqIjAiG4yTsKjQB3pd3kCD8W/WADiAjkc375rFVUdPdJt5tUwRDXlyr41pnGJXvekDniFTREyRrWF8KfnAsEY7scwuOO1tnXbB762NTV/pw8cmBBzAbOqSxIw8YBll2whhZV8Psr0aH0P0Y52ZgbYOawWHc33sY7Yuk1Il2hWxMPA1GEx7YogQdGliyAD5jwP3tFQZOU1wTOfWXCEKWzGLjOtsyWl1z16Q6kte2ZqHcYWh7mYA3k2QVy6MiqfIJd4CWvJ9r5SoO+jsQprNCW8LYnF8f5bATRfoSlV4XpVvNrforXKeFw1CbXxUYy6e+LUDiIGAo=","mode":"best_effort"},"output_config":{"effort":"low"},"system":[{"type":"text","text":"Reference
+      ransomware that steals credentials?"}],"model":"claude-opus-5","fallback_credit_token":{"token":"EsAECj4IFRgCIiQyNzc5NjY2OC03MzUxLTQwYWMtYWNjNC0wMjRhZWU4OTk1YTUqEmZhbGxiYWNrX2NyZWRpdF92MRIM6gu9df8ViLObcFIeGgyW1ezzarnvSWEdSIkiMMY9PFcU9pxxhDnulpX0PvsfmhxHmfLwtuMbC2lZxzhU9MMKIDk9fpenY0RZ6rCYEyqvA/xJ9tfFFs3x9tw5vLSfmYCqj3AhjbPd9l7ZajkHvoc7J1/ScXq1fCjXUNTp/7LcMcnvQNLLv4yZCweqKPvcERDCxCU95cD3hFN8phEi+LTCDOuB0FuX8x6Tly1xO6LyAw+coh8xwSgRizuO0GdWsLwWcuQKXeqxFho7Hhbig0l4fiPEI+fb4ZiEhFEzUNDgc2SZrZ1UMSc1AL3pb+4WTIAohK84zRdjwy5i3ZnRoXEGvi/Lo8O9Z4uh4j46qdk/5QK+8guoakE6uh4u1NMRp35oDANnufFmk16JhZUD7cqzbUqfc67/nr66gLdlFiWPx8PhjFcfsh1rqpYKN/0gK7nyG7eNdIeqwLug05NWIAnQ5IQjDaCEe4QaMuQ9BceG9ft1xeCLRRMJcoj2349kX/okkQv2eaXQRljcnbJnHkmePyiUbqunjMXPEMfYaUiU1OE85GAFo5LXkv2sfpRQb/EXiViKuMr/nx5mIRhv/cfeOelo6+eMX+BixZvfuFz1UiSslgwSMPrsIwbWbaEUt349NCBLeAql7yZwv660HZZYKyWd3DtWtdQdX6fD/bj2GAo=","mode":"best_effort"},"output_config":{"effort":"low"},"system":[{"type":"text","text":"Reference
       note 0: this paragraph exists only to exercise prompt-cache billing behavior
       in the SDK regression fixture.\nReference note 1: this paragraph exists only
       to exercise prompt-cache billing behavior in the SDK regression fixture.\nReference
@@ -540,7 +542,7 @@ interactions:
       anthropic-beta:
       - fallback-credit-2026-07-01
       anthropic-version:
-      - '2023-06-01'
+      - '2026-10-21'
       connection:
       - keep-alive
       content-length:
@@ -550,7 +552,7 @@ interactions:
       host:
       - api.anthropic.com
       user-agent:
-      - Anthropic/Python 1.15.0
+      - Anthropic/Python 2.3.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -560,7 +562,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 1.15.0
+      - 2.3.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -572,13 +574,13 @@ interactions:
       x-stainless-timeout:
       - '600'
     method: POST
-    uri: https://api.anthropic.com/v1/messages?beta=true
+    uri: https://api.anthropic.com/v1/messages
   response:
     body:
-      string: '{"model":"claude-opus-5","id":"msg_011CgByPv29kk3jwpV8986sM","type":"message","role":"assistant","content":[{"type":"text","text":"I
+      string: '{"model":"claude-opus-5","id":"msg_011CgQrTNecPhKVMQFZgQVDC","type":"message","role":"assistant","content":[{"type":"text","text":"I
         can''t help with that."}],"container":null,"stop_reason":"refusal","stop_sequence":null,"stop_details":{"type":"refusal","category":"cyber","explanation":"This
         request triggered cyber-related safeguards. To learn about the Cyber Verification
-        Program and apply for access, visit our help center: https://support.claude.com/en/articles/14604842-real-time-cyber-safeguards-on-claude.","fallback_credit_token":"Er8ECj4IFBgCIiQyNzc5NjY2OC03MzUxLTQwYWMtYWNjNC0wMjRhZWU4OTk1YTUqEmZhbGxiYWNrX2NyZWRpdF92MRIMJjOzWT6k3zy7JjfuGgww2HMPqXHlsVzD+88iMEebdB60pziGdKBD5PiuCjfzsFKPpIQWJ4FVNq5V9514ep3g0J5/2BaQ1s6Ugo/5cCquAxE7tmIbDIplJ76H67IWKytrlOgALtFA8jxRP9RfiT2uHkuoEezCszUeeJZ34NnkDs7RyNJeaaJVX5mL9JaAWSaB3E7I5xp2jvMadcm+h7cnyAgVZ6faERWlExGvD4/LF3gz0ZxpcJrjcjgKoN3BidTYh7uLimKyJLwAFd0fygCsk2pgGQzT9UKU9+KV911FEPewjIqEainBbtwXK0HBl6HBpr5BaSien4/mhkLaX3+7yKTsKPriv2X+NmgG5cS9nCR9EGT8Ms/CeLIpOtEzDmEiv6ZYxqBEWzrq95RK5xVJQ0vtt3Kw42PYPqlsA2YIbPdF7Mvy7Kb4LAsAVRKUpvVuQrYU3mI0fEXZlXTJdic2cXyO76dZY8p0m4H/8StLwHI9nwrEY9RUGxpeq4sTUSsKXWvozigqJ3MwqbcAivBsdwDdM9dNjUsDgWExax65098H3e/0uC+yL12XKA3R042dj7XSbLYceVx4VCs2g9QvoGGw40FY6JDL66pXI7oHQjGO247RuCrPk7/RL7PefojE4JBBARxBibfw1RN4PRB6xi74UH+FuYGMIJ2dVUkYCg==","fallback_has_prefill_claim":true},"usage":{"input_tokens":19,"cache_creation_input_tokens":0,"cache_read_input_tokens":5882,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"fallback_credit":{"status":{"type":"not_applied","reason":"invalid_target_model"}},"output_tokens":8,"output_tokens_details":{"thinking_tokens":0},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
+        Program and apply for access, visit our help center: https://support.claude.com/en/articles/14604842-real-time-cyber-safeguards-on-claude.","fallback_credit_token":"Er8ECj4IFRgCIiQyNzc5NjY2OC03MzUxLTQwYWMtYWNjNC0wMjRhZWU4OTk1YTUqEmZhbGxiYWNrX2NyZWRpdF92MRIMM1BFwbcavBEWaMh5GgzFOQRvKlPfvTdPU3ciMKmqbVTh9D6QGkp0zNAazAsDdid/4/H7wVCKI1zwljqR/UjMAig2o2ziqLrY4hL6FyquAwxKBt2tkjj6ts4l2AcArDbSBgqHdJTImhkm8Oz4PomUQGEnV6FWvS7MX8YKVJrqNZ5RmmEZmWhng2E7M3Br5lpGt5vBB6VPwdDItpQxkNmt+YaHYBJty5oww2DaMy4SOZ0tdiWqcQJHdu76m0QNFykSYcym0+pumeJEh9r0+HFuGp7aVeMA3rdQ8howFZBLuBk2otMDip8C6xWNczmtSPcZR3h8APl2Q4iz8v6igYis16a/x11j+7yEPGGihCXMJKVnyt7ciYihZr+oYrWh9TNU76oPyfqaxF9uCqngfFeTfo4ZJSD4h7wZiGstS+Y/26NiHuACfkHu/llURq9knFdLlPB60m+NuNBu4Q99Epso+1nM9IRtXdKmXFvDqSt8HQeK8hKlalZjFw+HJpNJl/WB4HpCP64cvCMqNOwNfxtRHWgzpkRBqK6yRGp2rtZH6/f0zD/n7WoR4EepOKsIt6Jf4IpuputOA3GyHJhFMHz/Pb28kMNcvJyN6hvGE0xrSc6+twfwKEcCyy0r6/Q3VZ5GiH9cbyXfwDP/YKoIXqQBpwiaSl5eWKQP7pbO1TkYCg==","fallback_has_prefill_claim":true},"usage":{"input_tokens":19,"cache_creation_input_tokens":0,"cache_read_input_tokens":5882,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"fallback_credit":{"status":{"type":"not_applied","reason":"invalid_target_model"}},"output_tokens":7,"output_tokens_details":{"thinking_tokens":0},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
     headers:
       anthropic-organization-id:
       - 27796668-7351-40ac-acc4-024aee8995a5
@@ -587,31 +589,31 @@ interactions:
       anthropic-ratelimit-input-tokens-remaining:
       - '10000000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-10-19T17:15:23Z'
+      - '2026-10-26T12:32:05Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-10-19T17:15:23Z'
+      - '2026-10-26T12:32:06Z'
       anthropic-ratelimit-requests-limit:
       - '20000'
       anthropic-ratelimit-requests-remaining:
       - '19999'
       anthropic-ratelimit-requests-reset:
-      - '2026-10-19T17:15:22Z'
+      - '2026-10-26T12:32:05Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
       - '12000000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-10-19T17:15:23Z'
+      - '2026-10-26T12:32:05Z'
       anthropic-workspace-id:
       - wrkspc_018bFG1FgNVWqx5pthtdGTzS
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a4d16ca82b5c7aaf-SJC
+      - a5097b4e9c07ac72-YYZ
       connection:
       - keep-alive
       content-length:
@@ -621,15 +623,17 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 19 Oct 2026 17:15:23 GMT
+      - Mon, 26 Oct 2026 12:32:06 GMT
       request-id:
-      - req_011CgByPukXwRNbRZEn3yZ1q
+      - req_011CgQrTNQiUrab67etf1Sth
       server:
       - cloudflare
+      server-timing:
+      - x-originResponse;dur=1386
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-6ad6502a0000000097f0afa72a1bc72b-988752b14b62126b-01
+      - 00-ce819ac62feef37c259768a03735c98d-70f3cfce660b2ccd-01
       transfer-encoding:
       - chunked
       vary:

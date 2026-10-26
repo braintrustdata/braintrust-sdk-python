@@ -17,7 +17,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.57.0
+      - pydantic-ai/2.61.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -27,7 +27,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.35.1
+      - 3.37.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -40,22 +40,22 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_047e140cc0369e57006ad6500cb46087d0a078a1af86d6fd39\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1792430092,\n  \"status\":
+      string: "{\n  \"id\": \"resp_00b87f69f5c31a86016adf482a767087d18bcc36b39bf30409\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1793017898,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1792430093,\n  \"error\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1793017899,\n  \"error\":
         null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": 500,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"fc_047e140cc0369e57006ad6500d41c087d08430fc0a2c09b66b\",\n
+        \     \"id\": \"fc_00b87f69f5c31a86016adf482ae11887d19a3575864a42955b\",\n
         \     \"type\": \"function_call\",\n      \"status\": \"completed\",\n      \"arguments\":
         \"{\\\"operation\\\":\\\"multiply\\\",\\\"a\\\":127,\\\"b\\\":49}\",\n      \"call_id\":
-        \"call_NBSCwCKE6nxJyvAXOGZGYfT2\",\n      \"name\": \"calculate\"\n    }\n
+        \"call_QPR9YcTbtI6YvNQi3QaUfFhy\",\n      \"name\": \"calculate\"\n    }\n
         \ ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\":
         null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\": \"in_memory\",\n
         \ \"reasoning\": {\n    \"context\": null,\n    \"effort\": null,\n    \"summary\":
         null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n
-        \ \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\":
+        \ \"store\": false,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\":
         {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n
         \ \"tool_choice\": \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n
         \     \"input_tokens\": 0,\n      \"input_tokens_details\": {\n        \"image_tokens\":
@@ -78,7 +78,7 @@ interactions:
         {}\n}"
     headers:
       access-control-expose-headers:
-      - X-Request-ID
+      - X-Request-ID, Server-Timing-Total
       - CF-Ray
       - CF-Ray
       alt-svc:
@@ -86,17 +86,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a4d16beeda85d01d-SJC
+      - a5097aa8caa636c9-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2541'
+      - '2542'
       content-type:
       - application/json
       date:
-      - Mon, 19 Oct 2026 17:14:53 GMT
+      - Mon, 26 Oct 2026 12:31:39 GMT
       openai-processing-ms:
-      - '808'
+      - '615'
       openai-version:
       - '2020-10-01'
       server:
@@ -112,21 +112,21 @@ interactions:
       x-ratelimit-limit-tokens:
       - '150000000'
       x-ratelimit-remaining-requests:
-      - '29995'
+      - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999117'
+      - '149999730'
       x-ratelimit-reset-requests:
-      - 10ms
+      - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_95a5ca228a354239bce58930d7a220a2
+      - req_139996aeb78948b3a29f0eedd947fe5d
     status:
       code: 200
       message: OK
 - request:
     body: '{"model":"gpt-4o-mini","stream":false,"input":[{"role":"user","content":"What
-      is 127 multiplied by 49?"},{"name":"calculate","arguments":"{\"operation\":\"multiply\",\"a\":127,\"b\":49}","call_id":"call_NBSCwCKE6nxJyvAXOGZGYfT2","type":"function_call"},{"type":"function_call_output","call_id":"call_NBSCwCKE6nxJyvAXOGZGYfT2","output":"6223.0"}],"max_output_tokens":500,"tool_choice":"auto","tools":[{"name":"calculate","parameters":{"additionalProperties":false,"properties":{"operation":{"type":"string"},"a":{"type":"number"},"b":{"type":"number"}},"required":["operation","a","b"],"type":"object"},"type":"function","description":"Perform
+      is 127 multiplied by 49?"},{"name":"calculate","arguments":"{\"operation\":\"multiply\",\"a\":127,\"b\":49}","call_id":"call_QPR9YcTbtI6YvNQi3QaUfFhy","type":"function_call"},{"type":"function_call_output","call_id":"call_QPR9YcTbtI6YvNQi3QaUfFhy","output":"6223.0"}],"max_output_tokens":500,"tool_choice":"auto","tools":[{"name":"calculate","parameters":{"additionalProperties":false,"properties":{"operation":{"type":"string"},"a":{"type":"number"},"b":{"type":"number"}},"required":["operation","a","b"],"type":"object"},"type":"function","description":"Perform
       a mathematical calculation.","strict":true}]}'
     headers:
       accept:
@@ -142,7 +142,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.57.0
+      - pydantic-ai/2.61.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -152,7 +152,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.35.1
+      - 3.37.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -165,23 +165,23 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0bed7c06dc12ed14006ad6500da94487d0a1f190c374523b29\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1792430093,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0feb9e41671db56c016adf482b3af887d1bedb2f8dda789bec\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1793017899,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1792430094,\n  \"error\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1793017899,\n  \"error\":
         null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": 500,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_0bed7c06dc12ed14006ad6500e274487d0824280d39fc79889\",\n
+        \     \"id\": \"msg_0feb9e41671db56c016adf482bb05c87d1ac6b41bfbeb13528\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"127 multiplied by
-        49 equals 6223.\"\n        }\n      ],\n      \"role\": \"assistant\"\n    }\n
+        49 is 6,223.\"\n        }\n      ],\n      \"role\": \"assistant\"\n    }\n
         \ ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\":
         null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\": \"in_memory\",\n
         \ \"reasoning\": {\n    \"context\": null,\n    \"effort\": null,\n    \"summary\":
         null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n
-        \ \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\":
+        \ \"store\": false,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\":
         {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n
         \ \"tool_choice\": \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n
         \     \"input_tokens\": 0,\n      \"input_tokens_details\": {\n        \"image_tokens\":
@@ -199,12 +199,12 @@ interactions:
         true\n    }\n  ],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
         \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 82,\n    \"input_tokens_details\":
         {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 12,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 94\n  },\n  \"user\": null,\n  \"metadata\":
+        \   \"output_tokens\": 13,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        0\n    },\n    \"total_tokens\": 95\n  },\n  \"user\": null,\n  \"metadata\":
         {}\n}"
     headers:
       access-control-expose-headers:
-      - X-Request-ID
+      - X-Request-ID, Server-Timing-Total
       - CF-Ray
       - CF-Ray
       alt-svc:
@@ -212,17 +212,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a4d16bf4be4bd01d-SJC
+      - a5097aad8f6736c9-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2606'
+      - '2604'
       content-type:
       - application/json
       date:
-      - Mon, 19 Oct 2026 17:14:54 GMT
+      - Mon, 26 Oct 2026 12:31:39 GMT
       openai-processing-ms:
-      - '901'
+      - '662'
       openai-version:
       - '2020-10-01'
       server:
@@ -238,15 +238,15 @@ interactions:
       x-ratelimit-limit-tokens:
       - '150000000'
       x-ratelimit-remaining-requests:
-      - '29993'
+      - '29999'
       x-ratelimit-remaining-tokens:
-      - '149998697'
+      - '149999702'
       x-ratelimit-reset-requests:
-      - 14ms
+      - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_ed1bb061c9e44559b63ab422d0faea9e
+      - req_25e3de13c0384f728f10809c38c70bbd
     status:
       code: 200
       message: OK

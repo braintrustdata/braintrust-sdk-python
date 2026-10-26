@@ -16,26 +16,26 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/3.0.0
+      - mistral-client-python/3.5.0
     method: POST
     uri: https://api.mistral.ai/v1/fim/completions#stream
   response:
     body:
-      string: 'data: {"id":"7a7f7371d67c458e8c0fbb0c7fde8a33","object":"chat.completion.chunk","created":1791211556,"model":"codestral-latest","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
+      string: 'data: {"id":"fb674ad3daa1467bb58a395f3d4f06c8","object":"chat.completion.chunk","created":1793017918,"model":"codestral-latest","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
 
 
-        data: {"id":"7a7f7371d67c458e8c0fbb0c7fde8a33","object":"chat.completion.chunk","created":1791211556,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"a"},"finish_reason":null}],"p":"abcdefghijklmnopqrstuvwxyz01234"}
+        data: {"id":"fb674ad3daa1467bb58a395f3d4f06c8","object":"chat.completion.chunk","created":1793017918,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"a"},"finish_reason":null}],"p":"abcdefgh"}
 
 
-        data: {"id":"7a7f7371d67c458e8c0fbb0c7fde8a33","object":"chat.completion.chunk","created":1791211556,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"
-        *"},"finish_reason":null}],"p":"abcdefghijklmnopqr"}
+        data: {"id":"fb674ad3daa1467bb58a395f3d4f06c8","object":"chat.completion.chunk","created":1793017918,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"
+        *"},"finish_reason":null}],"p":"abcdefghijklmnop"}
 
 
-        data: {"id":"7a7f7371d67c458e8c0fbb0c7fde8a33","object":"chat.completion.chunk","created":1791211556,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"
-        b"},"finish_reason":null}],"p":"abcdefghijklmnopqrstuvwxyz01234"}
+        data: {"id":"fb674ad3daa1467bb58a395f3d4f06c8","object":"chat.completion.chunk","created":1793017918,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"
+        b"},"finish_reason":null}],"p":"abcdefghijklmnopqrstu"}
 
 
-        data: {"id":"7a7f7371d67c458e8c0fbb0c7fde8a33","object":"chat.completion.chunk","created":1791211556,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":""},"finish_reason":"stop"}],"usage":{"prompt_tokens":24,"total_tokens":28,"completion_tokens":4,"prompt_tokens_details":{"cached_tokens":0},"service_tier":"standard"},"p":"abcdefghijklmnop"}
+        data: {"id":"fb674ad3daa1467bb58a395f3d4f06c8","object":"chat.completion.chunk","created":1793017918,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":""},"finish_reason":"stop"}],"usage":{"prompt_tokens":24,"total_tokens":28,"completion_tokens":4,"prompt_tokens_details":{"cached_tokens":0},"completion_tokens_details":{"reasoning_tokens":0},"service_tier":"standard"},"p":"abc"}
 
 
         data: [DONE]
@@ -50,15 +50,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a45d3685891faeb6-YYZ
+      - a5097b239c6eab22-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 05 Oct 2026 14:45:56 GMT
+      - Mon, 26 Oct 2026 12:31:58 GMT
       mistral-correlation-id:
-      - 01a10c87-4fb7-7ae3-8f2e-0800438ec651
+      - 01a17832-3280-7336-8cbb-c9b9471bd880
       server:
       - cloudflare
       strict-transport-security:
@@ -68,13 +68,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '106'
+      - '190'
       x-kong-proxy-latency:
-      - '26'
+      - '16'
       x-kong-request-id:
-      - 01a10c87-4fb7-7ae3-8f2e-0800438ec651
+      - 01a17832-3280-7336-8cbb-c9b9471bd880
       x-kong-upstream-latency:
-      - '107'
+      - '200'
       x-max-retry-attempts-reached:
       - 'false'
     status:

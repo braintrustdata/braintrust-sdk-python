@@ -17,14 +17,14 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.31.0 gl-python/3.14.7
+      - google-genai-sdk/2.33.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/2.31.0 gl-python/3.14.7
+      - google-genai-sdk/2.33.0 gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse
   response:
     body:
-      string: "data: {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"\\nThe
+      string: "data: {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"The
         URL context\"}],\"role\": \"model\"},\"index\": 0,\"groundingMetadata\": {},\"urlContextMetadata\":
         {\"urlMetadata\": [{\"retrievedUrl\": \"https://ai.google.dev/gemini-api/docs/url-context\",\"urlRetrievalStatus\":
         \"URL_RETRIEVAL_STATUS_SUCCESS\"}]}}],\"usageMetadata\": {\"promptTokenCount\":
@@ -32,62 +32,57 @@ interactions:
         [{\"modality\": \"TEXT\",\"tokenCount\": 24}],\"toolUsePromptTokenCount\":
         3932,\"toolUsePromptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
         3932}],\"thoughtsTokenCount\": 36,\"serviceTier\": \"standard\"},\"modelVersion\":
-        \"gemini-2.5-flash\",\"responseId\": \"HFDWaoyMLfWV_uMPkvSBmQw\"}\r\n\r\ndata:
+        \"gemini-2.5-flash\",\"responseId\": \"CEjfarKOH6PC0_gP8u2xgQ0\"}\r\n\r\ndata:
         {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \" tool in the Gemini
-        API allows models to access content from provided URLs, enhancing their\"}],\"role\":
+        API allows models to access and use content from provided URLs to\"}],\"role\":
         \"model\"},\"index\": 0,\"groundingMetadata\": {}}],\"usageMetadata\": {\"promptTokenCount\":
         24,\"candidatesTokenCount\": 44,\"totalTokenCount\": 4036,\"promptTokensDetails\":
         [{\"modality\": \"TEXT\",\"tokenCount\": 24}],\"toolUsePromptTokenCount\":
         3932,\"toolUsePromptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
         3932}],\"thoughtsTokenCount\": 36,\"serviceTier\": \"standard\"},\"modelVersion\":
-        \"gemini-2.5-flash\",\"responseId\": \"HFDWaoyMLfWV_uMPkvSBmQw\"}\r\n\r\ndata:
-        {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \" responses with
-        external information. This is useful for tasks such as data extraction, document
-        comparison, content creation, and code analysis. The tool utilizes a two-step
-        retrieval process, first checking an internal index cache and then performing\"}],\"role\":
+        \"gemini-2.5-flash\",\"responseId\": \"CEjfarKOH6PC0_gP8u2xgQ0\"}\r\n\r\ndata:
+        {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \" enhance their responses.
+        This is useful for tasks such as extracting data, comparing documents, synthesizing
+        content, and analyzing code or documentation. The tool employs a two-step
+        retrieval process, first checking an internal index cache and then performing
+        a live fetch if\"}],\"role\": \"model\"},\"index\": 0,\"groundingMetadata\":
+        {}}],\"usageMetadata\": {\"promptTokenCount\": 24,\"candidatesTokenCount\":
+        93,\"totalTokenCount\": 4085,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
+        24}],\"toolUsePromptTokenCount\": 3932,\"toolUsePromptTokensDetails\": [{\"modality\":
+        \"TEXT\",\"tokenCount\": 3932}],\"thoughtsTokenCount\": 36,\"serviceTier\":
+        \"standard\"},\"modelVersion\": \"gemini-2.5-flash\",\"responseId\": \"CEjfarKOH6PC0_gP8u2xgQ0\"}\r\n\r\ndata:
+        {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \" the content is
+        not cached. It can be combined with other tools, such as Google Search, for
+        more powerful workflows. The model's response includes inline citations linking
+        segments of text to their source URLs. The tool supports up to 20\"}],\"role\":
         \"model\"},\"index\": 0,\"groundingMetadata\": {}}],\"usageMetadata\": {\"promptTokenCount\":
-        24,\"candidatesTokenCount\": 88,\"totalTokenCount\": 4080,\"promptTokensDetails\":
+        24,\"candidatesTokenCount\": 142,\"totalTokenCount\": 4134,\"promptTokensDetails\":
         [{\"modality\": \"TEXT\",\"tokenCount\": 24}],\"toolUsePromptTokenCount\":
         3932,\"toolUsePromptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
         3932}],\"thoughtsTokenCount\": 36,\"serviceTier\": \"standard\"},\"modelVersion\":
-        \"gemini-2.5-flash\",\"responseId\": \"HFDWaoyMLfWV_uMPkvSBmQw\"}\r\n\r\ndata:
-        {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \" a live fetch if
-        needed. It can be combined with other tools, including Google Search, for
-        more powerful workflows. Responses include inline URL citation annotations,
-        linking text to its source URL. The tool supports up to 20 publicly accessible
-        URLs per request, with a maximum content size of 34MB per URL. It extracts
-        content from various types like HTML, JSON, plain\"}],\"role\": \"model\"},\"index\":
-        0,\"groundingMetadata\": {}}],\"usageMetadata\": {\"promptTokenCount\": 24,\"candidatesTokenCount\":
-        164,\"totalTokenCount\": 4156,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
-        24}],\"toolUsePromptTokenCount\": 3932,\"toolUsePromptTokensDetails\": [{\"modality\":
-        \"TEXT\",\"tokenCount\": 3932}],\"thoughtsTokenCount\": 36,\"serviceTier\":
-        \"standard\"},\"modelVersion\": \"gemini-2.5-flash\",\"responseId\": \"HFDWaoyMLfWV_uMPkvSBmQw\"}\r\n\r\ndata:
-        {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \" text, images, and
-        PDFs, but does not support paywalled content, YouTube videos, or Google Workspace
-        files.\"}],\"role\": \"model\"},\"finishReason\": \"STOP\",\"index\": 0,\"groundingMetadata\":
-        {\"groundingChunks\": [{\"web\": {\"uri\": \"https://ai.google.dev/gemini-api/docs/url-context\",\"title\":
+        \"gemini-2.5-flash\",\"responseId\": \"CEjfarKOH6PC0_gP8u2xgQ0\"}\r\n\r\ndata:
+        {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \" URLs per request
+        with a maximum content size of 34MB per URL and only publicly accessible content.
+        It supports various content types, including text, image, and PDF, but does
+        not support paywalled content, YouTube videos, or Google Workspace files.\"}],\"role\":
+        \"model\"},\"index\": 0,\"groundingMetadata\": {}}],\"usageMetadata\": {\"promptTokenCount\":
+        24,\"candidatesTokenCount\": 193,\"totalTokenCount\": 4185,\"promptTokensDetails\":
+        [{\"modality\": \"TEXT\",\"tokenCount\": 24}],\"toolUsePromptTokenCount\":
+        3932,\"toolUsePromptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
+        3932}],\"thoughtsTokenCount\": 36,\"serviceTier\": \"standard\"},\"modelVersion\":
+        \"gemini-2.5-flash\",\"responseId\": \"CEjfarKOH6PC0_gP8u2xgQ0\"}\r\n\r\ndata:
+        {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"\"}],\"role\": \"model\"},\"finishReason\":
+        \"STOP\",\"index\": 0,\"groundingMetadata\": {\"groundingChunks\": [{\"web\":
+        {\"uri\": \"https://ai.google.dev/gemini-api/docs/url-context\",\"title\":
         \"URL context - Interactions API | Google AI for Developers\"}}],\"groundingSupports\":
-        [{\"segment\": {\"startIndex\": 145,\"endIndex\": 251,\"text\": \"This is
-        useful for tasks such as data extraction, document comparison, content creation,
-        and code analysis\"},\"groundingChunkIndices\": [0]},{\"segment\": {\"startIndex\":
-        253,\"endIndex\": 382,\"text\": \"The tool utilizes a two-step retrieval process,
-        first checking an internal index cache and then performing a live fetch if
-        needed\"},\"groundingChunkIndices\": [0]},{\"segment\": {\"startIndex\": 384,\"endIndex\":
-        473,\"text\": \"It can be combined with other tools, including Google Search,
-        for more powerful workflows\"},\"groundingChunkIndices\": [0]},{\"segment\":
-        {\"startIndex\": 475,\"endIndex\": 556,\"text\": \"Responses include inline
-        URL citation annotations, linking text to its source URL\"},\"groundingChunkIndices\":
-        [0]},{\"segment\": {\"startIndex\": 558,\"endIndex\": 666,\"text\": \"The
-        tool supports up to 20 publicly accessible URLs per request, with a maximum
-        content size of 34MB per URL\"},\"groundingChunkIndices\": [0]},{\"segment\":
-        {\"startIndex\": 668,\"endIndex\": 835,\"text\": \"It extracts content from
-        various types like HTML, JSON, plain text, images, and PDFs, but does not
-        support paywalled content, YouTube videos, or Google Workspace files\"},\"groundingChunkIndices\":
+        [{\"segment\": {\"startIndex\": 714,\"endIndex\": 863,\"text\": \"It supports
+        various content types, including text, image, and PDF, but does not support
+        paywalled content, YouTube videos, or Google Workspace files.\"},\"groundingChunkIndices\":
         [0]}]}}],\"usageMetadata\": {\"promptTokenCount\": 24,\"candidatesTokenCount\":
-        187,\"totalTokenCount\": 4179,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
+        193,\"totalTokenCount\": 4185,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
         24}],\"toolUsePromptTokenCount\": 3932,\"toolUsePromptTokensDetails\": [{\"modality\":
         \"TEXT\",\"tokenCount\": 3932}],\"thoughtsTokenCount\": 36,\"serviceTier\":
-        \"standard\"},\"modelVersion\": \"gemini-2.5-flash\",\"responseId\": \"HFDWaoyMLfWV_uMPkvSBmQw\"}\r\n\r\n"
+        \"standard\"},\"modelVersion\": \"gemini-2.5-flash\",\"responseId\": \"CEjfarKOH6PC0_gP8u2xgQ0\"}\r\n\r\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
@@ -96,11 +91,11 @@ interactions:
       content-type:
       - text/event-stream
       date:
-      - Mon, 19 Oct 2026 17:15:10 GMT
+      - Mon, 26 Oct 2026 12:31:05 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=1692
+      - gfet4t7; dur=1654
       transfer-encoding:
       - chunked
       vary:

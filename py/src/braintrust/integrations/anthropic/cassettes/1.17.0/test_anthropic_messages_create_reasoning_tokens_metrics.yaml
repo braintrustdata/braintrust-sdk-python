@@ -1,0 +1,114 @@
+interactions:
+- request:
+    body: '{"max_tokens":2048,"messages":[{"role":"user","content":"What is 17 * 23?
+      Think it through, then give the number."}],"model":"claude-haiku-4-5-20251001","thinking":{"type":"enabled","budget_tokens":1024}}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate, zstd
+      anthropic-version:
+      - '2023-06-01'
+      connection:
+      - keep-alive
+      content-length:
+      - '204'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 1.17.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.17.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+      x-stainless-timeout:
+      - '600'
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: "{\"model\":\"claude-haiku-4-5-20251001\",\"id\":\"msg_011CgQsQXq3kAHLcDwj5H5vH\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"thinking\",\"thinking\":\"17
+        * 23\\n\\nLet me break this down:\\n17 * 23 = 17 * (20 + 3)\\n= 17 * 20 +
+        17 * 3\\n= 340 + 51\\n= 391\\n\\nLet me verify: \\n17 * 20 = 340 \u2713\\n17
+        * 3 = 51 \u2713\\n340 + 51 = 391 \u2713\",\"signature\":\"Er4DCrgBCBMYAipABG7tGNClPIeAFZjSvjmbCWp9Zs/wGoxEb3PQbtJtkW8/SS6DXPJXoYdESSilgTYyjbubdJRr9T5B2VkGNj0OhDIZY2xhdWRlLWhhaWt1LTQtNS0yMDI1MTAwMTgAQgh0aGlua2luZ1okMjc3OTY2NjgtNzM1MS00MGFjLWFjYzQtMDI0YWVlODk5NWE1mgEbChljbGF1ZGUtaGFpa3UtNC01LTIwMjUxMDAxqAGylv3WBhIMTY4RgljUYMZhdqq5GgwO03iJ376v1DovagIiMEmMMxvw06hccYF/cfE2ZeRQzbExIssCOdupR+K1/V8rLtimaN8d1hgn7Ie6RcXPLSqyAd9nEaB1aCiWawo2YCvVE5FG5nu0fsrYX37sqrKzDjRs928Oz6Oghvhouiz3cmUs1VUFBhIMMn0DT/WWUzpd8frr925NJ+wwi+v++ukdOKtwnaHPfBu9XXbtwdT20WFwkpzP09Sd/u3JtZvtkoTAUVwu0OHIcIkr9OsvTk+UNNm11hGoFd14L4arzGOdovo7RAHv138gS6gVcXLRG/0iEmJT7sS3EMkXkxPnx5vvgANmI/cYAQ==\"},{\"type\":\"text\",\"text\":\"#
+        Working through 17 \xD7 23\\n\\nBreaking it down:\\n- 17 \xD7 23 = 17 \xD7
+        (20 + 3)\\n- = (17 \xD7 20) + (17 \xD7 3)\\n- = 340 + 51\\n- = **391**\"}],\"container\":null,\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":54,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"output_tokens\":186,\"output_tokens_details\":{\"thinking_tokens\":113},\"service_tier\":\"standard\",\"inference_geo\":\"not_available\",\"speed\":\"standard\"},\"diagnostics\":null}"
+    headers:
+      anthropic-organization-id:
+      - 27796668-7351-40ac-acc4-024aee8995a5
+      anthropic-ratelimit-input-tokens-limit:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2026-10-26T12:44:33Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2026-10-26T12:44:34Z'
+      anthropic-ratelimit-requests-limit:
+      - '20000'
+      anthropic-ratelimit-requests-remaining:
+      - '19999'
+      anthropic-ratelimit-requests-reset:
+      - '2026-10-26T12:44:33Z'
+      anthropic-ratelimit-tokens-limit:
+      - '12000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '12000000'
+      anthropic-ratelimit-tokens-reset:
+      - '2026-10-26T12:44:33Z'
+      anthropic-workspace-id:
+      - wrkspc_018bFG1FgNVWqx5pthtdGTzS
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a5098d934e97982f-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '1518'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Mon, 26 Oct 2026 12:44:34 GMT
+      request-id:
+      - req_011CgQsQXbf7H99qQazeyF6p
+      server:
+      - cloudflare
+      server-timing:
+      - x-originResponse;dur=1691
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      traceresponse:
+      - 00-7a21adeab22b35b315447d8b228b7ab5-739044f078efc059-01
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+version: 1

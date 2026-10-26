@@ -6,7 +6,7 @@ interactions:
       accept:
       - application/json
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
@@ -16,12 +16,12 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.9.0
+      - mistral-client-python/3.5.0
     method: POST
     uri: https://api.mistral.ai/v1/chat/completions
   response:
     body:
-      string: '{"id":"0962797c81e247c28b0802e7fe4dda36","created":1785860148,"model":"mistral-small-latest","usage":{"prompt_tokens":28,"total_tokens":30,"completion_tokens":2,"prompt_tokens_details":{"cached_tokens":0},"service_tier":"standard"},"object":"chat.completion","choices":[{"index":0,"finish_reason":"stop","message":{"role":"assistant","tool_calls":null,"content":"6"}}]}'
+      string: '{"id":"c6bde4b967ca4699890b652a60f9b4c6","created":1793017870,"model":"mistral-small-latest","usage":{"prompt_tokens":28,"total_tokens":30,"completion_tokens":2,"prompt_tokens_details":{"cached_tokens":0},"completion_tokens_details":{"reasoning_tokens":0},"service_tier":"standard"},"object":"chat.completion","choices":[{"index":0,"finish_reason":"stop","message":{"role":"assistant","tool_calls":null,"content":"6"}}]}'
     headers:
       access-control-allow-origin:
       - '*'
@@ -30,17 +30,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a25edce5ca8b7aa8-YYZ
+      - a50979f82889a3f1-YYZ
       connection:
       - keep-alive
       content-length:
-      - '369'
+      - '420'
       content-type:
       - application/json
       date:
-      - Tue, 04 Aug 2026 16:15:48 GMT
+      - Mon, 26 Oct 2026 12:31:10 GMT
       mistral-correlation-id:
-      - 019fcd8f-4bdd-71a5-ab43-568534465cd6
+      - 01a17831-7753-70f6-8db8-643d66309e3d
       server:
       - cloudflare
       strict-transport-security:
@@ -50,23 +50,23 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '274'
+      - '330'
       x-kong-proxy-latency:
       - '11'
       x-kong-request-id:
-      - 019fcd8f-4bdd-71a5-ab43-568534465cd6
+      - 01a17831-7753-70f6-8db8-643d66309e3d
       x-kong-upstream-latency:
-      - '276'
+      - '332'
       x-max-retry-attempts-reached:
       - 'false'
       x-ratelimit-limit-req-minute:
-      - '50'
+      - '100'
       x-ratelimit-limit-tokens-minute:
-      - '50000'
+      - '100000'
       x-ratelimit-remaining-req-minute:
-      - '45'
+      - '97'
       x-ratelimit-remaining-tokens-minute:
-      - '49709'
+      - '99818'
       x-ratelimit-tokens-query-cost:
       - '30'
     status:

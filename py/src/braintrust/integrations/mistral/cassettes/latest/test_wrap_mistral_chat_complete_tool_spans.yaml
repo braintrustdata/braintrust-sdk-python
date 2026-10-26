@@ -7,7 +7,7 @@ interactions:
       accept:
       - application/json
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
@@ -17,12 +17,12 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.9.0
+      - mistral-client-python/3.5.0
     method: POST
     uri: https://api.mistral.ai/v1/chat/completions
   response:
     body:
-      string: '{"id":"e04a24cbd09b48b78ee190e16a7f0786","created":1785860146,"model":"mistral-small-latest","usage":{"prompt_tokens":88,"total_tokens":100,"completion_tokens":12,"prompt_tokens_details":{"cached_tokens":0},"service_tier":"standard"},"object":"chat.completion","choices":[{"index":0,"finish_reason":"tool_calls","message":{"role":"assistant","tool_calls":[{"id":"xiAXfaXKp","type":"function","function":{"name":"get_weather","arguments":"{\"city\":
+      string: '{"id":"ee00f5acc23d4f749221cc37f2f14e1d","created":1793017867,"model":"mistral-small-latest","usage":{"prompt_tokens":88,"total_tokens":100,"completion_tokens":12,"prompt_tokens_details":{"cached_tokens":0},"completion_tokens_details":{"reasoning_tokens":0},"service_tier":"standard"},"object":"chat.completion","choices":[{"index":0,"finish_reason":"tool_calls","message":{"role":"assistant","tool_calls":[{"id":"GMr5ZUmF2","type":"function","function":{"name":"get_weather","arguments":"{\"city\":
         \"Paris\"}"},"index":0}],"content":""}}]}'
     headers:
       access-control-allow-origin:
@@ -32,17 +32,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a25edcd969361117-YYZ
+      - a50979e49e7b78a5-YYZ
       connection:
       - keep-alive
       content-length:
-      - '490'
+      - '541'
       content-type:
       - application/json
       date:
-      - Tue, 04 Aug 2026 16:15:46 GMT
+      - Mon, 26 Oct 2026 12:31:07 GMT
       mistral-correlation-id:
-      - 019fcd8f-4423-7b53-a68a-0026d9f5a0fc
+      - 01a17831-6b1a-7966-a28b-28eca2dd62eb
       server:
       - cloudflare
       strict-transport-security:
@@ -52,23 +52,23 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '363'
+      - '289'
       x-kong-proxy-latency:
-      - '12'
+      - '19'
       x-kong-request-id:
-      - 019fcd8f-4423-7b53-a68a-0026d9f5a0fc
+      - 01a17831-6b1a-7966-a28b-28eca2dd62eb
       x-kong-upstream-latency:
-      - '364'
+      - '290'
       x-max-retry-attempts-reached:
       - 'false'
       x-ratelimit-limit-req-minute:
-      - '50'
+      - '100'
       x-ratelimit-limit-tokens-minute:
-      - '50000'
+      - '100000'
       x-ratelimit-remaining-req-minute:
-      - '48'
+      - '99'
       x-ratelimit-remaining-tokens-minute:
-      - '49870'
+      - '99883'
       x-ratelimit-tokens-query-cost:
       - '100'
     status:

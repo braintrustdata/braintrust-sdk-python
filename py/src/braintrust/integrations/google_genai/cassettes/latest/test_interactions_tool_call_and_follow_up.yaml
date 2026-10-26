@@ -18,25 +18,25 @@ interactions:
       user-agent:
       - speakeasy-sdk/python 2.4.1-preview.5 internal v1beta google-genai
       x-goog-api-client:
-      - google-genai-sdk/2.31.0 gl-python/3.14.7
+      - google-genai-sdk/2.33.0 gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/interactions
   response:
     body:
-      string: '{"id":"v1_ChdOVkRXYXMyYk5zVEtfdU1QdHEzSmtRdxIXTlZEV2FzMmJOc1RLX3VNUHRxM0prUXc","status":"requires_action","usage":{"total_tokens":132,"total_input_tokens":53,"input_tokens_by_modality":[{"modality":"text","tokens":53}],"total_cached_tokens":0,"total_output_tokens":15,"total_tool_use_tokens":0,"total_thought_tokens":64},"created":"2026-10-19T17:15:33Z","updated":"2026-10-19T17:15:33Z","service_tier":"standard","steps":[{"signature":"CqYCAWkUfRPtC3172B6mioKne/zuLqnkuaKjE37jRsvXFWwjq9MFMU7DjBD/TeSl2cHUYoTULTuzZNlRjOobDCbxegXgYCSj52KaR1sB7BLPE15X7P3t+UTKUFuPYKFyReXIY1F7YBARRtbDndf39yNso52gF/USYQNqc7CKAvGhCj7Os5uU5vkjxpwg0uWDYfZv08WYDxGPOqEBZtb86OtjRWJ/UZLWA27HDjrK9X9ES26fuOWQrFSU5KIHZ6+wjEMEFTaLEOVY8abyoRScEQH3aQEV0DORgvMJW+XrrnxP2AP2H92KIF9vNXmTFDzHUP1fV4aru6oqNcGhEXYB/Gm9UcdNILqZY0/XPjqlII4aQS8o69yiTtiuKiVQGxHMVaHQbAhES0g4","type":"thought"},{"id":"cgs0xap1","signature":"CqYCAWkUfRPtC3172B6mioKne/zuLqnkuaKjE37jRsvXFWwjq9MFMU7DjBD/TeSl2cHUYoTULTuzZNlRjOobDCbxegXgYCSj52KaR1sB7BLPE15X7P3t+UTKUFuPYKFyReXIY1F7YBARRtbDndf39yNso52gF/USYQNqc7CKAvGhCj7Os5uU5vkjxpwg0uWDYfZv08WYDxGPOqEBZtb86OtjRWJ/UZLWA27HDjrK9X9ES26fuOWQrFSU5KIHZ6+wjEMEFTaLEOVY8abyoRScEQH3aQEV0DORgvMJW+XrrnxP2AP2H92KIF9vNXmTFDzHUP1fV4aru6oqNcGhEXYB/Gm9UcdNILqZY0/XPjqlII4aQS8o69yiTtiuKiVQGxHMVaHQbAhES0g4","type":"function_call","name":"get_weather","arguments":{"location":"Paris"}}],"object":"interaction","model":"gemini-2.5-flash"}'
+      string: '{"id":"v1_ChdJMGpmYW9fdEt1bWU1Tm9QemRYZDRBNBIXSTBqZmFvX3RLdW1lNU5vUHpkWGQ0QTQ","status":"requires_action","usage":{"total_tokens":122,"total_input_tokens":53,"input_tokens_by_modality":[{"modality":"text","tokens":53}],"total_cached_tokens":0,"total_output_tokens":15,"total_tool_use_tokens":0,"total_thought_tokens":54},"created":"2026-10-26T12:31:31Z","updated":"2026-10-26T12:31:31Z","service_tier":"standard","steps":[{"signature":"CvUBAWkUfROLxrctQPIdSKFMDLsnKmBuPKUtCWWAiQNPlscobz5Ztp7FniSV4/Njl+dwh3Hhy0rl6kKq/TOkN/EiP8nZTFj5Gb7gZZzffV3agDXPtmBQ0wMIy1hsvdIfSI45p5/2mte0sPfXqlT7ZIL69pqCfBup+jn3aUAnQE23uqvDQaopKJRWtk3jOXKbAD7zOCCExiz2aKyk4bTRkK9ypZRq0cC47D4KwwiL7oMiegEHKdc3IMcDj0QGqRfpKioZfpDb0oARiFMalGp3TazTxiSZ7r+EmdiQMW0Vo4sgpBq+i+CV/8LOg7MLWwqMv+KrDuNTDK0=","type":"thought"},{"id":"5sqzyb6n","type":"function_call","name":"get_weather","arguments":{"location":"Paris"}}],"object":"interaction","model":"gemini-2.5-flash"}'
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '1409'
+      - '934'
       content-type:
       - application/json
       date:
-      - Mon, 19 Oct 2026 17:15:34 GMT
+      - Mon, 26 Oct 2026 12:31:32 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=1649
+      - gfet4t7; dur=2141
       transfer-encoding:
       - chunked
       vary:
@@ -53,7 +53,7 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"model":"gemini-2.5-flash","input":[{"call_id":"cgs0xap1","result":{"forecast":"sunny"},"name":"get_weather","type":"function_result"}],"previous_interaction_id":"v1_ChdOVkRXYXMyYk5zVEtfdU1QdHEzSmtRdxIXTlZEV2FzMmJOc1RLX3VNUHRxM0prUXc","tools":[{"description":"Get
+    body: '{"model":"gemini-2.5-flash","input":[{"call_id":"5sqzyb6n","result":{"forecast":"sunny"},"name":"get_weather","type":"function_result"}],"previous_interaction_id":"v1_ChdJMGpmYW9fdEt1bWU1Tm9QemRYZDRBNBIXSTBqZmFvX3RLdW1lNU5vUHpkWGQ0QTQ","tools":[{"description":"Get
       the current weather for a location.","name":"get_weather","parameters":{"type":"object","properties":{"location":{"type":"string"}},"required":["location"]},"type":"function"}]}'
     headers:
       accept:
@@ -71,12 +71,12 @@ interactions:
       user-agent:
       - speakeasy-sdk/python 2.4.1-preview.5 internal v1beta google-genai
       x-goog-api-client:
-      - google-genai-sdk/2.31.0 gl-python/3.14.7
+      - google-genai-sdk/2.33.0 gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/interactions
   response:
     body:
-      string: '{"id":"v1_ChdOVkRXYXMyYk5zVEtfdU1QdHEzSmtRdxIXTjFEV2F1bUxNNWFNX1BVUGhKclJ1UXc","status":"completed","usage":{"total_tokens":90,"total_input_tokens":83,"input_tokens_by_modality":[{"modality":"text","tokens":83}],"total_cached_tokens":0,"total_output_tokens":7,"total_tool_use_tokens":0,"total_thought_tokens":0},"created":"2026-10-19T17:15:35Z","updated":"2026-10-19T17:15:35Z","service_tier":"standard","steps":[{"signature":"CiRlMjQ4MzBhNy01Y2Q2LTQyZmUtOTk4Yi1lZTUzOWU3MmI5YzM=","type":"thought"},{"content":[{"text":"The
+      string: '{"id":"v1_ChdJMGpmYW9fdEt1bWU1Tm9QemRYZDRBNBIXSlVqZmFxdm5OZmFwNU5vUGg1X0VpQTA","status":"completed","usage":{"total_tokens":90,"total_input_tokens":83,"input_tokens_by_modality":[{"modality":"text","tokens":83}],"total_cached_tokens":0,"total_output_tokens":7,"total_tool_use_tokens":0,"total_thought_tokens":0},"created":"2026-10-26T12:31:33Z","updated":"2026-10-26T12:31:33Z","service_tier":"standard","steps":[{"signature":"CiRlMjQ4MzBhNy01Y2Q2LTQyZmUtOTk4Yi1lZTUzOWU3MmI5YzM=","type":"thought"},{"content":[{"text":"The
         weather in Paris is sunny.","type":"text"}],"type":"model_output"}],"object":"interaction","model":"gemini-2.5-flash"}'
     headers:
       alt-svc:
@@ -86,11 +86,11 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 19 Oct 2026 17:15:36 GMT
+      - Mon, 26 Oct 2026 12:31:34 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=2188
+      - gfet4t7; dur=2074
       transfer-encoding:
       - chunked
       vary:

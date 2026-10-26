@@ -23,7 +23,7 @@ from pydantic_ai.providers.openai import OpenAIProvider  # pylint: disable=impor
 
 
 PROJECT_NAME = "test-pydantic-ai"
-MODEL = "gpt-3.5-turbo"  # Use a cheaper model for testing
+MODEL = "gpt-4o-mini"
 TEST_PROMPT = "What is the capital of Italy?"
 
 

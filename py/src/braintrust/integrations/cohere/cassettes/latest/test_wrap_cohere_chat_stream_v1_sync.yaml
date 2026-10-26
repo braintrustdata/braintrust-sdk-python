@@ -15,7 +15,7 @@ interactions:
       host:
       - api.cohere.com
       user-agent:
-      - cohere/7.2.0
+      - cohere/7.3.0
       x-fern-language:
       - Python
       x-fern-platform:
@@ -25,18 +25,18 @@ interactions:
       x-fern-sdk-name:
       - cohere
       x-fern-sdk-version:
-      - 7.2.0
+      - 7.3.0
     method: POST
     uri: https://api.cohere.com/v1/chat
   response:
     body:
-      string: '{"is_finished":false,"event_type":"stream-start","generation_id":"d27b3f8e-bcfd-4d1b-8281-ad05737fe33e"}
+      string: '{"is_finished":false,"event_type":"stream-start","generation_id":"a3416091-148b-4a14-8299-e77daf352376"}
 
         {"is_finished":false,"event_type":"text-generation","text":"Hi"}
 
         {"is_finished":false,"event_type":"text-generation","text":"!"}
 
-        {"is_finished":true,"event_type":"stream-end","response":{"response_id":"ea121362-c388-41fb-9bcf-df339f2923b0","text":"Hi!","generation_id":"d27b3f8e-bcfd-4d1b-8281-ad05737fe33e","chat_history":[{"role":"USER","message":"Say
+        {"is_finished":true,"event_type":"stream-end","response":{"response_id":"cb23c7c2-ec37-4f48-841e-2ba5d07384d1","text":"Hi!","generation_id":"a3416091-148b-4a14-8299-e77daf352376","chat_history":[{"role":"USER","message":"Say
         hi in one word."},{"role":"CHATBOT","message":"Hi!"}],"finish_reason":"COMPLETE","meta":{"api_version":{"version":"1"},"billed_units":{"input_tokens":6,"output_tokens":2},"tokens":{"input_tokens":501,"output_tokens":5},"cached_tokens":448}},"finish_reason":"COMPLETE"}
 
         '
@@ -50,7 +50,7 @@ interactions:
       content-type:
       - application/stream+json
       date:
-      - Mon, 05 Oct 2026 14:45:27 GMT
+      - Mon, 26 Oct 2026 12:30:59 GMT
       expires:
       - Thu, 01 Jan 1970 00:00:00 GMT
       pragma:
@@ -66,11 +66,11 @@ interactions:
       x-accel-expires:
       - '0'
       x-debug-trace-id:
-      - 96bf4bd62c01701efe176253ce3879fc
+      - 5a7b62af91d073eba40ae51b94449e35
       x-endpoint-monthly-call-limit:
       - '1000'
       x-envoy-upstream-service-time:
-      - '210'
+      - '11752'
       x-trial-endpoint-call-limit:
       - '20'
       x-trial-endpoint-call-remaining:
