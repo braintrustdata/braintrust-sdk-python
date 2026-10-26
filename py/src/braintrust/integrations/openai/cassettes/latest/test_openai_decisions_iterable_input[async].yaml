@@ -1,8 +1,9 @@
 interactions:
 - request:
-    body: '{"model":"gpt-6-luna","input":[{"role":"user","content":[{"type":"input_text","text":"The
-      customer says: I love this product!"}]}],"questions":[{"type":"predicate","name":"positive","instructions":"Is
-      the sentiment positive?"}]}'
+    body: '{"model":"gpt-6-luna","input":[{"role":"user","content":[{"type":"input_text","text":"Look
+      up the customer feedback."}]},{"type":"function_call","call_id":"feedback","name":"get_feedback","arguments":"{}"},{"type":"function_call_output","call_id":"feedback","output":[{"type":"input_text","text":"The
+      customer says: I love this product!"}]}],"questions":[{"type":"predicate","name":"positive","instructions":[{"type":"input_text","text":"Is
+      the sentiment positive?"}]}]}'
     headers:
       accept:
       - application/json
@@ -11,7 +12,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '228'
+      - '470'
       content-type:
       - application/json
       host:
@@ -40,7 +41,7 @@ interactions:
     uri: https://api.openai.com/v1/decisions
   response:
     body:
-      string: '{"model":"gpt-6-luna","answers":[{"type":"predicate","name":"positive","probability":1.0}],"usage":{"input_tokens":162,"input_tokens_details":{"cached_tokens":0,"cache_write_tokens":0},"output_tokens":0,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":162}}'
+      string: '{"model":"gpt-6-luna","answers":[{"type":"predicate","name":"positive","probability":1.0}],"usage":{"input_tokens":193,"input_tokens_details":{"cached_tokens":0,"cache_write_tokens":0},"output_tokens":0,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":193}}'
     headers:
       access-control-allow-origin:
       - '*'
@@ -52,7 +53,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a50979c08bf436b2-YYZ
+      - a509b770ccf8c0f6-YYZ
       connection:
       - keep-alive
       content-length:
@@ -60,13 +61,13 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 26 Oct 2026 12:31:01 GMT
+      - Mon, 26 Oct 2026 13:13:08 GMT
       openai-processing-ms:
-      - '41'
+      - '153'
       server:
       - cloudflare
       server-timing-total:
-      - '41.175'
+      - '153.470'
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
@@ -77,20 +78,8 @@ interactions:
       - nosniff
       x-openai-proxy-wasm:
       - v0.1
-      x-ratelimit-limit-requests:
-      - '30000'
-      x-ratelimit-limit-tokens:
-      - '180000000'
-      x-ratelimit-remaining-requests:
-      - '29999'
-      x-ratelimit-remaining-tokens:
-      - '179999838'
-      x-ratelimit-reset-requests:
-      - 2ms
-      x-ratelimit-reset-tokens:
-      - 0s
       x-request-id:
-      - req_d23510e8e57c4086b8e639b76fedd7de
+      - req_a794b137a7f7449eb1f000c360d6a7ff
     status:
       code: 200
       message: OK
