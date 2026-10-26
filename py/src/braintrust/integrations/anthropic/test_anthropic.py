@@ -1787,18 +1787,19 @@ def _addition_tool(is_async):
 @pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "streaming,is_async,vcr_cassette_name",
+    "streaming,is_async,eager,vcr_cassette_name",
     [
         (
             streaming,
             is_async,
+            eager,
             f"test_anthropic_tool_runner[{'stream' if streaming else 'create'}-{'async' if is_async else 'sync'}]",
         )
-        for streaming in (False, True)
+        for streaming, eager in [(False, False), (True, False), (True, True)]
         for is_async in (False, True)
     ],
 )
-async def test_anthropic_tool_runner(memory_logger, is_async, streaming, vcr_cassette_name, monkeypatch):
+async def test_anthropic_tool_runner(memory_logger, is_async, streaming, eager, vcr_cassette_name, monkeypatch):
     raw_client = _get_async_client() if is_async else _get_client()
     if not hasattr(raw_client.beta.messages, "tool_runner"):
         pytest.skip("Tool runner is unavailable")
@@ -1818,20 +1819,31 @@ async def test_anthropic_tool_runner(memory_logger, is_async, streaming, vcr_cas
         tools=iter([add]),
         stream=streaming,
         max_iterations=3,
+        **({"run_tools_eagerly": True} if eager else {}),
     )
     replies = []
     # Exercise iteration and until_done in both sync and async modes without
     # repeating the whole provider matrix for each consumption API.
-    until_done = streaming != is_async
+    until_done = streaming != is_async and not eager
     if until_done:
         replies.append(await runner.until_done() if is_async else runner.until_done())
     elif is_async:
         async for reply in runner:
             assert logger.current_span() is parent
+            if eager:
+                async with reply:
+                    events = reply.text_stream if replies else reply
+                    async for _ in events:
+                        assert logger.current_span() is parent
             replies.append(await reply.get_final_message() if streaming else reply)
     else:
         for reply in runner:
             assert logger.current_span() is parent
+            if eager:
+                with reply:
+                    events = reply.text_stream if replies else reply
+                    for _ in events:
+                        assert logger.current_span() is parent
             replies.append(reply.get_final_message() if streaming else reply)
     assert logger.current_span() is parent
     assert add.call == original_tool_call
@@ -2085,11 +2097,17 @@ async def test_anthropic_create_stream_unknown_event(memory_logger, is_async, mo
 @pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "is_async,vcr_cassette_name",
-    [(False, "test_anthropic_tool_runner[create-sync]"), (True, "test_anthropic_tool_runner[create-async]")],
-    ids=["sync", "async"],
+    "is_async,finish,vcr_cassette_name",
+    [
+        (
+            is_async,
+            finish,
+            f"test_anthropic_tool_runner[{'stream' if finish == 'stream_error' else 'create'}-{'async' if is_async else 'sync'}]",
+        )
+        for is_async in (False, True)
+        for finish in ("gc", "tool_error", "stream_error")
+    ],
 )
-@pytest.mark.parametrize("finish", ["gc", "tool_error"])
 async def test_anthropic_tool_runner_cleanup(memory_logger, is_async, vcr_cassette_name, finish, monkeypatch):
     import gc
 
@@ -2101,11 +2119,13 @@ async def test_anthropic_tool_runner_cleanup(memory_logger, is_async, vcr_casset
         max_tokens=256,
         messages=[{"role": "user", "content": "Use the add tool to calculate 123 + 456. Reply with just the result."}],
         tools=[_addition_tool(is_async)],
-        stream=False,
+        stream=finish == "stream_error",
         max_iterations=3,
+        **({"run_tools_eagerly": True} if finish == "stream_error" else {}),
     )
     reply = await runner.__anext__() if is_async else next(runner)
-    assert reply.stop_reason == "tool_use"
+    if finish != "stream_error":
+        assert reply.stop_reason == "tool_use"
     task = find_span_by_name(memory_logger.pop(), "anthropic.messages.tool_runner")
     assert "end" not in task["metrics"]
     parent = logger.current_span()
@@ -2119,18 +2139,28 @@ async def test_anthropic_tool_runner_cleanup(memory_logger, is_async, vcr_casset
         error = RuntimeError("tool response failed")
         if is_async:
 
-            async def fail_response(self):
+            async def fail_response(self, *args):
                 raise error
 
-            monkeypatch.setattr(_beta_runner.BetaAsyncToolRunner, "generate_tool_call_response", fail_response)
+            runner_type = (
+                _beta_runner.BetaAsyncStreamingToolRunner
+                if finish == "stream_error"
+                else _beta_runner.BetaAsyncToolRunner
+            )
         else:
 
-            def fail_response(self):
+            def fail_response(self, *args):
                 raise error
 
-            monkeypatch.setattr(_beta_runner.BetaToolRunner, "generate_tool_call_response", fail_response)
+            runner_type = (
+                _beta_runner.BetaStreamingToolRunner if finish == "stream_error" else _beta_runner.BetaToolRunner
+            )
+        # Inject an unexpected SDK failure; ordinary tool errors become SDK tool_result blocks.
+        monkeypatch.setattr(
+            runner_type, "_run_tool" if finish == "stream_error" else "generate_tool_call_response", fail_response
+        )
         with pytest.raises(RuntimeError) as exc:
-            response = runner.generate_tool_call_response()
+            response = reply.get_final_message() if finish == "stream_error" else runner.generate_tool_call_response()
             if is_async:
                 await response
         assert exc.value is error
@@ -2140,14 +2170,14 @@ async def test_anthropic_tool_runner_cleanup(memory_logger, is_async, vcr_casset
     assert len(task_updates) == 1
     task_update = task_updates[0]
     assert task_update["metrics"]["end"] >= task["metrics"]["start"]
-    if finish == "tool_error":
+    if finish != "gc":
         assert "tool response failed" in task_update["error"]
         if is_async:
             await runner.close()
         else:
             runner.close()
     assert logger.current_span() is parent
-    assert not memory_logger.pop()
+    assert not [span for span in memory_logger.pop() if span["span_id"] == task["span_id"]]
 
 
 @pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])

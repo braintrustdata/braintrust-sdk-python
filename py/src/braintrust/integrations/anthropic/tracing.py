@@ -839,7 +839,7 @@ class TracedToolRunner(Wrapper):
             try:
                 item = next(self.__runner)
                 self.__has_items = True
-                return item
+                return TracedToolRunnerStream(item, self._context) if self.__kwargs.get("stream") else item
             except StopIteration:
                 self._finish(self.__runner.until_done() if self.__has_items else None)
                 raise
@@ -852,7 +852,7 @@ class TracedToolRunner(Wrapper):
             try:
                 item = await self.__runner.__anext__()
                 self.__has_items = True
-                return item
+                return TracedToolRunnerStream(item, self._context) if self.__kwargs.get("stream") else item
             except StopAsyncIteration:
                 self._finish(await self.__runner.until_done() if self.__has_items else None)
                 raise
@@ -897,6 +897,74 @@ class TracedToolRunner(Wrapper):
             return await self.__runner.close()
         finally:
             self._finish()
+
+
+class TracedToolRunnerStream(Wrapper):
+    """Scope eager tool execution to its task without leaking context across events."""
+
+    def __init__(self, stream, context):
+        super().__init__(stream)
+        self.__stream = stream
+        self.__context = context
+
+    def __getattr__(self, name):
+        value = super().__getattr__(name)
+        if name == "text_stream":
+            return TracedToolRunnerStream(value, self.__context)
+        if name not in ("get_final_message", "get_final_text", "until_done", "close"):
+            return value
+
+        def scoped_call(*args, **kwargs):
+            with self.__context():
+                result = value(*args, **kwargs)
+            # TracedMessageStream's regular methods can return awaitables too.
+            return self.__await_result(result) if inspect.isawaitable(result) else result
+
+        return scoped_call
+
+    async def __await_result(self, result):
+        with self.__context():
+            return await result
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        with self.__context():
+            try:
+                return next(self.__stream)
+            except StopIteration:
+                pass
+        raise StopIteration
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        with self.__context():
+            try:
+                return await self.__stream.__anext__()
+            except StopAsyncIteration:
+                pass
+        raise StopAsyncIteration
+
+    def __enter__(self):
+        with self.__context():
+            self.__stream.__enter__()
+        return self
+
+    def __exit__(self, *args):
+        with self.__context():
+            return self.__stream.__exit__(*args)
+
+    async def __aenter__(self):
+        with self.__context():
+            await self.__stream.__aenter__()
+        return self
+
+    async def __aexit__(self, *args):
+        with self.__context():
+            return await self.__stream.__aexit__(*args)
 
 
 class TracedMessageStreamManager(Wrapper):
@@ -982,6 +1050,15 @@ class TracedMessageStream(Wrapper):
 
     def __await__(self):
         return self.__msg_stream.__await__()
+
+    @property
+    def _iterator(self):
+        return self.__msg_stream._iterator
+
+    @_iterator.setter
+    def _iterator(self, value):
+        # Anthropic 1.x installs its eager tool hook on the returned stream.
+        self.__msg_stream._iterator = value
 
     def __aiter__(self):
         return self
