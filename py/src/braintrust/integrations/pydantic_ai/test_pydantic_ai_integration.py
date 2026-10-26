@@ -5,6 +5,7 @@
 import inspect
 import os
 import time
+from dataclasses import replace
 
 import pydantic_ai
 import pytest
@@ -15,7 +16,7 @@ from braintrust.test_helpers import init_test_logger
 from packaging.version import Version
 from pydantic import BaseModel
 from pydantic_ai import Agent, ModelSettings
-from pydantic_ai.messages import ModelRequest, UserPromptPart
+from pydantic_ai.messages import ModelRequest, ModelResponse, UserPromptPart
 from pydantic_ai.usage import UsageLimits
 
 
@@ -150,8 +151,6 @@ def test_extract_response_metrics_leaf_fields():
     went away are read back. `RequestUsage.details` is `dict[str, int]`, so
     attribute-style lookups on it (the prior implementation) silently no-op.
     """
-    from types import SimpleNamespace
-
     from braintrust.integrations.pydantic_ai.tracing import _extract_response_metrics
     from pydantic_ai.usage import RequestUsage
 
@@ -164,7 +163,10 @@ def test_extract_response_metrics_leaf_fields():
         output_audio_tokens=11,
         details={"reasoning_tokens": 13, "cached_tokens": 17},
     )
-    response = SimpleNamespace(usage=usage)
+    # Exercise the legacy details fallback when normalized reasoning usage is unavailable.
+    if hasattr(usage, "output_reasoning_tokens"):
+        setattr(usage, "output_reasoning_tokens", None)
+    response = ModelResponse(parts=[], usage=usage)
 
     maybe_metrics = _extract_response_metrics(response, start_time=1.0, end_time=2.0)
     assert maybe_metrics is not None
@@ -1822,16 +1824,13 @@ def test_agent_tool_metadata_extraction(memory_logger):
 async def test_agent_run_anthropic_reasoning_tokens(memory_logger):
     """Real Anthropic extended-thinking response through pydantic-ai's own usage mapping.
 
-    pydantic-ai stashes the reasoning count under ``details["thinking_tokens"]`` for
-    Anthropic (vs ``reasoning_tokens`` for OpenAI); the extractor must surface it as
-    ``completion_reasoning_tokens``. This exercises the real provider mapping via a
-    checked-in cassette; ``test_reasoning_tokens_extraction_provider_keys`` is the
-    supplemental synthetic coverage.
+    Verify the normalized usage field works even without the legacy details keys.
     """
     if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
         pytest.skip("Anthropic extended-thinking usage requires the latest pydantic-ai cassette")
 
     import anthropic
+    from braintrust.integrations.pydantic_ai.tracing import _extract_response_metrics
     from pydantic_ai.models.anthropic import AnthropicModel, AnthropicModelSettings
     from pydantic_ai.providers.anthropic import AnthropicProvider
 
@@ -1856,8 +1855,27 @@ async def test_agent_run_anthropic_reasoning_tokens(memory_logger):
     chat_span = next((s for s in spans if "chat" in s["span_attributes"]["name"]), None)
     assert chat_span is not None, "chat span not found"
     assert chat_span["metadata"]["provider"] == "anthropic"
+
+    response = result.all_messages()[-1]
+    assert isinstance(response, ModelResponse)
+    reasoning_tokens = response.usage.output_reasoning_tokens
+    assert reasoning_tokens > 0
+    # Reasoning is a subset of completion usage, not an additional token class.
     # pylint: disable=unsupported-membership-test,unsubscriptable-object
-    assert chat_span["metrics"]["completion_reasoning_tokens"] > 0
+    assert chat_span["metrics"]["completion_reasoning_tokens"] == reasoning_tokens
+    assert reasoning_tokens <= chat_span["metrics"]["completion_tokens"]
+    assert chat_span["metrics"]["completion_tokens"] == response.usage.output_tokens
+    for span in spans:
+        if span["span_attributes"]["type"] == SpanTypeAttribute.TASK:
+            assert "completion_reasoning_tokens" not in span["metrics"]
+    # pylint: enable=unsupported-membership-test,unsubscriptable-object
+
+    # Reuse the real provider usage without its legacy, provider-specific details.
+    normalized_response = replace(response, usage=replace(response.usage, details={}))
+    metrics = _extract_response_metrics(normalized_response, start_time=1.0, end_time=2.0)
+    assert metrics is not None
+    # pylint: disable=unsupported-membership-test,unsubscriptable-object
+    assert metrics["completion_reasoning_tokens"] == reasoning_tokens
     # pylint: enable=unsupported-membership-test,unsubscriptable-object
 
 
@@ -1884,32 +1902,31 @@ async def test_agent_run_openai_web_search_usage(memory_logger):
 
 
 @pytest.mark.parametrize(
-    "details_key",
+    "details_key, reasoning_tokens, expected",
     [
-        "thinking_tokens",  # Anthropic
-        "thoughts_tokens",  # Google
+        pytest.param("thinking_tokens", None, 128, id="anthropic-fallback"),
+        pytest.param("thoughts_tokens", None, 128, id="google-fallback"),
+        pytest.param("reasoning_tokens", 64, 64, id="normalized-precedence"),
+        pytest.param("reasoning_tokens", 0, 0, id="normalized-zero"),
     ],
 )
-def test_reasoning_tokens_extraction_provider_keys(details_key):
-    """pydantic_ai stashes the reasoning-token count under a provider-specific key:
-    OpenAI "reasoning_tokens", Anthropic "thinking_tokens", Google "thoughts_tokens".
-    All three must surface as `completion_reasoning_tokens` (previously only OpenAI's
-    key was read, silently dropping Anthropic/Google reasoning). OpenAI's key is
-    covered by `test_extract_response_metrics_leaf_fields`.
-    """
-    from types import SimpleNamespace
-
+def test_reasoning_tokens_extraction(details_key, reasoning_tokens, expected):
+    """Prefer normalized usage, including zero, with legacy provider-key fallbacks."""
     from braintrust.integrations.pydantic_ai.tracing import _extract_response_metrics
     from pydantic_ai.usage import RequestUsage
 
-    usage = RequestUsage(input_tokens=10, output_tokens=20, details={details_key: 128})
-    response = SimpleNamespace(parts=[], usage=usage)
+    usage = RequestUsage(input_tokens=10, output_tokens=200, details={details_key: 128})
+    if reasoning_tokens is not None and not hasattr(usage, "output_reasoning_tokens"):
+        pytest.skip("Normalized reasoning tokens require newer pydantic-ai")
+    if hasattr(usage, "output_reasoning_tokens"):
+        setattr(usage, "output_reasoning_tokens", reasoning_tokens)
+    response = ModelResponse(parts=[], usage=usage)
 
     metrics = _extract_response_metrics(response, start_time=1.0, end_time=2.0)
 
     assert metrics is not None
     # pylint: disable=unsupported-membership-test,unsubscriptable-object
-    assert metrics["completion_reasoning_tokens"] == 128.0
+    assert metrics["completion_reasoning_tokens"] == expected
     # pylint: enable=unsupported-membership-test,unsubscriptable-object
 
 
