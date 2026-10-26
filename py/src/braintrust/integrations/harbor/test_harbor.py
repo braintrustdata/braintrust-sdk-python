@@ -71,7 +71,7 @@ from harbor.models.job.result import JobResult, JobStats
 from harbor.models.task.id import LocalTaskId
 from harbor.models.trajectories.trajectory import Trajectory
 from harbor.models.trial.config import AgentConfig, EnvironmentConfig, TaskConfig, TrialConfig
-from harbor.models.trial.result import AgentInfo, StepResult, TimingInfo, TrialResult, VerifierResult
+from harbor.models.trial.result import AgentInfo, ExceptionInfo, StepResult, TimingInfo, TrialResult, VerifierResult
 
 
 _ABSOLUTE_PATH_RE = re.compile(r"(?:/(?:Users|private|home)/[^\"\\\\\s]+|[A-Za-z]:\\\\[^\"\\\\\s]+)")
@@ -774,6 +774,44 @@ def _scored_verifier_trial(tmp_path):
     return result
 
 
+@pytest.mark.parametrize("exception_type", ["DownloadVerifierDirError", "AgentTimeoutError"])
+def test_final_sync_respects_reward_validity(tmp_path, exception_type, with_memory_logger, with_simulate_login):
+    result = _trial_result(tmp_path, "trial-1", "task-a")
+    result.verifier_result = VerifierResult(rewards={"reward": 0.25, "quality": 0.7})
+    result.exception_info = ExceptionInfo(
+        exception_type=exception_type,
+        exception_message="trial failed",
+        exception_traceback="traceback",
+        occurred_at=datetime.now(timezone.utc),
+    )
+    experiment = init_test_exp("harbor-reward-validity", "harbor")
+    plugin = HarborPlugin(attachments="none", trajectory_mode="native")
+    _install_runtime(plugin, result, tmp_path, experiment)
+
+    spans = _sync_spans(plugin, result, experiment, with_memory_logger)
+
+    root = find_span_by_name(spans, "eval")
+    metadata = root["metadata"]["harbor"]
+    assert metadata["raw_rewards"] == {"reward": 0.25, "quality": 0.7}
+    has_reward_validity = hasattr(TrialResult, "reward_valid")
+    invalid = has_reward_validity and exception_type == "DownloadVerifierDirError"
+    scorers = find_spans_by_type(spans, "score")
+    if invalid:
+        assert scorers == []
+        assert "quality" not in root["metrics"]
+        assert "rewards omitted because Harbor marked them invalid (reward_valid=False)" in metadata["warnings"]
+    else:
+        assert scorers[0]["scores"] == {"reward": 0.25}
+        assert root["metrics"]["quality"] == 0.7
+        assert metadata["warnings"] == []
+    if has_reward_validity:
+        assert metadata["reward_valid"] == (not invalid)
+        assert metadata["failure_cause"] == ("sandbox_failed" if invalid else "agent_exhausted_budget")
+    else:
+        assert "reward_valid" not in metadata
+        assert "failure_cause" not in metadata
+
+
 @pytest.mark.parametrize(
     ("attachments", "expected_summary"),
     [
@@ -837,6 +875,12 @@ def test_verification_span_keeps_verifier_evidence_without_scores(tmp_path, with
     spans = _sync_spans(plugin, result, experiment, with_memory_logger)
 
     assert not find_spans_by_type(spans, "score")
+    metadata = find_span_by_name(spans, "eval")["metadata"]["harbor"]
+    assert "trial has no reward and is unevaluated" in metadata["warnings"]
+    assert not any("reward_valid=False" in warning for warning in metadata["warnings"])
+    if hasattr(TrialResult, "reward_valid"):
+        assert metadata["reward_valid"] is False
+        assert metadata["failure_cause"] is None
     verification = find_span_by_name(spans, "verification")
     assert verification["output"]["verifier_output"]["type"] == "braintrust_attachment"
 
