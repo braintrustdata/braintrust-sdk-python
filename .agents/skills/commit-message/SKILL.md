@@ -20,23 +20,21 @@ Use Conventional Commit form:
 ```text
 <type>(<scope>): <imperative summary>
 
-<optional body>
+<body>
 
-<optional footer>
+<footer(optional)>
 ```
 
 - Choose the most specific suitable type: `feat`, `fix`, `ref` (repository convention for behavior-preserving restructuring), `perf`, `test`, `docs`, `chore`, `ci`, `style`, or `revert`.
 - Add a scope only when it meaningfully narrows the change.
 - Keep the subject at 72 characters or fewer, lowercase, imperative, and without a trailing period.
-- Add a body when the subject alone does not explain the purpose or a meaningful behavior change. Keep it focused on what changed and why; wrap prose at about 100 characters.
-- Add `BREAKING CHANGE: ...` or an issue-closing footer only when the diff or conversation supports it.
-
-Use direct, specific language. Name relevant APIs, versions, errors, or files when they clarify the change. Avoid restating the diff, unsupported claims, decorative examples, and filler.
-
-For substantive changes, prefer a compact code snippet or ASCII diagram in the body when it explains behavior or data flow more clearly than prose. Keep it focused and omit it when it adds no clarity.
-
-## Output and commit execution
-
-For a message suggestion, return one copyable message in a fenced code block. Add at most one brief sentence explaining a non-obvious type or scope choice. Ask a focused question only when the intent cannot reasonably be inferred from the diff and conversation.
+- always add a body. The body must:
+  - start with a clear AI-generated notice: `> 🤖 **This text was AI-generated.**`
+  - explain the problem and the solution like you are writing docs for a user. Use simple english and link to issues/prs/docs as appropriate
+  - for both the problem and solution, try to include code snippets or ASCII diagrams that illustrates the change. ASCII diagrams should be in code snippet blocks
+  - mention limitations or next steps if applicable
+  - do not add validation or testing sections unless there is an extremely good reason to do so
+- Add `BREAKING CHANGE: ...` or an issue-closing footer only when the diff or conversation supports it. If the change is breaking, make sure to append `!` to the type, like `feat!`
+- add relevant github or linear issues to the footer if applicable
 
 Do not run `git commit` or `git commit --amend` unless the user explicitly asks you to commit. When committing a multiline message, preserve real newline characters: prefer writing the message to a temporary file and using `git commit -F <file>` (or `git commit --amend -F <file>`). Multiple `-m` flags or ANSI-C quoting are acceptable for simple cases. Never assume literal `\n` inside ordinary quotes becomes a newline. After committing, verify the stored message with `git log -1 --format=medium`.

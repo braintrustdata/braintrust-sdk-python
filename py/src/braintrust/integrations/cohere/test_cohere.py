@@ -453,6 +453,37 @@ def test_wrap_cohere_rerank_sync(memory_logger):
 
 
 @pytest.mark.vcr
+def test_wrap_cohere_rerank_relevant_spans(memory_logger):
+    client = _v2_client(require_methods=("rerank",))
+    if "relevant_spans" not in inspect.signature(client.rerank).parameters:
+        pytest.skip("Cohere rerank relevant_spans requires a newer SDK")
+    client = wrap_cohere(client)
+
+    model = "rerank-v5.0-fast"
+    documents = [
+        "Paris is the capital of France. The Eiffel Tower is a famous landmark in Paris.",
+        "Vienna is the capital of Austria. The city is known for its classical music.",
+    ]
+    relevant_spans = {"mode": "enabled", "threshold": 0.3, "max_spans": 10}
+    response = client.rerank(
+        model=model,
+        query="What is the capital of France?",
+        documents=documents,
+        top_n=2,
+        relevant_spans=relevant_spans,
+    )
+    assert any(result.relevant_spans for result in response.results)
+    assert any(result.relevant_spans is None for result in response.results)
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["context"]["span_origin"]["instrumentation"]["name"] == "cohere-auto"
+    assert span["metadata"]["relevant_spans"] == relevant_spans
+    assert span["output"] == [result.model_dump(exclude_none=True) for result in response.results]
+
+
+@pytest.mark.vcr
 def test_wrap_cohere_chat_stream_v1_sync(memory_logger):
     assert not memory_logger.pop()
     client = wrap_cohere(_v1_client())
