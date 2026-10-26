@@ -734,6 +734,12 @@ class HarborPlugin:
                 "warnings": list(machine.warnings),
             }
         }
+        # Harbor 0.25+ computes these from the trial and step error policies.
+        # Older releases must retain their existing reward conversion behavior.
+        for key in ("reward_valid", "failure_cause"):
+            value = getattr(result, key, _UNSET)
+            if value is not _UNSET:
+                metadata["harbor"][key] = value
         if error and traceback_value:
             metadata["harbor"]["exception_traceback"] = traceback_value
         return metadata
@@ -780,7 +786,12 @@ class HarborPlugin:
         error, _ = _exception(result, self.config.include_tracebacks)
         metadata = self._root_metadata(result, plan, machine)
         rewards = _rewards(result)
-        conversion = classify_rewards(rewards, self.config)
+        reward_valid = metadata["harbor"].get("reward_valid")
+        conversion = classify_rewards(rewards if reward_valid is not False else {}, self.config)
+        if rewards and reward_valid is False:
+            metadata["harbor"]["warnings"].append(
+                "rewards omitted because Harbor marked them invalid (reward_valid=False)"
+            )
         metadata["harbor"]["warnings"].extend(conversion.warnings)
         if not rewards and error is None:
             metadata["harbor"]["warnings"].append("trial has no reward and is unevaluated")
