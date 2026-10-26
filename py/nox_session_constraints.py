@@ -26,7 +26,6 @@ CONSTRAINTS = {
         "versions": {"not_latest": {"max_python_exclusive": "3.13"}},
     },
     "test_harbor": {"min_python": "3.12", "max_python_exclusive": "3.15"},  # fastuuid
-    "test_otel": {"versions": {"not_latest_below": {"version": "1.28.0", "skip_from_python": "3.14"}}},
     "test_instructor": {"max_python_exclusive": "3.15"},  # jiter 0.10
     "test_langchain": {"max_python_exclusive": "3.15"},  # ormsgpack
     "test_openrouter": {"versions": {"latest": {"max_python_exclusive": "3.15"}}},  # pydantic-core 2.41
