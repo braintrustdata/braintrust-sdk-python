@@ -240,26 +240,41 @@ async def test_openai_decisions_metrics(memory_logger, is_async):
 @pytest.mark.asyncio
 @pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "query", "body"])
 async def test_openai_decisions_iterable_input(memory_logger, is_async):
-    if not version_satisfies(openai.__version__, ">=3.26.0"):
-        pytest.skip("Decisions requires OpenAI >=3.26.0")
+    if not version_satisfies(openai.__version__, ">=3.37.0"):
+        pytest.skip("Iterable Decisions instructions require OpenAI >=3.37.0")
 
-    messages = [{"role": "user", "content": [{"type": "input_text", "text": DECISIONS_INPUT}]}]
+    instructions = [{"type": "input_text", "text": "Is the sentiment positive?"}]
+    output = [{"type": "input_text", "text": DECISIONS_INPUT}]
+    messages = [
+        {"role": "user", "content": [{"type": "input_text", "text": "Look up the customer feedback."}]},
+        {"type": "function_call", "call_id": "feedback", "name": "get_feedback", "arguments": "{}"},
+        {"type": "function_call_output", "call_id": "feedback", "output": output},
+    ]
     content = iter(messages[0]["content"])
-    request_messages = [{**messages[0], "content": content}]
+    instruction_parts = (part for part in instructions)
+    output_parts = (part for part in output)
+    questions = [{"type": "predicate", "name": "positive", "instructions": instruction_parts}]
+    request_messages = [{**messages[0], "content": content}, messages[1], {**messages[2], "output": output_parts}]
     client = wrap_openai(_client(is_async))
     response = await _call(
         is_async,
         client.decisions.create,
         model=DECISIONS_MODEL,
         input=iter(request_messages),
-        questions=DECISIONS_QUESTIONS[:1],
+        questions=iter(questions),
     )
 
+    assert request_messages[0]["content"] is content
+    assert questions[0]["instructions"] is instruction_parts
+    assert request_messages[2]["output"] is output_parts
     spans = memory_logger.pop()
     assert len(spans) == 1
-    assert request_messages[0]["content"] is content
-    assert spans[0]["input"]["state"] == messages
-    assert spans[0]["output"]["answers"] == [
+    span = spans[0]
+    assert span["input"] == {
+        "state": messages,
+        "questions": [{"id": "positive", "type": "boolean", "instructions": instructions}],
+    }
+    assert span["output"]["answers"] == [
         {"id": "positive", "type": "boolean", "probability": response.answers[0].probability}
     ]
 

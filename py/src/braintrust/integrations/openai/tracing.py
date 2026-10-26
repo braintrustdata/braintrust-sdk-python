@@ -2197,7 +2197,10 @@ def _materialize_decision_items(values: Any, nested_fields: tuple[str, ...]) -> 
 
 def _decisions_span_params(params: dict[str, Any]) -> dict[str, Any]:
     ret = params.pop("span_info", {})
-    for field, nested_fields in (("questions", ("choices", "levels")), ("input", ("content",))):
+    for field, nested_fields in (
+        ("questions", ("choices", "levels", "instructions")),
+        ("input", ("content", "output")),
+    ):
         if field in params:
             params[field] = _materialize_decision_items(params[field], nested_fields)
     return merge_dicts(
