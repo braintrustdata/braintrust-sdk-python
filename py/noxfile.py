@@ -463,9 +463,8 @@ LIVEKIT_AGENTS_VERSIONS = _get_matrix_versions("livekit-agents")
 def test_livekit_agents(session, version):
     _skip_if_incompatible(session)
     _install_test_deps(session)
-    # Install the locked plugins first so the matrix pin decides livekit-agents;
-    # 1.3.x needs its own group to keep OpenTelemetry below LogData's removal.
-    _install_group_locked(session, "test-livekit-agents-1-3" if version == "1.3.1" else "test-livekit-agents")
+    # Install the locked plugins first so the matrix pin decides livekit-agents.
+    _install_group_locked(session, "test-livekit-agents-1-8" if version == "1.8.8" else "test-livekit-agents")
     _install_matrix_dep(session, "livekit-agents", version)
     livekit_server_dir = _ensure_livekit_server(session)
     env = {
@@ -536,9 +535,8 @@ def test_autogen(session, version):
     _run_tests(session, f"{INTEGRATION_DIR}/autogen/test_autogen.py", version=version)
 
 
-# Two test suites with different version requirements:
-# 1. wrap_openai approach: works with older versions (0.1.9+)
-# 2. Direct wrapper (setup_pydantic_ai): requires 1.10.0+ for all features
+# Test both the direct integration and wrap_openai with provider versions
+# that support patched OpenTelemetry releases.
 PYDANTIC_AI_INTEGRATION_VERSIONS = _get_matrix_versions("pydantic-ai-integration")
 PYDANTIC_AI_WRAP_OPENAI_VERSIONS = _get_matrix_versions("pydantic-ai-wrap-openai")
 
@@ -548,9 +546,7 @@ PYDANTIC_AI_WRAP_OPENAI_VERSIONS = _get_matrix_versions("pydantic-ai-wrap-openai
 def test_pydantic_ai_integration(session, version):
     _skip_if_incompatible(session)
     _install_test_deps(session)
-    # Pydantic AI 1.10.0 imports opentelemetry._events, removed in opentelemetry-api 1.40.
-    constraint_group = "test-pydantic-ai-otel-events" if version == "1.10.0" else None
-    _install_matrix_dep(session, "pydantic-ai-integration", version, constraint_group)
+    _install_matrix_dep(session, "pydantic-ai-integration", version)
     _run_tests(session, f"{INTEGRATION_DIR}/pydantic_ai/test_pydantic_ai_integration.py", version=version)
 
 
@@ -567,12 +563,10 @@ def test_pydantic_ai_logfire(session, version):
 @nox.session()
 @nox.parametrize("version", PYDANTIC_AI_WRAP_OPENAI_VERSIONS, ids=PYDANTIC_AI_WRAP_OPENAI_VERSIONS)
 def test_pydantic_ai_wrap_openai(session, version):
-    """Test pydantic_ai with wrap_openai() approach - supports older versions."""
+    """Test pydantic_ai with the wrap_openai() approach."""
     _skip_if_incompatible(session)
     _install_test_deps(session)
-    # These versions import opentelemetry._events, removed in opentelemetry-api 1.40.
-    constraint_group = "test-pydantic-ai-otel-events" if version in {"0.1.9", "1.0.1"} else None
-    _install_matrix_dep(session, "pydantic-ai-wrap-openai", version, constraint_group)
+    _install_matrix_dep(session, "pydantic-ai-wrap-openai", version)
     _run_tests(session, f"{INTEGRATION_DIR}/pydantic_ai/test_pydantic_ai_wrap_openai.py", version=version)
 
 
@@ -952,7 +946,11 @@ def pylint(session):
     unlintable_integrations = set()
     for package in _VENDOR_TABLE:
         if sys.version_info[:2] < minimum_python.get(package, (3, 10)):
-            if package == "pydantic-ai-integration":
+            if package == "google-adk":
+                # ADK is installed only via its matrix pin for lint, and the
+                # latest release requires Python 3.11+.
+                unlintable_integrations.add("adk")
+            elif package == "pydantic-ai-integration":
                 # pydantic-ai-slim is not installed on Python 3.10, so pylint
                 # cannot resolve imports in this integration or its example.
                 unlintable_integrations.add("pydantic_ai")
@@ -964,6 +962,8 @@ def pylint(session):
             continue
         if package == "crewai":
             continue
+        if package == "livekit-agents":
+            _install_group_locked(session, "lint-livekit")
         _install_matrix_dep(session, package, LATEST)
 
     result = session.run("git", "ls-files", "**/*.py", silent=True, log=False)
@@ -989,6 +989,7 @@ def pylint(session):
             for f in files
             if not f.startswith(f"src/{INTEGRATION_DIR}/{integration}/")
             and f != f"src/{INTEGRATION_DIR}/auto_test_scripts/test_auto_{integration}.py"
+            and not f.startswith(f"src/{INTEGRATION_DIR}/auto_test_scripts/test_manual_wrap_{integration}_")
             and not f.startswith(f"../examples/{integration}/")
         ]
     session.run("pylint", "--errors-only", *files)

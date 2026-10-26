@@ -45,6 +45,14 @@ members = [
 [tool.uv.sources]
 braintrust = { path = "../../py", editable = true }
 
+[tool.uv]
+constraint-dependencies = [
+    "virtualenv>=21.14.9",
+    "filelock>=4.2.1; python_version>='3.11'",
+    # filelock 4.2 dropped Python 3.10; avoid introducing its vulnerable 4.1 line.
+    "filelock<4; python_version<'3.11'",
+]
+
 [dependency-groups]
 dev = [
     "build",
