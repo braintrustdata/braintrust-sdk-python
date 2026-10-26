@@ -178,6 +178,16 @@ def memory_logger():
         yield bgl
 
 
+@pytest.fixture
+def reasoning_request():
+    return {
+        "model": LATEST_MODEL,
+        "max_tokens": 2048,
+        "thinking": {"type": "enabled", "budget_tokens": 1024},
+        "messages": [{"role": "user", "content": "What is 17 * 23? Think it through, then give the number."}],
+    }
+
+
 class _ToDictOnly:
     __slots__ = ("_payload",)
 
@@ -684,16 +694,11 @@ def test_anthropic_messages_create_prompt_cache_diagnostics(memory_logger):
     ids=["create", "create_stream", "stream", "text_stream"],
 )
 async def test_anthropic_messages_reasoning_tokens_metrics(
-    memory_logger, vcr_cassette, vcr_cassette_name, mode, is_async
+    memory_logger, vcr_cassette, vcr_cassette_name, mode, is_async, reasoning_request
 ):
     assert not memory_logger.pop()
     client = wrap_anthropic(_get_async_client() if is_async else _get_client())
-    params = {
-        "model": LATEST_MODEL,
-        "max_tokens": 2048,
-        "thinking": {"type": "enabled", "budget_tokens": 1024},
-        "messages": [{"role": "user", "content": "What is 17 * 23? Think it through, then give the number."}],
-    }
+    params = reasoning_request
     events = []
     text = ""
     final_message = None
@@ -702,16 +707,22 @@ async def test_anthropic_messages_reasoning_tokens_metrics(
         response = await client.messages.create(**params) if is_async else client.messages.create(**params)
         text = "".join(block.text for block in response.content if block.type == "text")
     elif mode == "create_stream":
+        stream = (
+            await client.messages.create(**params, stream=True)
+            if is_async
+            else client.messages.create(**params, stream=True)
+        )
+        events = [event async for event in stream] if is_async else list(stream)
+        assert stream.response.status_code == 200
         if is_async:
-            stream = await client.messages.create(**params, stream=True)
-            events = [event async for event in stream]
+            await stream.close()
         else:
-            with client.messages.create(**params, stream=True) as stream:
-                events = list(stream)
+            stream.close()
     elif is_async:
         async with client.messages.stream(**params) as stream:
             if mode == "text_stream":
                 text = "".join([chunk async for chunk in stream.text_stream])
+                assert await stream.get_final_text() == text
             else:
                 events = [event async for event in stream]
             final_message = await stream.get_final_message()
@@ -719,6 +730,7 @@ async def test_anthropic_messages_reasoning_tokens_metrics(
         with client.messages.stream(**params) as stream:
             if mode == "text_stream":
                 text = "".join(stream.text_stream)
+                assert stream.get_final_text() == text
             else:
                 events = list(stream)
         final_message = stream.get_final_message()
@@ -1747,3 +1759,586 @@ class TestBatchesResultsSpans:
         span = spans[0]
         assert span["span_attributes"]["name"] == "anthropic.messages.batches.results"
         assert "results fetch failed" in span["error"]
+
+
+def _addition_tool(is_async):
+    @anthropic.beta_tool
+    def add(a: int, b: int) -> str:
+        """Add two integers.
+
+        Args:
+            a: First integer.
+            b: Second integer.
+        """
+        return str(a + b)
+
+    if is_async:
+
+        async def async_add(a: int, b: int) -> str:
+            return str(a + b)
+
+        add = anthropic.beta_async_tool(
+            async_add, name="add", description=add.description, input_schema=add.input_schema
+        )
+
+    return add
+
+
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "streaming,is_async,eager,vcr_cassette_name",
+    [
+        (
+            streaming,
+            is_async,
+            eager,
+            f"test_anthropic_tool_runner[{'stream' if streaming else 'create'}-{'async' if is_async else 'sync'}]",
+        )
+        for streaming, eager in [(False, False), (True, False), (True, True)]
+        for is_async in (False, True)
+    ],
+)
+async def test_anthropic_tool_runner(memory_logger, is_async, streaming, eager, vcr_cassette_name, monkeypatch):
+    raw_client = _get_async_client() if is_async else _get_client()
+    if not hasattr(raw_client.beta.messages, "tool_runner"):
+        pytest.skip("Tool runner is unavailable")
+
+    # Older Windows clocks can timestamp every step in a replay identically.
+    timestamp = time.time()
+    monkeypatch.setattr(time, "time", lambda: timestamp)
+
+    add = _addition_tool(is_async)
+    original_tool_call = add.call
+    client = wrap_anthropic(raw_client)
+    parent = logger.current_span()
+    runner = client.beta.messages.tool_runner(
+        model=MODEL,
+        max_tokens=256,
+        messages=[{"role": "user", "content": "Use the add tool to calculate 123 + 456. Reply with just the result."}],
+        tools=iter([add]),
+        stream=streaming,
+        max_iterations=3,
+        **({"run_tools_eagerly": True} if eager else {}),
+    )
+    replies = []
+    # Exercise iteration and until_done in both sync and async modes without
+    # repeating the whole provider matrix for each consumption API.
+    until_done = streaming != is_async and not eager
+    if until_done:
+        replies.append(await runner.until_done() if is_async else runner.until_done())
+    elif is_async:
+        async for reply in runner:
+            assert logger.current_span() is parent
+            if eager:
+                async with reply:
+                    events = reply.text_stream if replies else reply
+                    async for _ in events:
+                        assert logger.current_span() is parent
+            replies.append(await reply.get_final_message() if streaming else reply)
+    else:
+        for reply in runner:
+            assert logger.current_span() is parent
+            if eager:
+                with reply:
+                    events = reply.text_stream if replies else reply
+                    for _ in events:
+                        assert logger.current_span() is parent
+            replies.append(reply.get_final_message() if streaming else reply)
+    assert logger.current_span() is parent
+    assert add.call == original_tool_call
+    assert len(replies) == (1 if until_done else 2)
+    assert "579" in "".join(block.text for block in replies[-1].content if block.type == "text")
+    spans = memory_logger.pop()
+    assert len(spans) == 4
+    llms = find_spans_by_type(spans, SpanTypeAttribute.LLM)
+    assert len(llms) == 2
+    task = find_span_by_name(spans, "anthropic.messages.tool_runner")
+    assert task["span_attributes"]["type"] == "task"
+    assert task["output"]["role"] == "assistant"
+    assert "579" in "".join(block["text"] for block in task["output"]["content"] if block["type"] == "text")
+    assert task["metadata"]["tools"] == [add.to_dict()]
+    assert llms[0]["metadata"]["tools"] == [add.to_dict()]
+    assert llms[0]["input"] == task["input"]
+    assert task["metrics"]["end"] >= task["metrics"]["start"]
+    tools = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+    assert len(tools) == 1
+    assert tools[0]["span_attributes"]["name"] == "add"
+    assert tools[0]["input"] == {"a": 123, "b": 456}
+    assert tools[0]["output"] == "579"
+    tool_use = next(block for block in llms[0]["output"]["content"] if block["type"] == "tool_use")
+    tool_result = next(
+        block
+        for message in llms[1]["input"]
+        if isinstance(message["content"], list)
+        for block in message["content"]
+        if block["type"] == "tool_result"
+    )
+    assert tool_result["tool_use_id"] == tool_use["id"]
+    assert tool_result["content"] == "579"
+    # The memory logger preserves span creation order, including timestamp ties.
+    assert [span["span_attributes"]["type"] for span in spans] == ["task", "llm", "tool", "llm"]
+    for span in spans:
+        assert span["context"]["span_origin"]["instrumentation"]["name"] == "anthropic-auto"
+    for span in [*llms, *tools]:
+        assert span["span_parents"] == [task["span_id"]]
+        assert span["root_span_id"] == task["root_span_id"]
+        assert task["metrics"]["start"] <= span["metrics"]["start"] <= span["metrics"]["end"] <= task["metrics"]["end"]
+    for span in llms:
+        assert span["metadata"]["provider"] == "anthropic"
+        assert span["metadata"]["model"] == MODEL
+        assert span["metrics"]["prompt_tokens"] > 0
+        assert span["metrics"]["completion_tokens"] > 0
+        assert span["metrics"]["tokens"] == span["metrics"]["prompt_tokens"] + span["metrics"]["completion_tokens"]
+        assert span["output"]["role"] == "assistant"
+        if streaming:
+            assert span["metrics"]["time_to_first_token"] >= 0
+
+
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "streaming,is_async,vcr_cassette_name",
+    [
+        (
+            streaming,
+            is_async,
+            f"test_anthropic_message_thread[{'stream' if streaming else 'create'}-{'async' if is_async else 'sync'}]",
+        )
+        for streaming in (False, True)
+        for is_async in (False, True)
+    ],
+)
+async def test_anthropic_message_thread(memory_logger, is_async, streaming, vcr_cassette_name):
+    raw_client = _get_async_client() if is_async else _get_client()
+    if not hasattr(raw_client.beta.messages, "thread"):
+        pytest.skip("Message threads are unavailable")
+    client = wrap_anthropic(raw_client)
+    thread = client.beta.messages.thread(model=MODEL, max_tokens=128, system="Reply briefly.").fork()
+    replies = []
+    for prompt in ["Remember the number 579. Reply OK.", "What number did I ask you to remember?"]:
+        message = {"role": "user", "content": prompt}
+        if replies:
+            # Continue the same conversation through the runner, checking both
+            # thread entry points and their shared previous_message_id link.
+            thread.append(message)
+            runner = thread.tool_runner(stream=streaming)
+            replies.append(await runner.until_done() if is_async else runner.until_done())
+        elif streaming:
+            if is_async:
+                async with thread.stream(message) as stream:
+                    replies.append(await stream.get_final_message())
+            else:
+                with thread.stream(message) as stream:
+                    replies.append(stream.get_final_message())
+        else:
+            replies.append(await thread.send(message) if is_async else thread.send(message))
+    assert "579" in "".join(block.text for block in replies[-1].content if block.type == "text")
+    all_spans = memory_logger.pop()
+    spans = find_spans_by_type(all_spans, SpanTypeAttribute.LLM)
+    tasks = find_spans_by_type(all_spans, SpanTypeAttribute.TASK)
+    assert len(tasks) == 1
+    assert len(spans) == 2
+    assert spans[1]["span_parents"] == [tasks[0]["span_id"]]
+    assert spans[0]["metadata"]["thread"] == {"type": "create"}
+    assert spans[1]["metadata"]["thread"] == {"type": "continue", "previous_message_id": replies[0].id}
+    for span in spans:
+        assert span["metrics"]["tokens"] > 0
+        assert span["metadata"]["provider"] == "anthropic"
+        if streaming:
+            assert span["metrics"]["time_to_first_token"] >= 0
+
+
+@pytest.mark.vcr(
+    cassette_name="test_anthropic_messages_stream_reasoning_tokens_metrics",
+    match_on=["method", "scheme", "host", "port", "path", "body"],
+)
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "is_async,cleanup",
+    [
+        pytest.param(is_async, cleanup, id=f"{'async' if is_async else 'sync'}-{cleanup}")
+        for is_async in (False, True)
+        for cleanup in ("close_empty", "close_partial", "gc_empty", "gc_partial", "context_error")
+    ]
+    + [
+        pytest.param(False, "provider_error", id="sync-provider_error"),
+        pytest.param(True, "provider_cancel", id="async-provider_cancel"),
+    ],
+)
+async def test_anthropic_create_stream_lifecycle(memory_logger, is_async, cleanup, monkeypatch, reasoning_request):
+    import gc
+
+    client = wrap_anthropic(_get_async_client() if is_async else _get_client())
+    params = {**reasoning_request, "stream": True}
+    parent = logger.current_span()
+    stream = await client.messages.create(**params) if is_async else client.messages.create(**params)
+    response = stream.response
+    if cleanup.endswith("partial"):
+        if is_async:
+            async for event in stream:
+                if event.type == "content_block_delta":
+                    break
+        else:
+            for event in stream:
+                if event.type == "content_block_delta":
+                    break
+    if cleanup.startswith("gc"):
+        del stream
+        gc.collect()
+    elif cleanup == "context_error":
+        error = RuntimeError("caller failed")
+        with pytest.raises(RuntimeError) as exc:
+            if is_async:
+                async with stream:
+                    raise error
+            else:
+                with stream:
+                    raise error
+        assert exc.value is error
+    elif cleanup in {"provider_error", "provider_cancel"}:
+        import asyncio
+
+        error = (
+            asyncio.CancelledError("stream cancelled")
+            if cleanup == "provider_cancel"
+            else RuntimeError("stream interrupted")
+        )
+        if is_async:
+
+            async def fail_next(self):
+                raise error
+
+            monkeypatch.setattr(anthropic.AsyncStream, "__anext__", fail_next)
+        else:
+
+            def fail_next(self):
+                raise error
+
+            monkeypatch.setattr(anthropic.Stream, "__next__", fail_next)
+        with pytest.raises(type(error)) as exc:
+            if is_async:
+                await stream.__anext__()
+            else:
+                next(stream)
+        assert exc.value is error
+        if is_async:
+            await stream.close()
+        else:
+            stream.close()
+    else:
+        if is_async:
+            await stream.close()
+            await stream.close()
+        else:
+            stream.close()
+            stream.close()
+    assert logger.current_span() is parent
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metrics"]["end"] >= span["metrics"]["start"]
+    if cleanup.endswith("partial"):
+        assert span["output"]["role"] == "assistant"
+        assert span["metrics"]["time_to_first_token"] >= 0
+    if cleanup.endswith("error") or cleanup == "provider_cancel":
+        assert str(error) in span["error"]
+    if not cleanup.startswith("gc"):
+        assert response.is_closed
+        del stream
+        gc.collect()
+        assert not memory_logger.pop()
+
+
+@pytest.mark.vcr(
+    cassette_name="test_anthropic_messages_stream_reasoning_tokens_metrics",
+    match_on=["method", "scheme", "host", "port", "path", "body"],
+)
+@pytest.mark.asyncio
+@pytest.mark.parametrize("is_async", [False, True], ids=["sync", "async"])
+async def test_anthropic_create_stream_unknown_event(memory_logger, is_async, monkeypatch, reasoning_request):
+    if Version(anthropic.__version__) < Version("1.16.0"):
+        pytest.skip("Unknown SSE events are forwarded starting in Anthropic 1.16")
+    from anthropic._streaming import ServerSentEvent
+
+    # Unknown future events cannot be requested from the live API. Inject one
+    # at the SSE boundary, then let the real SDK parse the recorded response.
+    unknown = ServerSentEvent(event="future_event", data='{"type":"future_event"}')
+    if is_async:
+        original = anthropic.AsyncStream._iter_events
+
+        async def events(self):
+            yield unknown
+            async for event in original(self):
+                yield event
+
+        monkeypatch.setattr(anthropic.AsyncStream, "_iter_events", events)
+    else:
+        original = anthropic.Stream._iter_events
+
+        def events(self):
+            yield unknown
+            yield from original(self)
+
+        monkeypatch.setattr(anthropic.Stream, "_iter_events", events)
+    client = wrap_anthropic(_get_async_client() if is_async else _get_client())
+    params = {**reasoning_request, "stream": True}
+    stream = await client.messages.create(**params) if is_async else client.messages.create(**params)
+    events = [event async for event in stream] if is_async else list(stream)
+    assert events[0].type == "future_event"
+    assert events[-1].type == "message_stop"
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    assert spans[0]["output"]["stop_reason"] == "end_turn"
+    assert spans[0]["metrics"]["tokens"] > 0
+    assert "error" not in spans[0]
+
+
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "is_async,finish,vcr_cassette_name",
+    [
+        (
+            is_async,
+            finish,
+            f"test_anthropic_tool_runner[{'stream' if finish == 'stream_error' else 'create'}-{'async' if is_async else 'sync'}]",
+        )
+        for is_async in (False, True)
+        for finish in ("gc", "tool_error", "stream_error")
+    ],
+)
+async def test_anthropic_tool_runner_cleanup(memory_logger, is_async, vcr_cassette_name, finish, monkeypatch):
+    import gc
+
+    raw_client = _get_async_client() if is_async else _get_client()
+    if not hasattr(raw_client.beta.messages, "tool_runner"):
+        pytest.skip("Tool runner is unavailable")
+    runner = wrap_anthropic(raw_client).beta.messages.tool_runner(
+        model=MODEL,
+        max_tokens=256,
+        messages=[{"role": "user", "content": "Use the add tool to calculate 123 + 456. Reply with just the result."}],
+        tools=[_addition_tool(is_async)],
+        stream=finish == "stream_error",
+        max_iterations=3,
+        **({"run_tools_eagerly": True} if finish == "stream_error" else {}),
+    )
+    reply = await runner.__anext__() if is_async else next(runner)
+    if finish != "stream_error":
+        assert reply.stop_reason == "tool_use"
+    task = find_span_by_name(memory_logger.pop(), "anthropic.messages.tool_runner")
+    assert "end" not in task["metrics"]
+    parent = logger.current_span()
+
+    if finish == "gc":
+        del runner
+        gc.collect()
+    else:
+        from anthropic.lib.tools import _beta_runner
+
+        error = RuntimeError("tool response failed")
+        if is_async:
+
+            async def fail_response(self, *args):
+                raise error
+
+            runner_type = (
+                _beta_runner.BetaAsyncStreamingToolRunner
+                if finish == "stream_error"
+                else _beta_runner.BetaAsyncToolRunner
+            )
+        else:
+
+            def fail_response(self, *args):
+                raise error
+
+            runner_type = (
+                _beta_runner.BetaStreamingToolRunner if finish == "stream_error" else _beta_runner.BetaToolRunner
+            )
+        # Inject an unexpected SDK failure; ordinary tool errors become SDK tool_result blocks.
+        monkeypatch.setattr(
+            runner_type, "_run_tool" if finish == "stream_error" else "generate_tool_call_response", fail_response
+        )
+        with pytest.raises(RuntimeError) as exc:
+            response = reply.get_final_message() if finish == "stream_error" else runner.generate_tool_call_response()
+            if is_async:
+                await response
+        assert exc.value is error
+    # Inspect finalization before explicit close, which also ends a task.
+    updates = memory_logger.pop()
+    task_updates = [span for span in updates if span["span_id"] == task["span_id"]]
+    assert len(task_updates) == 1
+    task_update = task_updates[0]
+    assert task_update["metrics"]["end"] >= task["metrics"]["start"]
+    if finish != "gc":
+        assert "tool response failed" in task_update["error"]
+        if is_async:
+            await runner.close()
+        else:
+            runner.close()
+    assert logger.current_span() is parent
+    assert not [span for span in memory_logger.pop() if span["span_id"] == task["span_id"]]
+
+
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "is_async,vcr_cassette_name",
+    [(False, "test_anthropic_tool_runner[create-sync]"), (True, "test_anthropic_tool_runner[create-async]")],
+    ids=["sync", "async"],
+)
+async def test_anthropic_tool_runner_added_tools(memory_logger, is_async, vcr_cassette_name):
+    raw_client = _get_async_client() if is_async else _get_client()
+    if not hasattr(raw_client.beta.messages, "tool_runner"):
+        pytest.skip("Tool runner is unavailable")
+    add = _addition_tool(is_async)
+    original_call = add.call
+    runner = wrap_anthropic(raw_client).beta.messages.tool_runner(
+        model=MODEL,
+        max_tokens=256,
+        messages=[{"role": "user", "content": "Use the add tool to calculate 123 + 456. Reply with just the result."}],
+        tools=[add.to_dict()],
+        stream=False,
+        max_iterations=3,
+    )
+    parent = logger.current_span()
+    reply = await runner.__anext__() if is_async else next(runner)
+    assert reply.stop_reason == "tool_use"
+    try:
+        runner.add_tools(add)
+        result = await runner.generate_tool_call_response() if is_async else runner.generate_tool_call_response()
+    finally:
+        if is_async:
+            await runner.close()
+        else:
+            runner.close()
+    assert result["content"][0]["content"] == "579"
+    assert add.call == original_call
+    assert logger.current_span() is parent
+    spans = memory_logger.pop()
+    task = find_span_by_name(spans, "anthropic.messages.tool_runner")
+    tools = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+    assert len(tools) == 1
+    assert tools[0]["span_attributes"]["name"] == "add"
+    assert tools[0]["span_parents"] == [task["span_id"]]
+    assert tools[0]["input"] == {"a": 123, "b": 456}
+    assert tools[0]["output"] == "579"
+    assert tools[0]["context"]["span_origin"]["instrumentation"]["name"] == "anthropic-auto"
+
+
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
+@pytest.mark.asyncio
+@pytest.mark.parametrize("fail", [False, True], ids=["success", "error"])
+@pytest.mark.parametrize(
+    "is_async,vcr_cassette_name",
+    [(False, "test_anthropic_tool_runner_toolset[sync]"), (True, "test_anthropic_tool_runner_toolset[async]")],
+    ids=["sync", "async"],
+)
+async def test_anthropic_tool_runner_toolset(memory_logger, is_async, fail, vcr_cassette_name):
+    pytest.importorskip("anthropic.tools.computer")
+    from anthropic.tools import ToolError
+    from anthropic.tools.computer import BetaAbstractComputerToolset20260801, BetaAsyncAbstractComputerToolset20260801
+
+    # These SDK toolsets implement a real local wait operation; no desktop or
+    # browser driver is needed to exercise the member-execution contract.
+    if is_async:
+
+        class WaitingToolset(BetaAsyncAbstractComputerToolset20260801):
+            async def wait(self, context, input):
+                import asyncio
+
+                await asyncio.sleep(input.duration)
+                if fail:
+                    raise ToolError("wait failed")
+    else:
+
+        class WaitingToolset(BetaAbstractComputerToolset20260801):
+            def wait(self, context, input):
+                time.sleep(input.duration)
+                if fail:
+                    raise ToolError("wait failed")
+
+    toolset = WaitingToolset()
+    original_result = toolset.tool_result
+    client = wrap_anthropic(_get_async_client() if is_async else _get_client())
+    runner = client.beta.messages.tool_runner(
+        model="claude-sonnet-5",
+        max_tokens=256,
+        messages=[{"role": "user", "content": "Use the computer wait tool once to wait for 1 second."}],
+        tools=[toolset],
+        stream=is_async,
+        max_iterations=1,
+    )
+    parent = logger.current_span()
+    reply = await runner.__anext__() if is_async else next(runner)
+    if is_async:
+        reply = await reply.get_final_message()
+    assert reply.stop_reason == "tool_use"
+    tool_use = next(block for block in reply.content if block.type == "tool_use")
+    assert tool_use.name == "wait"
+    assert tool_use.toolset_name == "computer"
+    assert tool_use.input == {"duration": 1}
+    try:
+        result = await runner.generate_tool_call_response() if is_async else runner.generate_tool_call_response()
+    finally:
+        if is_async:
+            await runner.close()
+        else:
+            runner.close()
+    tool_result = result["content"][0]
+    assert bool(tool_result.get("is_error")) is fail
+    assert toolset.tool_result == original_result
+    assert logger.current_span() is parent
+    spans = memory_logger.pop()
+    task = find_span_by_name(spans, "anthropic.messages.tool_runner")
+    tools = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+    assert len(tools) == 1
+    tool = tools[0]
+    assert tool["span_attributes"]["name"] == "wait"
+    assert tool["span_parents"] == [task["span_id"]]
+    assert tool["input"] == tool_use.input
+    assert tool["output"] == tool_result["content"]
+    assert tool["metadata"] == {"provider": "anthropic", "toolset_name": "computer", "tool_use_id": tool_use.id}
+    if fail:
+        assert tool["error"] == tool["output"]
+    else:
+        assert "error" not in tool
+    assert tool["context"]["span_origin"]["instrumentation"]["name"] == "anthropic-auto"
+
+
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "is_async,vcr_cassette_name",
+    [(False, "test_anthropic_tool_runner[create-sync]"), (True, "test_anthropic_tool_runner[create-async]")],
+    ids=["sync", "async"],
+)
+async def test_anthropic_thread_updated_tools(memory_logger, is_async, vcr_cassette_name):
+    raw_client = _get_async_client() if is_async else _get_client()
+    if not hasattr(raw_client.beta.messages, "thread"):
+        pytest.skip("Message threads are unavailable")
+    client = wrap_anthropic(raw_client)
+    add = _addition_tool(is_async)
+    original_call = add.call
+    thread = client.beta.messages.thread(
+        model=MODEL,
+        max_tokens=256,
+        messages=[{"role": "user", "content": "Use the add tool to calculate 123 + 456. Reply with just the result."}],
+    )
+    # Tools belong to the thread. The SDK does not accept them on tool_runner().
+    with pytest.raises(TypeError, match="unexpected keyword argument 'tools'"):
+        thread.tool_runner(tools=[add])
+    thread.update(tools=[add])
+    runner = thread.tool_runner(max_iterations=3)
+    reply = await runner.until_done() if is_async else runner.until_done()
+    assert "579" in "".join(block.text for block in reply.content if block.type == "text")
+    assert add.call == original_call
+    spans = memory_logger.pop()
+    task = find_span_by_name(spans, "anthropic.messages.tool_runner")
+    assert task["metadata"]["tools"] == [add.to_dict()]
+    tools = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+    assert len(tools) == 1
+    assert tools[0]["span_attributes"]["name"] == "add"
+    assert tools[0]["input"] == {"a": 123, "b": 456}
+    assert tools[0]["output"] == "579"
+    assert tools[0]["span_parents"] == [task["span_id"]]

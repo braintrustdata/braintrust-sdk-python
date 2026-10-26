@@ -2,6 +2,9 @@ import inspect
 import logging
 import time
 import warnings
+from collections.abc import Iterable
+from contextlib import contextmanager
+from copy import copy
 from typing import Any
 
 from braintrust.integrations.anthropic._utils import Wrapper, _try_to_dict, extract_anthropic_usage
@@ -80,6 +83,7 @@ METADATA_PARAMS = (
     "compaction",
     "context_management",
     "diagnostics",
+    "thread",
 )
 
 
@@ -103,6 +107,8 @@ class AsyncMessages(Wrapper):
         self.__messages = messages
 
     def __getattr__(self, name: str) -> Any:
+        if name in {"tool_runner", "thread"}:
+            return _traced_messages_helper(self.__messages, name)
         if name == "parse":
             parse = getattr(self.__messages, "parse")
 
@@ -141,30 +147,22 @@ class AsyncMessages(Wrapper):
         request_start_time = time.time()
         try:
             stream = await self.__messages.create(*args, **kwargs)
-        except Exception as e:
+        except BaseException as e:
             span.log(error=e)
             span.end()
             raise
 
-        traced_stream = TracedMessageStream(stream, span, request_start_time)
-
-        async def async_stream():
-            try:
-                async for msg in traced_stream:
-                    yield msg
-            except Exception as e:
-                span.log(error=e)
-                raise
-            finally:
-                traced_stream._log_final_message()
-                span.end()
-
-        return async_stream()
+        return TracedMessageStream(stream, span, request_start_time)
 
     def stream(self, *args, **kwargs):
         span = _start_span("anthropic.messages.stream", kwargs)
         request_start_time = time.time()
-        stream = self.__messages.stream(*args, **kwargs)
+        try:
+            stream = self.__messages.stream(*args, **kwargs)
+        except BaseException as e:
+            span.log(error=e)
+            span.end()
+            raise
         return TracedMessageStreamManager(stream, span, request_start_time)
 
 
@@ -206,6 +204,8 @@ class Messages(Wrapper):
         self.__messages = messages
 
     def __getattr__(self, name: str) -> Any:
+        if name in {"tool_runner", "thread"}:
+            return _traced_messages_helper(self.__messages, name)
         if name == "parse":
             parse = getattr(self.__messages, "parse")
 
@@ -242,7 +242,14 @@ class Messages(Wrapper):
     def __trace_stream(self, stream_func, *args, **kwargs):
         span = _start_span("anthropic.messages.stream", kwargs)
         request_start_time = time.time()
-        s = stream_func(*args, **kwargs)
+        try:
+            s = stream_func(*args, **kwargs)
+        except BaseException as e:
+            span.log(error=e)
+            span.end()
+            raise
+        if kwargs.get("stream"):
+            return TracedMessageStream(s, span, request_start_time)
         return TracedMessageStreamManager(s, span, request_start_time)
 
 
@@ -680,6 +687,286 @@ class AsyncBatches(Wrapper):
             span.end()
 
 
+def _traced_messages_helper(messages, name):
+    # Preserve AttributeError on versions without these helpers.
+    getattr(messages, name)
+
+    def traced_helper(*args, **kwargs):
+        # The SDK binds the runner/thread to this resource's client. A shallow
+        # copy keeps the caller's original client and resource untouched.
+        resource = copy(messages)
+        resource._client = _wrap_anthropic(messages._client)
+        kwargs = _with_traced_tools(kwargs)
+        if isinstance(kwargs.get("messages"), Iterable):
+            # Both the SDK and the run span need to read one-shot histories.
+            kwargs = {**kwargs, "messages": list(kwargs["messages"])}
+        result = getattr(resource, name)(*args, **kwargs)
+        if name == "thread":
+            return TracedMessageThread(result)
+        return TracedToolRunner(result, kwargs)
+
+    return traced_helper
+
+
+def _with_traced_tools(kwargs):
+    if "tools" not in kwargs:
+        return kwargs
+    try:
+        tools = iter(kwargs["tools"])
+    except TypeError:
+        # SDK sentinels are not iterable. Leave them for the SDK to interpret.
+        return kwargs
+    return {**kwargs, "tools": [_trace_runnable_tool(tool) for tool in tools]}
+
+
+def _trace_runnable_tool(tool):
+    # Toolsets dispatch members through tool_result(tool_use); their call()
+    # takes (context, name, input), unlike a function tool's call(input).
+    is_toolset = callable(getattr(tool, "tool_result", None)) and isinstance(getattr(tool, "toolset_name", None), str)
+    method_name = "tool_result" if is_toolset else "call"
+    call = getattr(tool, method_name, None)
+    if not callable(call) or getattr(call, _BRAINTRUST_TRACED, False):
+        return tool
+    traced = copy(tool)
+
+    def tool_span(tool_input):
+        if is_toolset:
+            return start_span(
+                name=tool_input.name,
+                type=SpanTypeAttribute.TOOL,
+                input=_normalize_anthropic_input(tool_input.input),
+                metadata={"provider": "anthropic", "toolset_name": tool.toolset_name, "tool_use_id": tool_input.id},
+            )
+        return start_span(
+            name=tool.name, type=SpanTypeAttribute.TOOL, input=tool_input, metadata={"provider": "anthropic"}
+        )
+
+    def log_result(span, result):
+        if is_toolset:
+            output = _normalize_anthropic_input(result.get("content"))
+            span.log(output=output)
+            if result.get("is_error"):
+                span.log(error=output)
+        else:
+            span.log(output=result)
+
+    if inspect.iscoroutinefunction(call):
+
+        async def traced_call(tool_input):
+            with tool_span(tool_input) as span:
+                result = await call(tool_input)
+                log_result(span, result)
+                return result
+    else:
+
+        def traced_call(tool_input):
+            with tool_span(tool_input) as span:
+                result = call(tool_input)
+                log_result(span, result)
+                return result
+
+    setattr(traced_call, _BRAINTRUST_TRACED, True)
+    setattr(traced, method_name, traced_call)
+    return traced
+
+
+class TracedMessageThread(Wrapper):
+    def __init__(self, thread):
+        super().__init__(thread)
+        self.__thread = thread
+
+    def tool_runner(self, *args, **kwargs):
+        return TracedToolRunner(self.__thread.tool_runner(*args, **kwargs), {**self.__thread.params, **kwargs})
+
+    def update(self, *args, **kwargs):
+        return self.__thread.update(*args, **_with_traced_tools(kwargs))
+
+    def fork(self):
+        return TracedMessageThread(self.__thread.fork())
+
+
+class TracedToolRunner(Wrapper):
+    """Keep the run current only while the runner executes, never across a yield."""
+
+    def __init__(self, runner, kwargs):
+        super().__init__(runner)
+        self.__runner = runner
+        self.__kwargs = kwargs
+        self.__span = None
+        self.__finished = False
+        self.__has_items = False
+
+    def __del__(self):
+        try:
+            if self.__dict__.get("_TracedToolRunner__finished") is False:
+                self._finish()
+        except Exception:
+            log.debug("Failed to finalize Anthropic tool runner trace", exc_info=True)
+
+    @contextmanager
+    def _context(self):
+        if self.__span is None:
+            self.__span = start_span(
+                name="anthropic.messages.tool_runner",
+                type=SpanTypeAttribute.TASK,
+                input=_get_input_from_kwargs(self.__kwargs),
+                metadata=_get_metadata_from_kwargs(self.__kwargs),
+            )
+        self.__span.set_current()
+        try:
+            yield
+        except BaseException as e:
+            self._finish(error=e)
+            raise
+        finally:
+            self.__span.unset_current()
+
+    def _finish(self, result=None, error=None):
+        if self.__finished or self.__span is None:
+            return
+        self.__finished = True
+        if result is not None:
+            self.__span.log(output=_message_output(result, include_parsed_output=True))
+        if error is not None:
+            self.__span.log(error=error)
+        self.__span.end()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        with self._context():
+            try:
+                item = next(self.__runner)
+                self.__has_items = True
+                return TracedToolRunnerStream(item, self._context) if self.__kwargs.get("stream") else item
+            except StopIteration:
+                self._finish(self.__runner.until_done() if self.__has_items else None)
+                raise
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        with self._context():
+            try:
+                item = await self.__runner.__anext__()
+                self.__has_items = True
+                return TracedToolRunnerStream(item, self._context) if self.__kwargs.get("stream") else item
+            except StopAsyncIteration:
+                self._finish(await self.__runner.until_done() if self.__has_items else None)
+                raise
+
+    def until_done(self):
+        if inspect.iscoroutinefunction(self.__runner.until_done):
+            return self.__async_until_done()
+        with self._context():
+            result = self.__runner.until_done()
+            self._finish(result)
+            return result
+
+    async def __async_until_done(self):
+        with self._context():
+            result = await self.__runner.until_done()
+            self._finish(result)
+            return result
+
+    def add_tools(self, *tools):
+        return self.__runner.add_tools(*(_trace_runnable_tool(tool) for tool in tools))
+
+    def generate_tool_call_response(self):
+        if inspect.iscoroutinefunction(self.__runner.generate_tool_call_response):
+            return self.__async_tool_response()
+        with self._context():
+            return self.__runner.generate_tool_call_response()
+
+    async def __async_tool_response(self):
+        with self._context():
+            return await self.__runner.generate_tool_call_response()
+
+    def close(self):
+        if inspect.iscoroutinefunction(self.__runner.close):
+            return self.__async_close()
+        try:
+            return self.__runner.close()
+        finally:
+            self._finish()
+
+    async def __async_close(self):
+        try:
+            return await self.__runner.close()
+        finally:
+            self._finish()
+
+
+class TracedToolRunnerStream(Wrapper):
+    """Scope eager tool execution to its task without leaking context across events."""
+
+    def __init__(self, stream, context):
+        super().__init__(stream)
+        self.__stream = stream
+        self.__context = context
+
+    def __getattr__(self, name):
+        value = super().__getattr__(name)
+        if name == "text_stream":
+            return TracedToolRunnerStream(value, self.__context)
+        if name not in ("get_final_message", "get_final_text", "until_done", "close"):
+            return value
+
+        def scoped_call(*args, **kwargs):
+            with self.__context():
+                result = value(*args, **kwargs)
+            # TracedMessageStream's regular methods can return awaitables too.
+            return self.__await_result(result) if inspect.isawaitable(result) else result
+
+        return scoped_call
+
+    async def __await_result(self, result):
+        with self.__context():
+            return await result
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        with self.__context():
+            try:
+                return next(self.__stream)
+            except StopIteration:
+                pass
+        raise StopIteration
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        with self.__context():
+            try:
+                return await self.__stream.__anext__()
+            except StopAsyncIteration:
+                pass
+        raise StopAsyncIteration
+
+    def __enter__(self):
+        with self.__context():
+            self.__stream.__enter__()
+        return self
+
+    def __exit__(self, *args):
+        with self.__context():
+            return self.__stream.__exit__(*args)
+
+    async def __aenter__(self):
+        with self.__context():
+            await self.__stream.__aenter__()
+        return self
+
+    async def __aexit__(self, *args):
+        with self.__context():
+            return await self.__stream.__aexit__(*args)
+
+
 class TracedMessageStreamManager(Wrapper):
     def __init__(self, msg_stream_mgr, span, request_start_time: float):
         super().__init__(msg_stream_mgr)
@@ -689,18 +976,28 @@ class TracedMessageStreamManager(Wrapper):
         self.__request_start_time = request_start_time
 
     async def __aenter__(self):
-        ms = await self.__msg_stream_mgr.__aenter__()
+        try:
+            ms = await self.__msg_stream_mgr.__aenter__()
+        except BaseException as e:
+            self.__span.log(error=e)
+            self.__span.end()
+            raise
         self.__traced_message_stream = TracedMessageStream(ms, self.__span, self.__request_start_time)
         return self.__traced_message_stream
 
     def __enter__(self):
-        ms = self.__msg_stream_mgr.__enter__()
+        try:
+            ms = self.__msg_stream_mgr.__enter__()
+        except BaseException as e:
+            self.__span.log(error=e)
+            self.__span.end()
+            raise
         self.__traced_message_stream = TracedMessageStream(ms, self.__span, self.__request_start_time)
         return self.__traced_message_stream
 
-    def __aexit__(self, exc_type, exc_value, traceback):
+    async def __aexit__(self, exc_type, exc_value, traceback):
         try:
-            return self.__msg_stream_mgr.__aexit__(exc_type, exc_value, traceback)
+            return await self.__msg_stream_mgr.__aexit__(exc_type, exc_value, traceback)
         finally:
             self.__close(exc_type, exc_value, traceback)
 
@@ -712,10 +1009,10 @@ class TracedMessageStreamManager(Wrapper):
 
     def __close(self, exc_type, exc_value, traceback):
         tms = self.__traced_message_stream
-        tms._log_final_message()
-        if exc_type:
-            log_exc_info_to_span(self.__span, exc_type, exc_value, traceback)
-        self.__span.end()
+        if tms is not None:
+            tms._finish(exc_info=(exc_type, exc_value, traceback) if exc_type else None)
+        else:
+            self.__span.end()
 
 
 class TracedMessageStream(Wrapper):
@@ -733,6 +1030,14 @@ class TracedMessageStream(Wrapper):
         self.__snapshot = None
         self.__request_start_time = request_start_time
         self.__time_to_first_token: float | None = None
+        self.__finished = False
+
+    def __del__(self):
+        try:
+            if self.__dict__.get("_TracedMessageStream__finished") is False:
+                self._finish()
+        except Exception:
+            log.debug("Failed to finalize Anthropic stream trace", exc_info=True)
 
     def _log_final_message(self):
         if self.__snapshot:
@@ -746,6 +1051,15 @@ class TracedMessageStream(Wrapper):
     def __await__(self):
         return self.__msg_stream.__await__()
 
+    @property
+    def _iterator(self):
+        return self.__msg_stream._iterator
+
+    @_iterator.setter
+    def _iterator(self, value):
+        # Anthropic 1.x installs its eager tool hook on the returned stream.
+        self.__msg_stream._iterator = value
+
     def __aiter__(self):
         return self
 
@@ -753,14 +1067,103 @@ class TracedMessageStream(Wrapper):
         return self
 
     async def __anext__(self):
-        m = await self.__msg_stream.__anext__()
+        try:
+            m = await self.__msg_stream.__anext__()
+        except StopAsyncIteration:
+            self._finish()
+            raise
+        except BaseException as e:
+            self._finish(e)
+            raise
         self.__process_message(m)
         return m
 
     def __next__(self):
-        m = next(self.__msg_stream)
+        try:
+            m = next(self.__msg_stream)
+        except StopIteration:
+            self._finish()
+            raise
+        except BaseException as e:
+            self._finish(e)
+            raise
         self.__process_message(m)
         return m
+
+    def _finish(self, error=None, exc_info=None):
+        if self.__finished:
+            return
+        self.__finished = True
+        self._log_final_message()
+        if error is not None:
+            self.__span.log(error=error)
+        elif exc_info is not None:
+            log_exc_info_to_span(self.__span, *exc_info)
+        self.__span.end()
+
+    def close(self):
+        if inspect.iscoroutinefunction(self.__msg_stream.close):
+            return self.__async_close()
+        try:
+            return self.__msg_stream.close()
+        finally:
+            self._finish()
+
+    async def __async_close(self):
+        try:
+            return await self.__msg_stream.close()
+        finally:
+            self._finish()
+
+    def __enter__(self):
+        self.__msg_stream.__enter__()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        try:
+            return self.__msg_stream.__exit__(exc_type, exc_value, traceback)
+        finally:
+            self._finish(exc_info=(exc_type, exc_value, traceback) if exc_type else None)
+
+    async def __aenter__(self):
+        await self.__msg_stream.__aenter__()
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        try:
+            return await self.__msg_stream.__aexit__(exc_type, exc_value, traceback)
+        finally:
+            self._finish(exc_info=(exc_type, exc_value, traceback) if exc_type else None)
+
+    def get_final_message(self):
+        if hasattr(self.__msg_stream, "__aiter__"):
+            return self.__async_final_message()
+        self.until_done()
+        return self.__msg_stream.get_final_message()
+
+    async def __async_final_message(self):
+        await self.__async_until_done()
+        return await self.__msg_stream.get_final_message()
+
+    def get_final_text(self):
+        if hasattr(self.__msg_stream, "__aiter__"):
+            return self.__async_final_text()
+        self.until_done()
+        return self.__msg_stream.get_final_text()
+
+    async def __async_final_text(self):
+        await self.__async_until_done()
+        return await self.__msg_stream.get_final_text()
+
+    def until_done(self):
+        if hasattr(self.__msg_stream, "__aiter__"):
+            return self.__async_until_done()
+        for _ in self:
+            pass
+
+    async def __async_until_done(self):
+        async for _ in self:
+            pass
 
     @property
     def text_stream(self):
@@ -783,8 +1186,34 @@ class TracedMessageStream(Wrapper):
                     yield getattr(delta, "text", "")
 
     def __process_message(self, m):
-        if self.__time_to_first_token is None:
-            self.__time_to_first_token = time.time() - self.__request_start_time
+        # The SDK forwards unknown SSE events and also synthesizes helper events.
+        # Its accumulator requires message_start before any other recognized event.
+        if getattr(m, "type", None) not in {
+            "message_start",
+            "message_delta",
+            "message_stop",
+            "content_block_start",
+            "content_block_delta",
+            "content_block_stop",
+        }:
+            return
+        if self.__time_to_first_token is None and m.type in {"content_block_start", "content_block_delta"}:
+            # Header/usage events do not contain model output. Empty block
+            # starts are followed by deltas carrying text, thinking, or input.
+            block = getattr(m, "content_block", None)
+            delta = getattr(m, "delta", None)
+            if (
+                delta is not None
+                and any(getattr(delta, key, None) for key in ("text", "thinking", "partial_json", "citation", "input"))
+            ) or (
+                block is not None
+                and (
+                    getattr(block, "text", None)
+                    or getattr(block, "thinking", None)
+                    or getattr(block, "type", None) not in {"text", "thinking"}
+                )
+            ):
+                self.__time_to_first_token = time.time() - self.__request_start_time
 
         if BetaRawMessageStartEvent is not None and isinstance(m, BetaRawMessageStartEvent):
             # The regular accumulator does not recognize beta MCP input deltas.
@@ -1334,6 +1763,10 @@ def _get_input_from_kwargs(kwargs):
 
 
 def _metadata_value_from_kwargs(key: str, value: Any) -> Any:
+    if key == "tools" and isinstance(value, (list, tuple)):
+        return [tool.to_dict() if callable(getattr(tool, "to_dict", None)) else tool for tool in value]
+    if key == "thread" and isinstance(value, dict):
+        return {k: value[k] for k in ("type", "previous_message_id") if k in value}
     if key == "output_format" and isinstance(value, type):
         return f"{value.__module__}.{value.__qualname__}"
     return value
@@ -1344,7 +1777,10 @@ def _get_metadata_from_kwargs(kwargs):
     for k in METADATA_PARAMS:
         v = kwargs.get(k, None)
         if v is not None:
-            metadata[k] = _metadata_value_from_kwargs(k, v)
+            value = _metadata_value_from_kwargs(k, v)
+            if k == "tools" and not value:
+                continue
+            metadata[k] = value
     return metadata
 
 
