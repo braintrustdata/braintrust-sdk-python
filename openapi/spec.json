@@ -920,7 +920,7 @@
             "type": "string",
             "nullable": true,
             "minLength": 1,
-            "description": "Create the project within the named project group in this organization. Requires project_group:update and either project_group_projects:create on the group or org_project:create on the organization."
+            "description": "Create the project within the named project group in this organization. Requires project_group:update on the group's definition."
           }
         },
         "required": [
@@ -5355,7 +5355,7 @@
               "type": "string",
               "format": "uuid"
             },
-            "description": "Sorted ids of active projects in this project group"
+            "description": "Sorted ids of active projects in this project group. Modifying membership requires project_group:update on the group."
           }
         },
         "required": [
@@ -5364,7 +5364,7 @@
           "name",
           "member_projects"
         ],
-        "description": "A project group is a collection of projects which can inherit access from project-group ACLs"
+        "description": "A project group is a collection of projects which inherit access from project_group_projects ACLs. The group's definition and membership are governed separately by project_group ACLs."
       },
       "CreateProjectGroup": {
         "type": "object",
@@ -5839,12 +5839,17 @@
             "nullable": true,
             "enum": [
               "patterns",
+              "dashboard",
               null
             ],
             "description": "The product surface that created and manages the automation"
           },
           "status": {
             "$ref": "#/components/schemas/AutomationStatus"
+          },
+          "continuous": {
+            "type": "boolean",
+            "description": "Between scheduled runs, check for accumulated new work. The executor decides how to process it."
           },
           "threshold": {
             "type": "object",
@@ -6102,6 +6107,36 @@
                   "xhigh",
                   "max"
                 ]
+              },
+              "target": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "dashboard"
+                    ]
+                  },
+                  "id": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "overview"
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "type",
+                  "id"
+                ],
+                "description": "The object this automation writes to or maintains"
               }
             },
             "required": [
