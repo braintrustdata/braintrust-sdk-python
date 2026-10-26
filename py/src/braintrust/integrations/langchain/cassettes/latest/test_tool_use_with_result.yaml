@@ -35,16 +35,16 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.6
+      - 3.14.7
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EH9eueZxwwGOmPzZPQDD5uKpvmJIg\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1787757412,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EdE9TcqRVNtHGJwxGxo9B3CGmNwZg\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1793017899,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
-        \           \"id\": \"call_Tun9R9TNSMJQxBrOmojOtPco\",\n            \"type\":
+        \           \"id\": \"call_wKSoTwhJCWxAXfQz0x2ZkbCZ\",\n            \"type\":
         \"function\",\n            \"function\": {\n              \"name\": \"calculate\",\n
         \             \"arguments\": \"{\\\"operation\\\":\\\"multiply\\\",\\\"a\\\":127,\\\"b\\\":49}\"\n
         \           }\n          }\n        ],\n        \"refusal\": null,\n        \"annotations\":
@@ -54,7 +54,7 @@ interactions:
         0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_dc34d11855\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_e9e83bb9dc\"\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -65,7 +65,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a313ccd49bd8b5e5-YYZ
+      - a5097aafca7cac6c-YYZ
       connection:
       - keep-alive
       content-length:
@@ -73,218 +73,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Wed, 26 Aug 2026 15:16:53 GMT
+      - Mon, 26 Oct 2026 12:31:40 GMT
       openai-processing-ms:
-      - '487'
-      openai-version:
-      - '2020-10-01'
-      server:
-      - cloudflare
-      strict-transport-security:
-      - max-age=31536000; includeSubDomains; preload
-      transfer-encoding:
-      - chunked
-      x-content-type-options:
-      - nosniff
-      x-openai-proxy-wasm:
-      - v0.1
-      x-ratelimit-limit-requests:
-      - '30000'
-      x-ratelimit-limit-tokens:
-      - '150000000'
-      x-ratelimit-remaining-requests:
-      - '29999'
-      x-ratelimit-remaining-tokens:
-      - '149999990'
-      x-ratelimit-reset-requests:
-      - 2ms
-      x-ratelimit-reset-tokens:
-      - 0s
-      x-request-id:
-      - req_f138c061ce7642b09bc5dbb160da93bc
-    status:
-      code: 200
-      message: OK
-- request:
-    body: '{"messages":[{"content":"What is 127 multiplied by 49?","role":"user"},{"content":null,"role":"assistant","tool_calls":[{"type":"function","id":"call_Tun9R9TNSMJQxBrOmojOtPco","function":{"name":"calculate","arguments":"{\"operation\":
-      \"multiply\", \"a\": 127, \"b\": 49}"}}]},{"content":"6223","role":"tool","tool_call_id":"call_Tun9R9TNSMJQxBrOmojOtPco"}],"model":"gpt-4o-mini","stream":false,"tools":[{"type":"function","function":{"name":"calculate","description":"Perform
-      a mathematical calculation.\n\nArgs:\n    operation: The mathematical operation
-      (add, subtract, multiply, divide)\n    a: First number\n    b: Second number","parameters":{"properties":{"operation":{"type":"string"},"a":{"type":"number"},"b":{"type":"number"}},"required":["operation","a","b"],"type":"object"}}}]}'
-    headers:
-      accept:
-      - application/json
-      accept-encoding:
-      - gzip, deflate, zstd
-      connection:
-      - keep-alive
-      content-length:
-      - '792'
-      content-type:
-      - application/json
-      host:
-      - api.openai.com
-      user-agent:
-      - OpenAI/Python 2.32.0
-      x-stainless-arch:
-      - arm64
-      x-stainless-async:
-      - 'false'
-      x-stainless-lang:
-      - python
-      x-stainless-os:
-      - MacOS
-      x-stainless-package-version:
-      - 2.32.0
-      x-stainless-raw-response:
-      - 'true'
-      x-stainless-retry-count:
-      - '0'
-      x-stainless-runtime:
-      - CPython
-      x-stainless-runtime-version:
-      - 3.14.6
-    method: POST
-    uri: https://api.openai.com/v1/chat/completions
-  response:
-    body:
-      string: "{\n  \"id\": \"chatcmpl-EH9evpPwdk3HlkMcrpnhDiZQ5pDiE\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1787757413,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
-        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"127 multiplied by 49 is 6223.\",\n
-        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
-        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        115,\n    \"completion_tokens\": 11,\n    \"total_tokens\": 126,\n    \"prompt_tokens_details\":
-        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_dc34d11855\"\n}\n"
-    headers:
-      access-control-expose-headers:
-      - X-Request-ID
-      - CF-Ray
-      - CF-Ray
-      alt-svc:
-      - h3=":443"; ma=86400
-      cf-cache-status:
-      - DYNAMIC
-      cf-ray:
-      - a313ccd8a85bb5e5-YYZ
-      connection:
-      - keep-alive
-      content-length:
-      - '838'
-      content-type:
-      - application/json
-      date:
-      - Wed, 26 Aug 2026 15:16:53 GMT
-      openai-processing-ms:
-      - '353'
-      openai-version:
-      - '2020-10-01'
-      server:
-      - cloudflare
-      strict-transport-security:
-      - max-age=31536000; includeSubDomains; preload
-      transfer-encoding:
-      - chunked
-      x-content-type-options:
-      - nosniff
-      x-openai-proxy-wasm:
-      - v0.1
-      x-ratelimit-limit-requests:
-      - '30000'
-      x-ratelimit-limit-tokens:
-      - '150000000'
-      x-ratelimit-remaining-requests:
-      - '29999'
-      x-ratelimit-remaining-tokens:
-      - '149999987'
-      x-ratelimit-reset-requests:
-      - 2ms
-      x-ratelimit-reset-tokens:
-      - 0s
-      x-request-id:
-      - req_abbe4be2896f45e89ecc415bab1bde55
-    status:
-      code: 200
-      message: OK
-- request:
-    body: '{"messages":[{"content":"What is 127 multiplied by 49?","role":"user"}],"model":"gpt-4o-mini","stream":false,"tools":[{"type":"function","function":{"name":"calculate","description":"Perform
-      a mathematical calculation.\n\nArgs:\n    operation: The mathematical operation
-      (add, subtract, multiply, divide)\n    a: First number\n    b: Second number","parameters":{"properties":{"operation":{"type":"string"},"a":{"type":"number"},"b":{"type":"number"}},"required":["operation","a","b"],"type":"object"}}}]}'
-    headers:
-      accept:
-      - application/json
-      accept-encoding:
-      - gzip, deflate, zstd
-      connection:
-      - keep-alive
-      content-length:
-      - '505'
-      content-type:
-      - application/json
-      host:
-      - api.openai.com
-      user-agent:
-      - OpenAI/Python 2.32.0
-      x-stainless-arch:
-      - arm64
-      x-stainless-async:
-      - 'false'
-      x-stainless-lang:
-      - python
-      x-stainless-os:
-      - MacOS
-      x-stainless-package-version:
-      - 2.32.0
-      x-stainless-raw-response:
-      - 'true'
-      x-stainless-retry-count:
-      - '0'
-      x-stainless-runtime:
-      - CPython
-      x-stainless-runtime-version:
-      - 3.14.6
-    method: POST
-    uri: https://api.openai.com/v1/chat/completions
-  response:
-    body:
-      string: "{\n  \"id\": \"chatcmpl-EH9h5e1Qx46y6pkt6lGVwvhypERj7\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1787757547,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
-        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
-        \           \"id\": \"call_WvbgaJXxt3XlSGWaLsvaGs5q\",\n            \"type\":
-        \"function\",\n            \"function\": {\n              \"name\": \"calculate\",\n
-        \             \"arguments\": \"{\\\"operation\\\":\\\"multiply\\\",\\\"a\\\":127,\\\"b\\\":49}\"\n
-        \           }\n          }\n        ],\n        \"refusal\": null,\n        \"annotations\":
-        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"tool_calls\"\n
-        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 85,\n    \"completion_tokens\":
-        21,\n    \"total_tokens\": 106,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
-        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_dc34d11855\"\n}\n"
-    headers:
-      access-control-expose-headers:
-      - X-Request-ID
-      - CF-Ray
-      - CF-Ray
-      alt-svc:
-      - h3=":443"; ma=86400
-      cf-cache-status:
-      - DYNAMIC
-      cf-ray:
-      - a313d0201ff6aaad-YYZ
-      connection:
-      - keep-alive
-      content-length:
-      - '1110'
-      content-type:
-      - application/json
-      date:
-      - Wed, 26 Aug 2026 15:19:08 GMT
-      openai-processing-ms:
-      - '1091'
+      - '675'
       openai-version:
       - '2020-10-01'
       server:
@@ -310,13 +101,13 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_28c77fb66bf343069b293a9dce54e0e3
+      - req_5aca7bc976f949cc91bf5f6d94a7ca18
     status:
       code: 200
       message: OK
 - request:
-    body: '{"messages":[{"content":"What is 127 multiplied by 49?","role":"user"},{"content":null,"role":"assistant","tool_calls":[{"type":"function","id":"call_WvbgaJXxt3XlSGWaLsvaGs5q","function":{"name":"calculate","arguments":"{\"operation\":
-      \"multiply\", \"a\": 127, \"b\": 49}"}}]},{"content":"6223","role":"tool","tool_call_id":"call_WvbgaJXxt3XlSGWaLsvaGs5q"}],"model":"gpt-4o-mini","stream":false,"tools":[{"type":"function","function":{"name":"calculate","description":"Perform
+    body: '{"messages":[{"content":"What is 127 multiplied by 49?","role":"user"},{"content":null,"role":"assistant","tool_calls":[{"type":"function","id":"call_wKSoTwhJCWxAXfQz0x2ZkbCZ","function":{"name":"calculate","arguments":"{\"operation\":
+      \"multiply\", \"a\": 127, \"b\": 49}"}}]},{"content":"6223","role":"tool","tool_call_id":"call_wKSoTwhJCWxAXfQz0x2ZkbCZ"}],"model":"gpt-4o-mini","stream":false,"tools":[{"type":"function","function":{"name":"calculate","description":"Perform
       a mathematical calculation.\n\nArgs:\n    operation: The mathematical operation
       (add, subtract, multiply, divide)\n    a: First number\n    b: Second number","parameters":{"properties":{"operation":{"type":"string"},"a":{"type":"number"},"b":{"type":"number"}},"required":["operation","a","b"],"type":"object"}}}]}'
     headers:
@@ -351,13 +142,13 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.6
+      - 3.14.7
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EH9h7H1Tm17iSq4cfNMF5m2Pa3Hcv\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1787757549,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EdE9U5vc6cn4KCokUuo4S781FZbHy\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1793017900,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"127 multiplied by 49 is 6223.\",\n
         \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
@@ -366,7 +157,7 @@ interactions:
         {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_dc34d11855\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_e9e83bb9dc\"\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -377,7 +168,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a313d0283e8eaaad-YYZ
+      - a5097ab4cf2eac6c-YYZ
       connection:
       - keep-alive
       content-length:
@@ -385,9 +176,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Wed, 26 Aug 2026 15:19:09 GMT
+      - Mon, 26 Oct 2026 12:31:40 GMT
       openai-processing-ms:
-      - '743'
+      - '514'
       openai-version:
       - '2020-10-01'
       server:
@@ -413,7 +204,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_49179cc6687b4db3a6a980c6ea0683c2
+      - req_a9ce8fae3a3844e3bad70286a575bdec
     status:
       code: 200
       message: OK

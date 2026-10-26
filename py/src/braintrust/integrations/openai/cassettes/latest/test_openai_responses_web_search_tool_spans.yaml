@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 3.35.1
+      - OpenAI/Python 3.37.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.35.1
+      - 3.37.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,34 +39,44 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_02ff693aa61aaf2b006ad64fda79dc87d0ad886b49bc976a9b\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1792430042,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0ddf878d2ae7222d016adf480d5c0c87d1b244194a61479a63\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1793017869,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1792430044,\n  \"error\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1793017871,\n  \"error\":
         null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4.1-mini-2025-04-14\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"ws_02ff693aa61aaf2b006ad64fdaa77487d0a54ab05018bf7544\",\n
+        \     \"id\": \"ws_0ddf878d2ae7222d016adf480da1b487d18c58360b53dd894c\",\n
         \     \"type\": \"web_search_call\",\n      \"status\": \"completed\",\n      \"action\":
         {\n        \"type\": \"search\",\n        \"queries\": [\n          \"Search
         the web for the current weather in Paris and answer in one sentence.\"\n        ],\n
         \       \"query\": \"Search the web for the current weather in Paris and answer
-        in one sentence.\"\n      }\n    },\n    {\n      \"id\": \"msg_02ff693aa61aaf2b006ad64fdc138c87d090ca34a9d65eace9\",\n
+        in one sentence.\"\n      }\n    },\n    {\n      \"id\": \"msg_0ddf878d2ae7222d016adf480e9ec087d19c471efd68027176\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [\n            {\n              \"type\": \"url_citation\",\n              \"end_index\":
-        265,\n              \"start_index\": 178,\n              \"title\": \"Weather
-        for Paris, Paris, France\",\n              \"url\": \"https://www.timeanddate.com/weather/france/paris?utm_source=openai\"\n
-        \           }\n          ],\n          \"logprobs\": [],\n          \"text\":
-        \"As of 7:14\\u202fPM on October 19, 2026, in Paris, France, the current weather
-        is overcast with a temperature of 52\\u00b0F (11\\u00b0C), a \\\"feels like\\\"
-        temperature of 49\\u00b0F (9\\u00b0C), and light rain. ([timeanddate.com](https://www.timeanddate.com/weather/france/paris?utm_source=openai))
+        [],\n          \"logprobs\": [],\n          \"text\": \"As of 2:31\\u202fPM
+        on Monday, October 26, 2026, in Paris, France, the weather is light rain with
+        a temperature of 55\\u00b0F (13\\u00b0C).\\n\\n## Weather for Paris, Paris,
+        France:\\nCurrent Conditions: Light rain, 55\\u00b0F (13\\u00b0C)\\n\\nDaily
+        Forecast:\\n* Monday, October 26: Low: 54\\u00b0F (12\\u00b0C), High: 57\\u00b0F
+        (14\\u00b0C), Description: Cloudy most of the time; showers this morning followed
+        by a shower in spots this afternoon\\n* Tuesday, October 27: Low: 44\\u00b0F
+        (7\\u00b0C), High: 64\\u00b0F (18\\u00b0C), Description: Some sun, then turning
+        cloudy with occasional rain in the afternoon\\n* Wednesday, October 28: Low:
+        43\\u00b0F (6\\u00b0C), High: 61\\u00b0F (16\\u00b0C), Description: Mostly
+        cloudy\\n* Thursday, October 29: Low: 43\\u00b0F (6\\u00b0C), High: 62\\u00b0F
+        (17\\u00b0C), Description: Sunny to partly cloudy and nice\\n* Friday, October
+        30: Low: 42\\u00b0F (6\\u00b0C), High: 62\\u00b0F (16\\u00b0C), Description:
+        Partly sunny and pleasant\\n* Saturday, October 31: Low: 40\\u00b0F (5\\u00b0C),
+        High: 58\\u00b0F (14\\u00b0C), Description: Cloudy in the morning followed
+        by high thin cloudiness in the afternoon\\n* Sunday, November 1: Low: 41\\u00b0F
+        (5\\u00b0C), High: 55\\u00b0F (13\\u00b0C), Description: Mostly cloudy\\n
         \"\n        }\n      ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
         true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
         null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
         \   \"context\": null,\n    \"effort\": null,\n    \"summary\": null\n  },\n
         \ \"safety_identifier\": null,\n  \"service_tier\": \"auto\",\n  \"store\":
-        true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
+        false,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
         \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
         {\n    \"type\": \"web_search_preview\"\n  },\n  \"tool_usage\": {\n    \"image_gen\":
         {\n      \"input_tokens\": 0,\n      \"input_tokens_details\": {\n        \"image_tokens\":
@@ -80,12 +90,12 @@ interactions:
         \   }\n  ],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
         \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 323,\n    \"input_tokens_details\":
         {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 83,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 406\n  },\n  \"user\": null,\n  \"metadata\":
+        \   \"output_tokens\": 321,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        0\n    },\n    \"total_tokens\": 644\n  },\n  \"user\": null,\n  \"metadata\":
         {}\n}"
     headers:
       access-control-expose-headers:
-      - X-Request-ID
+      - X-Request-ID, Server-Timing-Total
       - CF-Ray
       - CF-Ray
       alt-svc:
@@ -93,17 +103,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a4d16ab4eb77eb34-SJC
+      - a50979f2fcfeec72-YYZ
       connection:
       - keep-alive
       content-length:
-      - '3328'
+      - '3968'
       content-type:
       - application/json
       date:
-      - Mon, 19 Oct 2026 17:14:05 GMT
+      - Mon, 26 Oct 2026 12:31:11 GMT
       openai-processing-ms:
-      - '2577'
+      - '1842'
       openai-version:
       - '2020-10-01'
       server:
@@ -115,7 +125,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-id:
-      - req_fcb9b89868a141fa80a5f4bad8d7dba2
+      - req_eb137f1b170749a3a44bd867a531684d
     status:
       code: 200
       message: OK

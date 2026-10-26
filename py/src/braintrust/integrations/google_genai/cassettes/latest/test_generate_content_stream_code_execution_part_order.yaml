@@ -18,43 +18,44 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.31.0 gl-python/3.14.7
+      - google-genai-sdk/2.33.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/2.31.0 gl-python/3.14.7
+      - google-genai-sdk/2.33.0 gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse
   response:
     body:
-      string: "data: {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"Here
-        is the calculation:\\n\\n\"}],\"role\": \"model\"},\"index\": 0}],\"usageMetadata\":
-        {\"promptTokenCount\": 34,\"candidatesTokenCount\": 5,\"totalTokenCount\":
-        77,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\": 34}],\"thoughtsTokenCount\":
-        38,\"serviceTier\": \"standard\"},\"modelVersion\": \"gemini-2.5-flash\",\"responseId\":
-        \"G1DWasCSEP6k_uMPxrHCwAg\"}\r\n\r\ndata: {\"candidates\": [{\"content\":
-        {\"parts\": [{\"executableCode\": {\"language\": \"PYTHON\",\"code\": \"print(17
-        * 19)\\n\"}}],\"role\": \"model\"},\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\":
-        34,\"candidatesTokenCount\": 14,\"totalTokenCount\": 86,\"promptTokensDetails\":
-        [{\"modality\": \"TEXT\",\"tokenCount\": 34}],\"thoughtsTokenCount\": 38,\"serviceTier\":
-        \"standard\"},\"modelVersion\": \"gemini-2.5-flash\",\"responseId\": \"G1DWasCSEP6k_uMPxrHCwAg\"}\r\n\r\ndata:
+      string: "data: {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"Let's
+        calculate the product of 17 and 19.\\n\\n\"}],\"role\": \"model\"},\"index\":
+        0}],\"usageMetadata\": {\"promptTokenCount\": 34,\"candidatesTokenCount\":
+        15,\"totalTokenCount\": 118,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
+        34}],\"thoughtsTokenCount\": 69,\"serviceTier\": \"standard\"},\"modelVersion\":
+        \"gemini-2.5-flash\",\"responseId\": \"BkjfarC7MKSOytMPuba7kQc\"}\r\n\r\ndata:
+        {\"candidates\": [{\"content\": {\"parts\": [{\"executableCode\": {\"language\":
+        \"PYTHON\",\"code\": \"print(17 * 19)\\n\"}}],\"role\": \"model\"},\"index\":
+        0}],\"usageMetadata\": {\"promptTokenCount\": 34,\"candidatesTokenCount\":
+        24,\"totalTokenCount\": 127,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
+        34}],\"thoughtsTokenCount\": 69,\"serviceTier\": \"standard\"},\"modelVersion\":
+        \"gemini-2.5-flash\",\"responseId\": \"BkjfarC7MKSOytMPuba7kQc\"}\r\n\r\ndata:
         {\"candidates\": [{\"content\": {\"parts\": [{\"codeExecutionResult\": {\"outcome\":
         \"OUTCOME_OK\",\"output\": \"323\\n\"}}],\"role\": \"model\"},\"index\": 0}],\"usageMetadata\":
-        {\"promptTokenCount\": 34,\"candidatesTokenCount\": 14,\"totalTokenCount\":
-        86,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\": 34}],\"thoughtsTokenCount\":
-        38,\"serviceTier\": \"standard\"},\"modelVersion\": \"gemini-2.5-flash\",\"responseId\":
-        \"G1DWasCSEP6k_uMPxrHCwAg\"}\r\n\r\ndata: {\"candidates\": [{\"content\":
-        {\"parts\": [{\"text\": \"The product\"}],\"role\": \"model\"},\"index\":
+        {\"promptTokenCount\": 34,\"candidatesTokenCount\": 24,\"totalTokenCount\":
+        127,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\": 34}],\"thoughtsTokenCount\":
+        69,\"serviceTier\": \"standard\"},\"modelVersion\": \"gemini-2.5-flash\",\"responseId\":
+        \"BkjfarC7MKSOytMPuba7kQc\"}\r\n\r\ndata: {\"candidates\": [{\"content\":
+        {\"parts\": [{\"text\": \"The product of \"}],\"role\": \"model\"},\"index\":
         0}],\"usageMetadata\": {\"promptTokenCount\": 34,\"candidatesTokenCount\":
-        16,\"totalTokenCount\": 180,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
-        34}],\"toolUsePromptTokenCount\": 92,\"toolUsePromptTokensDetails\": [{\"modality\":
-        \"TEXT\",\"tokenCount\": 92}],\"thoughtsTokenCount\": 38,\"serviceTier\":
-        \"standard\"},\"modelVersion\": \"gemini-2.5-flash\",\"responseId\": \"G1DWasCSEP6k_uMPxrHCwAg\"}\r\n\r\ndata:
-        {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \" of 17 and 19 is
-        323.\"}],\"role\": \"model\"},\"finishReason\": \"STOP\",\"index\": 0}],\"usageMetadata\":
-        {\"promptTokenCount\": 34,\"candidatesTokenCount\": 30,\"totalTokenCount\":
-        194,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\": 34}],\"toolUsePromptTokenCount\":
-        92,\"toolUsePromptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
-        92}],\"thoughtsTokenCount\": 38,\"serviceTier\": \"standard\"},\"modelVersion\":
-        \"gemini-2.5-flash\",\"responseId\": \"G1DWasCSEP6k_uMPxrHCwAg\"}\r\n\r\n"
+        27,\"totalTokenCount\": 263,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
+        34}],\"toolUsePromptTokenCount\": 133,\"toolUsePromptTokensDetails\": [{\"modality\":
+        \"TEXT\",\"tokenCount\": 133}],\"thoughtsTokenCount\": 69,\"serviceTier\":
+        \"standard\"},\"modelVersion\": \"gemini-2.5-flash\",\"responseId\": \"BkjfarC7MKSOytMPuba7kQc\"}\r\n\r\ndata:
+        {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"17 and 19 is 323.\"}],\"role\":
+        \"model\"},\"finishReason\": \"STOP\",\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\":
+        34,\"candidatesTokenCount\": 39,\"totalTokenCount\": 275,\"promptTokensDetails\":
+        [{\"modality\": \"TEXT\",\"tokenCount\": 34}],\"toolUsePromptTokenCount\":
+        133,\"toolUsePromptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
+        133}],\"thoughtsTokenCount\": 69,\"serviceTier\": \"standard\"},\"modelVersion\":
+        \"gemini-2.5-flash\",\"responseId\": \"BkjfarC7MKSOytMPuba7kQc\"}\r\n\r\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
@@ -63,11 +64,11 @@ interactions:
       content-type:
       - text/event-stream
       date:
-      - Mon, 19 Oct 2026 17:15:07 GMT
+      - Mon, 26 Oct 2026 12:31:03 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=727
+      - gfet4t7; dur=989
       transfer-encoding:
       - chunked
       vary:

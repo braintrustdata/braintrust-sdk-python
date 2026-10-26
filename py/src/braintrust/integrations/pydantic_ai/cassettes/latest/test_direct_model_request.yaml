@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.57.0
+      - pydantic-ai/2.61.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.35.1
+      - 3.37.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,14 +39,14 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_06afe1bc276f183e006ad64ff034e487d098cd943c76046562\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1792430064,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0e876176ab8cf451016adf48136ff087d19dc3966e33d87804\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1793017875,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1792430064,\n  \"error\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1793017875,\n  \"error\":
         null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_06afe1bc276f183e006ad64ff0940487d0a27136e674f7b465\",\n
+        \     \"id\": \"msg_0e876176ab8cf451016adf4813cc5487d1bd4e357dc8e0e42d\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"4\"\n        }\n      ],\n
@@ -55,7 +55,7 @@ interactions:
         null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
         \   \"context\": null,\n    \"effort\": null,\n    \"summary\": null\n  },\n
         \ \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n  \"store\":
-        true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
+        false,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
         \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
         \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\":
         0,\n      \"input_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
@@ -70,7 +70,7 @@ interactions:
         {}\n}"
     headers:
       access-control-expose-headers:
-      - X-Request-ID
+      - X-Request-ID, Server-Timing-Total
       - CF-Ray
       - CF-Ray
       alt-svc:
@@ -78,17 +78,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a4d16b3cc8fd7543-SJC
+      - a5097a191a4dac2a-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1997'
+      - '1998'
       content-type:
       - application/json
       date:
-      - Mon, 19 Oct 2026 17:14:24 GMT
+      - Mon, 26 Oct 2026 12:31:15 GMT
       openai-processing-ms:
-      - '629'
+      - '437'
       openai-version:
       - '2020-10-01'
       server:
@@ -106,13 +106,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999962'
+      - '149999960'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_db9c50d02ca942f9a2b1f412efb4738a
+      - req_436e468e3e7e41768ae1a82a0905f20b
     status:
       code: 200
       message: OK

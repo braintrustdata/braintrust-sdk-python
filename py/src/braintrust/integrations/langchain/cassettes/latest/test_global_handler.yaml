@@ -33,13 +33,13 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.6
+      - 3.14.7
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EH9eypjEOXqhuGcqoDrBF1CnMLCj7\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1787757416,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EdE9VC4MpYzRk8iJasyrYUbUsg6c7\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1793017901,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"1 + 2 equals 3.\",\n        \"refusal\":
         null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
@@ -48,7 +48,7 @@ interactions:
         {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_ab0a2ab924\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_f1b0ec5777\"\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -59,7 +59,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a313ccedcdca3786-YYZ
+      - a5097ab94b1eac6c-YYZ
       connection:
       - keep-alive
       content-length:
@@ -67,9 +67,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Wed, 26 Aug 2026 15:16:57 GMT
+      - Mon, 26 Oct 2026 12:31:41 GMT
       openai-processing-ms:
-      - '554'
+      - '570'
       openai-version:
       - '2020-10-01'
       server:
@@ -95,107 +95,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_601447c381ea42a09b43ad40569f7ac7
-    status:
-      code: 200
-      message: OK
-- request:
-    body: '{"messages":[{"content":"What is 1 + 2?","role":"user"}],"model":"gpt-4o-mini","frequency_penalty":0.0,"n":1,"presence_penalty":0.0,"stream":false,"temperature":1.0,"top_p":1.0}'
-    headers:
-      accept:
-      - application/json
-      accept-encoding:
-      - gzip, deflate, zstd
-      connection:
-      - keep-alive
-      content-length:
-      - '177'
-      content-type:
-      - application/json
-      host:
-      - api.openai.com
-      user-agent:
-      - OpenAI/Python 2.32.0
-      x-stainless-arch:
-      - arm64
-      x-stainless-async:
-      - 'false'
-      x-stainless-lang:
-      - python
-      x-stainless-os:
-      - MacOS
-      x-stainless-package-version:
-      - 2.32.0
-      x-stainless-raw-response:
-      - 'true'
-      x-stainless-retry-count:
-      - '0'
-      x-stainless-runtime:
-      - CPython
-      x-stainless-runtime-version:
-      - 3.14.6
-    method: POST
-    uri: https://api.openai.com/v1/chat/completions
-  response:
-    body:
-      string: "{\n  \"id\": \"chatcmpl-EH9hAPrwjUppd0l9Z5hG6kUbf8z7z\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1787757552,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
-        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"1 + 2 equals 3.\",\n        \"refusal\":
-        null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
-        \     \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        15,\n    \"completion_tokens\": 8,\n    \"total_tokens\": 23,\n    \"prompt_tokens_details\":
-        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_ab0a2ab924\"\n}\n"
-    headers:
-      access-control-expose-headers:
-      - X-Request-ID
-      - CF-Ray
-      - CF-Ray
-      alt-svc:
-      - h3=":443"; ma=86400
-      cf-cache-status:
-      - DYNAMIC
-      cf-ray:
-      - a313d03cbf4336a8-YYZ
-      connection:
-      - keep-alive
-      content-length:
-      - '821'
-      content-type:
-      - application/json
-      date:
-      - Wed, 26 Aug 2026 15:19:12 GMT
-      openai-processing-ms:
-      - '407'
-      openai-version:
-      - '2020-10-01'
-      server:
-      - cloudflare
-      strict-transport-security:
-      - max-age=31536000; includeSubDomains; preload
-      transfer-encoding:
-      - chunked
-      x-content-type-options:
-      - nosniff
-      x-openai-proxy-wasm:
-      - v0.1
-      x-ratelimit-limit-requests:
-      - '30000'
-      x-ratelimit-limit-tokens:
-      - '150000000'
-      x-ratelimit-remaining-requests:
-      - '29999'
-      x-ratelimit-remaining-tokens:
-      - '149999992'
-      x-ratelimit-reset-requests:
-      - 2ms
-      x-ratelimit-reset-tokens:
-      - 0s
-      x-request-id:
-      - req_4056569c9e234ca3b415e365c4456624
+      - req_bf25727924f94564a6db2a5a7beff8cc
     status:
       code: 200
       message: OK

@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.57.0
+      - pydantic-ai/2.61.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.35.1
+      - 3.37.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,23 +39,23 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0d1e5336248705b4006ad6500645bc87d0b1718ba43b921d3e\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1792430086,\n  \"status\":
+      string: "{\n  \"id\": \"resp_03d60decb2be40db016adf4824948887d1b6d1e57e2d790368\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1793017892,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1792430087,\n  \"error\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1793017893,\n  \"error\":
         null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": 50,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_0d1e5336248705b4006ad65007045487d0a6ce8c1bbeb79903\",\n
+        \     \"id\": \"msg_03d60decb2be40db016adf48251b6c87d1a6c95b082671b0fb\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"The image is primarily
-        black.\"\n        }\n      ],\n      \"role\": \"assistant\"\n    }\n  ],\n
-        \ \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\":
+        [],\n          \"logprobs\": [],\n          \"text\": \"The image is in black
+        and white.\"\n        }\n      ],\n      \"role\": \"assistant\"\n    }\n
+        \ ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\":
         null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\": \"in_memory\",\n
         \ \"reasoning\": {\n    \"context\": null,\n    \"effort\": null,\n    \"summary\":
         null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n
-        \ \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\":
+        \ \"store\": false,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\":
         {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n
         \ \"tool_choice\": \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n
         \     \"input_tokens\": 0,\n      \"input_tokens_details\": {\n        \"image_tokens\":
@@ -65,12 +65,12 @@ interactions:
         \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
         \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 8513,\n    \"input_tokens_details\":
         {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 7,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 8520\n  },\n  \"user\": null,\n  \"metadata\":
+        \   \"output_tokens\": 9,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        0\n    },\n    \"total_tokens\": 8522\n  },\n  \"user\": null,\n  \"metadata\":
         {}\n}"
     headers:
       access-control-expose-headers:
-      - X-Request-ID
+      - X-Request-ID, Server-Timing-Total
       - CF-Ray
       - CF-Ray
       alt-svc:
@@ -78,17 +78,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a4d16bc68809ed35-SJC
+      - a5097a842fde5577-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2027'
+      - '2031'
       content-type:
       - application/json
       date:
-      - Mon, 19 Oct 2026 17:14:47 GMT
+      - Mon, 26 Oct 2026 12:31:33 GMT
       openai-processing-ms:
-      - '979'
+      - '817'
       openai-version:
       - '2020-10-01'
       server:
@@ -99,20 +99,26 @@ interactions:
       - chunked
       x-content-type-options:
       - nosniff
+      x-ratelimit-limit-input-images:
+      - '50000'
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
       - '150000000'
+      x-ratelimit-remaining-input-images:
+      - '49999'
       x-ratelimit-remaining-requests:
-      - '29996'
+      - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999157'
+      - '149999235'
+      x-ratelimit-reset-input-images:
+      - 1ms
       x-ratelimit-reset-requests:
-      - 8ms
+      - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_7a17137938ec4850a70bd85327031e51
+      - req_8dd700aba47a42b3b7cdd279997a834c
     status:
       code: 200
       message: OK

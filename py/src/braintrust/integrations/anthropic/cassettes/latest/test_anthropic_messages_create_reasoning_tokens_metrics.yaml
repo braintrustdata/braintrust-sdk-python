@@ -8,7 +8,7 @@ interactions:
       accept-encoding:
       - gzip, deflate, zstd
       anthropic-version:
-      - '2023-06-01'
+      - '2026-10-21'
       connection:
       - keep-alive
       content-length:
@@ -18,7 +18,7 @@ interactions:
       host:
       - api.anthropic.com
       user-agent:
-      - Anthropic/Python 1.15.0
+      - Anthropic/Python 2.3.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -28,7 +28,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 1.15.0
+      - 2.3.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -43,12 +43,13 @@ interactions:
     uri: https://api.anthropic.com/v1/messages
   response:
     body:
-      string: '{"model":"claude-haiku-4-5-20251001","id":"msg_011CgBynyPCxL3ogNUDHtuka","type":"message","role":"assistant","content":[{"type":"thinking","thinking":"Let
-        me calculate 17 * 23.\n\nI can break this down:\n17 * 23 = 17 * (20 + 3)\n=
-        17 * 20 + 17 * 3\n= 340 + 51\n= 391\n\nAlternatively:\n17 * 23 = (10 + 7)
-        * 23\n= 10 * 23 + 7 * 23\n= 230 + 161\n= 391\n\nBoth methods give me 391.","signature":"EvEDCrgBCBIYAipAe5lPvzOueoRzsMn+wdMnGihJ0FquQBMY1I5V6HRMjBWSqtVo9zp8UQrcDTyiChz4Ln3GmAauJlnHK1tS6wamlDIZY2xhdWRlLWhhaWt1LTQtNS0yMDI1MTAwMTgAQgh0aGlua2luZ1okMjc3OTY2NjgtNzM1MS00MGFjLWFjYzQtMDI0YWVlODk5NWE1mgEbChljbGF1ZGUtaGFpa3UtNC01LTIwMjUxMDAxqAHkotnWBhIMJ3sHYfEh21yGlfnPGgxkLVbweSTIRWJF7MoiMAUH8mODyS9xKmccCvQOojV6WYnTQQ255SyrYnMwnD1W7MVz/LcoH3y/mFBTHDDDDirlAY9DavaUZEpbC+g+OslRge1zYzjnKgXdSryOjnK1kvLlyiki+Hkud72uPHLeMeL5oQObHXA6iCfaMuuyCwupgLlnzFEtmPrBhhg5zgGEw9Qtbxr99nwaHU4rSm5V/9V2nM4MounJq8VGY8sbysZIWUHSsYzgh4fdyZOcif+6EnEK6ODJ7NmbERkpfuCleZ60VxGpliJ0oTPrpPQ1druXn7MESy+OFa2IaVNQRrold2EBd1nsJADwq/uq32YXP/2UQkBGyzZWJxezWTK/On1wl0a0jzH3uVkAN7ZOkoAcnPyY09XGMbMYAQ=="},{"type":"text","text":"#
-        Calculating 17 * 23\n\nLet me break this down:\n- 17 * 23 = 17 * (20 + 3)\n-
-        = (17 * 20) + (17 * 3)\n- = 340 + 51\n- = **391**\n\nThe answer is **391**."}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":54,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":210,"output_tokens_details":{"thinking_tokens":127},"service_tier":"standard","inference_geo":"not_available","speed":"standard"},"diagnostics":null}'
+      string: "{\"model\":\"claude-haiku-4-5-20251001\",\"id\":\"msg_011CgQrsDJTXM1oQGqGeNFCh\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"thinking\",\"thinking\":\"Let
+        me calculate 17 * 23.\\n\\nI can break this down:\\n17 * 23 = 17 * (20 + 3)\\n=
+        17 * 20 + 17 * 3\\n= 340 + 51\\n= 391\\n\\nAlternatively, I could use the
+        standard multiplication method:\\n  17\\n\xD7 23\\n----\\n  51  (17 * 3)\\n340
+        \ (17 * 20)\\n----\\n391\\n\\nSo 17 * 23 = 391\",\"signature\":\"EpIECrgBCBMYAipAOY1YwfX1scHU0zLSbxBXz3JfR6CT/nBoy0ilorfj46/htdteSx3OEGGEqCk6IugetgFTZF7sUpEBYW2Fgg1VojIZY2xhdWRlLWhhaWt1LTQtNS0yMDI1MTAwMTgAQgh0aGlua2luZ1okMjc3OTY2NjgtNzM1MS00MGFjLWFjYzQtMDI0YWVlODk5NWE1mgEbChljbGF1ZGUtaGFpa3UtNC01LTIwMjUxMDAxqAGJk/3WBhIMJdaIQdFUPVGmf9ZVGgypjHucRcpHR2K6iuUiMG3neuUs/Fth/pBC9OE/jUmiWRcM7PcEFHLcVulebge2ugYpXcu7YmdYRTTM2kO+TyqGAkF1m4Y9atE+F8VaUXy4jcIBiB3/8NjsIMbKkPQ4wdahJaV2dD7rzMrAZhubldNlQFaoelET6Wq6Fdg1LDeXHPK59MgRfcXa8i4zrw5sratEiAkg2gY70ac4aRHIZL/LG3cJaYeEFpcb6JoGHuFGSu2dKkxDZXqq9Ei6aa81/kfzAGYUdfUEd+jGLRZPorwSTkJZu++fPtCCXccD7eJZFDu4/0oQZ41HoYSIKByb1J8GnfALwDZJH+dHZUCLJ3mjryhjT/rTBRgk3aTsKOd+gEkBicoBseGGLoSJPI46urTmKWFJnEOtFvZRldFtTh2I7hFaTv7fwni30PzoqcZmgZn5xAWPU6gYAQ==\"},{\"type\":\"text\",\"text\":\"Let
+        me work through this:\\n\\n17 * 23 = 17 * (20 + 3)\\n= (17 * 20) + (17 * 3)\\n=
+        340 + 51\\n= 391\\n\\n**The answer is 391**\"}],\"container\":null,\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":54,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"output_tokens\":195,\"output_tokens_details\":{\"thinking_tokens\":128},\"service_tier\":\"standard\",\"inference_geo\":\"not_available\",\"speed\":\"standard\"},\"diagnostics\":null}"
     headers:
       anthropic-organization-id:
       - 27796668-7351-40ac-acc4-024aee8995a5
@@ -57,49 +58,51 @@ interactions:
       anthropic-ratelimit-input-tokens-remaining:
       - '10000000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-10-19T17:20:35Z'
+      - '2026-10-26T12:37:28Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-10-19T17:20:36Z'
+      - '2026-10-26T12:37:30Z'
       anthropic-ratelimit-requests-limit:
       - '20000'
       anthropic-ratelimit-requests-remaining:
       - '19999'
       anthropic-ratelimit-requests-reset:
-      - '2026-10-19T17:20:35Z'
+      - '2026-10-26T12:37:28Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
       - '12000000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-10-19T17:20:35Z'
+      - '2026-10-26T12:37:28Z'
       anthropic-workspace-id:
       - wrkspc_018bFG1FgNVWqx5pthtdGTzS
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a4d1744b3a5a34a1-SJC
+      - a5098332bd69860b-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1663'
+      - '1709'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - application/json
       date:
-      - Mon, 19 Oct 2026 17:20:37 GMT
+      - Mon, 26 Oct 2026 12:37:30 GMT
       request-id:
-      - req_011CgBynyAowFMUNNzzPfRP1
+      - req_011CgQrsCN9vqbF7V3rVPaNH
       server:
       - cloudflare
+      server-timing:
+      - x-originResponse;dur=1984
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-6ad6516300000000fe59bcaf3153eaa8-cd7a826fc64f793a-01
+      - 00-cab0cc2fb9131a4a1a13d80a9a4a0c9b-54b651c8251ec7b2-01
       transfer-encoding:
       - chunked
       vary:

@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"model":"zai-glm-5-3","name":"braintrust-test-agent-1791905193535","instructions":"You
+    body: '{"model":"zai-glm-5-3","name":"braintrust-test-agent-1793017909151","instructions":"You
       are concise. Keep responses under five words."}'
     headers:
       accept:
@@ -16,12 +16,12 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/3.2.0
+      - mistral-client-python/3.5.0
     method: POST
     uri: https://api.mistral.ai/v1/agents
   response:
     body:
-      string: '{"instructions":"You are concise. Keep responses under five words.","tools":[],"completion_args":{"stop":null,"presence_penalty":null,"frequency_penalty":null,"temperature":null,"top_p":null,"max_tokens":null,"random_seed":null,"prediction":null,"response_format":null,"tool_choice":"auto","reasoning_effort":null},"guardrails":[],"model":"zai-glm-5-3","name":"braintrust-test-agent-1791905193535","description":null,"handoffs":null,"metadata":null,"object":"agent","id":"ag_01a135df5fc273f5b16cbdd1bfe55ac7","version":0,"versions":[],"owner_id":"4cf0889c-e6bd-4aba-a664-2e25c0dcd24e","created_at":"2026-10-13T15:26:33.950795Z","updated_at":"2026-10-13T15:26:33.950798Z","deployment_chat":false,"source":"api","version_message":null}'
+      string: '{"instructions":"You are concise. Keep responses under five words.","tools":[],"completion_args":{"stop":null,"presence_penalty":null,"frequency_penalty":null,"temperature":null,"top_p":null,"max_tokens":null,"random_seed":null,"prediction":null,"response_format":null,"tool_choice":"auto","reasoning_effort":null},"guardrails":[],"model":"zai-glm-5-3","name":"braintrust-test-agent-1793017909151","description":null,"handoffs":null,"metadata":null,"object":"agent","id":"ag_01a17832111c70b28357f001f646d817","version":0,"versions":[],"owner_id":"4cf0889c-e6bd-4aba-a664-2e25c0dcd24e","created_at":"2026-10-26T12:31:49.562090Z","updated_at":"2026-10-26T12:31:49.562094Z","deployment_chat":false,"source":"api","version_message":null}'
     headers:
       access-control-allow-origin:
       - '*'
@@ -30,7 +30,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a49f5d048e97ac28-YYZ
+      - a5097aecef943a09-YYZ
       connection:
       - keep-alive
       content-length:
@@ -38,9 +38,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Tue, 13 Oct 2026 15:26:34 GMT
+      - Mon, 26 Oct 2026 12:31:49 GMT
       mistral-correlation-id:
-      - 01a135df-5f9b-7cbb-961a-62f71dfc2674
+      - 01a17832-105b-79b3-a5b5-4e91acedb724
       server:
       - cloudflare
       strict-transport-security:
@@ -50,18 +50,18 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '80'
+      - '203'
       x-kong-proxy-latency:
-      - '14'
+      - '15'
       x-kong-request-id:
-      - 01a135df-5f9b-7cbb-961a-62f71dfc2674
+      - 01a17832-105b-79b3-a5b5-4e91acedb724
       x-kong-upstream-latency:
-      - '81'
+      - '242'
     status:
       code: 200
       message: OK
 - request:
-    body: '{"messages":[{"content":"What is 8+1? Reply with just the number.","role":"user"}],"agent_id":"ag_01a135df5fc273f5b16cbdd1bfe55ac7","max_tokens":256,"stream":false,"min_tokens":1,"repetition_penalty":1.1,"top_k":20,"logprobs":true,"top_logprobs":2,"prompt_logprobs":true,"top_prompt_logprobs":2}'
+    body: '{"messages":[{"content":"What is 8+1? Reply with just the number.","role":"user"}],"agent_id":"ag_01a17832111c70b28357f001f646d817","max_tokens":256,"stream":false,"min_tokens":1,"repetition_penalty":1.1,"top_k":20,"logprobs":true,"top_logprobs":2,"prompt_logprobs":true,"top_prompt_logprobs":2}'
     headers:
       accept:
       - application/json
@@ -76,57 +76,55 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/3.2.0
+      - mistral-client-python/3.5.0
     method: POST
     uri: https://api.mistral.ai/v1/agents/completions
   response:
     body:
-      string: '{"id":"8e508ec5ea8e4314a42e6b498a4458bb","created":1791905194,"model":"zai-glm-5-3","usage":{"prompt_tokens":36,"total_tokens":39,"completion_tokens":3,"prompt_tokens_details":{"cached_tokens":0}},"object":"chat.completion","choices":[{"index":0,"finish_reason":"stop","message":{"role":"assistant","index":0,"content":"9"},"logprobs":{"content":[{"token":"</think>","logprob":-0.0913877934217453,"bytes":[60,47,116,104,105,110,107,62],"token_id":-1,"top_logprobs":[{"token":"</think>","logprob":-0.0913877934217453,"bytes":[60,47,116,104,105,110,107,62],"token_id":-1},{"token":"The","logprob":-3.0913877487182617,"bytes":[84,104,101],"token_id":-1}]},{"token":"9","logprob":-0.0003773453936446458,"bytes":[57],"token_id":-1,"top_logprobs":[{"token":"9","logprob":-0.0003773453936446458,"bytes":[57],"token_id":-1},{"token":"8","logprob":-9.000377655029297,"bytes":[56],"token_id":-1}]},{"token":"<|user|>","logprob":-8.713819261174649e-05,"bytes":[60,124,117,115,101,114,124,62],"token_id":-1,"top_logprobs":[{"token":"<|user|>","logprob":-8.713819261174649e-05,"bytes":[60,124,117,115,101,114,124,62],"token_id":-1},{"token":"\n\n","logprob":-10.375086784362793,"bytes":[10,10],"token_id":-1}]}]},"prompt_logprobs":{"content":[{"token":"<sop>","logprob":-25.0937557220459,"bytes":[],"token_id":154824,"top_logprobs":[{"token":"[gMASK]","logprob":-6.318072337307967e-06,"bytes":[],"token_id":154822},{"token":"
-        comments","logprob":-18.6875057220459,"bytes":[],"token_id":6042}]},{"token":"<|system|>","logprob":-19.04717254638672,"bytes":[],"token_id":154826,"top_logprobs":[{"token":"<|endoftext|>","logprob":-0.10967207700014114,"bytes":[],"token_id":154820},{"token":"##","logprob":-4.5784220695495605,"bytes":[],"token_id":565}]},{"token":"Reason","logprob":-14.288257598876953,"bytes":[],"token_id":25062,"top_logprobs":[{"token":"\n","logprob":-2.2921640872955322,"bytes":[],"token_id":198},{"token":"\n\n","logprob":-3.2921640872955322,"bytes":[],"token_id":271}]},{"token":"ing","logprob":-0.37178710103034973,"bytes":[],"token_id":287,"top_logprobs":[{"token":"ably","logprob":-3.2467870712280273,"bytes":[],"token_id":2845}]},{"token":"
-        Eff","logprob":-11.087068557739258,"bytes":[],"token_id":29905,"top_logprobs":[{"token":"
-        with","logprob":-3.7042555809020996,"bytes":[],"token_id":448},{"token":".","logprob":-3.7042555809020996,"bytes":[],"token_id":13}]},{"token":"ort","logprob":-4.112343788146973,"bytes":[],"token_id":371,"top_logprobs":[{"token":"
-        Level","logprob":-2.8623440265655518,"bytes":[],"token_id":9391},{"token":"
-        Over","logprob":-3.3623440265655518,"bytes":[],"token_id":6065}]},{"token":":","logprob":-4.009695053100586,"bytes":[],"token_id":25,"top_logprobs":[{"token":"
-        final","logprob":-1.8846948146820068,"bytes":[],"token_id":1590},{"token":"
-        Answer","logprob":-2.072194814682007,"bytes":[],"token_id":21754}]},{"token":"
-        Max","logprob":-10.907561302185059,"bytes":[],"token_id":7487,"top_logprobs":[{"token":"
-        lon","logprob":-4.266936302185059,"bytes":[],"token_id":17780},{"token":"
-        ","logprob":-4.641936302185059,"bytes":[],"token_id":220}]},{"token":"<|system|>","logprob":-14.329546928405762,"bytes":[],"token_id":154826,"top_logprobs":[{"token":"\n","logprob":-0.8080625534057617,"bytes":[],"token_id":198},{"token":",","logprob":-3.3080625534057617,"bytes":[],"token_id":11}]},{"token":"You","logprob":-8.809078216552734,"bytes":[],"token_id":2610,"top_logprobs":[{"token":"</think>","logprob":-1.2465780973434448,"bytes":[],"token_id":154842},{"token":"The","logprob":-3.6215782165527344,"bytes":[],"token_id":785}]},{"token":"
-        are","logprob":-4.619465351104736,"bytes":[],"token_id":525,"top_logprobs":[{"token":"''re","logprob":-0.6194652915000916,"bytes":[],"token_id":2299},{"token":"
-        need","logprob":-1.4944653511047363,"bytes":[],"token_id":1184}]},{"token":"
-        concise","logprob":-12.689486503601074,"bytes":[],"token_id":63141,"top_logprobs":[{"token":"
-        asking","logprob":-1.2832363843917847,"bytes":[],"token_id":10156},{"token":"
-        asked","logprob":-1.4082363843917847,"bytes":[],"token_id":4588}]},{"token":".","logprob":-2.7664852142333984,"bytes":[],"token_id":13,"top_logprobs":[{"token":"
-        in","logprob":-0.8914852142333984,"bytes":[],"token_id":304},{"token":" by","logprob":-1.2664852142333984,"bytes":[],"token_id":553}]},{"token":"
-        Keep","logprob":-4.823254108428955,"bytes":[],"token_id":13646,"top_logprobs":[{"token":"
-        You","logprob":-0.5107541084289551,"bytes":[],"token_id":1446},{"token":"
-        Your","logprob":-3.010754108428955,"bytes":[],"token_id":4615}]},{"token":"
-        responses","logprob":-2.6773171424865723,"bytes":[],"token_id":14497,"top_logprobs":[{"token":"
-        your","logprob":-1.0523171424865723,"bytes":[],"token_id":697},{"token":"
-        the","logprob":-1.1773171424865723,"bytes":[],"token_id":279}]},{"token":"
-        under","logprob":-9.26633071899414,"bytes":[],"token_id":1212,"top_logprobs":[{"token":"
-        short","logprob":-0.07883025705814362,"bytes":[],"token_id":2805},{"token":"
-        brief","logprob":-3.0788302421569824,"bytes":[],"token_id":9809}]},{"token":"
-        five","logprob":-8.460169792175293,"bytes":[],"token_id":4236,"top_logprobs":[{"token":"
-        ","logprob":-0.02267015166580677,"bytes":[],"token_id":220},{"token":" ~","logprob":-4.647670269012451,"bytes":[],"token_id":3968}]},{"token":"
-        words","logprob":-4.671149730682373,"bytes":[],"token_id":4244,"top_logprobs":[{"token":"
-        sentences","logprob":-0.10864964872598648,"bytes":[],"token_id":22809},{"token":"
-        lines","logprob":-2.733649730682373,"bytes":[],"token_id":5128}]},{"token":".","logprob":-0.9434095621109009,"bytes":[],"token_id":13,"top_logprobs":[{"token":"
-        when","logprob":-1.3184095621109009,"bytes":[],"token_id":979}]},{"token":"<|user|>","logprob":-8.329792976379395,"bytes":[],"token_id":154827,"top_logprobs":[{"token":"</think>","logprob":-0.8922933340072632,"bytes":[],"token_id":154842},{"token":"
-        Under","logprob":-2.4547934532165527,"bytes":[],"token_id":9445}]},{"token":"What","logprob":-7.348790168762207,"bytes":[],"token_id":3838,"top_logprobs":[{"token":"</think>","logprob":-1.4737902879714966,"bytes":[],"token_id":154842},{"token":"Let","logprob":-1.4737902879714966,"bytes":[],"token_id":10056}]},{"token":"
-        is","logprob":-0.7880374789237976,"bytes":[],"token_id":374,"top_logprobs":[{"token":"
-        are","logprob":-1.9130375385284424,"bytes":[],"token_id":525}]},{"token":"
-        ","logprob":-2.6452090740203857,"bytes":[],"token_id":220,"top_logprobs":[{"token":"
-        the","logprob":-0.39520910382270813,"bytes":[],"token_id":279}]},{"token":"8","logprob":-4.051606178283691,"bytes":[],"token_id":23,"top_logprobs":[{"token":"2","logprob":-0.8016062378883362,"bytes":[],"token_id":17},{"token":"1","logprob":-2.4266061782836914,"bytes":[],"token_id":16}]},{"token":"+","logprob":-2.001539945602417,"bytes":[],"token_id":10,"top_logprobs":[{"token":"
-        divided","logprob":-1.626539945602417,"bytes":[],"token_id":17753}]},{"token":"1","logprob":-3.6469202041625977,"bytes":[],"token_id":16,"top_logprobs":[{"token":"3","logprob":-1.1469203233718872,"bytes":[],"token_id":18},{"token":"2","logprob":-1.7719203233718872,"bytes":[],"token_id":17}]},{"token":"?","logprob":-3.257967233657837,"bytes":[],"token_id":30,"top_logprobs":[{"token":"+","logprob":-1.132967233657837,"bytes":[],"token_id":10},{"token":"-","logprob":-1.757967233657837,"bytes":[],"token_id":12}]},{"token":"
-        Reply","logprob":-12.022690773010254,"bytes":[],"token_id":17815,"top_logprobs":[{"token":"</think>","logprob":-0.022690312936902046,"bytes":[],"token_id":154842},{"token":"9","logprob":-4.897690296173096,"bytes":[],"token_id":24}]},{"token":"
-        with","logprob":-1.343369483947754,"bytes":[],"token_id":448,"top_logprobs":[{"token":"
-        in","logprob":-1.218369483947754,"bytes":[],"token_id":304}]},{"token":" just","logprob":-1.7867549657821655,"bytes":[],"token_id":1101,"top_logprobs":[{"token":"
-        only","logprob":-1.4117549657821655,"bytes":[],"token_id":1172},{"token":"
-        a","logprob":-1.5367549657821655,"bytes":[],"token_id":264}]},{"token":" the","logprob":-0.1841922253370285,"bytes":[],"token_id":279,"top_logprobs":[{"token":"
-        your","logprob":-2.684192180633545,"bytes":[],"token_id":697}]},{"token":"
-        number","logprob":-0.9484573006629944,"bytes":[],"token_id":1372,"top_logprobs":[{"token":"
-        answer","logprob":-0.5734573006629944,"bytes":[],"token_id":4226}]},{"token":".","logprob":-0.3525479733943939,"bytes":[],"token_id":13,"top_logprobs":[{"token":".\n\n","logprob":-1.7275480031967163,"bytes":[],"token_id":382}]},{"token":"<|assistant|>","logprob":-12.56834888458252,"bytes":[],"token_id":154828,"top_logprobs":[{"token":"</think>","logprob":-0.00584891252219677,"bytes":[],"token_id":154842},{"token":"9","logprob":-7.0683488845825195,"bytes":[],"token_id":24}]},{"token":"<think>","logprob":-17.316312789916992,"bytes":[],"token_id":154841,"top_logprobs":[{"token":"</think>","logprob":-0.06631205976009369,"bytes":[],"token_id":154842},{"token":"9","logprob":-2.941312074661255,"bytes":[],"token_id":24}]}]},"response_error":{"format_error":null,"content_validation":["valid_text_chunk"],"tool_calls_validation":[],"extra_tags":[]}}]}'
+      string: "{\"id\":\"5dcda60adebd4b2281954bbc458aa68e\",\"created\":1793017909,\"model\":\"zai-glm-5-3\",\"usage\":{\"prompt_tokens\":36,\"total_tokens\":39,\"completion_tokens\":3,\"prompt_tokens_details\":{\"cached_tokens\":0},\"completion_tokens_details\":{\"reasoning_tokens\":0}},\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"finish_reason\":\"stop\",\"message\":{\"role\":\"assistant\",\"index\":0,\"content\":\"9\"},\"logprobs\":{\"content\":[{\"token\":\"</think>\",\"logprob\":-0.3854866325855255,\"bytes\":[60,47,116,104,105,110,107,62],\"token_id\":-1,\"top_logprobs\":[{\"token\":\"</think>\",\"logprob\":-0.3854866325855255,\"bytes\":[60,47,116,104,105,110,107,62],\"token_id\":-1},{\"token\":\"8\",\"logprob\":-1.5104866027832031,\"bytes\":[56],\"token_id\":-1}]},{\"token\":\"9\",\"logprob\":-0.001073380233719945,\"bytes\":[57],\"token_id\":-1,\"top_logprobs\":[{\"token\":\"9\",\"logprob\":-0.001073380233719945,\"bytes\":[57],\"token_id\":-1},{\"token\":\"<|user|>\",\"logprob\":-7.751073360443115,\"bytes\":[60,124,117,115,101,114,124,62],\"token_id\":-1}]},{\"token\":\"<|user|>\",\"logprob\":-4.577531944960356e-05,\"bytes\":[60,124,117,115,101,114,124,62],\"token_id\":-1,\"top_logprobs\":[{\"token\":\"<|user|>\",\"logprob\":-4.577531944960356e-05,\"bytes\":[60,124,117,115,101,114,124,62],\"token_id\":-1},{\"token\":\"</think>\",\"logprob\":-11.375045776367188,\"bytes\":[60,47,116,104,105,110,107,62],\"token_id\":-1}]}]},\"prompt_logprobs\":{\"content\":[{\"token\":\"<sop>\",\"logprob\":-25.0937557220459,\"bytes\":[],\"token_id\":154824,\"top_logprobs\":[{\"token\":\"[gMASK]\",\"logprob\":-6.318072337307967e-06,\"bytes\":[],\"token_id\":154822},{\"token\":\"
+        comments\",\"logprob\":-18.6875057220459,\"bytes\":[],\"token_id\":6042}]},{\"token\":\"<|system|>\",\"logprob\":-19.159305572509766,\"bytes\":[],\"token_id\":154826,\"top_logprobs\":[{\"token\":\"<|endoftext|>\",\"logprob\":-0.09680472314357758,\"bytes\":[],\"token_id\":154820},{\"token\":\"##\",\"logprob\":-4.659304618835449,\"bytes\":[],\"token_id\":565}]},{\"token\":\"Reason\",\"logprob\":-14.217857360839844,\"bytes\":[],\"token_id\":25062,\"top_logprobs\":[{\"token\":\"\\n\",\"logprob\":-2.327232837677002,\"bytes\":[],\"token_id\":198},{\"token\":\"\\n\\n\",\"logprob\":-3.202232837677002,\"bytes\":[],\"token_id\":271}]},{\"token\":\"ing\",\"logprob\":-1.3600064516067505,\"bytes\":[],\"token_id\":287,\"top_logprobs\":[{\"token\":\"ably\",\"logprob\":-1.6100064516067505,\"bytes\":[],\"token_id\":2845}]},{\"token\":\"
+        Eff\",\"logprob\":-11.856891632080078,\"bytes\":[],\"token_id\":29905,\"top_logprobs\":[{\"token\":\"
+        Steps\",\"logprob\":-4.06001615524292,\"bytes\":[],\"token_id\":39645},{\"token\":\"
+        time\",\"logprob\":-4.12251615524292,\"bytes\":[],\"token_id\":882}]},{\"token\":\"ort\",\"logprob\":-5.061731338500977,\"bytes\":[],\"token_id\":371,\"top_logprobs\":[{\"token\":\"
+        Level\",\"logprob\":-1.186731219291687,\"bytes\":[],\"token_id\":9391},{\"token\":\"
+        Over\",\"logprob\":-2.8117313385009766,\"bytes\":[],\"token_id\":6065}]},{\"token\":\":\",\"logprob\":-2.798213481903076,\"bytes\":[],\"token_id\":25,\"top_logprobs\":[{\"token\":\"
+        final\",\"logprob\":-2.173213481903076,\"bytes\":[],\"token_id\":1590},{\"token\":\"
+        Answer\",\"logprob\":-2.735713481903076,\"bytes\":[],\"token_id\":21754}]},{\"token\":\"
+        Max\",\"logprob\":-10.65478515625,\"bytes\":[],\"token_id\":7487,\"top_logprobs\":[{\"token\":\"\xB9\",\"logprob\":-5.498535633087158,\"bytes\":[],\"token_id\":59085},{\"token\":\"url\",\"logprob\":-5.529785633087158,\"bytes\":[],\"token_id\":1085}]},{\"token\":\"<|system|>\",\"logprob\":-14.218679428100586,\"bytes\":[],\"token_id\":154826,\"top_logprobs\":[{\"token\":\"\\n\",\"logprob\":-0.9803978204727173,\"bytes\":[],\"token_id\":198},{\"token\":\"ing\",\"logprob\":-2.2303977012634277,\"bytes\":[],\"token_id\":287}]},{\"token\":\"You\",\"logprob\":-8.311962127685547,\"bytes\":[],\"token_id\":2610,\"top_logprobs\":[{\"token\":\"</think>\",\"logprob\":-0.9057119488716125,\"bytes\":[],\"token_id\":154842},{\"token\":\"The\",\"logprob\":-2.9057118892669678,\"bytes\":[],\"token_id\":785}]},{\"token\":\"
+        are\",\"logprob\":-1.3594166040420532,\"bytes\":[],\"token_id\":525,\"top_logprobs\":[{\"token\":\"'re\",\"logprob\":-1.3594166040420532,\"bytes\":[],\"token_id\":2299}]},{\"token\":\"
+        concise\",\"logprob\":-14.119182586669922,\"bytes\":[],\"token_id\":63141,\"top_logprobs\":[{\"token\":\"
+        a\",\"logprob\":-1.3223075866699219,\"bytes\":[],\"token_id\":264},{\"token\":\"
+        asked\",\"logprob\":-1.4473075866699219,\"bytes\":[],\"token_id\":4588}]},{\"token\":\".\",\"logprob\":-2.6032519340515137,\"bytes\":[],\"token_id\":13,\"top_logprobs\":[{\"token\":\",\",\"logprob\":-1.1032519340515137,\"bytes\":[],\"token_id\":11},{\"token\":\"
+        by\",\"logprob\":-1.2282519340515137,\"bytes\":[],\"token_id\":553}]},{\"token\":\"
+        Keep\",\"logprob\":-5.453593730926514,\"bytes\":[],\"token_id\":13646,\"top_logprobs\":[{\"token\":\"
+        You\",\"logprob\":-0.5160936713218689,\"bytes\":[],\"token_id\":1446},{\"token\":\"</think>\",\"logprob\":-2.6410937309265137,\"bytes\":[],\"token_id\":154842}]},{\"token\":\"
+        responses\",\"logprob\":-2.1419458389282227,\"bytes\":[],\"token_id\":14497,\"top_logprobs\":[{\"token\":\"
+        the\",\"logprob\":-0.6419459581375122,\"bytes\":[],\"token_id\":279},{\"token\":\"
+        answers\",\"logprob\":-2.1419458389282227,\"bytes\":[],\"token_id\":11248}]},{\"token\":\"
+        under\",\"logprob\":-6.909956932067871,\"bytes\":[],\"token_id\":1212,\"top_logprobs\":[{\"token\":\"
+        short\",\"logprob\":-0.15995706617832184,\"bytes\":[],\"token_id\":2805},{\"token\":\"
+        to\",\"logprob\":-2.90995717048645,\"bytes\":[],\"token_id\":311}]},{\"token\":\"
+        five\",\"logprob\":-9.326311111450195,\"bytes\":[],\"token_id\":4236,\"top_logprobs\":[{\"token\":\"
+        \",\"logprob\":-0.013811376877129078,\"bytes\":[],\"token_id\":220},{\"token\":\"
+        ~\",\"logprob\":-5.7638115882873535,\"bytes\":[],\"token_id\":3968}]},{\"token\":\"
+        words\",\"logprob\":-2.891220808029175,\"bytes\":[],\"token_id\":4244,\"top_logprobs\":[{\"token\":\"
+        sentences\",\"logprob\":-0.1412208080291748,\"bytes\":[],\"token_id\":22809}]},{\"token\":\".\",\"logprob\":-1.9885177612304688,\"bytes\":[],\"token_id\":13,\"top_logprobs\":[{\"token\":\"
+        when\",\"logprob\":-0.3635178208351135,\"bytes\":[],\"token_id\":979}]},{\"token\":\"<|user|>\",\"logprob\":-9.977621078491211,\"bytes\":[],\"token_id\":154827,\"top_logprobs\":[{\"token\":\"
+        Under\",\"logprob\":-1.7276209592819214,\"bytes\":[],\"token_id\":9445},{\"token\":\"</think>\",\"logprob\":-2.540121078491211,\"bytes\":[],\"token_id\":154842}]},{\"token\":\"What\",\"logprob\":-6.177124977111816,\"bytes\":[],\"token_id\":3838,\"top_logprobs\":[{\"token\":\"Let\",\"logprob\":-1.4271247386932373,\"bytes\":[],\"token_id\":10056},{\"token\":\"</think>\",\"logprob\":-1.9271247386932373,\"bytes\":[],\"token_id\":154842}]},{\"token\":\"
+        is\",\"logprob\":-0.8120399117469788,\"bytes\":[],\"token_id\":374,\"top_logprobs\":[{\"token\":\"'s\",\"logprob\":-1.687039852142334,\"bytes\":[],\"token_id\":594}]},{\"token\":\"
+        \",\"logprob\":-2.9728126525878906,\"bytes\":[],\"token_id\":220,\"top_logprobs\":[{\"token\":\"
+        the\",\"logprob\":-0.347812682390213,\"bytes\":[],\"token_id\":279}]},{\"token\":\"8\",\"logprob\":-4.441056728363037,\"bytes\":[],\"token_id\":23,\"top_logprobs\":[{\"token\":\"2\",\"logprob\":-0.5660569071769714,\"bytes\":[],\"token_id\":17},{\"token\":\"1\",\"logprob\":-2.441056966781616,\"bytes\":[],\"token_id\":16}]},{\"token\":\"+\",\"logprob\":-2.1323304176330566,\"bytes\":[],\"token_id\":10,\"top_logprobs\":[{\"token\":\"
+        divided\",\"logprob\":-1.5073305368423462,\"bytes\":[],\"token_id\":17753},{\"token\":\"
+        +\",\"logprob\":-1.7573305368423462,\"bytes\":[],\"token_id\":488}]},{\"token\":\"1\",\"logprob\":-4.278728008270264,\"bytes\":[],\"token_id\":16,\"top_logprobs\":[{\"token\":\"3\",\"logprob\":-0.7787281274795532,\"bytes\":[],\"token_id\":18},{\"token\":\"8\",\"logprob\":-1.6537281274795532,\"bytes\":[],\"token_id\":23}]},{\"token\":\"?\",\"logprob\":-2.2632083892822266,\"bytes\":[],\"token_id\":30,\"top_logprobs\":[{\"token\":\"?\\n\\n\",\"logprob\":-0.8882084488868713,\"bytes\":[],\"token_id\":1939},{\"token\":\"+\",\"logprob\":-2.0132083892822266,\"bytes\":[],\"token_id\":10}]},{\"token\":\"
+        Reply\",\"logprob\":-11.234923362731934,\"bytes\":[],\"token_id\":17815,\"top_logprobs\":[{\"token\":\"</think>\",\"logprob\":-0.04742372781038284,\"bytes\":[],\"token_id\":154842},{\"token\":\"9\",\"logprob\":-4.297423839569092,\"bytes\":[],\"token_id\":24}]},{\"token\":\"
+        with\",\"logprob\":-1.2553240060806274,\"bytes\":[],\"token_id\":448,\"top_logprobs\":[{\"token\":\"
+        in\",\"logprob\":-1.1303240060806274,\"bytes\":[],\"token_id\":304}]},{\"token\":\"
+        just\",\"logprob\":-1.3789772987365723,\"bytes\":[],\"token_id\":1101,\"top_logprobs\":[{\"token\":\"
+        a\",\"logprob\":-1.5039772987365723,\"bytes\":[],\"token_id\":264}]},{\"token\":\"
+        the\",\"logprob\":-0.1423187553882599,\"bytes\":[],\"token_id\":279,\"top_logprobs\":[{\"token\":\"
+        a\",\"logprob\":-2.6423187255859375,\"bytes\":[],\"token_id\":264}]},{\"token\":\"
+        number\",\"logprob\":-1.0911064147949219,\"bytes\":[],\"token_id\":1372,\"top_logprobs\":[{\"token\":\"
+        answer\",\"logprob\":-0.4661064147949219,\"bytes\":[],\"token_id\":4226}]},{\"token\":\".\",\"logprob\":-0.539473831653595,\"bytes\":[],\"token_id\":13,\"top_logprobs\":[{\"token\":\".\\n\\n\",\"logprob\":-1.2894737720489502,\"bytes\":[],\"token_id\":382}]},{\"token\":\"<|assistant|>\",\"logprob\":-12.044443130493164,\"bytes\":[],\"token_id\":154828,\"top_logprobs\":[{\"token\":\"</think>\",\"logprob\":-0.04444305598735809,\"bytes\":[],\"token_id\":154842},{\"token\":\"9\",\"logprob\":-3.544443130493164,\"bytes\":[],\"token_id\":24}]},{\"token\":\"<think>\",\"logprob\":-17.10346031188965,\"bytes\":[],\"token_id\":154841,\"top_logprobs\":[{\"token\":\"</think>\",\"logprob\":-0.00970974937081337,\"bytes\":[],\"token_id\":154842},{\"token\":\"9\",\"logprob\":-5.38470983505249,\"bytes\":[],\"token_id\":24}]}]},\"response_error\":{\"format_error\":null,\"content_validation\":[\"valid_text_chunk\"],\"tool_calls_validation\":[],\"extra_tags\":[]}}]}"
     headers:
       access-control-allow-origin:
       - '*'
@@ -135,17 +133,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a49f5d06c976ac28-YYZ
+      - a5097aef79873a09-YYZ
       connection:
       - keep-alive
       content-length:
-      - '9063'
+      - '9005'
       content-type:
       - application/json
       date:
-      - Tue, 13 Oct 2026 15:26:35 GMT
+      - Mon, 26 Oct 2026 12:31:50 GMT
       mistral-correlation-id:
-      - 01a135df-60a0-7d73-8168-0ae619daa745
+      - 01a17832-1201-75c6-b6e5-ab4c7c4c108d
       server:
       - cloudflare
       strict-transport-security:
@@ -155,13 +153,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '836'
+      - '676'
       x-kong-proxy-latency:
-      - '18'
+      - '23'
       x-kong-request-id:
-      - 01a135df-60a0-7d73-8168-0ae619daa745
+      - 01a17832-1201-75c6-b6e5-ab4c7c4c108d
       x-kong-upstream-latency:
-      - '838'
+      - '678'
       x-ratelimit-limit-req-minute:
       - '1000'
       x-ratelimit-limit-tokens-minute:
@@ -169,7 +167,7 @@ interactions:
       x-ratelimit-remaining-req-minute:
       - '997'
       x-ratelimit-remaining-tokens-minute:
-      - '31999867'
+      - '31999802'
       x-ratelimit-tokens-query-cost:
       - '39'
     status:
@@ -187,9 +185,9 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/3.2.0
+      - mistral-client-python/3.5.0
     method: DELETE
-    uri: https://api.mistral.ai/v1/agents/ag_01a135df5fc273f5b16cbdd1bfe55ac7
+    uri: https://api.mistral.ai/v1/agents/ag_01a17832111c70b28357f001f646d817
   response:
     body:
       string: ''
@@ -201,13 +199,13 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a49f5d0e2b37ac28-YYZ
+      - a5097af4ee7a3a09-YYZ
       connection:
       - keep-alive
       date:
-      - Tue, 13 Oct 2026 15:26:35 GMT
+      - Mon, 26 Oct 2026 12:31:50 GMT
       mistral-correlation-id:
-      - 01a135df-6520-7723-9cec-795bfc771b35
+      - 01a17832-1563-7e79-832c-e190683537a2
       server:
       - cloudflare
       strict-transport-security:
@@ -215,13 +213,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '91'
+      - '110'
       x-kong-proxy-latency:
-      - '14'
+      - '13'
       x-kong-request-id:
-      - 01a135df-6520-7723-9cec-795bfc771b35
+      - 01a17832-1563-7e79-832c-e190683537a2
       x-kong-upstream-latency:
-      - '94'
+      - '113'
     status:
       code: 204
       message: No Content

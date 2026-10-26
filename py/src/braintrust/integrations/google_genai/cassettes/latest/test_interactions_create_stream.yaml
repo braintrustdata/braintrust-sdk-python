@@ -17,19 +17,19 @@ interactions:
       user-agent:
       - speakeasy-sdk/python 2.4.1-preview.5 internal v1beta google-genai
       x-goog-api-client:
-      - google-genai-sdk/2.31.0 gl-python/3.14.7
+      - google-genai-sdk/2.33.0 gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/interactions
   response:
     body:
       string: 'event: interaction.created
 
-        data: {"interaction":{"id":"v1_ChdNbERXYW9DOE5zdVVfdU1QNVBiU3FRdxIXTWxEV2FvQzhOc3VVX3VNUDVQYlNxUXc","status":"in_progress","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.created"}
+        data: {"interaction":{"id":"v1_ChdIMGpmYXBLekpKV0V5dE1QdHVHV3dRVRIXSDBqZmFwS3pKSldFeXRNUHR1R1d3UVU","status":"in_progress","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.created"}
 
 
         event: interaction.status_update
 
-        data: {"interaction_id":"v1_ChdNbERXYW9DOE5zdVVfdU1QNVBiU3FRdxIXTWxEV2FvQzhOc3VVX3VNUDVQYlNxUXc","status":"in_progress","event_type":"interaction.status_update"}
+        data: {"interaction_id":"v1_ChdIMGpmYXBLekpKV0V5dE1QdHVHV3dRVRIXSDBqZmFwS3pKSldFeXRNUHR1R1d3UVU","status":"in_progress","event_type":"interaction.status_update"}
 
 
         event: step.start
@@ -39,7 +39,7 @@ interactions:
 
         event: step.delta
 
-        data: {"index":0,"delta":{"signature":"ClsBaRR9E1Gt8VAC0l4sV9z9LCD0M9KeZMs9Ej47mJH2NCv73piJpO+m5S59RihOA+x3VSpM4IC8BXFkYGhH2g+lyN+mRBEB/tTuUC+9QYVVQPMeL5Rjcuu6rT63CpIBAWkUfRNRTpA9ImfNunDsqgOVQMdlPSYKIGeKyG90sTFszXU93K5OqCLEOXgw9b3iUJZ99je9Co3Y9z+J5UOcoidS0Iuuo2AiwjtOHpq6ZUmtzQF2cAplqOXOdmdpe+248cufr92QFlLL6Vs6rlDMjJYeckGFxCUDoaVycIAzW2oHoEzuDN6sAyfM23drCAop+Cg=","type":"thought_signature"},"event_type":"step.delta"}
+        data: {"index":0,"delta":{"signature":"ClUBaRR9E9Y0RofftaVIWFcfmhUmb1UUgmS6hd8400wcN+CUlwr+zdTsCFRZXm38BSBA8UGssSEGUxSlqgdYW+CBhnywLH3RK3hKJzRp1kEgWph6Uze7Cq0BAWkUfRNeFWBiYTmsd+sEnxcJjLCu1wVC4CxRrOPnhYLk1LU8LcUdGZNgFVxrnw2gLGavsBvMRsaLMG5OxDKGU1DZSUUG69lSFav8JK++3c9RkATs3W1k6lFBm+20iSNjlHoQEbLNbTHzg1cc5R75dNcujjnwcGicQs6Ks8KhEsXEMs6CfaXawfdAYXGqWJ/px/LWppgncAXZLYtES7V8JaExQHU1oDHp3r5mFiA=","type":"thought_signature"},"event_type":"step.delta"}
 
 
         event: step.stop
@@ -64,7 +64,7 @@ interactions:
 
         event: interaction.completed
 
-        data: {"interaction":{"id":"v1_ChdNbERXYW9DOE5zdVVfdU1QNVBiU3FRdxIXTWxEV2FvQzhOc3VVX3VNUDVQYlNxUXc","status":"completed","usage":{"total_tokens":64,"total_input_tokens":9,"input_tokens_by_modality":[{"modality":"text","tokens":9}],"total_cached_tokens":0,"total_output_tokens":2,"total_tool_use_tokens":0,"total_thought_tokens":53},"created":"2026-10-19T17:15:32Z","updated":"2026-10-19T17:15:32Z","service_tier":"standard","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.completed"}
+        data: {"interaction":{"id":"v1_ChdIMGpmYXBLekpKV0V5dE1QdHVHV3dRVRIXSDBqZmFwS3pKSldFeXRNUHR1R1d3UVU","status":"completed","usage":{"total_tokens":75,"total_input_tokens":9,"input_tokens_by_modality":[{"modality":"text","tokens":9}],"total_cached_tokens":0,"total_output_tokens":2,"total_tool_use_tokens":0,"total_thought_tokens":64},"created":"2026-10-26T12:31:29Z","updated":"2026-10-26T12:31:29Z","service_tier":"standard","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.completed"}
 
 
         event: done
@@ -77,15 +77,15 @@ interactions:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '1847'
+      - '1875'
       content-type:
       - text/event-stream
       date:
-      - Mon, 19 Oct 2026 17:15:31 GMT
+      - Mon, 26 Oct 2026 12:31:28 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=714
+      - gfet4t7; dur=1263
       transfer-encoding:
       - chunked
       vary:

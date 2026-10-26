@@ -5,7 +5,7 @@ interactions:
       accept:
       - application/json
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
@@ -15,7 +15,7 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.10.0
+      - mistral-client-python/3.5.0
     method: POST
     uri: https://api.mistral.ai/v1/ocr
   response:
@@ -29,7 +29,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a3afc9e1586ba1de-YYZ
+      - a5097b0f2b8e5383-YYZ
       connection:
       - keep-alive
       content-length:
@@ -37,9 +37,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 14 Sep 2026 13:37:50 GMT
+      - Mon, 26 Oct 2026 12:31:55 GMT
       mistral-correlation-id:
-      - 01a0a023-6945-7fcb-9666-f45af82569d7
+      - 01a17832-25b2-7d96-bc1f-4c4fd84d87d0
       server:
       - cloudflare
       strict-transport-security:
@@ -49,19 +49,19 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '112'
+      - '757'
       x-kong-proxy-latency:
-      - '35'
+      - '16'
       x-kong-request-id:
-      - 01a0a023-6945-7fcb-9666-f45af82569d7
+      - 01a17832-25b2-7d96-bc1f-4c4fd84d87d0
       x-kong-upstream-latency:
-      - '113'
+      - '758'
       x-ratelimit-limit-ocr-pages-minute:
-      - '60'
+      - '1250'
       x-ratelimit-ocr-pages-query-cost:
       - '1'
       x-ratelimit-remaining-ocr-pages-minute:
-      - '59'
+      - '1249'
     status:
       code: 200
       message: OK

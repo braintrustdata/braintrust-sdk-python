@@ -18,13 +18,19 @@ from braintrust.integrations.anthropic.tracing import TracedMessageStream, _norm
 from braintrust.integrations.test_utils import verify_autoinstrument_script
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import find_span_by_name, find_spans_by_type, init_test_logger
+from packaging.version import Version
 from pydantic import BaseModel
 
 
 PROJECT_NAME = "test-anthropic-app"
 LEGACY_MODEL = "claude-3-haiku-20240307"
 LATEST_MODEL = "claude-haiku-4-5-20251001"
-MODEL = LATEST_MODEL if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest" else LEGACY_MODEL
+# Pre-1.0 matrix pins replay cassettes recorded against the retired LEGACY_MODEL and the
+# pre-1.0 API surface; ``latest`` and 1.x+ pins use current models and API features.
+MODERN_SDK = os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest" or Version(
+    anthropic.__version__
+) >= Version("1.0.0")
+MODEL = LATEST_MODEL if MODERN_SDK else LEGACY_MODEL
 MULTIMODAL_MODEL = "claude-haiku-4-5-20251001"
 STRUCTURED_OUTPUT_MODEL = "claude-haiku-4-5"
 STRUCTURED_OUTPUT_SCHEMA = {
@@ -286,7 +292,7 @@ def test_extract_anthropic_usage(usage, expected_metrics, expected_metadata):
 
 @pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
 def test_anthropic_beta_messages_create_captures_context_and_usage_metadata(memory_logger):
-    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
+    if not MODERN_SDK:
         pytest.skip("Context management and usage speed require the latest Anthropic API")
 
     client = wrap_anthropic(_get_client())
@@ -310,7 +316,7 @@ def test_anthropic_beta_messages_create_captures_context_and_usage_metadata(memo
 
 @pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
 def test_anthropic_beta_messages_create_captures_compaction_metadata(memory_logger):
-    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
+    if not MODERN_SDK:
         pytest.skip("On-demand compaction requires the latest Anthropic API")
 
     client = wrap_anthropic(_get_client())
@@ -340,7 +346,7 @@ def test_anthropic_beta_messages_create_captures_compaction_metadata(memory_logg
 async def test_anthropic_beta_messages_create_preserves_inline_mcp_blocks(
     memory_logger, is_async, vcr_cassette, vcr_cassette_name
 ):
-    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
+    if not MODERN_SDK:
         pytest.skip("Inline MCP tool definitions require the latest Anthropic API")
 
     client = wrap_anthropic(_get_async_client() if is_async else _get_client())
@@ -430,7 +436,7 @@ async def test_anthropic_beta_messages_create_preserves_inline_mcp_blocks(
     ids=["sync", "async"],
 )
 async def test_anthropic_mcp_stream_accumulates_tool_input(memory_logger, is_async, vcr_cassette, vcr_cassette_name):
-    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
+    if not MODERN_SDK:
         pytest.skip("MCP stream events require the latest Anthropic SDK")
 
     client = wrap_anthropic(_get_async_client() if is_async else _get_client())
@@ -503,7 +509,7 @@ async def test_anthropic_mcp_stream_accumulates_tool_input(memory_logger, is_asy
 
 @pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
 def test_anthropic_messages_create_captures_refusal_stop_details(memory_logger):
-    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
+    if not MODERN_SDK:
         pytest.skip("Refusal stop details require the latest Anthropic API")
 
     client = wrap_anthropic(_get_client())
@@ -524,7 +530,7 @@ def test_anthropic_messages_create_captures_refusal_stop_details(memory_logger):
 
 @pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
 def test_anthropic_beta_messages_create_captures_fallback_credit_usage(memory_logger):
-    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
+    if not MODERN_SDK:
         pytest.skip("Fallback credit usage requires the latest Anthropic API")
 
     client = wrap_anthropic(_get_client())
@@ -577,7 +583,7 @@ def test_anthropic_beta_messages_create_captures_fallback_credit_usage(memory_lo
     ids=["5m", "1h"],
 )
 def test_anthropic_messages_create_prompt_cache_metrics(memory_logger, ttl, vcr_cassette_name):
-    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
+    if not MODERN_SDK:
         pytest.skip("Prompt cache TTL breakdown requires the latest Anthropic SDK cassette")
 
     client = wrap_anthropic(_get_client())
@@ -611,7 +617,7 @@ def test_anthropic_messages_create_prompt_cache_metrics(memory_logger, ttl, vcr_
 # The SDK's generated method signature omits the runtime-supported diagnostics parameter.
 # pylint: disable=unexpected-keyword-arg
 def test_anthropic_messages_create_prompt_cache_diagnostics(memory_logger):
-    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
+    if not MODERN_SDK:
         pytest.skip("Prompt cache diagnostics require the latest Anthropic SDK cassette")
 
     client = wrap_anthropic(_get_client())

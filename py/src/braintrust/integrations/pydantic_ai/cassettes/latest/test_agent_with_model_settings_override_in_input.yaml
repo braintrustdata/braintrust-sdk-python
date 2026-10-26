@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.57.0
+      - pydantic-ai/2.61.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.35.1
+      - 3.37.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,35 +39,35 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_021c2426a03b5012006ad64ff77c1487d0b63eb37649cd32fb\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1792430071,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0625b412172aa4e5016adf4818273487d1898d327ccb93afb5\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1793017880,\n  \"status\":
         \"incomplete\",\n  \"access_programs\": null,\n  \"background\": false,\n
         \ \"billing\": {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\":
         null,\n  \"error\": null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\":
         {\n    \"reason\": \"max_output_tokens\"\n  },\n  \"instructions\": null,\n
         \ \"max_output_tokens\": 200,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
-        \ \"moderation\": null,\n  \"output\": [\n    {\n      \"id\": \"msg_021c2426a03b5012006ad64ff7e04887d08780c0b93ff7b49e\",\n
+        \ \"moderation\": null,\n  \"output\": [\n    {\n      \"id\": \"msg_0625b412172aa4e5016adf48188b4087d1a99e5a5a60aaf561\",\n
         \     \"type\": \"message\",\n      \"status\": \"incomplete\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"Once upon a time,
-        in a small village nestled between emerald hills, there lived a young girl
-        named Elara. From a young age, she was known for her adventurous spirit and
-        insatiable curiosity. Unlike the other villagers, who were content with their
-        daily routines, Elara often wandered into the lush forests that bordered her
-        home, seeking out the hidden wonders of nature.\\n\\nOne sunny afternoon,
-        while exploring a part of the forest she had never seen before, Elara stumbled
-        upon an ancient oak tree. Its trunk was wide and gnarled, and its branches
-        stretched high into the sky, adorned with vibrant green leaves. Intrigued,
-        she approached the tree and noticed a small door carved into its trunk.\\n\\nWith
-        a mix of excitement and trepidation, she gently pushed the door open. To her
-        astonishment, she found herself in a magical realm filled with colors she
-        had never seen before. The sky was a swirling tapestry of pink and gold, and
-        the air hummed with the sounds\"\n        }\n      ],\n      \"role\": \"assistant\"\n
-        \   }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n
-        \ \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
+        [],\n          \"logprobs\": [],\n          \"text\": \"Once in a small village
+        nestled between the mountains and the sea, there lived a young girl named
+        Mira. She was known for her bright smile and adventurous spirit. Mira would
+        often explore the lush forests and rocky shores, dreaming of what lay beyond
+        the horizon.\\n\\nOne sunny afternoon, while wandering along the coast, she
+        stumbled upon a peculiar bottle half-buried in the sand. Curious, she dug
+        it out and discovered a rolled parchment inside. Uncorking the bottle, she
+        pulled out the scroll and read:\\n\\n\\\"To the one who finds this, you hold
+        the key to a hidden treasure. Follow the path of the three ancient trees,
+        and your heart's desire shall be revealed.\\\"\\n\\nIntrigued, Mira decided
+        to embark on the quest. She remembered the old trees her grandmother once
+        told her stories about: the Oak of Wisdom, the Willow of Whispers, and the
+        Pine of Courage.\\n\\nThe next morning, she packed a small bag with food and
+        set off toward the forest. After a\"\n        }\n      ],\n      \"role\":
+        \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\":
+        0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
         \"in_memory\",\n  \"reasoning\": {\n    \"context\": null,\n    \"effort\":
         null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
-        \"default\",\n  \"store\": true,\n  \"temperature\": 0.9,\n  \"text\": {\n
+        \"default\",\n  \"store\": false,\n  \"temperature\": 0.9,\n  \"text\": {\n
         \   \"format\": {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n
         \ },\n  \"tool_choice\": \"auto\",\n  \"tool_usage\": {\n    \"image_gen\":
         {\n      \"input_tokens\": 0,\n      \"input_tokens_details\": {\n        \"image_tokens\":
@@ -82,7 +82,7 @@ interactions:
         {}\n}"
     headers:
       access-control-expose-headers:
-      - X-Request-ID
+      - X-Request-ID, Server-Timing-Total
       - CF-Ray
       - CF-Ray
       alt-svc:
@@ -90,17 +90,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a4d16b6a3faffa22-SJC
+      - a5097a36796cab4b-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2992'
+      - '2981'
       content-type:
       - application/json
       date:
-      - Mon, 19 Oct 2026 17:14:34 GMT
+      - Mon, 26 Oct 2026 12:31:22 GMT
       openai-processing-ms:
-      - '2510'
+      - '2539'
       openai-version:
       - '2020-10-01'
       server:
@@ -116,15 +116,15 @@ interactions:
       x-ratelimit-limit-tokens:
       - '150000000'
       x-ratelimit-remaining-requests:
-      - '29998'
+      - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999935'
+      - '149999970'
       x-ratelimit-reset-requests:
-      - 4ms
+      - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_4af1689d58c54649aa57473de66545e2
+      - req_ddbecde74913433a8784d3e81472d0d6
     status:
       code: 200
       message: OK

@@ -572,12 +572,14 @@ def test_wrap_mistral_agents_stream_tool_spans(memory_logger):
 
     assert chunks
     usage = next(chunk.data.usage for chunk in reversed(chunks) if getattr(chunk.data, "usage", None) is not None)
-    assert usage.prompt_tokens_details["cached_tokens"] == 80
+    # The live cache hit varies between recordings; check the streamed value is propagated.
+    cached_tokens = usage.prompt_tokens_details["cached_tokens"]
+    assert isinstance(cached_tokens, int)
 
     spans = memory_logger.pop()
     llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
     assert len(llm_spans) == 1
-    assert llm_spans[0]["metrics"]["prompt_cached_tokens"] == 80
+    assert llm_spans[0]["metrics"]["prompt_cached_tokens"] == cached_tokens
     assert len(find_spans_by_type(spans, SpanTypeAttribute.TOOL)) == 1
 
 

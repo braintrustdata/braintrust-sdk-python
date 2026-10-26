@@ -2083,6 +2083,13 @@ def test_conversation_messages_serialize_same_with_or_without_adapter_dump():
     raw_shape = bt_safe_deep_copy(_shape_messages(messages))
     dumped_shape = bt_safe_deep_copy(_shape_messages(ModelMessagesTypeAdapter.dump_python(messages)))
 
+    # pydantic_ai >= 2.61 drops a zero ``usage.unmeasured_requests`` from adapter dumps via
+    # ``Field(exclude_if=...)``; the raw dataclass serializer keeps it.
+    for message in raw_shape:
+        usage = message.get("usage")
+        if isinstance(usage, dict) and usage.get("unmeasured_requests") == 0:
+            del usage["unmeasured_requests"]
+
     assert raw_shape == dumped_shape
 
     def assert_same_key_sets(raw, dumped):
