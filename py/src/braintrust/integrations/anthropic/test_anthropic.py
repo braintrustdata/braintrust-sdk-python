@@ -2145,3 +2145,129 @@ async def test_anthropic_tool_runner_cleanup(memory_logger, is_async, vcr_casset
             runner.close()
     assert logger.current_span() is parent
     assert not memory_logger.pop()
+
+
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "is_async,vcr_cassette_name",
+    [(False, "test_anthropic_tool_runner[create-sync]"), (True, "test_anthropic_tool_runner[create-async]")],
+    ids=["sync", "async"],
+)
+async def test_anthropic_tool_runner_added_tools(memory_logger, is_async, vcr_cassette_name):
+    raw_client = _get_async_client() if is_async else _get_client()
+    if not hasattr(raw_client.beta.messages, "tool_runner"):
+        pytest.skip("Tool runner is unavailable")
+    add = _addition_tool(is_async)
+    original_call = add.call
+    runner = wrap_anthropic(raw_client).beta.messages.tool_runner(
+        model=MODEL,
+        max_tokens=256,
+        messages=[{"role": "user", "content": "Use the add tool to calculate 123 + 456. Reply with just the result."}],
+        tools=[add.to_dict()],
+        stream=False,
+        max_iterations=3,
+    )
+    parent = logger.current_span()
+    reply = await runner.__anext__() if is_async else next(runner)
+    assert reply.stop_reason == "tool_use"
+    try:
+        runner.add_tools(add)
+        result = await runner.generate_tool_call_response() if is_async else runner.generate_tool_call_response()
+    finally:
+        if is_async:
+            await runner.close()
+        else:
+            runner.close()
+    assert result["content"][0]["content"] == "579"
+    assert add.call == original_call
+    assert logger.current_span() is parent
+    spans = memory_logger.pop()
+    task = find_span_by_name(spans, "anthropic.messages.tool_runner")
+    tools = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+    assert len(tools) == 1
+    assert tools[0]["span_attributes"]["name"] == "add"
+    assert tools[0]["span_parents"] == [task["span_id"]]
+    assert tools[0]["input"] == {"a": 123, "b": 456}
+    assert tools[0]["output"] == "579"
+    assert tools[0]["context"]["span_origin"]["instrumentation"]["name"] == "anthropic-auto"
+
+
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
+@pytest.mark.asyncio
+@pytest.mark.parametrize("fail", [False, True], ids=["success", "error"])
+@pytest.mark.parametrize(
+    "is_async,vcr_cassette_name",
+    [(False, "test_anthropic_tool_runner_toolset[sync]"), (True, "test_anthropic_tool_runner_toolset[async]")],
+    ids=["sync", "async"],
+)
+async def test_anthropic_tool_runner_toolset(memory_logger, is_async, fail, vcr_cassette_name):
+    pytest.importorskip("anthropic.tools.computer")
+    from anthropic.tools import ToolError
+    from anthropic.tools.computer import BetaAbstractComputerToolset20260801, BetaAsyncAbstractComputerToolset20260801
+
+    # These SDK toolsets implement a real local wait operation; no desktop or
+    # browser driver is needed to exercise the member-execution contract.
+    if is_async:
+
+        class WaitingToolset(BetaAsyncAbstractComputerToolset20260801):
+            async def wait(self, context, input):
+                import asyncio
+
+                await asyncio.sleep(input.duration)
+                if fail:
+                    raise ToolError("wait failed")
+    else:
+
+        class WaitingToolset(BetaAbstractComputerToolset20260801):
+            def wait(self, context, input):
+                time.sleep(input.duration)
+                if fail:
+                    raise ToolError("wait failed")
+
+    toolset = WaitingToolset()
+    original_result = toolset.tool_result
+    client = wrap_anthropic(_get_async_client() if is_async else _get_client())
+    runner = client.beta.messages.tool_runner(
+        model="claude-sonnet-5",
+        max_tokens=256,
+        messages=[{"role": "user", "content": "Use the computer wait tool once to wait for 1 second."}],
+        tools=[toolset],
+        stream=is_async,
+        max_iterations=1,
+    )
+    parent = logger.current_span()
+    reply = await runner.__anext__() if is_async else next(runner)
+    if is_async:
+        reply = await reply.get_final_message()
+    assert reply.stop_reason == "tool_use"
+    tool_use = next(block for block in reply.content if block.type == "tool_use")
+    assert tool_use.name == "wait"
+    assert tool_use.toolset_name == "computer"
+    assert tool_use.input == {"duration": 1}
+    try:
+        result = await runner.generate_tool_call_response() if is_async else runner.generate_tool_call_response()
+    finally:
+        if is_async:
+            await runner.close()
+        else:
+            runner.close()
+    tool_result = result["content"][0]
+    assert bool(tool_result.get("is_error")) is fail
+    assert toolset.tool_result == original_result
+    assert logger.current_span() is parent
+    spans = memory_logger.pop()
+    task = find_span_by_name(spans, "anthropic.messages.tool_runner")
+    tools = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+    assert len(tools) == 1
+    tool = tools[0]
+    assert tool["span_attributes"]["name"] == "wait"
+    assert tool["span_parents"] == [task["span_id"]]
+    assert tool["input"] == tool_use.input
+    assert tool["output"] == tool_result["content"]
+    assert tool["metadata"] == {"provider": "anthropic", "toolset_name": "computer", "tool_use_id": tool_use.id}
+    if fail:
+        assert tool["error"] == tool["output"]
+    else:
+        assert "error" not in tool
+    assert tool["context"]["span_origin"]["instrumentation"]["name"] == "anthropic-auto"

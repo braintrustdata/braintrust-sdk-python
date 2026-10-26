@@ -720,33 +720,53 @@ def _with_traced_tools(kwargs):
 
 
 def _trace_runnable_tool(tool):
-    call = getattr(tool, "call", None)
+    # Toolsets dispatch members through tool_result(tool_use); their call()
+    # takes (context, name, input), unlike a function tool's call(input).
+    is_toolset = callable(getattr(tool, "tool_result", None)) and isinstance(getattr(tool, "toolset_name", None), str)
+    method_name = "tool_result" if is_toolset else "call"
+    call = getattr(tool, method_name, None)
     if not callable(call) or getattr(call, _BRAINTRUST_TRACED, False):
         return tool
     traced = copy(tool)
 
     def tool_span(tool_input):
+        if is_toolset:
+            return start_span(
+                name=tool_input.name,
+                type=SpanTypeAttribute.TOOL,
+                input=_normalize_anthropic_input(tool_input.input),
+                metadata={"provider": "anthropic", "toolset_name": tool.toolset_name, "tool_use_id": tool_input.id},
+            )
         return start_span(
             name=tool.name, type=SpanTypeAttribute.TOOL, input=tool_input, metadata={"provider": "anthropic"}
         )
+
+    def log_result(span, result):
+        if is_toolset:
+            output = _normalize_anthropic_input(result.get("content"))
+            span.log(output=output)
+            if result.get("is_error"):
+                span.log(error=output)
+        else:
+            span.log(output=result)
 
     if inspect.iscoroutinefunction(call):
 
         async def traced_call(tool_input):
             with tool_span(tool_input) as span:
                 result = await call(tool_input)
-                span.log(output=result)
+                log_result(span, result)
                 return result
     else:
 
         def traced_call(tool_input):
             with tool_span(tool_input) as span:
                 result = call(tool_input)
-                span.log(output=result)
+                log_result(span, result)
                 return result
 
     setattr(traced_call, _BRAINTRUST_TRACED, True)
-    traced.call = traced_call
+    setattr(traced, method_name, traced_call)
     return traced
 
 
@@ -847,6 +867,9 @@ class TracedToolRunner(Wrapper):
             result = await self.__runner.until_done()
             self._finish(result)
             return result
+
+    def add_tools(self, *tools):
+        return self.__runner.add_tools(*(_trace_runnable_tool(tool) for tool in tools))
 
     def generate_tool_call_response(self):
         if inspect.iscoroutinefunction(self.__runner.generate_tool_call_response):
