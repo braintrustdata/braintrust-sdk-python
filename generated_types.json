@@ -2126,7 +2126,7 @@
                           },
                           "snapshot_ref": {
                             "type": "string",
-                            "description": "sandbox snapshot ref"
+                            "description": "The Modal snapshot to start the sandbox from"
                           }
                         },
                         "required": [
@@ -2917,13 +2917,13 @@
                 "description": "The total number of tokens in the input and output of the experiment event."
               },
               "caller_functionname": {
-                "description": "This metric is deprecated"
+                "description": "Deprecated. Use `context.caller_functionname` instead."
               },
               "caller_filename": {
-                "description": "This metric is deprecated"
+                "description": "Deprecated. Use `context.caller_filename` instead."
               },
               "caller_lineno": {
-                "description": "This metric is deprecated"
+                "description": "Deprecated. Use `context.caller_lineno` instead."
               }
             },
             "additionalProperties": {
@@ -6021,7 +6021,7 @@
                             "type": "string",
                             "minLength": 1,
                             "maxLength": 10000,
-                            "description": "Publish a Slack mrkdwn digest.\n\nPattern selection requirement: include every selected Pattern whose final status is active at the end of this automation run, plus every selected Pattern that changed from active to inactive during this run (a newly inactive outcome). Exclude Patterns that were already inactive before this run and remained inactive. Do not mention excluded Patterns anywhere in the digest, including Highlights. If no selected Patterns meet these criteria, say \"No current pattern outcomes.\" This requirement overrides conflicting formatting guidance.\n\nInclude a complete \"*Pattern outcomes*\" section with one row for every included Pattern.\n\nUse this row format exactly:\n• <pattern_url|Pattern title> — `outcome`\n\nIf a Pattern has no URL, use the plain title instead. Do not use GitHub Markdown tables or code-block tables, because links must remain clickable. Do not omit any active selected Pattern.\n\nAfter the outcome list, include a \"*Highlights*\" section with one very short paragraph, 2-3 sentences maximum. Summarize what changed or what broadly stands out among the included active Patterns. Do not introduce new claims beyond the run report."
+                            "description": "Instructions for Loop to format content sent to this destination"
                           }
                         },
                         "required": [
@@ -6408,7 +6408,7 @@
                             "type": "string",
                             "minLength": 1,
                             "maxLength": 10000,
-                            "description": "Publish a Slack mrkdwn digest.\n\nPattern selection requirement: include every selected Pattern whose final status is active at the end of this automation run, plus every selected Pattern that changed from active to inactive during this run (a newly inactive outcome). Exclude Patterns that were already inactive before this run and remained inactive. Do not mention excluded Patterns anywhere in the digest, including Highlights. If no selected Patterns meet these criteria, say \"No current pattern outcomes.\" This requirement overrides conflicting formatting guidance.\n\nInclude a complete \"*Pattern outcomes*\" section with one row for every included Pattern.\n\nUse this row format exactly:\n• <pattern_url|Pattern title> — `outcome`\n\nIf a Pattern has no URL, use the plain title instead. Do not use GitHub Markdown tables or code-block tables, because links must remain clickable. Do not omit any active selected Pattern.\n\nAfter the outcome list, include a \"*Highlights*\" section with one very short paragraph, 2-3 sentences maximum. Summarize what changed or what broadly stands out among the included active Patterns. Do not introduce new claims beyond the run report."
+                            "description": "Instructions for Loop to format content sent to this destination"
                           }
                         },
                         "required": [
@@ -6699,13 +6699,13 @@
                 "description": "The total number of tokens in the input and output of the project logs event."
               },
               "caller_functionname": {
-                "description": "This metric is deprecated"
+                "description": "Deprecated. Use `context.caller_functionname` instead."
               },
               "caller_filename": {
-                "description": "This metric is deprecated"
+                "description": "Deprecated. Use `context.caller_filename` instead."
               },
               "caller_lineno": {
-                "description": "This metric is deprecated"
+                "description": "Deprecated. Use `context.caller_lineno` instead."
               }
             },
             "additionalProperties": {
@@ -8457,7 +8457,7 @@
               "number",
               "null"
             ],
-            "description": "The maximum duration, in milliseconds, to run the evaluation. Defaults to undefined, in which case there is no timeout."
+            "description": "The maximum duration, in milliseconds, to run the evaluation. There is no timeout by default."
           },
           "max_concurrency": {
             "type": [
@@ -9246,7 +9246,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 10000,
-                "description": "Publish a Slack mrkdwn digest.\n\nPattern selection requirement: include every selected Pattern whose final status is active at the end of this automation run, plus every selected Pattern that changed from active to inactive during this run (a newly inactive outcome). Exclude Patterns that were already inactive before this run and remained inactive. Do not mention excluded Patterns anywhere in the digest, including Highlights. If no selected Patterns meet these criteria, say \"No current pattern outcomes.\" This requirement overrides conflicting formatting guidance.\n\nInclude a complete \"*Pattern outcomes*\" section with one row for every included Pattern.\n\nUse this row format exactly:\n• <pattern_url|Pattern title> — `outcome`\n\nIf a Pattern has no URL, use the plain title instead. Do not use GitHub Markdown tables or code-block tables, because links must remain clickable. Do not omit any active selected Pattern.\n\nAfter the outcome list, include a \"*Highlights*\" section with one very short paragraph, 2-3 sentences maximum. Summarize what changed or what broadly stands out among the included active Patterns. Do not introduce new claims beyond the run report."
+                "description": "Instructions for Loop to format content sent to this destination"
               }
             },
             "required": [
@@ -10501,7 +10501,7 @@
                       "type": "string",
                       "minLength": 1,
                       "maxLength": 10000,
-                      "description": "Publish a Slack mrkdwn digest.\n\nPattern selection requirement: include every selected Pattern whose final status is active at the end of this automation run, plus every selected Pattern that changed from active to inactive during this run (a newly inactive outcome). Exclude Patterns that were already inactive before this run and remained inactive. Do not mention excluded Patterns anywhere in the digest, including Highlights. If no selected Patterns meet these criteria, say \"No current pattern outcomes.\" This requirement overrides conflicting formatting guidance.\n\nInclude a complete \"*Pattern outcomes*\" section with one row for every included Pattern.\n\nUse this row format exactly:\n• <pattern_url|Pattern title> — `outcome`\n\nIf a Pattern has no URL, use the plain title instead. Do not use GitHub Markdown tables or code-block tables, because links must remain clickable. Do not omit any active selected Pattern.\n\nAfter the outcome list, include a \"*Highlights*\" section with one very short paragraph, 2-3 sentences maximum. Summarize what changed or what broadly stands out among the included active Patterns. Do not introduce new claims beyond the run report."
+                      "description": "Instructions for Loop to format content sent to this destination"
                     }
                   },
                   "required": [
