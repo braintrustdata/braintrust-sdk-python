@@ -261,6 +261,161 @@ def test_http_background_logger_atexit_flush(monkeypatch, disable_atexit_flush, 
     assert mock_register.called is registers
 
 
+_SERVERLESS_ENV_VARS = (
+    "VERCEL",
+    "NETLIFY",
+    "AWS_EXECUTION_ENV",
+    "AWS_LAMBDA_FUNCTION_NAME",
+    "K_SERVICE",
+    "FUNCTION_TARGET",
+    "GAE_ENV",
+    "FUNCTIONS_WORKER_RUNTIME",
+)
+
+
+@pytest.fixture
+def make_batching_logger(monkeypatch):
+    for name in (*_SERVERLESS_ENV_VARS, "BRAINTRUST_FLUSH_DELAY_MS", "BRAINTRUST_DEFAULT_BATCH_SIZE"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("BRAINTRUST_DISABLE_ATEXIT_FLUSH", "true")
+    monkeypatch.setenv("BRAINTRUST_SYNC_FLUSH", "false")
+    loggers = []
+
+    def create():
+        conn = MagicMock()
+        conn.post.return_value.ok = True
+        bg = logger._HTTPBackgroundLogger(LazyValue(lambda: conn, use_mutex=False))
+        bg._max_request_size_result = {"max_request_size": 6 * 1024 * 1024, "can_use_overflow": False}
+        loggers.append(bg)
+        return bg, conn
+
+    yield create
+    for bg in loggers:
+        bg.sync_flush = False
+        bg.flush()
+
+
+@pytest.mark.parametrize(
+    ("name", "value", "expected"),
+    [
+        (None, None, 1000),
+        ("VERCEL", "1", 0),
+        ("NETLIFY", "true", 0),
+        ("AWS_EXECUTION_ENV", "AWS_Lambda_python3.14", 0),
+        ("AWS_LAMBDA_FUNCTION_NAME", "fn", 0),
+        ("K_SERVICE", "service", 0),
+        ("FUNCTION_TARGET", "handler", 0),
+        ("GAE_ENV", "standard", 0),
+        ("FUNCTIONS_WORKER_RUNTIME", "python", 0),
+        ("AWS_EXECUTION_ENV", "AWS_ECS_FARGATE", 1000),
+        ("GAE_ENV", "flex", 1000),
+    ],
+)
+def test_http_background_logger_flush_delay_default(make_batching_logger, monkeypatch, name, value, expected):
+    if name:
+        monkeypatch.setenv(name, value)
+    bg, _ = make_batching_logger()
+    assert bg.flush_delay_ms == expected
+
+
+@pytest.mark.parametrize(
+    ("serverless", "value", "expected"),
+    [(False, "0", 0), (False, "0.5", 0.5), (False, "-1", 1000), (False, "bad", 1000), (True, "250", 250)],
+)
+def test_http_background_logger_flush_delay_override(make_batching_logger, monkeypatch, serverless, value, expected):
+    if serverless:
+        monkeypatch.setenv("VERCEL", "1")
+    monkeypatch.setenv("BRAINTRUST_FLUSH_DELAY_MS", value)
+    bg, _ = make_batching_logger()
+    assert bg.flush_delay_ms == expected
+
+
+def test_http_background_logger_batches_and_merges_nearby_rows(make_batching_logger):
+    bg, conn = make_batching_logger()
+    bg.flush_delay_ms = 150
+    sent = threading.Event()
+    conn.post.side_effect = lambda *args, **kwargs: sent.set() or MagicMock(ok=True)
+
+    bg.log(LazyValue(lambda: {"id": "span", "dataset_id": "dataset", "metrics": {"start": 1}}, use_mutex=False))
+    assert not sent.wait(0.03)
+    bg.log(
+        LazyValue(
+            lambda: {"id": "span", "dataset_id": "dataset", "_is_merge": True, "metrics": {"end": 2}}, use_mutex=False
+        )
+    )
+    assert sent.wait(2)
+    assert conn.post.call_count == 1
+    rows = json.loads(conn.post.call_args.kwargs["data"])["rows"]
+    assert len(rows) == 1
+    assert rows[0]["metrics"] == {"start": 1, "end": 2}
+
+
+def test_http_background_logger_full_batch_skips_delay(make_batching_logger):
+    bg, conn = make_batching_logger()
+    bg.flush_delay_ms = 60_000
+    bg.default_batch_size = 3
+    sent = threading.Event()
+    conn.post.side_effect = lambda *args, **kwargs: sent.set() or MagicMock(ok=True)
+    for i in range(2):
+        bg.log(LazyValue(lambda i=i: {"id": str(i), "dataset_id": "dataset"}, use_mutex=False))
+    assert not sent.wait(0.03)
+    bg.log(LazyValue(lambda: {"id": "2", "dataset_id": "dataset"}, use_mutex=False))
+    assert sent.wait(2)
+    assert len(json.loads(conn.post.call_args.kwargs["data"])["rows"]) == 3
+
+
+def test_http_background_logger_exit_flush_skips_delay(make_batching_logger):
+    bg, conn = make_batching_logger()
+    bg.flush_delay_ms = 60_000
+    bg.log(LazyValue(lambda: {"id": "span", "dataset_id": "dataset"}, use_mutex=False))
+    bg._finalize()
+    conn.post.assert_called_once()
+    assert bg.queue.size() == 0
+
+
+def test_http_background_logger_rows_during_flush_get_their_own_delay(make_batching_logger):
+    bg, conn = make_batching_logger()
+    bg.flush_delay_ms = 150
+    uploading = threading.Event()
+    release_upload = threading.Event()
+    second_sent = threading.Event()
+
+    def post(*args, **kwargs):
+        rows = json.loads(kwargs["data"])["rows"]
+        if rows[0]["id"] == "first":
+            uploading.set()
+            assert release_upload.wait(2)
+        else:
+            second_sent.set()
+        return MagicMock(ok=True)
+
+    conn.post.side_effect = post
+    try:
+        bg.log(LazyValue(lambda: {"id": "first", "dataset_id": "dataset"}, use_mutex=False))
+        assert uploading.wait(2)
+        bg.log(LazyValue(lambda: {"id": "second", "dataset_id": "dataset"}, use_mutex=False))
+    finally:
+        release_upload.set()
+    assert not second_sent.wait(0.03)
+    assert second_sent.wait(2)
+    assert conn.post.call_count == 2
+
+
+@pytest.mark.parametrize("sync_flush", [False, True])
+def test_http_background_logger_zero_delay_respects_sync_flush(make_batching_logger, sync_flush):
+    bg, conn = make_batching_logger()
+    bg.sync_flush = sync_flush
+    bg.flush_delay_ms = 0
+    sent = threading.Event()
+    conn.post.side_effect = lambda *args, **kwargs: sent.set() or MagicMock(ok=True)
+    bg.log(LazyValue(lambda: {"id": "span", "dataset_id": "dataset"}, use_mutex=False))
+    if sync_flush:
+        assert not sent.wait(0.03)
+        bg.flush()
+    assert sent.wait(2)
+    conn.post.assert_called_once()
+
+
 class TestHTTPBackgroundLoggerLogs3(TestCase):
     def test_flush_uses_request_byte_budget(self) -> None:
         from braintrust.logger import _HTTPBackgroundLogger, construct_logs3_data, stringify_with_overflow_meta
