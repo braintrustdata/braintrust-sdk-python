@@ -18,18 +18,10 @@ def setup_openai(
     project_id: str | None = None,
     project_name: str | None = None,
 ) -> bool:
-    """Setup Braintrust integration with OpenAI.
-
-    Patches OpenAI resource classes at the module level so that all clients
-    produce Braintrust tracing spans.
-
-    Args:
-        api_key: Braintrust API key (optional, can use env var BRAINTRUST_API_KEY)
-        project_id: Braintrust project ID (optional)
-        project_name: Braintrust project name (optional, can use env var BRAINTRUST_PROJECT)
+    """Set up Braintrust tracing for the OpenAI Python SDK.
 
     Returns:
-        True if setup was successful, False otherwise
+        True if patched or already patched, False if OpenAI is not installed.
     """
     span = current_span()
     if span == NOOP_SPAN:

@@ -505,7 +505,6 @@ async def _flow_call_llm_async_wrapper(wrapped: Any, instance: Any, args: Any, k
 
             async with aclosing(wrapped(*args, **kwargs)) as agen:
                 async for event in agen:
-                    # Record time to first token
                     if first_token_time is None:
                         first_token_time = time.time()
 

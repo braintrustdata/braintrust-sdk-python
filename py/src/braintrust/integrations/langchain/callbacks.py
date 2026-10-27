@@ -98,6 +98,8 @@ def _split_tools(invocation_params: Mapping[str, Any] | None) -> tuple[dict[str,
 
 
 class BraintrustCallbackHandler(BaseCallbackHandler):
+    """LangChain callback handler that logs runs to Braintrust."""
+
     root_run_id: UUID | None = None
 
     def __init__(

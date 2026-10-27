@@ -44,9 +44,7 @@ def setup_agno(
     project_name: str | None = None,
     eval_experiments: bool | None = None,
 ) -> bool:
-    """
-    Setup Braintrust integration with Agno. Will automatically patch Agno agents, models,
-    function calls, and evals (``agno.eval``) for tracing.
+    """Set up Braintrust tracing for Agno.
 
     Args:
         api_key: Braintrust API key (optional, can use env var BRAINTRUST_API_KEY)
@@ -59,7 +57,8 @@ def setup_agno(
             current, so pass eval_experiments=False to keep suite runs in logs too.
 
     Returns:
-        True if setup was successful, False otherwise
+        ``True`` when patching ran or was already applied. ``False`` when Agno is missing or outside the version
+        range.
     """
     _configure_eval_experiments(eval_experiments)
 

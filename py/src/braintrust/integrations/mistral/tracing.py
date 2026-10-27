@@ -1903,7 +1903,7 @@ async def _ocr_process_async_wrapper(wrapped, instance, args, kwargs):
 
 
 def wrap_mistral(client: Any) -> Any:
-    """Wrap a single Mistral client instance for tracing."""
+    """Instrument a Mistral client in place."""
     from .patchers import (
         AgentsPatcher,
         ChatPatcher,

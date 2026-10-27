@@ -33,17 +33,12 @@ def setup_pydantic_ai(
     project_id: str | None = None,
     project_name: str | None = None,
 ) -> bool:
-    """
-    Setup Braintrust integration with Pydantic AI. Will automatically patch Pydantic AI
-    agents and direct API functions for automatic tracing.
+    """Set up Braintrust tracing for Pydantic AI.
 
-    Args:
-        api_key: Braintrust API key.
-        project_id: Braintrust project ID.
-        project_name: Braintrust project name.
+    :func:`wrap_model_classes` is deprecated.
 
     Returns:
-        True if setup was successful, False otherwise.
+        True if patched or already patched, False if Pydantic AI is missing or too old.
     """
     span = current_span()
     if span == NOOP_SPAN:

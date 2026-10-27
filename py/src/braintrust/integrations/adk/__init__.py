@@ -30,6 +30,10 @@ __all__ = [
 
 
 def setup_braintrust(*args, **kwargs):
+    """Deprecated. Call :func:`setup_adk` instead.
+
+    Forwards ``*args`` and ``**kwargs`` to :func:`setup_adk`.
+    """
     warnings.warn("setup_braintrust is deprecated, use setup_adk instead", DeprecationWarning, stacklevel=2)
     return setup_adk(*args, **kwargs)
 
@@ -40,16 +44,7 @@ def setup_adk(
     project_name: str | None = None,
     SpanProcessor: type | None = None,
 ) -> bool:
-    """
-    Setup Braintrust integration with Google ADK. Will automatically patch Google ADK agents, runners, flows, and MCP tools for automatic tracing.
-
-    Also enables the Google GenAI integration, which ADK's Gemini models call
-    through. It owns the ``llm`` span and token usage for each Gemini request;
-    ADK's ``llm_call`` spans are ``task`` spans so usage is counted once. For
-    other ADK models (e.g. LiteLLM or Anthropic), enable that provider's
-    integration, or use ``braintrust.auto_instrument()``, to record usage.
-
-    If you prefer manual patching take a look at `wrap_agent`, `wrap_runner`, `wrap_workflow`, `wrap_flow`, and `wrap_mcp_tool`.
+    """Set up Braintrust tracing for Google ADK.
 
     Args:
         api_key (Optional[str]): Braintrust API key.
@@ -58,7 +53,7 @@ def setup_adk(
         SpanProcessor (Optional[type]): Deprecated parameter.
 
     Returns:
-        bool: True if setup was successful, False otherwise.
+        True if patched or already patched, False if ADK is missing or too old.
     """
     if SpanProcessor is not None:
         warnings.warn("SpanProcessor parameter is deprecated and will be ignored", DeprecationWarning, stacklevel=2)

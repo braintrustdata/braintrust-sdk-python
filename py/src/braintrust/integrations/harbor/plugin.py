@@ -395,7 +395,11 @@ def _verifier_evidence(result: Any, config: PluginConfig) -> tuple[dict[str, Any
 
 
 class HarborPlugin:
-    """Harbor plugin that reconciles final trials into Braintrust experiments."""
+    """Harbor plugin that writes finished trials to a Braintrust experiment.
+
+    Loaded with ``--plugin braintrust``, not ``auto_instrument()``. The default project name is ``Harbor``.
+    ``strict=True`` cannot fail the Harbor job, because Harbor isolates finalizers.
+    """
 
     def __init__(
         self,

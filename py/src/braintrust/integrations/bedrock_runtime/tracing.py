@@ -105,6 +105,7 @@ def _invoke_model_wrapper(wrapped, instance, args, kwargs):  # noqa: ARG001
 
     output = None
     if isinstance(result, dict) and "body" in result:
+        # InvokeModel body is a one-shot stream that is read and replaced.
         body_bytes = _read_streaming_body(result["body"])
         if body_bytes is not None:
             output = _parse_json_bytes(body_bytes)
@@ -211,6 +212,7 @@ def _tool_choice_to_openai(tool_choice: Any) -> Any:
     if "auto" in tool_choice:
         return "auto"
     if "any" in tool_choice:
+        # toolChoice.any is logged as "required".
         return "required"
     if isinstance(tool_choice.get("tool"), dict):
         name = tool_choice["tool"].get("name")

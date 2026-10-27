@@ -17,18 +17,20 @@ def setup_cursor_sdk(
     project_id: str | None = None,
     project: str | None = None,
 ) -> bool:
-    """Patch Cursor SDK agent runs for Braintrust tracing."""
+    """Set up Braintrust tracing for Cursor SDK agent runs.
+
+    ``project`` is the project name.
+
+    Returns:
+        True if patched or already patched, False if the Cursor SDK is missing or too old.
+    """
     if current_span() == NOOP_SPAN:
         init_logger(project=project, api_key=api_key, project_id=project_id)
     return CursorSDKIntegration.setup()
 
 
 def wrap_cursor_sdk_agent(agent_class: Any) -> Any:
-    """Instrument a Cursor ``Agent`` or ``AsyncAgent`` class in place.
-
-    Cursor traces model turns off ``Run``, not ``Agent``, so this also runs
-    the full integration setup to patch the run lifecycle.
-    """
+    """Instrument a Cursor ``Agent`` or ``AsyncAgent`` class in place."""
     CursorSDKIntegration.setup()
     # Both flavors spell these methods `send`/`close`, so the composite
     # patcher cannot tell them apart when wrapping a class directly.

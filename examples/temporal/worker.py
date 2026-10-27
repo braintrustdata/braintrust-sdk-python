@@ -1,7 +1,7 @@
 import asyncio
 import os
 
-from braintrust.contrib.temporal import BraintrustPlugin
+from braintrust.integrations.temporal import BraintrustPlugin
 
 # Import only what we need to avoid loading optional dependencies
 from braintrust.logger import init_logger

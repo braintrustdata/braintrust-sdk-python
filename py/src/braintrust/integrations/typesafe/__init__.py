@@ -7,12 +7,12 @@ from .patchers import AsyncSystemOnePatcher, SystemOnePatcher
 
 
 def setup_typesafe() -> bool:
-    """Instrument installed TypeSafe sync and async clients."""
+    """Set up Braintrust tracing for TypeSafe."""
     return TypeSafeIntegration.setup()
 
 
 def wrap_typesafe(client: Any) -> Any:
-    """Instrument a TypeSafe sync or async client in place."""
+    """Instrument a TypeSafe client in place."""
     from typesafe_sdk import AsyncTypeSafeClient
 
     patcher = AsyncSystemOnePatcher if isinstance(client, AsyncTypeSafeClient) else SystemOnePatcher

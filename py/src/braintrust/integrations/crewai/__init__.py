@@ -2,15 +2,13 @@
 
 Public entry points:
 
-- :func:`setup_crewai` — mirrors :func:`setup_agno`/``setup_dspy`` ergonomics.
-  Initializes a Braintrust logger (when one is not already set) and
-  registers the CrewAI event-bus listener.
-- :func:`patch_crewai` — thin setup-only helper (no logger init), matches
-  the ``patch_*`` naming used elsewhere.
-- :class:`CrewAIIntegration` — used by :func:`braintrust.auto_instrument`.
-- :class:`BraintrustCrewAIListener` — exposed for advanced users who want
-  to register the listener manually on their own event-bus instance (e.g.
-  for tests).
+- :func:`setup_crewai` initializes a Braintrust logger (when one is not already set) and registers the CrewAI
+  event-bus listener.
+- :func:`patch_crewai` is a thin setup-only helper (no logger init) and matches the ``patch_*`` naming used
+  elsewhere.
+- :class:`CrewAIIntegration` is used by :func:`braintrust.auto_instrument`.
+- :class:`BraintrustCrewAIListener` is exposed for advanced users who want to register the listener manually on
+  their own event-bus instance (for example, in tests).
 """
 
 import logging
@@ -39,9 +37,8 @@ def setup_crewai(
 ) -> bool:
     """Set up Braintrust tracing for CrewAI.
 
-    Initializes a Braintrust logger (unless one is already active) and
-    registers :class:`BraintrustCrewAIListener` on the singleton
-    ``crewai_event_bus``.  Safe to call multiple times.
+    Initializes a Braintrust logger (unless one is already active) and registers :class:`BraintrustCrewAIListener`
+    on the singleton ``crewai_event_bus``. Safe to call multiple times.
 
     Args:
         api_key: Braintrust API key (optional, ``BRAINTRUST_API_KEY`` env var works too).
@@ -49,8 +46,8 @@ def setup_crewai(
         project_name: Braintrust project name (optional, ``BRAINTRUST_PROJECT`` env var works too).
 
     Returns:
-        ``True`` on successful (or already-registered) setup, ``False`` when
-        CrewAI is not importable at the required minimum version.
+        ``True`` when patching ran or was already applied. ``False`` when CrewAI is missing or outside the version
+        range.
     """
     span = current_span()
     if span == NOOP_SPAN:

@@ -47,7 +47,7 @@ braintrust.init_logger(project="example-<name>")
 # now import and use the library normally
 ```
 
-`braintrust.auto_instrument()` patches every supported integration that's installed in the current environment — there's no need to call individual `setup_*()` or `wrap_*()` helpers. The exceptions are examples that demonstrate non-tracing concerns (`evals/`, `langsmith/`, `otel/`, `temporal/`).
+`braintrust.auto_instrument()` patches every supported integration that's installed in the current environment — there's no need to call individual `setup_*()` or `wrap_*()` helpers. `setup_*()`, `wrap_*()`, and `patch_*()` in `braintrust.integrations.<name>` are the manual alternatives. The exceptions are examples that demonstrate non-tracing concerns (`evals/`, `langsmith/`, `otel/`, `temporal/`).
 
 If you want to see `auto_instrument()` light up multiple providers in one trace, the `openai/`, `anthropic/`, and any other provider example can be combined trivially — just install both packages in the same environment, call `auto_instrument()` once, and use both clients.
 
@@ -66,6 +66,7 @@ Unless noted otherwise, every example below uses `braintrust.auto_instrument()`.
 | `claude_agent_sdk/` | Claude Agent SDK subprocess query |
 | `cohere/` | Cohere `ClientV2` chat call |
 | `crewai/` | CrewAI `Agent` + `Task` + `Crew` end-to-end |
+| `deepagents/` | Deep Agents traced through LangChain; there is no `setup_deepagents()` |
 | `dspy/` | DSPy `ReAct` agent with two tools (LiteLLM token metrics propagate) |
 | `evals/` | The `Eval` framework — does **not** use `auto_instrument()` |
 | `google_genai/` | Google GenAI `generate_content` against Gemini |
@@ -82,6 +83,19 @@ Unless noted otherwise, every example below uses `braintrust.auto_instrument()`.
 | `pydantic_ai/` | Pydantic AI agent run inside a `start_span` for a permalink |
 | `strands/` | Strands `Agent` against `gpt-4o-mini` |
 | `temporal/` | Distributed Temporal workflow tracing via `BraintrustPlugin` |
+
+## Integrations without a sample yet
+
+These integrations ship in the SDK and do not have a directory under `examples/` yet:
+
+- `ai_sdk`
+- `google_discoveryengine`
+- `huggingface_hub`
+- `instructor`
+- `livekit_agents`
+- `pipecat`
+- `transformers`
+- `typesafe`
 
 ## Why no committed `uv.lock`?
 

@@ -698,7 +698,7 @@ async def _responses_send_async_wrapper(wrapped, instance, args, kwargs, *, span
 
 
 def wrap_openrouter(client: Any) -> Any:
-    """Wrap a single OpenRouter client instance for tracing."""
+    """Instrument an OpenRouter client in place."""
     from .patchers import BetaResponsesPatcher, ChatPatcher, EmbeddingsPatcher, ResponsesPatcher
 
     chat = getattr(client, "chat", None)

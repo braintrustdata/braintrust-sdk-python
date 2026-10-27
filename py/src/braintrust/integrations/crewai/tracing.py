@@ -19,22 +19,6 @@ We use the event-bus path instead of method patching for two reasons:
 Thread-safety: the bus uses up to ``max_workers=10`` workers, so start and
 end events for the same scope can race across threads. A listener-level
 :class:`threading.Lock` guards the ``event_id -> Span`` map.
-
-Token-metric rule (wrapper-only):
-
-CrewAI is always an orchestration layer: every LLM call it emits is
-routed through an underlying provider SDK (LiteLLM, or a native
-``openai`` / ``anthropic`` / ``bedrock`` / ``google-genai`` client).
-Whichever of those the user has patched — commonly all of them via
-``auto_instrument()`` — owns the leaf span with real token accounting.
-If ``crewai.llm`` also logged tokens, trace-tree rollup would
-double-count them at every ancestor.
-
-We therefore follow the same rule ``pydantic_ai`` uses for its wrapper
-spans (see ``_wrapper_span_metrics`` in ``pydantic_ai/tracing.py``):
-``crewai.llm`` emits timing + ``time_to_first_token`` only. Tokens live
-on the leaf provider span. This is the "clear ownership" pattern the
-sdk-integrations SKILL prefers over "if X is patched, skip" checks.
 """
 
 # pylint: disable=import-error
@@ -266,12 +250,7 @@ def _listener_init(self: Any) -> None:
 
 
 def _listener_setup_listeners(self: Any, crewai_event_bus: "CrewAIEventsBus") -> None:
-    """Wire handlers onto the CrewAI event bus.
-
-    The list of subscribed events matches the v1 scope documented in
-    ``BraintrustCrewAIListener``: crew kickoff, tasks, agent execution,
-    LLM calls (including streaming first-token timing), and tool usage.
-    """
+    """Wire handlers onto the CrewAI event bus."""
     # Imports are scoped here so that importing this module never forces a
     # CrewAI import.
     from crewai.events import (

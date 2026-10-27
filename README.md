@@ -8,7 +8,7 @@ This repository contains Braintrust's Python SDKs and integrations, including:
 
 - The main `braintrust` SDK package in [`./py`](./py)
 - Built-in integrations under [`py/src/braintrust/integrations`](py/src/braintrust/integrations) and related compatibility packages under [`./integrations`](./integrations)
-- Self-contained `uv`-project examples for every integration in [`./examples`](./examples)
+- Self-contained `uv`-project examples for the integrations that have a directory under [`./examples`](./examples)
 - Tests and local development tooling for Python SDK development
 
 ## Quickstart
@@ -63,6 +63,7 @@ BRAINTRUST_API_KEY=<YOUR_API_KEY> braintrust eval tutorial_eval.py
 | [OpenRouter](py/src/braintrust/integrations/openrouter/) | Yes | `openrouter>=0.6.0` |
 | [Vercel AI SDK for Python](py/src/braintrust/integrations/ai_sdk/) | Yes | `ai>=0.4.0` |
 | [Google GenAI](py/src/braintrust/integrations/google_genai/) | Yes | `google-genai>=1.30.0` |
+| [Google Discovery Engine](py/src/braintrust/integrations/google_discoveryengine/) | Yes | `google-cloud-discoveryengine>=0.20.3` |
 | [Bedrock Runtime](py/src/braintrust/integrations/bedrock_runtime/) | Yes | `boto3>=1.34.116` |
 | [HuggingFace Hub](py/src/braintrust/integrations/huggingface_hub/) | Yes | `huggingface-hub>=0.32.0` |
 | [Hugging Face Transformers](py/src/braintrust/integrations/transformers/) | Yes | `transformers>=4.42.0` |
@@ -71,6 +72,7 @@ BRAINTRUST_API_KEY=<YOUR_API_KEY> braintrust eval tutorial_eval.py
 | [LangChain](py/src/braintrust/integrations/langchain/) | Yes | `langchain-core>=0.3.28` |
 | [LlamaIndex](py/src/braintrust/integrations/llamaindex/) | Yes | `llama-index-core>=0.13.0` |
 | [Instructor](py/src/braintrust/integrations/instructor/) | Yes | `instructor>=1.11.0` |
+| [TypeSafe](py/src/braintrust/integrations/typesafe/) | Yes | `typesafe-sdk>=0.6.0` |
 | [DSPy](py/src/braintrust/integrations/dspy/) | Yes | `dspy>=2.6.0` |
 | [OpenAI Agents](py/src/braintrust/integrations/openai_agents/) | Yes | `openai-agents>=0.0.19` |
 | [Claude Agent SDK](py/src/braintrust/integrations/claude_agent_sdk/) | Yes | `claude_agent_sdk>=0.1.10` |

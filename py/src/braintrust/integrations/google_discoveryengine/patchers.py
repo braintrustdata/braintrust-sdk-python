@@ -82,7 +82,7 @@ PATCHERS = (
 
 
 def wrap_google_discoveryengine(client):
-    """Instrument one v1 client instance, returning the same client."""
+    """Instrument a Discovery Engine client and return it."""
     from google.cloud import discoveryengine_v1
 
     for patcher in PATCHERS:

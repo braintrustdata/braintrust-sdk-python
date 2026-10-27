@@ -32,7 +32,11 @@ def setup_langchain(
     project_id: str | None = None,
     project_name: str | None = None,
 ) -> bool:
-    """Setup Braintrust integration with LangChain."""
+    """Set up Braintrust tracing for LangChain.
+
+    Returns:
+        True if patched or already patched, False if LangChain is missing or too old.
+    """
     if current_span() == NOOP_SPAN:
         init_logger(project=project_name, api_key=api_key, project_id=project_id)
 

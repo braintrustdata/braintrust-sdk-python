@@ -38,6 +38,11 @@ def setup_llamaindex(
     project_id: str | None = None,
     project_name: str | None = None,
 ) -> bool:
+    """Set up Braintrust tracing for LlamaIndex.
+
+    Returns:
+        True if patched or already patched, False if LlamaIndex is missing or too old.
+    """
     if current_span() == NOOP_SPAN:
         init_logger(project=project_name, api_key=api_key, project_id=project_id)
 

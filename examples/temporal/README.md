@@ -2,6 +2,8 @@
 
 This example demonstrates distributed tracing for Temporal workflows using Braintrust.
 
+This example passes `BraintrustPlugin` explicitly. Import it from `braintrust.integrations.temporal`.
+
 ## Setup
 
 1. Install dependencies. This is a uv project that installs `braintrust[temporal]` from the local checkout:

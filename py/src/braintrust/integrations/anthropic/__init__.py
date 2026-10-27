@@ -1,3 +1,5 @@
+"""Braintrust integration for the Anthropic Python SDK."""
+
 import warnings
 
 from .integration import AnthropicIntegration
@@ -8,6 +10,7 @@ wrap_anthropic = _wrap_anthropic
 
 
 def wrap_anthropic_client(client):
+    """Deprecated. Use ``wrap_anthropic``."""
     warnings.warn(
         "wrap_anthropic_client() is deprecated. Use wrap_anthropic() instead.",
         DeprecationWarning,

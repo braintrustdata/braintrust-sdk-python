@@ -23,7 +23,7 @@ The wrapper supports two modes:
 Both LangSmith and Braintrust tracing are active. Use this during migration to verify everything works before fully switching.
 
 ```python
-from braintrust.wrappers.langsmith import setup_langsmith
+from braintrust.wrappers.langsmith_wrapper import setup_langsmith
 
 setup_langsmith(project_name="my-project")
 ```
@@ -33,7 +33,7 @@ setup_langsmith(project_name="my-project")
 Only Braintrust runs - LangSmith code is completely replaced. Use this when you're ready to fully migrate.
 
 ```python
-from braintrust.wrappers.langsmith import setup_langsmith
+from braintrust.wrappers.langsmith_wrapper import setup_langsmith
 
 setup_langsmith(project_name="my-project", standalone=True)
 ```

@@ -323,9 +323,6 @@ def _loop_turn_start(_upstream_span: Any, _data: Any) -> dict[str, Any]:
 
 
 def _stream_start(_upstream_span: Any, data: Any) -> dict[str, Any]:
-    # The AI SDK delegates transport to an instrumentable provider client.
-    # Keep this framework-level span a task and let that provider own the
-    # single LLM span for the request.
     return {
         "name": "ai.stream",
         "type": SpanTypeAttribute.TASK,

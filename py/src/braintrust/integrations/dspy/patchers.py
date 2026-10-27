@@ -30,8 +30,9 @@ def patch_dspy() -> bool:
 
     Example:
         ```python
-        import braintrust
-        braintrust.patch_dspy()
+        from braintrust.integrations.dspy import patch_dspy
+
+        patch_dspy()
 
         import dspy
         lm = dspy.LM("openai/gpt-4o-mini")

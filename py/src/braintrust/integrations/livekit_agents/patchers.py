@@ -209,6 +209,7 @@ class MetricsEmitterPatcher(CompositeFunctionWrapperPatcher):
 
 
 def wrap_livekit_agents(target: Any) -> Any:
+    """Instrument a LiveKit Agents target in place."""
     AgentSessionPatcher.wrap_target(target)
     MetricsEmitterPatcher.wrap_target(target)
     return target

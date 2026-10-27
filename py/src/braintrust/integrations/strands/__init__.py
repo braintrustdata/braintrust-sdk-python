@@ -14,7 +14,11 @@ def setup_strands(
     project_id: str | None = None,
     project_name: str | None = None,
 ) -> bool:
-    """Set up Braintrust tracing for Strands Agents."""
+    """Set up Braintrust tracing for Strands Agents.
+
+    Returns:
+        True if patched or already patched, False if Strands is missing or too old.
+    """
     span = current_span()
     if span == NOOP_SPAN:
         init_logger(project=project_name, api_key=api_key, project_id=project_id)

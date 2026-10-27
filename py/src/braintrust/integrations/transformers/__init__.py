@@ -12,5 +12,5 @@ __all__ = [
 
 
 def setup_transformers() -> bool:
-    """Instrument supported Transformers pipeline classes."""
+    """Set up Braintrust tracing for local Transformers pipelines."""
     return TransformersIntegration.setup()

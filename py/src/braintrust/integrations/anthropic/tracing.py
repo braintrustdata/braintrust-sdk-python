@@ -1016,8 +1016,6 @@ class TracedMessageStreamManager(Wrapper):
 
 
 class TracedMessageStream(Wrapper):
-    """TracedMessageStream wraps both sync and async message streams."""
-
     def __init__(self, msg_stream, span, request_start_time: float):
         super().__init__(msg_stream)
         self.__msg_stream = msg_stream
@@ -2047,11 +2045,7 @@ _BRAINTRUST_TRACED = "__braintrust_traced__"
 
 
 def _wrap_anthropic(client):
-    """Wrap an Anthropic object (or AsyncAnthropic) to add tracing.
-
-    If the client is already traced (e.g. via ``AnthropicIntegration.setup()``),
-    it is returned unchanged to avoid double-wrapping.
-    """
+    """Wrap an Anthropic or async Anthropic client. Already-traced clients are returned unchanged."""
     if getattr(client, _BRAINTRUST_TRACED, False):
         return client
 

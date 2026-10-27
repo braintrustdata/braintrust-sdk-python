@@ -24,7 +24,13 @@ def setup_openai_agents(
     project: str | None = None,
     project_name: str | None = None,
 ) -> bool:
-    """Setup Braintrust tracing for the OpenAI Agents SDK."""
+    """Set up Braintrust tracing for the OpenAI Agents SDK.
+
+    ``project_name`` wins over ``project`` when both are set.
+
+    Returns:
+        True if patched or already patched, False if the Agents SDK is missing or too old.
+    """
     if current_span() == NOOP_SPAN:
         init_logger(project=project_name or project, api_key=api_key, project_id=project_id)
 

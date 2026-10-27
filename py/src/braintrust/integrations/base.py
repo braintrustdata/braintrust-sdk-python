@@ -1,4 +1,10 @@
-"""Shared integration orchestration primitives."""
+"""Orchestration for third-party integrations.
+
+Subclass :class:`BaseIntegration` and keep the provider import inside the patcher.
+:meth:`BaseIntegration.setup` returns ``False`` when the package is missing or
+outside ``min_version`` / ``max_version``. An undetectable version still patches.
+Patchers run in ascending ``priority`` and must be idempotent.
+"""
 
 import importlib
 import importlib.metadata
@@ -16,7 +22,13 @@ from .versioning import detect_module_version, make_specifier, version_satisfies
 
 
 class BasePatcher(ABC):
-    """Base class for one concrete integration patch strategy."""
+    """One patch strategy.
+
+    ``priority`` runs ascending from a default of 100. ``rescan_on_setup``
+    re-runs ``patch`` on later ``setup()`` calls instead of treating an existing
+    marker as success. A callback or ``patch_class`` that returns ``False``
+    leaves the target unmarked so the next ``setup()`` retries.
+    """
 
     name: ClassVar[str]
     patch_id: ClassVar[str | None] = None
@@ -132,7 +144,12 @@ class CallbackPatcher(BasePatcher):
 
 
 class ClassScanPatcher(BasePatcher):
-    """Base patcher for rescanning and patching discovered class hierarchies."""
+    """Rescan a class hierarchy on every ``setup()``.
+
+    Subclasses imported later are still found. A scan that finds nothing new
+    returns ``False``. Abstract classes are skipped unless
+    ``include_abstract_classes`` is set.
+    """
 
     rescan_on_setup: ClassVar[bool] = True
     include_abstract_classes: ClassVar[bool] = False
@@ -564,7 +581,14 @@ class CompositeFunctionWrapperPatcher(BasePatcher):
 
 
 class BaseIntegration(ABC):
-    """Base class for an instrumentable third-party integration."""
+    """Base class for an instrumentable third-party integration.
+
+    ``import_names`` are tried in order; the first importable module wins.
+    ``distribution_names`` are the PyPI names tried before
+    :func:`detect_module_version`, for packages whose distribution name differs
+    from the import root. ``min_version`` and ``max_version`` are inclusive.
+    ``patchers`` must not repeat an identifier.
+    """
 
     name: ClassVar[str]
     import_names: ClassVar[tuple[str, ...]]
@@ -597,7 +621,12 @@ class BaseIntegration(ABC):
         *,
         target: Any | None = None,
     ) -> bool:
-        """Apply all applicable patchers for this integration."""
+        """Apply applicable patchers.
+
+        Returns ``False`` when the package is missing or outside the version
+        range. An undetectable version still patches. An already-applied patcher
+        counts as success unless ``rescan_on_setup`` is set.
+        """
         module = _import_first_available(cls.import_names)
         if module is None:
             return False
@@ -619,7 +648,11 @@ class BaseIntegration(ABC):
 
     @classmethod
     def detect_version(cls, module: Any) -> str | None:
-        """Return the installed provider version for this integration."""
+        """Return the installed provider version for this integration.
+
+        ``distribution_names`` are tried first. A distribution whose metadata
+        file is missing falls through to :func:`detect_module_version`.
+        """
         for distribution_name in cls.distribution_names:
             try:
                 return importlib.metadata.version(distribution_name)

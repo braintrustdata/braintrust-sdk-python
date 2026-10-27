@@ -6,6 +6,13 @@ temporal extra:
 
     pip install braintrust[temporal]
 
+``setup_temporal()`` and ``braintrust.auto_instrument()`` inject ``BraintrustPlugin``, so callers do not have
+to pass it. The samples below remain valid for callers who pass the plugin themselves.
+
+The workflow sandbox blocks ``os.environ``. Braintrust reads ``BRAINTRUST_OTEL_COMPAT`` on the first access of
+its context implementation, so this module calls ``current_span()`` at import time before workflow code runs
+inside the sandbox.
+
 Components
 ----------
 
@@ -23,7 +30,7 @@ Worker Setup
 Use ``BraintrustPlugin`` when creating a worker::
 
     import braintrust
-    from braintrust.contrib.temporal import BraintrustPlugin
+    from braintrust.integrations.temporal import BraintrustPlugin
     from temporalio.client import Client
     from temporalio.worker import Worker
 
@@ -47,7 +54,7 @@ Client Setup
 Use ``BraintrustPlugin`` when creating a client to propagate span context to workflows::
 
     import braintrust
-    from braintrust.contrib.temporal import BraintrustPlugin
+    from braintrust.integrations.temporal import BraintrustPlugin
     from temporalio.client import Client
 
     braintrust.init_logger(project="my-project")
@@ -417,7 +424,7 @@ class BraintrustPlugin(SimplePlugin):
     - Configuring the sandbox to allow braintrust imports without unsafe.imports_passed_through()
 
     Example usage:
-        from braintrust.contrib.temporal import BraintrustPlugin
+        from braintrust.integrations.temporal import BraintrustPlugin
         from temporalio.worker import Worker
 
         worker = Worker(

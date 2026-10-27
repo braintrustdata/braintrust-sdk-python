@@ -31,8 +31,9 @@ def setup_claude_agent_sdk(
     project_id: str | None = None,
     project: str | None = None,
 ) -> bool:
-    """
-    Setup Braintrust integration with Claude Agent SDK. Will automatically patch the SDK for automatic tracing.
+    """Set up Braintrust tracing for the Claude Agent SDK.
+
+    ``project`` is the project name.
 
     Args:
         api_key (Optional[str]): Braintrust API key.
@@ -40,7 +41,7 @@ def setup_claude_agent_sdk(
         project (Optional[str]): Braintrust project name.
 
     Returns:
-        bool: True if setup was successful, False otherwise.
+        True if patched or already patched, False if the Claude Agent SDK is missing or too old.
 
     Example:
         ```python

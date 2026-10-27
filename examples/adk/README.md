@@ -1,6 +1,6 @@
 # Google ADK + Braintrust
 
-Calls `braintrust.auto_instrument()` so Google ADK is patched automatically, then runs a weather agent against `gemini-3.8-flash` with one tool. The trace shows the runner span, the agent span, the LLM span, and the tool call.
+Calls `braintrust.auto_instrument()` so Google ADK is patched automatically, then runs a weather agent against `gemini-3.8-flash` with one tool.
 
 ## Run
 

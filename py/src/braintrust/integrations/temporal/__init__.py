@@ -27,7 +27,7 @@ def setup_temporal(
     project_id: str | None = None,
     project_name: str | None = None,
 ) -> bool:
-    """Set up Braintrust auto-instrumentation for Temporal."""
+    """Set up Braintrust tracing for Temporal."""
     span = current_span()
     if span == NOOP_SPAN:
         init_logger(project=project_name, api_key=api_key, project_id=project_id)

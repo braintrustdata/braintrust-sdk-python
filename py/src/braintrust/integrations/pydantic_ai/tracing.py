@@ -210,7 +210,6 @@ def _agent_run_stream_sync_wrapper(wrapped: Any, instance: Any, args: Any, kwarg
     start_time = time.time()
 
     try:
-        # Call the original function within the span context
         stream_result = wrapped(*args, **kwargs)
         return _AgentStreamResultSyncProxy(
             stream_result,
@@ -221,7 +220,6 @@ def _agent_run_stream_sync_wrapper(wrapped: Any, instance: Any, args: Any, kwarg
             tool_trace_token,
         )
     except Exception:
-        # Clean up span on error
         _reset_tool_trace_capture(tool_trace_token)
         span_cm.__exit__(*sys.exc_info())
         raise

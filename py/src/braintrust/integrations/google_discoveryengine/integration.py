@@ -6,6 +6,8 @@ from .patchers import PATCHERS
 
 
 class GoogleDiscoveryEngineIntegration(BaseIntegration):
+    """Braintrust instrumentation for Discovery Engine."""
+
     name = "google_discoveryengine"
     import_names = ("google.cloud.discoveryengine_v1",)
     distribution_names = ("google-cloud-discoveryengine",)

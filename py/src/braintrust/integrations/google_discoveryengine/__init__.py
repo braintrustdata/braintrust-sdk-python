@@ -8,5 +8,8 @@ __all__ = ["GoogleDiscoveryEngineIntegration", "setup_google_discoveryengine", "
 
 
 def setup_google_discoveryengine() -> bool:
-    """Instrument supported v1 clients in this process."""
+    """Set up Braintrust tracing for Discovery Engine.
+
+    Returns True if patched or already patched, False if the library is missing or too old.
+    """
     return GoogleDiscoveryEngineIntegration.setup()

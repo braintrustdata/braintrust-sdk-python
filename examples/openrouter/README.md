@@ -1,6 +1,6 @@
 # OpenRouter + Braintrust
 
-Calls `braintrust.auto_instrument()` to patch the OpenRouter SDK so chat, embeddings, and responses calls are traced. The resulting LLM spans include the provider that OpenRouter dispatched to (e.g. `metadata.provider == "openai"`).
+Calls `braintrust.auto_instrument()` so OpenRouter chat completions are traced.
 
 ## Run
 

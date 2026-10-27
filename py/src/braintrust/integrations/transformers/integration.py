@@ -6,7 +6,7 @@ from .patchers import PIPELINE_PATCHERS
 
 
 class TransformersIntegration(BaseIntegration):
-    """Instrument supported local ``transformers`` text pipelines."""
+    """Braintrust instrumentation for local Transformers pipelines."""
 
     name = "transformers"
     import_names = ("transformers",)

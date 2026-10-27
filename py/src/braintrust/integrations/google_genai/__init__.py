@@ -20,17 +20,10 @@ def setup_genai(
     project_id: str | None = None,
     project_name: str | None = None,
 ) -> bool:
-    """Setup Braintrust integration with Google GenAI.
-
-    Will automatically patch Google GenAI models for automatic tracing.
-
-    Args:
-        api_key: Braintrust API key.
-        project_id: Braintrust project ID.
-        project_name: Braintrust project name.
+    """Set up Braintrust tracing for the Google GenAI SDK.
 
     Returns:
-        True if setup was successful, False if google-genai is not installed.
+        True if patched or already patched, False if google-genai is missing or too old.
     """
     span = current_span()
     if span == NOOP_SPAN:

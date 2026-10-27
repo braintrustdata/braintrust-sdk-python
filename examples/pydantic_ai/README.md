@@ -1,6 +1,6 @@
 # Pydantic AI + Braintrust
 
-Calls `braintrust.auto_instrument()` so the Pydantic AI agent's underlying provider calls are captured as Braintrust spans automatically. The agent itself is wrapped in `start_span` so the run gets a permalink.
+Calls `braintrust.auto_instrument()`, which traces the Pydantic AI agent. The script also opens `start_span` so it can print a permalink.
 
 ## Run
 

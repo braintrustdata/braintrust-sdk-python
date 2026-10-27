@@ -3,7 +3,7 @@ import sys
 import uuid
 
 import braintrust
-from braintrust.contrib.temporal import BraintrustPlugin
+from braintrust.integrations.temporal import BraintrustPlugin
 from temporalio.client import Client
 from workflow import TASK_QUEUE_NAME, SimpleWorkflow, TaskInput
 

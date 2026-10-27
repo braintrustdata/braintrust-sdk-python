@@ -105,8 +105,9 @@ def _process_images_impl(value: Any) -> Any:
 class BraintrustDSpyCallback(BaseCallback):
     """Callback handler that logs DSPy execution traces to Braintrust.
 
-    This callback integrates DSPy with Braintrust's observability platform, automatically
-    logging language model calls, module executions, tool invocations, and evaluations.
+    This callback integrates DSPy with Braintrust's observability platform, automatically logging module executions,
+    tool invocations, evaluations, and LM activity. :func:`braintrust.integrations.dspy.patch_dspy` installs this
+    callback.
 
     Logged information includes:
     - Input parameters and output results
@@ -247,7 +248,7 @@ class BraintrustDSpyCallback(BaseCallback):
         outputs: dict[str, Any] | None,
         exception: Exception | None = None,
     ):
-        """Log the end of a language model call.
+        """Log the end of a DSPy LM call.
 
         Args:
             call_id: Unique identifier for this call
