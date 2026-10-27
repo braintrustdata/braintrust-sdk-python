@@ -561,7 +561,7 @@ class CodeBundleLocation2SandboxSpec(TypedDict):
     provider: Literal['modal']
     snapshot_ref: str
     """
-    sandbox snapshot ref
+    The Modal snapshot to start the sandbox from
     """
 
 
@@ -761,15 +761,15 @@ class ExperimentEventMetrics(TypedDict):
     """
     caller_functionname: NotRequired[Any | None]
     """
-    This metric is deprecated
+    Deprecated. Use `context.caller_functionname` instead.
     """
     caller_filename: NotRequired[Any | None]
     """
-    This metric is deprecated
+    Deprecated. Use `context.caller_filename` instead.
     """
     caller_lineno: NotRequired[Any | None]
     """
-    This metric is deprecated
+    Deprecated. Use `context.caller_lineno` instead.
     """
 
 
@@ -1822,18 +1822,7 @@ class ProjectAutomationConfigAction1(TypedDict):
     """
     formatting_prompt: NotRequired[str | None]
     """
-    Publish a Slack mrkdwn digest.
-
-    Pattern selection requirement: include every selected Pattern whose final status is active at the end of this automation run, plus every selected Pattern that changed from active to inactive during this run (a newly inactive outcome). Exclude Patterns that were already inactive before this run and remained inactive. Do not mention excluded Patterns anywhere in the digest, including Highlights. If no selected Patterns meet these criteria, say "No current pattern outcomes." This requirement overrides conflicting formatting guidance.
-
-    Include a complete "*Pattern outcomes*" section with one row for every included Pattern.
-
-    Use this row format exactly:
-    • <pattern_url|Pattern title> — `outcome`
-
-    If a Pattern has no URL, use the plain title instead. Do not use GitHub Markdown tables or code-block tables, because links must remain clickable. Do not omit any active selected Pattern.
-
-    After the outcome list, include a "*Highlights*" section with one very short paragraph, 2-3 sentences maximum. Summarize what changed or what broadly stands out among the included active Patterns. Do not introduce new claims beyond the run report.
+    Instructions for Loop to format content sent to this destination
     """
 
 
@@ -1983,18 +1972,7 @@ class ProjectAutomationConfig4Action1(TypedDict):
     """
     formatting_prompt: NotRequired[str | None]
     """
-    Publish a Slack mrkdwn digest.
-
-    Pattern selection requirement: include every selected Pattern whose final status is active at the end of this automation run, plus every selected Pattern that changed from active to inactive during this run (a newly inactive outcome). Exclude Patterns that were already inactive before this run and remained inactive. Do not mention excluded Patterns anywhere in the digest, including Highlights. If no selected Patterns meet these criteria, say "No current pattern outcomes." This requirement overrides conflicting formatting guidance.
-
-    Include a complete "*Pattern outcomes*" section with one row for every included Pattern.
-
-    Use this row format exactly:
-    • <pattern_url|Pattern title> — `outcome`
-
-    If a Pattern has no URL, use the plain title instead. Do not use GitHub Markdown tables or code-block tables, because links must remain clickable. Do not omit any active selected Pattern.
-
-    After the outcome list, include a "*Highlights*" section with one very short paragraph, 2-3 sentences maximum. Summarize what changed or what broadly stands out among the included active Patterns. Do not introduce new claims beyond the run report.
+    Instructions for Loop to format content sent to this destination
     """
 
 
@@ -2106,15 +2084,15 @@ class ProjectLogsEventMetrics(TypedDict):
     """
     caller_functionname: NotRequired[Any | None]
     """
-    This metric is deprecated
+    Deprecated. Use `context.caller_functionname` instead.
     """
     caller_filename: NotRequired[Any | None]
     """
-    This metric is deprecated
+    Deprecated. Use `context.caller_filename` instead.
     """
     caller_lineno: NotRequired[Any | None]
     """
-    This metric is deprecated
+    Deprecated. Use `context.caller_lineno` instead.
     """
 
 
@@ -2901,18 +2879,7 @@ class TopicDigestAutomationConfigAction(TypedDict):
     """
     formatting_prompt: NotRequired[str | None]
     """
-    Publish a Slack mrkdwn digest.
-
-    Pattern selection requirement: include every selected Pattern whose final status is active at the end of this automation run, plus every selected Pattern that changed from active to inactive during this run (a newly inactive outcome). Exclude Patterns that were already inactive before this run and remained inactive. Do not mention excluded Patterns anywhere in the digest, including Highlights. If no selected Patterns meet these criteria, say "No current pattern outcomes." This requirement overrides conflicting formatting guidance.
-
-    Include a complete "*Pattern outcomes*" section with one row for every included Pattern.
-
-    Use this row format exactly:
-    • <pattern_url|Pattern title> — `outcome`
-
-    If a Pattern has no URL, use the plain title instead. Do not use GitHub Markdown tables or code-block tables, because links must remain clickable. Do not omit any active selected Pattern.
-
-    After the outcome list, include a "*Highlights*" section with one very short paragraph, 2-3 sentences maximum. Summarize what changed or what broadly stands out among the included active Patterns. Do not introduce new claims beyond the run report.
+    Instructions for Loop to format content sent to this destination
     """
 
 
@@ -3366,18 +3333,7 @@ class WindowedAutomationConfigActions1(TypedDict):
     """
     formatting_prompt: NotRequired[str | None]
     """
-    Publish a Slack mrkdwn digest.
-
-    Pattern selection requirement: include every selected Pattern whose final status is active at the end of this automation run, plus every selected Pattern that changed from active to inactive during this run (a newly inactive outcome). Exclude Patterns that were already inactive before this run and remained inactive. Do not mention excluded Patterns anywhere in the digest, including Highlights. If no selected Patterns meet these criteria, say "No current pattern outcomes." This requirement overrides conflicting formatting guidance.
-
-    Include a complete "*Pattern outcomes*" section with one row for every included Pattern.
-
-    Use this row format exactly:
-    • <pattern_url|Pattern title> — `outcome`
-
-    If a Pattern has no URL, use the plain title instead. Do not use GitHub Markdown tables or code-block tables, because links must remain clickable. Do not omit any active selected Pattern.
-
-    After the outcome list, include a "*Highlights*" section with one very short paragraph, 2-3 sentences maximum. Summarize what changed or what broadly stands out among the included active Patterns. Do not introduce new claims beyond the run report.
+    Instructions for Loop to format content sent to this destination
     """
 
 
@@ -4886,7 +4842,7 @@ class RunEval(TypedDict):
     """
     timeout: NotRequired[float | None]
     """
-    The maximum duration, in milliseconds, to run the evaluation. Defaults to undefined, in which case there is no timeout.
+    The maximum duration, in milliseconds, to run the evaluation. There is no timeout by default.
     """
     max_concurrency: NotRequired[float | None]
     """
