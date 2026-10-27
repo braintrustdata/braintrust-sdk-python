@@ -202,6 +202,36 @@ class TestDiskCache(unittest.TestCase):
 
         self.assertEqual(result.as_dict(), test_prompt.as_dict())
 
+    def test_prompt_with_string_function_call_round_trips(self):
+        cache = disk_cache.DiskCache[prompt.PromptSchema](
+            cache_dir=self.cache_dir,
+            serializer=lambda value: value.as_dict(),
+            deserializer=prompt.PromptSchema.from_dict_deep,
+        )
+        test_prompt = prompt.PromptSchema(
+            id="prompt-id",
+            project_id="project-id",
+            _xact_id="version",
+            name="templated function call",
+            slug="templated-call",
+            description=None,
+            tags=None,
+            prompt_data=prompt.PromptData(
+                prompt=prompt.PromptChatBlock(
+                    messages=[prompt.PromptMessage(role="assistant", content="", function_call="{{function_call}}")]
+                )
+            ),
+        )
+        cache.set("test-key", test_prompt)
+
+        result = cache.get("test-key")
+
+        self.assertEqual(result.as_dict(), test_prompt.as_dict())
+        block = result.prompt_data.prompt
+        assert isinstance(block, prompt.PromptChatBlock)
+        self.assertIsInstance(block.messages[0], prompt.PromptMessage)
+        self.assertEqual(block.messages[0].function_call, "{{function_call}}")
+
     def test_throw_on_deserializer_error(self):
         """Test that deserializer errors are propagated."""
 

@@ -1,6 +1,7 @@
 import unittest
 from dataclasses import dataclass
 
+from .prompt import FunctionCall, PromptMessage
 from .serializable_data_class import SerializableDataClass
 
 
@@ -23,6 +24,24 @@ class PromptSchema(SerializableDataClass):
 
 
 class TestSerializableDataClass(unittest.TestCase):
+    def test_union_preserves_string_and_none_values(self):
+        for function_call in ("{{function_call}}", None):
+            with self.subTest(function_call=function_call):
+                message = PromptMessage.from_dict_deep(
+                    {"role": "assistant", "content": "", "function_call": function_call}
+                )
+                self.assertEqual(message.function_call, function_call)
+
+    def test_union_deserializes_nested_dataclass(self):
+        message = PromptMessage.from_dict_deep(
+            {
+                "role": "assistant",
+                "content": "",
+                "function_call": {"name": "lookup", "arguments": "{}"},
+            }
+        )
+        self.assertEqual(message.function_call, FunctionCall(name="lookup", arguments="{}"))
+
     def test_from_dict_deep_with_none_values(self):
         """Test that from_dict_deep correctly handles None values in nested objects."""
         test_dict = {
