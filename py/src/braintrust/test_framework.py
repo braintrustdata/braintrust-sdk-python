@@ -5,6 +5,7 @@ import re
 import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -1831,6 +1832,49 @@ async def test_eval_enable_cache():
     )
     state.span_cache.start.assert_called()
     state.span_cache.stop.assert_called()
+
+
+@pytest.mark.parametrize("eval_fn", [Eval, EvalAsync])
+@pytest.mark.parametrize("data_kind", ["partial", "callable_object", "function", "iterator", "list"])
+@pytest.mark.asyncio
+async def test_eval_callable_data_factories(eval_fn, data_kind):
+    factory_calls = []
+
+    def make_data(offset=2):
+        factory_calls.append(offset)
+        return iter([EvalCase(input=x, expected=x * 2) for x in (offset + 1, offset + 2)])
+
+    class DataFactory:
+        def __call__(self):
+            return make_data()
+
+    if data_kind == "partial":
+        data = partial(make_data, offset=2)
+    elif data_kind == "callable_object":
+        data = DataFactory()
+    elif data_kind == "function":
+        data = make_data
+    elif data_kind == "iterator":
+        data = make_data()
+    else:
+        data = list(make_data())
+
+    def exact_match(output, expected):
+        return output == expected
+
+    result = await eval_fn(
+        "test-callable-data",
+        data=data,
+        task=lambda input: input * 2,
+        scores=[exact_match],
+        no_send_logs=True,
+        enable_cache=False,
+    )
+
+    assert factory_calls == [2]
+    assert [row.input for row in result.results] == [3, 4]
+    assert [row.output for row in result.results] == [6, 8]
+    assert all(row.error is None and row.scores == {"exact_match": 1.0} for row in result.results)
 
 
 @pytest.mark.asyncio
