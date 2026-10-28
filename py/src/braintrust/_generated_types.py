@@ -3749,6 +3749,7 @@ class FunctionIdFunctionId4(TypedDict):
 
 
 class InvokeFunctionInvokeFunction7(TypedDict):
+    request_source: NotRequired[str | None]
     input: NotRequired[Any | None]
     """
     Argument to the function, which can be any JSON serializable value
