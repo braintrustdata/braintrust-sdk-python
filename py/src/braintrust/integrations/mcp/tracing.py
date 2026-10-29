@@ -115,6 +115,10 @@ class ServerOperation:
     error_type: str | None = None
     client: bool = False
 
+    @property
+    def captures_output(self) -> bool:
+        return self.capture_content and self.method in _CONTENT_METHODS
+
     def record_result(self, result: Any) -> None:
         """Keep the JSON-RPC result; it is shaped when the operation ends."""
         if not self.ended and isinstance(result, Mapping):
@@ -162,7 +166,7 @@ class ServerOperation:
                 if isinstance(result.get("protocolVersion"), str):
                     metadata["mcp.protocol.version"] = result["protocolVersion"]
                 metadata.update(identity_metadata(result.get("serverInfo"), "server"))
-            if self.capture_content and self.method in _CONTENT_METHODS:
+            if self.captures_output:
                 event["output"] = sanitize_result(result)
             if self.method == "tools/call" and result.get("isError") is True and self.failure is None:
                 self.failure = tool_error_message(result, self.capture_content)

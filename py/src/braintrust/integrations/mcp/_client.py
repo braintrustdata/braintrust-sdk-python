@@ -27,22 +27,24 @@ Client span contract:
 import contextvars
 import sys
 from collections.abc import Mapping
-from dataclasses import dataclass
 from typing import Any, get_args
 
 import anyio
 from braintrust import logger as bt_logger
 from braintrust.logger import inject_trace_context
 
-from .tracing import MCPServerConfig, ServerOperation, call_arg, contain, start_client_operation
+from .tracing import MCPServerConfig as ClientConfig
+from .tracing import ServerOperation, call_arg, contain, start_client_operation
 
 
 CLIENT_CONFIG_ATTR = "__braintrust_mcp_client_config__"
 
 
-@dataclass
-class ClientConfig:
-    capture_content: bool = True
+# Pydantic include keys are Python field names, which differ across MCP majors.
+# Content-free spans need only outcome, protocol identity, and result metadata.
+_RESULT_METADATA_FIELDS = frozenset(
+    {"meta", "isError", "is_error", "protocolVersion", "protocol_version", "serverInfo", "server_info"}
+)
 
 
 _enter_config: contextvars.ContextVar[ClientConfig | None] = contextvars.ContextVar(
@@ -108,7 +110,7 @@ def _prepare(session: Any, request: Any, config: ClientConfig) -> tuple[ServerOp
         method=data["method"],
         params=params,
         request_id=getattr(session, "_request_id", None),  # MCP 1.x allocates synchronously on entry.
-        config=MCPServerConfig(capture_content=config.capture_content),
+        config=config,
         protocol_version=getattr(session, "_negotiated_version", None),
     )
     if operation is None:
@@ -178,10 +180,11 @@ async def _run_request(operation: ServerOperation, dispatcher: Any, wrapped: Any
     span_token = manager.set_current_span(operation.span)
     try:
         result = await wrapped(*args, **kwargs)
+        include = None if operation.captures_output else _RESULT_METADATA_FIELDS
         payload = (
             result
             if isinstance(result, Mapping)
-            else contain(lambda: result.model_dump(by_alias=True, mode="json", exclude_none=True))
+            else contain(lambda: result.model_dump(by_alias=True, mode="json", exclude_none=True, include=include))
         )
         contain(operation.record_result, payload)
         return result
@@ -197,9 +200,7 @@ async def _run_request(operation: ServerOperation, dispatcher: Any, wrapped: Any
 def _prepare_raw(method: str, params: Any, config: ClientConfig) -> tuple[ServerOperation, Any] | None:
     params = params or {}
     meta = dict(params.get("_meta") or {})
-    operation = start_client_operation(
-        method=method, params=params, request_id=None, config=MCPServerConfig(capture_content=config.capture_content)
-    )
+    operation = start_client_operation(method=method, params=params, request_id=None, config=config)
     if operation is None:
         return None
     inject_trace_context(meta, span=operation.span)

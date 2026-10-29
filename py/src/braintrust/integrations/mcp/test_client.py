@@ -208,21 +208,22 @@ def _normalize_http_request(request):
     before_record_request=_normalize_http_request,
 )
 @pytest.mark.asyncio
-async def test_client_http_recording(memory_logger):
+@pytest.mark.parametrize("capture_content", [True, False])
+async def test_client_http_recording(memory_logger, capture_content):
     # VCR records the real MCP HTTP exchange, including initialize and teardown.
     # Replay exercises the real client against those protocol responses.
     async with harness.serve_http(harness.http_app(harness.build_server())) as url:
         async with harness.connect_http(url, trace_client=True) as client:
+            wrap_mcp_client(client.raw, capture_content=capture_content)
             await client.call_tool("add", {"a": 4, "b": 5}, meta={"Baggage": "tenant=demo", "custom": "untouched"})
             await client.call_tool("fail")
             await client.get_prompt("greet", {"name": "Ada"})
             await client.read_resource("resource://greeting")
-            await client.call_tool("image")
+            image = await client.call_tool("image")
+            assert image.content[0].data == harness.PNG_BASE64
     spans = client_spans(memory_logger.pop())
-    assert find_span_by_name(spans, "tools/call add")["output"]["content"][0]["text"] == "9"
-    assert find_span_by_name(spans, "tools/call fail")["metadata"]["error.type"] == "tool_error"
-    assert find_span_by_name(spans, "prompts/get greet")["output"]["messages"]
-    assert find_span_by_name(spans, "resources/read")["output"]["contents"]
+    failed = find_span_by_name(spans, "tools/call fail")
+    assert failed["metadata"]["error.type"] == "tool_error"
     initialized = [s for s in spans if s["metadata"]["mcp.method.name"] == "initialize"]
     if initialized:
         assert initialized[0]["metadata"]["mcp.server.name"] == "braintrust-mcp-test"
@@ -230,7 +231,15 @@ async def test_client_http_recording(memory_logger):
         assert find_span_by_name(spans, "server/discover")
     from braintrust import Attachment
 
-    assert isinstance(find_span_by_name(spans, "tools/call image")["output"]["content"][0]["data"], Attachment)
+    if capture_content:
+        assert find_span_by_name(spans, "tools/call add")["output"]["content"][0]["text"] == "9"
+        assert find_span_by_name(spans, "prompts/get greet")["output"]["messages"]
+        assert find_span_by_name(spans, "resources/read")["output"]["contents"]
+        assert isinstance(find_span_by_name(spans, "tools/call image")["output"]["content"][0]["data"], Attachment)
+    else:
+        assert failed["error"] == "Tool returned an error result"
+        for span in spans:
+            assert span.get("input") is None and span.get("output") is None
 
 
 @pytest.mark.asyncio

@@ -25,8 +25,6 @@ def observe_stdio(run: Any, path: str) -> None:
         if "traceparent" in meta:
             meta["traceparent"] = "00-" + "1" * 32 + "-" + "2" * 16 + "-01"
         messages.append({"direction": direction, "message": data})
-        with open(path, "w") as file:
-            json.dump(messages, file, indent=2, sort_keys=True)
 
     @contextlib.asynccontextmanager
     async def stdio(wrapped, _instance, args, kwargs):
@@ -52,5 +50,7 @@ def observe_stdio(run: Any, path: str) -> None:
                 yield streams
             finally:
                 type(read).receive, type(write).send = read_method, write_method
+                with open(path, "w") as file:
+                    json.dump(messages, file, indent=2, sort_keys=True)
 
     wrap_function_wrapper(sys.modules[run.__module__], "stdio_server", stdio)

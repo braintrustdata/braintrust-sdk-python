@@ -95,10 +95,10 @@ def wrap_mcp_client(client_or_session: ServerT, capture_content: bool = True) ->
         logger.warning("Unsupported mcp version. Not wrapping.")
         return client_or_session
     config = ClientConfig(capture_content=capture_content)
-    setattr(client_or_session, CLIENT_CONFIG_ATTR, config)
     if isinstance(client_or_session, ClientSession):
         set_session_config(client_or_session, config)
     else:
+        setattr(client_or_session, CLIENT_CONFIG_ATTR, config)
         configure_session(client_or_session, config)
         # Python resolves special methods on the class, not the instance.
         ClientEnterPatcher.wrap_target(type(client_or_session))
