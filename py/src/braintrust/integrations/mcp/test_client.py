@@ -7,7 +7,6 @@ import re
 import anyio
 import pytest
 from braintrust import logger
-from braintrust.conftest import get_vcr_config
 from braintrust.integrations.mcp import _test_harness as harness
 from braintrust.integrations.mcp import wrap_mcp_client, wrap_mcp_server
 from braintrust.logger import current_span, start_span
@@ -19,11 +18,6 @@ def memory_logger():
     init_test_logger("test-mcp-client")
     with logger._internal_with_memory_background_logger() as bgl:
         yield bgl
-
-
-@pytest.fixture(scope="module")
-def vcr_config():
-    return {**get_vcr_config(), "ignore_localhost": True}
 
 
 def client_spans(spans):
@@ -94,22 +88,22 @@ async def test_concurrent_connected_requests(memory_logger, mode):
         assert span["input"] == by_id[parent_id]["input"]
 
 
-@pytest.mark.vcr(cassette_name=f"{harness.FLAVOR}_test_http_tool_with_model_call")
 @pytest.mark.asyncio
-async def test_connected_http_model_call(memory_logger):
+async def test_connected_http(memory_logger):
     server = wrap_mcp_server(harness.build_server(), capture_content=False)
     async with harness.serve_http(harness.http_app(server)) as url:
         async with harness.connect_http(url) as client:
             wrap_mcp_client(client.raw, capture_content=False)
             with start_span(name="agent") as agent:
-                await client.call_tool("ask_llm", {"question": "Reply with the single word: pong"})
+                result = await client.call_tool("add", {"a": 2, "b": 3})
+                assert result.content[0].text == "5"
     spans = memory_logger.pop()
-    outgoing = find_span_by_name(client_spans(spans), "tools/call ask_llm")
-    incoming = find_span_by_name([s for s in spans if s not in client_spans(spans)], "tools/call ask_llm")
-    llm = find_span_by_name(spans, "anthropic.messages.create")
+    outgoing = find_span_by_name(client_spans(spans), "tools/call add")
+    incoming = find_span_by_name([s for s in spans if s not in client_spans(spans)], "tools/call add")
+    nested = find_span_by_name(spans, "nested-work")
     assert outgoing["span_parents"] == [agent.span_id]
     assert incoming["span_parents"] == [outgoing["span_id"]]
-    assert llm["span_parents"] == [incoming["span_id"]]
+    assert nested["span_parents"] == [incoming["span_id"]]
     assert incoming["root_span_id"] == outgoing["root_span_id"] == agent.root_span_id
     for span in (outgoing, incoming):
         assert span.get("input") is None and span.get("output") is None
@@ -117,75 +111,39 @@ async def test_connected_http_model_call(memory_logger):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("server_traced", [False, True])
-async def test_connected_stdio_model_call(memory_logger, tmp_path, request, vcr_cassette_dir, server_traced):
-    from pathlib import Path
-
-    from braintrust.integrations.mcp._test_transport import TRANSCRIPT_ENV
-
+async def test_connected_stdio(memory_logger, tmp_path, server_traced):
     spans_file = tmp_path / "server-spans.json"
-    transcript = tmp_path / "transport.json"
     env = {
         harness.SPANS_FILE_ENV: str(spans_file),
-        harness.CASSETTE_ENV: f"{harness.FLAVOR}_test_stdio_subprocess",
-        harness.RECORD_MODE_ENV: "none",
         harness.WRAP_ENV: "wrap" if server_traced else "none",
-        TRANSCRIPT_ENV: str(transcript),
     }
     async with harness.connect_stdio(env) as client:
         wrap_mcp_client(client.raw)
         with start_span(name="agent") as agent:
-            await client.call_tool("ask_llm", {"question": "Reply with the single word: pong"})
+            await client.call_tool("add", {"a": 2, "b": 3})
     with anyio.fail_after(10):
         while not spans_file.exists():
             await anyio.sleep(0.05)
     remote = json.loads(spans_file.read_text())
-    outgoing = find_span_by_name(client_spans(memory_logger.pop()), "tools/call ask_llm")
+    outgoing = find_span_by_name(client_spans(memory_logger.pop()), "tools/call add")
     assert outgoing["span_parents"] == [agent.span_id]
+    assert outgoing["root_span_id"] == agent.root_span_id
+    assert outgoing["output"]["content"][0]["text"] == "5"
     if server_traced:
-        incoming = find_span_by_name(remote, "tools/call ask_llm")
+        incoming = find_span_by_name(remote, "tools/call add")
         assert incoming["span_parents"] == [outgoing["span_id"]]
         assert incoming["root_span_id"] == outgoing["root_span_id"]
-        assert find_span_by_name(remote, "anthropic.messages.create")["span_parents"] == [incoming["span_id"]]
+        assert find_span_by_name(remote, "nested-work")["span_parents"] == [incoming["span_id"]]
     else:
         assert not [s for s in remote if "mcp.method.name" in s.get("metadata", {})]
-    observed = json.loads(transcript.read_text())
-    recording = Path(vcr_cassette_dir) / f"{harness.FLAVOR}_client_stdio.json"
-    mode = request.config.getoption("--vcr-record", default=None)
-    if mode == "all" or (mode == "once" and not recording.exists()):
-        recording.write_text(json.dumps(observed, indent=2, sort_keys=True) + "\n")
-    else:
-        assert observed == json.loads(recording.read_text())
 
 
-def _normalize_http_request(request):
-    # Normalize only variable trace identity in VCR's recording/matching copy.
-    # The real transport still sends the client's own span context.
-    if request.method == "POST" and request.body:
-        data = json.loads(request.body)
-        meta = data.get("params", {}).get("_meta", {})
-        if meta.get("custom") == "untouched":
-            assert "tenant=demo" in meta["baggage"]
-            assert "braintrust.parent=" in meta["baggage"]
-            assert "Baggage" not in meta
-        if "traceparent" in meta:
-            assert re.fullmatch(r"00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}", meta["traceparent"])
-            meta["traceparent"] = "00-" + "1" * 32 + "-" + "2" * 16 + "-01"
-        request.body = json.dumps(data, sort_keys=True).encode()
-    return request
-
-
-@pytest.mark.vcr(
-    cassette_name=f"{harness.FLAVOR}_client_http",
-    ignore_localhost=False,
-    match_on=["method", "scheme", "host", "path", "query", "body"],
-    before_record_request=_normalize_http_request,
-)
 @pytest.mark.asyncio
 @pytest.mark.parametrize("capture_content", [True, False])
-async def test_client_http_recording(memory_logger, capture_content):
-    # VCR records the real MCP HTTP exchange, including initialize and teardown.
-    # Replay exercises the real client against those protocol responses.
-    async with harness.serve_http(harness.http_app(harness.build_server())) as url:
+async def test_client_http_operations(memory_logger, capture_content):
+    request_meta = []
+    server = harness.build_server(request_meta=request_meta)
+    async with harness.serve_http(harness.http_app(server)) as url:
         async with harness.connect_http(url, trace_client=True) as client:
             assert wrap_mcp_client(client.raw, capture_content=capture_content) is client.raw
             wrap_mcp_client(client.raw, capture_content=capture_content)
@@ -197,6 +155,12 @@ async def test_client_http_recording(memory_logger, capture_content):
                 image = await client.call_tool("image")
                 assert image.content[0].data == harness.PNG_BASE64
                 assert current_span() is agent
+    (meta,) = request_meta
+    assert meta["custom"] == "untouched"
+    assert "tenant=demo" in meta["baggage"]
+    assert "braintrust.parent=" in meta["baggage"]
+    assert "Baggage" not in meta
+    assert re.fullmatch(r"00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}", meta["traceparent"])
     spans = client_spans(memory_logger.pop())
     for span in spans:
         assert_client(span, span["metadata"]["mcp.method.name"])
@@ -322,8 +286,6 @@ async def test_client_timeout(memory_logger):
 async def test_client_disconnect(memory_logger, tmp_path):
     env = {
         harness.SPANS_FILE_ENV: str(tmp_path / "unused-spans.json"),
-        harness.CASSETTE_ENV: f"{harness.FLAVOR}_test_stdio_subprocess",
-        harness.RECORD_MODE_ENV: "none",
     }
     with anyio.fail_after(10):
         with pytest.raises(Exception):

@@ -55,15 +55,18 @@ def _server_classes() -> tuple[Any, Any]:
     return FastMCP, Context
 
 
-def build_server(name: str = "braintrust-mcp-test") -> Any:
+def build_server(name: str = "braintrust-mcp-test", *, request_meta: list[dict[str, Any]] | None = None) -> Any:
     from braintrust.logger import start_span
 
     server_class, context_class = _server_classes()
     server = server_class(name)
 
     @server.tool()
-    async def add(a: int, b: int) -> int:
+    async def add(a: int, b: int, ctx: context_class) -> int:  # type: ignore[valid-type]
         """Add two integers."""
+        if request_meta is not None:
+            meta = ctx.request_context.meta
+            request_meta.append(meta if isinstance(meta, dict) else meta.model_dump(by_alias=True, exclude_none=True))
         with start_span(name="nested-work") as span:
             span.log(input={"a": a, "b": b})
         return a + b
@@ -286,10 +289,6 @@ async def _serve_stdio() -> None:
         elif os.environ.get(WRAP_ENV) != "none":
             wrap_mcp_server(server)
         run = server.run_stdio_async
-        from braintrust.integrations.mcp._test_transport import TRANSCRIPT_ENV, observe_stdio
-
-        if os.environ.get(TRANSCRIPT_ENV):
-            observe_stdio(run, os.environ[TRANSCRIPT_ENV])
         if "show_banner" in inspect.signature(run).parameters:
             await run(show_banner=False)
         else:
