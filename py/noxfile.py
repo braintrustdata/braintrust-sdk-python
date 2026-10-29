@@ -337,26 +337,26 @@ _register_matrix_sessions(
         },
         {
             "name": "test_mcp",
-            "doc": "MCP server instrumentation on the bundled FastMCP (1.x) / MCPServer (2.x).",
+            "doc": "MCP client/server instrumentation on bundled FastMCP (1.x) / MCPServer (2.x).",
             "versions": MCP_VERSIONS,
             "dependencies": [("mcp", "$version")],
-            "tests": f"{INTEGRATION_DIR}/mcp/test_mcp.py",
+            "tests": [f"{INTEGRATION_DIR}/mcp/test_mcp.py", f"{INTEGRATION_DIR}/mcp/test_client.py"],
             "env": {"BRAINTRUST_MCP_TEST_FLAVOR": "mcp"},
         },
         {
             "name": "test_fastmcp",
-            "doc": "MCP server instrumentation on standalone FastMCP.",
+            "doc": "MCP client/server instrumentation on standalone FastMCP.",
             "versions": FASTMCP_VERSIONS,
             "dependencies": [("fastmcp", "$version")],
-            "tests": f"{INTEGRATION_DIR}/mcp/test_mcp.py",
+            "tests": [f"{INTEGRATION_DIR}/mcp/test_mcp.py", f"{INTEGRATION_DIR}/mcp/test_client.py"],
             "env": {"BRAINTRUST_MCP_TEST_FLAVOR": "fastmcp"},
         },
         {
             "name": "test_fastmcp_slim",
-            "doc": "MCP server instrumentation on fastmcp-slim without the fastmcp meta-package.",
+            "doc": "MCP client/server instrumentation on fastmcp-slim without the fastmcp meta-package.",
             "versions": FASTMCP_SLIM_VERSIONS,
             "dependencies": [("fastmcp-slim", "$version")],
-            "tests": f"{INTEGRATION_DIR}/mcp/test_mcp.py",
+            "tests": [f"{INTEGRATION_DIR}/mcp/test_mcp.py", f"{INTEGRATION_DIR}/mcp/test_client.py"],
             "env": {"BRAINTRUST_MCP_TEST_FLAVOR": "fastmcp"},
         },
         {
@@ -416,6 +416,22 @@ def test_openai_agents(session, version):
 
 
 LITELLM_VERSIONS = _get_matrix_versions("litellm")
+
+
+@nox.session()
+def test_mcp_interop(session):
+    """MCP 1.x coexistence with the upstream OTel instrumentor and LangChain tools."""
+    _install_test_deps(session, "test-mcp-interop")
+    # The upstream OTel instrumentor targets the MCP 1.x BaseSession API.
+    _install_matrix_dep(session, "mcp", "1.28.1")
+    _install_matrix_dep(session, "langchain-core", LATEST)
+    _run_tests(
+        session,
+        f"{INTEGRATION_DIR}/mcp/test_interop.py",
+        version="1.28.1",
+        env={"BRAINTRUST_MCP_TEST_FLAVOR": "mcp"},
+    )
+
 
 # LiteLLM >= 1.102.0 fetches model_prices_and_context_window.json from GitHub on
 # import. Recording that lands a ~3MB blob in the cassette, so force the bundled

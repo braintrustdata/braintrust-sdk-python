@@ -74,6 +74,11 @@ def build_server(name: str = "braintrust-mcp-test") -> Any:
         raise ValueError("tool exploded")
 
     @server.tool()
+    async def disconnect() -> str:
+        """Exit the real stdio subprocess before sending a response."""
+        os._exit(0)  # pylint: disable=protected-access
+
+    @server.tool()
     async def image() -> Any:
         """Return an inline image."""
         return [mcp.types.ImageContent.model_validate({"type": "image", "data": PNG_BASE64, "mimeType": "image/png"})]
@@ -189,23 +194,26 @@ async def connect_in_memory(
 
 
 @contextlib.asynccontextmanager
-async def connect_http(url: str) -> AsyncIterator[Client]:
+async def connect_http(url: str, *, trace_client: bool = False) -> AsyncIterator[Client]:
+    from braintrust.integrations.mcp import wrap_mcp_client
+
+    wrap = wrap_mcp_client if trace_client else lambda value: value
     if FLAVOR == "fastmcp":
         from fastmcp import Client as FastMCPClient
 
-        async with FastMCPClient(url) as client:
+        async with wrap(FastMCPClient(url)) as client:
             yield Client(client)
     elif MCP_V2:
         from mcp import Client as MCPClient
 
-        async with MCPClient(url, log_level="info") as client:
+        async with wrap(MCPClient(url, mode="legacy", log_level="info")) as client:
             yield Client(client)
     else:
         from mcp import ClientSession
         from mcp.client.streamable_http import streamablehttp_client  # pylint: disable=no-name-in-module  # MCP 1.x
 
         async with streamablehttp_client(url) as (read, write, _):
-            async with ClientSession(read, write) as session:
+            async with wrap(ClientSession(read, write)) as session:
                 await session.initialize()
                 yield Client(session)
 
@@ -273,9 +281,13 @@ async def _serve_stdio() -> None:
         server = build_server()
         if os.environ.get(WRAP_ENV) == "setup":
             MCPIntegration.setup()
-        else:
+        elif os.environ.get(WRAP_ENV) != "none":
             wrap_mcp_server(server)
         run = server.run_stdio_async
+        from braintrust.integrations.mcp._test_transport import TRANSCRIPT_ENV, observe_stdio
+
+        if os.environ.get(TRANSCRIPT_ENV):
+            observe_stdio(run, os.environ[TRANSCRIPT_ENV])
         if "show_banner" in inspect.signature(run).parameters:
             await run(show_banner=False)
         else:

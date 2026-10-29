@@ -1,0 +1,312 @@
+[
+  {
+    "direction": "client_to_server",
+    "message": {
+      "id": 0,
+      "jsonrpc": "2.0",
+      "method": "initialize",
+      "params": {
+        "capabilities": {},
+        "clientInfo": {
+          "name": "mcp",
+          "version": "0.1.0"
+        },
+        "protocolVersion": "2025-11-25"
+      }
+    }
+  },
+  {
+    "direction": "server_to_client",
+    "message": {
+      "id": 0,
+      "jsonrpc": "2.0",
+      "result": {
+        "capabilities": {
+          "experimental": {},
+          "extensions": {
+            "io.modelcontextprotocol/ui": {}
+          },
+          "logging": {},
+          "prompts": {
+            "listChanged": false
+          },
+          "resources": {
+            "listChanged": false,
+            "subscribe": false
+          },
+          "tools": {
+            "listChanged": true
+          }
+        },
+        "protocolVersion": "2025-11-25",
+        "serverInfo": {
+          "name": "braintrust-mcp-test",
+          "version": "3.4.11"
+        }
+      }
+    }
+  },
+  {
+    "direction": "client_to_server",
+    "message": {
+      "jsonrpc": "2.0",
+      "method": "notifications/initialized"
+    }
+  },
+  {
+    "direction": "client_to_server",
+    "message": {
+      "id": 1,
+      "jsonrpc": "2.0",
+      "method": "tools/call",
+      "params": {
+        "_meta": {
+          "baggage": "braintrust.parent=project_name%3Atest-mcp-client",
+          "progressToken": 1,
+          "traceparent": "00-11111111111111111111111111111111-2222222222222222-01"
+        },
+        "arguments": {
+          "question": "Reply with the single word: pong"
+        },
+        "name": "ask_llm"
+      }
+    }
+  },
+  {
+    "direction": "server_to_client",
+    "message": {
+      "id": 1,
+      "jsonrpc": "2.0",
+      "result": {
+        "_meta": {
+          "fastmcp": {
+            "wrap_result": true
+          }
+        },
+        "content": [
+          {
+            "text": "pong",
+            "type": "text"
+          }
+        ],
+        "isError": false,
+        "structuredContent": {
+          "result": "pong"
+        }
+      }
+    }
+  },
+  {
+    "direction": "client_to_server",
+    "message": {
+      "id": 2,
+      "jsonrpc": "2.0",
+      "method": "tools/list",
+      "params": {
+        "_meta": {
+          "baggage": "braintrust.parent=project_name%3Atest-mcp-client",
+          "traceparent": "00-11111111111111111111111111111111-2222222222222222-01"
+        }
+      }
+    }
+  },
+  {
+    "direction": "server_to_client",
+    "message": {
+      "id": 2,
+      "jsonrpc": "2.0",
+      "result": {
+        "tools": [
+          {
+            "_meta": {
+              "fastmcp": {
+                "tags": []
+              }
+            },
+            "description": "Add two integers.",
+            "inputSchema": {
+              "additionalProperties": false,
+              "properties": {
+                "a": {
+                  "type": "integer"
+                },
+                "b": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "a",
+                "b"
+              ],
+              "type": "object"
+            },
+            "name": "add",
+            "outputSchema": {
+              "properties": {
+                "result": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "result"
+              ],
+              "type": "object",
+              "x-fastmcp-wrap-result": true
+            }
+          },
+          {
+            "_meta": {
+              "fastmcp": {
+                "tags": []
+              }
+            },
+            "description": "Always fails.",
+            "inputSchema": {
+              "additionalProperties": false,
+              "properties": {},
+              "type": "object"
+            },
+            "name": "fail",
+            "outputSchema": {
+              "properties": {
+                "result": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "result"
+              ],
+              "type": "object",
+              "x-fastmcp-wrap-result": true
+            }
+          },
+          {
+            "_meta": {
+              "fastmcp": {
+                "tags": []
+              }
+            },
+            "description": "Exit the real stdio subprocess before sending a response.",
+            "inputSchema": {
+              "additionalProperties": false,
+              "properties": {},
+              "type": "object"
+            },
+            "name": "disconnect",
+            "outputSchema": {
+              "properties": {
+                "result": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "result"
+              ],
+              "type": "object",
+              "x-fastmcp-wrap-result": true
+            }
+          },
+          {
+            "_meta": {
+              "fastmcp": {
+                "tags": []
+              }
+            },
+            "description": "Return an inline image.",
+            "inputSchema": {
+              "additionalProperties": false,
+              "properties": {},
+              "type": "object"
+            },
+            "name": "image"
+          },
+          {
+            "_meta": {
+              "fastmcp": {
+                "tags": []
+              }
+            },
+            "description": "Send a log notification while running.",
+            "inputSchema": {
+              "additionalProperties": false,
+              "properties": {},
+              "type": "object"
+            },
+            "name": "notify",
+            "outputSchema": {
+              "properties": {
+                "result": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "result"
+              ],
+              "type": "object",
+              "x-fastmcp-wrap-result": true
+            }
+          },
+          {
+            "_meta": {
+              "fastmcp": {
+                "tags": []
+              }
+            },
+            "description": "Block until cancelled.",
+            "inputSchema": {
+              "additionalProperties": false,
+              "properties": {},
+              "type": "object"
+            },
+            "name": "wait_for_cancel",
+            "outputSchema": {
+              "properties": {
+                "result": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "result"
+              ],
+              "type": "object",
+              "x-fastmcp-wrap-result": true
+            }
+          },
+          {
+            "_meta": {
+              "fastmcp": {
+                "tags": []
+              }
+            },
+            "description": "Answer with a model call made inside the tool.",
+            "inputSchema": {
+              "additionalProperties": false,
+              "properties": {
+                "question": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "question"
+              ],
+              "type": "object"
+            },
+            "name": "ask_llm",
+            "outputSchema": {
+              "properties": {
+                "result": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "result"
+              ],
+              "type": "object",
+              "x-fastmcp-wrap-result": true
+            }
+          }
+        ]
+      }
+    }
+  }
+]

@@ -205,6 +205,11 @@ test-langchain = [
     "langgraph==1.1.6",
 ]
 
+test-mcp-interop = [
+    "opentelemetry-instrumentation-mcp==0.62.4",
+    "langchain-mcp-adapters==0.3.2",
+]
+
 test-deepagents = [
     {include-group = "test"},
     "langchain-openai==1.1.14",
@@ -435,6 +440,10 @@ conflicts = [
     [
         {group = "test-litellm"},
         {group = "test-mcp-v1"},
+    ],
+    [
+        {group = "test-litellm"},
+        {group = "test-mcp-interop"},
     ],
 ]
 

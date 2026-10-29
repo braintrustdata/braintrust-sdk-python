@@ -1,0 +1,409 @@
+interactions:
+- request:
+    body: '{"id": 2, "jsonrpc": "2.0", "method": "tools/call", "params": {"_meta":
+      {"baggage": "braintrust.parent=project_name%3Atest-mcp-client", "io.modelcontextprotocol/clientCapabilities":
+      {}, "io.modelcontextprotocol/clientInfo": {"name": "mcp", "version": "0.1.0"},
+      "io.modelcontextprotocol/logLevel": "debug", "io.modelcontextprotocol/protocolVersion":
+      "2026-07-28", "progressToken": 2, "traceparent": "00-11111111111111111111111111111111-2222222222222222-01"},
+      "arguments": {"a": 4, "b": 5}, "name": "add"}}'
+    headers:
+      accept:
+      - application/json, text/event-stream
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '473'
+      content-type:
+      - application/json
+      host:
+      - 127.0.0.1:62620
+      mcp-method:
+      - tools/call
+      mcp-name:
+      - add
+      mcp-protocol-version:
+      - '2026-07-28'
+      user-agent:
+      - python-httpx2/2.16.0
+    method: POST
+    uri: http://127.0.0.1:62620/mcp
+  response:
+    body:
+      string: '{"jsonrpc":"2.0","id":2,"result":{"_meta":{"fastmcp":{"wrap_result":true},"io.modelcontextprotocol/serverInfo":{"name":"braintrust-mcp-test","version":"4.0.0"}},"content":[{"text":"9","type":"text"}],"isError":false,"resultType":"complete","structuredContent":{"result":9}}}'
+    headers:
+      content-length:
+      - '274'
+      content-type:
+      - application/json
+      date:
+      - Thu, 29 Oct 2026 17:03:25 GMT
+      server:
+      - uvicorn
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"id": 1, "jsonrpc": "2.0", "method": "server/discover", "params": {"_meta":
+      {"io.modelcontextprotocol/clientCapabilities": {}, "io.modelcontextprotocol/clientInfo":
+      {"name": "mcp", "version": "0.1.0"}, "io.modelcontextprotocol/protocolVersion":
+      "2026-07-28"}}}'
+    headers:
+      accept:
+      - application/json, text/event-stream
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '245'
+      content-type:
+      - application/json
+      host:
+      - 127.0.0.1:62800
+      mcp-method:
+      - server/discover
+      mcp-protocol-version:
+      - '2026-07-28'
+      user-agent:
+      - python-httpx2/2.16.0
+    method: POST
+    uri: http://127.0.0.1:62800/mcp
+  response:
+    body:
+      string: '{"jsonrpc":"2.0","id":1,"result":{"_meta":{"io.modelcontextprotocol/serverInfo":{"name":"braintrust-mcp-test","version":"4.0.0"}},"ttlMs":0,"cacheScope":"private","supportedVersions":["2026-07-28"],"capabilities":{"logging":{},"prompts":{"listChanged":false},"resources":{"subscribe":false,"listChanged":false},"tools":{"listChanged":false},"extensions":{"io.modelcontextprotocol/ui":{}}},"resultType":"complete"}}'
+    headers:
+      content-length:
+      - '414'
+      content-type:
+      - application/json
+      date:
+      - Thu, 29 Oct 2026 17:05:45 GMT
+      server:
+      - uvicorn
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"id": 1, "jsonrpc": "2.0", "method": "server/discover", "params": {"_meta":
+      {"baggage": "braintrust.parent=project_name%3Atest-mcp-client", "io.modelcontextprotocol/clientCapabilities":
+      {}, "io.modelcontextprotocol/clientInfo": {"name": "mcp", "version": "0.1.0"},
+      "io.modelcontextprotocol/protocolVersion": "2026-07-28", "traceparent": "00-11111111111111111111111111111111-2222222222222222-01"}}}'
+    headers:
+      accept:
+      - application/json, text/event-stream
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '378'
+      content-type:
+      - application/json
+      host:
+      - 127.0.0.1:63066
+      mcp-method:
+      - server/discover
+      mcp-protocol-version:
+      - '2026-07-28'
+      user-agent:
+      - python-httpx2/2.16.0
+    method: POST
+    uri: http://127.0.0.1:63066/mcp
+  response:
+    body:
+      string: '{"jsonrpc":"2.0","id":1,"result":{"_meta":{"io.modelcontextprotocol/serverInfo":{"name":"braintrust-mcp-test","version":"4.0.0"}},"ttlMs":0,"cacheScope":"private","supportedVersions":["2026-07-28"],"capabilities":{"logging":{},"prompts":{"listChanged":false},"resources":{"subscribe":false,"listChanged":false},"tools":{"listChanged":false},"extensions":{"io.modelcontextprotocol/ui":{}}},"resultType":"complete"}}'
+    headers:
+      content-length:
+      - '414'
+      content-type:
+      - application/json
+      date:
+      - Thu, 29 Oct 2026 17:07:47 GMT
+      server:
+      - uvicorn
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"id": 2, "jsonrpc": "2.0", "method": "tools/call", "params": {"_meta":
+      {"baggage": "tenant=demo,braintrust.parent=project_name%3Atest-mcp-client",
+      "custom": "untouched", "io.modelcontextprotocol/clientCapabilities": {}, "io.modelcontextprotocol/clientInfo":
+      {"name": "mcp", "version": "0.1.0"}, "io.modelcontextprotocol/logLevel": "debug",
+      "io.modelcontextprotocol/protocolVersion": "2026-07-28", "progressToken": 2,
+      "traceparent": "00-11111111111111111111111111111111-2222222222222222-01"}, "arguments":
+      {"a": 4, "b": 5}, "name": "add"}}'
+    headers:
+      accept:
+      - application/json, text/event-stream
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '506'
+      content-type:
+      - application/json
+      host:
+      - 127.0.0.1:63066
+      mcp-method:
+      - tools/call
+      mcp-name:
+      - add
+      mcp-protocol-version:
+      - '2026-07-28'
+      user-agent:
+      - python-httpx2/2.16.0
+    method: POST
+    uri: http://127.0.0.1:63066/mcp
+  response:
+    body:
+      string: '{"jsonrpc":"2.0","id":2,"result":{"_meta":{"fastmcp":{"wrap_result":true},"io.modelcontextprotocol/serverInfo":{"name":"braintrust-mcp-test","version":"4.0.0"}},"content":[{"text":"9","type":"text"}],"isError":false,"resultType":"complete","structuredContent":{"result":9}}}'
+    headers:
+      content-length:
+      - '274'
+      content-type:
+      - application/json
+      date:
+      - Thu, 29 Oct 2026 17:07:47 GMT
+      server:
+      - uvicorn
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"id": 3, "jsonrpc": "2.0", "method": "tools/list", "params": {"_meta":
+      {"baggage": "braintrust.parent=project_name%3Atest-mcp-client", "io.modelcontextprotocol/clientCapabilities":
+      {}, "io.modelcontextprotocol/clientInfo": {"name": "mcp", "version": "0.1.0"},
+      "io.modelcontextprotocol/logLevel": "debug", "io.modelcontextprotocol/protocolVersion":
+      "2026-07-28", "traceparent": "00-11111111111111111111111111111111-2222222222222222-01"}}}'
+    headers:
+      accept:
+      - application/json, text/event-stream
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '416'
+      content-type:
+      - application/json
+      host:
+      - 127.0.0.1:63066
+      mcp-method:
+      - tools/list
+      mcp-protocol-version:
+      - '2026-07-28'
+      user-agent:
+      - python-httpx2/2.16.0
+    method: POST
+    uri: http://127.0.0.1:63066/mcp
+  response:
+    body:
+      string: '{"jsonrpc":"2.0","id":3,"result":{"cacheScope":"private","resultType":"complete","tools":[{"_meta":{"fastmcp":{"tags":[]}},"description":"Add
+        two integers.","inputSchema":{"type":"object","additionalProperties":false,"properties":{"a":{"type":"integer"},"b":{"type":"integer"}},"required":["a","b"]},"name":"add","outputSchema":{"properties":{"result":{"type":"integer"}},"required":["result"],"type":"object","x-fastmcp-wrap-result":true},"title":"Add"},{"_meta":{"fastmcp":{"tags":[]}},"description":"Always
+        fails.","inputSchema":{"type":"object","additionalProperties":false,"properties":{}},"name":"fail","outputSchema":{"properties":{"result":{"type":"string"}},"required":["result"],"type":"object","x-fastmcp-wrap-result":true},"title":"Fail"},{"_meta":{"fastmcp":{"tags":[]}},"description":"Exit
+        the real stdio subprocess before sending a response.","inputSchema":{"type":"object","additionalProperties":false,"properties":{}},"name":"disconnect","outputSchema":{"properties":{"result":{"type":"string"}},"required":["result"],"type":"object","x-fastmcp-wrap-result":true},"title":"Disconnect"},{"_meta":{"fastmcp":{"tags":[]}},"description":"Return
+        an inline image.","inputSchema":{"type":"object","additionalProperties":false,"properties":{}},"name":"image","title":"Image"},{"_meta":{"fastmcp":{"tags":[]}},"description":"Send
+        a log notification while running.","inputSchema":{"type":"object","additionalProperties":false,"properties":{}},"name":"notify","outputSchema":{"properties":{"result":{"type":"string"}},"required":["result"],"type":"object","x-fastmcp-wrap-result":true},"title":"Notify"},{"_meta":{"fastmcp":{"tags":[]}},"description":"Block
+        until cancelled.","inputSchema":{"type":"object","additionalProperties":false,"properties":{}},"name":"wait_for_cancel","outputSchema":{"properties":{"result":{"type":"string"}},"required":["result"],"type":"object","x-fastmcp-wrap-result":true},"title":"Wait
+        For Cancel"},{"_meta":{"fastmcp":{"tags":[]}},"description":"Answer with a
+        model call made inside the tool.","inputSchema":{"type":"object","additionalProperties":false,"properties":{"question":{"type":"string"}},"required":["question"]},"name":"ask_llm","outputSchema":{"properties":{"result":{"type":"string"}},"required":["result"],"type":"object","x-fastmcp-wrap-result":true},"title":"Ask
+        Llm"}],"ttlMs":0,"_meta":{"io.modelcontextprotocol/serverInfo":{"name":"braintrust-mcp-test","version":"4.0.0"}}}}'
+    headers:
+      content-length:
+      - '2432'
+      content-type:
+      - application/json
+      date:
+      - Thu, 29 Oct 2026 17:07:47 GMT
+      server:
+      - uvicorn
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"id": 4, "jsonrpc": "2.0", "method": "tools/call", "params": {"_meta":
+      {"baggage": "braintrust.parent=project_name%3Atest-mcp-client", "io.modelcontextprotocol/clientCapabilities":
+      {}, "io.modelcontextprotocol/clientInfo": {"name": "mcp", "version": "0.1.0"},
+      "io.modelcontextprotocol/logLevel": "debug", "io.modelcontextprotocol/protocolVersion":
+      "2026-07-28", "progressToken": 4, "traceparent": "00-11111111111111111111111111111111-2222222222222222-01"},
+      "arguments": {}, "name": "fail"}}'
+    headers:
+      accept:
+      - application/json, text/event-stream
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '463'
+      content-type:
+      - application/json
+      host:
+      - 127.0.0.1:63066
+      mcp-method:
+      - tools/call
+      mcp-name:
+      - fail
+      mcp-protocol-version:
+      - '2026-07-28'
+      user-agent:
+      - python-httpx2/2.16.0
+    method: POST
+    uri: http://127.0.0.1:63066/mcp
+  response:
+    body:
+      string: '{"jsonrpc":"2.0","id":4,"result":{"content":[{"text":"Error calling
+        tool ''fail'': tool exploded","type":"text"}],"isError":true,"resultType":"complete","_meta":{"io.modelcontextprotocol/serverInfo":{"name":"braintrust-mcp-test","version":"4.0.0"}}}}'
+    headers:
+      content-length:
+      - '248'
+      content-type:
+      - application/json
+      date:
+      - Thu, 29 Oct 2026 17:07:47 GMT
+      server:
+      - uvicorn
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"id": 5, "jsonrpc": "2.0", "method": "prompts/get", "params": {"_meta":
+      {"baggage": "braintrust.parent=project_name%3Atest-mcp-client", "io.modelcontextprotocol/clientCapabilities":
+      {}, "io.modelcontextprotocol/clientInfo": {"name": "mcp", "version": "0.1.0"},
+      "io.modelcontextprotocol/logLevel": "debug", "io.modelcontextprotocol/protocolVersion":
+      "2026-07-28", "traceparent": "00-11111111111111111111111111111111-2222222222222222-01"},
+      "arguments": {"name": "Ada"}, "name": "greet"}}'
+    headers:
+      accept:
+      - application/json, text/event-stream
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '459'
+      content-type:
+      - application/json
+      host:
+      - 127.0.0.1:63066
+      mcp-method:
+      - prompts/get
+      mcp-name:
+      - greet
+      mcp-protocol-version:
+      - '2026-07-28'
+      user-agent:
+      - python-httpx2/2.16.0
+    method: POST
+    uri: http://127.0.0.1:63066/mcp
+  response:
+    body:
+      string: '{"jsonrpc":"2.0","id":5,"result":{"description":"Greet someone.","messages":[{"content":{"text":"Say
+        hello to Ada.","type":"text"},"role":"user"}],"resultType":"complete","_meta":{"io.modelcontextprotocol/serverInfo":{"name":"braintrust-mcp-test","version":"4.0.0"}}}}'
+    headers:
+      content-length:
+      - '268'
+      content-type:
+      - application/json
+      date:
+      - Thu, 29 Oct 2026 17:07:47 GMT
+      server:
+      - uvicorn
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"id": 6, "jsonrpc": "2.0", "method": "resources/read", "params": {"_meta":
+      {"baggage": "braintrust.parent=project_name%3Atest-mcp-client", "io.modelcontextprotocol/clientCapabilities":
+      {}, "io.modelcontextprotocol/clientInfo": {"name": "mcp", "version": "0.1.0"},
+      "io.modelcontextprotocol/logLevel": "debug", "io.modelcontextprotocol/protocolVersion":
+      "2026-07-28", "traceparent": "00-11111111111111111111111111111111-2222222222222222-01"},
+      "uri": "resource://greeting"}}'
+    headers:
+      accept:
+      - application/json, text/event-stream
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '448'
+      content-type:
+      - application/json
+      host:
+      - 127.0.0.1:63066
+      mcp-method:
+      - resources/read
+      mcp-name:
+      - resource://greeting
+      mcp-protocol-version:
+      - '2026-07-28'
+      user-agent:
+      - python-httpx2/2.16.0
+    method: POST
+    uri: http://127.0.0.1:63066/mcp
+  response:
+    body:
+      string: '{"jsonrpc":"2.0","id":6,"result":{"cacheScope":"private","contents":[{"mimeType":"text/plain","text":"Hello
+        from a resource","uri":"resource://greeting"}],"resultType":"complete","ttlMs":0,"_meta":{"io.modelcontextprotocol/serverInfo":{"name":"braintrust-mcp-test","version":"4.0.0"}}}}'
+    headers:
+      content-length:
+      - '286'
+      content-type:
+      - application/json
+      date:
+      - Thu, 29 Oct 2026 17:07:47 GMT
+      server:
+      - uvicorn
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"id": 7, "jsonrpc": "2.0", "method": "tools/call", "params": {"_meta":
+      {"baggage": "braintrust.parent=project_name%3Atest-mcp-client", "io.modelcontextprotocol/clientCapabilities":
+      {}, "io.modelcontextprotocol/clientInfo": {"name": "mcp", "version": "0.1.0"},
+      "io.modelcontextprotocol/logLevel": "debug", "io.modelcontextprotocol/protocolVersion":
+      "2026-07-28", "progressToken": 7, "traceparent": "00-11111111111111111111111111111111-2222222222222222-01"},
+      "arguments": {}, "name": "image"}}'
+    headers:
+      accept:
+      - application/json, text/event-stream
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '464'
+      content-type:
+      - application/json
+      host:
+      - 127.0.0.1:63066
+      mcp-method:
+      - tools/call
+      mcp-name:
+      - image
+      mcp-protocol-version:
+      - '2026-07-28'
+      user-agent:
+      - python-httpx2/2.16.0
+    method: POST
+    uri: http://127.0.0.1:63066/mcp
+  response:
+    body:
+      string: '{"jsonrpc":"2.0","id":7,"result":{"content":[{"data":"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==","mimeType":"image/png","type":"image"}],"isError":false,"resultType":"complete","_meta":{"io.modelcontextprotocol/serverInfo":{"name":"braintrust-mcp-test","version":"4.0.0"}}}}'
+    headers:
+      content-length:
+      - '329'
+      content-type:
+      - application/json
+      date:
+      - Thu, 29 Oct 2026 17:07:47 GMT
+      server:
+      - uvicorn
+    status:
+      code: 200
+      message: OK
+version: 1

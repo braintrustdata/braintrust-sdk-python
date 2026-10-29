@@ -1,0 +1,476 @@
+interactions:
+- request:
+    body: '{"id": 2, "jsonrpc": "2.0", "method": "tools/call", "params": {"_meta":
+      {"baggage": "braintrust.parent=project_name%3Atest-mcp-client", "traceparent":
+      "00-11111111111111111111111111111111-2222222222222222-01"}, "arguments": {"a":
+      4, "b": 5}, "name": "add"}}'
+    headers:
+      accept:
+      - application/json, text/event-stream
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '239'
+      content-type:
+      - application/json
+      host:
+      - 127.0.0.1:62535
+      mcp-protocol-version:
+      - '2025-11-25'
+      mcp-session-id:
+      - e5a72730d4014cb8a0301ae330ac77cd
+      user-agent:
+      - python-httpx2/2.16.0
+    method: POST
+    uri: http://127.0.0.1:62535/mcp
+  response:
+    body:
+      string: "event: message\r\ndata: {\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"content\":[{\"text\":\"9\",\"type\":\"text\"}],\"isError\":false,\"structuredContent\":{\"result\":9}}}\r\n\r\n"
+    headers:
+      cache-control:
+      - no-cache, no-transform
+      connection:
+      - keep-alive
+      content-type:
+      - text/event-stream
+      date:
+      - Thu, 29 Oct 2026 17:03:08 GMT
+      mcp-session-id:
+      - e5a72730d4014cb8a0301ae330ac77cd
+      server:
+      - uvicorn
+      transfer-encoding:
+      - chunked
+      x-accel-buffering:
+      - 'no'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"id": 1, "jsonrpc": "2.0", "method": "initialize", "params": {"_meta":
+      {"baggage": "braintrust.parent=project_name%3Atest-mcp-client", "traceparent":
+      "00-11111111111111111111111111111111-2222222222222222-01"}, "capabilities":
+      {}, "clientInfo": {"name": "mcp", "version": "0.1.0"}, "protocolVersion": "2025-11-25"}}'
+    headers:
+      accept:
+      - application/json, text/event-stream
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '295'
+      content-type:
+      - application/json
+      host:
+      - 127.0.0.1:63057
+      user-agent:
+      - python-httpx2/2.16.0
+    method: POST
+    uri: http://127.0.0.1:63057/mcp
+  response:
+    body:
+      string: "event: message\r\ndata: {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"capabilities\":{\"experimental\":{},\"prompts\":{\"listChanged\":false},\"resources\":{\"listChanged\":false,\"subscribe\":false},\"tools\":{\"listChanged\":false}},\"protocolVersion\":\"2025-11-25\",\"serverInfo\":{\"name\":\"braintrust-mcp-test\",\"version\":\"\"}}}\r\n\r\n"
+    headers:
+      cache-control:
+      - no-cache, no-transform
+      connection:
+      - keep-alive
+      content-type:
+      - text/event-stream
+      date:
+      - Thu, 29 Oct 2026 17:07:45 GMT
+      mcp-session-id:
+      - 450716a3fd504a759292acb4f2e65443
+      server:
+      - uvicorn
+      transfer-encoding:
+      - chunked
+      x-accel-buffering:
+      - 'no'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"jsonrpc": "2.0", "method": "notifications/initialized"}'
+    headers:
+      accept:
+      - application/json, text/event-stream
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '54'
+      content-type:
+      - application/json
+      host:
+      - 127.0.0.1:63057
+      mcp-protocol-version:
+      - '2025-11-25'
+      mcp-session-id:
+      - 450716a3fd504a759292acb4f2e65443
+      user-agent:
+      - python-httpx2/2.16.0
+    method: POST
+    uri: http://127.0.0.1:63057/mcp
+  response:
+    body:
+      string: ''
+    headers:
+      content-length:
+      - '0'
+      content-type:
+      - application/json
+      date:
+      - Thu, 29 Oct 2026 17:07:45 GMT
+      mcp-session-id:
+      - 450716a3fd504a759292acb4f2e65443
+      server:
+      - uvicorn
+    status:
+      code: 202
+      message: Accepted
+- request:
+    body: '{"id": 2, "jsonrpc": "2.0", "method": "tools/call", "params": {"_meta":
+      {"baggage": "tenant=demo,braintrust.parent=project_name%3Atest-mcp-client",
+      "custom": "untouched", "traceparent": "00-11111111111111111111111111111111-2222222222222222-01"},
+      "arguments": {"a": 4, "b": 5}, "name": "add"}}'
+    headers:
+      accept:
+      - application/json, text/event-stream
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '272'
+      content-type:
+      - application/json
+      host:
+      - 127.0.0.1:63057
+      mcp-protocol-version:
+      - '2025-11-25'
+      mcp-session-id:
+      - 450716a3fd504a759292acb4f2e65443
+      user-agent:
+      - python-httpx2/2.16.0
+    method: POST
+    uri: http://127.0.0.1:63057/mcp
+  response:
+    body:
+      string: "event: message\r\ndata: {\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"content\":[{\"text\":\"9\",\"type\":\"text\"}],\"isError\":false,\"structuredContent\":{\"result\":9}}}\r\n\r\n"
+    headers:
+      cache-control:
+      - no-cache, no-transform
+      connection:
+      - keep-alive
+      content-type:
+      - text/event-stream
+      date:
+      - Thu, 29 Oct 2026 17:07:45 GMT
+      mcp-session-id:
+      - 450716a3fd504a759292acb4f2e65443
+      server:
+      - uvicorn
+      transfer-encoding:
+      - chunked
+      x-accel-buffering:
+      - 'no'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"id": 3, "jsonrpc": "2.0", "method": "tools/list", "params": {"_meta":
+      {"baggage": "braintrust.parent=project_name%3Atest-mcp-client", "traceparent":
+      "00-11111111111111111111111111111111-2222222222222222-01"}}}'
+    headers:
+      accept:
+      - application/json, text/event-stream
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '200'
+      content-type:
+      - application/json
+      host:
+      - 127.0.0.1:63057
+      mcp-protocol-version:
+      - '2025-11-25'
+      mcp-session-id:
+      - 450716a3fd504a759292acb4f2e65443
+      user-agent:
+      - python-httpx2/2.16.0
+    method: POST
+    uri: http://127.0.0.1:63057/mcp
+  response:
+    body:
+      string: "event: message\r\ndata: {\"jsonrpc\":\"2.0\",\"id\":3,\"result\":{\"tools\":[{\"description\":\"Add
+        two integers.\",\"inputSchema\":{\"properties\":{\"a\":{\"title\":\"A\",\"type\":\"integer\"},\"b\":{\"title\":\"B\",\"type\":\"integer\"}},\"required\":[\"a\",\"b\"],\"type\":\"object\",\"title\":\"addArguments\"},\"name\":\"add\",\"outputSchema\":{\"properties\":{\"result\":{\"title\":\"Result\",\"type\":\"integer\"}},\"required\":[\"result\"],\"type\":\"object\",\"title\":\"addOutput\"}},{\"description\":\"Always
+        fails.\",\"inputSchema\":{\"properties\":{},\"type\":\"object\",\"title\":\"failArguments\"},\"name\":\"fail\",\"outputSchema\":{\"properties\":{\"result\":{\"title\":\"Result\",\"type\":\"string\"}},\"required\":[\"result\"],\"type\":\"object\",\"title\":\"failOutput\"}},{\"description\":\"Exit
+        the real stdio subprocess before sending a response.\",\"inputSchema\":{\"properties\":{},\"type\":\"object\",\"title\":\"disconnectArguments\"},\"name\":\"disconnect\",\"outputSchema\":{\"properties\":{\"result\":{\"title\":\"Result\",\"type\":\"string\"}},\"required\":[\"result\"],\"type\":\"object\",\"title\":\"disconnectOutput\"}},{\"description\":\"Return
+        an inline image.\",\"inputSchema\":{\"properties\":{},\"type\":\"object\",\"title\":\"imageArguments\"},\"name\":\"image\"},{\"description\":\"Send
+        a log notification while running.\",\"inputSchema\":{\"properties\":{},\"type\":\"object\",\"title\":\"notifyArguments\"},\"name\":\"notify\",\"outputSchema\":{\"properties\":{\"result\":{\"title\":\"Result\",\"type\":\"string\"}},\"required\":[\"result\"],\"type\":\"object\",\"title\":\"notifyOutput\"}},{\"description\":\"Block
+        until cancelled.\",\"inputSchema\":{\"properties\":{},\"type\":\"object\",\"title\":\"wait_for_cancelArguments\"},\"name\":\"wait_for_cancel\",\"outputSchema\":{\"properties\":{\"result\":{\"title\":\"Result\",\"type\":\"string\"}},\"required\":[\"result\"],\"type\":\"object\",\"title\":\"wait_for_cancelOutput\"}},{\"description\":\"Answer
+        with a model call made inside the tool.\",\"inputSchema\":{\"properties\":{\"question\":{\"title\":\"Question\",\"type\":\"string\"}},\"required\":[\"question\"],\"type\":\"object\",\"title\":\"ask_llmArguments\"},\"name\":\"ask_llm\",\"outputSchema\":{\"properties\":{\"result\":{\"title\":\"Result\",\"type\":\"string\"}},\"required\":[\"result\"],\"type\":\"object\",\"title\":\"ask_llmOutput\"}}]}}\r\n\r\n"
+    headers:
+      cache-control:
+      - no-cache, no-transform
+      connection:
+      - keep-alive
+      content-type:
+      - text/event-stream
+      date:
+      - Thu, 29 Oct 2026 17:07:45 GMT
+      mcp-session-id:
+      - 450716a3fd504a759292acb4f2e65443
+      server:
+      - uvicorn
+      transfer-encoding:
+      - chunked
+      x-accel-buffering:
+      - 'no'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"id": 4, "jsonrpc": "2.0", "method": "tools/call", "params": {"_meta":
+      {"baggage": "braintrust.parent=project_name%3Atest-mcp-client", "traceparent":
+      "00-11111111111111111111111111111111-2222222222222222-01"}, "arguments": {},
+      "name": "fail"}}'
+    headers:
+      accept:
+      - application/json, text/event-stream
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '229'
+      content-type:
+      - application/json
+      host:
+      - 127.0.0.1:63057
+      mcp-protocol-version:
+      - '2025-11-25'
+      mcp-session-id:
+      - 450716a3fd504a759292acb4f2e65443
+      user-agent:
+      - python-httpx2/2.16.0
+    method: POST
+    uri: http://127.0.0.1:63057/mcp
+  response:
+    body:
+      string: "event: message\r\ndata: {\"jsonrpc\":\"2.0\",\"id\":4,\"result\":{\"content\":[{\"text\":\"Error
+        executing tool fail: tool exploded\",\"type\":\"text\"}],\"isError\":true}}\r\n\r\n"
+    headers:
+      cache-control:
+      - no-cache, no-transform
+      connection:
+      - keep-alive
+      content-type:
+      - text/event-stream
+      date:
+      - Thu, 29 Oct 2026 17:07:45 GMT
+      mcp-session-id:
+      - 450716a3fd504a759292acb4f2e65443
+      server:
+      - uvicorn
+      transfer-encoding:
+      - chunked
+      x-accel-buffering:
+      - 'no'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"id": 5, "jsonrpc": "2.0", "method": "prompts/get", "params": {"_meta":
+      {"baggage": "braintrust.parent=project_name%3Atest-mcp-client", "traceparent":
+      "00-11111111111111111111111111111111-2222222222222222-01"}, "arguments": {"name":
+      "Ada"}, "name": "greet"}}'
+    headers:
+      accept:
+      - application/json, text/event-stream
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '243'
+      content-type:
+      - application/json
+      host:
+      - 127.0.0.1:63057
+      mcp-protocol-version:
+      - '2025-11-25'
+      mcp-session-id:
+      - 450716a3fd504a759292acb4f2e65443
+      user-agent:
+      - python-httpx2/2.16.0
+    method: POST
+    uri: http://127.0.0.1:63057/mcp
+  response:
+    body:
+      string: "event: message\r\ndata: {\"jsonrpc\":\"2.0\",\"id\":5,\"result\":{\"description\":\"Greet
+        someone.\",\"messages\":[{\"content\":{\"text\":\"Say hello to Ada.\",\"type\":\"text\"},\"role\":\"user\"}]}}\r\n\r\n"
+    headers:
+      cache-control:
+      - no-cache, no-transform
+      connection:
+      - keep-alive
+      content-type:
+      - text/event-stream
+      date:
+      - Thu, 29 Oct 2026 17:07:45 GMT
+      mcp-session-id:
+      - 450716a3fd504a759292acb4f2e65443
+      server:
+      - uvicorn
+      transfer-encoding:
+      - chunked
+      x-accel-buffering:
+      - 'no'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"id": 6, "jsonrpc": "2.0", "method": "resources/read", "params": {"_meta":
+      {"baggage": "braintrust.parent=project_name%3Atest-mcp-client", "traceparent":
+      "00-11111111111111111111111111111111-2222222222222222-01"}, "uri": "resource://greeting"}}'
+    headers:
+      accept:
+      - application/json, text/event-stream
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '232'
+      content-type:
+      - application/json
+      host:
+      - 127.0.0.1:63057
+      mcp-protocol-version:
+      - '2025-11-25'
+      mcp-session-id:
+      - 450716a3fd504a759292acb4f2e65443
+      user-agent:
+      - python-httpx2/2.16.0
+    method: POST
+    uri: http://127.0.0.1:63057/mcp
+  response:
+    body:
+      string: "event: message\r\ndata: {\"jsonrpc\":\"2.0\",\"id\":6,\"result\":{\"contents\":[{\"mimeType\":\"text/plain\",\"text\":\"Hello
+        from a resource\",\"uri\":\"resource://greeting\"}]}}\r\n\r\n"
+    headers:
+      cache-control:
+      - no-cache, no-transform
+      connection:
+      - keep-alive
+      content-type:
+      - text/event-stream
+      date:
+      - Thu, 29 Oct 2026 17:07:45 GMT
+      mcp-session-id:
+      - 450716a3fd504a759292acb4f2e65443
+      server:
+      - uvicorn
+      transfer-encoding:
+      - chunked
+      x-accel-buffering:
+      - 'no'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"id": 7, "jsonrpc": "2.0", "method": "tools/call", "params": {"_meta":
+      {"baggage": "braintrust.parent=project_name%3Atest-mcp-client", "traceparent":
+      "00-11111111111111111111111111111111-2222222222222222-01"}, "arguments": {},
+      "name": "image"}}'
+    headers:
+      accept:
+      - application/json, text/event-stream
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '230'
+      content-type:
+      - application/json
+      host:
+      - 127.0.0.1:63057
+      mcp-protocol-version:
+      - '2025-11-25'
+      mcp-session-id:
+      - 450716a3fd504a759292acb4f2e65443
+      user-agent:
+      - python-httpx2/2.16.0
+    method: POST
+    uri: http://127.0.0.1:63057/mcp
+  response:
+    body:
+      string: "event: message\r\ndata: {\"jsonrpc\":\"2.0\",\"id\":7,\"result\":{\"content\":[{\"data\":\"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==\",\"mimeType\":\"image/png\",\"type\":\"image\"}],\"isError\":false}}\r\n\r\n"
+    headers:
+      cache-control:
+      - no-cache, no-transform
+      connection:
+      - keep-alive
+      content-type:
+      - text/event-stream
+      date:
+      - Thu, 29 Oct 2026 17:07:45 GMT
+      mcp-session-id:
+      - 450716a3fd504a759292acb4f2e65443
+      server:
+      - uvicorn
+      transfer-encoding:
+      - chunked
+      x-accel-buffering:
+      - 'no'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      accept:
+      - application/json, text/event-stream
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-type:
+      - application/json
+      host:
+      - 127.0.0.1:63057
+      mcp-protocol-version:
+      - '2025-11-25'
+      mcp-session-id:
+      - 450716a3fd504a759292acb4f2e65443
+      user-agent:
+      - python-httpx2/2.16.0
+    method: DELETE
+    uri: http://127.0.0.1:63057/mcp
+  response:
+    body:
+      string: ''
+    headers:
+      content-length:
+      - '0'
+      content-type:
+      - application/json
+      date:
+      - Thu, 29 Oct 2026 17:07:45 GMT
+      mcp-session-id:
+      - 450716a3fd504a759292acb4f2e65443
+      server:
+      - uvicorn
+    status:
+      code: 200
+      message: OK
+version: 1

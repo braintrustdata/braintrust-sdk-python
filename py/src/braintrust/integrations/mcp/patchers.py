@@ -1,6 +1,6 @@
 from braintrust.integrations.base import FunctionWrapperPatcher
 
-from . import _server_v1, _server_v2
+from . import _client, _server_v1, _server_v2
 
 
 _MCP_V1 = "<2.0.0a0"
@@ -103,4 +103,61 @@ SERVER_PATCHERS = (
     DispatcherWriteResultPatcher,
     DispatcherWriteErrorPatcher,
     DispatcherNotifyPatcher,
+)
+
+
+class ClientSessionInitPatcher(FunctionWrapperPatcher):
+    name = "mcp.client.session_init"
+    version_spec = "<3"
+    target_module = "mcp.client.session"
+    target_path = "ClientSession.__init__"
+    wrapper = _client.session_init_wrapper
+
+
+class ClientSendRequestPatcher(FunctionWrapperPatcher):
+    name = "mcp.client.send_request"
+    version_spec = "<3"
+    target_module = "mcp.client.session"
+    target_path = "ClientSession.send_request"
+    wrapper = _client.send_request_wrapper
+
+
+class ClientEnterPatcher(FunctionWrapperPatcher):
+    """Applied to a high-level client class; gated by per-instance settings."""
+
+    name = "mcp.client.enter"
+    target_path = "__aenter__"
+    wrapper = _client.client_enter_wrapper
+
+
+class ClientAllocateIdPatcher(FunctionWrapperPatcher):
+    name = "mcp.client.v2.allocate_id"
+    version_spec = _MCP_V2
+    target_module = "mcp.shared.jsonrpc_dispatcher"
+    target_path = "JSONRPCDispatcher._allocate_id"
+    wrapper = _client.allocate_id_wrapper
+
+
+class ClientRawRequestPatcher(FunctionWrapperPatcher):
+    name = "mcp.client.v2.raw_request"
+    version_spec = _MCP_V2
+    target_module = "mcp.shared.jsonrpc_dispatcher"
+    target_path = "JSONRPCDispatcher.send_raw_request"
+    wrapper = _client.raw_request_wrapper
+
+
+class ClientDirectRequestPatcher(FunctionWrapperPatcher):
+    name = "mcp.client.v2.direct_request"
+    version_spec = _MCP_V2
+    target_module = "mcp.shared.direct_dispatcher"
+    target_path = "DirectDispatcher.send_raw_request"
+    wrapper = _client.raw_request_wrapper
+
+
+CLIENT_PATCHERS = (
+    ClientSessionInitPatcher,
+    ClientSendRequestPatcher,
+    ClientAllocateIdPatcher,
+    ClientRawRequestPatcher,
+    ClientDirectRequestPatcher,
 )
