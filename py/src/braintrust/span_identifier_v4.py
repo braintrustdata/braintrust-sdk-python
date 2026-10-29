@@ -21,7 +21,8 @@ def _try_make_hex_trace_id(s):
         if isinstance(s, str) and len(s) == 32:  # 32 hex chars = 16 bytes
             ret = bytes.fromhex(s)
             assert len(ret) == 16
-            return ret, True
+            if ret.hex() == s:
+                return ret, True
     except Exception:
         pass
     return None, False
@@ -33,7 +34,8 @@ def _try_make_hex_span_id(s):
         if isinstance(s, str) and len(s) == 16:  # 16 hex chars = 8 bytes
             ret = bytes.fromhex(s)
             assert len(ret) == 8
-            return ret, True
+            if ret.hex() == s:
+                return ret, True
     except Exception:
         pass
     return None, False

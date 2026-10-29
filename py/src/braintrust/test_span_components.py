@@ -76,6 +76,40 @@ class TestSpanComponentsV3:
 class TestSpanComponentsV4:
     """Test SpanComponentsV4 functionality and OTEL compatibility."""
 
+    @pytest.mark.parametrize(
+        ("span_id", "root_span_id"),
+        [
+            ("ABCDEF1234567890", "abcdef0123456789abcdef0123456789"),
+            ("abcdef1234567890", "ABCDEF0123456789ABCDEF0123456789"),
+            ("AbCdEf1234567890", "AbCdEf0123456789AbCdEf0123456789"),
+            ("abcdef1234567890", "abcdef0123456789abcdef0123456789"),
+            ("0123456789012345", "01234567890123456789012345678901"),
+            ("custom-span", "custom-root"),
+            ("72EAC0DD-0775-4D40-BAC8-1DFC8CC14059", "72EAC0DD-0775-4D40-BAC8-1DFC8CC14059"),
+        ],
+    )
+    def test_exported_custom_ids_preserve_parent_link(self, span_id, root_span_id, with_memory_logger):
+        from braintrust.test_helpers import init_test_logger, preserve_env_vars
+
+        with preserve_env_vars("BRAINTRUST_LEGACY_IDS"):
+            os.environ.pop("BRAINTRUST_LEGACY_IDS", None)
+            log = init_test_logger("custom-id-roundtrip")
+            with log.start_span(name="parent", span_id=span_id, root_span_id=root_span_id) as parent:
+                exported = parent.export()
+            with log.start_span(name="child", parent=exported):
+                pass
+
+        rows = with_memory_logger.pop()
+        parent_row = next(row for row in rows if row["span_attributes"]["name"] == "parent")
+        child_row = next(row for row in rows if row["span_attributes"]["name"] == "child")
+        assert parent_row["span_id"] == span_id
+        assert parent_row["root_span_id"] == root_span_id
+        assert child_row["span_parents"] == [parent_row["span_id"]]
+        assert child_row["root_span_id"] == parent_row["root_span_id"]
+        decoded = SpanComponentsV4.from_str(exported)
+        assert decoded.span_id == span_id
+        assert decoded.root_span_id == root_span_id
+
     def test_otel_hex_strings_preserved(self):
         """Test that V4 preserves OTEL hex strings exactly."""
         otel_gen = OTELIDGenerator()
