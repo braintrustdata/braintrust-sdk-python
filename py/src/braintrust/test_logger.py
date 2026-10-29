@@ -3829,3 +3829,16 @@ def test_proxy_conn_base_url(proxy_url, expected_base_url):
     state = BraintrustState()
     state.proxy_url = proxy_url
     assert state.proxy_conn().base_url == expected_base_url
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+def test_log_score_validation_rejects_nonfinite_values(value):
+    # Exercise validation without constructing a logger or making requests.
+    with pytest.raises(ValueError, match="between 0 and 1"):
+        logger._validate_and_sanitize_experiment_log_partial_args({"scores": {"accuracy": value}})
+
+
+@pytest.mark.parametrize("value", [None, 0, 0.5, 1, False, True])
+def test_log_score_validation_preserves_valid_values(value):
+    result = logger._validate_and_sanitize_experiment_log_partial_args({"scores": {"accuracy": value}})
+    assert result["scores"]["accuracy"] == value
