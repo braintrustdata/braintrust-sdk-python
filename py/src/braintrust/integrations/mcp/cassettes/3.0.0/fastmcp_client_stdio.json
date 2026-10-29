@@ -250,6 +250,33 @@
                 "tags": []
               }
             },
+            "description": "Turn content capture off mid-request, then send a notification.",
+            "inputSchema": {
+              "additionalProperties": false,
+              "properties": {},
+              "type": "object"
+            },
+            "name": "notify_after_disabling_capture",
+            "outputSchema": {
+              "description": "Generic wrapper for non-object return types.",
+              "properties": {
+                "result": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "result"
+              ],
+              "type": "object",
+              "x-fastmcp-wrap-result": true
+            }
+          },
+          {
+            "_meta": {
+              "fastmcp": {
+                "tags": []
+              }
+            },
             "description": "Block until cancelled.",
             "inputSchema": {
               "additionalProperties": false,

@@ -65,11 +65,11 @@ interactions:
       content-type:
       - application/json
       host:
-      - 127.0.0.1:63057
+      - 127.0.0.1:57189
       user-agent:
       - python-httpx2/2.16.0
     method: POST
-    uri: http://127.0.0.1:63057/mcp
+    uri: http://127.0.0.1:57189/mcp
   response:
     body:
       string: "event: message\r\ndata: {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"capabilities\":{\"experimental\":{},\"prompts\":{\"listChanged\":false},\"resources\":{\"listChanged\":false,\"subscribe\":false},\"tools\":{\"listChanged\":false}},\"protocolVersion\":\"2025-11-25\",\"serverInfo\":{\"name\":\"braintrust-mcp-test\",\"version\":\"\"}}}\r\n\r\n"
@@ -81,9 +81,9 @@ interactions:
       content-type:
       - text/event-stream
       date:
-      - Thu, 29 Oct 2026 17:07:45 GMT
+      - Thu, 29 Oct 2026 20:41:48 GMT
       mcp-session-id:
-      - 450716a3fd504a759292acb4f2e65443
+      - 673bac9c6e504a8a82a077d9051e2575
       server:
       - uvicorn
       transfer-encoding:
@@ -107,15 +107,15 @@ interactions:
       content-type:
       - application/json
       host:
-      - 127.0.0.1:63057
+      - 127.0.0.1:57189
       mcp-protocol-version:
       - '2025-11-25'
       mcp-session-id:
-      - 450716a3fd504a759292acb4f2e65443
+      - 673bac9c6e504a8a82a077d9051e2575
       user-agent:
       - python-httpx2/2.16.0
     method: POST
-    uri: http://127.0.0.1:63057/mcp
+    uri: http://127.0.0.1:57189/mcp
   response:
     body:
       string: ''
@@ -125,9 +125,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Thu, 29 Oct 2026 17:07:45 GMT
+      - Thu, 29 Oct 2026 20:41:48 GMT
       mcp-session-id:
-      - 450716a3fd504a759292acb4f2e65443
+      - 673bac9c6e504a8a82a077d9051e2575
       server:
       - uvicorn
     status:
@@ -150,15 +150,15 @@ interactions:
       content-type:
       - application/json
       host:
-      - 127.0.0.1:63057
+      - 127.0.0.1:57189
       mcp-protocol-version:
       - '2025-11-25'
       mcp-session-id:
-      - 450716a3fd504a759292acb4f2e65443
+      - 673bac9c6e504a8a82a077d9051e2575
       user-agent:
       - python-httpx2/2.16.0
     method: POST
-    uri: http://127.0.0.1:63057/mcp
+    uri: http://127.0.0.1:57189/mcp
   response:
     body:
       string: "event: message\r\ndata: {\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"content\":[{\"text\":\"9\",\"type\":\"text\"}],\"isError\":false,\"structuredContent\":{\"result\":9}}}\r\n\r\n"
@@ -170,9 +170,9 @@ interactions:
       content-type:
       - text/event-stream
       date:
-      - Thu, 29 Oct 2026 17:07:45 GMT
+      - Thu, 29 Oct 2026 20:41:48 GMT
       mcp-session-id:
-      - 450716a3fd504a759292acb4f2e65443
+      - 673bac9c6e504a8a82a077d9051e2575
       server:
       - uvicorn
       transfer-encoding:
@@ -198,15 +198,15 @@ interactions:
       content-type:
       - application/json
       host:
-      - 127.0.0.1:63057
+      - 127.0.0.1:57189
       mcp-protocol-version:
       - '2025-11-25'
       mcp-session-id:
-      - 450716a3fd504a759292acb4f2e65443
+      - 673bac9c6e504a8a82a077d9051e2575
       user-agent:
       - python-httpx2/2.16.0
     method: POST
-    uri: http://127.0.0.1:63057/mcp
+    uri: http://127.0.0.1:57189/mcp
   response:
     body:
       string: "event: message\r\ndata: {\"jsonrpc\":\"2.0\",\"id\":3,\"result\":{\"tools\":[{\"description\":\"Add
@@ -214,7 +214,8 @@ interactions:
         fails.\",\"inputSchema\":{\"properties\":{},\"type\":\"object\",\"title\":\"failArguments\"},\"name\":\"fail\",\"outputSchema\":{\"properties\":{\"result\":{\"title\":\"Result\",\"type\":\"string\"}},\"required\":[\"result\"],\"type\":\"object\",\"title\":\"failOutput\"}},{\"description\":\"Exit
         the real stdio subprocess before sending a response.\",\"inputSchema\":{\"properties\":{},\"type\":\"object\",\"title\":\"disconnectArguments\"},\"name\":\"disconnect\",\"outputSchema\":{\"properties\":{\"result\":{\"title\":\"Result\",\"type\":\"string\"}},\"required\":[\"result\"],\"type\":\"object\",\"title\":\"disconnectOutput\"}},{\"description\":\"Return
         an inline image.\",\"inputSchema\":{\"properties\":{},\"type\":\"object\",\"title\":\"imageArguments\"},\"name\":\"image\"},{\"description\":\"Send
-        a log notification while running.\",\"inputSchema\":{\"properties\":{},\"type\":\"object\",\"title\":\"notifyArguments\"},\"name\":\"notify\",\"outputSchema\":{\"properties\":{\"result\":{\"title\":\"Result\",\"type\":\"string\"}},\"required\":[\"result\"],\"type\":\"object\",\"title\":\"notifyOutput\"}},{\"description\":\"Block
+        a log notification while running.\",\"inputSchema\":{\"properties\":{},\"type\":\"object\",\"title\":\"notifyArguments\"},\"name\":\"notify\",\"outputSchema\":{\"properties\":{\"result\":{\"title\":\"Result\",\"type\":\"string\"}},\"required\":[\"result\"],\"type\":\"object\",\"title\":\"notifyOutput\"}},{\"description\":\"Turn
+        content capture off mid-request, then send a notification.\",\"inputSchema\":{\"properties\":{},\"type\":\"object\",\"title\":\"notify_after_disabling_captureArguments\"},\"name\":\"notify_after_disabling_capture\",\"outputSchema\":{\"properties\":{\"result\":{\"title\":\"Result\",\"type\":\"string\"}},\"required\":[\"result\"],\"type\":\"object\",\"title\":\"notify_after_disabling_captureOutput\"}},{\"description\":\"Block
         until cancelled.\",\"inputSchema\":{\"properties\":{},\"type\":\"object\",\"title\":\"wait_for_cancelArguments\"},\"name\":\"wait_for_cancel\",\"outputSchema\":{\"properties\":{\"result\":{\"title\":\"Result\",\"type\":\"string\"}},\"required\":[\"result\"],\"type\":\"object\",\"title\":\"wait_for_cancelOutput\"}},{\"description\":\"Answer
         with a model call made inside the tool.\",\"inputSchema\":{\"properties\":{\"question\":{\"title\":\"Question\",\"type\":\"string\"}},\"required\":[\"question\"],\"type\":\"object\",\"title\":\"ask_llmArguments\"},\"name\":\"ask_llm\",\"outputSchema\":{\"properties\":{\"result\":{\"title\":\"Result\",\"type\":\"string\"}},\"required\":[\"result\"],\"type\":\"object\",\"title\":\"ask_llmOutput\"}}]}}\r\n\r\n"
     headers:
@@ -225,9 +226,9 @@ interactions:
       content-type:
       - text/event-stream
       date:
-      - Thu, 29 Oct 2026 17:07:45 GMT
+      - Thu, 29 Oct 2026 20:41:48 GMT
       mcp-session-id:
-      - 450716a3fd504a759292acb4f2e65443
+      - 673bac9c6e504a8a82a077d9051e2575
       server:
       - uvicorn
       transfer-encoding:
@@ -254,15 +255,15 @@ interactions:
       content-type:
       - application/json
       host:
-      - 127.0.0.1:63057
+      - 127.0.0.1:57189
       mcp-protocol-version:
       - '2025-11-25'
       mcp-session-id:
-      - 450716a3fd504a759292acb4f2e65443
+      - 673bac9c6e504a8a82a077d9051e2575
       user-agent:
       - python-httpx2/2.16.0
     method: POST
-    uri: http://127.0.0.1:63057/mcp
+    uri: http://127.0.0.1:57189/mcp
   response:
     body:
       string: "event: message\r\ndata: {\"jsonrpc\":\"2.0\",\"id\":4,\"result\":{\"content\":[{\"text\":\"Error
@@ -275,9 +276,9 @@ interactions:
       content-type:
       - text/event-stream
       date:
-      - Thu, 29 Oct 2026 17:07:45 GMT
+      - Thu, 29 Oct 2026 20:41:48 GMT
       mcp-session-id:
-      - 450716a3fd504a759292acb4f2e65443
+      - 673bac9c6e504a8a82a077d9051e2575
       server:
       - uvicorn
       transfer-encoding:
@@ -304,15 +305,15 @@ interactions:
       content-type:
       - application/json
       host:
-      - 127.0.0.1:63057
+      - 127.0.0.1:57189
       mcp-protocol-version:
       - '2025-11-25'
       mcp-session-id:
-      - 450716a3fd504a759292acb4f2e65443
+      - 673bac9c6e504a8a82a077d9051e2575
       user-agent:
       - python-httpx2/2.16.0
     method: POST
-    uri: http://127.0.0.1:63057/mcp
+    uri: http://127.0.0.1:57189/mcp
   response:
     body:
       string: "event: message\r\ndata: {\"jsonrpc\":\"2.0\",\"id\":5,\"result\":{\"description\":\"Greet
@@ -325,9 +326,9 @@ interactions:
       content-type:
       - text/event-stream
       date:
-      - Thu, 29 Oct 2026 17:07:45 GMT
+      - Thu, 29 Oct 2026 20:41:48 GMT
       mcp-session-id:
-      - 450716a3fd504a759292acb4f2e65443
+      - 673bac9c6e504a8a82a077d9051e2575
       server:
       - uvicorn
       transfer-encoding:
@@ -353,15 +354,15 @@ interactions:
       content-type:
       - application/json
       host:
-      - 127.0.0.1:63057
+      - 127.0.0.1:57189
       mcp-protocol-version:
       - '2025-11-25'
       mcp-session-id:
-      - 450716a3fd504a759292acb4f2e65443
+      - 673bac9c6e504a8a82a077d9051e2575
       user-agent:
       - python-httpx2/2.16.0
     method: POST
-    uri: http://127.0.0.1:63057/mcp
+    uri: http://127.0.0.1:57189/mcp
   response:
     body:
       string: "event: message\r\ndata: {\"jsonrpc\":\"2.0\",\"id\":6,\"result\":{\"contents\":[{\"mimeType\":\"text/plain\",\"text\":\"Hello
@@ -374,9 +375,9 @@ interactions:
       content-type:
       - text/event-stream
       date:
-      - Thu, 29 Oct 2026 17:07:45 GMT
+      - Thu, 29 Oct 2026 20:41:48 GMT
       mcp-session-id:
-      - 450716a3fd504a759292acb4f2e65443
+      - 673bac9c6e504a8a82a077d9051e2575
       server:
       - uvicorn
       transfer-encoding:
@@ -403,15 +404,15 @@ interactions:
       content-type:
       - application/json
       host:
-      - 127.0.0.1:63057
+      - 127.0.0.1:57189
       mcp-protocol-version:
       - '2025-11-25'
       mcp-session-id:
-      - 450716a3fd504a759292acb4f2e65443
+      - 673bac9c6e504a8a82a077d9051e2575
       user-agent:
       - python-httpx2/2.16.0
     method: POST
-    uri: http://127.0.0.1:63057/mcp
+    uri: http://127.0.0.1:57189/mcp
   response:
     body:
       string: "event: message\r\ndata: {\"jsonrpc\":\"2.0\",\"id\":7,\"result\":{\"content\":[{\"data\":\"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==\",\"mimeType\":\"image/png\",\"type\":\"image\"}],\"isError\":false}}\r\n\r\n"
@@ -423,9 +424,9 @@ interactions:
       content-type:
       - text/event-stream
       date:
-      - Thu, 29 Oct 2026 17:07:45 GMT
+      - Thu, 29 Oct 2026 20:41:48 GMT
       mcp-session-id:
-      - 450716a3fd504a759292acb4f2e65443
+      - 673bac9c6e504a8a82a077d9051e2575
       server:
       - uvicorn
       transfer-encoding:
@@ -447,15 +448,15 @@ interactions:
       content-type:
       - application/json
       host:
-      - 127.0.0.1:63057
+      - 127.0.0.1:57189
       mcp-protocol-version:
       - '2025-11-25'
       mcp-session-id:
-      - 450716a3fd504a759292acb4f2e65443
+      - 673bac9c6e504a8a82a077d9051e2575
       user-agent:
       - python-httpx2/2.16.0
     method: DELETE
-    uri: http://127.0.0.1:63057/mcp
+    uri: http://127.0.0.1:57189/mcp
   response:
     body:
       string: ''
@@ -465,9 +466,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Thu, 29 Oct 2026 17:07:45 GMT
+      - Thu, 29 Oct 2026 20:41:48 GMT
       mcp-session-id:
-      - 450716a3fd504a759292acb4f2e65443
+      - 673bac9c6e504a8a82a077d9051e2575
       server:
       - uvicorn
     status:
