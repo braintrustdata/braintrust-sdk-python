@@ -78,8 +78,10 @@ def build_server(name: str = "braintrust-mcp-test") -> Any:
         """Exit the real stdio subprocess before sending a response."""
         os._exit(0)  # pylint: disable=protected-access
 
+    # Bundled MCP infers an output schema for Any only on Python 3.10.
+    # These protocol content blocks do not need a structured output schema.
     @server.tool()
-    async def image() -> Any:
+    async def image():
         """Return an inline image."""
         return [mcp.types.ImageContent.model_validate({"type": "image", "data": PNG_BASE64, "mimeType": "image/png"})]
 
