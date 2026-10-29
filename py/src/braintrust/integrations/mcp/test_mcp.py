@@ -368,6 +368,23 @@ async def test_disconnect_ends_pending_request_with_error(memory_logger):
     assert "mcp.cancelled" not in span["metadata"]
 
 
+@pytest.mark.skipif(FLAVOR != "mcp" or harness.MCP_V2, reason="MCP 1.x re-raises handler exceptions")
+@pytest.mark.asyncio
+async def test_raised_handler_exception_is_recorded(memory_logger):
+    # With raise_exceptions=True, MCP 1.x propagates a handler exception
+    # instead of sending an error response.
+    server = wrap_mcp_server(harness.build_server())
+
+    with pytest.raises(BaseException):
+        async with harness.connect_in_memory(server, raise_exceptions=True) as client:
+            await client.get_prompt("broken", {})
+
+    span = find_span_by_name(memory_logger.pop(), "prompts/get broken")
+    assert span["metadata"]["error.type"] == "ValueError"
+    assert "prompt exploded" in str(span["error"])
+    assert "rpc.response.status_code" not in span["metadata"]
+
+
 @pytest.mark.vcr(cassette_name=f"{FLAVOR}_test_http_tool_with_model_call")
 @pytest.mark.asyncio
 async def test_http_tool_with_model_call(memory_logger):

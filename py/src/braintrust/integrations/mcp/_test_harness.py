@@ -119,6 +119,11 @@ def build_server(name: str = "braintrust-mcp-test") -> Any:
         """Greet someone."""
         return f"Say hello to {name}."
 
+    @server.prompt()
+    def broken() -> str:
+        """Always fails to render."""
+        raise RuntimeError("prompt exploded")
+
     @server.resource("resource://greeting")
     def greeting() -> str:
         return "Hello from a resource"
@@ -167,7 +172,9 @@ class Client:
 
 
 @contextlib.asynccontextmanager
-async def connect_in_memory(server: Any, mode: str | None = None) -> AsyncIterator[Client]:
+async def connect_in_memory(
+    server: Any, mode: str | None = None, raise_exceptions: bool = False
+) -> AsyncIterator[Client]:
     if FLAVOR == "fastmcp":
         from fastmcp import Client as FastMCPClient
 
@@ -183,7 +190,9 @@ async def connect_in_memory(server: Any, mode: str | None = None) -> AsyncIterat
             create_connected_server_and_client_session,
         )
 
-        async with create_connected_server_and_client_session(lowlevel_server(server)) as session:
+        async with create_connected_server_and_client_session(
+            lowlevel_server(server), raise_exceptions=raise_exceptions
+        ) as session:
             yield Client(session)
 
 

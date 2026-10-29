@@ -257,7 +257,14 @@ async def server_handle_message_wrapper(wrapped: Any, instance: Any, args: Any, 
             return await wrapped(*args, **kwargs)
         # The write observer ends the operation once the response is sent.
         with activate(operation):
-            return await wrapped(*args, **kwargs)
+            try:
+                return await wrapped(*args, **kwargs)
+            except Exception as error:
+                # ``raise_exceptions=True`` propagates the handler error
+                # instead of sending a response.
+                if trace.pending.pop(message.request_id, None) is operation:
+                    operation.finish(error)
+                raise
     operation = trace.forwarded_notifications.pop(id(message), None)
     if operation is None:
         return await wrapped(*args, **kwargs)
