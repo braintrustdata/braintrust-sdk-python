@@ -35,14 +35,15 @@ from .tracing import (
     http_transport_metadata,
     related_operation,
     run_operation,
+    server_config,
     start_outgoing_notification,
     start_server_operation,
 )
 
 
-# Set while a wrapped ``Server.run`` constructs its session.
-_pending_server_config: contextvars.ContextVar[MCPServerConfig | None] = contextvars.ContextVar(
-    "braintrust_mcp_pending_server_config", default=None
+# The wrapped server whose ``run`` is constructing a session.
+_pending_server: contextvars.ContextVar["weakref.ref[Any] | None"] = contextvars.ContextVar(
+    "braintrust_mcp_pending_server", default=None
 )
 
 _session_traces: "weakref.WeakKeyDictionary[Any, _SessionTrace]" = weakref.WeakKeyDictionary()
@@ -60,13 +61,18 @@ def _mcp() -> Any:
 class _SessionTrace:
     """Pending operations for one server session (one MCP connection)."""
 
-    def __init__(self, session: Any, config: MCPServerConfig):
+    def __init__(self, session: Any, server_ref: "weakref.ref[Any] | None"):
         self._session_ref = weakref.ref(session)
-        self.config = config
+        self._server_ref = server_ref
         self.pending: dict[Any, ServerOperation] = {}
         self.forwarded_notifications: dict[int, ServerOperation] = {}
         self.inbound_notification: ServerOperation | None = None
         self.protocol_version: str | None = None
+
+    @property
+    def config(self) -> MCPServerConfig | None:
+        """The server's current settings, so re-wrapping applies to open connections."""
+        return server_config(self._server_ref() if self._server_ref is not None else None)
 
     def _session_attr(self, name: str) -> Any:
         session = self._session_ref()
@@ -85,13 +91,16 @@ class _SessionTrace:
         if not is_request and not isinstance(message, types.JSONRPCNotification):
             # Responses to server-initiated requests are not operations.
             return
+        config = self.config
+        if config is None:
+            return
         request_context = getattr(item.metadata, "request_context", None)
         params = message.params
         operation = start_server_operation(
             method=message.method,
             params=params,
             request_id=message.id if is_request else None,
-            config=self.config,
+            config=config,
             session_id=http_session_id(request_context),
             protocol_version=self.protocol_version,
             client_info=getattr(self._session_attr("_client_params"), "clientInfo", None),
@@ -133,12 +142,13 @@ class _SessionTrace:
             if operation is not None:
                 operation.record_error_response(message.error.code, message.error.message)
             return operation, None
-        if isinstance(message, types.JSONRPCNotification):
+        config = self.config
+        if isinstance(message, types.JSONRPCNotification) and config is not None:
             related_id = getattr(item.metadata, "related_request_id", None)
             span = start_outgoing_notification(
                 method=message.method,
                 params=message.params,
-                config=self.config,
+                config=config,
                 related=related_operation(related_id) or self.pending.get(related_id),
             )
             return None, span
@@ -221,13 +231,13 @@ class _ObservedIncomingWriter(_StreamObserver):
         await self._stream.send(item)
 
 
-def _install_session_observers(session: Any, config: MCPServerConfig) -> None:
+def _install_session_observers(session: Any, server_ref: "weakref.ref[Any] | None") -> None:
     if session in _session_traces:
         return
     streams = ("_read_stream", "_write_stream", "_incoming_message_stream_writer")
     if not all(hasattr(session, name) for name in streams):
         return
-    trace = _SessionTrace(session, config)
+    trace = _SessionTrace(session, server_ref)
     session._read_stream = _ObservedReadStream(session._read_stream, trace)
     session._write_stream = _ObservedWriteStream(session._write_stream, trace)
     session._incoming_message_stream_writer = _ObservedIncomingWriter(session._incoming_message_stream_writer, trace)
@@ -236,12 +246,12 @@ def _install_session_observers(session: Any, config: MCPServerConfig) -> None:
 
 def server_session_init_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
     result = wrapped(*args, **kwargs)
-    config = _pending_server_config.get() or global_server_config()
-    if config is not None:
-        # A session consumes the config of the run that created it, so a
-        # server started from inside a handler is not traced implicitly.
-        _pending_server_config.set(None)
-        contain(_install_session_observers, instance, config)
+    server_ref = _pending_server.get()
+    if server_ref is not None or global_server_config() is not None:
+        # A session belongs to the run that created it, so a server started
+        # from inside a handler is not attributed to the outer server.
+        _pending_server.set(None)
+        contain(_install_session_observers, instance, server_ref)
     return result
 
 
@@ -277,9 +287,9 @@ async def server_run_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any
     Per instance rather than on ``Server.run``, because fastmcp 2/3 override
     ``run`` without calling it.
     """
-    config = getattr(instance, SERVER_CONFIG_ATTR, None)
-    token = _pending_server_config.set(config if isinstance(config, MCPServerConfig) else None)
+    is_wrapped = isinstance(getattr(instance, SERVER_CONFIG_ATTR, None), MCPServerConfig)
+    token = _pending_server.set(weakref.ref(instance) if is_wrapped else None)
     try:
         return await wrapped(*args, **kwargs)
     finally:
-        _pending_server_config.reset(token)
+        _pending_server.reset(token)

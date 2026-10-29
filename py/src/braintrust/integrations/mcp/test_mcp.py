@@ -200,6 +200,21 @@ async def test_capture_content_disabled(memory_logger):
 
 
 @pytest.mark.asyncio
+async def test_rewrap_updates_open_connections(memory_logger):
+    server = wrap_mcp_server(harness.build_server())
+
+    async with harness.connect_in_memory(server) as client:
+        await client.call_tool("add", {"a": 1, "b": 1})
+        wrap_mcp_server(server, capture_content=False)
+        await client.call_tool("add", {"a": 2, "b": 2})
+
+    captured, redacted = [s for s in memory_logger.pop() if s["span_attributes"]["name"] == "tools/call add"]
+    assert captured["input"] == {"a": 1, "b": 1}
+    assert redacted.get("input") is None
+    assert redacted.get("output") is None
+
+
+@pytest.mark.asyncio
 async def test_outgoing_notification_is_child_of_request(memory_logger):
     server = wrap_mcp_server(harness.build_server())
 
