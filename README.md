@@ -57,6 +57,7 @@ BRAINTRUST_API_KEY=<YOUR_API_KEY> braintrust eval tutorial_eval.py
 | --- | --- | --- |
 | [OpenAI](py/src/braintrust/integrations/openai/) | Yes | `openai>=1.71.0` |
 | [Anthropic](py/src/braintrust/integrations/anthropic/) | Yes | `anthropic>=0.48.0` |
+| [MCP / FastMCP](py/src/braintrust/integrations/mcp/) | Yes (client and server) | `mcp>=1.28.1,<3`; `fastmcp>=2.14.7,<5` |
 | [Cohere](py/src/braintrust/integrations/cohere/) | Yes | `cohere>=5.0.0` |
 | [Mistral](py/src/braintrust/integrations/mistral/) | Yes | `mistralai>=1.12.4` |
 | [LiteLLM](py/src/braintrust/integrations/litellm/) | Yes | `litellm>=1.74.0` |

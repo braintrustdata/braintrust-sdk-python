@@ -61,12 +61,16 @@ def auto_instrument(
     livekit_agents: bool = True,
     pipecat: bool = True,
     typesafe: bool = True,
+    mcp_client: bool = True,
+    mcp_server: bool = True,
+    mcp_capture_content: bool = True,
     span_customizers: Sequence[SpanCustomizer] | None = None,
 ) -> dict[str, bool]:
     """
     Auto-instrument supported AI/ML libraries for Braintrust tracing.
 
-    Safe to call multiple times - already instrumented libraries are skipped.
+    Safe to call multiple times - hooks are installed once. MCP settings are
+    updated on each call; explicit per-client/server wrapping takes precedence.
 
     Note on import order: If you use `from openai import OpenAI` style imports,
     call auto_instrument() first. If you use `import openai` style imports,
@@ -103,6 +107,12 @@ def auto_instrument(
         livekit_agents: Enable LiveKit Agents instrumentation (default: True)
         pipecat: Enable Pipecat AI instrumentation (default: True)
         typesafe: Enable TypeSafe instrumentation (default: True)
+        mcp_client: Enable MCP client instrumentation (default: True)
+        mcp_server: Enable MCP server instrumentation (default: True)
+        mcp_capture_content: Capture MCP arguments, results, resource contents,
+            and server notification parameters (default: True). False keeps
+            names, timing, identifiers, and error classification. Applies to
+            both enabled MCP sides; does not affect other integrations.
         span_customizers: Ordered synchronous export customizers for native SDK spans
             and OTel spans sent through OtelExporter or BraintrustSpanProcessor,
             including manual spans; generic OTLP exporters, dataset rows, and
@@ -221,12 +231,16 @@ def auto_instrument(
         results["pipecat"] = _instrument_integration("pipecat", "PipecatIntegration")
     if typesafe:
         results["typesafe"] = _instrument_integration("typesafe", "TypeSafeIntegration")
+    if mcp_client or mcp_server:
+        results["mcp"] = _instrument_integration(
+            "mcp", "MCPIntegration", client=mcp_client, server=mcp_server, capture_content=mcp_capture_content
+        )
 
     return results
 
 
-def _instrument_integration(module_name: str, class_name: str) -> bool:
+def _instrument_integration(module_name: str, class_name: str, **kwargs: Any) -> bool:
     with _try_patch():
         integration: Any = getattr(import_module(f"braintrust.integrations.{module_name}"), class_name)
-        return integration.setup()
+        return integration.setup(**kwargs)
     return False

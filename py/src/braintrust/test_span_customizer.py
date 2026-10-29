@@ -96,7 +96,7 @@ def test_registration_rejects_misconfigured_customizers(invalid):
 
 
 def test_registration_supported_in_otel_compat_mode(monkeypatch, caplog):
-    monkeypatch.setattr("braintrust.auto._instrument_integration", lambda _module, _class: False)
+    monkeypatch.setattr("braintrust.auto._instrument_integration", lambda _module, _class, **_kwargs: False)
     monkeypatch.setenv("BRAINTRUST_OTEL_COMPAT", "true")
     set_span_customizers([SpanCustomizer()])
     auto_instrument(span_customizers=[_Valid()])
@@ -878,7 +878,7 @@ def test_masking_remains_logger_local_and_runs_on_merged_manual_records(
 
 def test_auto_instrument_registration_and_disable(monkeypatch, with_memory_logger, test_logger):
     # Registration should work without importing optional provider libraries.
-    monkeypatch.setattr("braintrust.auto._instrument_integration", lambda _module, _class: False)
+    monkeypatch.setattr("braintrust.auto._instrument_integration", lambda _module, _class, **_kwargs: False)
 
     class Redact(SpanCustomizer):
         def on_span_export(self, data):
