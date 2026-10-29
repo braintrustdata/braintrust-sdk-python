@@ -50,8 +50,8 @@ _dispatch_slot: contextvars.ContextVar[_DispatchSlot | None] = contextvars.Conte
     "braintrust_mcp_dispatch_slot", default=None
 )
 
-# Dispatchers that serve a traced server, for outgoing notifications.
-_server_dispatchers: "weakref.WeakKeyDictionary[Any, MCPServerConfig]" = weakref.WeakKeyDictionary()
+# The server each dispatcher serves, so outgoing notifications use its current settings.
+_server_dispatchers: "weakref.WeakKeyDictionary[Any, weakref.ref[Any]]" = weakref.WeakKeyDictionary()
 
 
 def _cancel_requested(dctx: Any) -> bool:
@@ -106,8 +106,10 @@ async def runner_on_request_wrapper(wrapped: Any, instance: Any, args: Any, kwar
     dispatcher_owned = slot is not None
     if dispatcher_owned:
         slot.operation = operation
-        if _server_dispatchers.get(slot.dispatcher) is not config:
-            _server_dispatchers[slot.dispatcher] = config
+        server = getattr(instance, "server", None)
+        server_ref = _server_dispatchers.get(slot.dispatcher)
+        if server is not None and (server_ref is None or server_ref() is not server):
+            _server_dispatchers[slot.dispatcher] = weakref.ref(server)
     try:
         with activate(operation):
             result = await wrapped(*args, **kwargs)
@@ -175,7 +177,9 @@ async def dispatcher_write_error_wrapper(wrapped: Any, instance: Any, args: Any,
 
 
 async def dispatcher_notify_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
-    config = _server_dispatchers.get(instance)
+    server_ref = _server_dispatchers.get(instance)
+    server = server_ref() if server_ref is not None else None
+    config = server_config(server) if server is not None else None
     span = None
     if config is not None:
         span = contain(

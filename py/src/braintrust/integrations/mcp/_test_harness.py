@@ -89,6 +89,16 @@ def build_server(name: str = "braintrust-mcp-test") -> Any:
 
     server.tool()(notify)
 
+    async def notify_after_disabling_capture(ctx: context_class) -> str:  # type: ignore[valid-type]
+        """Turn content capture off mid-request, then send a notification."""
+        from braintrust.integrations.mcp import wrap_mcp_server
+
+        wrap_mcp_server(server, capture_content=False)
+        await ctx.info("sensitive progress detail")
+        return "done"
+
+    server.tool()(notify_after_disabling_capture)
+
     async def wait_for_cancel(ctx: context_class) -> str:  # type: ignore[valid-type]
         """Block until cancelled."""
         global cancel_tool_request_id

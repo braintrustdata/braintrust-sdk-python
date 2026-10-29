@@ -187,6 +187,8 @@ async def test_capture_content_disabled(memory_logger):
         await client.call_tool("add", {"a": 1, "b": 1})
         await client.call_tool("fail")
         await client.read_resource("resource://greeting")
+        with pytest.raises(Exception):
+            await client.get_prompt("broken", {})
 
     spans = memory_logger.pop()
     for span in _mcp_spans(spans):
@@ -195,6 +197,10 @@ async def test_capture_content_disabled(memory_logger):
     failed = find_span_by_name(spans, "tools/call fail")
     assert failed["error"] == "Tool returned an error result"
     assert failed["metadata"]["error.type"] == "tool_error"
+    # JSON-RPC and exception messages can echo application data.
+    broken = find_span_by_name(spans, "prompts/get broken")
+    assert broken["metadata"]["error.type"]
+    assert "exploded" not in str(broken["error"])
     # Identity, timing, and allowlisted metadata stay available.
     assert find_span_by_name(spans, "resources/read")["metadata"]["mcp.resource.uri"] == "resource://greeting"
 
@@ -212,6 +218,17 @@ async def test_rewrap_updates_open_connections(memory_logger):
     assert captured["input"] == {"a": 1, "b": 1}
     assert redacted.get("input") is None
     assert redacted.get("output") is None
+
+
+@pytest.mark.asyncio
+async def test_rewrap_applies_to_notifications_sent_mid_request(memory_logger):
+    server = wrap_mcp_server(harness.build_server())
+
+    async with harness.connect_in_memory(server) as client:
+        await client.call_tool("notify_after_disabling_capture")
+
+    notification = find_span_by_name(memory_logger.pop(), "notifications/message")
+    assert notification.get("output") is None
 
 
 @pytest.mark.asyncio

@@ -132,7 +132,9 @@ class ServerOperation:
         self.error_type = None
         if isinstance(code, int) and code in _CALLER_ERROR_CODES:
             return
-        self.failure = f"MCP error {code}: {message}" if isinstance(message, str) and message else f"MCP error {code}"
+        # Error messages can echo application data.
+        detail = message if self.capture_content and isinstance(message, str) and message else None
+        self.failure = f"MCP error {code}: {detail}" if detail else f"MCP error {code}"
         self.error_type = str(code)
 
     def record_exception(self, error: BaseException) -> None:
@@ -172,7 +174,9 @@ class ServerOperation:
         if self.cancelled:
             metadata["mcp.cancelled"] = True
         elif self.failure is not None:
-            event["error"] = self.failure
+            # Without content capture, exceptions keep only their type.
+            redact = not self.capture_content and isinstance(self.failure, BaseException)
+            event["error"] = type(self.failure).__name__ if redact else self.failure
             metadata["error.type"] = self.error_type or "_OTHER"
         if metadata:
             event["metadata"] = metadata
