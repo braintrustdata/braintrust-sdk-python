@@ -6,9 +6,8 @@ real MCP clients to it in-process, over streamable HTTP (uvicorn on
 localhost), or over stdio (a real server subprocess running this module).
 
 Run as ``python _test_harness.py stdio`` to serve the demo server over stdio;
-the subprocess records its spans with the memory logger, replays nested model
-calls from a cassette, and writes the spans to ``BRAINTRUST_MCP_TEST_SPANS_FILE``
-on exit.
+the subprocess records its spans with the memory logger and writes them to
+``BRAINTRUST_MCP_TEST_SPANS_FILE`` on exit.
 """
 
 import contextlib
@@ -33,11 +32,8 @@ FLAVOR = os.environ.get("BRAINTRUST_MCP_TEST_FLAVOR") or (
 )
 MCP_V2 = version_satisfies(MCPIntegration.detect_version(mcp), _MCP_V2)
 FASTMCP_MAJOR = int(importlib.import_module("fastmcp").__version__.split(".")[0]) if FLAVOR == "fastmcp" else 0
-LLM_MODEL = "claude-haiku-4-5-20251001"
 PNG_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="
 SPANS_FILE_ENV = "BRAINTRUST_MCP_TEST_SPANS_FILE"
-CASSETTE_ENV = "BRAINTRUST_MCP_TEST_CASSETTE"
-RECORD_MODE_ENV = "BRAINTRUST_MCP_TEST_RECORD_MODE"
 WRAP_ENV = "BRAINTRUST_MCP_TEST_WRAP"
 
 # Set by the ``wait_for_cancel`` tool so tests can cancel a running request.
@@ -109,20 +105,6 @@ def build_server(name: str = "braintrust-mcp-test") -> Any:
         return "not cancelled"
 
     server.tool()(wait_for_cancel)
-
-    @server.tool()
-    async def ask_llm(question: str) -> str:
-        """Answer with a model call made inside the tool."""
-        import anthropic
-        from braintrust.integrations.anthropic import wrap_anthropic
-
-        client = wrap_anthropic(anthropic.AsyncAnthropic())
-        response = await client.messages.create(
-            model=LLM_MODEL,
-            max_tokens=32,
-            messages=[{"role": "user", "content": question}],
-        )
-        return response.content[0].text
 
     @server.prompt()
     def greet(name: str) -> str:
@@ -282,17 +264,12 @@ async def serve_http(app: Any) -> AsyncIterator[str]:
 
 
 async def _serve_stdio() -> None:
-    from braintrust.conftest import get_vcr_config
+    from braintrust import logger
     from braintrust.integrations.mcp import wrap_mcp_server
-    from braintrust.integrations.test_utils import autoinstrument_test_context
+    from braintrust.test_helpers import init_test_logger
 
-    vcr_config = get_vcr_config()
-    record_mode = os.environ.get(RECORD_MODE_ENV)
-    if record_mode:
-        vcr_config["record_mode"] = record_mode
-    with autoinstrument_test_context(
-        os.environ[CASSETTE_ENV], integration="mcp", use_vcr=record_mode != "disabled", vcr_config=vcr_config
-    ) as memory_logger:
+    init_test_logger("test-mcp-stdio")
+    with logger._internal_with_memory_background_logger() as memory_logger:
         server = build_server()
         if os.environ.get(WRAP_ENV) == "setup":
             MCPIntegration.setup()

@@ -4,7 +4,7 @@ The same tests run against the bundled server abstraction (``test_mcp``
 sessions: ``FastMCP`` on MCP 1.x, ``MCPServer`` on MCP 2.x) and standalone
 ``fastmcp`` (``test_fastmcp`` sessions). MCP traffic is always real: clients
 talk to servers in-process, over streamable HTTP on localhost, or over stdio
-to a server subprocess. Model calls made inside tools replay from cassettes.
+to a server subprocess, so no cassettes are needed.
 """
 
 import asyncio
@@ -13,7 +13,6 @@ import json
 import anyio
 import pytest
 from braintrust import Attachment, logger
-from braintrust.conftest import get_vcr_config
 from braintrust.integrations.mcp import MCPIntegration, wrap_mcp_server
 from braintrust.integrations.mcp import _test_harness as harness
 from braintrust.integrations.mcp.tracing import set_global_server_config
@@ -37,12 +36,6 @@ def memory_logger():
 def reset_global_server_config():
     yield
     set_global_server_config(None)
-
-
-@pytest.fixture(scope="module")
-def vcr_config():
-    # MCP traffic to the localhost test server is real; only model calls replay.
-    return {**get_vcr_config(), "ignore_localhost": True}
 
 
 def _mcp_spans(spans):
@@ -417,25 +410,21 @@ async def test_raised_handler_exception_is_recorded(memory_logger):
     assert "rpc.response.status_code" not in span["metadata"]
 
 
-@pytest.mark.vcr(cassette_name=f"{FLAVOR}_test_http_tool_with_model_call")
 @pytest.mark.asyncio
-async def test_http_tool_with_model_call(memory_logger):
+async def test_streamable_http(memory_logger):
     server = wrap_mcp_server(harness.build_server())
 
     async with harness.serve_http(harness.http_app(server)) as url:
         async with harness.connect_http(url) as client:
-            await client.call_tool("ask_llm", {"question": "Reply with the single word: pong"})
+            await client.call_tool("add", {"a": 2, "b": 3})
 
     spans = memory_logger.pop()
-    tool = find_span_by_name(spans, "tools/call ask_llm")
-    llm = find_span_by_name(spans, "anthropic.messages.create")
-    assert llm["span_parents"] == [tool["span_id"]]
-    assert llm["span_attributes"]["type"] == "llm"
-    assert llm["metrics"]["tokens"] > 0
+    tool = find_span_by_name(spans, "tools/call add")
+    assert find_span_by_name(spans, "nested-work")["span_parents"] == [tool["span_id"]]
+    assert tool["output"]["content"] == [{"type": "text", "text": "5"}]
     # MCP spans never invent model fields.
     assert "model" not in tool["metadata"]
     assert "tokens" not in tool["metrics"]
-    assert tool["output"]["content"][0]["type"] == "text"
 
     metadata = tool["metadata"]
     assert metadata["network.protocol.name"] == "http"
@@ -450,22 +439,12 @@ async def test_http_tool_with_model_call(memory_logger):
 
 @pytest.mark.parametrize("wrap", ["wrap", "setup"])
 @pytest.mark.asyncio
-async def test_stdio_subprocess(tmp_path, request, wrap):
+async def test_stdio_subprocess(tmp_path, wrap):
     spans_file = tmp_path / "spans.json"
-    record_mode = request.config.getoption("--vcr-record", default=None)
-    if request.config.getoption("--disable-vcr", default=False):
-        record_mode = "disabled"
-    env = {
-        harness.SPANS_FILE_ENV: str(spans_file),
-        harness.CASSETTE_ENV: f"{FLAVOR}_test_stdio_subprocess",
-        harness.WRAP_ENV: wrap,
-    }
-    if record_mode:
-        env[harness.RECORD_MODE_ENV] = record_mode
+    env = {harness.SPANS_FILE_ENV: str(spans_file), harness.WRAP_ENV: wrap}
 
     async with harness.connect_stdio(env) as client:
         await client.call_tool("add", {"a": 2, "b": 2})
-        await client.call_tool("ask_llm", {"question": "Reply with the single word: pong"})
         await client.call_tool("notify")
 
     with anyio.fail_after(10):
@@ -476,8 +455,6 @@ async def test_stdio_subprocess(tmp_path, request, wrap):
     add = find_span_by_name(spans, "tools/call add")
     assert add["input"] == {"a": 2, "b": 2}
     assert find_span_by_name(spans, "nested-work")["span_parents"] == [add["span_id"]]
-    ask = find_span_by_name(spans, "tools/call ask_llm")
-    assert find_span_by_name(spans, "anthropic.messages.create")["span_parents"] == [ask["span_id"]]
     assert find_span_by_name(spans, "notifications/message")["span_parents"] == [
         find_span_by_name(spans, "tools/call notify")["span_id"]
     ]
