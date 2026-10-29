@@ -25,6 +25,7 @@ _INTEGRATION_MODULES = {
     "LiteLLMIntegration": "litellm",
     "LiveKitAgentsIntegration": "livekit_agents",
     "LlamaIndexIntegration": "llamaindex",
+    "MCPIntegration": "mcp",
     "MistralIntegration": "mistral",
     "OpenAIIntegration": "openai",
     "OpenAIAgentsIntegration": "openai_agents",
@@ -59,6 +60,7 @@ if TYPE_CHECKING:
     from .litellm import LiteLLMIntegration as LiteLLMIntegration
     from .livekit_agents import LiveKitAgentsIntegration as LiveKitAgentsIntegration
     from .llamaindex import LlamaIndexIntegration as LlamaIndexIntegration
+    from .mcp import MCPIntegration as MCPIntegration
     from .mistral import MistralIntegration as MistralIntegration
     from .openai import OpenAIIntegration as OpenAIIntegration
     from .openai_agents import OpenAIAgentsIntegration as OpenAIAgentsIntegration
@@ -92,6 +94,7 @@ __all__ = [
     "LiveKitAgentsIntegration",
     "LangChainIntegration",
     "LlamaIndexIntegration",
+    "MCPIntegration",
     "MistralIntegration",
     "OpenAIIntegration",
     "OpenAIAgentsIntegration",
