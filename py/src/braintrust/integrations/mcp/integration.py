@@ -8,7 +8,7 @@ from .tracing import MCPServerConfig, set_global_server_config
 
 
 class MCPIntegration(BaseIntegration):
-    """Braintrust instrumentation hooks for MCP on mcp>=1.28.1,<3.
+    """Braintrust instrumentation hooks for MCP on ``mcp>=1.28.1,<3``.
 
     Covers low-level servers and the server abstractions built on them: the
     bundled ``FastMCP`` (1.x) / ``MCPServer`` (2.x) and standalone ``fastmcp``.
