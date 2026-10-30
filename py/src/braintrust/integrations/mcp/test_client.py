@@ -8,8 +8,8 @@ import re
 import anyio
 import pytest
 from braintrust import auto_instrument, logger
+from braintrust.integrations.mcp import MCPIntegration, wrap_mcp_client, wrap_mcp_server
 from braintrust.integrations.mcp import _test_harness as harness
-from braintrust.integrations.mcp import wrap_mcp_client, wrap_mcp_server
 from braintrust.integrations.mcp._client import set_global_client_config
 from braintrust.integrations.test_utils import verify_autoinstrument_script
 from braintrust.logger import current_span, start_span
@@ -34,11 +34,11 @@ def assert_client(span, method):
     assert span["metrics"]["end"] >= span["metrics"]["start"]
 
 
-def _setup_auto_client(capture_content):
+def _setup_auto_client():
     options = {
         name: False for name, param in inspect.signature(auto_instrument).parameters.items() if param.default is True
     }
-    assert auto_instrument(**{**options, "mcp_client": True, "mcp_capture_content": capture_content}) == {"mcp": True}
+    assert auto_instrument(**{**options, "mcp_client": True}) == {"mcp": True}
 
 
 @pytest.mark.parametrize("import_order", ["before_import", "after_import", "after_connect"])
@@ -127,17 +127,19 @@ async def test_connected_http(memory_logger):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("server_mode", ["none", "wrap", "auto"])
+@pytest.mark.parametrize("server_mode", ["none", "wrap", "auto", "setup"])
 async def test_connected_stdio(memory_logger, tmp_path, server_mode):
     spans_file = tmp_path / "server-spans.json"
     env = {
         harness.SPANS_FILE_ENV: str(spans_file),
         harness.WRAP_ENV: server_mode,
-        harness.CAPTURE_ENV: str(server_mode != "auto").lower(),
+        harness.CAPTURE_ENV: str(server_mode != "setup").lower(),
     }
     async with harness.connect_stdio(env) as client:
         if server_mode == "auto":
-            _setup_auto_client(capture_content=False)
+            _setup_auto_client()
+        elif server_mode == "setup":
+            assert MCPIntegration.setup(client=True, server=False, capture_content=False)
         else:
             wrap_mcp_client(client.raw)
         with start_span(name="agent") as agent:
@@ -149,14 +151,14 @@ async def test_connected_stdio(memory_logger, tmp_path, server_mode):
     outgoing = find_span_by_name(client_spans(memory_logger.pop()), "tools/call add")
     assert outgoing["span_parents"] == [agent.span_id]
     assert outgoing["root_span_id"] == agent.root_span_id
-    if server_mode != "auto":
+    if server_mode != "setup":
         assert outgoing["output"]["content"][0]["text"] == "5"
     if server_mode != "none":
         incoming = find_span_by_name(remote, "tools/call add")
         assert incoming["span_parents"] == [outgoing["span_id"]]
         assert incoming["root_span_id"] == outgoing["root_span_id"]
         assert find_span_by_name(remote, "nested-work")["span_parents"] == [incoming["span_id"]]
-        if server_mode == "auto":
+        if server_mode == "setup":
             for span in (outgoing, incoming):
                 assert span.get("input") is None and span.get("output") is None
     else:
@@ -164,11 +166,15 @@ async def test_connected_stdio(memory_logger, tmp_path, server_mode):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("capture_content", [True, False])
-@pytest.mark.parametrize("entrypoint", ["manual", "auto"])
+@pytest.mark.parametrize(
+    ("entrypoint", "capture_content"),
+    [("manual", True), ("manual", False), ("auto", True), ("setup", True), ("setup", False)],
+)
 async def test_client_http_operations(memory_logger, capture_content, entrypoint):
     if entrypoint == "auto":
-        _setup_auto_client(capture_content)
+        _setup_auto_client()
+    elif entrypoint == "setup":
+        assert MCPIntegration.setup(client=True, server=False, capture_content=capture_content)
     request_meta = []
     server = harness.build_server(request_meta=request_meta)
     async with harness.serve_http(harness.http_app(server)) as url:

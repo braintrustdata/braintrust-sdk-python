@@ -63,7 +63,6 @@ def auto_instrument(
     typesafe: bool = True,
     mcp_client: bool = True,
     mcp_server: bool = True,
-    mcp_capture_content: bool = True,
     span_customizers: Sequence[SpanCustomizer] | None = None,
 ) -> dict[str, bool]:
     """
@@ -109,10 +108,6 @@ def auto_instrument(
         typesafe: Enable TypeSafe instrumentation (default: True)
         mcp_client: Enable MCP client instrumentation (default: True)
         mcp_server: Enable MCP server instrumentation (default: True)
-        mcp_capture_content: Capture MCP arguments, results, resource contents,
-            and server notification parameters (default: True). False keeps
-            names, timing, identifiers, and error classification. Applies to
-            both enabled MCP sides; does not affect other integrations.
         span_customizers: Ordered synchronous export customizers for native SDK spans
             and OTel spans sent through OtelExporter or BraintrustSpanProcessor,
             including manual spans; generic OTLP exporters, dataset rows, and
@@ -232,9 +227,7 @@ def auto_instrument(
     if typesafe:
         results["typesafe"] = _instrument_integration("typesafe", "TypeSafeIntegration")
     if mcp_client or mcp_server:
-        results["mcp"] = _instrument_integration(
-            "mcp", "MCPIntegration", client=mcp_client, server=mcp_server, capture_content=mcp_capture_content
-        )
+        results["mcp"] = _instrument_integration("mcp", "MCPIntegration", client=mcp_client, server=mcp_server)
 
     return results
 

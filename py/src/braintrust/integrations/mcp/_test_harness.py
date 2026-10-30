@@ -287,12 +287,11 @@ async def _serve_stdio() -> None:
         if os.environ.get(WRAP_ENV) == "auto":
             from braintrust import auto_instrument
 
-            capture = os.environ.get(CAPTURE_ENV, "true") == "true"
-            auto_instrument(mcp_client=False, mcp_capture_content=capture)
-            auto_instrument(mcp_client=False, mcp_capture_content=capture)
+            auto_instrument(mcp_client=False)
+            auto_instrument(mcp_client=False)
         server = build_server()
         if os.environ.get(WRAP_ENV) == "setup":
-            MCPIntegration.setup()
+            MCPIntegration.setup(capture_content=os.environ.get(CAPTURE_ENV, "true") == "true")
         elif os.environ.get(WRAP_ENV) not in ("none", "auto"):
             wrap_mcp_server(server)
         run = server.run_stdio_async
