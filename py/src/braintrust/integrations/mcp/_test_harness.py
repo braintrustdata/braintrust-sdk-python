@@ -55,15 +55,18 @@ def _server_classes() -> tuple[Any, Any]:
     return FastMCP, Context
 
 
-def build_server(name: str = "braintrust-mcp-test") -> Any:
+def build_server(name: str = "braintrust-mcp-test", *, request_meta: list[dict[str, Any]] | None = None) -> Any:
     from braintrust.logger import start_span
 
     server_class, context_class = _server_classes()
     server = server_class(name)
 
     @server.tool()
-    async def add(a: int, b: int) -> int:
+    async def add(a: int, b: int, ctx: context_class) -> int:  # type: ignore[valid-type]
         """Add two integers."""
+        if request_meta is not None:
+            meta = ctx.request_context.meta
+            request_meta.append(meta if isinstance(meta, dict) else meta.model_dump(by_alias=True, exclude_none=True))
         with start_span(name="nested-work") as span:
             span.log(input={"a": a, "b": b})
         return a + b
@@ -74,7 +77,14 @@ def build_server(name: str = "braintrust-mcp-test") -> Any:
         raise ValueError("tool exploded")
 
     @server.tool()
-    async def image() -> Any:
+    async def disconnect() -> str:
+        """Exit the real stdio subprocess before sending a response."""
+        os._exit(0)  # pylint: disable=protected-access
+
+    # Bundled MCP infers an output schema for Any only on Python 3.10.
+    # These protocol content blocks do not need a structured output schema.
+    @server.tool()
+    async def image():
         """Return an inline image."""
         return [mcp.types.ImageContent.model_validate({"type": "image", "data": PNG_BASE64, "mimeType": "image/png"})]
 
@@ -189,23 +199,26 @@ async def connect_in_memory(
 
 
 @contextlib.asynccontextmanager
-async def connect_http(url: str) -> AsyncIterator[Client]:
+async def connect_http(url: str, *, trace_client: bool = False) -> AsyncIterator[Client]:
+    from braintrust.integrations.mcp import wrap_mcp_client
+
+    wrap = wrap_mcp_client if trace_client else lambda value: value
     if FLAVOR == "fastmcp":
         from fastmcp import Client as FastMCPClient
 
-        async with FastMCPClient(url) as client:
+        async with wrap(FastMCPClient(url)) as client:
             yield Client(client)
     elif MCP_V2:
         from mcp import Client as MCPClient
 
-        async with MCPClient(url, log_level="info") as client:
+        async with wrap(MCPClient(url, mode="legacy", log_level="info")) as client:
             yield Client(client)
     else:
         from mcp import ClientSession
         from mcp.client.streamable_http import streamablehttp_client  # pylint: disable=no-name-in-module  # MCP 1.x
 
         async with streamablehttp_client(url) as (read, write, _):
-            async with ClientSession(read, write) as session:
+            async with wrap(ClientSession(read, write)) as session:
                 await session.initialize()
                 yield Client(session)
 
@@ -273,7 +286,7 @@ async def _serve_stdio() -> None:
         server = build_server()
         if os.environ.get(WRAP_ENV) == "setup":
             MCPIntegration.setup()
-        else:
+        elif os.environ.get(WRAP_ENV) != "none":
             wrap_mcp_server(server)
         run = server.run_stdio_async
         if "show_banner" in inspect.signature(run).parameters:

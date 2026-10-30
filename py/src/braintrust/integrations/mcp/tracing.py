@@ -1,4 +1,4 @@
-"""Version-independent span shaping for MCP server operations.
+"""Version-independent span shaping for MCP client and server operations.
 
 The version-specific lifecycle hooks (``_server_v1`` / ``_server_v2``) observe
 when a request arrives, which result or error is sent, and when sending
@@ -113,6 +113,11 @@ class ServerOperation:
     status_code: str | None = None
     failure: Any = None
     error_type: str | None = None
+    client: bool = False
+
+    @property
+    def captures_output(self) -> bool:
+        return self.capture_content and self.method in _CONTENT_METHODS
 
     def record_result(self, result: Any) -> None:
         """Keep the JSON-RPC result; it is shaped when the operation ends."""
@@ -130,7 +135,7 @@ class ServerOperation:
         # the library already converted into this error.
         self.failure = None
         self.error_type = None
-        if isinstance(code, int) and code in _CALLER_ERROR_CODES:
+        if not self.client and isinstance(code, int) and code in _CALLER_ERROR_CODES:
             return
         # Error messages can echo application data.
         detail = message if self.capture_content and isinstance(message, str) and message else None
@@ -157,11 +162,11 @@ class ServerOperation:
         result = self.result
         if result is not None:
             metadata.update(protocol_meta_metadata(result.get("_meta"), "response"))
-            if self.method == "initialize":
+            if self.method in ("initialize", "server/discover"):
                 if isinstance(result.get("protocolVersion"), str):
                     metadata["mcp.protocol.version"] = result["protocolVersion"]
                 metadata.update(identity_metadata(result.get("serverInfo"), "server"))
-            if self.capture_content and self.method in _CONTENT_METHODS:
+            if self.captures_output:
                 event["output"] = sanitize_result(result)
             if self.method == "tools/call" and result.get("isError") is True and self.failure is None:
                 self.failure = tool_error_message(result, self.capture_content)
@@ -240,7 +245,7 @@ def _is_task_message(method: str, params: Mapping[str, Any], meta: Mapping[str, 
     )
 
 
-def start_server_operation(
+def _start_operation(
     *,
     method: str,
     params: Any,
@@ -251,21 +256,24 @@ def start_server_operation(
     client_info: Any = None,
     transport_metadata: Mapping[str, Any] | None = None,
     jsonrpc_version: Any = "2.0",
+    client: bool = False,
 ) -> ServerOperation | None:
-    """Start the span for one incoming request (or notification when *request_id* is None)."""
+    """Shape one request or server notification, with side-specific parentage."""
     if not isinstance(method, str) or (request_id is not None and not _is_request_id(request_id)):
         return None
     params = params if isinstance(params, Mapping) else {}
     meta = _meta_of(params)
     if _is_task_message(method, params, meta):
         return None
-    is_notification = request_id is None
+    is_notification = request_id is None and not client
     is_tool_call = method == "tools/call" and not is_notification
     target = params.get("name") if method in ("tools/call", "prompts/get") and not is_notification else None
     target = target if isinstance(target, str) and target else None
 
     metadata: dict[str, Any] = {"mcp.method.name": method}
-    if not is_notification:
+    if client:
+        metadata["mcp.span.kind"] = "client"
+    if request_id is not None:
         metadata["jsonrpc.request.id"] = str(request_id)
     if session_id:
         metadata["mcp.session.id"] = session_id
@@ -296,13 +304,29 @@ def start_server_operation(
         if payload is not None:
             event["input"] = payload
 
-    span = start_detached_span(
+    span_kwargs = dict(
         name=f"{method} {target}" if target else method,
         type=SpanTypeAttribute.TOOL if is_tool_call else SpanTypeAttribute.FUNCTION,
-        parent=extract_trace_context(_trace_carrier(meta)),
         **event,
     )
-    return ServerOperation(span=span, method=method, request_id=request_id, capture_content=config.capture_content)
+    span = (
+        start_span(set_current=False, internal=_INTERNAL, **span_kwargs)
+        if client
+        else start_detached_span(parent=extract_trace_context(_trace_carrier(meta)), **span_kwargs)
+    )
+    return ServerOperation(
+        span=span, method=method, request_id=request_id, capture_content=config.capture_content, client=client
+    )
+
+
+def start_server_operation(**kwargs: Any) -> ServerOperation | None:
+    """Start an incoming operation using only the propagated parent."""
+    return _start_operation(**kwargs)
+
+
+def start_client_operation(**kwargs: Any) -> ServerOperation | None:
+    """Start an outgoing request under the caller's current span."""
+    return _start_operation(client=True, **kwargs)
 
 
 def start_outgoing_notification(

@@ -1,12 +1,14 @@
-"""Braintrust instrumentation for Model Context Protocol (MCP) servers."""
+"""Braintrust instrumentation for Model Context Protocol clients and servers."""
 
 import logging
+import sys
 from typing import Any, TypeVar
 
 from braintrust.integrations.versioning import version_satisfies
 
+from ._client import CLIENT_CONFIG_ATTR, ClientConfig, configure_session, set_session_config
 from .integration import MCPIntegration
-from .patchers import ServerRunPatcher
+from .patchers import ClientEnterPatcher, ServerRunPatcher
 from .tracing import SERVER_CONFIG_ATTR, MCPServerConfig
 
 
@@ -59,4 +61,48 @@ def wrap_mcp_server(server: ServerT, capture_content: bool = True) -> ServerT:
     return server
 
 
-__all__ = ["MCPIntegration", "wrap_mcp_server"]
+def wrap_mcp_client(client_or_session: ServerT, capture_content: bool = True) -> ServerT:
+    """Trace outgoing MCP round trips and propagate W3C context in ``params._meta``.
+
+    Accepts an official ``mcp.ClientSession`` (1.x/2.x), ``mcp.Client`` (2.x),
+    or standalone ``fastmcp.Client`` (2.x–4.x). Returns the same object; wrap
+    before connecting to include initialization, or wrap an active session.
+    Repeated calls update content settings without adding operation spans.
+
+    Content capture defaults to True. False omits arguments and results;
+    method, timing, identifiers, and error classification remain available.
+    Each client and server can be instrumented independently.
+
+    One-way notifications and detached task APIs have no client operation span.
+    If ``opentelemetry-instrumentation-mcp`` is enabled, its instrumentor owns
+    client spans, propagation, and capture settings; no duplicate span is added.
+    """
+    try:
+        import mcp
+        from mcp.client.session import ClientSession
+    except ImportError:
+        return client_or_session
+    supported = [ClientSession]
+    if hasattr(mcp, "Client"):
+        supported.append(mcp.Client)
+    fastmcp = sys.modules.get("fastmcp")
+    if fastmcp is not None and hasattr(fastmcp, "Client"):
+        supported.append(fastmcp.Client)
+    if not isinstance(client_or_session, tuple(supported)):
+        logger.warning("Unsupported MCP client %r. Not wrapping.", type(client_or_session).__name__)
+        return client_or_session
+    if not MCPIntegration.install_patchers():
+        logger.warning("Unsupported mcp version. Not wrapping.")
+        return client_or_session
+    config = ClientConfig(capture_content=capture_content)
+    if isinstance(client_or_session, ClientSession):
+        set_session_config(client_or_session, config)
+    else:
+        setattr(client_or_session, CLIENT_CONFIG_ATTR, config)
+        configure_session(client_or_session, config)
+        # Python resolves special methods on the class, not the instance.
+        ClientEnterPatcher.wrap_target(type(client_or_session))
+    return client_or_session
+
+
+__all__ = ["MCPIntegration", "wrap_mcp_client", "wrap_mcp_server"]

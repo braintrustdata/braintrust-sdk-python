@@ -2,22 +2,24 @@ from typing import Any
 
 from braintrust.integrations.base import BaseIntegration
 
-from .patchers import SERVER_PATCHERS
+from .patchers import CLIENT_PATCHERS, SERVER_PATCHERS
 from .tracing import MCPServerConfig, set_global_server_config
 
 
 class MCPIntegration(BaseIntegration):
-    """Braintrust instrumentation for MCP servers on mcp>=1.28.1,<3.
+    """Braintrust instrumentation hooks for MCP on mcp>=1.28.1,<3.
 
     Covers low-level servers and the server abstractions built on them: the
     bundled ``FastMCP`` (1.x) / ``MCPServer`` (2.x) and standalone ``fastmcp``.
+    ``setup()`` enables server tracing; ``wrap_mcp_client()`` opts individual
+    clients or sessions into tracing independently.
     """
 
     name = "mcp"
     import_names = ("mcp",)
     distribution_names = ("mcp",)
     min_version = "1.28.1"
-    patchers = SERVER_PATCHERS
+    patchers = (*SERVER_PATCHERS, *CLIENT_PATCHERS)
 
     @classmethod
     def setup(cls, *, target: Any | None = None, capture_content: bool = True) -> bool:
@@ -34,5 +36,5 @@ class MCPIntegration(BaseIntegration):
 
     @classmethod
     def install_patchers(cls, *, target: Any | None = None) -> bool:
-        """Install the class-level hooks without tracing any server by itself."""
+        """Install the class-level hooks without enabling tracing by itself."""
         return super().setup(target=target)
