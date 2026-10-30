@@ -162,6 +162,6 @@ If your shell is not configured with `mise activate`, prefix commands with `mise
 
 ## Documentation
 
-- [Braintrust Documentation](https://www.braintrust.dev/docs)
-- [Braintrust Python SDK Documentation](https://www.braintrust.dev/docs/reference/sdks/python)
+- [Braintrust Documentation](https://docs.braintrust.dev)
+- [Braintrust Python SDK Documentation](https://docs.braintrust.dev/sdks/python/versions/latest)
 - [Google ADK Documentation](https://github.com/google/genai-agent-dev-kit)

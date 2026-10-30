@@ -59,7 +59,7 @@ pytest --braintrust --braintrust-project="my-project"
 
 ## Logging Data
 
-The `braintrust_span` fixture is a standard [`Span`](https://www.braintrust.dev/docs/reference/python#span) object. Use `span.log()` to record data:
+The `braintrust_span` fixture is a standard [`Span`](https://docs.braintrust.dev/sdks/python/versions/latest#span) object. Use `span.log()` to record data:
 
 ```python
 def test_example(braintrust_span):

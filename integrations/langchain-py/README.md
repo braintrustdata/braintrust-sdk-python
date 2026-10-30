@@ -114,6 +114,6 @@ Review the [LangChain documentation](https://python.langchain.com/docs/modules/c
 
 ## Documentation
 
-- Braintrust docs: https://www.braintrust.dev/docs
-- Braintrust Python SDK docs: https://www.braintrust.dev/docs/reference/sdks/python
+- Braintrust docs: https://docs.braintrust.dev
+- Braintrust Python SDK docs: https://docs.braintrust.dev/sdks/python/versions/latest
 - LangChain callback docs: https://python.langchain.com/docs/modules/callbacks/
