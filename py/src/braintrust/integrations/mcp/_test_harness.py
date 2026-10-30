@@ -35,6 +35,7 @@ FASTMCP_MAJOR = int(importlib.import_module("fastmcp").__version__.split(".")[0]
 PNG_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="
 SPANS_FILE_ENV = "BRAINTRUST_MCP_TEST_SPANS_FILE"
 WRAP_ENV = "BRAINTRUST_MCP_TEST_WRAP"
+CAPTURE_ENV = "BRAINTRUST_MCP_TEST_CAPTURE_CONTENT"
 
 # Set by the ``wait_for_cancel`` tool so tests can cancel a running request.
 cancel_tool_started: anyio.Event | None = None
@@ -283,10 +284,16 @@ async def _serve_stdio() -> None:
 
     init_test_logger("test-mcp-stdio")
     with logger._internal_with_memory_background_logger() as memory_logger:
+        if os.environ.get(WRAP_ENV) == "auto":
+            from braintrust import auto_instrument
+
+            capture = os.environ.get(CAPTURE_ENV, "true") == "true"
+            auto_instrument(mcp_client=False, mcp_capture_content=capture)
+            auto_instrument(mcp_client=False, mcp_capture_content=capture)
         server = build_server()
         if os.environ.get(WRAP_ENV) == "setup":
             MCPIntegration.setup()
-        elif os.environ.get(WRAP_ENV) != "none":
+        elif os.environ.get(WRAP_ENV) not in ("none", "auto"):
             wrap_mcp_server(server)
         run = server.run_stdio_async
         if "show_banner" in inspect.signature(run).parameters:

@@ -1,3 +1,4 @@
+import importlib.util
 import json
 import subprocess
 import sys
@@ -89,6 +90,22 @@ print(json.dumps({
         "loaded_openai": True,
         "loaded_anthropic": False,
     }
+
+
+def test_mcp_auto_without_optional_dependency():
+    if importlib.util.find_spec("mcp") is not None:
+        pytest.skip("Requires the core session without optional MCP dependencies")
+    loaded = _run_import_script(
+        """
+import inspect
+import json
+from braintrust import auto_instrument
+
+options = {name: False for name, param in inspect.signature(auto_instrument).parameters.items() if param.default is True}
+print(json.dumps(auto_instrument(**{**options, "mcp_client": True, "mcp_server": True})))
+"""
+    )
+    assert loaded == {"mcp": False}
 
 
 @requires_lazy_imports

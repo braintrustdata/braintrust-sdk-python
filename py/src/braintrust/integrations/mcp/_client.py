@@ -38,6 +38,17 @@ from .tracing import ServerOperation, call_arg, contain, start_client_operation
 
 
 CLIENT_CONFIG_ATTR = "__braintrust_mcp_client_config__"
+_global_client_config: ClientConfig | None = None
+
+
+def set_global_client_config(config: ClientConfig | None) -> None:
+    global _global_client_config
+    _global_client_config = config
+
+
+def client_config(client: Any) -> ClientConfig | None:
+    config = getattr(client, CLIENT_CONFIG_ATTR, None)
+    return _global_client_config if config is None else config
 
 
 # Pydantic include keys are Python field names, which differ across MCP majors.
@@ -75,7 +86,9 @@ def configure_session(client: Any, config: ClientConfig) -> None:
     set_session_config(session, config)
 
 
-def set_session_config(session: Any, config: ClientConfig) -> None:
+def set_session_config(session: Any, config: ClientConfig | None) -> None:
+    # None inherits automatic defaults. Mark only client-owned dispatchers;
+    # server dispatchers share the same class and must not become traced clients.
     setattr(session, CLIENT_CONFIG_ATTR, config)
     dispatcher = getattr(session, "_dispatcher", None)
     if dispatcher is not None:
@@ -97,9 +110,7 @@ async def client_enter_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: A
 
 def session_init_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
     result = wrapped(*args, **kwargs)
-    config = _enter_config.get()
-    if config is not None:
-        contain(set_session_config, instance, config)
+    contain(set_session_config, instance, _enter_config.get())
     return result
 
 
@@ -154,9 +165,13 @@ def _record_exception(operation: ServerOperation, error: BaseException) -> None:
 
 
 async def send_request_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
-    config = getattr(instance, CLIENT_CONFIG_ATTR, None)
+    config = client_config(instance)
     if not isinstance(config, ClientConfig):
         return await wrapped(*args, **kwargs)
+    # Also cover sessions connected before automatic setup installed the hooks.
+    dispatcher = getattr(instance, "_dispatcher", None)
+    if dispatcher is not None and not hasattr(dispatcher, CLIENT_CONFIG_ATTR):
+        contain(set_session_config, instance, None)
     if upstream_owns_operations():
         # MCP 1.x inherits this method. Resolve the live base method so an OTel
         # hook installed after our subclass hook remains visible as well.
@@ -210,7 +225,7 @@ def _prepare_raw(method: str, params: Any, config: ClientConfig) -> tuple[Server
 async def raw_request_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
     # 2.x negotiation and direct dispatcher calls can bypass send_request. The
     # typed wrapper remains the owner when it is already tracing this dispatcher.
-    config = getattr(instance, CLIENT_CONFIG_ATTR, None)
+    config = client_config(instance) if hasattr(instance, CLIENT_CONFIG_ATTR) else None
     active = _outgoing_operation.get()
     if not isinstance(config, ClientConfig) or (active is not None and active[1] is instance):
         return await wrapped(*args, **kwargs)
