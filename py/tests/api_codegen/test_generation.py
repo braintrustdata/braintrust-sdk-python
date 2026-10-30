@@ -108,7 +108,6 @@ def test_pinned_unsupported_tags_are_explicit_and_proxy_is_excluded():
     endpoint_config = config["endpoint_generator"]
 
     assert set(endpoint_config["unsupported_tags"]) == {
-        "CORS",
         "CrossObject",
         "Evals",
         "Logs",
@@ -505,6 +504,56 @@ def test_nullable_and_missing_fields_remain_distinct(tmp_path, codegen_config, m
     assert re.search(r"required_nullable: str \| None", models)
     assert re.search(r"optional_nullable: NotRequired\[str \| None\]", models)
     assert re.search(r"optional_non_null: NotRequired\[str\]", models)
+
+
+def test_json_schema_type_arrays_generate(tmp_path, codegen_config, minimal_spec):
+    minimal_spec["openapi"] = "3.1.1"
+    widget = minimal_spec["components"]["schemas"]["Widget"]
+    widget["properties"] = {
+        "required_nullable": {"type": ["string", "null"]},
+        "optional_nullable": {"type": ["string", "null"]},
+        "optional_non_null": {"type": "string"},
+    }
+    widget["required"] = ["required_nullable"]
+    minimal_spec["paths"]["/widgets/{widget_id}"]["get"]["parameters"].extend(
+        [
+            {"name": "limit", "in": "query", "schema": {"type": ["integer", "null"]}},
+            {
+                "name": "labels",
+                "in": "query",
+                "schema": {"type": ["array", "null"], "items": {"type": "string"}},
+            },
+        ]
+    )
+
+    generated = _generate(tmp_path, "json-schema-type-arrays", codegen_config, minimal_spec)
+    models = _models_text(generated)
+    resource = (generated / "widgets.py").read_text()
+
+    assert re.search(r"required_nullable: str \| None", models)
+    assert re.search(r"optional_nullable: NotRequired\[str \| None\]", models)
+    assert re.search(r"optional_non_null: NotRequired\[str\]", models)
+    assert 'limit: "int | None" = None' in resource
+    assert 'labels: "Sequence[str] | None" = None' in resource
+
+
+def test_nullable_json_schema_maps_preserve_value_types(tmp_path, codegen_config, minimal_spec):
+    minimal_spec["openapi"] = "3.1.1"
+    minimal_spec["components"]["schemas"]["Detail"] = {
+        "type": "object",
+        "properties": {"value": {"type": "string"}},
+        "required": ["value"],
+    }
+    minimal_spec["components"]["schemas"]["Widget"]["properties"]["details"] = {
+        "type": ["object", "null"],
+        "additionalProperties": {"$ref": "#/components/schemas/Detail"},
+    }
+
+    generated = _generate(tmp_path, "nullable-json-schema-maps", codegen_config, minimal_spec)
+    models = _models_text(generated)
+
+    assert "class Detail(TypedDict):" in models
+    assert "details: NotRequired[Mapping[str, Detail] | None]" in models
 
 
 def test_composition_types_and_json_scalars_generate(tmp_path, codegen_config, minimal_spec):

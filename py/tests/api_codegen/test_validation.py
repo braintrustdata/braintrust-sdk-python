@@ -212,6 +212,45 @@ def test_parameter_all_of_metadata_wrapper_is_supported(minimal_spec, codegen_co
     assert validate_spec(minimal_spec, codegen_config).operation_count == 1
 
 
+@pytest.mark.parametrize(
+    "schema",
+    [
+        {"type": ["integer", "null"]},
+        {"type": ["array", "null"], "items": {"type": "string"}},
+        {"anyOf": [{"type": "boolean"}, {"type": "null"}]},
+    ],
+)
+def test_json_schema_nullable_query_parameters(minimal_spec, codegen_config, schema):
+    minimal_spec["openapi"] = "3.1.1"
+    minimal_spec["paths"]["/widgets/{widget_id}"]["get"]["parameters"].append(
+        {"name": "filter", "in": "query", "schema": schema}
+    )
+
+    assert validate_spec(minimal_spec, codegen_config).operation_count == 1
+
+
+@pytest.mark.parametrize("schema_type", [["string", "date"], [], ["string", ["null"]]])
+def test_invalid_json_schema_type_arrays_fail(minimal_spec, codegen_config, schema_type):
+    minimal_spec["components"]["schemas"]["Widget"]["properties"]["value"] = {"type": schema_type}
+
+    with pytest.raises(CodegenError, match="Unsupported non-JSON schema type"):
+        validate_spec(minimal_spec, codegen_config)
+
+
+def test_nullable_query_arrays_must_be_exploded(minimal_spec, codegen_config):
+    minimal_spec["paths"]["/widgets/{widget_id}"]["get"]["parameters"].append(
+        {
+            "name": "names",
+            "in": "query",
+            "explode": False,
+            "schema": {"type": ["array", "null"], "items": {"type": "string"}},
+        }
+    )
+
+    with pytest.raises(CodegenError, match="query array parameters must be exploded"):
+        validate_spec(minimal_spec, codegen_config)
+
+
 def test_specialized_operations_must_belong_to_generated_tags(minimal_spec, codegen_config):
     codegen_config["endpoint_generator"]["specialized_operations"] = ["missingOperation"]
 

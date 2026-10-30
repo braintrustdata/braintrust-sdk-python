@@ -22,6 +22,8 @@ def test_all_dataset_operations_have_complete_retry_classification():
         "getDatasetIdFetch": RetryMode.SAFE_READ,
         "postDatasetIdFeedback": RetryMode.NONE,
         "getDatasetIdSummarize": RetryMode.SAFE_READ,
+        "postDatasetIdRestorePreview": RetryMode.NONE,
+        "postDatasetIdRestore": RetryMode.NONE,
     }
 
 
