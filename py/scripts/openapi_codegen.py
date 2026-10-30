@@ -12,6 +12,9 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
+import urllib.error
+import urllib.request
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Mapping, NamedTuple, Sequence, Set, Tuple
 
@@ -100,8 +103,47 @@ def verify_spec_hash(spec_bytes: bytes, config: Mapping[str, Any], source: str) 
         )
 
 
+def _read_spec_source(config: Mapping[str, Any]) -> Tuple[bytes, str]:
+    spec_config = config["spec"]
+    local_root = os.environ.get("BRAINTRUST_OPENAPI_ROOT")
+    if local_root:
+        root = Path(local_root).expanduser().resolve()
+        source = f"{spec_config['commit']}:{spec_config['path']}"
+        try:
+            content = subprocess.run(["git", "-C", str(root), "show", source], check=True, capture_output=True).stdout
+        except (OSError, subprocess.CalledProcessError) as exc:
+            raise CodegenError(f"Unable to read pinned OpenAPI spec {source} from {root}") from exc
+        return content, f"{root}@{source}"
+
+    url = (
+        f"https://raw.githubusercontent.com/{spec_config['repository']}/{spec_config['commit']}/{spec_config['path']}"
+    )
+    try:
+        with urllib.request.urlopen(url, timeout=30) as response:  # noqa: S310 - explicitly pinned public source.
+            return response.read(), url
+    except (OSError, urllib.error.URLError) as exc:
+        raise CodegenError(f"Unable to fetch pinned OpenAPI spec from {url}: {exc}") from exc
+
+
+def fetch_spec(config: Mapping[str, Any], path: Path = SPEC_PATH) -> None:
+    validate_config(config, check_installed_tools=False)
+    content, source = _read_spec_source(config)
+    verify_spec_hash(content, config, source)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(dir=path.parent, delete=False) as temporary:
+        temporary.write(content)
+        temporary_path = Path(temporary.name)
+    umask = os.umask(0)
+    os.umask(umask)
+    os.chmod(temporary_path, 0o666 & ~umask)
+    os.replace(temporary_path, path)
+    print(f"Fetched {source} -> {path} ({config['spec']['sha256']})", file=sys.stderr)
+
+
 def read_and_verify_spec(config: Mapping[str, Any], path: Path = SPEC_PATH) -> Dict[str, Any]:
     try:
+        if not path.exists():
+            fetch_spec(config, path)
         spec_bytes = path.read_bytes()
     except OSError as exc:
         raise CodegenError(f"Unable to read pinned OpenAPI spec {path}: {exc}") from exc
@@ -465,12 +507,49 @@ def _partition_model_source(
     return modules, module_for_name
 
 
+def _normalize_nullable_type_arrays(spec: Dict[str, Any]) -> None:
+    """Keep nullable map value types with the pinned model generator.
+
+    Its JSON Schema type-array handling drops additionalProperties. The equivalent nullable
+    spelling preserves those types; only the temporary model-generator input is changed.
+    """
+
+    def visit(schema: Dict[str, Any]) -> None:
+        schema_type = schema.get("type")
+        if isinstance(schema_type, list) and len(schema_type) == 2 and "null" in schema_type:
+            schema["type"] = next(choice for choice in schema_type if choice != "null")
+            schema["nullable"] = True
+        for key in _SCHEMA_MAP_KEYWORDS:
+            mapping = schema.get(key)
+            if isinstance(mapping, dict):
+                for child in mapping.values():
+                    if isinstance(child, dict):
+                        visit(child)
+        for key in _SCHEMA_CHILD_KEYWORDS:
+            child = schema.get(key)
+            if isinstance(child, dict):
+                visit(child)
+        for key in _SCHEMA_LIST_KEYWORDS:
+            children = schema.get(key)
+            if isinstance(children, list):
+                for child in children:
+                    if isinstance(child, dict):
+                        visit(child)
+
+    for schema in spec.get("components", {}).get("schemas", {}).values():
+        visit(schema)
+    for value in _walk_values(spec):
+        if isinstance(value, dict) and isinstance(value.get("schema"), dict):
+            visit(value["schema"])
+
+
 def generate_tree(output_root: Path, config: Mapping[str, Any], spec: Mapping[str, Any]) -> ValidationReport:
     validate_config(config)
     report = validate_spec(spec, config)
     operations, inline_models = collect_generated_operations(spec, config)
     selected_spec = _slice_model_spec(spec, {operation.operation_id for operation in operations})
     model_spec = _with_inline_models(_extract_colliding_inline_models(selected_spec), inline_models)
+    _normalize_nullable_type_arrays(model_spec)
     output_root.mkdir(parents=True, exist_ok=True)
     selected_spec_path = output_root.parent / "selected-spec.json"
     monolithic_models_path = output_root.parent / "models.py"
@@ -975,7 +1054,9 @@ def _schema_annotation(schema: Mapping[str, Any], spec: Mapping[str, Any]) -> st
         annotation = _schema_annotation(choices[0], spec) if len(choices) == 1 else "Any"
     else:
         schema_type = resolved.get("type")
-        if schema_type == "array":
+        if isinstance(schema_type, list):
+            annotation = " | ".join(_schema_annotation({**resolved, "type": choice}, spec) for choice in schema_type)
+        elif schema_type == "array":
             annotation = f"Sequence[{_schema_annotation(resolved.get('items', {}), spec)}]"
         elif schema_type == "object":
             annotation = "Mapping[str, Any]"
@@ -985,6 +1066,7 @@ def _schema_annotation(schema: Mapping[str, Any], spec: Mapping[str, Any]) -> st
                 "integer": "int",
                 "number": "float",
                 "string": "str",
+                "null": "None",
             }.get(schema_type, "Any")
     if resolved.get("nullable") is True and "None" not in annotation:
         annotation += " | None"
@@ -1084,9 +1166,12 @@ def _resource_method_source(operation: GeneratedOperation) -> List[str]:
     optional_parameters = [parameter for parameter in operation.parameters if not parameter.required]
     arguments = ["self"]
     arguments.extend(f'{parameter.argument_name}: "{parameter.type_name}"' for parameter in required_parameters)
-    keyword_arguments = [
-        f'{parameter.argument_name}: "{parameter.type_name} | None" = None' for parameter in optional_parameters
-    ]
+    keyword_arguments = []
+    for parameter in optional_parameters:
+        type_name = parameter.type_name
+        if not type_name.endswith(" | None"):
+            type_name += " | None"
+        keyword_arguments.append(f'{parameter.argument_name}: "{type_name}" = None')
     if operation.request_body_type is not None:
         default = "" if operation.request_body_required else " = None"
         body_type = (
@@ -1356,7 +1441,8 @@ def _validate_parameters(
         if not isinstance(schema, dict):
             raise CodegenError(f"Operation {operation_id!r} path parameter {name!r} must define a schema")
         schema = _resolve_object(schema, spec)
-        if schema.get("type") not in {"boolean", "integer", "number", "string"}:
+        schema_type = schema.get("type")
+        if not isinstance(schema_type, str) or schema_type not in {"boolean", "integer", "number", "string"}:
             raise CodegenError(f"Operation {operation_id!r} path parameter {name!r} must be scalar")
 
 
@@ -1381,6 +1467,13 @@ def _parameter_schema_kinds(schema: Mapping[str, Any], spec: Mapping[str, Any]) 
         return kinds
 
     schema_type = schema.get("type")
+    if isinstance(schema_type, list):
+        kinds: Set[str] = set()
+        for choice in schema_type:
+            kinds.update(_parameter_schema_kinds({**schema, "type": choice}, spec))
+        return kinds
+    if schema_type == "null":
+        return set()
     if schema_type in {"boolean", "integer", "number", "string"}:
         return {"scalar"}
     if schema_type == "array":
@@ -1434,8 +1527,12 @@ def _validate_json_values_and_types(spec: Mapping[str, Any]) -> None:
 
 def _validate_schema_values(schema: Mapping[str, Any]) -> None:
     schema_type = schema.get("type")
-    if schema_type is not None and schema_type not in JSON_SCHEMA_TYPES:
-        raise CodegenError(f"Unsupported non-JSON schema type {schema_type!r}")
+    if schema_type is not None:
+        schema_types = schema_type if isinstance(schema_type, list) else [schema_type]
+        if not schema_types or any(
+            not isinstance(choice, str) or choice not in JSON_SCHEMA_TYPES for choice in schema_types
+        ):
+            raise CodegenError(f"Unsupported non-JSON schema type {schema_type!r}")
     for key in ("default", "enum", "example"):
         if key in schema:
             try:

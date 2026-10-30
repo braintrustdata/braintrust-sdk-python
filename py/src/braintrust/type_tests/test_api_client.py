@@ -10,6 +10,9 @@ from braintrust.api.types import (
     CreateProject,
     CreatePrompt,
     Dataset,
+    DatasetRestorePreviewResponse,
+    DatasetRestoreRequest,
+    DatasetRestoreResponse,
     Experiment,
     FetchDatasetEventsResponse,
     FetchEventsRequest,
@@ -140,6 +143,14 @@ if TYPE_CHECKING:
     )
     fetched_dataset_xact_id: str | None = fetched_dataset_events["events"][0].get("_xact_id")
     dataset_summary: SummarizeDatasetResponse = openapi_client.datasets.get_dataset_id_summarize(dataset["id"])
+    restore_request: DatasetRestoreRequest = {"version": "123"}
+    restore_preview: DatasetRestorePreviewResponse = openapi_client.datasets.post_dataset_id_restore_preview(
+        dataset["id"], body=restore_request
+    )
+    restore_result: DatasetRestoreResponse = openapi_client.datasets.post_dataset_id_restore(
+        dataset["id"], body=restore_request
+    )
+    restore_xact_id: str | None = restore_result["xact_id"]
     deleted_dataset: Dataset = openapi_client.datasets.delete_dataset_id(dataset["id"])
 
     create_experiment: CreateExperiment = {"project_id": project["id"], "name": "typed-experiment"}

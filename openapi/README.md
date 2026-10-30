@@ -1,10 +1,12 @@
 # Pinned Braintrust OpenAPI specification
 
-`spec.json` is a committed snapshot of
-[`braintrustdata/braintrust-openapi`](https://github.com/braintrustdata/braintrust-openapi).
-`config.json` pins the upstream commit, snapshot hash, generator versions and flags, selected endpoint
-tags, and retry-policy allowlists. Builds use committed generated source and never fetch the spec or
-run code generation.
+`config.json` pins the upstream commit and SHA-256 of the spec from
+[`braintrustdata/braintrust-openapi`](https://github.com/braintrustdata/braintrust-openapi), along with
+generator versions and flags, selected endpoint tags, and retry-policy allowlists.
+`spec.json` is an ignored local cache, fetched automatically when missing by generation, codegen
+checks, and spec updates. Its hash is verified on every read. The first run needs access to GitHub
+or a local upstream checkout; later runs can use the verified cache offline. Builds use committed
+generated source and never fetch the spec or run code generation.
 
 ## Generate and check
 
@@ -33,8 +35,6 @@ resource's model module; shared models live in `models/common.py`; unreachable m
 Every tag in the pinned spec must be either selected or present in `unsupported_tags` in
 `config.json` with a rationale. The intentionally unsupported tags are:
 
-- **CORS:** browser preflight `OPTIONS` operations are transport concerns rather than callable
-  resource methods.
 - **CrossObject:** cross-object event insertion belongs to the specialized at-least-once
   log-ingestion path.
 - **Evals:** eval launch is a long-running, payload-dependent workflow that can stream and needs a
@@ -58,7 +58,7 @@ nested objects that collide with component names receive contextual names, keepi
 
 ## Refresh the snapshot
 
-Fetch the configured upstream commit:
+Fetch the configured upstream commit explicitly, or replace a stale cached spec after changing the pin:
 
 ```bash
 make fetch-openapi-spec
@@ -70,7 +70,10 @@ To fetch from a local checkout instead:
 BRAINTRUST_OPENAPI_ROOT=../../braintrust-openapi make fetch-openapi-spec
 ```
 
-The checkout must be at the commit pinned in `config.json`, and its spec must match the pinned hash.
-To update the snapshot manually, update the commit and hash in `config.json`, fetch, regenerate, and review both the upstream spec diff and generated-source diff. Validation and generation apply only to selected tags and their transitively reachable schemas.
+The checkout must contain the commit pinned in `config.json`; the spec is read directly from that
+commit and must match the pinned hash. Uncommitted files are ignored.
+To update the pin manually, update the commit and hash in `config.json`, fetch, regenerate, and review
+the upstream spec diff and generated-source diff. Only the pin and generated sources are committed.
+Validation and generation apply only to selected tags and their transitively reachable schemas.
 
 The scheduled and manually dispatchable [OpenAPI spec updates workflow](../.github/workflows/openapi-spec-updates.yml) checks the latest upstream commit that changed the spec. When the pin changes, it updates the snapshot, regenerates the client and public reference, runs codegen, runtime, and type tests, and opens or updates a review PR containing operation/schema summaries and a link to the upstream diff. The workflow never auto-merges its PR. If generation or validation fails, it still opens the update PR with the failure status and then fails the workflow so the new API shape can be reviewed explicitly.
