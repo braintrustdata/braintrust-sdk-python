@@ -12,12 +12,13 @@ OPTIONS = {
     name: False for name, param in inspect.signature(auto_instrument).parameters.items() if param.default is True
 }
 ORDER = os.environ["BRAINTRUST_MCP_TEST_IMPORT_ORDER"]
+assert "mcp_capture_content" not in inspect.signature(auto_instrument).parameters
 assert auto_instrument(**OPTIONS) == {}
 assert "mcp" not in sys.modules and "fastmcp" not in sys.modules
 
 
-def setup(client=True, server=True, capture=True):
-    result = auto_instrument(**{**OPTIONS, "mcp_client": client, "mcp_server": server, "mcp_capture_content": capture})
+def setup(client=True, server=True):
+    result = auto_instrument(**{**OPTIONS, "mcp_client": client, "mcp_server": server})
     assert result["mcp"] is True
 
 
@@ -28,8 +29,8 @@ if ORDER == "before_import":
     }
 
 import anyio  # noqa: E402
+from braintrust.integrations.mcp import MCPIntegration, wrap_mcp_client, wrap_mcp_server  # noqa: E402
 from braintrust.integrations.mcp import _test_harness as harness  # noqa: E402
-from braintrust.integrations.mcp import wrap_mcp_client, wrap_mcp_server  # noqa: E402
 from braintrust.integrations.test_utils import autoinstrument_test_context  # noqa: E402
 from braintrust.logger import start_span  # noqa: E402
 from braintrust.test_helpers import find_span_by_name  # noqa: E402
@@ -62,11 +63,15 @@ async def main():
                         assert (
                             any(s["metadata"].get("mcp.span.kind") != "client" for s in negotiation) == server_enabled
                         )
-                    # The combined case checks live capture updates; the
-                    # independent cases only need to verify content opt-out.
-                    for capture in (True, False) if ORDER == "before_import" else (False,):
-                        setup(client_enabled, server_enabled, capture)
-                        setup(client_enabled, server_enabled, capture)
+                    setup(client_enabled, server_enabled)
+                    setup(client_enabled, server_enabled)
+                    # Auto setup captures content by default. Opt out through
+                    # the integration-specific API, including on active sessions.
+                    for capture in (True, False):
+                        if not capture:
+                            assert MCPIntegration.setup(
+                                client=client_enabled, server=server_enabled, capture_content=False
+                            )
                         with start_span(name="agent") as agent:
                             await client.call_tool("add", {"a": 2, "b": 3})
                         spans = memory_logger.pop()
@@ -93,12 +98,12 @@ async def main():
         if ORDER != "before_import":
             return
         for manual_capture in (True, False):
-            setup(capture=not manual_capture)
+            assert MCPIntegration.setup(client=True, capture_content=not manual_capture)
             server = wrap_mcp_server(harness.build_server(), capture_content=manual_capture)
             async with harness.serve_http(harness.http_app(server)) as url:
                 async with harness.connect_http(url) as client:
                     wrap_mcp_client(client.raw, capture_content=manual_capture)
-                    setup(capture=not manual_capture)
+                    assert MCPIntegration.setup(client=True, capture_content=not manual_capture)
                     memory_logger.pop()
                     await client.call_tool("add", {"a": 2, "b": 3})
                     spans = memory_logger.pop()
