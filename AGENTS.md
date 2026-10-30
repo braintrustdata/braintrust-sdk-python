@@ -1,7 +1,7 @@
 # Braintrust SDK Agent Guide
 
 This guide is for development of the Braintrust Python SDK in this repository.
-If you need to learn more about Braintrust itself, see the Braintrust docs: https://www.braintrust.dev/docs
+If you need to learn more about Braintrust itself, see the Braintrust docs: https://docs.braintrust.dev
 
 Use this file as the default playbook for work in this repository.
 

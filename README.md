@@ -2,7 +2,7 @@
 
 # Braintrust Python SDKs
 
-[Braintrust](https://www.braintrust.dev/) is a platform for evaluating and shipping AI products. Learn more at [braintrust.dev](https://www.braintrust.dev/) and in the [docs](https://www.braintrust.dev/docs).
+[Braintrust](https://www.braintrust.dev/) is a platform for evaluating and shipping AI products. Learn more at [braintrust.dev](https://www.braintrust.dev/) and in the [docs](https://docs.braintrust.dev).
 
 This repository contains Braintrust's Python SDKs and integrations, including:
 
@@ -89,8 +89,8 @@ BRAINTRUST_API_KEY=<YOUR_API_KEY> braintrust eval tutorial_eval.py
 
 ## Documentation
 
-- Python SDK docs: https://www.braintrust.dev/docs/reference/sdks/python
-- Release notes: https://www.braintrust.dev/docs/reference/release-notes
+- Python SDK docs: https://docs.braintrust.dev/sdks/python/versions/latest
+- Release notes: https://docs.braintrust.dev/changelog
 
 ## License
 
