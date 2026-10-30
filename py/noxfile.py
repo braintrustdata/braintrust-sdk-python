@@ -274,6 +274,10 @@ INSTRUCTOR_VERSIONS = _get_matrix_versions("instructor")
 OPENAI_VERSIONS = _get_matrix_versions("openai")
 OPENAI_ENDPOINT_VERSIONS = (OPENAI_VERSIONS[0], OPENAI_VERSIONS[-1])
 
+MCP_VERSIONS = _get_matrix_versions("mcp")
+FASTMCP_VERSIONS = _get_matrix_versions("fastmcp")
+FASTMCP_SLIM_VERSIONS = _get_matrix_versions("fastmcp-slim")
+
 
 def _register_matrix_sessions(specs):
     """Register the routine provider sessions from compact data records."""
@@ -330,6 +334,30 @@ _register_matrix_sessions(
             "groups": ("test-instructor",),
             "dependencies": [("instructor", "$version")],
             "tests": f"{INTEGRATION_DIR}/instructor/test_instructor.py",
+        },
+        {
+            "name": "test_mcp",
+            "doc": "MCP server instrumentation on the bundled FastMCP (1.x) / MCPServer (2.x).",
+            "versions": MCP_VERSIONS,
+            "dependencies": [("mcp", "$version")],
+            "tests": f"{INTEGRATION_DIR}/mcp/test_mcp.py",
+            "env": {"BRAINTRUST_MCP_TEST_FLAVOR": "mcp"},
+        },
+        {
+            "name": "test_fastmcp",
+            "doc": "MCP server instrumentation on standalone FastMCP.",
+            "versions": FASTMCP_VERSIONS,
+            "dependencies": [("fastmcp", "$version")],
+            "tests": f"{INTEGRATION_DIR}/mcp/test_mcp.py",
+            "env": {"BRAINTRUST_MCP_TEST_FLAVOR": "fastmcp"},
+        },
+        {
+            "name": "test_fastmcp_slim",
+            "doc": "MCP server instrumentation on fastmcp-slim without the fastmcp meta-package.",
+            "versions": FASTMCP_SLIM_VERSIONS,
+            "dependencies": [("fastmcp-slim", "$version")],
+            "tests": f"{INTEGRATION_DIR}/mcp/test_mcp.py",
+            "env": {"BRAINTRUST_MCP_TEST_FLAVOR": "fastmcp"},
         },
         {
             "name": "test_openai",

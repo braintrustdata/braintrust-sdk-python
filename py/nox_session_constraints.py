@@ -30,6 +30,8 @@ CONSTRAINTS = {
     "test_langchain": {"max_python_exclusive": "3.15"},  # ormsgpack
     "test_openrouter": {"versions": {"latest": {"max_python_exclusive": "3.15"}}},  # pydantic-core 2.41
     "test_openai_ddtrace": {"max_python_exclusive": "3.15"},  # ddtrace requires Python < 3.15
+    # fastmcp 2.x depends on lupa, which has no cp315 wheels and does not build on Windows.
+    "test_fastmcp": {"versions": {"not_latest_below": {"version": "3.0.0", "max_python_exclusive": "3.15"}}},
 }
 
 
