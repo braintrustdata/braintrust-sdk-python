@@ -2011,7 +2011,7 @@ async def _run_evaluator_internal_impl(
             set_current=False,
         ).as_dataset()
 
-    if inspect.isfunction(data_iterator) or inspect.isroutine(data_iterator):
+    if callable(data_iterator) and not isinstance(data_iterator, Dataset):
         data_iterator = data_iterator()
 
     if not inspect.isasyncgen(data_iterator):
