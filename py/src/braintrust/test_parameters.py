@@ -674,3 +674,79 @@ def test_serialize_eval_parameters_omits_description_when_absent():
     assert serialized["judge_model"]["type"] == "model"
     for name in ("template", "main", "judge_model"):
         assert "description" not in serialized[name]
+
+
+def _remote_parameters_for_isolation(schema, data=None):
+    return RemoteEvalParameters(
+        id="params-123",
+        project_id="project-123",
+        name="Saved parameters",
+        slug="saved-parameters",
+        version="v1",
+        schema=schema,
+        data={} if data is None else data,
+    )
+
+
+def test_remote_parameter_defaults_are_isolated_between_validations():
+    parameters = _remote_parameters_for_isolation(
+        {"type": "object", "properties": {"labels": {"type": "array", "items": {"type": "string"}, "default": []}}}
+    )
+    first = validate_parameters({}, parameters)
+    first["labels"].append("first-run-only")
+    assert validate_parameters({}, parameters) == {"labels": []}
+    assert parameters.schema["properties"]["labels"]["default"] == []
+
+
+def test_remote_parameter_nested_defaults_do_not_mutate_inputs():
+    parameters = _remote_parameters_for_isolation(
+        {
+            "type": "object",
+            "properties": {
+                "configs": {
+                    "type": "array",
+                    "items": {"type": "object", "properties": {"limit": {"type": "integer", "default": 3}}},
+                }
+            },
+        }
+    )
+    supplied = {"configs": [{}]}
+    assert validate_parameters(supplied, parameters) == {"configs": [{"limit": 3}]}
+    assert supplied == {"configs": [{}]}
+
+
+def test_remote_parameter_results_do_not_mutate_saved_data():
+    parameters = _remote_parameters_for_isolation(
+        {"type": "object", "properties": {"config": {"type": "object"}}}, {"config": {"limit": 3}}
+    )
+    first = validate_parameters({}, parameters)
+    first["config"]["limit"] = 9
+    assert validate_parameters({}, parameters) == {"config": {"limit": 3}}
+
+
+def test_remote_parameter_validation_preserves_opaque_values():
+    class Opaque:
+        def __deepcopy__(self, memo):
+            raise AssertionError("Opaque parameter values must not be deep-copied")
+
+    value = Opaque()
+    parameters = _remote_parameters_for_isolation({"type": "object"})
+    result = validate_parameters({"config": {"value": value}}, parameters)
+    assert result["config"]["value"] is value
+
+
+def test_invalid_remote_parameters_do_not_apply_defaults_to_input():
+    parameters = _remote_parameters_for_isolation(
+        {
+            "type": "object",
+            "properties": {
+                "config": {"type": "object", "properties": {"limit": {"type": "integer", "default": 3}}},
+                "required_value": {"type": "integer"},
+            },
+            "required": ["required_value"],
+        }
+    )
+    supplied = {"config": {}}
+    with pytest.raises(ValueError, match="Invalid parameters"):
+        validate_parameters(supplied, parameters)
+    assert supplied == {"config": {}}

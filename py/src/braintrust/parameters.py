@@ -253,6 +253,25 @@ def _create_prompt(name: str, prompt_data: dict[str, Any]) -> "Prompt":
     return Prompt.from_prompt_data(name, PromptData.from_dict_deep(prompt_data))
 
 
+def _copy_parameter_containers(value: Any, memo: dict[int, Any] | None = None) -> Any:
+    """Isolate JSON containers without deep-copying opaque parameter values."""
+    if not isinstance(value, (dict, list)):
+        return value
+    if memo is None:
+        memo = {}
+    if id(value) in memo:
+        return memo[id(value)]
+    if isinstance(value, dict):
+        copied_dict: dict[str, Any] = {}
+        memo[id(value)] = copied_dict
+        copied_dict.update({key: _copy_parameter_containers(item, memo) for key, item in value.items()})
+        return copied_dict
+    copied_list: list[Any] = []
+    memo[id(value)] = copied_list
+    copied_list.extend(_copy_parameter_containers(item, memo) for item in value)
+    return copied_list
+
+
 def _apply_defaults_to_json_schema_instance(instance: Any, schema: Mapping[str, Any]) -> Any:
     if not isinstance(instance, dict):
         return instance
@@ -268,7 +287,7 @@ def _apply_defaults_to_json_schema_instance(instance: Any, schema: Mapping[str, 
             continue
 
         if name not in instance and "default" in property_schema:
-            instance[name] = property_schema["default"]
+            instance[name] = _copy_parameter_containers(property_schema["default"])
 
         if name in instance:
             value = instance[name]
@@ -284,7 +303,7 @@ def _apply_defaults_to_json_schema_instance(instance: Any, schema: Mapping[str, 
 
 
 def validate_json_schema(parameters: dict[str, Any], schema: ParametersSchema) -> dict[str, Any]:
-    candidate = dict(parameters)
+    candidate = _copy_parameter_containers(dict(parameters))
     _apply_defaults_to_json_schema_instance(candidate, schema)
 
     validator = Draft7Validator(schema)
