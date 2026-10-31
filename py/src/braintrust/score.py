@@ -45,7 +45,7 @@ class Score(SerializableDataClass):
         }
 
     def __post_init__(self):
-        if self.score is not None and (self.score < 0 or self.score > 1):
+        if self.score is not None and not 0 <= self.score <= 1:
             raise ValueError(f"score ({self.score}) must be between 0 and 1")
         if self.error is not None:
             warnings.warn(

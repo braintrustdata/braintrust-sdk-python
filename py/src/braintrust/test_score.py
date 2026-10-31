@@ -135,6 +135,14 @@ class TestScore(unittest.TestCase):
         with self.assertRaises(ValueError):
             Score(name="invalid_over_one", score=1.1)
 
+    def test_score_rejects_nonfinite_values(self):
+        for value in (float("nan"), float("inf"), float("-inf")):
+            with self.subTest(value=value):
+                with self.assertRaises(ValueError):
+                    Score(name="nonfinite", score=value)
+                with self.assertRaises(ValueError):
+                    Score.from_dict({"name": "nonfinite", "score": value})
+
     def test_score_does_not_include_deprecated_error_field(self):
         """Test that as_dict() does not include the deprecated error field."""
         score = Score(name="test_scorer", score=0.5)

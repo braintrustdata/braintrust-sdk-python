@@ -3557,7 +3557,7 @@ def _validate_and_sanitize_experiment_log_partial_args(event: Mapping[str, Any])
 
             if not isinstance(score, (int, float)):
                 raise ValueError("score values must be numbers")
-            if score < 0 or score > 1:
+            if not 0 <= score <= 1:
                 raise ValueError("score values must be between 0 and 1")
 
     if "metadata" in sanitized_event and sanitized_event["metadata"] is not None:
