@@ -770,7 +770,11 @@ class _DirectStreamWrapper(AbstractAsyncContextManager):
         self.span_cm.__enter__()
 
         self.start_time = time.time()
-        self.stream = await self.stream_cm.__aenter__()
+        try:
+            self.stream = await self.stream_cm.__aenter__()
+        except BaseException:
+            self.span_cm.__exit__(*sys.exc_info())
+            raise
 
         return _DirectStreamIteratorProxy(self.stream, self)
 

@@ -2493,6 +2493,42 @@ async def test_model_fallback_traces_each_attempt(memory_logger, candidate_kind)
 
 @pytest.mark.vcr
 @pytest.mark.asyncio
+async def test_model_fallback_stream_closes_failed_attempt(memory_logger):
+    try:
+        from pydantic_ai.capabilities import ModelFallback
+    except ImportError:
+        pytest.skip("ModelFallback is unavailable in this Pydantic AI version")
+    from pydantic_ai.models.openai import OpenAIChatModel, OpenAIResponsesModel
+
+    agent = Agent(
+        OpenAIChatModel("braintrust-nonexistent-model-for-fallback-test"),
+        capabilities=[ModelFallback(OpenAIResponsesModel("gpt-4o-mini"))],
+        model_settings=ModelSettings(max_tokens=50),
+    )
+    async with agent.run_stream(TEST_PROMPT) as result:
+        output = await result.get_output()
+    assert "4" in output
+
+    spans = memory_logger.pop()
+    agent_span = _find_agent_span(spans)
+    model_spans = [span for span in spans if span["span_attributes"].get("type") == SpanTypeAttribute.LLM]
+    assert agent_span is not None
+    assert len(model_spans) == 2
+    failed = next(
+        span
+        for span in model_spans
+        if span["metadata"].get("model") == "braintrust-nonexistent-model-for-fallback-test"
+    )
+    answered = next(span for span in model_spans if span["metadata"].get("model") == "gpt-4o-mini")
+    assert failed.get("error")
+    assert failed["metrics"].get("end") is not None
+    assert not answered.get("error")
+    assert answered["metrics"].get("end") is not None
+    assert failed["span_parents"] == answered["span_parents"] == [agent_span["span_id"]]
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
 async def test_agent_with_error_handling(memory_logger):
     """Test Agent propagates API errors for invalid binary content.
 
