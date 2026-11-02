@@ -36,7 +36,6 @@ if TYPE_CHECKING:
     from ._generated.prompts import PromptsAPI
     from ._generated.roles import RolesAPI
     from ._generated.service_tokens import ServiceTokensAPI
-    from ._generated.simulated_users import SimulatedUsersAPI
     from ._generated.span_iframes import SpanIframesAPI
     from ._generated.users import UsersAPI
     from ._generated.views import ViewsAPI
@@ -333,12 +332,6 @@ class BraintrustOpenApiClient:
         from ._generated.service_tokens import ServiceTokensAPI
 
         return self._service("service_tokens", ServiceTokensAPI)
-
-    @property
-    def simulated_users(self) -> "SimulatedUsersAPI":
-        from ._generated.simulated_users import SimulatedUsersAPI
-
-        return self._service("simulated_users", SimulatedUsersAPI)
 
     @property
     def span_iframes(self) -> "SpanIframesAPI":
