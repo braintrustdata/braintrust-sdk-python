@@ -15,24 +15,24 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/3.5.0
+      - mistral-client-python/3.7.0
     method: POST
     uri: https://api.mistral.ai/v1/conversations#stream
   response:
     body:
       string: 'event: conversation.response.started
 
-        data: {"type":"conversation.response.started","created_at":"2026-10-26T12:31:46.576343Z","conversation_id":"conv_01a178320435717fb8ba54ccf57dc70a"}
+        data: {"type":"conversation.response.started","created_at":"2026-11-02T13:49:58.758015Z","conversation_id":"conv_01a19c862177752ba6a8287c56d1f2ba"}
 
 
         event: message.output.delta
 
-        data: {"type":"message.output.delta","created_at":"2026-10-26T12:31:46.579896Z","output_index":0,"id":"msg_01a178320593700a9032854edf8b8d4c","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"7"}
+        data: {"type":"message.output.delta","created_at":"2026-11-02T13:49:58.764011Z","output_index":0,"id":"msg_01a19c86226b73bd8a24ec943867a599","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"7"}
 
 
         event: conversation.response.done
 
-        data: {"type":"conversation.response.done","created_at":"2026-10-26T12:31:46.612167Z","usage":{"prompt_tokens":16,"completion_tokens":2,"total_tokens":18}}
+        data: {"type":"conversation.response.done","created_at":"2026-11-02T13:49:58.800750Z","usage":{"prompt_tokens":16,"completion_tokens":2,"total_tokens":18}}
 
 
         '
@@ -44,15 +44,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5097ad959d8aaa2-YYZ
+      - a5439b081f16961e-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 26 Oct 2026 12:31:46 GMT
+      - Mon, 02 Nov 2026 13:49:58 GMT
       mistral-correlation-id:
-      - 01a17832-0410-7edd-8621-4f1b5e10e777
+      - 01a19c86-2150-703c-a0a6-6dcb85aba29d
       server:
       - cloudflare
       strict-transport-security:
@@ -62,13 +62,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '373'
+      - '269'
       x-kong-proxy-latency:
-      - '12'
+      - '13'
       x-kong-request-id:
-      - 01a17832-0410-7edd-8621-4f1b5e10e777
+      - 01a19c86-2150-703c-a0a6-6dcb85aba29d
       x-kong-upstream-latency:
-      - '377'
+      - '271'
     status:
       code: 200
       message: OK

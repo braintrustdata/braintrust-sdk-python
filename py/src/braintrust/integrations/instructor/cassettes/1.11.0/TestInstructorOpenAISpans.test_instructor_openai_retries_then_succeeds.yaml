@@ -1,33 +1,223 @@
 interactions:
 - request:
-    body: '{"messages":[{"role":"user","content":"Extract Ada, age 30."}],"model":"gpt-4o-mini","tool_choice":{"type":"function","function":{"name":"Person"}},"tools":[{"type":"function","function":{"name":"Person","description":"Correctly extracted `Person` with all the required parameters with correct types","parameters":{"properties":{"name":{"description":"The person''s name","title":"Name","type":"string"},"age":{"description":"The person''s age","title":"Age","type":"integer"}},"required":["age","name"],"type":"object"}}}]}'
-    headers: {}
+    body: '{"messages":[{"role":"user","content":"Extract Ada, age 30."}],"model":"gpt-4o-mini","tool_choice":{"type":"function","function":{"name":"ShoutedPerson"}},"tools":[{"type":"function","function":{"name":"ShoutedPerson","description":"A
+      ``Person`` whose name must be upper-case.\n\nThe field description deliberately
+      does not mention the rule, so a live\nmodel answers \"Ada\" first, fails validation,
+      and fixes it on the retry\nonce Instructor feeds the validation error back.","parameters":{"properties":{"name":{"description":"The
+      person''s name","title":"Name","type":"string"},"age":{"description":"The person''s
+      age","title":"Age","type":"integer"}},"required":["age","name"],"type":"object"}}}]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '698'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - OpenAI/Python 1.99.9
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.99.9
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: '{"id":"chatcmpl-instructor-ada-1","object":"chat.completion","created":1779735568,"model":"gpt-4o-mini-2024-07-18","choices":[{"index":0,"message":{"role":"assistant","content":null,"tool_calls":[{"id":"call_ada_1","type":"function","function":{"name":"Person","arguments":"{\"name\":\"Ada\"}"}}],"refusal":null,"annotations":[]},"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":80,"completion_tokens":8,"total_tokens":88},"service_tier":"default","system_fingerprint":"fp_test"}'
+      string: "{\n  \"id\": \"chatcmpl-Efmxr4tLzGJY1lfHdkIgs1egr84E3\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1793628375,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
+        \           \"id\": \"call_vyQ1rnbgZFTibmBFyUMBkwh2\",\n            \"type\":
+        \"function\",\n            \"function\": {\n              \"name\": \"ShoutedPerson\",\n
+        \             \"arguments\": \"{\\\"name\\\":\\\"Ada\\\",\\\"age\\\":30}\"\n
+        \           }\n          }\n        ],\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 126,\n    \"completion_tokens\":
+        9,\n    \"total_tokens\": 135,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_9b01c99668\"\n}\n"
     headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a543b2de7c14ac40-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '1090'
       content-type:
       - application/json
+      date:
+      - Mon, 02 Nov 2026 14:06:15 GMT
+      openai-processing-ms:
+      - '421'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999992'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
       x-request-id:
-      - req_instructor_ada_1
+      - req_601be2cd2dc34baabb9580e78efcea9d
     status:
       code: 200
       message: OK
 - request:
-    body: '{"messages":[{"role":"user","content":"Extract Ada, age 30."},{"role":"assistant","tool_calls":[{"id":"call_ada_1","type":"function","function":{"name":"Person","arguments":"{\"name\":\"Ada\"}"}}]},{"role":"tool","tool_call_id":"call_ada_1","name":"Person","content":"Validation Error found:\n1 validation error for Person\nage\n  Field required [type=missing, input_value={''name'': ''Ada''}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nRecall the function correctly, fix the errors"}],"model":"gpt-4o-mini","tool_choice":{"type":"function","function":{"name":"Person"}},"tools":[{"type":"function","function":{"name":"Person","description":"Correctly extracted `Person` with all the required parameters with correct types","parameters":{"properties":{"name":{"description":"The person''s name","title":"Name","type":"string"},"age":{"description":"The person''s age","title":"Age","type":"integer"}},"required":["age","name"],"type":"object"}}}]}'
-    headers: {}
+    body: '{"messages":[{"role":"user","content":"Extract Ada, age 30."},{"role":"assistant","content":"","tool_calls":[{"id":"call_vyQ1rnbgZFTibmBFyUMBkwh2","function":{"arguments":"{\"name\":\"Ada\",\"age\":30}","name":"ShoutedPerson"},"type":"function"}]},{"role":"tool","tool_call_id":"call_vyQ1rnbgZFTibmBFyUMBkwh2","name":"ShoutedPerson","content":"Validation
+      Error found:\n1 validation error for ShoutedPerson\nname\n  Value error, name
+      must be written in ALL UPPER-CASE letters [type=value_error, input_value=''Ada'',
+      input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/value_error\nRecall
+      the function correctly, fix the errors"}],"model":"gpt-4o-mini","tool_choice":{"type":"function","function":{"name":"ShoutedPerson"}},"tools":[{"type":"function","function":{"name":"ShoutedPerson","description":"A
+      ``Person`` whose name must be upper-case.\n\nThe field description deliberately
+      does not mention the rule, so a live\nmodel answers \"Ada\" first, fails validation,
+      and fixes it on the retry\nonce Instructor feeds the validation error back.","parameters":{"properties":{"name":{"description":"The
+      person''s name","title":"Name","type":"string"},"age":{"description":"The person''s
+      age","title":"Age","type":"integer"}},"required":["age","name"],"type":"object"}}}]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '1296'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - OpenAI/Python 1.99.9
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.99.9
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: '{"id":"chatcmpl-instructor-ada-2","object":"chat.completion","created":1779735569,"model":"gpt-4o-mini-2024-07-18","choices":[{"index":0,"message":{"role":"assistant","content":null,"tool_calls":[{"id":"call_ada_2","type":"function","function":{"name":"Person","arguments":"{\"name\":\"Ada\",\"age\":30}"}}],"refusal":null,"annotations":[]},"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":120,"completion_tokens":12,"total_tokens":132},"service_tier":"default","system_fingerprint":"fp_test"}'
+      string: "{\n  \"id\": \"chatcmpl-Efmxrc5JnONfnYalfqEYCxHOYzXSZ\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1793628375,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
+        \           \"id\": \"call_8x0bZprqMAmKhruOrlyuUc3G\",\n            \"type\":
+        \"function\",\n            \"function\": {\n              \"name\": \"ShoutedPerson\",\n
+        \             \"arguments\": \"{\\\"name\\\":\\\"ADA\\\",\\\"age\\\":30}\"\n
+        \           }\n          }\n        ],\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 225,\n    \"completion_tokens\":
+        9,\n    \"total_tokens\": 234,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_9b01c99668\"\n}\n"
     headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a543b2e1fa33ac40-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '1090'
       content-type:
       - application/json
+      date:
+      - Mon, 02 Nov 2026 14:06:15 GMT
+      openai-processing-ms:
+      - '517'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999915'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
       x-request-id:
-      - req_instructor_ada_2
+      - req_ef8a437cc574415b81745b32d1e8e646
     status:
       code: 200
       message: OK

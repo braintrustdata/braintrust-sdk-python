@@ -17,7 +17,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.61.0
+      - pydantic-ai/2.64.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -27,7 +27,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.37.0
+      - 3.42.1
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -40,17 +40,17 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_00b87f69f5c31a86016adf482a767087d18bcc36b39bf30409\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1793017898,\n  \"status\":
+      string: "{\n  \"id\": \"resp_04093d678aedcf22016ae894489abc87d1a594bd24c28b187f\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1793627208,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1793017899,\n  \"error\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1793627209,\n  \"error\":
         null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": 500,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"fc_00b87f69f5c31a86016adf482ae11887d19a3575864a42955b\",\n
+        \     \"id\": \"fc_04093d678aedcf22016ae894490d7487d1a48d4cdacec953a0\",\n
         \     \"type\": \"function_call\",\n      \"status\": \"completed\",\n      \"arguments\":
         \"{\\\"operation\\\":\\\"multiply\\\",\\\"a\\\":127,\\\"b\\\":49}\",\n      \"call_id\":
-        \"call_QPR9YcTbtI6YvNQi3QaUfFhy\",\n      \"name\": \"calculate\"\n    }\n
+        \"call_9iSGcyyvkvtYYEfjwzauF8Xb\",\n      \"name\": \"calculate\"\n    }\n
         \ ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\":
         null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\": \"in_memory\",\n
         \ \"reasoning\": {\n    \"context\": null,\n    \"effort\": null,\n    \"summary\":
@@ -86,7 +86,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5097aa8caa636c9-YYZ
+      - a5439665593ff80e-YYZ
       connection:
       - keep-alive
       content-length:
@@ -94,9 +94,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 26 Oct 2026 12:31:39 GMT
+      - Mon, 02 Nov 2026 13:46:49 GMT
       openai-processing-ms:
-      - '615'
+      - '729'
       openai-version:
       - '2020-10-01'
       server:
@@ -114,19 +114,19 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999730'
+      - '149999732'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_139996aeb78948b3a29f0eedd947fe5d
+      - req_1754dd410b9e4c61be36c96fd887a61d
     status:
       code: 200
       message: OK
 - request:
     body: '{"model":"gpt-4o-mini","stream":false,"input":[{"role":"user","content":"What
-      is 127 multiplied by 49?"},{"name":"calculate","arguments":"{\"operation\":\"multiply\",\"a\":127,\"b\":49}","call_id":"call_QPR9YcTbtI6YvNQi3QaUfFhy","type":"function_call"},{"type":"function_call_output","call_id":"call_QPR9YcTbtI6YvNQi3QaUfFhy","output":"6223.0"}],"max_output_tokens":500,"tool_choice":"auto","tools":[{"name":"calculate","parameters":{"additionalProperties":false,"properties":{"operation":{"type":"string"},"a":{"type":"number"},"b":{"type":"number"}},"required":["operation","a","b"],"type":"object"},"type":"function","description":"Perform
+      is 127 multiplied by 49?"},{"name":"calculate","arguments":"{\"operation\":\"multiply\",\"a\":127,\"b\":49}","call_id":"call_9iSGcyyvkvtYYEfjwzauF8Xb","type":"function_call"},{"type":"function_call_output","call_id":"call_9iSGcyyvkvtYYEfjwzauF8Xb","output":"6223.0"}],"max_output_tokens":500,"tool_choice":"auto","tools":[{"name":"calculate","parameters":{"additionalProperties":false,"properties":{"operation":{"type":"string"},"a":{"type":"number"},"b":{"type":"number"}},"required":["operation","a","b"],"type":"object"},"type":"function","description":"Perform
       a mathematical calculation.","strict":true}]}'
     headers:
       accept:
@@ -142,7 +142,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.61.0
+      - pydantic-ai/2.64.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -152,7 +152,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.37.0
+      - 3.42.1
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -165,14 +165,14 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0feb9e41671db56c016adf482b3af887d1bedb2f8dda789bec\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1793017899,\n  \"status\":
+      string: "{\n  \"id\": \"resp_013f7a7761a49879016ae8944975d087d1a2a38ebb59682331\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1793627209,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1793017899,\n  \"error\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1793627210,\n  \"error\":
         null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": 500,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_0feb9e41671db56c016adf482bb05c87d1ac6b41bfbeb13528\",\n
+        \     \"id\": \"msg_013f7a7761a49879016ae8944a077087d18abab25360feac42\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"127 multiplied by
@@ -212,7 +212,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5097aad8f6736c9-YYZ
+      - a543966a78bff80e-YYZ
       connection:
       - keep-alive
       content-length:
@@ -220,9 +220,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 26 Oct 2026 12:31:39 GMT
+      - Mon, 02 Nov 2026 13:46:50 GMT
       openai-processing-ms:
-      - '662'
+      - '795'
       openai-version:
       - '2020-10-01'
       server:
@@ -246,7 +246,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_25e3de13c0384f728f10809c38c70bbd
+      - req_e03f747f87a44fecbcb81c87452574d9
     status:
       code: 200
       message: OK

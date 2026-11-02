@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.61.0
+      - pydantic-ai/2.64.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.37.0
+      - 3.42.1
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,47 +39,37 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_06c32d887e335610016adf4835e11087d1bed0e85918c5b869\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1793017909,\n  \"status\":
+      string: "{\n  \"id\": \"resp_011e88b1d71566ea016ae89452affc87d1b19a578f5299824e\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1793627218,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1793017911,\n  \"error\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1793627222,\n  \"error\":
         null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4.1-mini-2025-04-14\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"ws_06c32d887e335610016adf48365d2087d18bf35be2ba064ba8\",\n
+        \     \"id\": \"ws_011e88b1d71566ea016ae89453239c87d19e383ef09d6cbd50\",\n
         \     \"type\": \"web_search_call\",\n      \"status\": \"completed\",\n      \"action\":
         {\n        \"type\": \"search\",\n        \"queries\": [\n          \"current
         weather in Paris\"\n        ],\n        \"query\": \"current weather in Paris\"\n
-        \     }\n    },\n    {\n      \"id\": \"msg_06c32d887e335610016adf4837083487d1b5eed8ba8997001d\",\n
+        \     }\n    },\n    {\n      \"id\": \"msg_011e88b1d71566ea016ae8945559fc87d1abe75424badf31ee\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"As of 2:31\\u202fPM
-        on Monday, October 26, 2026, in Paris, France, the weather is overcast with
-        light rain, a temperature of 55\\u00b0F (13\\u00b0C), and winds from the south
-        at 10 mph.\\n\\n## Weather for Paris, Paris, France:\\nCurrent Conditions:
-        Light rain, 55\\u00b0F (13\\u00b0C)\\n\\nDaily Forecast:\\n* Monday, October
-        26: Low: 54\\u00b0F (12\\u00b0C), High: 57\\u00b0F (14\\u00b0C), Description:
-        Cloudy most of the time; showers this morning followed by a shower in spots
-        this afternoon\\n* Tuesday, October 27: Low: 44\\u00b0F (7\\u00b0C), High:
-        64\\u00b0F (18\\u00b0C), Description: Some sun, then turning cloudy with occasional
-        rain in the afternoon\\n* Wednesday, October 28: Low: 43\\u00b0F (6\\u00b0C),
-        High: 61\\u00b0F (16\\u00b0C), Description: Mostly cloudy\\n* Thursday, October
-        29: Low: 43\\u00b0F (6\\u00b0C), High: 62\\u00b0F (17\\u00b0C), Description:
-        Sunny to partly cloudy and nice\\n* Friday, October 30: Low: 42\\u00b0F (6\\u00b0C),
-        High: 62\\u00b0F (16\\u00b0C), Description: Partly sunny and pleasant\\n*
-        Saturday, October 31: Low: 40\\u00b0F (5\\u00b0C), High: 58\\u00b0F (14\\u00b0C),
-        Description: Cloudy in the morning followed by high thin cloudiness in the
-        afternoon\\n* Sunday, November 1: Low: 41\\u00b0F (5\\u00b0C), High: 55\\u00b0F
-        (13\\u00b0C), Description: Mostly cloudy\\n \"\n        }\n      ],\n      \"role\":
-        \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\":
-        0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
-        \"in_memory\",\n  \"reasoning\": {\n    \"context\": null,\n    \"effort\":
-        null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
-        \"default\",\n  \"store\": false,\n  \"temperature\": 1.0,\n  \"text\": {\n
-        \   \"format\": {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n
-        \ },\n  \"tool_choice\": \"auto\",\n  \"tool_usage\": {\n    \"image_gen\":
-        {\n      \"input_tokens\": 0,\n      \"input_tokens_details\": {\n        \"image_tokens\":
-        0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
+        [\n            {\n              \"type\": \"url_citation\",\n              \"end_index\":
+        284,\n              \"start_index\": 197,\n              \"title\": \"Weather
+        for Paris, Paris, France\",\n              \"url\": \"https://www.timeanddate.com/weather/france/paris?utm_source=openai\"\n
+        \           }\n          ],\n          \"logprobs\": [],\n          \"text\":
+        \"As of 2:46\\u202fPM on Monday, November 2, 2026, in Paris, France, the weather
+        is mostly cloudy with a temperature of 52\\u00b0F (11\\u00b0C), a RealFeel\\u00ae
+        of 49\\u00b0F (9\\u00b0C), and winds from the north at 9 mph (14 km/h). ([timeanddate.com](https://www.timeanddate.com/weather/france/paris?utm_source=openai))
+        \"\n        }\n      ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
+        true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
+        null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
+        \   \"context\": null,\n    \"effort\": null,\n    \"summary\": null\n  },\n
+        \ \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n  \"store\":
+        false,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
+        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
+        \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\":
+        0,\n      \"input_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
+        0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
         {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
         0\n    },\n    \"web_search\": {\n      \"num_requests\": 1\n    }\n  },\n
         \ \"tools\": [\n    {\n      \"type\": \"web_search\",\n      \"return_token_budget\":
@@ -90,8 +80,8 @@ interactions:
         \ \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n
         \ \"usage\": {\n    \"input_tokens\": 8174,\n    \"input_tokens_details\":
         {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 349,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 8523\n  },\n  \"user\": null,\n  \"metadata\":
+        \   \"output_tokens\": 106,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        0\n    },\n    \"total_tokens\": 8280\n  },\n  \"user\": null,\n  \"metadata\":
         {}\n}"
     headers:
       access-control-expose-headers:
@@ -103,17 +93,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5097af04c5aa216-YYZ
+      - a54396a459ec46b5-YYZ
       connection:
       - keep-alive
       content-length:
-      - '3920'
+      - '3258'
       content-type:
       - application/json
       date:
-      - Mon, 26 Oct 2026 12:31:51 GMT
+      - Mon, 02 Nov 2026 13:47:02 GMT
       openai-processing-ms:
-      - '1802'
+      - '3392'
       openai-version:
       - '2020-10-01'
       server:
@@ -137,7 +127,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_59dba0946ca04e6e85b39360da37b5b4
+      - req_2226bce9ba604a7ea0c174321fd6ab6d
     status:
       code: 200
       message: OK

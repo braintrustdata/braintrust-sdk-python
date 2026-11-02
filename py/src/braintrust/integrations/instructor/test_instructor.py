@@ -22,7 +22,7 @@ import openai
 import pytest
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import find_spans_by_type, init_test_logger, memory_logger
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 # memory_logger fixture from braintrust.test_helpers is imported above
@@ -35,6 +35,25 @@ PROJECT_NAME = "test-instructor-app"
 class Person(BaseModel):
     name: str = Field(..., description="The person's name")
     age: int = Field(..., description="The person's age")
+
+
+class ShoutedPerson(BaseModel):
+    """A ``Person`` whose name must be upper-case.
+
+    The field description deliberately does not mention the rule, so a live
+    model answers "Ada" first, fails validation, and fixes it on the retry
+    once Instructor feeds the validation error back.
+    """
+
+    name: str = Field(..., description="The person's name")
+    age: int = Field(..., description="The person's age")
+
+    @field_validator("name")
+    @classmethod
+    def name_must_be_upper_case(cls, value: str) -> str:
+        if value != value.upper():
+            raise ValueError("name must be written in ALL UPPER-CASE letters")
+        return value
 
 
 def _make_openai_client():
@@ -131,24 +150,14 @@ class TestInstructorOpenAISpans:
 
     @pytest.mark.vcr
     def test_instructor_openai_retries_then_succeeds(self, setup_logger, memory_logger):
-        """First LLM call returns missing field; instructor retries and succeeds.
+        """First LLM call fails validation; instructor retries and succeeds.
 
-        Expect exactly: 1 task parent + 2 llm children. Parent records
+        The validator on ``ShoutedPerson`` rejects the model's natural
+        mixed-case "Ada", so a live run takes exactly one retry. Expect
+        exactly: 1 task parent + 2 llm children. Parent records
         retry_count=1 and one validation_errors entry. Token totals across
         the trace equal the sum across the *children*; parent contributes
         zero tokens.
-
-        NOTE: this test's cassette is hand-authored and must NOT be
-        re-recorded.  Its first interaction returns ``{"name": "Ada"}`` with
-        ``age`` deliberately omitted, which is what forces the validation
-        retry.  A live model returns a valid ``Person`` on the first attempt,
-        so ``--vcr-record=all`` captures a single interaction and the
-        ``retry_count == 1`` / two-``llm``-span assertions below fail.  If you
-        clobber it, restore with::
-
-            git checkout -- src/braintrust/integrations/instructor/cassettes/\
-                latest/TestInstructorOpenAISpans.\
-                test_instructor_openai_retries_then_succeeds.yaml
         """
         from braintrust import wrap_openai
 
@@ -157,11 +166,11 @@ class TestInstructorOpenAISpans:
 
         result = patched.chat.completions.create(
             model="gpt-4o-mini",
-            response_model=Person,
+            response_model=ShoutedPerson,
             max_retries=3,
             messages=[{"role": "user", "content": "Extract Ada, age 30."}],
         )
-        assert result.model_dump() == {"name": "Ada", "age": 30}
+        assert result.model_dump() == {"name": "ADA", "age": 30}
 
         spans = _all_spans(memory_logger)
         task_spans = find_spans_by_type(spans, SpanTypeAttribute.TASK)
@@ -173,15 +182,14 @@ class TestInstructorOpenAISpans:
         meta = parent.get("metadata", {})
         assert meta.get("model") == "gpt-4o-mini"
         assert meta.get("provider") == "openai"
-        assert meta.get("response_model") == "Person"
+        assert meta.get("response_model") == "ShoutedPerson"
         assert meta.get("mode") == "TOOLS"
         assert meta.get("max_retries") == 3
         assert meta.get("retry_count") == 1, f"Expected retry_count=1, got {meta.get('retry_count')}"
         ve = meta.get("validation_errors")
         assert isinstance(ve, list) and len(ve) == 1, f"Expected 1 validation_errors entry, got {ve!r}"
-        # The error must mention the missing 'age' field somehow.
-        assert "age" in json.dumps(ve), f"validation_errors should reference 'age': {ve!r}"
-        assert _dump(parent.get("output")) == {"name": "Ada", "age": 30}
+        assert "UPPER-CASE" in json.dumps(ve), f"validation_errors should carry the validator message: {ve!r}"
+        assert _dump(parent.get("output")) == {"name": "ADA", "age": 30}
 
         # No double counting: parent has no tokens.
         parent_metrics = parent.get("metrics") or {}

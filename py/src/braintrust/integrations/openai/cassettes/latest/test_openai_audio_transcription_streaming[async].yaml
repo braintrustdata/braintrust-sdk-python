@@ -1,10 +1,10 @@
 interactions:
 - request:
     body: !!binary |
-      LS0zMjQyZmU4M2I1ZmE3ODg4ZjRhNTNlNjA3OGM1MjYxMg0KQ29udGVudC1EaXNwb3NpdGlvbjog
-      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0KZ3B0LTRvLXRyYW5zY3JpYmUNCi0tMzI0MmZlODNi
-      NWZhNzg4OGY0YTUzZTYwNzhjNTI2MTINCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
-      bmFtZT0ic3RyZWFtIg0KDQp0cnVlDQotLTMyNDJmZTgzYjVmYTc4ODhmNGE1M2U2MDc4YzUyNjEy
+      LS04NjAwMWYxZjNlOTJkYjE2MGMxMDgxMTE4OGViOWM1Nw0KQ29udGVudC1EaXNwb3NpdGlvbjog
+      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0KZ3B0LTRvLXRyYW5zY3JpYmUNCi0tODYwMDFmMWYz
+      ZTkyZGIxNjBjMTA4MTExODhlYjljNTcNCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
+      bmFtZT0ic3RyZWFtIg0KDQp0cnVlDQotLTg2MDAxZjFmM2U5MmRiMTYwYzEwODExMTg4ZWI5YzU3
       DQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0i
       dGVzdF9hdWRpby53YXYiDQpDb250ZW50LVR5cGU6IGF1ZGlvL3gtd2F2DQoNClJJRkYkfQAAV0FW
       RWZtdCAQAAAAAQABAIA+AAAAfQAAAgAQAGRhdGEAfQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -569,7 +569,7 @@ interactions:
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN
-      Ci0tMzI0MmZlODNiNWZhNzg4OGY0YTUzZTYwNzhjNTI2MTItLQ0K
+      Ci0tODYwMDFmMWYzZTkyZGIxNjBjMTA4MTExODhlYjljNTctLQ0K
     headers:
       accept:
       - application/json
@@ -580,11 +580,11 @@ interactions:
       content-length:
       - '32415'
       content-type:
-      - multipart/form-data; boundary=3242fe83b5fa7888f4a53e6078c52612
+      - multipart/form-data; boundary=86001f1f3e92db160c10811188eb9c57
       host:
       - api.openai.com
       user-agent:
-      - AsyncOpenAI/Python 3.37.0
+      - AsyncOpenAI/Python 3.42.1
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -594,7 +594,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.37.0
+      - 3.42.1
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -607,11 +607,9 @@ interactions:
     uri: https://api.openai.com/v1/audio/transcriptions
   response:
     body:
-      string: "data: {\"type\":\"transcript.text.delta\",\"delta\":\"\u0416\"}\r\n\r\ndata:
-        {\"type\":\"transcript.text.delta\",\"delta\":\"\u0435\u043B\"}\r\n\r\ndata:
-        {\"type\":\"transcript.text.delta\",\"delta\":\"\u0442\u043E\"}\r\n\r\ndata:
-        {\"type\":\"transcript.text.delta\",\"delta\":\"\u049B\"}\r\n\r\ndata: {\"type\":\"transcript.text.delta\",\"delta\":\"\u0441\u0430\u043D\"}\r\n\r\ndata:
-        {\"type\":\"transcript.text.done\",\"text\":\"\u0416\u0435\u043B\u0442\u043E\u049B\u0441\u0430\u043D\",\"usage\":{\"type\":\"tokens\",\"total_tokens\":17,\"input_tokens\":10,\"input_token_details\":{\"text_tokens\":0,\"audio_tokens\":10},\"output_tokens\":7}}\r\n\r\ndata:
+      string: "data: {\"type\":\"transcript.text.delta\",\"delta\":\"K\"}\r\n\r\ndata:
+        {\"type\":\"transcript.text.delta\",\"delta\":\"us\"}\r\n\r\ndata: {\"type\":\"transcript.text.delta\",\"delta\":\"zenie\"}\r\n\r\ndata:
+        {\"type\":\"transcript.text.done\",\"text\":\"Kuszenie\",\"usage\":{\"type\":\"tokens\",\"total_tokens\":15,\"input_tokens\":10,\"input_token_details\":{\"text_tokens\":0,\"audio_tokens\":10},\"output_tokens\":5}}\r\n\r\ndata:
         [DONE]\r\n\r\n"
     headers:
       access-control-expose-headers:
@@ -624,15 +622,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5097bdaeb8236af-YYZ
+      - a5439879afc0e930-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 26 Oct 2026 12:32:28 GMT
+      - Mon, 02 Nov 2026 13:48:14 GMT
       openai-processing-ms:
-      - '380'
+      - '282'
       openai-version:
       - '2020-10-01'
       server:
@@ -652,7 +650,7 @@ interactions:
       x-ratelimit-reset-requests:
       - 6ms
       x-request-id:
-      - req_5a9d374614164a5f9cac212d9ae8dd2e
+      - req_0b6cc0842cb74265afdbadf172944eae
     status:
       code: 200
       message: OK

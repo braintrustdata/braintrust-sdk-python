@@ -16,26 +16,26 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/3.5.0
+      - mistral-client-python/3.7.0
     method: POST
     uri: https://api.mistral.ai/v1/fim/completions#stream
   response:
     body:
-      string: 'data: {"id":"2ede2c7d7bf349c48441ba0e2ad24b4e","object":"chat.completion.chunk","created":1793017919,"model":"codestral-latest","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
+      string: 'data: {"id":"eaaa36e3b43d4e81a5f4ba619c6fb5aa","object":"chat.completion.chunk","created":1793627410,"model":"codestral-latest","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
 
 
-        data: {"id":"2ede2c7d7bf349c48441ba0e2ad24b4e","object":"chat.completion.chunk","created":1793017919,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"a"},"finish_reason":null}],"p":"abcdefghij"}
+        data: {"id":"eaaa36e3b43d4e81a5f4ba619c6fb5aa","object":"chat.completion.chunk","created":1793627410,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"a"},"finish_reason":null}],"p":"abcdefghij"}
 
 
-        data: {"id":"2ede2c7d7bf349c48441ba0e2ad24b4e","object":"chat.completion.chunk","created":1793017919,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"
-        /"},"finish_reason":null}],"p":"abcdefghijklmnopqrstuvwxyz01"}
+        data: {"id":"eaaa36e3b43d4e81a5f4ba619c6fb5aa","object":"chat.completion.chunk","created":1793627410,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"
+        /"},"finish_reason":null}],"p":"abc"}
 
 
-        data: {"id":"2ede2c7d7bf349c48441ba0e2ad24b4e","object":"chat.completion.chunk","created":1793017919,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"
-        b"},"finish_reason":null}],"p":"abcdefghijk"}
+        data: {"id":"eaaa36e3b43d4e81a5f4ba619c6fb5aa","object":"chat.completion.chunk","created":1793627410,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"
+        b"},"finish_reason":null}],"p":"abcdefghijklm"}
 
 
-        data: {"id":"2ede2c7d7bf349c48441ba0e2ad24b4e","object":"chat.completion.chunk","created":1793017919,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":""},"finish_reason":"stop"}],"usage":{"prompt_tokens":23,"total_tokens":27,"completion_tokens":4,"prompt_tokens_details":{"cached_tokens":0},"completion_tokens_details":{"reasoning_tokens":0},"service_tier":"standard"},"p":"abcdefghijklmnopqrstuvwxyz012345678"}
+        data: {"id":"eaaa36e3b43d4e81a5f4ba619c6fb5aa","object":"chat.completion.chunk","created":1793627410,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":""},"finish_reason":"stop"}],"usage":{"prompt_tokens":23,"total_tokens":27,"completion_tokens":4,"prompt_tokens_details":{"cached_tokens":0},"completion_tokens_details":{"reasoning_tokens":0},"service_tier":"standard"},"p":"abcdefghijklmnopqrstuvw"}
 
 
         data: [DONE]
@@ -50,15 +50,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5097b293d6dac64-YYZ
+      - a5439b549f9b1a24-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 26 Oct 2026 12:31:59 GMT
+      - Mon, 02 Nov 2026 13:50:10 GMT
       mistral-correlation-id:
-      - 01a17832-3606-7fed-ba7f-edb13272bcf1
+      - 01a19c86-5116-7e06-8544-4cfdb6140dc4
       server:
       - cloudflare
       strict-transport-security:
@@ -68,15 +68,23 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '145'
+      - '205'
       x-kong-proxy-latency:
-      - '16'
+      - '17'
       x-kong-request-id:
-      - 01a17832-3606-7fed-ba7f-edb13272bcf1
+      - 01a19c86-5116-7e06-8544-4cfdb6140dc4
       x-kong-upstream-latency:
-      - '146'
+      - '206'
       x-max-retry-attempts-reached:
       - 'false'
+      x-ratelimit-limit-req-minute:
+      - '500'
+      x-ratelimit-limit-tokens-minute:
+      - '1000000'
+      x-ratelimit-remaining-req-minute:
+      - '496'
+      x-ratelimit-remaining-tokens-minute:
+      - '999918'
     status:
       code: 200
       message: OK

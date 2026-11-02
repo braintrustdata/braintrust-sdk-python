@@ -17,17 +17,16 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.33.0 gl-python/3.14.7
+      - google-genai-sdk/2.34.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/2.33.0 gl-python/3.14.7
+      - google-genai-sdk/2.34.0 gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse
   response:
     body:
-      string: "data: {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"The
-        estimated population of Tokyo Metropolis is approximately 14\"}],\"role\":
-        \"model\"},\"finishReason\": \"MAX_TOKENS\",\"index\": 0,\"groundingMetadata\":
-        {\"searchEntryPoint\": {\"renderedContent\": \"\\u003cstyle\\u003e\\n.container
+      string: "data: {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"As
+        of October 1, 20\"}],\"role\": \"model\"},\"finishReason\": \"MAX_TOKENS\",\"index\":
+        0,\"groundingMetadata\": {\"searchEntryPoint\": {\"renderedContent\": \"\\u003cstyle\\u003e\\n.container
         {\\n  align-items: center;\\n  border-radius: 8px;\\n  display: flex;\\n  font-family:
         Google Sans, Roboto, sans-serif;\\n  font-size: 14px;\\n  line-height: 20px;\\n
         \ padding: 8px 12px;\\n}\\n.chip {\\n  display: inline-block;\\n  border:
@@ -90,14 +89,16 @@ interactions:
         \   \\u003c/svg\\u003e\\n    \\u003cdiv class=\\\"gradient-container\\\"\\u003e\\u003cdiv
         class=\\\"gradient\\\"\\u003e\\u003c/div\\u003e\\u003c/div\\u003e\\n  \\u003c/div\\u003e\\n
         \ \\u003cdiv class=\\\"carousel\\\"\\u003e\\n    \\u003ca class=\\\"chip\\\"
-        href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQH6RB16m5xXAbkC1sX1Oe41c4T8ISm_ziRfnV9J_zz424r2J1wEvhLmYAYxAh_XcY0Kxt1OLTz4W89q0A2YGiFLzSkWUqMdTWOFNvRl_L5v8NfyzkL4hfCTzdVynl7FUyoD5q3mdhJtCw0Z9amrhWu8jR0tEAO33uzqflAZ3h3odFx4aUWZGyA-ptiU-yQ2QofV5bNPikYCycCi0qLdIWYZTw6Qcw==\\\"\\u003ecurrent
-        population of Tokyo Japan\\u003c/a\\u003e\\n  \\u003c/div\\u003e\\n\\u003c/div\\u003e\\n\"},\"webSearchQueries\":
-        [\"current population of Tokyo Japan\"]}}],\"usageMetadata\": {\"promptTokenCount\":
-        11,\"candidatesTokenCount\": 27,\"totalTokenCount\": 438,\"promptTokensDetails\":
-        [{\"modality\": \"TEXT\",\"tokenCount\": 11}],\"toolUsePromptTokenCount\":
-        71,\"toolUsePromptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
-        71}],\"thoughtsTokenCount\": 329,\"serviceTier\": \"standard\"},\"modelVersion\":
-        \"gemini-2.5-flash\",\"responseId\": \"EUjfauevDdvliLMP4JygkA0\"}\r\n\r\n"
+        href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHKUKZn3C7T2K9SQKpVUrTgi6S1KwXMjlcql8X_9dq88leX7FhM1-eZ8GS6B5TZWITitf9QeaojL_-L83c1DuTIupXDJEewJgxDxnkdUkLs3MK-Ag46M2fOCu9UHYnmW-2ReGigMQpqIWCyVrpXesKAypF5NJLnAE6Zavo6WcxxwgzBQ__5EQCQ6k_O0AFIkN8nsthJOR_ZfQ==\\\"\\u003eTokyo
+        population 2024\\u003c/a\\u003e\\n    \\u003ca class=\\\"chip\\\" href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGfHzalq9Mw-EOFPbu_2Wv8OiXPCWOZC84pQ8ltJendS8wRg1zCwr1m1vuGjCe1QefrHV5yntQiAhnrdG-o0bhxxCqUx5fJ4YEWEqZCY59Tn-FWNqsWebyZnbgv-_J3AYmGQ4QALv6tvLHCGuSusI4x8mJsOb7MNfE28Vblb0G8HIy_p3s0lA-5vrlSlOl1x-ZPNBoJN4PjnlpaOS8guQ==\\\"\\u003ecurrent
+        population of Tokyo\\u003c/a\\u003e\\n    \\u003ca class=\\\"chip\\\" href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQG1nOWylA8YwwsL2elRem9x9M18KXrNQOg761VERk0m8KCR80DQt4yp_5MGvkdrpL72sqZNGSbPZ8hWqdYBdfgz8mmVA_SQAgZhbO-HUBCdgg3de0SX1j100pJlNzoN7FcK_7Gzew99RRvi9AaEPIAZdL5TX357pa-8wBqnplO0B1SBLYt0wog3AVlexIyJL5ikp4OGD09X_A==\\\"\\u003eTokyo
+        population 2023\\u003c/a\\u003e\\n  \\u003c/div\\u003e\\n\\u003c/div\\u003e\\n\"},\"webSearchQueries\":
+        [\"current population of Tokyo\",\"Tokyo population 2024\",\"Tokyo population
+        2023\"]}}],\"usageMetadata\": {\"promptTokenCount\": 11,\"candidatesTokenCount\":
+        42,\"totalTokenCount\": 566,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
+        11}],\"toolUsePromptTokenCount\": 135,\"toolUsePromptTokensDetails\": [{\"modality\":
+        \"TEXT\",\"tokenCount\": 135}],\"thoughtsTokenCount\": 378,\"serviceTier\":
+        \"standard\"},\"modelVersion\": \"gemini-2.5-flash\",\"responseId\": \"1JToap0NgrLK0w-dqvThAQ\"}\r\n\r\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
@@ -106,11 +107,11 @@ interactions:
       content-type:
       - text/event-stream
       date:
-      - Mon, 26 Oct 2026 12:31:15 GMT
+      - Mon, 02 Nov 2026 13:49:11 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=3082
+      - gfet4t7; dur=3263
       transfer-encoding:
       - chunked
       vary:

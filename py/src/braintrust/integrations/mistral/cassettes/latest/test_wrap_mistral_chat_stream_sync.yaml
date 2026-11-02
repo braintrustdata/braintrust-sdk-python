@@ -16,176 +16,59 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/3.5.0
+      - mistral-client-python/3.7.0
     method: POST
     uri: https://api.mistral.ai/v1/chat/completions#stream
   response:
     body:
-      string: 'data: {"id":"810331955ba742a0b749725529593d7c","object":"chat.completion.chunk","created":1793017868,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
+      string: 'data: {"id":"eefeb44d70e040c7b032bc6332737ff0","object":"chat.completion.chunk","created":1793627387,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
 
 
-        data: {"id":"810331955ba742a0b749725529593d7c","object":"chat.completion.chunk","created":1793017868,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"role":"assistant","index":0,"content":""},"finish_reason":null,"logprobs":null}]}
+        data: {"id":"eefeb44d70e040c7b032bc6332737ff0","object":"chat.completion.chunk","created":1793627388,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"role":"assistant","index":0,"content":""},"finish_reason":null,"logprobs":null}]}
 
 
-        data: {"id":"810331955ba742a0b749725529593d7c","object":"chat.completion.chunk","created":1793017868,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"index":0,"content":[{"type":"thinking","thinking":[{"type":"text","text":"The"}],"closed":true}]},"finish_reason":null,"logprobs":{"content":[{"token":"The","logprob":-0.03075050376355648,"bytes":[84,104,101],"token_id":-1,"top_logprobs":[{"token":"The","logprob":-0.03075050376355648,"bytes":[84,104,101],"token_id":-1},{"token":"This","logprob":-3.5307505130767822,"bytes":[84,104,105,115],"token_id":-1}]}]}}]}
+        data: {"id":"eefeb44d70e040c7b032bc6332737ff0","object":"chat.completion.chunk","created":1793627388,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"index":0,"content":[{"type":"thinking","thinking":[{"type":"text","text":"The"}],"closed":true}]},"finish_reason":null,"logprobs":{"content":[{"token":"The","logprob":-0.05786751210689545,"bytes":[84,104,101],"token_id":-1,"top_logprobs":[{"token":"The","logprob":-0.05786751210689545,"bytes":[84,104,101],"token_id":-1},{"token":"This","logprob":-2.9328675270080566,"bytes":[84,104,105,115],"token_id":-1}]}]}}]}
 
 
-        data: {"id":"810331955ba742a0b749725529593d7c","object":"chat.completion.chunk","created":1793017868,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"index":0,"content":[{"type":"thinking","thinking":[{"type":"text","text":"
-        user asks"}],"closed":true}]},"finish_reason":null,"logprobs":{"content":[{"token":"
-        user","logprob":-0.0032276222482323647,"bytes":[32,117,115,101,114],"token_id":-1,"top_logprobs":[{"token":"
-        user","logprob":-0.0032276222482323647,"bytes":[32,117,115,101,114],"token_id":-1},{"token":"
-        question","logprob":-5.753227710723877,"bytes":[32,113,117,101,115,116,105,111,110],"token_id":-1}]},{"token":"
-        asks","logprob":-1.420807123184204,"bytes":[32,97,115,107,115],"token_id":-1,"top_logprobs":[{"token":"
-        asks","logprob":-1.420807123184204,"bytes":[32,97,115,107,115],"token_id":-1},{"token":"
-        is","logprob":-0.4208071529865265,"bytes":[32,105,115],"token_id":-1}]}]}}]}
+        data: {"id":"eefeb44d70e040c7b032bc6332737ff0","object":"chat.completion.chunk","created":1793627388,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"index":0,"content":[{"type":"thinking","thinking":[{"type":"text","text":"
+        user asked a simple math question and wants just the number."}],"closed":true},{"type":"text","text":"10"}]},"finish_reason":null,"logprobs":{"content":[{"token":"
+        user","logprob":-0.004247691016644239,"bytes":[32,117,115,101,114],"token_id":-1,"top_logprobs":[{"token":"
+        user","logprob":-0.004247691016644239,"bytes":[32,117,115,101,114],"token_id":-1},{"token":"
+        question","logprob":-5.504247665405273,"bytes":[32,113,117,101,115,116,105,111,110],"token_id":-1}]},{"token":"
+        asked","logprob":-2.177358865737915,"bytes":[32,97,115,107,101,100],"token_id":-1,"top_logprobs":[{"token":"
+        asked","logprob":-2.177358865737915,"bytes":[32,97,115,107,101,100],"token_id":-1},{"token":"
+        is","logprob":-0.4273589253425598,"bytes":[32,105,115],"token_id":-1}]},{"token":"
+        a","logprob":-0.7293187975883484,"bytes":[32,97],"token_id":-1,"top_logprobs":[{"token":"
+        a","logprob":-0.7293187975883484,"bytes":[32,97],"token_id":-1},{"token":"
+        \"","logprob":-0.9793187975883484,"bytes":[32,34],"token_id":-1}]},{"token":"
+        simple","logprob":-0.018478158861398697,"bytes":[32,115,105,109,112,108,101],"token_id":-1,"top_logprobs":[{"token":"
+        simple","logprob":-0.018478158861398697,"bytes":[32,115,105,109,112,108,101],"token_id":-1},{"token":"
+        very","logprob":-4.0184783935546875,"bytes":[32,118,101,114,121],"token_id":-1}]},{"token":"
+        math","logprob":-0.5136129856109619,"bytes":[32,109,97,116,104],"token_id":-1,"top_logprobs":[{"token":"
+        math","logprob":-0.5136129856109619,"bytes":[32,109,97,116,104],"token_id":-1},{"token":"
+        arithmetic","logprob":-1.263612985610962,"bytes":[32,97,114,105,116,104,109,101,116,105,99],"token_id":-1}]},{"token":"
+        question","logprob":-0.0000792710343375802,"bytes":[32,113,117,101,115,116,105,111,110],"token_id":-1,"top_logprobs":[{"token":"
+        question","logprob":-0.0000792710343375802,"bytes":[32,113,117,101,115,116,105,111,110],"token_id":-1},{"token":"
+        problem","logprob":-9.500079154968262,"bytes":[32,112,114,111,98,108,101,109],"token_id":-1}]},{"token":"
+        and","logprob":-2.2388219833374023,"bytes":[32,97,110,100],"token_id":-1,"top_logprobs":[{"token":"
+        and","logprob":-2.2388219833374023,"bytes":[32,97,110,100],"token_id":-1},{"token":":","logprob":-0.11382200568914413,"bytes":[58],"token_id":-1}]},{"token":"
+        wants","logprob":-0.6292529106140137,"bytes":[32,119,97,110,116,115],"token_id":-1,"top_logprobs":[{"token":"
+        wants","logprob":-0.6292529106140137,"bytes":[32,119,97,110,116,115],"token_id":-1},{"token":"
+        explicitly","logprob":-1.1292529106140137,"bytes":[32,101,120,112,108,105,99,105,116,108,121],"token_id":-1}]},{"token":"
+        just","logprob":-0.016003375872969627,"bytes":[32,106,117,115,116],"token_id":-1,"top_logprobs":[{"token":"
+        just","logprob":-0.016003375872969627,"bytes":[32,106,117,115,116],"token_id":-1},{"token":"
+        me","logprob":-4.266003608703613,"bytes":[32,109,101],"token_id":-1}]},{"token":"
+        the","logprob":-0.0003367095487192273,"bytes":[32,116,104,101],"token_id":-1,"top_logprobs":[{"token":"
+        the","logprob":-0.0003367095487192273,"bytes":[32,116,104,101],"token_id":-1},{"token":"
+        a","logprob":-8.000336647033691,"bytes":[32,97],"token_id":-1}]},{"token":"
+        number","logprob":-0.00003397406908334233,"bytes":[32,110,117,109,98,101,114],"token_id":-1,"top_logprobs":[{"token":"
+        number","logprob":-0.00003397406908334233,"bytes":[32,110,117,109,98,101,114],"token_id":-1},{"token":"
+        answer","logprob":-10.37503433227539,"bytes":[32,97,110,115,119,101,114],"token_id":-1}]},{"token":".","logprob":-0.7673723101615906,"bytes":[46],"token_id":-1,"top_logprobs":[{"token":".","logprob":-0.7673723101615906,"bytes":[46],"token_id":-1},{"token":"
+        as","logprob":-0.6423723101615906,"bytes":[32,97,115],"token_id":-1}]},{"token":"</think>","logprob":-1.1534541845321655,"bytes":[60,47,116,104,105,110,107,62],"token_id":-1,"top_logprobs":[{"token":"</think>","logprob":-1.1534541845321655,"bytes":[60,47,116,104,105,110,107,62],"token_id":-1},{"token":"
+        ","logprob":-0.5284541845321655,"bytes":[32],"token_id":-1}]},{"token":"10","logprob":-0.0010080024367198348,"bytes":[49,48],"token_id":-1,"top_logprobs":[{"token":"10","logprob":-0.0010080024367198348,"bytes":[49,48],"token_id":-1},{"token":"**","logprob":-7.626008033752441,"bytes":[42,42],"token_id":-1}]},{"token":"<|user|>","logprob":-9.65590606938349e-6,"bytes":[60,124,117,115,101,114,124,62],"token_id":-1,"top_logprobs":[{"token":"<|user|>","logprob":-9.65590606938349e-6,"bytes":[60,124,117,115,101,114,124,62],"token_id":-1},{"token":"</arg_value>","logprob":-12.875009536743164,"bytes":[60,47,97,114,103,95,118,97,108,117,101,62],"token_id":-1}]}]}}]}
 
 
-        data: {"id":"810331955ba742a0b749725529593d7c","object":"chat.completion.chunk","created":1793017868,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"index":0,"content":[{"type":"thinking","thinking":[{"type":"text","text":"
-        a simple question: What"}],"closed":true}]},"finish_reason":null,"logprobs":{"content":[{"token":"
-        a","logprob":-0.7882869243621826,"bytes":[32,97],"token_id":-1,"top_logprobs":[{"token":"
-        a","logprob":-0.7882869243621826,"bytes":[32,97],"token_id":-1},{"token":"
-        what","logprob":-1.4132869243621826,"bytes":[32,119,104,97,116],"token_id":-1}]},{"token":"
-        simple","logprob":-0.00825741607695818,"bytes":[32,115,105,109,112,108,101],"token_id":-1,"top_logprobs":[{"token":"
-        simple","logprob":-0.00825741607695818,"bytes":[32,115,105,109,112,108,101],"token_id":-1},{"token":"
-        very","logprob":-4.8832573890686035,"bytes":[32,118,101,114,121],"token_id":-1}]},{"token":"
-        question","logprob":-2.2658369541168213,"bytes":[32,113,117,101,115,116,105,111,110],"token_id":-1,"top_logprobs":[{"token":"
-        question","logprob":-2.2658369541168213,"bytes":[32,113,117,101,115,116,105,111,110],"token_id":-1},{"token":"
-        math","logprob":-0.3908368945121765,"bytes":[32,109,97,116,104],"token_id":-1}]},{"token":":","logprob":-0.001809746609069407,"bytes":[58],"token_id":-1,"top_logprobs":[{"token":":","logprob":-0.001809746609069407,"bytes":[58],"token_id":-1},{"token":"
-        and","logprob":-6.626809597015381,"bytes":[32,97,110,100],"token_id":-1}]},{"token":"
-        What","logprob":-2.3005330562591553,"bytes":[32,87,104,97,116],"token_id":-1,"top_logprobs":[{"token":"
-        What","logprob":-2.3005330562591553,"bytes":[32,87,104,97,116],"token_id":-1},{"token":"
-        ","logprob":-0.3005329668521881,"bytes":[32],"token_id":-1}]}]}}]}
-
-
-        data: {"id":"810331955ba742a0b749725529593d7c","object":"chat.completion.chunk","created":1793017868,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"index":0,"content":[{"type":"thinking","thinking":[{"type":"text","text":"
-        is 5+5?"}],"closed":true}]},"finish_reason":null,"logprobs":{"content":[{"token":"
-        is","logprob":-2.0265558760002023e-6,"bytes":[32,105,115],"token_id":-1,"top_logprobs":[{"token":"
-        is","logprob":-2.0265558760002023e-6,"bytes":[32,105,115],"token_id":-1},{"token":"''s","logprob":-14.000001907348633,"bytes":[39,115],"token_id":-1}]},{"token":"
-        ","logprob":-5.960462772236497e-7,"bytes":[32],"token_id":-1,"top_logprobs":[{"token":"
-        ","logprob":-5.960462772236497e-7,"bytes":[32],"token_id":-1},{"token":" the","logprob":-14.875000953674316,"bytes":[32,116,104,101],"token_id":-1}]},{"token":"5","logprob":-8.344646857949556e-7,"bytes":[53],"token_id":-1,"top_logprobs":[{"token":"5","logprob":-8.344646857949556e-7,"bytes":[53],"token_id":-1},{"token":"4","logprob":-15.000000953674316,"bytes":[52],"token_id":-1}]},{"token":"+","logprob":-8.702239938429557e-6,"bytes":[43],"token_id":-1,"top_logprobs":[{"token":"+","logprob":-8.702239938429557e-6,"bytes":[43],"token_id":-1},{"token":"
-        +","logprob":-12.000008583068848,"bytes":[32,43],"token_id":-1}]},{"token":"5","logprob":-3.576278118089249e-7,"bytes":[53],"token_id":-1,"top_logprobs":[{"token":"5","logprob":-3.576278118089249e-7,"bytes":[53],"token_id":-1},{"token":"3","logprob":-16.25,"bytes":[51],"token_id":-1}]},{"token":"?","logprob":-0.005499827675521374,"bytes":[63],"token_id":-1,"top_logprobs":[{"token":"?","logprob":-0.005499827675521374,"bytes":[63],"token_id":-1},{"token":",","logprob":-5.255499839782715,"bytes":[44],"token_id":-1}]}]}}]}
-
-
-        data: {"id":"810331955ba742a0b749725529593d7c","object":"chat.completion.chunk","created":1793017868,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"index":0,"content":[{"type":"thinking","thinking":[{"type":"text","text":"
-        They want me"}],"closed":true}]},"finish_reason":null,"logprobs":{"content":[{"token":"
-        They","logprob":-0.3419930338859558,"bytes":[32,84,104,101,121],"token_id":-1,"top_logprobs":[{"token":"
-        They","logprob":-0.3419930338859558,"bytes":[32,84,104,101,121],"token_id":-1},{"token":"
-        Reply","logprob":-1.3419930934906006,"bytes":[32,82,101,112,108,121],"token_id":-1}]},{"token":"
-        want","logprob":-0.07463180273771286,"bytes":[32,119,97,110,116],"token_id":-1,"top_logprobs":[{"token":"
-        want","logprob":-0.07463180273771286,"bytes":[32,119,97,110,116],"token_id":-1},{"token":"
-        explicitly","logprob":-2.699631690979004,"bytes":[32,101,120,112,108,105,99,105,116,108,121],"token_id":-1}]},{"token":"
-        me","logprob":-1.9109469652175903,"bytes":[32,109,101],"token_id":-1,"top_logprobs":[{"token":"
-        me","logprob":-1.9109469652175903,"bytes":[32,109,101],"token_id":-1},{"token":"
-        just","logprob":-0.16094695031642914,"bytes":[32,106,117,115,116],"token_id":-1}]}]}}]}
-
-
-        data: {"id":"810331955ba742a0b749725529593d7c","object":"chat.completion.chunk","created":1793017868,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"index":0,"content":[{"type":"thinking","thinking":[{"type":"text","text":"
-        to reply with just the number"}],"closed":true}]},"finish_reason":null,"logprobs":{"content":[{"token":"
-        to","logprob":-3.576278118089249e-7,"bytes":[32,116,111],"token_id":-1,"top_logprobs":[{"token":"
-        to","logprob":-3.576278118089249e-7,"bytes":[32,116,111],"token_id":-1},{"token":"
-        reply","logprob":-15.75,"bytes":[32,114,101,112,108,121],"token_id":-1}]},{"token":"
-        reply","logprob":-0.00013255194062367082,"bytes":[32,114,101,112,108,121],"token_id":-1,"top_logprobs":[{"token":"
-        reply","logprob":-0.00013255194062367082,"bytes":[32,114,101,112,108,121],"token_id":-1},{"token":"
-        respond","logprob":-9.37513256072998,"bytes":[32,114,101,115,112,111,110,100],"token_id":-1}]},{"token":"
-        with","logprob":-4.768370445162873e-7,"bytes":[32,119,105,116,104],"token_id":-1,"top_logprobs":[{"token":"
-        with","logprob":-4.768370445162873e-7,"bytes":[32,119,105,116,104],"token_id":-1},{"token":"
-        \"","logprob":-15.5,"bytes":[32,34],"token_id":-1}]},{"token":" just","logprob":-9.298280929215252e-6,"bytes":[32,106,117,115,116],"token_id":-1,"top_logprobs":[{"token":"
-        just","logprob":-9.298280929215252e-6,"bytes":[32,106,117,115,116],"token_id":-1},{"token":"
-        \"","logprob":-11.625009536743164,"bytes":[32,34],"token_id":-1}]},{"token":"
-        the","logprob":-3.814689989667386e-6,"bytes":[32,116,104,101],"token_id":-1,"top_logprobs":[{"token":"
-        the","logprob":-3.814689989667386e-6,"bytes":[32,116,104,101],"token_id":-1},{"token":"
-        a","logprob":-12.625003814697266,"bytes":[32,97],"token_id":-1}]},{"token":"
-        number","logprob":-3.6954811548639555e-6,"bytes":[32,110,117,109,98,101,114],"token_id":-1,"top_logprobs":[{"token":"
-        number","logprob":-3.6954811548639555e-6,"bytes":[32,110,117,109,98,101,114],"token_id":-1},{"token":"
-        answer","logprob":-13.000003814697266,"bytes":[32,97,110,115,119,101,114],"token_id":-1}]}]}}]}
-
-
-        data: {"id":"810331955ba742a0b749725529593d7c","object":"chat.completion.chunk","created":1793017868,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"index":0,"content":[{"type":"thinking","thinking":[{"type":"text","text":".\n\n5+5
-        ="}],"closed":true}]},"finish_reason":null,"logprobs":{"content":[{"token":".\n\n","logprob":-0.11351621150970459,"bytes":[46,10,10],"token_id":-1,"top_logprobs":[{"token":".\n\n","logprob":-0.11351621150970459,"bytes":[46,10,10],"token_id":-1},{"token":".","logprob":-2.238516330718994,"bytes":[46],"token_id":-1}]},{"token":"5","logprob":-0.017383944243192673,"bytes":[53],"token_id":-1,"top_logprobs":[{"token":"5","logprob":-0.017383944243192673,"bytes":[53],"token_id":-1},{"token":"The","logprob":-4.267384052276611,"bytes":[84,104,101],"token_id":-1}]},{"token":"+","logprob":-0.2519846260547638,"bytes":[43],"token_id":-1,"top_logprobs":[{"token":"+","logprob":-0.2519846260547638,"bytes":[43],"token_id":-1},{"token":"
-        +","logprob":-1.5019845962524414,"bytes":[32,43],"token_id":-1}]},{"token":"5","logprob":-1.0728830375228426e-6,"bytes":[53],"token_id":-1,"top_logprobs":[{"token":"5","logprob":-1.0728830375228426e-6,"bytes":[53],"token_id":-1},{"token":"10","logprob":-14.875000953674316,"bytes":[49,48],"token_id":-1}]},{"token":"
-        =","logprob":-0.006006405223160982,"bytes":[32,61],"token_id":-1,"top_logprobs":[{"token":"
-        =","logprob":-0.006006405223160982,"bytes":[32,61],"token_id":-1},{"token":"=","logprob":-5.131006240844727,"bytes":[61],"token_id":-1}]},{"token":"
-        ","logprob":-5.960462772236497e-7,"bytes":[32],"token_id":-1,"top_logprobs":[{"token":"
-        ","logprob":-5.960462772236497e-7,"bytes":[32],"token_id":-1},{"token":"10","logprob":-15.625000953674316,"bytes":[49,48],"token_id":-1}]}]}}]}
-
-
-        data: {"id":"810331955ba742a0b749725529593d7c","object":"chat.completion.chunk","created":1793017868,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"index":0,"content":[{"type":"thinking","thinking":[{"type":"text","text":"
-        10"}],"closed":true}]},"finish_reason":null,"logprobs":{"content":[{"token":"10","logprob":-0.000028729025871143676,"bytes":[49,48],"token_id":-1,"top_logprobs":[{"token":"10","logprob":-0.000028729025871143676,"bytes":[49,48],"token_id":-1},{"token":"101","logprob":-11.500028610229492,"bytes":[49,48,49],"token_id":-1}]},{"token":"\n\n","logprob":-0.6215104460716248,"bytes":[10,10],"token_id":-1,"top_logprobs":[{"token":"\n\n","logprob":-0.6215104460716248,"bytes":[10,10],"token_id":-1},{"token":".\n\n","logprob":-1.1215105056762695,"bytes":[46,10,10],"token_id":-1}]}]}}]}
-
-
-        data: {"id":"810331955ba742a0b749725529593d7c","object":"chat.completion.chunk","created":1793017868,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"index":0,"content":[{"type":"thinking","thinking":[{"type":"text","text":"\n\nThey
-        explicitly"}],"closed":true}]},"finish_reason":null,"logprobs":{"content":[{"token":"They","logprob":-0.1835554540157318,"bytes":[84,104,101,121],"token_id":-1,"top_logprobs":[{"token":"They","logprob":-0.1835554540157318,"bytes":[84,104,101,121],"token_id":-1},{"token":"I","logprob":-2.3085553646087646,"bytes":[73],"token_id":-1}]},{"token":"
-        explicitly","logprob":-0.2451227456331253,"bytes":[32,101,120,112,108,105,99,105,116,108,121],"token_id":-1,"top_logprobs":[{"token":"
-        explicitly","logprob":-0.2451227456331253,"bytes":[32,101,120,112,108,105,99,105,116,108,121],"token_id":-1},{"token":"
-        asked","logprob":-1.7451227903366089,"bytes":[32,97,115,107,101,100],"token_id":-1}]}]}}]}
-
-
-        data: {"id":"810331955ba742a0b749725529593d7c","object":"chat.completion.chunk","created":1793017868,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"index":0,"content":[{"type":"thinking","thinking":[{"type":"text","text":"
-        asked for just the number,"}],"closed":true}]},"finish_reason":null,"logprobs":{"content":[{"token":"
-        asked","logprob":-0.10828482359647751,"bytes":[32,97,115,107,101,100],"token_id":-1,"top_logprobs":[{"token":"
-        asked","logprob":-0.10828482359647751,"bytes":[32,97,115,107,101,100],"token_id":-1},{"token":"
-        said","logprob":-2.6082847118377686,"bytes":[32,115,97,105,100],"token_id":-1}]},{"token":"
-        for","logprob":-0.47489309310913086,"bytes":[32,102,111,114],"token_id":-1,"top_logprobs":[{"token":"
-        for","logprob":-0.47489309310913086,"bytes":[32,102,111,114],"token_id":-1},{"token":"
-        to","logprob":-1.2248930931091309,"bytes":[32,116,111],"token_id":-1}]},{"token":"
-        just","logprob":-0.0015767297009006143,"bytes":[32,106,117,115,116],"token_id":-1,"top_logprobs":[{"token":"
-        just","logprob":-0.0015767297009006143,"bytes":[32,106,117,115,116],"token_id":-1},{"token":"
-        \"","logprob":-6.501576900482178,"bytes":[32,34],"token_id":-1}]},{"token":"
-        the","logprob":-6.6756979322235566e-6,"bytes":[32,116,104,101],"token_id":-1,"top_logprobs":[{"token":"
-        the","logprob":-6.6756979322235566e-6,"bytes":[32,116,104,101],"token_id":-1},{"token":"
-        a","logprob":-12.000006675720215,"bytes":[32,97],"token_id":-1}]},{"token":"
-        number","logprob":-4.768370445162873e-7,"bytes":[32,110,117,109,98,101,114],"token_id":-1,"top_logprobs":[{"token":"
-        number","logprob":-4.768370445162873e-7,"bytes":[32,110,117,109,98,101,114],"token_id":-1},{"token":"
-        answer","logprob":-15.375,"bytes":[32,97,110,115,119,101,114],"token_id":-1}]},{"token":",","logprob":-0.06259308755397797,"bytes":[44],"token_id":-1,"top_logprobs":[{"token":",","logprob":-0.06259308755397797,"bytes":[44],"token_id":-1},{"token":".","logprob":-2.8125929832458496,"bytes":[46],"token_id":-1}]}]}}]}
-
-
-        data: {"id":"810331955ba742a0b749725529593d7c","object":"chat.completion.chunk","created":1793017868,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"index":0,"content":[{"type":"thinking","thinking":[{"type":"text","text":"
-        so I should just respond"}],"closed":true}]},"finish_reason":null,"logprobs":{"content":[{"token":"
-        so","logprob":-0.0007435894221998751,"bytes":[32,115,111],"token_id":-1,"top_logprobs":[{"token":"
-        so","logprob":-0.0007435894221998751,"bytes":[32,115,111],"token_id":-1},{"token":"
-        no","logprob":-7.250743389129639,"bytes":[32,110,111],"token_id":-1}]},{"token":"
-        I","logprob":-0.012773128226399422,"bytes":[32,73],"token_id":-1,"top_logprobs":[{"token":"
-        I","logprob":-0.012773128226399422,"bytes":[32,73],"token_id":-1},{"token":"
-        my","logprob":-4.387773036956787,"bytes":[32,109,121],"token_id":-1}]},{"token":"
-        should","logprob":-0.000071403817855753,"bytes":[32,115,104,111,117,108,100],"token_id":-1,"top_logprobs":[{"token":"
-        should","logprob":-0.000071403817855753,"bytes":[32,115,104,111,117,108,100],"token_id":-1},{"token":"''ll","logprob":-9.75007152557373,"bytes":[39,108,108],"token_id":-1}]},{"token":"
-        just","logprob":-1.2652604579925537,"bytes":[32,106,117,115,116],"token_id":-1,"top_logprobs":[{"token":"
-        just","logprob":-1.2652604579925537,"bytes":[32,106,117,115,116],"token_id":-1},{"token":"
-        reply","logprob":-0.7652605175971985,"bytes":[32,114,101,112,108,121],"token_id":-1}]},{"token":"
-        respond","logprob":-3.4446141719818115,"bytes":[32,114,101,115,112,111,110,100],"token_id":-1,"top_logprobs":[{"token":"
-        respond","logprob":-3.4446141719818115,"bytes":[32,114,101,115,112,111,110,100],"token_id":-1},{"token":"
-        say","logprob":-0.19461409747600555,"bytes":[32,115,97,121],"token_id":-1}]}]}}]}
-
-
-        data: {"id":"810331955ba742a0b749725529593d7c","object":"chat.completion.chunk","created":1793017868,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"index":0,"content":[{"type":"thinking","thinking":[{"type":"text","text":"
-        with \"10\""}],"closed":true}]},"finish_reason":null,"logprobs":{"content":[{"token":"
-        with","logprob":-0.06196907162666321,"bytes":[32,119,105,116,104],"token_id":-1,"top_logprobs":[{"token":"
-        with","logprob":-0.06196907162666321,"bytes":[32,119,105,116,104],"token_id":-1},{"token":"
-        \"","logprob":-2.811969041824341,"bytes":[32,34],"token_id":-1}]},{"token":"
-        \"","logprob":-0.0001629458274692297,"bytes":[32,34],"token_id":-1,"top_logprobs":[{"token":"
-        \"","logprob":-0.0001629458274692297,"bytes":[32,34],"token_id":-1},{"token":"
-        ","logprob":-8.750163078308105,"bytes":[32],"token_id":-1}]},{"token":"10","logprob":-2.622600959512056e-6,"bytes":[49,48],"token_id":-1,"top_logprobs":[{"token":"10","logprob":-2.622600959512056e-6,"bytes":[49,48],"token_id":-1},{"token":"5","logprob":-13.87500286102295,"bytes":[53],"token_id":-1}]},{"token":"\"","logprob":-0.8985556364059448,"bytes":[34],"token_id":-1,"top_logprobs":[{"token":"\"","logprob":-0.8985556364059448,"bytes":[34],"token_id":-1},{"token":"\".","logprob":-0.5235556364059448,"bytes":[34,46],"token_id":-1}]}]}}]}
-
-
-        data: {"id":"810331955ba742a0b749725529593d7c","object":"chat.completion.chunk","created":1793017868,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"index":0,"content":[{"type":"thinking","thinking":[{"type":"text","text":"
-        and"}],"closed":true}]},"finish_reason":null,"logprobs":{"content":[{"token":"
-        and","logprob":-1.297399878501892,"bytes":[32,97,110,100],"token_id":-1,"top_logprobs":[{"token":"
-        and","logprob":-1.297399878501892,"bytes":[32,97,110,100],"token_id":-1},{"token":"
-        without","logprob":-0.6723998785018921,"bytes":[32,119,105,116,104,111,117,116],"token_id":-1}]}]}}]}
-
-
-        data: {"id":"810331955ba742a0b749725529593d7c","object":"chat.completion.chunk","created":1793017868,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"index":0,"content":[{"type":"thinking","thinking":[{"type":"text","text":"
-        nothing else."}],"closed":true},{"type":"text","text":"10"}]},"finish_reason":null,"logprobs":{"content":[{"token":"
-        nothing","logprob":-0.000024914430468925275,"bytes":[32,110,111,116,104,105,110,103],"token_id":-1,"top_logprobs":[{"token":"
-        nothing","logprob":-0.000024914430468925275,"bytes":[32,110,111,116,104,105,110,103],"token_id":-1},{"token":"
-        no","logprob":-11.625024795532227,"bytes":[32,110,111],"token_id":-1}]},{"token":"
-        else","logprob":-0.000014066597032069694,"bytes":[32,101,108,115,101],"token_id":-1,"top_logprobs":[{"token":"
-        else","logprob":-0.000014066597032069694,"bytes":[32,101,108,115,101],"token_id":-1},{"token":"
-        more","logprob":-11.250014305114746,"bytes":[32,109,111,114,101],"token_id":-1}]},{"token":".","logprob":-0.00026556302327662706,"bytes":[46],"token_id":-1,"top_logprobs":[{"token":".","logprob":-0.00026556302327662706,"bytes":[46],"token_id":-1},{"token":".\n\n","logprob":-9.125265121459961,"bytes":[46,10,10],"token_id":-1}]},{"token":"</think>","logprob":-0.04608290269970894,"bytes":[60,47,116,104,105,110,107,62],"token_id":-1,"top_logprobs":[{"token":"</think>","logprob":-0.04608290269970894,"bytes":[60,47,116,104,105,110,107,62],"token_id":-1},{"token":"
-        No","logprob":-3.6710829734802246,"bytes":[32,78,111],"token_id":-1}]},{"token":"10","logprob":-0.00007319182623177767,"bytes":[49,48],"token_id":-1,"top_logprobs":[{"token":"10","logprob":-0.00007319182623177767,"bytes":[49,48],"token_id":-1},{"token":"**","logprob":-9.875073432922363,"bytes":[42,42],"token_id":-1}]}]}}]}
-
-
-        data: {"id":"810331955ba742a0b749725529593d7c","object":"chat.completion.chunk","created":1793017868,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"index":0,"content":""},"finish_reason":"stop","logprobs":{"content":[{"token":"<|user|>","logprob":-7.152531907195225e-6,"bytes":[60,124,117,115,101,114,124,62],"token_id":-1,"top_logprobs":[{"token":"<|user|>","logprob":-7.152531907195225e-6,"bytes":[60,124,117,115,101,114,124,62],"token_id":-1},{"token":"<tool_call>","logprob":-13.250006675720215,"bytes":[60,116,111,111,108,95,99,97,108,108,62],"token_id":-1}]}]},"response_error":{"format_error":null,"content_validation":["valid_think_chunk","valid_text_chunk"],"tool_calls_validation":[],"extra_tags":[]}}],"usage":{"prompt_tokens":25,"total_tokens":80,"completion_tokens":55,"prompt_tokens_details":{"cached_tokens":0},"completion_tokens_details":{"reasoning_tokens":52}}}
+        data: {"id":"eefeb44d70e040c7b032bc6332737ff0","object":"chat.completion.chunk","created":1793627388,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"index":0,"content":""},"finish_reason":"stop","logprobs":null,"response_error":{"format_error":null,"content_validation":["valid_think_chunk","valid_text_chunk"],"tool_calls_validation":[],"extra_tags":[]}}],"usage":{"prompt_tokens":25,"total_tokens":41,"completion_tokens":16,"prompt_tokens_details":{"cached_tokens":0},"completion_tokens_details":{"reasoning_tokens":13}}}
 
 
         data: [DONE]
@@ -200,15 +83,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a50979ebe8eca229-YYZ
+      - a5439ac48b94c48a-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 26 Oct 2026 12:31:08 GMT
+      - Mon, 02 Nov 2026 13:49:48 GMT
       mistral-correlation-id:
-      - 01a17831-6fb1-7fd6-90d9-b1af34349aa0
+      - 01a19c85-f70d-7b7b-8a27-09e5ee994962
       server:
       - cloudflare
       strict-transport-security:
@@ -218,13 +101,21 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '362'
+      - '757'
       x-kong-proxy-latency:
-      - '16'
+      - '20'
       x-kong-request-id:
-      - 01a17831-6fb1-7fd6-90d9-b1af34349aa0
+      - 01a19c85-f70d-7b7b-8a27-09e5ee994962
       x-kong-upstream-latency:
-      - '363'
+      - '759'
+      x-ratelimit-limit-req-minute:
+      - '1000'
+      x-ratelimit-limit-tokens-minute:
+      - '32000000'
+      x-ratelimit-remaining-req-minute:
+      - '998'
+      x-ratelimit-remaining-tokens-minute:
+      - '31999954'
     status:
       code: 200
       message: OK
