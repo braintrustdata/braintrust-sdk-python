@@ -17,12 +17,12 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/3.5.0
+      - mistral-client-python/3.7.0
     method: POST
     uri: https://api.mistral.ai/v1/chat/completions
   response:
     body:
-      string: '{"id":"ee00f5acc23d4f749221cc37f2f14e1d","created":1793017867,"model":"mistral-small-latest","usage":{"prompt_tokens":88,"total_tokens":100,"completion_tokens":12,"prompt_tokens_details":{"cached_tokens":0},"completion_tokens_details":{"reasoning_tokens":0},"service_tier":"standard"},"object":"chat.completion","choices":[{"index":0,"finish_reason":"tool_calls","message":{"role":"assistant","tool_calls":[{"id":"GMr5ZUmF2","type":"function","function":{"name":"get_weather","arguments":"{\"city\":
+      string: '{"id":"d2131c141ce143e595c0099ad27e512f","created":1793627386,"model":"mistral-small-latest","usage":{"prompt_tokens":88,"total_tokens":100,"completion_tokens":12,"prompt_tokens_details":{"cached_tokens":0},"completion_tokens_details":{"reasoning_tokens":0},"service_tier":"standard"},"object":"chat.completion","choices":[{"index":0,"finish_reason":"tool_calls","message":{"role":"assistant","tool_calls":[{"id":"t1ZNA3e2Q","type":"function","function":{"name":"get_weather","arguments":"{\"city\":
         \"Paris\"}"},"index":0}],"content":""}}]}'
     headers:
       access-control-allow-origin:
@@ -32,7 +32,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a50979e49e7b78a5-YYZ
+      - a5439abc28b674a5-YYZ
       connection:
       - keep-alive
       content-length:
@@ -40,9 +40,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 26 Oct 2026 12:31:07 GMT
+      - Mon, 02 Nov 2026 13:49:46 GMT
       mistral-correlation-id:
-      - 01a17831-6b1a-7966-a28b-28eca2dd62eb
+      - 01a19c85-f1db-73e8-8bcb-fff42f9c86c0
       server:
       - cloudflare
       strict-transport-security:
@@ -52,13 +52,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '289'
-      x-kong-proxy-latency:
-      - '19'
-      x-kong-request-id:
-      - 01a17831-6b1a-7966-a28b-28eca2dd62eb
-      x-kong-upstream-latency:
       - '290'
+      x-kong-proxy-latency:
+      - '24'
+      x-kong-request-id:
+      - 01a19c85-f1db-73e8-8bcb-fff42f9c86c0
+      x-kong-upstream-latency:
+      - '293'
       x-max-retry-attempts-reached:
       - 'false'
       x-ratelimit-limit-req-minute:
@@ -68,7 +68,7 @@ interactions:
       x-ratelimit-remaining-req-minute:
       - '99'
       x-ratelimit-remaining-tokens-minute:
-      - '99883'
+      - '99900'
       x-ratelimit-tokens-query-cost:
       - '100'
     status:

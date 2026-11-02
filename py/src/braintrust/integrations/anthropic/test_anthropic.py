@@ -330,17 +330,23 @@ def test_anthropic_beta_messages_create_captures_compaction_metadata(memory_logg
         pytest.skip("On-demand compaction requires the latest Anthropic API")
 
     client = wrap_anthropic(_get_client())
-    client.beta.messages.create(
+    # The compaction summary alone can use ~450 output tokens; leave headroom so
+    # the live API finishes with ``stop_reason="compaction"`` rather than
+    # ``max_tokens`` when re-recording.
+    response = client.beta.messages.create(
         model="claude-opus-5",
-        max_tokens=512,
+        max_tokens=4096,
         messages=[{"role": "user", "content": "Summarize this sentence: compaction captures request metadata."}],
         compaction={"type": "summarize"},
         betas=["compact-2026-09-04"],
     )
+    assert response.stop_reason == "compaction"
+    assert any(block.type == "compaction" for block in response.content)
 
     span = find_span_by_name(memory_logger.pop(), "anthropic.messages.create")
     assert "error" not in span
     assert span["metadata"]["compaction"] == {"type": "summarize"}
+    assert span["output"]["stop_reason"] == "compaction"
 
 
 @pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
@@ -1217,7 +1223,10 @@ def test_anthropic_messages_sync_server_tool_spans(memory_logger):
     result_block = next(block for block in msg.content if block.type == "web_search_tool_result")
     text_block = next(block for block in msg.content if block.type == "text")
 
-    assert text_block.text == "https://www.braintrust.dev/docs"
+    # Live search results drift, so assert structure rather than a specific URL.
+    assert text_block.text
+    assert result_block.content
+    result_urls = [result.url for result in result_block.content]
 
     spans = memory_logger.pop()
     llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
@@ -1242,9 +1251,10 @@ def test_anthropic_messages_sync_server_tool_spans(memory_logger):
 
     assert tool_span["input"] == tool_use_block.input
     assert isinstance(tool_span["output"], list)
-    matching_result = next(result for result in tool_span["output"] if result["url"] == text_block.text)
-    assert matching_result["type"] == "web_search_result"
-    assert matching_result["encrypted_content"] == "<redacted>"
+    assert [result["url"] for result in tool_span["output"]] == result_urls
+    for result in tool_span["output"]:
+        assert result["type"] == "web_search_result"
+        assert result["encrypted_content"] == "<redacted>"
     assert tool_span["metadata"] == {
         "tool_use_id": tool_use_block.id,
         "tool_call_type": "server_tool_use",

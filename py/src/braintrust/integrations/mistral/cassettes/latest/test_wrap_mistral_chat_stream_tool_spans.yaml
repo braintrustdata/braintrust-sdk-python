@@ -17,16 +17,16 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/3.5.0
+      - mistral-client-python/3.7.0
     method: POST
     uri: https://api.mistral.ai/v1/chat/completions#stream
   response:
     body:
-      string: 'data: {"id":"56f2dede291445f7a0f6d3ea12962bd7","object":"chat.completion.chunk","created":1793017867,"model":"mistral-small-latest","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
+      string: 'data: {"id":"d22d237be6b548a9b467cdcf87f1ac81","object":"chat.completion.chunk","created":1793627386,"model":"mistral-small-latest","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
 
 
-        data: {"id":"56f2dede291445f7a0f6d3ea12962bd7","object":"chat.completion.chunk","created":1793017867,"model":"mistral-small-latest","choices":[{"index":0,"delta":{"tool_calls":[{"id":"qtil6yEzE","type":"function","function":{"name":"get_weather","arguments":"{\"city\":
-        \"Paris\"}"},"index":0}]},"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":88,"total_tokens":100,"completion_tokens":12,"prompt_tokens_details":{"cached_tokens":64},"completion_tokens_details":{"reasoning_tokens":0},"service_tier":"standard"},"p":"abcdefghijk"}
+        data: {"id":"d22d237be6b548a9b467cdcf87f1ac81","object":"chat.completion.chunk","created":1793627386,"model":"mistral-small-latest","choices":[{"index":0,"delta":{"tool_calls":[{"id":"UUledHtNz","type":"function","function":{"name":"get_weather","arguments":"{\"city\":
+        \"Paris\"}"},"index":0}]},"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":88,"total_tokens":100,"completion_tokens":12,"prompt_tokens_details":{"cached_tokens":64},"completion_tokens_details":{"reasoning_tokens":0},"service_tier":"standard"},"p":"abcdefghijklmnopqrstuvwxy"}
 
 
         data: [DONE]
@@ -41,15 +41,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a50979e7dec9e403-YYZ
+      - a5439abf7863ac6c-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 26 Oct 2026 12:31:08 GMT
+      - Mon, 02 Nov 2026 13:49:47 GMT
       mistral-correlation-id:
-      - 01a17831-6d2a-78c0-aef0-5585665ed5c0
+      - 01a19c85-f3eb-7044-a9ed-c03e3ee03a88
       server:
       - cloudflare
       strict-transport-security:
@@ -59,15 +59,23 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '418'
+      - '435'
       x-kong-proxy-latency:
-      - '20'
+      - '43'
       x-kong-request-id:
-      - 01a17831-6d2a-78c0-aef0-5585665ed5c0
+      - 01a19c85-f3eb-7044-a9ed-c03e3ee03a88
       x-kong-upstream-latency:
-      - '420'
+      - '443'
       x-max-retry-attempts-reached:
       - 'false'
+      x-ratelimit-limit-req-minute:
+      - '100'
+      x-ratelimit-limit-tokens-minute:
+      - '100000'
+      x-ratelimit-remaining-req-minute:
+      - '98'
+      x-ratelimit-remaining-tokens-minute:
+      - '99900'
     status:
       code: 200
       message: OK

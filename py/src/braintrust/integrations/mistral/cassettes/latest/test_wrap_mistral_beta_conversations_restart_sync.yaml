@@ -15,12 +15,12 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/3.5.0
+      - mistral-client-python/3.7.0
     method: POST
     uri: https://api.mistral.ai/v1/conversations
   response:
     body:
-      string: '{"object":"conversation.response","conversation_id":"conv_01a17832072b70cab430ea1b09d24ee4","outputs":[{"object":"entry","type":"message.output","created_at":"2026-10-26T12:31:47.192858Z","completed_at":"2026-10-26T12:31:47.205356Z","model":"mistral-small-latest","id":"msg_01a1783207f8707a83fad5e7d8348507","role":"assistant","content":"10"}],"usage":{"prompt_tokens":16,"completion_tokens":3,"total_tokens":19},"guardrails":null}'
+      string: '{"object":"conversation.response","conversation_id":"conv_01a19c8623f4712781169a0d57411cbb","outputs":[{"object":"entry","type":"message.output","created_at":"2026-11-02T13:49:59.345829Z","completed_at":"2026-11-02T13:49:59.357846Z","model":"mistral-small-latest","id":"msg_01a19c8624b170d7b97a8c2cc467946c","role":"assistant","content":"10"}],"usage":{"prompt_tokens":16,"completion_tokens":3,"total_tokens":19},"guardrails":null}'
     headers:
       access-control-allow-origin:
       - '*'
@@ -29,7 +29,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5097addbf49ab9a-YYZ
+      - a5439b0b68ee36b3-YYZ
       connection:
       - keep-alive
       content-length:
@@ -37,9 +37,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 26 Oct 2026 12:31:47 GMT
+      - Mon, 02 Nov 2026 13:49:59 GMT
       mistral-correlation-id:
-      - 01a17832-06d9-7fa3-bbe9-49935db1025d
+      - 01a19c86-236e-7e41-8316-9a8e9a9416c8
       server:
       - cloudflare
       strict-transport-security:
@@ -49,22 +49,22 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '320'
+      - '348'
       x-kong-proxy-latency:
-      - '13'
+      - '24'
       x-kong-request-id:
-      - 01a17832-06d9-7fa3-bbe9-49935db1025d
+      - 01a19c86-236e-7e41-8316-9a8e9a9416c8
       x-kong-upstream-latency:
-      - '324'
+      - '351'
       x-ratelimit-limit-tokens-minute:
       - '100000'
       x-ratelimit-remaining-tokens-minute:
-      - '99457'
+      - '99180'
     status:
       code: 200
       message: OK
 - request:
-    body: '{"from_entry_id":"msg_01a1783207f8707a83fad5e7d8348507","inputs":"What
+    body: '{"from_entry_id":"msg_01a19c8624b170d7b97a8c2cc467946c","inputs":"What
       is 6+6? Reply with just the number.","stream":false,"store":true,"handoff_execution":"server"}'
     headers:
       accept:
@@ -80,12 +80,12 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/3.5.0
+      - mistral-client-python/3.7.0
     method: POST
-    uri: https://api.mistral.ai/v1/conversations/conv_01a17832072b70cab430ea1b09d24ee4/restart
+    uri: https://api.mistral.ai/v1/conversations/conv_01a19c8623f4712781169a0d57411cbb/restart
   response:
     body:
-      string: '{"object":"conversation.response","conversation_id":"conv_01a17832093975e0ae72d2d85f75235e","outputs":[{"object":"entry","type":"message.output","created_at":"2026-10-26T12:31:47.855824Z","completed_at":"2026-10-26T12:31:47.876948Z","model":"mistral-small-latest","id":"msg_01a178320a8f7393a3bead9ebd70dfd3","role":"assistant","content":"12"}],"usage":{"prompt_tokens":34,"completion_tokens":3,"total_tokens":37},"guardrails":null}'
+      string: '{"object":"conversation.response","conversation_id":"conv_01a19c8626227514ae93775a9783d405","outputs":[{"object":"entry","type":"message.output","created_at":"2026-11-02T13:49:59.957688Z","completed_at":"2026-11-02T13:49:59.962917Z","model":"mistral-small-latest","id":"msg_01a19c86271574d1a3e6e327b5175264","role":"assistant","content":"12"}],"usage":{"prompt_tokens":34,"completion_tokens":3,"total_tokens":37},"guardrails":null}'
     headers:
       access-control-allow-origin:
       - '*'
@@ -94,7 +94,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5097ae0f96bab9a-YYZ
+      - a5439b0ebc9b36b3-YYZ
       connection:
       - keep-alive
       content-length:
@@ -102,9 +102,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 26 Oct 2026 12:31:47 GMT
+      - Mon, 02 Nov 2026 13:50:00 GMT
       mistral-correlation-id:
-      - 01a17832-08de-7600-9d5a-a2bbb671799d
+      - 01a19c86-2573-7bde-96c9-a30829121f27
       server:
       - cloudflare
       strict-transport-security:
@@ -114,17 +114,17 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '468'
+      - '382'
       x-kong-proxy-latency:
-      - '14'
+      - '62'
       x-kong-request-id:
-      - 01a17832-08de-7600-9d5a-a2bbb671799d
+      - 01a19c86-2573-7bde-96c9-a30829121f27
       x-kong-upstream-latency:
-      - '472'
+      - '392'
       x-ratelimit-limit-tokens-minute:
       - '100000'
       x-ratelimit-remaining-tokens-minute:
-      - '99421'
+      - '99143'
     status:
       code: 200
       message: OK

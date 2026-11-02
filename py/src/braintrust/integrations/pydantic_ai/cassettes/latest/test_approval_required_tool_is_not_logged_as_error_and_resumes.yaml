@@ -17,7 +17,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.61.0
+      - pydantic-ai/2.64.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -27,7 +27,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.37.0
+      - 3.42.1
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -40,16 +40,16 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0ec47357b677c282016adf482d67a487d1aafe805cd578c24a\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1793017901,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0fea8d57a7f69275016ae8944b82c087d1828a43f21fbb8656\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1793627211,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1793017901,\n  \"error\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1793627212,\n  \"error\":
         null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": 200,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"fc_0ec47357b677c282016adf482ddff087d1b723929032fb6c02\",\n
+        \     \"id\": \"fc_0fea8d57a7f69275016ae8944c596087d19a5ba22c0924dd72\",\n
         \     \"type\": \"function_call\",\n      \"status\": \"completed\",\n      \"arguments\":
-        \"{\\\"path\\\":\\\"/tmp/report.txt\\\"}\",\n      \"call_id\": \"call_hFY6OrwRvhmFzqdUnqFZKrnK\",\n
+        \"{\\\"path\\\":\\\"/tmp/report.txt\\\"}\",\n      \"call_id\": \"call_ZMKWEbIIeE1dJKN7cIxFQaor\",\n
         \     \"name\": \"delete_file\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n
         \ \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
         null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
@@ -84,7 +84,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5097abb4cbbab84-YYZ
+      - a54396776a25a1fe-YYZ
       connection:
       - keep-alive
       content-length:
@@ -92,9 +92,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 26 Oct 2026 12:31:42 GMT
+      - Mon, 02 Nov 2026 13:46:52 GMT
       openai-processing-ms:
-      - '605'
+      - '916'
       openai-version:
       - '2020-10-01'
       server:
@@ -118,13 +118,13 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_dd95b71053564093abb6008b591d8b8f
+      - req_b6d80d5791984ab8b0c3f5cf2d9fb285
     status:
       code: 200
       message: OK
 - request:
     body: '{"model":"gpt-4o-mini","stream":false,"input":[{"role":"user","content":"Delete
-      the file at /tmp/report.txt."},{"name":"delete_file","arguments":"{\"path\":\"/tmp/report.txt\"}","call_id":"call_hFY6OrwRvhmFzqdUnqFZKrnK","type":"function_call"},{"type":"function_call_output","call_id":"call_hFY6OrwRvhmFzqdUnqFZKrnK","output":"Deleted
+      the file at /tmp/report.txt."},{"name":"delete_file","arguments":"{\"path\":\"/tmp/report.txt\"}","call_id":"call_ZMKWEbIIeE1dJKN7cIxFQaor","type":"function_call"},{"type":"function_call_output","call_id":"call_ZMKWEbIIeE1dJKN7cIxFQaor","output":"Deleted
       /tmp/report.txt"}],"max_output_tokens":200,"tool_choice":"auto","tools":[{"name":"delete_file","parameters":{"additionalProperties":false,"properties":{"path":{"type":"string"}},"required":["path"],"type":"object"},"type":"function","description":"Delete
       the file at the given path.","strict":true}]}'
     headers:
@@ -141,7 +141,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.61.0
+      - pydantic-ai/2.64.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -151,7 +151,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.37.0
+      - 3.42.1
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -164,18 +164,18 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_00caf7031c39ae7a016adf482e21d087d19a394149678a4e3f\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1793017902,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0f6b64023c09927e016ae8944c969487d18aeeadd907523b8d\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1793627212,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1793017902,\n  \"error\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1793627213,\n  \"error\":
         null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": 200,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_00caf7031c39ae7a016adf482e738c87d1987ae317f704f023\",\n
+        \     \"id\": \"msg_0f6b64023c09927e016ae8944d0f5487d19038022b2ce99610\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"The file at /tmp/report.txt
-        has been deleted.\"\n        }\n      ],\n      \"role\": \"assistant\"\n
+        [],\n          \"logprobs\": [],\n          \"text\": \"The file at `/tmp/report.txt`
+        has been successfully deleted.\"\n        }\n      ],\n      \"role\": \"assistant\"\n
         \   }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n
         \ \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
         \"in_memory\",\n  \"reasoning\": {\n    \"context\": null,\n    \"effort\":
@@ -196,8 +196,8 @@ interactions:
         \   }\n  ],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
         \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 76,\n    \"input_tokens_details\":
         {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 13,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 89\n  },\n  \"user\": null,\n  \"metadata\":
+        \   \"output_tokens\": 15,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        0\n    },\n    \"total_tokens\": 91\n  },\n  \"user\": null,\n  \"metadata\":
         {}\n}"
     headers:
       access-control-expose-headers:
@@ -209,17 +209,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5097abfd87fab84-YYZ
+      - a543967e0fc8a1fe-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2462'
+      - '2477'
       content-type:
       - application/json
       date:
-      - Mon, 26 Oct 2026 12:31:42 GMT
+      - Mon, 02 Nov 2026 13:46:53 GMT
       openai-processing-ms:
-      - '470'
+      - '741'
       openai-version:
       - '2020-10-01'
       server:
@@ -243,7 +243,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_1f54d7b382f74bc8bd46accb062375ee
+      - req_58388938a2064470a0df5ae48a5946ba
     status:
       code: 200
       message: OK

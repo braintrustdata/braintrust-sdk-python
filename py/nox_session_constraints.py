@@ -15,6 +15,7 @@ CONSTRAINTS = {
     "test_pipecat": {"min_python": "3.11", "max_python_exclusive": "3.14"},
     "test_agentscope": {"versions": {"latest": {"min_python": "3.11"}}},
     "test_google_adk": {"versions": {"latest": {"min_python": "3.11"}}},  # google-adk 2.12 requires 3.11
+    "test_google_genai": {"versions": {"latest": {"min_python": "3.11"}}},  # google-genai 2.34 requires 3.11
     "test_pydantic_ai_integration": {"versions": {"latest": {"min_python": "3.11"}}},
     "test_pydantic_ai_logfire": {"versions": {"latest": {"min_python": "3.11"}}},
     "test_pydantic_ai_wrap_openai": {"versions": {"latest": {"min_python": "3.11"}}},
@@ -23,7 +24,8 @@ CONSTRAINTS = {
     "test_deepagents": {"min_python": "3.11", "max_python_exclusive": "3.15"},  # ormsgpack
     "test_transformers": {
         "max_python_exclusive": "3.15",  # sentencepiece
-        "versions": {"not_latest": {"max_python_exclusive": "3.13"}},
+        # transformers 5.22 requires Python 3.11.
+        "versions": {"latest": {"min_python": "3.11"}, "not_latest": {"max_python_exclusive": "3.13"}},
     },
     "test_harbor": {"min_python": "3.12", "max_python_exclusive": "3.15"},  # fastuuid
     "test_instructor": {"max_python_exclusive": "3.15"},  # jiter 0.10

@@ -16,62 +16,67 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/3.5.0
+      - mistral-client-python/3.7.0
     method: POST
     uri: https://api.mistral.ai/v1/conversations#stream
   response:
     body:
       string: 'event: conversation.response.started
 
-        data: {"type":"conversation.response.started","created_at":"2026-10-26T12:31:42.584173Z","conversation_id":"conv_01a17831f3067204af139557a0ad5fa1"}
+        data: {"type":"conversation.response.started","created_at":"2026-11-02T13:49:55.218919Z","conversation_id":"conv_01a19c86113b760a86eaec7fc10cca53"}
 
 
         event: tool.execution.started
 
-        data: {"type":"tool.execution.started","created_at":"2026-10-26T12:31:42.588606Z","output_index":0,"id":"tool_exec_01a17831f5fc71b8969a0366157ddea4","model":"mistral-small-latest","name":"code_interpreter","arguments":"","function":"code_interpreter"}
+        data: {"type":"tool.execution.started","created_at":"2026-11-02T13:49:55.222364Z","output_index":0,"id":"tool_exec_01a19c86149672b5a92888f999e907cc","model":"mistral-small-latest","name":"code_interpreter","arguments":"","function":"code_interpreter"}
 
 
         event: tool.execution.delta
 
-        data: {"type":"tool.execution.delta","created_at":"2026-10-26T12:31:42.596309Z","output_index":0,"id":"tool_exec_01a17831f5fc71b8969a0366157ddea4","name":"code_interpreter","arguments":"{\"code","function":"code_interpreter"}
+        data: {"type":"tool.execution.delta","created_at":"2026-11-02T13:49:55.234218Z","output_index":0,"id":"tool_exec_01a19c86149672b5a92888f999e907cc","name":"code_interpreter","arguments":"{\"code","function":"code_interpreter"}
 
 
         event: tool.execution.delta
 
-        data: {"type":"tool.execution.delta","created_at":"2026-10-26T12:31:42.611136Z","output_index":0,"id":"tool_exec_01a17831f5fc71b8969a0366157ddea4","name":"code_interpreter","arguments":"\":
+        data: {"type":"tool.execution.delta","created_at":"2026-11-02T13:49:55.247742Z","output_index":0,"id":"tool_exec_01a19c86149672b5a92888f999e907cc","name":"code_interpreter","arguments":"\":
         \"","function":"code_interpreter"}
 
 
         event: tool.execution.delta
 
-        data: {"type":"tool.execution.delta","created_at":"2026-10-26T12:31:42.626207Z","output_index":0,"id":"tool_exec_01a17831f5fc71b8969a0366157ddea4","name":"code_interpreter","arguments":"21
-        * ","function":"code_interpreter"}
+        data: {"type":"tool.execution.delta","created_at":"2026-11-02T13:49:55.263081Z","output_index":0,"id":"tool_exec_01a19c86149672b5a92888f999e907cc","name":"code_interpreter","arguments":"2","function":"code_interpreter"}
 
 
         event: tool.execution.delta
 
-        data: {"type":"tool.execution.delta","created_at":"2026-10-26T12:31:42.649318Z","output_index":0,"id":"tool_exec_01a17831f5fc71b8969a0366157ddea4","name":"code_interpreter","arguments":"2\"}","function":"code_interpreter"}
+        data: {"type":"tool.execution.delta","created_at":"2026-11-02T13:49:55.278799Z","output_index":0,"id":"tool_exec_01a19c86149672b5a92888f999e907cc","name":"code_interpreter","arguments":"1
+        * 2","function":"code_interpreter"}
+
+
+        event: tool.execution.delta
+
+        data: {"type":"tool.execution.delta","created_at":"2026-11-02T13:49:55.300496Z","output_index":0,"id":"tool_exec_01a19c86149672b5a92888f999e907cc","name":"code_interpreter","arguments":"\"}","function":"code_interpreter"}
 
 
         event: tool.execution.done
 
-        data: {"type":"tool.execution.done","created_at":"2026-10-26T12:31:43.911121Z","output_index":0,"id":"tool_exec_01a17831f5fc71b8969a0366157ddea4","name":"code_interpreter","function":"code_interpreter","info":{"result":[{"type":"text","text":"42\n"}],"code":"21
+        data: {"type":"tool.execution.done","created_at":"2026-11-02T13:49:56.826603Z","output_index":0,"id":"tool_exec_01a19c86149672b5a92888f999e907cc","name":"code_interpreter","function":"code_interpreter","info":{"result":[{"type":"text","text":"42\n"}],"code":"21
         * 2","code_output":"42\n"}}
 
 
         event: message.output.delta
 
-        data: {"type":"message.output.delta","created_at":"2026-10-26T12:31:44.266529Z","output_index":1,"id":"msg_01a17831fc8a720e8a547f3d0f0a489f","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"4"}
+        data: {"type":"message.output.delta","created_at":"2026-11-02T13:49:57.045375Z","output_index":1,"id":"msg_01a19c861bb5743f9ab17aadcecdfc21","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"4"}
 
 
         event: message.output.delta
 
-        data: {"type":"message.output.delta","created_at":"2026-10-26T12:31:44.279942Z","output_index":1,"id":"msg_01a17831fc8a720e8a547f3d0f0a489f","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"2"}
+        data: {"type":"message.output.delta","created_at":"2026-11-02T13:49:57.061518Z","output_index":1,"id":"msg_01a19c861bb5743f9ab17aadcecdfc21","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"2"}
 
 
         event: conversation.response.done
 
-        data: {"type":"conversation.response.done","created_at":"2026-10-26T12:31:44.312859Z","usage":{"prompt_tokens":240,"completion_tokens":19,"total_tokens":264,"connector_tokens":5,"connectors":{"code_interpreter":1}}}
+        data: {"type":"conversation.response.done","created_at":"2026-11-02T13:49:57.085066Z","usage":{"prompt_tokens":240,"completion_tokens":19,"total_tokens":264,"connector_tokens":5,"connectors":{"code_interpreter":1}}}
 
 
         '
@@ -83,15 +88,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5097abd7997cceb-YYZ
+      - a5439aedb9a3ac81-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 26 Oct 2026 12:31:42 GMT
+      - Mon, 02 Nov 2026 13:49:55 GMT
       mistral-correlation-id:
-      - 01a17831-f2b5-71a9-a703-eccd41274062
+      - 01a19c86-10d4-79cb-8bdd-303da4dea33a
       server:
       - cloudflare
       strict-transport-security:
@@ -101,13 +106,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '818'
+      - '896'
       x-kong-proxy-latency:
-      - '17'
+      - '62'
       x-kong-request-id:
-      - 01a17831-f2b5-71a9-a703-eccd41274062
+      - 01a19c86-10d4-79cb-8bdd-303da4dea33a
       x-kong-upstream-latency:
-      - '823'
+      - '902'
     status:
       code: 200
       message: OK

@@ -635,6 +635,7 @@ GENAI_VERSIONS = _get_matrix_versions("google-genai")
 @nox.session()
 @nox.parametrize("version", GENAI_VERSIONS, ids=GENAI_VERSIONS)
 def test_google_genai(session, version):
+    _skip_if_incompatible(session)
     _install_test_deps(session)
     _install_matrix_dep(session, "google-genai", version)
     _run_tests(session, f"{INTEGRATION_DIR}/google_genai/test_google_genai.py", version=version)
@@ -970,9 +971,13 @@ def pylint(session):
         "ai-sdk": (3, 12),
         "agentscope": (3, 11),
         "google-adk": (3, 11),
+        # google-genai 2.34 and transformers 5.22 require Python 3.11; on 3.10
+        # pylint uses the lint group's locked google-genai 2.33.
+        "google-genai": (3, 11),
         "harbor": (3, 12),
         "pipecat-ai": (3, 11),
         "pydantic-ai-integration": (3, 11),
+        "transformers": (3, 11),
     }
     # Latest pins that cannot install on newer Pythons yet (see the matching
     # caps in nox_session_constraints.py), and the integration whose files
