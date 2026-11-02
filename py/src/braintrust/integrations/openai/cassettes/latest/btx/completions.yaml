@@ -1,7 +1,7 @@
 interactions:
 - request:
-    body: '{"model":"gpt-4o-mini","messages":[{"role":"system","content":"you are
-      a helpful assistant"},{"role":"user","content":"What is the capital of France?"}],"temperature":0.0}'
+    body: '{"model":"gpt-6-luna","messages":[{"role":"system","content":"you are a
+      helpful assistant"},{"role":"user","content":"What is the capital of France?"}],"reasoning_effort":"none","temperature":0.0}'
     headers:
       accept:
       - application/json
@@ -10,7 +10,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '171'
+      - '196'
       content-type:
       - application/json
       host:
@@ -19,17 +19,18 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EdEAlMSRCMJIHfMjkE9O7BzkcK9Jo\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1793017979,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EfoRyS5mfrOb0I9Mf9E1rWtVS4BDw\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1793634086,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"The capital of France is Paris.\",\n
-        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
-        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        23,\n    \"completion_tokens\": 7,\n    \"total_tokens\": 30,\n    \"prompt_tokens_details\":
-        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_ccaf3fe85e\"\n}\n"
+        \"assistant\",\n        \"content\": \"Paris.\",\n        \"refusal\": null,\n
+        \       \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 22,\n    \"completion_tokens\":
+        5,\n    \"total_tokens\": 27,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"cache_write_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n
+        \   \"completion_tokens_details\": {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\":
+        0,\n      \"accepted_prediction_tokens\": 0,\n      \"rejected_prediction_tokens\":
+        0\n    }\n  },\n  \"service_tier\": \"default\",\n  \"system_fingerprint\":
+        null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -38,13 +39,13 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '837'
+      - '796'
       content-type:
       - application/json
       date:
-      - Mon, 26 Oct 2026 12:32:59 GMT
+      - Mon, 02 Nov 2026 15:41:27 GMT
       openai-processing-ms:
-      - '432'
+      - '986'
       openai-version:
       - '2020-10-01'
       server:
@@ -60,11 +61,11 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999982'
+      - '179999982'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:

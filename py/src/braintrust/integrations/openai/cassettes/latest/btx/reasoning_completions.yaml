@@ -1,8 +1,8 @@
 interactions:
 - request:
-    body: '{"model":"o4-mini","messages":[{"role":"user","content":"Look at this sequence:
-      2, 6, 12, 20, 30. What is the pattern and what would be the formula for the
-      nth term?\n"}],"reasoning_effort":"medium"}'
+    body: '{"model":"gpt-6-luna","messages":[{"role":"user","content":"Look at this
+      sequence: 2, 6, 12, 20, 30. What is the pattern and what would be the formula
+      for the nth term?\n"}],"reasoning_effort":"medium"}'
     headers:
       accept:
       - application/json
@@ -11,7 +11,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '199'
+      - '202'
       content-type:
       - application/json
       host:
@@ -20,23 +20,19 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EalGpv3DejXVtt7YXGLNWLzQxciky\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1792430223,\n  \"model\": \"o4-mini-2025-04-16\",\n
+      string: "{\n  \"id\": \"chatcmpl-EfoS71mGBQexHsZNa0Zy3W7KGTcSW\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1793634095,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"The given terms  \\n1st: 2  \\n2nd:
-        6  \\n3rd: 12  \\n4th: 20  \\n5th: 30  \\n\\nhave successive differences 6\u20132=4,
-        12\u20136=6, 20\u201312=8, 30\u201320=10,\u2026 i.e. the differences are the
-        even numbers 4,6,8,10,\u2026\\n\\nEquivalently each term is the product of
-        two consecutive integers:\\n\\na\u2099 = n\xB7(n+1)\\n\\nChecking:\\nn=1 \u2192
-        1\xB72 = 2  \\nn=2 \u2192 2\xB73 = 6  \\nn=3 \u2192 3\xB74 = 12  \\nn=4 \u2192
-        4\xB75 = 20  \\nn=5 \u2192 5\xB76 = 30  \\n\\nSo the n\u1D57\u02B0 term is
-        a\u2099 = n\xB2 + n.\",\n        \"refusal\": null,\n        \"annotations\":
-        []\n      },\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\":
-        {\n    \"prompt_tokens\": 41,\n    \"completion_tokens\": 590,\n    \"total_tokens\":
-        631,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\": 0,\n      \"audio_tokens\":
-        0\n    },\n    \"completion_tokens_details\": {\n      \"reasoning_tokens\":
-        384,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\": 0,\n
-        \     \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"assistant\",\n        \"content\": \"The terms follow the pattern \\\\(1\\\\cdot2,\\\\;2\\\\cdot3,\\\\;3\\\\cdot4,\\\\;4\\\\cdot5,\\\\;5\\\\cdot6\\\\).
+        So, starting with \\\\(n=1\\\\), the \\\\(n\\\\)th term is\\n\\n\\\\[\\na_n=n(n+1).\\n\\\\]\\n\\nThe
+        differences between consecutive terms are \\\\(4,6,8,10,\\\\ldots\\\\), increasing
+        by 2 each time.\",\n        \"refusal\": null,\n        \"annotations\": []\n
+        \     },\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n
+        \   \"prompt_tokens\": 41,\n    \"completion_tokens\": 173,\n    \"total_tokens\":
+        214,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\": 0,\n      \"cache_write_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 67,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
         \"default\",\n  \"system_fingerprint\": null\n}\n"
     headers:
       access-control-expose-headers:
@@ -46,13 +42,13 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '1219'
+      - '1062'
       content-type:
       - application/json
       date:
-      - Mon, 19 Oct 2026 17:17:08 GMT
+      - Mon, 02 Nov 2026 15:41:37 GMT
       openai-processing-ms:
-      - '4718'
+      - '2080'
       openai-version:
       - '2020-10-01'
       server:
@@ -68,11 +64,11 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999970'
+      - '179999970'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:

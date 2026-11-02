@@ -1,8 +1,8 @@
 interactions:
 - request:
-    body: '{"model":"gpt-4o","messages":[{"role":"system","content":"you are a helpful
-      assistant"},{"role":"user","content":[{"type":"text","text":"Briefly describe
-      these attachments"},{"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="}},{"type":"file","file":{"filename":"blank.pdf","file_data":"data:application/pdf;base64,JVBERi0xLjAKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSA+PgplbmRvYmoKeHJlZgowIDQKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDA5IDAwMDAwIG4gCjAwMDAwMDAwNTggMDAwMDAgbiAKMDAwMDAwMDExNSAwMDAwMCBuIAp0cmFpbGVyCjw8IC9TaXplIDQgL1Jvb3QgMSAwIFIgPj4Kc3RhcnR4cmVmCjE5MAolJUVPRgo="}}]}],"temperature":0.0}'
+    body: '{"model":"gpt-6-luna","messages":[{"role":"system","content":"you are a
+      helpful assistant"},{"role":"user","content":[{"type":"text","text":"Briefly
+      describe these attachments"},{"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="}},{"type":"file","file":{"filename":"blank.pdf","file_data":"data:application/pdf;base64,JVBERi0xLjAKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSA+PgplbmRvYmoKeHJlZgowIDQKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDA5IDAwMDAwIG4gCjAwMDAwMDAwNTggMDAwMDAgbiAKMDAwMDAwMDExNSAwMDAwMCBuIAp0cmFpbGVyCjw8IC9TaXplIDQgL1Jvb3QgMSAwIFIgPj4Kc3RhcnR4cmVmCjE5MAolJUVPRgo="}}]}],"reasoning_effort":"none","temperature":0.0}'
     headers:
       accept:
       - application/json
@@ -11,7 +11,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '888'
+      - '918'
       content-type:
       - application/json
       host:
@@ -20,20 +20,18 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EdEAkKpI63xSB09eW7o9PI8d1t8j7\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1793017978,\n  \"model\": \"gpt-4o-2024-08-06\",\n
+      string: "{\n  \"id\": \"chatcmpl-EfoRwhawe6gppRkk9tnuD5XUfZiLG\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1793634084,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"The first attachment is a solid red
-        square, likely an image with no additional content or context.\\n\\nThe second
-        attachment, \\\"blank.pdf,\\\" appears to be a document with no readable content
-        or visible text or images.\",\n        \"refusal\": null,\n        \"annotations\":
-        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
-        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 495,\n    \"completion_tokens\":
-        42,\n    \"total_tokens\": 537,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
-        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_55e838642c\"\n}\n"
+        \"assistant\",\n        \"content\": \"The attached PDF appears blank; no
+        readable text or images were detected.\",\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\":
+        {\n    \"prompt_tokens\": 241,\n    \"completion_tokens\": 17,\n    \"total_tokens\":
+        258,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\": 0,\n      \"audio_tokens\":
+        0\n    },\n    \"completion_tokens_details\": {\n      \"reasoning_tokens\":
+        0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\": 0,\n
+        \     \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -42,13 +40,13 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '1020'
+      - '835'
       content-type:
       - application/json
       date:
-      - Mon, 26 Oct 2026 12:32:58 GMT
+      - Mon, 02 Nov 2026 15:41:25 GMT
       openai-processing-ms:
-      - '1097'
+      - '1253'
       openai-version:
       - '2020-10-01'
       server:
@@ -62,23 +60,23 @@ interactions:
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-input-images:
-      - '250000'
+      - '50000'
       x-ratelimit-limit-requests:
-      - '10000'
+      - '30000'
       x-ratelimit-limit-tokens:
-      - '30000000'
+      - '180000000'
       x-ratelimit-remaining-input-images:
-      - '249999'
+      - '49999'
       x-ratelimit-remaining-requests:
-      - '9999'
+      - '29999'
       x-ratelimit-remaining-tokens:
-      - '29998451'
+      - '179998452'
       x-ratelimit-reset-input-images:
-      - 0s
+      - 1ms
       x-ratelimit-reset-requests:
-      - 6ms
+      - 2ms
       x-ratelimit-reset-tokens:
-      - 3ms
+      - 0s
     status:
       code: 200
       message: OK

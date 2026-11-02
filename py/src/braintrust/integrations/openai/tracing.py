@@ -750,6 +750,27 @@ class ChatCompletionWrapper:
         *,
         audio_format: str | None = None,
     ) -> dict[str, Any]:
+        indices: set[int] = set()
+        for result in all_results:
+            choices = _get_attr_or_item(result, "choices", []) or []
+            for choice in choices:
+                indices.add(_get_attr_or_item(choice, "index", 0))
+
+        if len(indices) <= 1:
+            result = cls._postprocess_streaming_choice(all_results, audio_format=audio_format)
+            if indices:
+                result["output"][0]["index"] = next(iter(indices))
+            return result
+        result = cls._postprocess_streaming_choice(all_results, audio_format=audio_format, choice_index=min(indices))
+        for index in sorted(indices)[1:]:
+            choice = cls._postprocess_streaming_choice(all_results, audio_format=audio_format, choice_index=index)
+            result["output"].extend(choice["output"])
+        return result
+
+    @classmethod
+    def _postprocess_streaming_choice(
+        cls, all_results: list[Any], *, audio_format: str | None = None, choice_index: int | None = None
+    ) -> dict[str, Any]:
         role = None
         content = None
         refusal = None
@@ -768,6 +789,8 @@ class ChatCompletionWrapper:
                 metrics.update(_parse_metrics_from_usage(usage))
 
             choices = _get_attr_or_item(result, "choices", []) or []
+            if choice_index is not None:
+                choices = [choice for choice in choices if _get_attr_or_item(choice, "index", 0) == choice_index]
             if not choices:
                 continue
 
@@ -866,7 +889,7 @@ class ChatCompletionWrapper:
             "metadata": metadata,
             "output": [
                 {
-                    "index": 0,
+                    "index": choice_index if choice_index is not None else 0,
                     "message": {
                         "role": role,
                         "content": content,
@@ -1693,6 +1716,12 @@ class ResponseWrapper:
     def _parse_params(cls, params: dict[str, Any]) -> dict[str, Any]:
         ret = params.pop("span_info", {})
         processed_input = _process_attachments_in_input(params.get("input"))
+        instructions = params.get("instructions")
+        if isinstance(instructions, str):
+            if isinstance(processed_input, str):
+                processed_input = [{"role": "user", "content": processed_input}]
+            if isinstance(processed_input, list):
+                processed_input = [{"role": "system", "content": instructions}, *processed_input]
         return merge_dicts(
             ret,
             {

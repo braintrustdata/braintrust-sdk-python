@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"model":"o4-mini","input":[{"role":"user","content":"Look at this sequence:
+    body: '{"model":"gpt-6-luna","input":[{"role":"user","content":"Look at this sequence:
       2, 6, 12, 20, 30. What is the pattern and what would be the formula for the
       nth term?\n"}],"reasoning":{"effort":"high","summary":"detailed"}}'
     headers:
@@ -11,7 +11,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '219'
+      - '222'
       content-type:
       - application/json
       host:
@@ -20,79 +20,62 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_06d8732f210e8745006ad6507ef67087d0852d282edc8ac12a\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1792430207,\n  \"status\":
+      string: "{\n  \"id\": \"resp_03eb0707a238ef57016ae8af28256c87d18809b4208ce8f322\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1793634088,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1792430217,\n  \"error\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1793634091,\n  \"error\":
         null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
-        \"o4-mini-2025-04-16\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"rs_06d8732f210e8745006ad6507fe8a487d0bc33cf78b4ef9399\",\n
-        \     \"type\": \"reasoning\",\n      \"content\": [],\n      \"encrypted_content\":
-        \"gAAAAABq1lCKNe4xrP2U1mh0z4oVf7HLY7-TKckY-YuJ-IXx8CrSa_b3sQzOymRtAiU6p0Xj2_c1feca482ql9Go5--KhriKX1C5vUooriKiSz5Cf9sMRqhqpiA7oWCGWHEdHthjgqGI9mN2xD0p4SdgTZLJheTbKGbaJv-0bGlGHTCNq8ivd-i-YGoTB-NGLMvq7TPemOIiGDpyqAwuoVZoKvqrIEmzwPtk_cmdf1H_JYf7_ydFbE0hPvMu_w3fxsSBx2zR7kvWG4e_13nZByf7WpJ5tgMN_V_0qnDKspz0G8v7RsOM5ZJVoLDcu7ird_p8HkORwL9h5ugKzE1h2Z4MGgor_6dyNLkH40J3dGIGaf8n-R7hPCvKjSZE5pHzHO0SRXnraOGb9-b23eV0LNQ4BE3o9-V1mI5gtFrJdamtz25La76uNhMG_m8F9aIaN45lOfLOIJaWlVuBfisuvW_3P995IdykxqsYKZqBn_x-sRv9SSWMXuCeV0saDumWw_WDVhHRlJRxXgI1Dpwdl09lZdKZiwn60BGj_VkSm6qHnniG0DmHwBh9Mmrkj9Gr-9TtwdZzxexyrQlt0DaIZkI_Suco-E1DUgV5Sc-Mx8p6E43kT6wdJu5fPNMB8Fn_emCVHyt2KbFLjFGJ4ZYnR7I3-LkqKTBzZx5jkkTQSju4m1HycVBYvlruGYIVliHsialHGxHzij67i6IJ1Soh4SAfBMqi2ONPzUQwyVszlINU-yCLd3I8NEl-XWu_0l11BFCpw8-KzoYeAmek6MBISBhJf-i745y04jyRb2O_2YyBq3Gkay1t0bJTXga5qQW0l2Sm0HRiD333wdhai6-mg8JWtqUMHsKYQ4Z4kCLrAm3X2Smr3D5yPUwQZFapSmpZXTVL0gDuhEL_5hVW8OawM4qCVYOW5kfpLngsMcTRvThFBtLd2ET7V8xvGBBY8IMvJr9Q0c23iJIw9CTuOzDX9Sv_DEaKyEpwMAblTEekht7o0F_ce5qeL8lvZoB8YmAWkfTx5L5mfulettnkvj9uAo91SCbipw-w3fDPOiqN3IglSGdjLQ6_1YbJfnEOYEG6EyelkWS0gALBDBkZbbUiQxFKXCRVlB5U_6WrgX_r_2JxMDOWNrSAazzWwmVNMepOX2zzAbgL8avPnPgLLE-UxhKXpXtUoqgxaBLND79mj-8aGUNEl7LoerhdyDiRVQNrWbH6EzhwOvwZwnCWP12EJQyPNc_hO55TRmWRD_MtxYD203FVzZm9n95vl0_QHN3uWiwRIoUS9QHmMVM78IxsMDXkE4zpw5Ifr4S1y4hnthJkt9L-5e1fBGaxaQrih68T6TOXzFYECDi8oWC4nX92GD5-2p8B4_rfW9uBfsRYP1dnrNhAWT6SjPBR_L9y7Ymg26lvuW0dyG4z8hoIPymU3RIjoBZOw1tm9ybeSp7ELCoZ5tJkbTWMrvYgdD7Lq1NwaTAR5BAnqnBUbysaMFDlh3GuXh4qTLXtFcVOUdD0wEsFnouFG5bFIStn9YF5WrSUv2WP7EVPZEXrDqW_t_h9xydeFayznbj6xp95ctKWsrr1fhQxcTw8b9-_-00AmzRcOv213uPnVaTeuMbenvXzCD9eumIWSq6UW3uLpNuMzJwpMEZvr0YdXdjCY5_TnfczYT9UViI9rl__rQhqIg7tiWRPreTWCpoJFMBGgy-bqetwls6gLz-Pbp7GLc-ujI9GQx4rweqaw33mvIGP13EEniIOZ7mdRwQsMVuNXsiSRV480_2pP0pezA3cis9vsN9DiGFjjaOM1lvUEDQ2GaN-NstpWqDtbD9_1xZ0662Cs0blQxlS18AoPL1YElX7MmIBhEXUXrHFRVUYZy-W8MdRxWD7zmS0XXf1y2KBs5kh-gk9pqEahzuQskSEEhpQIxF5zl28JWO_2-s2pvPxueTSYHmMS-bXySih5I7v199FXLh5PNhdfN-iYrqfrrUIAW9ysGB02bcYbStFKkRnPQj98Nusj5Le7Bpn2xBAruAs0I14CxYThcWFKhJcRJuNXtcpJJgSIS3ftIodAO9t5nRocalS3v-9pjxI2B6iCGRI7bBssTn0p8I7jxRcZ7zdMeNqZdEfn8Vs29A-v7UpGSK1tUYyXU0rEd9icQmY4EJE0YY2kV_9Cj9vYQJe3TS9I7kcFBxi7wjb7Y3xsqCXFRNgnMjkiPFh0PkVRKWiJdufVlYneAGVa7iW17X6DeOpaJUcE9X1a9l2WOh_lbgPJpCR-v-in_Mvn552nchy9jj94yLagK2tTQR6CY4M4rraecGGcgihbrgZprlEf5Xlva9zYl_EJa2FK2q2oooE2puBnfuuVYsm0GTJJ9fta1qpFvkc6no22R2grgVdQxgJTaXA8O7aTHE3at1Er667vxQ_QY9py_L1ArUGkpGo4syCIJtE620-f5fafV_M-3yaT2fj2oJ4qav0z2ZZL9tGE-t4vsPJUQdFtGzfteYPhjKQWBmv9taOsXaTq8MspvqFLAuniyDlPGaUnJiki7EXe-oEiHImcgxYTgBsWsYUTcPwt-9RU54rSUYJewX3CrrjFWBSzQoG_Fd7OhKN5OWChI3SHv_ohrolDai91PpT2WcHCdar2UP418jE98JP7c9I7TYKFi7oePRS-tmh7Lbb3SGAhYjLHnYyd4p3CuDTTLqrwwlcq3DEcz6r_jg4tCOYsYz776NWZjoeehyurkPGAF0WLV3_Vd7Yzm7VUqovPjgChBoXVJeeYRzq-Dw8mfyS3DdXMD9SFjSrUfWcEdAp_KoI2ghXcEfnZyFL5P8krNB5c5BbHjH9X3R78szDZA8kMB5ULIByJ9lFInDUpVapJc8GWAkorT9YeWDyVjF-13GcQruaumJ_GrSW0_Lri_8uFb4VyAspr-QBSc0VYwv0laX90-RJI0cFtyGZgl5KMd5xPbZL_MQCNkGzfRRASKYbSkcXrjAa677VAp7Avis_QIcNo22ZI4Hdn5WLlbrmbOyf7X1xZDXZoZCglFHvmyolvk3F3XfidFYef0d5WV042JBv_EkIYp8_SAZ9-FKUpoFqAu0PKivpl0iQpCB9z6QntWWCOLkL8Jz0Bo2LHybIrySJMWYYVFKFNdvvZPIc6Rx8PxJsXP7Fc1aOeDeQ5nB7Vk_IcUgXLE3jeEJALqkhA8pp_c_gM56miD8uEJm902DeDXiQsFJqWgEiMgwGh_02yBDzaMfFUj5i3w_AL2bcPDvwrrgDmyvGFFttF8jpGNhXtkI4_ERahJlFaW-aT5Lvh1enD5Hv8qzmPUrvDSJgldIGP8Ae-MfGk_W-DcgD6Wc3SrZN1cmAT-G584_s6j4GHwEz5dZnDU8ohdzDIwRazoaYVfbzAHJQvQVpLydqYmCphedZHb3zc_O8-RBm-85ibUNum0YXU-hU2wvFkBoa50tWcmahvbWLAgT3yG9418r1EKhZP3mbw1dLpOU29XBvWbqwXaLBj_1vkHQuEd0zD3y4FK0qpIGGyweOM_W6u2Os3H_63fu3WG2bB4Vqc6TbA5E76JODxrxOym8ofHFcepkUP8m5Akf4nhgGOfIDLUv5P3HJ5gmfPI5O4C5i6FstHClfwMpyk_GM4y5sGrYRNputkQH4JYrvA3WDIvQz7sDOo5XL5YIlNZCi08ne1UV0lheNnvIWQSsV1kgpcj0011nPdwsLe7qTzP9NvC5EDJsbTVhDamyg6Vnb7A_P2Hw8t_mhxsjPS3IXkqKp_jadffWjX-9ontdFBPK4XpGvwxL06EaMVrAk63ci4D4NS8wYkj9gyC86mmxXheSibEzUYHv5wwdv2tTVoGU0u5yIypYS_j5FikBAvpaG8JD6OY76hF_faQA8FxmVDp67Gx-2MtxhCtZmEQWWYIiyGxm89N05pjeOKmgB2y1Z5fvOZlrPFwszKefx4hWuJwMJYmwWmqMBmVN57ObNZ-McAErK2XflvrCcPlOsvIkHEW79yQjWb_B7dBM_GgHf1tbvv42NcH9Wiqm7UJbtzjV712ux2Br6PrKMbFzzWMj3dXUp3ggDz6Q_kOkeZUZkEwXrsLriP11mDpTPx7L5MVDehGKVohn9ZFZ3IlL5ffi87ogbtra_56JdfjrsTgNu8liY9-5tOdv5K4TvqUjnxF4uPpzq996c_bra37MNibbSE28Z5xYWl6VI9Nu2h-2T3z2xRKD_U0RHzf8hOwVj6rt7arUvWN44dCqYQi_jmid_rqBKvEXnvo6Df7zuDwGqwledLn5TzBGGh3wf3Jiz7dmgwDlx3S-eyw0JN0DWZs7cwJsnjTyK9Ze_JLWL699pjdtt6Z0MLK77wA9X8dAOCEgKRjcjG7kMsvgdnrrwhtdkNmUpmfig1Oj14Za72XyCfDigzPMJi1ApGAknWNrBGknYXJ_utoVUBfm6e63Q7DxcYQv7QtAcdt7_p-Pz2CjUEnR-hq1-j9NY-LZiA2MASjh-czc8ndXaAMOnJi4rXH30Dd3vCtkjp41ERrk4oOPlaLiZVCP_YQjIfk7HDd0tMT1Cj-Jg9FKjedWPQe0vAIjisbaTBe1-9v-Ot3ZGgt5271HmeklExy34UMfA-9mTBYjWFsYb97JXXkZYCmpSHNHqp3hvvcgnImJ98ZRHE1_SSegiJjRxCsA3sS27Ira4GTMarmQjm5lN7eOF4aOf_LY47_kBmk7RZ-QngddcWRSknKjTDFPGsL81qA8r1lUjIZAu9tewFxn5vKcE_QRMZ24vhydBt-yJeF8U21kuaQo671eVxlTx6-auhMHDm9nmMNPyywJ-u7Fzyw7oL7x8e4dNBjx8wPgx5Qn3ZQnQJdT1LG4YVu4FHsbxM4WVotPavfWM09FYQJI8iTIyTLcNgSNuxbTstOoQDvSHANXxxMefJetlbnsvIxUdxDx2F0NjaUeP5u6vNJP9IO7hfqeCGqMDmnwjmClDvlgBDR3V8lq4GGyzd72UiuWUjPcYh155ETWXUJpjqL3O25cSasDl9K3FbSFU2X0ifUByvUKl-M0aBXpiSMbDxL8WMwWvp2nWKNP5s8Iyio2UHKJPhUNmjHrVUSCqO1jbjgGHr-u6KDRJsghvmmFH0RTx8rpLc_drmILMAYP2Tqd70k3M3pMlL2glvw5HmmiJagTOk0ja9ca5QRSTEC4G56A1Ouy-J-B1Ru4UOW95uloTdAJ8H6_i_vrsnKTkUHvHqMk93mKWVB_-Xbc8-MwPp9w93No9XceNW7ahEvvpEvoQJg0Du-BMjWXqMQLBXw1wDRoK2sy_0wFOn6jSQTo1iYZrlZulaO7NcR8NIbj6d9fZVEVGD4_gQOjnGGV74pBwq0sv237Egz7fqw7djEAWFHUUEPIfjiHIJ5rqR659k-zzjZyBAXkKea3K3tg1QDTfj3Nf7jun5WTccvN_tDfDbKCkU036lvmBbgFQW9duveD-zGSkVPZL9vu8WFpCgiIrUYmpIMzXU8bI4KIGCb4WxIRsqjOphxzLzwPZxkNhiyrm5YvufNy6_8wD3iPq57UNR4ZeonCvhkZD1x3ia9v7ZduCFTHXO5QrPG_l1m2aYkGovNZrH9puYn1PJUNbBOU1U3JJWs_YN5TDdpyqD7TE-uW1Jr_0hx5eALY-GuryNdyF-DUEADm2fI9Bs4xqtECWlpXKbSRhRERa5fzAy66ibjNNW0RgZ-ed4eAV7hEC_dtE6-T6t5N1RdYbdgToY5OZg6X-pUv0Y-ixN6Gz6UYR49OyIAPGi_8IAkNI103bTeIWWphPK1wwIQ_IrlyCvCSEcjB6WGFGXuUvpbkXDjqggAx_Tp6vp0k0X-_IHAlVbj1brQ07YzYekK5UOsdJosBA2qZm5yLw7bnCmtl-j8rDcgmWOT_RLH8FTew33cYv3TuZToFpGxBurCyHyx9l7y3nUo31Kwh6vZNH5TQSf0dfCKeBTF9Rp_WIdNck4Q8s2oq8xkUJM4iUz_2-htGgn9yhnwA7en7ehqIKrvopCp-lFnPZlYAjLVwYudvGl6SHhKz9TkNyASuJSzL-f8sUdyKRp2MKCKV9wVYdqAugACu9m-ZzH8IJtcl3H4ERXPyxZQrkYM2Uk4jY5lz6_NwdHcO9Sq13nQUvhMTwWy6t4h0713LufjQ1rreErrFgby86Cz_VFvteOdkF-jw5q55oSp_oLAMxOBAET-bYwJ_WfycvOeVdbL5JPAQKq81_9VHuVIRWvbuL0ZKwaSMCM5v8x5flvNUoCVMXDyfrhJA3GbpayjS3Z2puHmWMueom2-Q8Hgcp4QB2w67wRQ8sFUf4UXzm7XCm5v194gnkYiAigHgJ4tg3igNpw0aUPCYRZLNSCp_dLModFqx5c1ErM-em45_c2eutZHNcGbg2RHGs1rIgicIfa4f1obX7JYM2bepMmv9Bp7YRo0Cr-s6Lryk6Ex6ABY7gvYKac8Ov3XnUGsMtZ-yzejgWob48Cp29FRq75-da9imYTv2Ncw9hqhS7pY4YIkJIHfRG_HmgY6D08x9EbK0RoyGIQSfB9k1fLX9EgbrkwCv-T_AYwPuLzvkPX7E7DcJMMMyJW3pNcLUWImCta-adhUSNwAuq_8ayjWi7NBFkl10iKSz55OYloiMujvjgIKEqdgbLPAfAS5oKPRX2s1PEsLxFnMcS9SiX1EwW80ACxheB-gVOKNR3twuU69f2rwTOdIF4dT0m6GwZNjSQ-WlNnWnI5-ZkEMDRknIl2G84jKSFEv556TCbwi5bhStAER5sOuG6lrfiK_vA8lM-HwQnZzfgS6ptpeKwoep2EPK59faqDpeWinHqNnckBOCkfDJHl18k60Hv4sbR8rhhcGWKj88z8owLz-nxik4u6NyGcu3n8_vnq8vy2H66K4Fb17E3SeRfDbbu1nNLMTZcZ60oHnu6fg7qVOdc1bzUYSso2D5nNSARuJVMPH1-OiG-Epqaz9WB5av-in0BmRh-Tlj9D4jg5D-oaE1cbu6XAl5MKRH_FgzZechv05dF2tzTE-2PtAcwipN5_IYAkTz-aPuKO1EFmdZEczinPdThTEEt4JMKt1W0IqrKohsttm7VyVcKQXjgeKo8RnI9P7xrV6SKFZM1EoI2PttHuoX0CVrdHQKX9Ar8ourSQjot3rakiDRypkV8YfjeDvrdmj7tlXjlbRtU-soexTlb1Fsk2jKUawKNkMNBCQPlLBoYRLruRu7Z6jeppyPvFNrc9OZLrtO9OhTCfflOWc0ofspTg-e7YVyKU-7-t7SW6hf2AQxZgjV6Qa3TCu13fWTOwkZRzwVN5y-Bs2qLA7OWev0P7TwdZxWxdErim5DSdy2O5ablCTrdZFLbWiSGC-4HVUb_5EKr-fp8jaLeygR-KCRIY-5qUnX8ebtEWXutwIHkOJX3DHDb3JTmYO-UiPOyNq3AKVQXo69bVaWeHBGdipuovq9RKdEgDcBBiSaLAKDLlEwgK61tKq6VnIu4uHTWOSYiiMfNL-r4jBbxrjZNxMPtPX_o28SSaki_wat1y-PDgJCd8Bq7csPxO6JKDrzM_OwuadmjVYeVdbmEOmVnXdaLXZ2zlOb9SmJdooyqbIepc7Uqho0fbm_LhJ5wHaR5KE1IM4N8RHWiWBTnD-zfNifybFKVAKPsyW2kVQIDkWZigi0DbE-gtmwWY7fynm3D_GEKoE95Mqf4D9u6LOPMGXvC2A4QevzP-JOUQyWovkmyYyEoZb4KQnZhtSh0sLegniIqeIUVcbw8hSG55p-rxfg4wpdKwU3nmQaiYRPHwMNg3uwQK_eJ03nG9vYq4QfNLcwLV_8ODyR2cYQWA_ZszPVv2ekkgtgya_lF_9TmhrfFAbKAHjPK2e5bN_nSNlEm0h12e2QUKAKXLUyOaWkkYenr3p0jw1DWr1sXDaJ1Vd04W3NHqXQ7fGnDAwOjDOo7wheh2Fzc6LJXms8sJ9DhrFRVec1yCaObjqSSj_esnBp7WkBg3Je9_0nHKIcMfcqx0WUl0QDxUObkLfQHWU_1ZHeZ892984g9ppfgncmkh6esa5u07AZvB7q9QHYhdW9uvLEhYKTnhcj40Gt74p8nBOZ_IhEnBkhnwZar25vk_b12PwODE9wI63rcf-lLX-a5Ynp_fKhskgDNRCqx4uEA0MA202eAFP4C-yLwCGr8SgP8qi8GmXGxZDj-k2KlDrDRByziMO9AMgh8yMctSY4JZcF2cZZSPSyKJY5qjXs8NoT6sR3AaYRHx-uZ-TzuVbQdBDwRJQNwtkveoPSGTCHVtoCOo9uu5piob4YzfUay4TX8qn1T5ayKbPijC2KOATqXM0WMkoTVvqGKfcey-gCfvp7lBj5tDFVcyLE3_6QsZVHESHrCsAR02-gdxBI33DFoes_1NT81vAnt_c9z166FTpKpvXT_PcKgvwLpbyOIrFkM08C9lycQT7jjm47UmOAHDP2NeePb1BZWahv7PpIdX8a0FvSSTPrn-owMfDIWhAQjr4f4OyvQJu6Kj6e_4j0XOhfl-mDsj_d7iZ786MQgLyeCe-pIsJPdsLfHrFgcjObINyb85QxQa6W0xV_gbIqy2UyB_SNYnxEGnef3QJ51Yi5fIoM9aO_pkVWgzLHhSUXK7fecYc-2TfgEKD4hDLByqHm-SfbG4J4EzV0-zqh8X7K5LnjymcVgzCN4hq86iJpfBkCn-pBBv5T1efdK8S3leU0sWcj9HDf72s33j1MPCDkZ7hIp4TcureKekv9Iwt5lG3G7938_7IBj0BfOU7qUOyKLpUg4oIacTgUxdQ3JwNotU6o6s8yrVABf1Jj28TwFAyTti1sUWTuRKlC-bXbhjtvhK4Wmoy6A7q9CZx7_pJLyqnlGcQNZT6j3J3K71lZurYFj5scHGToKgmEB2LJGhEd9N8un_5Z0zo8QhDhxOga5iSPwhr4mQqA5s4bJfPaQvrzZT0iopCnKuhDh3_UdbahVbGcyOJXw7oQfneiewaUI4DR0fevqjdh7nfWx1To7nf04ZDRInWJX2Y6J5wLk5efM0bGB41FXnfYVUJ18bMKk2gSatswtwJdeJh9vg2YAevXpXmzb3BmACNFlYN1LCtO_R9VS0f0K4kdoQEqo88muRpMPy_3btTzCGgbPaUSkkFxsyheQViT7ywq4TUmQFt3THpj6HDWJOOSBh4Hs3t7lCKZyBvkdTA3iq5KMGEP1AqFPshmr1mGlIjtlVT_sz_hSRZEKI-z8SoP4bk76FZ01_ZILsR0tOP8We1XoxObb0UKgApR11d8LMfwLwISJM0hgSzmXHgpMJ2igD4RJE8usKju5fyGnagB-4dkyZkwic6LVq3Mj1FpIuQcDtLhF_t1NOret6f32y31KUvtKdeBEqOIw3H7iqGJPLEzCKjW3rGv_HgQzAiIRFa1zAxu6dTyoQdLulzLX53Mc8L2WEraHx_QHi0tDanPzM-4aW7mJtujpKI3T2a3sjr5ezvBXPnOE5tVscT79TSju50aIMexnDevMB3iyIOwbBO8J5l7cLrA95whPJiBFTl-GysJCaoSbHiV1WEeLOZxihSuDyXArKtyNXwkA_b0vLZRvkviduqUekQmSfESCYwWCTwy838fssV17rm3hkYvzpTnkDpuw8O1IOLw1IFFmll4-GvsH-1DRdv2gzdCBm1r58gPdeIsdcgHLcXy70Xfm46y4eK9gHMY7bJYPzRVD56heUdw_263teozM2QRT9W-KPeeUJblRB34gm-vUXMh57KPNl0JeX-2G9YmpGMx0USLoTqeRtjReWgyPvh5BDu8yRp-lXUg_EDK_3W7mqDpS5h_ngCiCvvXb4joZO5hFjKV5-oyuZ8e2Ghx-8oPfzmsvPPG09_in8-VPe42Qi6mBYoS0WwVdZY9kJsNOFq6k9uhmngBTim5Q1eGyZvN7ENEGBVMLvxbvPBY9MZVVcIlPNwz2dZ3KbhAzZKEKINwPwODasYEEpJKouKjC52mmdm8pasRa19EYaI6Xd2SrDL12mLbDo3QMAxY5KmjKbLmF_Xo3gyYXdm9K6NrHJ8kMbtl_lunFcw==\",\n
+        \"gpt-6-luna\",\n  \"moderation\": null,\n  \"output\": [\n    {\n      \"id\":
+        \"rs_03eb0707a238ef57016ae8af2905dc87d1a344a4cde342cb00\",\n      \"type\":
+        \"reasoning\",\n      \"content\": [],\n      \"encrypted_content\": \"gAAAAABq6K8ra7wyJT6YQh6TTLgzwv67_D4nfU3VrztqcHeAyq3OiSzisTvCIPbuc_HEv832C9O_4otFqLzzZpcRBi2Z3_D2zn7hdn92sULS6W73ZXAc8R8m0q3LWc7GIy1iYhBCdlwCwUmuB4TmL4lfzxJk-qwLwDLl44m0zGnMSZm4q0fZUh7X1J4nV-R6Pi6D9zlK6phOGjS5iPElMqHCqTHk0UMlfspsy6mWQ6XndCliixZA0nBAh3qBCAL_nicQ1EXTHd8Es-K1hR4ANNhZ-Y4FkygA2YBGiXoee38G6A44P41dqv65nDuyPKCrT2qtkruuSk39dgPD3rEJF2Zex8qhox9NJoEbQIboUUE2jOf0M1TZI237zYnRLaYzH6KQ8PlMVceFYiQ6T9VP06ChB-9xop6fUlzFvOgM_JEa9KbdUdWRXhBInL8GUYf3zLMfVbmkk-i7xIQiaH6KvVMjZlF0hWyH6hVtWsCwdC1TDy3UXEUfEY2haABQzbVEqWQ1osJKi0F9mFMo8dJyXjka3clNPCRIlbORGmE_68-lrPhyl0ilBPl1iVNRR8zlLBoFvNChb-td9ZjAsi4rVKf-vgR34R1yJgS04QF73vXedusFPdNEclFPfg27o89DR33XCMkadChFlZmU8UxgjNBzRyp9lVGADTz8wQSVGdE41rIzWimW_DJZ3Gu3COUz4Yg_QMQrxyMgGvqeK7kkgDDSYUkIR7IH-fJ-cVCkHOezIGfK4ulxFKol6apOjAGvDXtzADNOxocJa1l_TAwyNBH1MJ4EwxhzxaV1Kf4n6fLCpfZgiXkJSkI5p8sN535DvYDA98WRtZaqg52aNY1lTnfvspzBhF-p5Lw_kPg5WihRvWlTihmaJ0tP5eIdAZ2Dq6pGXaywcqFeFoVchP_9_wIqseCsF2fosHqDdbeJGkgC1J4YtK47y9axHn-T7CT1TBsFxMixqL3MXerUFpl13ejlh-R2--Aad6rHPMEYX67Y8E7GTQPmFxeTqX9vSPIXA6ic29ufU1-NWsNaMmpRVwWBtzD0oBsvE1w_QWiAsXwD9JeAooEgkmV_2AzsXk0pvoUA8sMhimunvktI3quckwemmZ2Jf03aWk7z865DGM6-x11odbbK3TYAzwG-mgcar1gXMe7W9FlSstB4a0VYttyhle2hvJprVY2Hy_LHPz8FL8EYAd5pxYDSg7Fax96T6y7FRVUjWhubIYpsLdIKdN2WVUXPAmfwAcVkvkA1_OS0KgyrW2SExDMewPcAzFIw4nJMfHW06faNij7KOe0eK8qet8ESmGcq4zJaWLGHgHWHjBvGqPcRMciBYtvpB-grnUxd_wTaJNMd6n17mWXcVSb6dEzmIvj_Yrd6GZgtKcm-lXVbke-EKxoe3wXGwJ0RS_BxYEOL5u2xOK6pwOQTjrctmTXMTGtUjrNTzPTErIZS8bnTCCpwZgWbPR8DXnQGXpg_AAdPjitfR1Ob90G2gOyvfjq8Cj0ipZlVzCVzedvqQB2lklh5Pb1sOlMMYOQUEk9Y9aFJb5EC4vBHw5HnQc2WGyrOqKkGFFQwMffkg4JAnNaA242paOgzFE4jLzzPcS8CZceaVrllIfebF0j0MaLsh3rDzEHR6UJZJJMQLujsXcq4Z-x9JOJmEQzA3vPgS6Rsl__kqA3Dg_JQpEk5xes_WZtUQw_Yzz2NXUlWMIE_2HX-BCJ3t1ipyQKt-9yZY8RSTXLpmhnVoDjRiTlPH0wfBWImtysAGdvnbaKDLABkhDkYwyqdsKW5bYkMZTPDu7RJJBKfUID5nyMTLGOc-anScN0k3ONQWvuWeQWI-NqqcHtZJmoAyrj1uM_u16xxgEfYvaFfP8S1XFYoUA2r6LR8nNEHAMGfVlzb-_Y5wyDPEWJOLKGDwkxJ3Pj7sOmWJDtmm1EJTzS8F_fmsuuiKtrSYc6sUI4jq3l-L9S72voJQ0DkbkqrIT6mB0VYwmI-X5_PRhVobO7LfPEM5bsmpJM5yBfqomfS5GbEosyUqGoG4CIzqMRP-kYQseo2ufhcOas0LCAgNR-Sc5kAVwQ1sfvdmKEYN03RexJURaJX4ipZtJSP99VSi08NIlIlDBmTQ3xyHIpib5Eqpql3rkxjA5hDQU6xaWzpcPFhhCdUOh3fOmyP03nYyqUd-kLIFhd_jyQcN0mX4sAk\",\n
         \     \"summary\": [\n        {\n          \"type\": \"summary_text\",\n          \"text\":
-        \"**Identifying a sequence pattern**\\n\\nThe user has asked about the sequence
-        2, 6, 12, 20, 30, and I'm recognizing it as familiar. The general term is
-        n(n+1), where n starts at 1. So for example, 1 times 2 equals 2, 2 times 3
-        equals 6, and so forth. The pattern involves the product of consecutive integers,
-        also known as pronic numbers. Alternatively, this can be expressed as 2 times
-        the nth triangular number. The differences between terms are increasing by
-        2 as well.\"\n        },\n        {\n          \"type\": \"summary_text\",\n
-        \         \"text\": \"**Determining the quadratic pattern**\\n\\nI've recognized
-        that the second difference being constant at 2 indicates a quadratic sequence.
-        I can express it in the form a_n = an\\u00b2 + bn + c. By substituting various
-        values of n, I can create equations to solve for a, b, and c. After solving,
-        I find that a_n = n\\u00b2 + n, which identifies the pattern as pronic numbers,
-        each being the product of consecutive integers. It's essential to note this
-        starts at n=1, yielding correct terms. The general formula is a_n = n(n+1).\"\n
-        \       },\n        {\n          \"type\": \"summary_text\",\n          \"text\":
-        \"**Summarizing the pattern**\\n\\nThe pattern I've identified is that these
-        numbers are pronic numbers, which means each term is the product of two consecutive
-        integers. The formula for the nth term is a_n = n(n+1), or equivalently n\\u00b2
-        + n. This conclusion clearly defines the relationship in the sequence, and
-        I'm confident it accurately represents the problem at hand. So, to summarize:
-        the pattern is pronic numbers, and the nth term can be expressed as n(n+1).\"\n
-        \       }\n      ]\n    },\n    {\n      \"id\": \"msg_06d8732f210e8745006ad650898c0087d09c355da502644409\",\n
-        \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
-        [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"The sequence 2, 6,
-        12, 20, 30,\\u2026 has successive differences 4, 6, 8, 10,\\u2026 so it\\u2019s
-        a quadratic.  In fact one checks  \\n  1\\u00b72=2,  2\\u00b73=6,  3\\u00b74=12,
-        \ 4\\u00b75=20,  5\\u00b76=30, \\u2026  \\nSo the nth term is the \\u201cpronic\\u201d
-        number  \\n  a\\u2099 = n\\u2009\\u00d7\\u2009(n + 1) = n\\u00b2 + n.\"\n
-        \       }\n      ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
-        true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
-        null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
-        \   \"context\": \"current_turn\",\n    \"effort\": \"high\",\n    \"mode\":
-        \"standard\",\n    \"summary\": \"detailed\"\n  },\n  \"safety_identifier\":
-        null,\n  \"service_tier\": \"default\",\n  \"store\": true,\n  \"temperature\":
-        1.0,\n  \"text\": {\n    \"format\": {\n      \"type\": \"text\"\n    },\n
-        \   \"verbosity\": \"medium\"\n  },\n  \"tool_choice\": \"auto\",\n  \"tool_usage\":
-        {\n    \"image_gen\": {\n      \"input_tokens\": 0,\n      \"input_tokens_details\":
-        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\":
-        0,\n      \"output_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
-        0\n      },\n      \"total_tokens\": 0\n    },\n    \"web_search\": {\n      \"num_requests\":
-        0\n    }\n  },\n  \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n
-        \ \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 41,\n
-        \   \"input_tokens_details\": {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\":
-        0\n    },\n    \"output_tokens\": 1018,\n    \"output_tokens_details\": {\n
-        \     \"reasoning_tokens\": 832\n    },\n    \"total_tokens\": 1059\n  },\n
-        \ \"user\": null,\n  \"metadata\": {}\n}"
+        \"**Clarifying Patterns in Sequences**\\n\\nI need to address some ambiguity
+        in the sequence. It seems like I'm looking at differences such as 4, 6, 8,
+        10. I think the formula n(n+1) with n starting from 1 might explain the sequence.
+        I'm realizing that a finite sequence can show many patterns, particularly
+        with products of consecutive integers like 1*2, 2*3, and so on. That seems
+        like a good direction to pursue!\"\n        }\n      ]\n    },\n    {\n      \"id\":
+        \"msg_03eb0707a238ef57016ae8af2b24ec87d19d59ed8e7f11e244\",\n      \"type\":
+        \"message\",\n      \"status\": \"completed\",\n      \"content\": [\n        {\n
+        \         \"type\": \"output_text\",\n          \"annotations\": [],\n          \"logprobs\":
+        [],\n          \"text\": \"The terms are products of consecutive integers:\\n\\n\\\\(1\\\\cdot2=2,\\\\;2\\\\cdot3=6,\\\\;3\\\\cdot4=12,\\\\ldots\\\\)\\n\\nSo,
+        starting with \\\\(n=1\\\\), the \\\\(n\\\\)th term is\\n\\n\\\\[\\na_n=n(n+1).\\n\\\\]\\n\\nEquivalently,
+        the differences between terms are \\\\(4,6,8,10,\\\\ldots\\\\).\"\n        }\n
+        \     ],\n      \"phase\": \"final_answer\",\n      \"role\": \"assistant\"\n
+        \   }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n
+        \ \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
+        \"24h\",\n  \"reasoning\": {\n    \"context\": \"all_turns\",\n    \"effort\":
+        \"high\",\n    \"mode\": \"standard\",\n    \"summary\": \"detailed\"\n  },\n
+        \ \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n  \"store\":
+        false,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
+        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
+        \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\":
+        0,\n      \"input_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
+        0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
+        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
+        0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
+        \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 0.98,\n  \"truncation\":
+        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 41,\n    \"input_tokens_details\":
+        {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 0\n    },\n
+        \   \"output_tokens\": 166,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        69\n    },\n    \"total_tokens\": 207\n  },\n  \"user\": null,\n  \"metadata\":
+        {}\n}"
     headers:
       access-control-expose-headers:
-      - X-Request-ID
+      - X-Request-ID, Server-Timing-Total
       - CF-Ray
       - CF-Ray
       connection:
       - keep-alive
       content-length:
-      - '14248'
+      - '5174'
       content-type:
       - application/json
       date:
-      - Mon, 19 Oct 2026 17:16:58 GMT
+      - Mon, 02 Nov 2026 15:41:31 GMT
       openai-processing-ms:
-      - '11196'
+      - '3616'
       openai-version:
       - '2020-10-01'
       server:
@@ -106,11 +89,11 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999752'
+      - '180000000'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
@@ -119,34 +102,19 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: "{\"model\":\"o4-mini\",\"input\":[{\"role\":\"user\",\"content\":\"Look
-      at this sequence: 2, 6, 12, 20, 30. What is the pattern and what would be the
-      formula for the nth term?\\n\"},{\"id\":\"rs_06d8732f210e8745006ad6507fe8a487d0bc33cf78b4ef9399\",\"summary\":[{\"text\":\"**Identifying
-      a sequence pattern**\\n\\nThe user has asked about the sequence 2, 6, 12, 20,
-      30, and I'm recognizing it as familiar. The general term is n(n+1), where n
-      starts at 1. So for example, 1 times 2 equals 2, 2 times 3 equals 6, and so
-      forth. The pattern involves the product of consecutive integers, also known
-      as pronic numbers. Alternatively, this can be expressed as 2 times the nth triangular
-      number. The differences between terms are increasing by 2 as well.\",\"type\":\"summary_text\"},{\"text\":\"**Determining
-      the quadratic pattern**\\n\\nI've recognized that the second difference being
-      constant at 2 indicates a quadratic sequence. I can express it in the form a_n
-      = an\xB2 + bn + c. By substituting various values of n, I can create equations
-      to solve for a, b, and c. After solving, I find that a_n = n\xB2 + n, which
-      identifies the pattern as pronic numbers, each being the product of consecutive
-      integers. It's essential to note this starts at n=1, yielding correct terms.
-      The general formula is a_n = n(n+1).\",\"type\":\"summary_text\"},{\"text\":\"**Summarizing
-      the pattern**\\n\\nThe pattern I've identified is that these numbers are pronic
-      numbers, which means each term is the product of two consecutive integers. The
-      formula for the nth term is a_n = n(n+1), or equivalently n\xB2 + n. This conclusion
-      clearly defines the relationship in the sequence, and I'm confident it accurately
-      represents the problem at hand. So, to summarize: the pattern is pronic numbers,
-      and the nth term can be expressed as n(n+1).\",\"type\":\"summary_text\"}],\"type\":\"reasoning\",\"content\":[],\"encrypted_content\":\"gAAAAABq1lCKNe4xrP2U1mh0z4oVf7HLY7-TKckY-YuJ-IXx8CrSa_b3sQzOymRtAiU6p0Xj2_c1feca482ql9Go5--KhriKX1C5vUooriKiSz5Cf9sMRqhqpiA7oWCGWHEdHthjgqGI9mN2xD0p4SdgTZLJheTbKGbaJv-0bGlGHTCNq8ivd-i-YGoTB-NGLMvq7TPemOIiGDpyqAwuoVZoKvqrIEmzwPtk_cmdf1H_JYf7_ydFbE0hPvMu_w3fxsSBx2zR7kvWG4e_13nZByf7WpJ5tgMN_V_0qnDKspz0G8v7RsOM5ZJVoLDcu7ird_p8HkORwL9h5ugKzE1h2Z4MGgor_6dyNLkH40J3dGIGaf8n-R7hPCvKjSZE5pHzHO0SRXnraOGb9-b23eV0LNQ4BE3o9-V1mI5gtFrJdamtz25La76uNhMG_m8F9aIaN45lOfLOIJaWlVuBfisuvW_3P995IdykxqsYKZqBn_x-sRv9SSWMXuCeV0saDumWw_WDVhHRlJRxXgI1Dpwdl09lZdKZiwn60BGj_VkSm6qHnniG0DmHwBh9Mmrkj9Gr-9TtwdZzxexyrQlt0DaIZkI_Suco-E1DUgV5Sc-Mx8p6E43kT6wdJu5fPNMB8Fn_emCVHyt2KbFLjFGJ4ZYnR7I3-LkqKTBzZx5jkkTQSju4m1HycVBYvlruGYIVliHsialHGxHzij67i6IJ1Soh4SAfBMqi2ONPzUQwyVszlINU-yCLd3I8NEl-XWu_0l11BFCpw8-KzoYeAmek6MBISBhJf-i745y04jyRb2O_2YyBq3Gkay1t0bJTXga5qQW0l2Sm0HRiD333wdhai6-mg8JWtqUMHsKYQ4Z4kCLrAm3X2Smr3D5yPUwQZFapSmpZXTVL0gDuhEL_5hVW8OawM4qCVYOW5kfpLngsMcTRvThFBtLd2ET7V8xvGBBY8IMvJr9Q0c23iJIw9CTuOzDX9Sv_DEaKyEpwMAblTEekht7o0F_ce5qeL8lvZoB8YmAWkfTx5L5mfulettnkvj9uAo91SCbipw-w3fDPOiqN3IglSGdjLQ6_1YbJfnEOYEG6EyelkWS0gALBDBkZbbUiQxFKXCRVlB5U_6WrgX_r_2JxMDOWNrSAazzWwmVNMepOX2zzAbgL8avPnPgLLE-UxhKXpXtUoqgxaBLND79mj-8aGUNEl7LoerhdyDiRVQNrWbH6EzhwOvwZwnCWP12EJQyPNc_hO55TRmWRD_MtxYD203FVzZm9n95vl0_QHN3uWiwRIoUS9QHmMVM78IxsMDXkE4zpw5Ifr4S1y4hnthJkt9L-5e1fBGaxaQrih68T6TOXzFYECDi8oWC4nX92GD5-2p8B4_rfW9uBfsRYP1dnrNhAWT6SjPBR_L9y7Ymg26lvuW0dyG4z8hoIPymU3RIjoBZOw1tm9ybeSp7ELCoZ5tJkbTWMrvYgdD7Lq1NwaTAR5BAnqnBUbysaMFDlh3GuXh4qTLXtFcVOUdD0wEsFnouFG5bFIStn9YF5WrSUv2WP7EVPZEXrDqW_t_h9xydeFayznbj6xp95ctKWsrr1fhQxcTw8b9-_-00AmzRcOv213uPnVaTeuMbenvXzCD9eumIWSq6UW3uLpNuMzJwpMEZvr0YdXdjCY5_TnfczYT9UViI9rl__rQhqIg7tiWRPreTWCpoJFMBGgy-bqetwls6gLz-Pbp7GLc-ujI9GQx4rweqaw33mvIGP13EEniIOZ7mdRwQsMVuNXsiSRV480_2pP0pezA3cis9vsN9DiGFjjaOM1lvUEDQ2GaN-NstpWqDtbD9_1xZ0662Cs0blQxlS18AoPL1YElX7MmIBhEXUXrHFRVUYZy-W8MdRxWD7zmS0XXf1y2KBs5kh-gk9pqEahzuQskSEEhpQIxF5zl28JWO_2-s2pvPxueTSYHmMS-bXySih5I7v199FXLh5PNhdfN-iYrqfrrUIAW9ysGB02bcYbStFKkRnPQj98Nusj5Le7Bpn2xBAruAs0I14CxYThcWFKhJcRJuNXtcpJJgSIS3ftIodAO9t5nRocalS3v-9pjxI2B6iCGRI7bBssTn0p8I7jxRcZ7zdMeNqZdEfn8Vs29A-v7UpGSK1tUYyXU0rEd9icQmY4EJE0YY2kV_9Cj9vYQJe3TS9I7kcFBxi7wjb7Y3xsqCXFRNgnMjkiPFh0PkVRKWiJdufVlYneAGVa7iW17X6DeOpaJUcE9X1a9l2WOh_lbgPJpCR-v-in_Mvn552nchy9jj94yLagK2tTQR6CY4M4rraecGGcgihbrgZprlEf5Xlva9zYl_EJa2FK2q2oooE2puBnfuuVYsm0GTJJ9fta1qpFvkc6no22R2grgVdQxgJTaXA8O7aTHE3at1Er667vxQ_QY9py_L1ArUGkpGo4syCIJtE620-f5fafV_M-3yaT2fj2oJ4qav0z2ZZL9tGE-t4vsPJUQdFtGzfteYPhjKQWBmv9taOsXaTq8MspvqFLAuniyDlPGaUnJiki7EXe-oEiHImcgxYTgBsWsYUTcPwt-9RU54rSUYJewX3CrrjFWBSzQoG_Fd7OhKN5OWChI3SHv_ohrolDai91PpT2WcHCdar2UP418jE98JP7c9I7TYKFi7oePRS-tmh7Lbb3SGAhYjLHnYyd4p3CuDTTLqrwwlcq3DEcz6r_jg4tCOYsYz776NWZjoeehyurkPGAF0WLV3_Vd7Yzm7VUqovPjgChBoXVJeeYRzq-Dw8mfyS3DdXMD9SFjSrUfWcEdAp_KoI2ghXcEfnZyFL5P8krNB5c5BbHjH9X3R78szDZA8kMB5ULIByJ9lFInDUpVapJc8GWAkorT9YeWDyVjF-13GcQruaumJ_GrSW0_Lri_8uFb4VyAspr-QBSc0VYwv0laX90-RJI0cFtyGZgl5KMd5xPbZL_MQCNkGzfRRASKYbSkcXrjAa677VAp7Avis_QIcNo22ZI4Hdn5WLlbrmbOyf7X1xZDXZoZCglFHvmyolvk3F3XfidFYef0d5WV042JBv_EkIYp8_SAZ9-FKUpoFqAu0PKivpl0iQpCB9z6QntWWCOLkL8Jz0Bo2LHybIrySJMWYYVFKFNdvvZPIc6Rx8PxJsXP7Fc1aOeDeQ5nB7Vk_IcUgXLE3jeEJALqkhA8pp_c_gM56miD8uEJm902DeDXiQsFJqWgEiMgwGh_02yBDzaMfFUj5i3w_AL2bcPDvwrrgDmyvGFFttF8jpGNhXtkI4_ERahJlFaW-aT5Lvh1enD5Hv8qzmPUrvDSJgldIGP8Ae-MfGk_W-DcgD6Wc3SrZN1cmAT-G584_s6j4GHwEz5dZnDU8ohdzDIwRazoaYVfbzAHJQvQVpLydqYmCphedZHb3zc_O8-RBm-85ibUNum0YXU-hU2wvFkBoa50tWcmahvbWLAgT3yG9418r1EKhZP3mbw1dLpOU29XBvWbqwXaLBj_1vkHQuEd0zD3y4FK0qpIGGyweOM_W6u2Os3H_63fu3WG2bB4Vqc6TbA5E76JODxrxOym8ofHFcepkUP8m5Akf4nhgGOfIDLUv5P3HJ5gmfPI5O4C5i6FstHClfwMpyk_GM4y5sGrYRNputkQH4JYrvA3WDIvQz7sDOo5XL5YIlNZCi08ne1UV0lheNnvIWQSsV1kgpcj0011nPdwsLe7qTzP9NvC5EDJsbTVhDamyg6Vnb7A_P2Hw8t_mhxsjPS3IXkqKp_jadffWjX-9ontdFBPK4XpGvwxL06EaMVrAk63ci4D4NS8wYkj9gyC86mmxXheSibEzUYHv5wwdv2tTVoGU0u5yIypYS_j5FikBAvpaG8JD6OY76hF_faQA8FxmVDp67Gx-2MtxhCtZmEQWWYIiyGxm89N05pjeOKmgB2y1Z5fvOZlrPFwszKefx4hWuJwMJYmwWmqMBmVN57ObNZ-McAErK2XflvrCcPlOsvIkHEW79yQjWb_B7dBM_GgHf1tbvv42NcH9Wiqm7UJbtzjV712ux2Br6PrKMbFzzWMj3dXUp3ggDz6Q_kOkeZUZkEwXrsLriP11mDpTPx7L5MVDehGKVohn9ZFZ3IlL5ffi87ogbtra_56JdfjrsTgNu8liY9-5tOdv5K4TvqUjnxF4uPpzq996c_bra37MNibbSE28Z5xYWl6VI9Nu2h-2T3z2xRKD_U0RHzf8hOwVj6rt7arUvWN44dCqYQi_jmid_rqBKvEXnvo6Df7zuDwGqwledLn5TzBGGh3wf3Jiz7dmgwDlx3S-eyw0JN0DWZs7cwJsnjTyK9Ze_JLWL699pjdtt6Z0MLK77wA9X8dAOCEgKRjcjG7kMsvgdnrrwhtdkNmUpmfig1Oj14Za72XyCfDigzPMJi1ApGAknWNrBGknYXJ_utoVUBfm6e63Q7DxcYQv7QtAcdt7_p-Pz2CjUEnR-hq1-j9NY-LZiA2MASjh-czc8ndXaAMOnJi4rXH30Dd3vCtkjp41ERrk4oOPlaLiZVCP_YQjIfk7HDd0tMT1Cj-Jg9FKjedWPQe0vAIjisbaTBe1-9v-Ot3ZGgt5271HmeklExy34UMfA-9mTBYjWFsYb97JXXkZYCmpSHNHqp3hvvcgnImJ98ZRHE1_SSegiJjRxCsA3sS27Ira4GTMarmQjm5lN7eOF4aOf_LY47_kBmk7RZ-QngddcWRSknKjTDFPGsL81qA8r1lUjIZAu9tewFxn5vKcE_QRMZ24vhydBt-yJeF8U21kuaQo671eVxlTx6-auhMHDm9nmMNPyywJ-u7Fzyw7oL7x8e4dNBjx8wPgx5Qn3ZQnQJdT1LG4YVu4FHsbxM4WVotPavfWM09FYQJI8iTIyTLcNgSNuxbTstOoQDvSHANXxxMefJetlbnsvIxUdxDx2F0NjaUeP5u6vNJP9IO7hfqeCGqMDmnwjmClDvlgBDR3V8lq4GGyzd72UiuWUjPcYh155ETWXUJpjqL3O25cSasDl9K3FbSFU2X0ifUByvUKl-M0aBXpiSMbDxL8WMwWvp2nWKNP5s8Iyio2UHKJPhUNmjHrVUSCqO1jbjgGHr-u6KDRJsghvmmFH0RTx8rpLc_drmILMAYP2Tqd70k3M3pMlL2glvw5HmmiJagTOk0ja9ca5QRSTEC4G56A1Ouy-J-B1Ru4UOW95uloTdAJ8H6_i_vrsnKTkUHvHqMk93mKWVB_-Xbc8-MwPp9w93No9XceNW7ahEvvpEvoQJg0Du-BMjWXqMQLBXw1wDRoK2sy_0wFOn6jSQTo1iYZrlZulaO7NcR8NIbj6d9fZVEVGD4_gQOjnGGV74pBwq0sv237Egz7fqw7djEAWFHUUEPIfjiHIJ5rqR659k-zzjZyBAXkKea3K3tg1QDTfj3Nf7jun5WTccvN_tDfDbKCkU036lvmBbgFQW9duveD-zGSkVPZL9vu8WFpCgiIrUYmpIMzXU8bI4KIGCb4WxIRsqjOphxzLzwPZxkNhiyrm5YvufNy6_8wD3iPq57UNR4ZeonCvhkZD1x3ia9v7ZduCFTHXO5QrPG_l1m2aYkGovNZrH9puYn1PJUNbBOU1U3JJWs_YN5TDdpyqD7TE-uW1Jr_0hx5eALY-GuryNdyF-DUEADm2fI9Bs4xqtECWlpXKbSRhRERa5fzAy66ibjNNW0RgZ-ed4eAV7hEC_dtE6-T6t5N1RdYbdgToY5OZg6X-pUv0Y-ixN6Gz6UYR49OyIAPGi_8IAkNI103bTeIWWphPK1wwIQ_IrlyCvCSEcjB6WGFGXuUvpbkXDjqggAx_Tp6vp0k0X-_IHAlVbj1brQ07YzYekK5UOsdJosBA2qZm5yLw7bnCmtl-j8rDcgmWOT_RLH8FTew33cYv3TuZToFpGxBurCyHyx9l7y3nUo31Kwh6vZNH5TQSf0dfCKeBTF9Rp_WIdNck4Q8s2oq8xkUJM4iUz_2-htGgn9yhnwA7en7ehqIKrvopCp-lFnPZlYAjLVwYudvGl6SHhKz9TkNyASuJSzL-f8sUdyKRp2MKCKV9wVYdqAugACu9m-ZzH8IJtcl3H4ERXPyxZQrkYM2Uk4jY5lz6_NwdHcO9Sq13nQUvhMTwWy6t4h0713LufjQ1rreErrFgby86Cz_VFvteOdkF-jw5q55oSp_oLAMxOBAET-bYwJ_WfycvOeVdbL5JPAQKq81_9VHuVIRWvbuL0ZKwaSMCM5v8x5flvNUoCVMXDyfrhJA3GbpayjS3Z2puHmWMueom2-Q8Hgcp4QB2w67wRQ8sFUf4UXzm7XCm5v194gnkYiAigHgJ4tg3igNpw0aUPCYRZLNSCp_dLModFqx5c1ErM-em45_c2eutZHNcGbg2RHGs1rIgicIfa4f1obX7JYM2bepMmv9Bp7YRo0Cr-s6Lryk6Ex6ABY7gvYKac8Ov3XnUGsMtZ-yzejgWob48Cp29FRq75-da9imYTv2Ncw9hqhS7pY4YIkJIHfRG_HmgY6D08x9EbK0RoyGIQSfB9k1fLX9EgbrkwCv-T_AYwPuLzvkPX7E7DcJMMMyJW3pNcLUWImCta-adhUSNwAuq_8ayjWi7NBFkl10iKSz55OYloiMujvjgIKEqdgbLPAfAS5oKPRX2s1PEsLxFnMcS9SiX1EwW80ACxheB-gVOKNR3twuU69f2rwTOdIF4dT0m6GwZNjSQ-WlNnWnI5-ZkEMDRknIl2G84jKSFEv556TCbwi5bhStAER5sOuG6lrfiK_vA8lM-HwQnZzfgS6ptpeKwoep2EPK59faqDpeWinHqNnckBOCkfDJHl18k60Hv4sbR8rhhcGWKj88z8owLz-nxik4u6NyGcu3n8_vnq8vy2H66K4Fb17E3SeRfDbbu1nNLMTZcZ60oHnu6fg7qVOdc1bzUYSso2D5nNSARuJVMPH1-OiG-Epqaz9WB5av-in0BmRh-Tlj9D4jg5D-oaE1cbu6XAl5MKRH_FgzZechv05dF2tzTE-2PtAcwipN5_IYAkTz-aPuKO1EFmdZEczinPdThTEEt4JMKt1W0IqrKohsttm7VyVcKQXjgeKo8RnI9P7xrV6SKFZM1EoI2PttHuoX0CVrdHQKX9Ar8ourSQjot3rakiDRypkV8YfjeDvrdmj7tlXjlbRtU-soexTlb1Fsk2jKUawKNkMNBCQPlLBoYRLruRu7Z6jeppyPvFNrc9OZLrtO9OhTCfflOWc0ofspTg-e7YVyKU-7-t7SW6hf2AQxZgjV6Qa3TCu13fWTOwkZRzwVN5y-Bs2qLA7OWev0P7TwdZxWxdErim5DSdy2O5ablCTrdZFLbWiSGC-4HVUb_5EKr-fp8jaLeygR-KCRIY-5qUnX8ebtEWXutwIHkOJX3DHDb3JTmYO-UiPOyNq3AKVQXo69bVaWeHBGdipuovq9RKdEgDcBBiSaLAKDLlEwgK61tKq6VnIu4uHTWOSYiiMfNL-r4jBbxrjZNxMPtPX_o28SSaki_wat1y-PDgJCd8Bq7csPxO6JKDrzM_OwuadmjVYeVdbmEOmVnXdaLXZ2zlOb9SmJdooyqbIepc7Uqho0fbm_LhJ5wHaR5KE1IM4N8RHWiWBTnD-zfNifybFKVAKPsyW2kVQIDkWZigi0DbE-gtmwWY7fynm3D_GEKoE95Mqf4D9u6LOPMGXvC2A4QevzP-JOUQyWovkmyYyEoZb4KQnZhtSh0sLegniIqeIUVcbw8hSG55p-rxfg4wpdKwU3nmQaiYRPHwMNg3uwQK_eJ03nG9vYq4QfNLcwLV_8ODyR2cYQWA_ZszPVv2ekkgtgya_lF_9TmhrfFAbKAHjPK2e5bN_nSNlEm0h12e2QUKAKXLUyOaWkkYenr3p0jw1DWr1sXDaJ1Vd04W3NHqXQ7fGnDAwOjDOo7wheh2Fzc6LJXms8sJ9DhrFRVec1yCaObjqSSj_esnBp7WkBg3Je9_0nHKIcMfcqx0WUl0QDxUObkLfQHWU_1ZHeZ892984g9ppfgncmkh6esa5u07AZvB7q9QHYhdW9uvLEhYKTnhcj40Gt74p8nBOZ_IhEnBkhnwZar25vk_b12PwODE9wI63rcf-lLX-a5Ynp_fKhskgDNRCqx4uEA0MA202eAFP4C-yLwCGr8SgP8qi8GmXGxZDj-k2KlDrDRByziMO9AMgh8yMctSY4JZcF2cZZSPSyKJY5qjXs8NoT6sR3AaYRHx-uZ-TzuVbQdBDwRJQNwtkveoPSGTCHVtoCOo9uu5piob4YzfUay4TX8qn1T5ayKbPijC2KOATqXM0WMkoTVvqGKfcey-gCfvp7lBj5tDFVcyLE3_6QsZVHESHrCsAR02-gdxBI33DFoes_1NT81vAnt_c9z166FTpKpvXT_PcKgvwLpbyOIrFkM08C9lycQT7jjm47UmOAHDP2NeePb1BZWahv7PpIdX8a0FvSSTPrn-owMfDIWhAQjr4f4OyvQJu6Kj6e_4j0XOhfl-mDsj_d7iZ786MQgLyeCe-pIsJPdsLfHrFgcjObINyb85QxQa6W0xV_gbIqy2UyB_SNYnxEGnef3QJ51Yi5fIoM9aO_pkVWgzLHhSUXK7fecYc-2TfgEKD4hDLByqHm-SfbG4J4EzV0-zqh8X7K5LnjymcVgzCN4hq86iJpfBkCn-pBBv5T1efdK8S3leU0sWcj9HDf72s33j1MPCDkZ7hIp4TcureKekv9Iwt5lG3G7938_7IBj0BfOU7qUOyKLpUg4oIacTgUxdQ3JwNotU6o6s8yrVABf1Jj28TwFAyTti1sUWTuRKlC-bXbhjtvhK4Wmoy6A7q9CZx7_pJLyqnlGcQNZT6j3J3K71lZurYFj5scHGToKgmEB2LJGhEd9N8un_5Z0zo8QhDhxOga5iSPwhr4mQqA5s4bJfPaQvrzZT0iopCnKuhDh3_UdbahVbGcyOJXw7oQfneiewaUI4DR0fevqjdh7nfWx1To7nf04ZDRInWJX2Y6J5wLk5efM0bGB41FXnfYVUJ18bMKk2gSatswtwJdeJh9vg2YAevXpXmzb3BmACNFlYN1LCtO_R9VS0f0K4kdoQEqo88muRpMPy_3btTzCGgbPaUSkkFxsyheQViT7ywq4TUmQFt3THpj6HDWJOOSBh4Hs3t7lCKZyBvkdTA3iq5KMGEP1AqFPshmr1mGlIjtlVT_sz_hSRZEKI-z8SoP4bk76FZ01_ZILsR0tOP8We1XoxObb0UKgApR11d8LMfwLwISJM0hgSzmXHgpMJ2igD4RJE8usKju5fyGnagB-4dkyZkwic6LVq3Mj1FpIuQcDtLhF_t1NOret6f32y31KUvtKdeBEqOIw3H7iqGJPLEzCKjW3rGv_HgQzAiIRFa1zAxu6dTyoQdLulzLX53Mc8L2WEraHx_QHi0tDanPzM-4aW7mJtujpKI3T2a3sjr5ezvBXPnOE5tVscT79TSju50aIMexnDevMB3iyIOwbBO8J5l7cLrA95whPJiBFTl-GysJCaoSbHiV1WEeLOZxihSuDyXArKtyNXwkA_b0vLZRvkviduqUekQmSfESCYwWCTwy838fssV17rm3hkYvzpTnkDpuw8O1IOLw1IFFmll4-GvsH-1DRdv2gzdCBm1r58gPdeIsdcgHLcXy70Xfm46y4eK9gHMY7bJYPzRVD56heUdw_263teozM2QRT9W-KPeeUJblRB34gm-vUXMh57KPNl0JeX-2G9YmpGMx0USLoTqeRtjReWgyPvh5BDu8yRp-lXUg_EDK_3W7mqDpS5h_ngCiCvvXb4joZO5hFjKV5-oyuZ8e2Ghx-8oPfzmsvPPG09_in8-VPe42Qi6mBYoS0WwVdZY9kJsNOFq6k9uhmngBTim5Q1eGyZvN7ENEGBVMLvxbvPBY9MZVVcIlPNwz2dZ3KbhAzZKEKINwPwODasYEEpJKouKjC52mmdm8pasRa19EYaI6Xd2SrDL12mLbDo3QMAxY5KmjKbLmF_Xo3gyYXdm9K6NrHJ8kMbtl_lunFcw==\"},{\"id\":\"msg_06d8732f210e8745006ad650898c0087d09c355da502644409\",\"content\":[{\"annotations\":[],\"text\":\"The
-      sequence 2, 6, 12, 20, 30,\u2026 has successive differences 4, 6, 8, 10,\u2026
-      so it\u2019s a quadratic.  In fact one checks  \\n  1\xB72=2,  2\xB73=6,  3\xB74=12,
-      \ 4\xB75=20,  5\xB76=30, \u2026  \\nSo the nth term is the \u201Cpronic\u201D
-      number  \\n  a\u2099 = n\u2009\xD7\u2009(n + 1) = n\xB2 + n.\",\"type\":\"output_text\",\"logprobs\":[]}],\"role\":\"assistant\",\"status\":\"completed\",\"type\":\"message\"},{\"role\":\"user\",\"content\":\"Using
+    body: '{"model":"gpt-6-luna","input":[{"role":"user","content":"Look at this sequence:
+      2, 6, 12, 20, 30. What is the pattern and what would be the formula for the
+      nth term?\n"},{"id":"rs_03eb0707a238ef57016ae8af2905dc87d1a344a4cde342cb00","summary":[{"text":"**Clarifying
+      Patterns in Sequences**\n\nI need to address some ambiguity in the sequence.
+      It seems like I''m looking at differences such as 4, 6, 8, 10. I think the formula
+      n(n+1) with n starting from 1 might explain the sequence. I''m realizing that
+      a finite sequence can show many patterns, particularly with products of consecutive
+      integers like 1*2, 2*3, and so on. That seems like a good direction to pursue!","type":"summary_text"}],"type":"reasoning","content":[],"encrypted_content":"gAAAAABq6K8ra7wyJT6YQh6TTLgzwv67_D4nfU3VrztqcHeAyq3OiSzisTvCIPbuc_HEv832C9O_4otFqLzzZpcRBi2Z3_D2zn7hdn92sULS6W73ZXAc8R8m0q3LWc7GIy1iYhBCdlwCwUmuB4TmL4lfzxJk-qwLwDLl44m0zGnMSZm4q0fZUh7X1J4nV-R6Pi6D9zlK6phOGjS5iPElMqHCqTHk0UMlfspsy6mWQ6XndCliixZA0nBAh3qBCAL_nicQ1EXTHd8Es-K1hR4ANNhZ-Y4FkygA2YBGiXoee38G6A44P41dqv65nDuyPKCrT2qtkruuSk39dgPD3rEJF2Zex8qhox9NJoEbQIboUUE2jOf0M1TZI237zYnRLaYzH6KQ8PlMVceFYiQ6T9VP06ChB-9xop6fUlzFvOgM_JEa9KbdUdWRXhBInL8GUYf3zLMfVbmkk-i7xIQiaH6KvVMjZlF0hWyH6hVtWsCwdC1TDy3UXEUfEY2haABQzbVEqWQ1osJKi0F9mFMo8dJyXjka3clNPCRIlbORGmE_68-lrPhyl0ilBPl1iVNRR8zlLBoFvNChb-td9ZjAsi4rVKf-vgR34R1yJgS04QF73vXedusFPdNEclFPfg27o89DR33XCMkadChFlZmU8UxgjNBzRyp9lVGADTz8wQSVGdE41rIzWimW_DJZ3Gu3COUz4Yg_QMQrxyMgGvqeK7kkgDDSYUkIR7IH-fJ-cVCkHOezIGfK4ulxFKol6apOjAGvDXtzADNOxocJa1l_TAwyNBH1MJ4EwxhzxaV1Kf4n6fLCpfZgiXkJSkI5p8sN535DvYDA98WRtZaqg52aNY1lTnfvspzBhF-p5Lw_kPg5WihRvWlTihmaJ0tP5eIdAZ2Dq6pGXaywcqFeFoVchP_9_wIqseCsF2fosHqDdbeJGkgC1J4YtK47y9axHn-T7CT1TBsFxMixqL3MXerUFpl13ejlh-R2--Aad6rHPMEYX67Y8E7GTQPmFxeTqX9vSPIXA6ic29ufU1-NWsNaMmpRVwWBtzD0oBsvE1w_QWiAsXwD9JeAooEgkmV_2AzsXk0pvoUA8sMhimunvktI3quckwemmZ2Jf03aWk7z865DGM6-x11odbbK3TYAzwG-mgcar1gXMe7W9FlSstB4a0VYttyhle2hvJprVY2Hy_LHPz8FL8EYAd5pxYDSg7Fax96T6y7FRVUjWhubIYpsLdIKdN2WVUXPAmfwAcVkvkA1_OS0KgyrW2SExDMewPcAzFIw4nJMfHW06faNij7KOe0eK8qet8ESmGcq4zJaWLGHgHWHjBvGqPcRMciBYtvpB-grnUxd_wTaJNMd6n17mWXcVSb6dEzmIvj_Yrd6GZgtKcm-lXVbke-EKxoe3wXGwJ0RS_BxYEOL5u2xOK6pwOQTjrctmTXMTGtUjrNTzPTErIZS8bnTCCpwZgWbPR8DXnQGXpg_AAdPjitfR1Ob90G2gOyvfjq8Cj0ipZlVzCVzedvqQB2lklh5Pb1sOlMMYOQUEk9Y9aFJb5EC4vBHw5HnQc2WGyrOqKkGFFQwMffkg4JAnNaA242paOgzFE4jLzzPcS8CZceaVrllIfebF0j0MaLsh3rDzEHR6UJZJJMQLujsXcq4Z-x9JOJmEQzA3vPgS6Rsl__kqA3Dg_JQpEk5xes_WZtUQw_Yzz2NXUlWMIE_2HX-BCJ3t1ipyQKt-9yZY8RSTXLpmhnVoDjRiTlPH0wfBWImtysAGdvnbaKDLABkhDkYwyqdsKW5bYkMZTPDu7RJJBKfUID5nyMTLGOc-anScN0k3ONQWvuWeQWI-NqqcHtZJmoAyrj1uM_u16xxgEfYvaFfP8S1XFYoUA2r6LR8nNEHAMGfVlzb-_Y5wyDPEWJOLKGDwkxJ3Pj7sOmWJDtmm1EJTzS8F_fmsuuiKtrSYc6sUI4jq3l-L9S72voJQ0DkbkqrIT6mB0VYwmI-X5_PRhVobO7LfPEM5bsmpJM5yBfqomfS5GbEosyUqGoG4CIzqMRP-kYQseo2ufhcOas0LCAgNR-Sc5kAVwQ1sfvdmKEYN03RexJURaJX4ipZtJSP99VSi08NIlIlDBmTQ3xyHIpib5Eqpql3rkxjA5hDQU6xaWzpcPFhhCdUOh3fOmyP03nYyqUd-kLIFhd_jyQcN0mX4sAk"},{"id":"msg_03eb0707a238ef57016ae8af2b24ec87d19d59ed8e7f11e244","content":[{"annotations":[],"text":"The
+      terms are products of consecutive integers:\n\n\\(1\\cdot2=2,\\;2\\cdot3=6,\\;3\\cdot4=12,\\ldots\\)\n\nSo,
+      starting with \\(n=1\\), the \\(n\\)th term is\n\n\\[\na_n=n(n+1).\n\\]\n\nEquivalently,
+      the differences between terms are \\(4,6,8,10,\\ldots\\).","type":"output_text","logprobs":[]}],"role":"assistant","status":"completed","type":"message","phase":"final_answer"},{"role":"user","content":"Using
       the pattern you discovered, what would be the 10th term? And can you find the
-      sum of the first 10 terms?\"}],\"reasoning\":{\"effort\":\"high\",\"summary\":\"detailed\"}}"
+      sum of the first 10 terms?"}],"reasoning":{"effort":"high","summary":"detailed"}}'
     headers:
       accept:
       - application/json
@@ -155,7 +123,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '12512'
+      - '3602'
       content-type:
       - application/json
       host:
@@ -164,65 +132,62 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_06d8732f210e8745006ad6508a81cc87d0a4dc1d1f0a4bc22f\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1792430218,\n  \"status\":
+      string: "{\n  \"id\": \"resp_03eb0707a238ef57016ae8af2bf46487d1bb0307913bc7475a\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1793634092,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1792430222,\n  \"error\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1793634095,\n  \"error\":
         null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
-        \"o4-mini-2025-04-16\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"rs_06d8732f210e8745006ad6508b66a487d09fce8f1c844a13e6\",\n
-        \     \"type\": \"reasoning\",\n      \"content\": [],\n      \"encrypted_content\":
-        \"gAAAAABq1lCPDcR49juz1uofWHqEEm85DbA1_x-M74OmFymKn-LOJ4tnPfHMBOhEXZC9iS6Z4ez7usyUkgkV4OcmpG8ydzfmRrq0XuOiO1AcAAOCBO0VMqrly9IIYCJJVjYmJskfiBIvMEtgcLmuDZKtRutWNE6096P4UhNAlLYDwwPNtzMxg5VdaFk8bMfeUeZsiQDPaIk6hTmiWtXOrLZ7W71vsdPF2vOTP8KrEgY5Hy6KroH4j6JMjy7OqCamZPeIGzm1s04vfxMZRfoVM9M-zLLV8E219Ecac2zvo9E_OxJuK2WWZj1JwHZUQvq-9uSE_J31p6mCWMNrpNe-d1ywCps_cBT5yWDtIA2Cbw4OV5QvYFDAJvYStev1bZegjZfk3fLa8xhYG1bTLn0GG-DRjsobSskExHJ9yVo5UetA_hdN8F8dGIr28kFrAP4ofj4aW2NHYc9GGV9Z3r-9FwFTRb_y5nW-6Qr4yiyQ7a5lWtj1ufEBD1aenq0kmWJcRsFubBqqTajzDceSxairdwTdHqpVpiBb2VDGX_Sax-Hi5-Ojrn3CFkPWF-haH_beU1wkigI5gkkFd1e8OCaTc_5WPvs53fD5guMOz5pZoZx2k5VEID2rSulftt8us6beh4gZm1ZudWbfQbapWfNGR6EhEpaubLX567s8w2YBcetGkzGPI4eL54jO7mgZ7-L1xNw4DSrBGoXfe9x9Mgji4JmmrYruNuR18OqTZjV6NHj-eyzabK1egzjOGLt0slvMINdh3JBuq5vp4a0NBhFKmisOLOiHXo5-OE9FmqzV7o3xuwvMt7c5aB9O10iyCg3EsLYsG3x-sFFb820f0FNHzRglaIVrc59WUXML1QnvR0F_F5mtHoiGswn19o5O9vZJqYK3QraaRWoG9RL871teVkbnDAjAomvxOzhnMrJe1Ch9ORCcBbRYqSMdeGhngAouooLWL6dx8Jj3RAyqtDIEBtvI7QOeBt-10z4VdMWlZm-uED2pzCqHMiOuqPBjY3ydQ99FzeTcJhVzT-1HzqfuCxCLA7GxIS6wm_qbPrQGAax_8Tdvijudvuo6HZK8FT-Snu3nW0GBlkultjVsNmYXCV_iV5LCg179W0Prfx_2ciK0GdfT4oZLhcWg3XVGv1grtJsJ_V7-GEVYTSfIG--BKA7XYHXTCDd8fF4jmHjTDb65IyP8OXinGr0jiH8WhhJacLYNAa-hFnyOEp8FmDte0k3bg6CsNkIkZMt7R06caxCtjxbK_lXHk0r5wzdGf3J90nrzLU72Zcns3CBCKYdq-ui-56wTZxP3xyJAEjOt5XaC28dEkhzY8l6r39FOp8CMFSMUXIxY6qWhUCIt5MGnVpZwoDc5eEmpz0cU4B5xDAnclYv0Xbhe_hgeJQzfJgczHnoMMo2BIiQWJW-bm50fft88fZCtMhUPoxllQML4sspaOCTpkm6rbZ6c6p6lfHLzSFAxT7ml_mQGr5p5lrylARL5HCm6fSslXP4vGaCUiyBmG3RhEB8CIEbzveqq2DUV0jO30b-r3Z5gsJs7Rh-jEnnQJA-B78Pg5SBbTyJOsamap9zdzOa4j75Gwr5R6MWrytgoGiR549uYZ6xpETQaRPx6RVYfoWq8_Mo2YBz5tlqYb2gQLjlnACIzkLyQ23YBcx8YH1n-TzbafF9gGs9lVdFTr01TtlRlU9LwESIxVbecPBIULeUYEZm41ZDoXs1oL6Ss2QDCH8Jfns9rP8fHJ5JJzsfi5jE5JFXGV5ENA0XqysnqpqXQW_tcAIBd6cWiz91LyDcS4roPhGOut16Do7xJNURF5QF8uk_6QfC8CP4lwAjL-GU5_9-9qblKcKLn97AlZmfmUKVUuHfKiYFf5TuIa6uBGU0qextWHkvNxSansXOOrzmXrCi7gKOi8TwZuNb2u-SeZnrjEbS5sLMRqgSz3fgZ5PSpDjWy9X9nQgNqTW-BuiS8qI6eBpVxfmexrBqMdYGfe8Hf_8y5lUrGm_x2ZJLugZY7tY9WlobjkEtnM-Xon7K7qOoC29Av_8Pf0cxlcwaQ0xHVPy3tko4vkMXIhe-3f6mDX5SS-2xgFxu5_0sQZFeVXfJp0CRobcdAJBt-waZd0IMSqESMkN_2k9lpDpYEY-fZJFAc9G_K2zXoFm7pw_OEV62ea2_WwhI3txAadZfTFGL7kQzlUI0fHeS9Hjy6hXiYbD-J7rotioVOHxAn1tgmpmoPEnDwHOLNmItwhm8mIKfT5sx6A_IYPleYB4FYFknhE_OhiD06OEvW6UXDcxGEyRP2E69X9pQh120VEV-eH20X4yh_HTbFvf-1SOvjI2-rLBAPPnwyItH0Ps_LQlJfdHnCmalStBmgCyhw8g1V1yQbcS_Sw-wnV8xfruZ_4JzqHCUVjjt4DZfJjBcTM9OJohaGYcYzDnpA7bcC6emN9T53GP7nOEhZ024iI6uJg0itusbj7iBos24v9dmMUeDQGugRAkjl4d05ggtqo7NDboVNeikHhigHT0hmHAyLP2YaeetIAdltFqnONsqApYxRQDFSxeRU82cAIPEzWTBt_9M9AVj7k2Du0o7c1lEXTS1aUA5Tpwz8rDHEIXW-Ket3Hm3ZVldnlo9LHdU5q9M8o7kqA0pl-Gwpa-n9hhFVFep1UzMzC_zaR0_q7xr3NqLIUH3P-nhtRx5zcuW2rz1QQCxFKCB0XPTyDh5Ua8i77-tDMWduaBgP2GeRFLPxxNDJ_oFvH0xYCBQHKwu_h-TPpBayoGaNyIHqTQV5aJ-HR0AMTaaXAymj2KMbSch6yr8dHHWumY9tKa9HEPQJlNpv5NQvp8E1o7bmdHgO3KtKLC34OywlZ-vr-LFi9HD-XRgNorF5RhnRSz6H0gLeRA0LIKno_iujIB3--2WqDQG1R4NdsJ_eSRJTJUSYyHfAQg1Q-BznVQTIcqIh1hCTrv-1n3R0gGbCElFN4yoS4LENfU_E3jTLy-QkQl3P_85bSj_mYN9EJiztcqnkWrB7DTHnQuPU7IrdLJe8RIbrWo1uZ4lyfMMQszpqgsxpjPZQ_lsa711qqXF08ci24z-tNAynUH4nyAoqYGr-cyqtHpKdhS04EmXq8QYw-0pqAzMFgdWUoyUjSbgDfooR5Siw8JeNo-tfGJMI9YaJIXZyVMrg2pl-MLQXaGvHdyW09pk7hu5Y40PzoCawHC5TKmHMXbUNAUDI2XgI30fXIxEc317E3h4DnLVf9M9MSNAL2nrBfJUtZZ5CoowwkKo1pXWjvAvdw6G0ZErCm8WLf6smZXJblawcZ4TE4vz5qtE5nZ37f4WrU3RqqA98xqhifHnipSewoEjo2T9yW32oBoaf2DRPX_UCUfnrkxjkE6UzKOcZdeunDs9R9kwVwtDfe9VQM-NAT2VwSsaOknjBu6WZxYNjlLiGuBqHp5H75wakU9J3c97WhBhm2Z4UTjHqqABBLvxrfVJicYb2nAY06_R5lO6dmF3jRx7XtL81XtJXeIO3aIfLGD9CQD6p7yKKpxNjK7gHF2SQVIfFAXLLzFWD_JmX7Hqwh7HPaDWb1_62z3dZqd4i4m24X34ka-aKwzvNZvPSrJBIOTLUEcH0k156WeV_0Q4oqbaM-M8zbZ03Cxe_Q5DJZQwqMQMxOxuWyP6NMbuzmvv18OzXw7Ik791y1mj5-8sh2CNWOhsHOm4Q4o0sBQN1a6XO8AUrFWYLies-60MoIHxI2I0P49kvfZrht8kGhwcJ-CnclbZSuowAo7ex6WtjhuqfSSrMy2_T6VYTw-9AwepjMR6Sut_HEwPahMjEi4zZ8VgNOnl00EPa3E4sIttYpnKeSYM_2nJOLPeWU5pM2cXH29qBTS7wCuJvnbNb0jkmSg==\",\n
+        \"gpt-6-luna\",\n  \"moderation\": null,\n  \"output\": [\n    {\n      \"id\":
+        \"rs_03eb0707a238ef57016ae8af2cd30487d192d2e7df96fdd1da\",\n      \"type\":
+        \"reasoning\",\n      \"content\": [],\n      \"encrypted_content\": \"gAAAAABq6K8v2KBreCyJ1t3N8983hNVMEVoMPEo2Ajx_V_yXZiIlf77iQiRPOVZpPMDiofp_fqwNM1Yk1P8E-n5OEpQQU71mUAxZDFr9hC52hsOf7yILUq-wzB-fVjusR-4356gGD8Cs4KEwsHbHujt_kdtaxQk4YRA1PuBHpfISuf2T4rZv6pV-g7FbyUfnSuIBEwSaa2GPwtH-Wp1ECebY2u27MBbH84JusVsPJ0WH0ZeiM2DnzGciS3WxtI5_06092hQFc4Mg4DS5iXz4mRVKcVdzFKQQkSyD0qPQh-GXuzVjSW9NEKhHgQ5ncjN4JmoqgVqIH3iqCdOXOOCUCuDnB66ZkVJJeuTnVDuWSn_nUU7Fc94lmTDkpJqHmXGBBwmxQbTMKdefPLLVmhxp90BOsv6XTwKST1D0H8DbMMKQwwq5mjIodfK2f7AUIvv8VZb_CUAPFrZw-gYbHyUpZHdSRysbFUpUW70PmN9A5T-DmmRwb4g2R5zT7Nd5cp1XWIXYdslsQB1hbJVzwmp2uIxYq5O0c0pGXmVPSoyy2IAtzD0CXUJAXi9sfCyo_1Ckuz9ayzfRR5VlC_klHeAfxFRg8KUFxblSeJ2mqN3uzgg_3xRuegai8fPvXtitiQsQ5rgqnMmBUMsztcSKJ2iZdjFhph3mfXBWQKoS8S2ur0Q17TgOHf2K-8Du2VUiTPMoA9QFcamDdcHhZEZZYxA11cQ3KAAIuNfjMbW6uSOlwlE_dH1wqcubwVc_MSVIgvF5NGjWsMkWczmgLAPOIf1Sz_jZJ-s7FxPhe8ijso9JmiUZQBq0dN3yE_kGfpVdTI2z47cXXW_CErklYpozLJNPG6X33rR1T1rThe4kgt2OCp3C-Z9IlR8O0T54xk9-iBZR2MkJQoaSeFL25OGIOcTrneiLAw_ca3gY6E6vBR_uPbglyNTlFDzn2AVOimH4otEOz-dEFNkE4128YWys2MiefGyMSz5VnWeXxsllo2psd4vdpaywuufEgi8PMsQa4SntwiQ9mRNAyG-cvc9VuYGF-oc20AGUVVjJ0KNQ7PpXAmvk6UFXnifpliuYQ3Kl5Eo-9wnOs4B-yCCdsMJKEu212bBmrYM70hxSpYduUjRjDQFtlcl6T5BXRrl6HtLkIlGRkyJrSFRHYisRH40OBn0Je0ewAq3PBgNKdZkLJ-JXwifBsCbvKIYFhEjrTaVAPNH9LjScIsPNFQkp4paBpYG1hsTUbVQhoue9fGRZkbKO62h6D1ET9DCyzOItOXUOTFL51bauuP8is7Oqab1pKVu55TKlGqzn1gMubfmHg7NNSMSJJIjr6sbxS7uvv-VBewX3Utfjz2a5y52dVXzRuiFyCmfDw_kjOkD5yx31lg09LKGFvrDjQ_LjHahdJ3iN6oka0Vh5cNEezfH7-VnrA1t_BGB5HN1N3nw4Ycy3JgG4XjW_Vu74gL8VLiglwBmL50uphhZb_hwXvj4NKwTypXGt4wWCT5a6lGmmPnbxU3VGVTaF-kyF5NF5k3lDUxbHxtmbiIHEqAMJ_u9DVKPVIBJtzbPdwoKih6Q30mAD-5l1dhqIcXLvtwEKIrDOAODiGa9Gga8c-DHuUFvbDsl2VsUL2kDUzTGsH2ZHkp6S_Z6wbkRCI6X_lRH9ZkqTFI_1r_jAD3i0Qld-9r40ws8Ul0Q3Mih8nU58ZipdfW6CW-TRrFJ37Pz01fow808IVbdcEONqKazdlyFvXfwDp6yia7qFnPqZJ8weoPFCBlsTebeYn_Ncz1f3yW2G-HAJ4rxJFTH7TlREQmeyBPsA5gRKy7VtqbV0OIYamz6f0j9ekZp-Rul1sUQ--SRG5eGiUuxLu7tpCQNEPf9iiEThedZ96x_kZ6VFlXFgvKAwHM6sNkNycpdKs15QqOZzU_wP43jLTGD_ftfvSC330hiU\",\n
         \     \"summary\": [\n        {\n          \"type\": \"summary_text\",\n          \"text\":
-        \"**Calculating pronic numbers**\\n\\nI\\u2019m working through the sequence
-        of pronic numbers, defined as a_n = n(n+1). So for the 10th term, I compute
-        a_10 = 10 * 11 = 110. Next, I need to find the sum of the first 10 terms,
-        which turns out to be 440. Alternatively, I can also use a different formula
-        for the sum of pronic numbers, leading to the same result. So, the answer
-        is that the 10th term is 110, and the sum is 440.\"\n        }\n      ]\n
-        \   },\n    {\n      \"id\": \"msg_06d8732f210e8745006ad6508e9bc887d098cee265782c3446\",\n
+        \"**Calculating sums**\\n\\nI need to find a concise answer for the question
+        involving sums. First, I calculated \\\\(10 \\\\times 11 = 110\\\\). Then,
+        for the sum of the first 10 natural numbers using the formula \\\\(n(n+1)/2\\\\),
+        I determined that it equals 55. Adding the sum of the squares, which is 385,
+        gives me a total of 440. I wonder if providing the sequence of the first ten
+        terms would be helpful to clarify things!\"\n        }\n      ]\n    },\n
+        \   {\n      \"id\": \"msg_03eb0707a238ef57016ae8af2ecb1887d1a383bf027676dc60\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"The 10th term is  \\n
-        \ a\\u2081\\u2080 = 10\\u00b7(10+1) = 10\\u00b711 = 110.  \\n\\nThe sum of
-        the first 10 terms is  \\n  S\\u2081\\u2080 = \\u2211\\u2099\\u208c\\u2081\\u00b9\\u2070
-        n(n+1)  \\n       = \\u2211\\u2099\\u208c\\u2081\\u00b9\\u2070 n\\u00b2  +
-        \\u2211\\u2099\\u208c\\u2081\\u00b9\\u2070 n  \\n       = (10\\u00b711\\u00b721)/6
-        \ + (10\\u00b711)/2  \\n       = 385 + 55  \\n       = 440.\"\n        }\n
-        \     ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
-        true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
-        null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
-        \   \"context\": \"current_turn\",\n    \"effort\": \"high\",\n    \"mode\":
-        \"standard\",\n    \"summary\": \"detailed\"\n  },\n  \"safety_identifier\":
-        null,\n  \"service_tier\": \"default\",\n  \"store\": true,\n  \"temperature\":
-        1.0,\n  \"text\": {\n    \"format\": {\n      \"type\": \"text\"\n    },\n
-        \   \"verbosity\": \"medium\"\n  },\n  \"tool_choice\": \"auto\",\n  \"tool_usage\":
-        {\n    \"image_gen\": {\n      \"input_tokens\": 0,\n      \"input_tokens_details\":
-        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\":
-        0,\n      \"output_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
-        0\n      },\n      \"total_tokens\": 0\n    },\n    \"web_search\": {\n      \"num_requests\":
-        0\n    }\n  },\n  \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n
-        \ \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 197,\n
-        \   \"input_tokens_details\": {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\":
-        0\n    },\n    \"output_tokens\": 402,\n    \"output_tokens_details\": {\n
-        \     \"reasoning_tokens\": 256\n    },\n    \"total_tokens\": 599\n  },\n
-        \ \"user\": null,\n  \"metadata\": {}\n}"
+        [],\n          \"logprobs\": [],\n          \"text\": \"Using \\\\(a_n=n(n+1)\\\\),
+        the 10th term is\\n\\n\\\\[\\na_{10}=10\\\\cdot11=\\\\boxed{110}.\\n\\\\]\\n\\nThe
+        sum of the first 10 terms is\\n\\n\\\\[\\n\\\\sum_{n=1}^{10}n(n+1)\\n=\\\\sum_{n=1}^{10}n^2+\\\\sum_{n=1}^{10}n\\n=385+55\\n=\\\\boxed{440}.\\n\\\\]\"\n
+        \       }\n      ],\n      \"phase\": \"final_answer\",\n      \"role\": \"assistant\"\n
+        \   }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n
+        \ \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
+        \"24h\",\n  \"reasoning\": {\n    \"context\": \"all_turns\",\n    \"effort\":
+        \"high\",\n    \"mode\": \"standard\",\n    \"summary\": \"detailed\"\n  },\n
+        \ \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n  \"store\":
+        false,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
+        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
+        \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\":
+        0,\n      \"input_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
+        0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
+        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
+        0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
+        \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 0.98,\n  \"truncation\":
+        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 241,\n    \"input_tokens_details\":
+        {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 0\n    },\n
+        \   \"output_tokens\": 157,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        55\n    },\n    \"total_tokens\": 398\n  },\n  \"user\": null,\n  \"metadata\":
+        {}\n}"
     headers:
       access-control-expose-headers:
-      - X-Request-ID
+      - X-Request-ID, Server-Timing-Total
       - CF-Ray
       - CF-Ray
       connection:
       - keep-alive
       content-length:
-      - '6966'
+      - '4887'
       content-type:
       - application/json
       date:
-      - Mon, 19 Oct 2026 17:17:03 GMT
+      - Mon, 02 Nov 2026 15:41:35 GMT
       openai-processing-ms:
-      - '4607'
+      - '3335'
       openai-version:
       - '2020-10-01'
       server:
@@ -236,11 +201,11 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999597'
+      - '180000000'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:

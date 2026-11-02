@@ -1,0 +1,108 @@
+interactions:
+- request:
+    body: '{"input":[{"role":"user","content":"Search the web for a recent AI news
+      headline and answer in one sentence."}],"model":"gpt-6-luna","reasoning":{"effort":"none"},"tool_choice":{"type":"web_search_preview"},"tools":[{"type":"web_search_preview","search_context_size":"low"}]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '275'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+    method: POST
+    uri: https://api.openai.com/v1/responses
+  response:
+    body:
+      string: "{\n  \"id\": \"resp_04e73c04a352e653016ae8afe11f6c87d18f5e95ef50f0ef32\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1793634273,\n  \"status\":
+        \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1793634276,\n  \"error\":
+        null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
+        null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
+        \"gpt-6-luna\",\n  \"moderation\": null,\n  \"output\": [\n    {\n      \"id\":
+        \"ws_04e73c04a352e653016ae8afe1978887d1aa1119c216caa019\",\n      \"type\":
+        \"web_search_call\",\n      \"status\": \"completed\",\n      \"action\":
+        {\n        \"type\": \"search\",\n        \"queries\": [\n          \"AI news
+        latest November 2 2026 artificial intelligence headline\",\n          \"AI
+        news November 2026 recent headline\"\n        ],\n        \"query\": \"AI
+        news latest November 2 2026 artificial intelligence headline\"\n      }\n
+        \   },\n    {\n      \"id\": \"msg_04e73c04a352e653016ae8afe3ee5487d19f1bc1382d55ccb4\",\n
+        \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
+        [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
+        [\n            {\n              \"type\": \"url_citation\",\n              \"end_index\":
+        228,\n              \"start_index\": 130,\n              \"title\": \"Anthropic's
+        spending commitments surge to nearly $900 billion\",\n              \"url\":
+        \"https://www.axios.com/2026/11/02/anthropic-spending-revenue-surge?utm_source=openai\"\n
+        \           }\n          ],\n          \"logprobs\": [],\n          \"text\":
+        \"Axios reports that Anthropic\\u2019s disclosed AI-computing and infrastructure
+        spending commitments have surged to nearly $900 billion. ([axios.com](https://www.axios.com/2026/11/02/anthropic-spending-revenue-surge?utm_source=openai))\"\n
+        \       }\n      ],\n      \"phase\": \"final_answer\",\n      \"role\": \"assistant\"\n
+        \   }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n
+        \ \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
+        \"24h\",\n  \"reasoning\": {\n    \"context\": \"all_turns\",\n    \"effort\":
+        \"none\",\n    \"mode\": \"standard\",\n    \"summary\": null\n  },\n  \"safety_identifier\":
+        null,\n  \"service_tier\": \"default\",\n  \"store\": false,\n  \"temperature\":
+        1.0,\n  \"text\": {\n    \"format\": {\n      \"type\": \"text\"\n    },\n
+        \   \"verbosity\": \"medium\"\n  },\n  \"tool_choice\": {\n    \"type\": \"web_search_preview\"\n
+        \ },\n  \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\": 0,\n
+        \     \"input_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
+        0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
+        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
+        0\n    },\n    \"web_search\": {\n      \"num_requests\": 1\n    }\n  },\n
+        \ \"tools\": [\n    {\n      \"type\": \"web_search_preview\",\n      \"search_content_types\":
+        [\n        \"text\"\n      ],\n      \"search_context_size\": \"low\",\n      \"user_location\":
+        {\n        \"type\": \"approximate\",\n        \"city\": null,\n        \"country\":
+        \"US\",\n        \"region\": null,\n        \"timezone\": null\n      }\n
+        \   }\n  ],\n  \"top_logprobs\": 0,\n  \"top_p\": 0.98,\n  \"truncation\":
+        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 8578,\n    \"input_tokens_details\":
+        {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 4328\n    },\n
+        \   \"output_tokens\": 88,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        46\n    },\n    \"total_tokens\": 8666\n  },\n  \"user\": null,\n  \"metadata\":
+        {}\n}"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID, Server-Timing-Total
+      - CF-Ray
+      - CF-Ray
+      connection:
+      - keep-alive
+      content-length:
+      - '3397'
+      content-type:
+      - application/json
+      date:
+      - Mon, 02 Nov 2026 15:44:36 GMT
+      openai-processing-ms:
+      - '3545'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '180000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '179996373'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 1ms
+    status:
+      code: 200
+      message: OK
+version: 1

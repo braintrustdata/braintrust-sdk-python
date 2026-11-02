@@ -100,7 +100,7 @@ def test_btx_spec(
 
         assert btx_project_id is not None
 
-        num_expected = len(spec.expected_brainstore_spans)
+        num_expected = sum(1 + len(span.get("child_spans", [])) for span in spec.expected_brainstore_spans)
         print(f"\n[btx] Fetching {num_expected} span(s) for root_span_id={root_span_id!r} ...")
         spans = fetch_spans(root_span_id, btx_project_id, num_expected)
         print(f"[btx] Got {len(spans)} span(s), validating...")

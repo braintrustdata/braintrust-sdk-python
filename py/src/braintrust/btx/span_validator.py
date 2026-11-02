@@ -218,7 +218,11 @@ def validate_spans(actual_spans: list[dict[str, Any]], spec: LlmSpanSpec) -> Non
     for i, (actual_span, expected_span) in enumerate(zip(llm_spans, expected_spans)):
         span_errors: list[str] = []
         for key, exp_val in expected_span.items():
-            if key not in actual_span:
+            if key == "child_spans":
+                children = [s for s in actual_spans if actual_span.get("span_id") in (s.get("span_parents") or [])]
+                children.sort(key=lambda s: s.get("span_attributes", {}).get("exec_counter", 0))
+                _validate_value(children, exp_val, f"span[{i}].child_spans", span_errors)
+            elif key not in actual_span:
                 span_errors.append(f"  span[{i}].{key}: key not found in actual span")
             else:
                 _validate_value(actual_span[key], exp_val, f"span[{i}].{key}", span_errors)

@@ -1510,7 +1510,10 @@ def test_openai_responses_not_given_filtering(memory_logger):
     assert_dict_matches(
         span,
         {
-            "input": TEST_PROMPT,
+            "input": [
+                {"role": "system", "content": "Just the number please"},
+                {"role": "user", "content": TEST_PROMPT},
+            ],
             "metadata": {
                 "model": lambda x: TEST_MODEL in x,
                 "provider": "openai",
