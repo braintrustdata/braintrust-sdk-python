@@ -525,6 +525,10 @@ def test_openai_responses_web_search_tool_spans(memory_logger):
     tool_spans = _find_spans_by_type(spans, SpanTypeAttribute.TOOL)
 
     assert len(llm_spans) == 1
+    if version_satisfies(openai.__version__, ">=3.41.0"):
+        tool_usage = response.tool_usage.model_dump(exclude_none=True)
+        assert tool_usage["web_search"]["num_requests"] == 1
+        assert _try_to_dict(llm_spans[0]["metadata"]["tool_usage"]) == tool_usage
     tool_span = _find_span_by_name(tool_spans, "web_search_call")
     assert tool_span["span_parents"] == [llm_spans[0]["span_id"]]
     assert tool_span["metadata"]["tool_type"] == "web_search_call"
@@ -566,6 +570,10 @@ def test_openai_responses_web_search_tool_spans_stream(memory_logger):
     tool_spans = _find_spans_by_type(spans, SpanTypeAttribute.TOOL)
 
     assert len(llm_spans) == 1
+    if version_satisfies(openai.__version__, ">=3.41.0"):
+        tool_usage = final_response.tool_usage.model_dump(exclude_none=True)
+        assert tool_usage["web_search"]["num_requests"] == 1
+        assert _try_to_dict(llm_spans[0]["metadata"]["tool_usage"]) == tool_usage
     tool_span = _find_span_by_name(tool_spans, "web_search_call")
     assert tool_span["span_parents"] == [llm_spans[0]["span_id"]]
     assert tool_span["metadata"]["tool_type"] == "web_search_call"
