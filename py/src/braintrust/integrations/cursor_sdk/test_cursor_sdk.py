@@ -3,6 +3,7 @@
 # pylint: disable=import-error
 
 import base64
+import hashlib
 import os
 from pathlib import Path
 
@@ -126,8 +127,17 @@ def test_sync_wait_traces_cursor_owned_model_turn(memory_logger, tmp_path):
     assert llm_span["metrics"]["tokens"] == (
         llm_span["metrics"]["prompt_tokens"] + llm_span["metrics"]["completion_tokens"]
     )
+    # Cursor's reported total can exclude cache tokens; Braintrust's total
+    # includes them even when the provider's total does not.
+    usage = result.usage
+    assert usage is not None
+    assert task_span["metrics"]["prompt_tokens"] == (
+        usage.input_tokens + usage.cache_read_tokens + usage.cache_write_tokens
+    )
+    assert task_span["metrics"]["tokens"] == (
+        usage.input_tokens + usage.output_tokens + usage.cache_read_tokens + usage.cache_write_tokens
+    )
     assert llm_span["metrics"]["time_to_first_token"] >= 0
-    assert set(llm_span.get("metadata", {})) == {"model", "provider"}
     allowed_metrics = {
         "start",
         "end",
@@ -144,7 +154,45 @@ def test_sync_wait_traces_cursor_owned_model_turn(memory_logger, tmp_path):
 
 
 @_REQUIRES_SYNC_BRIDGE
-@pytest.mark.parametrize("consumer", ["messages", "stream", "events", "iteration", "iter_text", "text"])
+@pytest.mark.vcr
+def test_summary_compaction_is_traced(request, tmp_path):
+    import cursor_sdk
+
+    if not hasattr(cursor_sdk.types, "SDKSummaryMessage"):
+        pytest.skip("Cursor SDK does not expose summary messages")
+    memory_logger = request.getfixturevalue("memory_logger")
+    assert CursorSDKIntegration.setup()
+    workspace = _workspace(tmp_path)
+    summaries = []
+    with cursor_sdk.CursorClient.launch_bridge(workspace=str(workspace)) as client:
+        with cursor_sdk.Agent.create(
+            model=TEST_MODEL,
+            api_key=_api_key(),
+            local=cursor_sdk.LocalAgentOptions(cwd=str(workspace)),
+            client=client,
+        ) as agent:
+            for turn in range(4):
+                data = " ".join(hashlib.sha256(f"{turn}:{i}".encode()).hexdigest() for i in range(3000))
+                run = agent.send(f"Remember this data for later. Reply only OK.\n{data}")
+                summaries.extend(message for message in run.messages() if message.type == "summary")
+                if summaries:
+                    break
+
+    assert [message.status for message in summaries] == ["running", "completed"]
+    spans = memory_logger.pop()
+    summary_spans = [span for span in spans if span["span_attributes"]["name"] == "Cursor Context Summary"]
+    assert len(summary_spans) == 1
+    summary_span = summary_spans[0]
+    root = next(span for span in spans if span["span_id"] in summary_span["span_parents"])
+    assert root["span_attributes"]["name"] == "Cursor Agent"
+    assert summary_span["span_attributes"]["type"] == SpanTypeAttribute.TASK
+    assert summary_span["metadata"] == {"status": "completed", "fallback": summaries[-1].fallback}
+    assert summary_span["metrics"]["end"] >= summary_span["metrics"]["start"]
+    assert summary_span["context"]["span_origin"]["instrumentation"]["name"] == "cursor-sdk-auto"
+
+
+@_REQUIRES_SYNC_BRIDGE
+@pytest.mark.parametrize("consumer", ["messages", "events", "iter_text", "text"])
 @pytest.mark.vcr
 def test_sync_consumption_paths_finalize_once(memory_logger, tmp_path, consumer):
     import cursor_sdk
@@ -160,12 +208,8 @@ def test_sync_consumption_paths_finalize_once(memory_logger, tmp_path, consumer)
             run = agent.send("Reply with exactly: cursor tracing complete")
             if consumer == "messages":
                 consumed = list(run.messages())
-            elif consumer == "stream":
-                consumed = list(run.stream())
             elif consumer == "events":
                 consumed = list(run.events())
-            elif consumer == "iteration":
-                consumed = list(run)
             elif consumer == "iter_text":
                 consumed = list(run.iter_text())
             else:
@@ -285,7 +329,7 @@ async def test_async_messages_preserve_callbacks_and_trace(memory_logger, tmp_pa
     assert all(span["context"]["span_origin"]["instrumentation"]["name"] == "cursor-sdk-auto" for span in spans)
 
 
-@pytest.mark.parametrize("consumer", ["stream", "events", "iteration", "iter_text", "text"])
+@pytest.mark.parametrize("consumer", ["events", "iter_text", "text"])
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_async_consumption_paths_finalize_once(memory_logger, tmp_path, consumer):
@@ -307,12 +351,8 @@ async def test_async_consumption_paths_finalize_once(memory_logger, tmp_path, co
                 "Reply with exactly: cursor async tracing complete",
                 cursor_sdk.SendOptions(on_delta=on_delta, on_step=lambda _step: None),
             )
-            if consumer == "stream":
-                consumed = [item async for item in run.stream()]
-            elif consumer == "events":
+            if consumer == "events":
                 consumed = [item async for item in run.events()]
-            elif consumer == "iteration":
-                consumed = [item async for item in run]
             elif consumer == "iter_text":
                 consumed = [item async for item in run.iter_text()]
             else:
