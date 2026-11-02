@@ -57,6 +57,11 @@ async def _agent_resolve_model_selection_wrapper(wrapped: Any, instance: Any, ar
     return _wrap_model_instance(await wrapped(*args, **kwargs))
 
 
+async def _resolve_retry_model_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+    model, model_id = await wrapped(*args, **kwargs)
+    return _wrap_model_instance(model), model_id
+
+
 def _direct_prepare_model_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
     return _wrap_model_instance(wrapped(*args, **kwargs))
 
@@ -84,9 +89,17 @@ def _maybe_create_tool_spans_from_messages(result: Any) -> None:
 
 def _log_agent_result(span: Any, input_data: dict[str, Any], result: Any, output: Any, metrics: Any) -> None:
     resolved_input = input_data
+    metadata = {}
     if result is not None:
         resolved_input = dict(input_data)
-        for message in reversed(result.new_messages()):
+        new_messages = result.new_messages()
+        for message in reversed(new_messages):
+            model_id = getattr(message, "model_id", None)
+            if model_id:
+                model_name, provider = _parse_model_string(model_id)
+                metadata = _build_model_metadata(model_name, getattr(message, "provider_name", None) or provider)
+                break
+        for message in reversed(new_messages):
             instructions = getattr(message, "instructions", None)
             if instructions:
                 resolved_input["instructions"] = instructions
@@ -101,7 +114,7 @@ def _log_agent_result(span: Any, input_data: dict[str, Any], result: Any, output
         if system_prompts:
             resolved_input["system_prompt"] = "\n\n".join(system_prompts)
 
-    span.log(input=resolved_input, output=output, metrics=metrics)
+    span.log(input=resolved_input, output=output, metrics=metrics, metadata=metadata)
 
 
 async def _agent_run_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):

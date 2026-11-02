@@ -20,6 +20,7 @@ from .tracing import (
     _create_direct_model_request_wrapper,
     _create_start_producer_wrapper,
     _direct_prepare_model_wrapper,
+    _resolve_retry_model_wrapper,
     _sync_stream_bridge_init_wrapper,
     _tool_manager_call_function_tool_wrapper,
     _tool_manager_execute_function_tool_wrapper,
@@ -95,6 +96,13 @@ class AgentPatcher(CompositeFunctionWrapperPatcher):
         _AgentGetModelPatcher,
         _AgentResolveModelSelectionPatcher,
     )
+
+
+class RetryModelPatcher(FunctionWrapperPatcher):
+    name = "pydantic_ai.resolve_retry_model"
+    target_module = "pydantic_ai._agent_graph"
+    target_path = "ModelRequestNode._resolve_retry_model"
+    wrapper = _resolve_retry_model_wrapper
 
 
 class DirectPrepareModelPatcher(FunctionWrapperPatcher):
