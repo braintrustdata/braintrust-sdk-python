@@ -122,6 +122,7 @@ _RESPONSES_RESULT_METADATA_KEYS = (
     "object",
     "background",
     "incomplete_details",
+    "tool_usage",
 )
 
 _EMBEDDING_METADATA_PARAMS = (
@@ -1735,6 +1736,10 @@ class ResponseWrapper:
 
         for result in all_results:
             usage = getattr(result, "usage", None)
+            if getattr(result, "type", None) in ("response.completed", "response.incomplete", "response.failed"):
+                tool_usage = getattr(getattr(result, "response", None), "tool_usage", None)
+                if tool_usage is not None:
+                    metadata["tool_usage"] = tool_usage
             if (
                 not usage
                 and hasattr(result, "type")
