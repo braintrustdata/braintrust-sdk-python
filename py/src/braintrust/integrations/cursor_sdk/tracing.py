@@ -215,6 +215,7 @@ class CursorRunTracker:
         self.turn_ttft = 0.0
         self.turn_count = 0
         self.tools: dict[str, _ToolState] = {}
+        self.summary_span: Any = None
         self.aggregate_metrics: dict[str, int] = {}
         # `observe()` is a second, independent stream over the same run, so an
         # observed run can redeliver events already seen via `_apply_event_state`.
@@ -371,6 +372,22 @@ class CursorRunTracker:
                 self._finish_tool(call_id, output=_value(message, "result"), is_error=status == "error")
         elif message_type == "usage":
             self._finish_llm(_value(message, "usage"))
+        elif message_type == "summary":
+            status = str(_value(message, "status", ""))
+            fallback = bool(_value(message, "fallback", False))
+            if self.summary_span is None:
+                self.summary_span = start_span(
+                    name="Cursor Context Summary",
+                    span_attributes={"type": SpanTypeAttribute.TASK},
+                    parent=self.root_export,
+                    set_current=False,
+                )
+            self.summary_span.log(metadata={"status": status, "fallback": fallback})
+            if status in {"completed", "error"}:
+                if status == "error":
+                    self.summary_span.log(error="Cursor context summarization failed")
+                self.summary_span.end()
+                self.summary_span = None
 
         if run is not None:
             self._update_model(getattr(run, "model", None))
@@ -383,6 +400,9 @@ class CursorRunTracker:
         if self.finished:
             return
         self._finish_llm()
+        if self.summary_span is not None:
+            self.summary_span.end()
+            self.summary_span = None
         for state in self.tools.values():
             if not state.completed:
                 state.finish(error="Cursor run cancelled" if cancelled else None)
