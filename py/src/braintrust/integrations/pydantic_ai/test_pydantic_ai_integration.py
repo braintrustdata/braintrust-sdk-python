@@ -2440,6 +2440,93 @@ async def test_agent_with_prefill(memory_logger):
     _assert_metrics_are_valid(agent_span["metrics"], start, end)
 
 
+@pytest.mark.vcr(cassette_name="test_model_fallback_traces_each_attempt")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("candidate_kind", ["instance", "string"])
+async def test_model_fallback_traces_each_attempt(memory_logger, candidate_kind):
+    """A failed provider request and the model that answers each get their own span."""
+    try:
+        from pydantic_ai.capabilities import ModelFallback
+    except ImportError:
+        pytest.skip("ModelFallback is unavailable in this Pydantic AI version")
+    from pydantic_ai.models.openai import OpenAIChatModel, OpenAIResponsesModel
+
+    fallback = "openai-responses:gpt-4o-mini" if candidate_kind == "string" else OpenAIResponsesModel("gpt-4o-mini")
+    agent = Agent(
+        OpenAIChatModel("braintrust-nonexistent-model-for-fallback-test"),
+        capabilities=[ModelFallback(fallback, sticky=True)],
+        model_settings=ModelSettings(max_tokens=50),
+    )
+    result = await agent.run(TEST_PROMPT)
+    assert "4" in result.output
+
+    spans = memory_logger.pop()
+    agent_span = _find_agent_span(spans)
+    model_spans = [span for span in spans if span["span_attributes"].get("type") == SpanTypeAttribute.LLM]
+    assert agent_span is not None
+    assert len(model_spans) == 2
+    failed = next(
+        span
+        for span in model_spans
+        if span["metadata"].get("model") == "braintrust-nonexistent-model-for-fallback-test"
+    )
+    answered = next(span for span in model_spans if span["metadata"].get("model") == "gpt-4o-mini")
+    assert failed.get("error")
+    assert not answered.get("error")
+    assert agent_span["metadata"]["model"] == "gpt-4o-mini"
+    assert agent_span["metadata"]["provider"] == "openai"
+    for span in model_spans:
+        assert span["metadata"]["provider"] == "openai"
+        assert span["span_parents"] == [agent_span["span_id"]]
+        assert span["context"]["span_origin"]["instrumentation"]["name"] == "pydantic-ai-auto"
+
+    continued = await agent.run("What is 3+3? Answer with just the number.", message_history=result.all_messages())
+    assert "6" in continued.output
+    spans = memory_logger.pop()
+    agent_span = _find_agent_span(spans)
+    model_spans = [span for span in spans if span["span_attributes"].get("type") == SpanTypeAttribute.LLM]
+    assert len(model_spans) == 1
+    assert model_spans[0]["metadata"]["model"] == "gpt-4o-mini"
+    assert agent_span["metadata"]["model"] == "gpt-4o-mini"
+    assert agent_span["metadata"]["provider"] == "openai"
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_model_fallback_stream_closes_failed_attempt(memory_logger):
+    try:
+        from pydantic_ai.capabilities import ModelFallback
+    except ImportError:
+        pytest.skip("ModelFallback is unavailable in this Pydantic AI version")
+    from pydantic_ai.models.openai import OpenAIChatModel, OpenAIResponsesModel
+
+    agent = Agent(
+        OpenAIChatModel("braintrust-nonexistent-model-for-fallback-test"),
+        capabilities=[ModelFallback(OpenAIResponsesModel("gpt-4o-mini"))],
+        model_settings=ModelSettings(max_tokens=50),
+    )
+    async with agent.run_stream(TEST_PROMPT) as result:
+        output = await result.get_output()
+    assert "4" in output
+
+    spans = memory_logger.pop()
+    agent_span = _find_agent_span(spans)
+    model_spans = [span for span in spans if span["span_attributes"].get("type") == SpanTypeAttribute.LLM]
+    assert agent_span is not None
+    assert len(model_spans) == 2
+    failed = next(
+        span
+        for span in model_spans
+        if span["metadata"].get("model") == "braintrust-nonexistent-model-for-fallback-test"
+    )
+    answered = next(span for span in model_spans if span["metadata"].get("model") == "gpt-4o-mini")
+    assert failed.get("error")
+    assert failed["metrics"].get("end") is not None
+    assert not answered.get("error")
+    assert answered["metrics"].get("end") is not None
+    assert failed["span_parents"] == answered["span_parents"] == [agent_span["span_id"]]
+
+
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_agent_with_error_handling(memory_logger):
