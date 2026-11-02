@@ -347,7 +347,7 @@ lint = [
     # Keep these available to pylint without installing CrewAI (whose
     # transitive chromadb versions are unsuitable for shared CI).
     "opentelemetry-instrumentation-openai==0.59.1",
-    "langsmith==0.8.18",
+    "langsmith==0.14.17",
     "langchain-core",
     "langchain-openai",
     "langchain-anthropic",
@@ -359,9 +359,9 @@ lint = [
     "pydantic-ai-slim>=2.53.0; python_version >= '3.11'",
     # Keep the lint environment's optional SDK dependencies lock-resolved
     # instead of installing the unconstrained [all] extra separately.
-    "opentelemetry-api==1.45.1",
-    "opentelemetry-exporter-otlp-proto-http==1.45.1",
-    "opentelemetry-sdk==1.45.1",
+    "opentelemetry-api==1.45.2",
+    "opentelemetry-exporter-otlp-proto-http==1.45.2",
+    "opentelemetry-sdk==1.45.2",
     "orjson",
     {include-group = "test-cli"},
 ]
