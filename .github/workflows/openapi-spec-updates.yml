@@ -29,8 +29,6 @@ jobs:
         run: |
           mise exec -- python py/scripts/update-openapi-spec.py \
             --summary-file "$RUNNER_TEMP/openapi-update.md" >> "$GITHUB_OUTPUT"
-          commit="$(jq -r '.spec.commit' openapi/config.json)"
-          echo "branch=auto/update-openapi-spec-${commit:0:12}" >> "$GITHUB_OUTPUT"
 
       - name: Regenerate client and public reference
         id: generate
@@ -81,7 +79,7 @@ jobs:
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           commit-message: "chore(api): update pinned OpenAPI spec"
-          branch: ${{ steps.update.outputs.branch }}
+          branch: auto/update-openapi-spec
           title: "chore(api): update pinned OpenAPI spec"
           body-path: ${{ runner.temp }}/openapi-update.md
           delete-branch: true
