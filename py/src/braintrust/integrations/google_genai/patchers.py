@@ -27,6 +27,15 @@ from .tracing import (
 # ---------------------------------------------------------------------------
 
 
+class ModelsGenerateContentContinuationPatcher(FunctionWrapperPatcher):
+    """Trace a complete model turn, including any continuation requests."""
+
+    name = "google_genai.models.generate_content_continuation"
+    target_module = "google.genai.models"
+    target_path = "Models._generate_content_with_continuation"
+    wrapper = _generate_content_wrapper
+
+
 class ModelsGenerateContentPatcher(FunctionWrapperPatcher):
     """Patch ``Models._generate_content`` for tracing."""
 
@@ -34,6 +43,7 @@ class ModelsGenerateContentPatcher(FunctionWrapperPatcher):
     target_module = "google.genai.models"
     target_path = "Models._generate_content"
     wrapper = _generate_content_wrapper
+    superseded_by = (ModelsGenerateContentContinuationPatcher,)
 
 
 class ModelsGenerateContentStreamPatcher(FunctionWrapperPatcher):
