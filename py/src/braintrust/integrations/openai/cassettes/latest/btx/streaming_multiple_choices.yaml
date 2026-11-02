@@ -1,0 +1,89 @@
+interactions:
+- request:
+    body: '{"model":"gpt-6-luna","stream":true,"messages":[{"role":"system","content":"you
+      are a concise assistant"},{"role":"user","content":"Say hello in one word."}],"max_completion_tokens":100,"n":2,"reasoning_effort":"none","stream_options":{"include_usage":true},"temperature":0.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '276'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      x-stainless-helper-method:
+      - chat.completions.stream
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: 'data: {"id":"chatcmpl-EfoSDCy2rRmG8pT73zttQf6824IHP","object":"chat.completion.chunk","created":1793634101,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{"role":"assistant","content":"","refusal":null},"finish_reason":null}],"usage":null,"obfuscation":""}
+
+
+        data: {"id":"chatcmpl-EfoSDCy2rRmG8pT73zttQf6824IHP","object":"chat.completion.chunk","created":1793634101,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":"Hello"},"finish_reason":null}],"usage":null,"obfuscation":"TBxOmQWuCk2GA"}
+
+
+        data: {"id":"chatcmpl-EfoSDCy2rRmG8pT73zttQf6824IHP","object":"chat.completion.chunk","created":1793634101,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":1,"delta":{"role":"assistant","content":"","refusal":null},"finish_reason":null}],"usage":null,"obfuscation":""}
+
+
+        data: {"id":"chatcmpl-EfoSDCy2rRmG8pT73zttQf6824IHP","object":"chat.completion.chunk","created":1793634101,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":1,"delta":{"content":"Hello"},"finish_reason":null}],"usage":null,"obfuscation":"w3nJMUsthWE8W"}
+
+
+        data: {"id":"chatcmpl-EfoSDCy2rRmG8pT73zttQf6824IHP","object":"chat.completion.chunk","created":1793634101,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":null,"obfuscation":"XDHUlEqTbcJg"}
+
+
+        data: {"id":"chatcmpl-EfoSDCy2rRmG8pT73zttQf6824IHP","object":"chat.completion.chunk","created":1793634101,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":1,"delta":{},"finish_reason":"stop"}],"usage":null,"obfuscation":"Ey8kcxa2rcu7"}
+
+
+        data: {"id":"chatcmpl-EfoSDCy2rRmG8pT73zttQf6824IHP","object":"chat.completion.chunk","created":1793634101,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[],"usage":{"prompt_tokens":21,"completion_tokens":8,"total_tokens":29,"prompt_tokens_details":{"cached_tokens":0,"cache_write_tokens":0,"audio_tokens":0},"completion_tokens_details":{"reasoning_tokens":0,"audio_tokens":0,"accepted_prediction_tokens":0,"rejected_prediction_tokens":0}},"obfuscation":"fiitV0aiRNf"}
+
+
+        data: [DONE]
+
+
+        '
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      - CF-Ray
+      connection:
+      - keep-alive
+      content-type:
+      - text/event-stream; charset=utf-8
+      date:
+      - Mon, 02 Nov 2026 15:41:41 GMT
+      openai-processing-ms:
+      - '492'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '180000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '179999982'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+    status:
+      code: 200
+      message: OK
+version: 1

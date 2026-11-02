@@ -1,7 +1,7 @@
 interactions:
 - request:
-    body: '{"model":"gpt-4o","messages":[{"role":"user","content":"What is the weather
-      like in Paris, France?"}],"max_tokens":500,"temperature":0.0,"tools":[{"type":"function","function":{"name":"get_weather","description":"Get
+    body: '{"model":"gpt-6-luna","messages":[{"role":"user","content":"What is the
+      weather like in Paris, France?"}],"max_completion_tokens":500,"reasoning_effort":"none","temperature":0.0,"tools":[{"type":"function","function":{"name":"get_weather","description":"Get
       the current weather for a location","parameters":{"type":"object","properties":{"location":{"type":"string","description":"The
       city and state, e.g. San Francisco, CA"},"unit":{"type":"string","enum":["celsius","fahrenheit"],"description":"The
       unit of temperature"}},"required":["location"]}}}]}'
@@ -13,7 +13,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '511'
+      - '552'
       content-type:
       - application/json
       host:
@@ -22,21 +22,21 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EdEAnxDOeZBcwMNQuYs5NaHtjnzqE\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1793017981,\n  \"model\": \"gpt-4o-2024-08-06\",\n
+      string: "{\n  \"id\": \"chatcmpl-EfoSEzl2X1ZXFNettBJ59NqyShum0\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1793634102,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
-        \           \"id\": \"call_sgM6VF3KKTa7TQfHjmCF7ean\",\n            \"type\":
+        \           \"id\": \"call_m9SQVRoTAr6P5qCUERs5IaLm\",\n            \"type\":
         \"function\",\n            \"function\": {\n              \"name\": \"get_weather\",\n
-        \             \"arguments\": \"{\\\"location\\\":\\\"Paris, France\\\"}\"\n
+        \             \"arguments\": \"{\\\"location\\\":\\\"Paris, France\\\",\\\"unit\\\":\\\"celsius\\\"}\"\n
         \           }\n          }\n        ],\n        \"refusal\": null,\n        \"annotations\":
-        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"tool_calls\"\n
-        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 85,\n    \"completion_tokens\":
-        16,\n    \"total_tokens\": 101,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        []\n      },\n      \"finish_reason\": \"tool_calls\"\n    }\n  ],\n  \"usage\":
+        {\n    \"prompt_tokens\": 166,\n    \"completion_tokens\": 24,\n    \"total_tokens\":
+        190,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\": 0,\n      \"cache_write_tokens\":
         0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_3bfbcbf18d\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -45,13 +45,13 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '1092'
+      - '1103'
       content-type:
       - application/json
       date:
-      - Mon, 26 Oct 2026 12:33:02 GMT
+      - Mon, 02 Nov 2026 15:41:42 GMT
       openai-processing-ms:
-      - '507'
+      - '974'
       openai-version:
       - '2020-10-01'
       server:
@@ -65,15 +65,15 @@ interactions:
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
-      - '10000'
+      - '30000'
       x-ratelimit-limit-tokens:
-      - '30000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
-      - '9999'
+      - '29999'
       x-ratelimit-remaining-tokens:
-      - '29999987'
+      - '179999988'
       x-ratelimit-reset-requests:
-      - 6ms
+      - 2ms
       x-ratelimit-reset-tokens:
       - 0s
     status:
