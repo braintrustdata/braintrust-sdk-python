@@ -104,7 +104,6 @@ The table lists every reviewed generated method. Consult the method's Python sig
 | `client.project_tags` | `post_project_tag` — `POST /v1/project_tag`<br>`put_project_tag` — `PUT /v1/project_tag`<br>`get_project_tag` — `GET /v1/project_tag`<br>`get_project_tag_id` — `GET /v1/project_tag/{project_tag_id}`<br>`patch_project_tag_id` — `PATCH /v1/project_tag/{project_tag_id}`<br>`delete_project_tag_id` — `DELETE /v1/project_tag/{project_tag_id}` |
 | `client.roles` | `post_role` — `POST /v1/role`<br>`put_role` — `PUT /v1/role`<br>`get_role` — `GET /v1/role`<br>`get_role_id` — `GET /v1/role/{role_id}`<br>`patch_role_id` — `PATCH /v1/role/{role_id}`<br>`delete_role_id` — `DELETE /v1/role/{role_id}` |
 | `client.service_tokens` | `post_service_token` — `POST /v1/service_token`<br>`put_service_token` — `PUT /v1/service_token`<br>`delete_service_token` — `DELETE /v1/service_token`<br>`get_service_token` — `GET /v1/service_token`<br>`get_service_token_id` — `GET /v1/service_token/{service_token_id}`<br>`delete_service_token_id` — `DELETE /v1/service_token/{service_token_id}` |
-| `client.simulated_users` | `list_simulated_users` — `GET /v1/project/{project_id}/simulated_user`<br>`create_simulated_user` — `POST /v1/project/{project_id}/simulated_user`<br>`get_simulated_user` — `GET /v1/project/{project_id}/simulated_user/{id}`<br>`patch_simulated_user` — `PATCH /v1/project/{project_id}/simulated_user/{id}`<br>`delete_simulated_user` — `DELETE /v1/project/{project_id}/simulated_user/{id}` |
 | `client.span_iframes` | `post_span_iframe` — `POST /v1/span_iframe`<br>`put_span_iframe` — `PUT /v1/span_iframe`<br>`get_span_iframe` — `GET /v1/span_iframe`<br>`get_span_iframe_id` — `GET /v1/span_iframe/{span_iframe_id}`<br>`patch_span_iframe_id` — `PATCH /v1/span_iframe/{span_iframe_id}`<br>`delete_span_iframe_id` — `DELETE /v1/span_iframe/{span_iframe_id}` |
 | `client.users` | `get_user` — `GET /v1/user`<br>`get_user_id` — `GET /v1/user/{user_id}` |
 | `client.views` | `post_view` — `POST /v1/view`<br>`put_view` — `PUT /v1/view`<br>`get_view` — `GET /v1/view`<br>`get_view_id` — `GET /v1/view/{view_id}`<br>`patch_view_id` — `PATCH /v1/view/{view_id}`<br>`delete_view_id` — `DELETE /v1/view/{view_id}` |
@@ -139,38 +138,36 @@ Only request and response models reachable directly from reviewed resource metho
 | `CreateGroup` | `CreateMCPServer` | `CreateOrgAutomation` |
 | `CreateProject` | `CreateProjectAutomation` | `CreateProjectGroup` |
 | `CreateProjectScore` | `CreateProjectTag` | `CreatePrompt` |
-| `CreateRole` | `CreateServiceTokenOutput` | `CreateSimulatedUser` |
-| `CreateSpanIFrame` | `CreateView` | `Dataset` |
-| `DatasetRestorePreviewResponse` | `DatasetRestoreRequest` | `DatasetRestoreResponse` |
-| `DatasetSnapshot` | `DeleteAISecret` | `DeleteServiceToken` |
-| `DeleteView` | `EnvVar` | `Environment` |
-| `Experiment` | `FeedbackDatasetEventRequest` | `FeedbackExperimentEventRequest` |
-| `FeedbackResponseSchema` | `FetchDatasetEventsResponse` | `FetchEventsRequest` |
-| `FetchExperimentEventsResponse` | `Function` | `GetAclResponse` |
-| `GetAgentResponse` | `GetAiSecretResponse` | `GetApiKeyResponse` |
-| `GetDatasetResponse` | `GetDatasetSnapshotResponse` | `GetEnvVarResponse` |
-| `GetExperimentResponse` | `GetFunctionResponse` | `GetGroupResponse` |
-| `GetMcpServerResponse` | `GetOrgAutomationResponse` | `GetOrganizationApiKeysResponse` |
-| `GetOrganizationResponse` | `GetProjectAutomationResponse` | `GetProjectGroupResponse` |
-| `GetProjectResponse` | `GetProjectScoreResponse` | `GetProjectTagResponse` |
-| `GetPromptResponse` | `GetRoleResponse` | `GetServiceTokenResponse` |
-| `GetSpanIframeResponse` | `GetUserResponse` | `GetViewResponse` |
-| `Group` | `InsertDatasetEventRequest` | `InsertEventsResponse` |
-| `InsertExperimentEventRequest` | `ListEnvironmentsResponse` | `ListSimulatedUsersResponse` |
-| `MCPServer` | `OrgAutomation` | `Organization` |
-| `PatchAISecret` | `PatchAgent` | `PatchDataset` |
-| `PatchDatasetSnapshot` | `PatchEnvironment` | `PatchExperiment` |
-| `PatchFunction` | `PatchGroup` | `PatchMCPServer` |
-| `PatchOrgAutomation` | `PatchOrganization` | `PatchOrganizationMembers` |
-| `PatchOrganizationMembersOutput` | `PatchProject` | `PatchProjectAutomation` |
-| `PatchProjectGroup` | `PatchProjectScore` | `PatchProjectTag` |
-| `PatchPrompt` | `PatchRole` | `PatchSimulatedUser` |
+| `CreateRole` | `CreateServiceTokenOutput` | `CreateSpanIFrame` |
+| `CreateView` | `Dataset` | `DatasetRestorePreviewResponse` |
+| `DatasetRestoreRequest` | `DatasetRestoreResponse` | `DatasetSnapshot` |
+| `DeleteAISecret` | `DeleteServiceToken` | `DeleteView` |
+| `EnvVar` | `Environment` | `Experiment` |
+| `FeedbackDatasetEventRequest` | `FeedbackExperimentEventRequest` | `FeedbackResponseSchema` |
+| `FetchDatasetEventsResponse` | `FetchEventsRequest` | `FetchExperimentEventsResponse` |
+| `Function` | `GetAclResponse` | `GetAgentResponse` |
+| `GetAiSecretResponse` | `GetApiKeyResponse` | `GetDatasetResponse` |
+| `GetDatasetSnapshotResponse` | `GetEnvVarResponse` | `GetExperimentResponse` |
+| `GetFunctionResponse` | `GetGroupResponse` | `GetMcpServerResponse` |
+| `GetOrgAutomationResponse` | `GetOrganizationApiKeysResponse` | `GetOrganizationResponse` |
+| `GetProjectAutomationResponse` | `GetProjectGroupResponse` | `GetProjectResponse` |
+| `GetProjectScoreResponse` | `GetProjectTagResponse` | `GetPromptResponse` |
+| `GetRoleResponse` | `GetServiceTokenResponse` | `GetSpanIframeResponse` |
+| `GetUserResponse` | `GetViewResponse` | `Group` |
+| `InsertDatasetEventRequest` | `InsertEventsResponse` | `InsertExperimentEventRequest` |
+| `ListEnvironmentsResponse` | `MCPServer` | `OrgAutomation` |
+| `Organization` | `PatchAISecret` | `PatchAgent` |
+| `PatchDataset` | `PatchDatasetSnapshot` | `PatchEnvironment` |
+| `PatchExperiment` | `PatchFunction` | `PatchGroup` |
+| `PatchMCPServer` | `PatchOrgAutomation` | `PatchOrganization` |
+| `PatchOrganizationMembers` | `PatchOrganizationMembersOutput` | `PatchProject` |
+| `PatchProjectAutomation` | `PatchProjectGroup` | `PatchProjectScore` |
+| `PatchProjectTag` | `PatchPrompt` | `PatchRole` |
 | `PatchSpanIFrame` | `PatchView` | `Project` |
 | `ProjectAutomation` | `ProjectGroup` | `ProjectScore` |
 | `ProjectTag` | `Prompt` | `Role` |
-| `ServiceToken` | `SimulatedUser` | `SpanIFrame` |
-| `SummarizeDatasetResponse` | `SummarizeExperimentResponse` | `User` |
-| `View` |  |  |
+| `ServiceToken` | `SpanIFrame` | `SummarizeDatasetResponse` |
+| `SummarizeExperimentResponse` | `User` | `View` |
 <!-- END GENERATED REST TYPES -->
 
 The reference sections above are synchronized with the Python surface by `make generate-api-client`; do not edit those sections manually.
