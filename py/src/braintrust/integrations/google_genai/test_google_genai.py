@@ -270,6 +270,45 @@ def _serialized_modality_details(details):
 
 
 # Test 1: Basic Completion
+@LATEST_ONLY
+@pytest.mark.vcr
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mode", ["sync", "async"])
+@pytest.mark.parametrize("vcr_cassette_name", ["test_automatic_continuation"])
+async def test_automatic_continuation(memory_logger, mode, vcr_cassette, vcr_cassette_name):
+    """A continued generation is traced as one merged model response."""
+    client = Client()
+    kwargs = dict(
+        model="gemini-4-argon",
+        contents=(
+            "Write a complete graduate textbook on algebraic geometry, with detailed proofs and exercises for each "
+            "chapter. Continue for at least 100 pages without summarizing or stopping early."
+        ),
+        config=types.GenerateContentConfig(
+            max_output_tokens=65536,
+            thinking_config=types.ThinkingConfig(thinking_level="high"),
+        ),
+    )
+    if mode == "sync":
+        response = client.models.generate_content(**kwargs)
+    else:
+        response = await client.aio.models.generate_content(**kwargs)
+
+    assert len(vcr_cassette.responses) == 2
+    first_response = json.loads(vcr_cassette.responses[0]["body"]["string"])
+    assert first_response["candidates"][0]["finishReason"] == "CONTINUATION"
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    assert spans[0]["span_attributes"]["type"] == "llm"
+    assert spans[0]["metadata"]["model"] == "gemini-4-argon"
+    assert spans[0]["metadata"]["provider"] == "google"
+    assert spans[0]["context"]["span_origin"]["instrumentation"]["name"] == "google-genai-auto"
+    assert spans[0]["metrics"]["tokens"] == response.usage_metadata.total_token_count
+    assert spans[0]["output"]["candidates"][0]["content"] == response.candidates[0].content.model_dump(
+        exclude_none=True
+    )
+
+
 @pytest.mark.vcr
 @pytest.mark.asyncio
 @pytest.mark.parametrize(

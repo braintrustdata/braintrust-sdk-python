@@ -26,6 +26,7 @@ from .patchers import (
     InteractionsDeletePatcher,
     InteractionsGetPatcher,
     ModelsEmbedContentPatcher,
+    ModelsGenerateContentContinuationPatcher,
     ModelsGenerateContentPatcher,
     ModelsGenerateContentStreamPatcher,
     ModelsGenerateImagesPatcher,
@@ -42,6 +43,7 @@ class GoogleGenAIIntegration(BaseIntegration):
     import_names = ("google.genai",)
     min_version = "1.30.0"
     patchers = (
+        ModelsGenerateContentContinuationPatcher,
         ModelsGenerateContentPatcher,
         ModelsGenerateContentStreamPatcher,
         ModelsEmbedContentPatcher,
