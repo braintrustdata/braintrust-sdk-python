@@ -473,6 +473,7 @@ def test_crew_kickoff_smoke_via_litellm_mock(memory_logger):
     forcing ``is_litellm=True`` and using LiteLLM's ``mock_response`` to
     return a canned answer without touching the network.
     """
+    pytest.importorskip("litellm")
     patch_crewai()
 
     from crewai import LLM, Agent, Crew, Task

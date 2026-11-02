@@ -133,7 +133,7 @@ test-openai-http2 = [
 
 test-openai-ddtrace = [
     {include-group = "test"},
-    "ddtrace==4.12.0",
+    "ddtrace==4.15.6",
 ]
 
 test-openai-agents = [
@@ -175,7 +175,7 @@ test-agentscope = [
 # used as pip constraint files, so they do not install optional packages that
 # the provider itself does not require.
 test-mcp-v1 = [
-    "mcp==1.28.1",
+    "mcp==1.30.0",
 ]
 
 # SQLAlchemy 2.1.0 ships only an sdist whose pyproject declares a duplicate
@@ -241,8 +241,9 @@ test-crewai = [
     # CrewAI's no-network smoke test forces the LiteLLM fallback path via
     # ``is_litellm=True`` + ``mock_response``. Keep this on a recent LiteLLM
     # so transitive security fixes (for example python-dotenv and aiohttp) are
-    # present in the locked test environment.
-    "litellm==1.88.6",
+    # present in the locked test environment. 1.104+ caps filelock<4, which
+    # would keep a vulnerable filelock in the lockfile.
+    "litellm==1.103.10",
 ]
 
 test-llamaindex = [
@@ -339,13 +340,14 @@ lint = [
     "google-genai",
     "google-cloud-discoveryengine",
     "instructor; python_version<'3.15'",
-    "litellm==1.106.4; python_version<'3.15'",
+    # 1.104+ caps filelock<4, which would keep a vulnerable filelock locked.
+    "litellm==1.103.10; python_version<'3.15'",
     # Fork the resolution so 3.15 is not stuck on instructor's jiter<0.11.
     "jiter>=0.11; python_version>='3.15'",
     # Keep these available to pylint without installing CrewAI (whose
     # transitive chromadb versions are unsuitable for shared CI).
     "opentelemetry-instrumentation-openai==0.59.1",
-    "langsmith==0.8.18",
+    "langsmith==0.14.17",
     "langchain-core",
     "langchain-openai",
     "langchain-anthropic",
@@ -357,9 +359,9 @@ lint = [
     "pydantic-ai-slim>=2.53.0; python_version >= '3.11'",
     # Keep the lint environment's optional SDK dependencies lock-resolved
     # instead of installing the unconstrained [all] extra separately.
-    "opentelemetry-api==1.45.1",
-    "opentelemetry-exporter-otlp-proto-http==1.45.1",
-    "opentelemetry-sdk==1.45.1",
+    "opentelemetry-api==1.45.2",
+    "opentelemetry-exporter-otlp-proto-http==1.45.2",
+    "opentelemetry-sdk==1.45.2",
     "orjson",
     {include-group = "test-cli"},
 ]

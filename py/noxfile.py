@@ -680,7 +680,11 @@ CREWAI_VERSIONS = _get_matrix_versions("crewai")
 def test_crewai(session, version):
     _skip_if_incompatible(session)
     _install_test_deps(session)
-    _install_group_locked(session, "test-crewai")
+    # CrewAI 1.13.0 pins pydantic-settings~=2.10.1, but every patched LiteLLM
+    # release requires pydantic-settings>=2.14.1. Skip the LiteLLM smoke test
+    # dependency there; the direct event-bus tests still cover that version.
+    if version != "1.13.0":
+        _install_group_locked(session, "test-crewai")
     _install_matrix_dep(session, "crewai", version)
     _run_tests(session, f"{INTEGRATION_DIR}/crewai/test_crewai.py", version=version)
 
