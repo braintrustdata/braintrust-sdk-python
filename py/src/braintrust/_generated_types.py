@@ -137,6 +137,9 @@ class ApiKey(TypedDict):
     Name of the api key
     """
     preview_name: str
+    """
+    Masked preview showing the key prefix and last four characters, e.g. sk-…AbCd.
+    """
     user_id: NotRequired[str | None]
     """
     Unique identifier for the user
@@ -2687,6 +2690,9 @@ class ServiceToken(TypedDict):
     Name of the service token
     """
     preview_name: str
+    """
+    Masked preview showing the token prefix and last four characters, e.g. bt-st-…AbCd.
+    """
     service_account_id: NotRequired[str | None]
     """
     Unique identifier for the service token
