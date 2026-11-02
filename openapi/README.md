@@ -26,7 +26,7 @@ The reviewed generated surface includes these tags:
   ApiKeys, and ServiceTokens;
 - configuration resources: AiSecrets, EnvVars, Environments, and McpServers;
 - project resources: Agents, ProjectAutomations, OrgAutomations, ProjectScores, ProjectTags,
-  Simulated users, SpanIframes, and Views; and
+  SpanIframes, and Views; and
 - versioned data resources: DatasetSnapshots.
 
 Each tag produces one resource and operation registry. Models used by one resource stay in that
