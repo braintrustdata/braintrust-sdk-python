@@ -220,6 +220,29 @@ class ParentWorkflow:
 
 
 @temporalio.workflow.defn
+class DelegatingParentWorkflow:
+    """Parent workflow that starts a child workflow and an activity inside an in-workflow span.
+
+    Mirrors Pydantic AI's TemporalAgent, where a tool such as ``delegate_task`` runs in
+    workflow code and starts a subagent child workflow.
+    """
+
+    @temporalio.workflow.run
+    async def run(self, input: TaskInput) -> int:
+        with braintrust.start_span(name="delegate_task", type="tool"):
+            child_result = await temporalio.workflow.execute_child_workflow(
+                ChildWorkflow.run,
+                input,
+                id=f"child-{temporalio.workflow.info().workflow_id}",
+            )
+            return await temporalio.workflow.execute_activity(
+                simple_activity,
+                TaskInput(value=child_result),
+                start_to_close_timeout=timedelta(seconds=10),
+            )
+
+
+@temporalio.workflow.defn
 class ReplayAfterSignalWorkflow:
     """Workflow that schedules an activity after a later workflow task."""
 
@@ -242,6 +265,37 @@ class ReplayAfterSignalWorkflow:
             TaskInput(value=first_result),
             start_to_close_timeout=timedelta(seconds=10),
         )
+
+    @temporalio.workflow.signal
+    def continue_workflow(self) -> None:
+        self._continue = True
+
+    @temporalio.workflow.query
+    def state(self) -> str:
+        return self._state
+
+
+@temporalio.workflow.defn
+class InWorkflowSpanReplayWorkflow:
+    """Opens in-workflow spans across workflow tasks, like a Pydantic AI agent_run span."""
+
+    def __init__(self) -> None:
+        self._continue = False
+        self._state = "starting"
+
+    @temporalio.workflow.run
+    async def run(self, input: TaskInput) -> int:
+        with braintrust.start_span(name="agent_run", type="task"):
+            with braintrust.start_span(name="first_tool", type="tool"):
+                first = await temporalio.workflow.execute_activity(
+                    simple_activity, input, start_to_close_timeout=timedelta(seconds=10)
+                )
+            self._state = "waiting"
+            await temporalio.workflow.wait_condition(lambda: self._continue)
+            with braintrust.start_span(name="second_tool", type="tool"):
+                return await temporalio.workflow.execute_activity(
+                    simple_activity, TaskInput(value=first), start_to_close_timeout=timedelta(seconds=10)
+                )
 
     @temporalio.workflow.signal
     def continue_workflow(self) -> None:
@@ -307,7 +361,7 @@ def _spans_named(spans: list[dict[str, Any]], name: str) -> list[dict[str, Any]]
 
 async def _wait_for_workflow_state(handle: Any, expected: str) -> None:
     for _ in range(50):
-        if await handle.query(ReplayAfterSignalWorkflow.state) == expected:
+        if await handle.query("state") == expected:
             return
         await asyncio.sleep(0.1)
     raise AssertionError(f"Workflow did not reach state {expected!r}")
@@ -366,6 +420,9 @@ class TestBraintrustPluginIntegration:
         assert len(workflow_spans) == 1
         assert len(activity_spans) == 2
         workflow_span = workflow_spans[0]
+        # Evicting the workflow between tasks unwinds its coroutine; the span must still end when the
+        # workflow really finishes, not when it was first evicted.
+        assert workflow_span["metrics"]["end"] >= max(span["metrics"]["start"] for span in activity_spans)
         assert workflow_span["context"]["span_origin"]["instrumentation"]["name"] == "temporal-auto"
         assert all(
             span["context"]["span_origin"]["instrumentation"]["name"] == "temporal-auto" for span in activity_spans
@@ -449,3 +506,74 @@ class TestBraintrustPluginIntegration:
         assert [bool(span.get("error")) for span in activity_spans] == expected_activity_errors
         if any(expected_activity_errors):
             assert "Simulated failure on first attempt" in activity_spans[0]["error"]
+
+    @pytest.mark.asyncio
+    async def test_child_workflow_and_activity_nest_under_in_workflow_span(self, temporal_env, memory_logger):
+        task_queue = f"test-queue-delegate-{uuid.uuid4()}"
+        async with Worker(
+            temporal_env.client,
+            task_queue=task_queue,
+            workflows=[DelegatingParentWorkflow, ChildWorkflow],
+            activities=[simple_activity],
+            plugins=[BraintrustPlugin(logger=memory_logger)],
+        ):
+            await temporal_env.client.execute_workflow(
+                DelegatingParentWorkflow.run,
+                TaskInput(value=1),
+                id=f"test-workflow-{uuid.uuid4()}",
+                task_queue=task_queue,
+            )
+
+        braintrust.flush()
+        spans = memory_logger.pop()
+        (parent_wf,) = _spans_named(spans, "temporal.workflow.DelegatingParentWorkflow")
+        (tool,) = _spans_named(spans, "delegate_task")
+        (child_wf,) = _spans_named(spans, "temporal.workflow.ChildWorkflow")
+        activities = _spans_named(spans, "temporal.activity.simple_activity")
+
+        assert tool["span_parents"] == [parent_wf["span_id"]]
+        assert child_wf["span_parents"] == [tool["span_id"]]
+        parent_activity = next(
+            a
+            for a in activities
+            if a["metadata"]["temporal.workflow_id"] != child_wf["metadata"]["temporal.workflow_id"]
+        )
+        assert parent_activity["span_parents"] == [tool["span_id"]]
+
+    @pytest.mark.asyncio
+    async def test_in_workflow_spans_are_not_duplicated_on_replay(self, temporal_env, memory_logger):
+        task_queue = f"test-queue-span-replay-{uuid.uuid4()}"
+        async with Worker(
+            temporal_env.client,
+            task_queue=task_queue,
+            workflows=[InWorkflowSpanReplayWorkflow],
+            activities=[simple_activity],
+            max_cached_workflows=0,
+            plugins=[BraintrustPlugin(logger=memory_logger)],
+        ):
+            handle = await temporal_env.client.start_workflow(
+                InWorkflowSpanReplayWorkflow.run,
+                TaskInput(value=10),
+                id=f"test-workflow-{uuid.uuid4()}",
+                task_queue=task_queue,
+            )
+            await _wait_for_workflow_state(handle, "waiting")
+            await handle.signal(InWorkflowSpanReplayWorkflow.continue_workflow)
+            assert await handle.result() == 30
+
+        braintrust.flush()
+        spans = memory_logger.pop()
+        (workflow_span,) = _spans_named(spans, "temporal.workflow.InWorkflowSpanReplayWorkflow")
+        (agent_run,) = _spans_named(spans, "agent_run")
+        (first_tool,) = _spans_named(spans, "first_tool")
+        (second_tool,) = _spans_named(spans, "second_tool")
+        # Spans still open across a replay must end when the workflow really finishes.
+        assert workflow_span["metrics"]["end"] >= second_tool["metrics"]["start"]
+        assert agent_run["metrics"]["end"] >= second_tool["metrics"]["start"]
+        assert agent_run["span_parents"] == [workflow_span["span_id"]]
+        assert first_tool["span_parents"] == [agent_run["span_id"]]
+        assert second_tool["span_parents"] == [agent_run["span_id"]]
+        activities = _spans_named(spans, "temporal.activity.simple_activity")
+        assert sorted(a["span_parents"][0] for a in activities) == sorted(
+            [first_tool["span_id"], second_tool["span_id"]]
+        )

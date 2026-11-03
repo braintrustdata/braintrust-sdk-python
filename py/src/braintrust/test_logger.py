@@ -3829,3 +3829,55 @@ def test_proxy_conn_base_url(proxy_url, expected_base_url):
     state = BraintrustState()
     state.proxy_url = proxy_url
     assert state.proxy_conn().base_url == expected_base_url
+
+
+class _RecordingSpanHooks:
+    def __init__(self):
+        self.counter = 0
+        self.write = True
+
+    def next_ids(self):
+        self.counter += 1
+        return f"row-{self.counter}", f"span-{self.counter}", f"trace-{self.counter}"
+
+    def should_write(self):
+        return self.write
+
+
+def test_span_hooks_supply_default_ids_and_gate_writes(with_memory_logger):
+    hooks = _RecordingSpanHooks()
+    test_logger = init_test_logger(__name__)
+    token = braintrust.logger._internal_set_span_hooks(hooks)
+    try:
+        with test_logger.start_span(name="root") as root:
+            with root.start_span(name="child"):
+                pass
+            # Explicit IDs win over the hooks and do not consume a hook ID.
+            with test_logger.start_span(name="explicit", id="explicit-row", span_id="explicit-span"):
+                pass
+            hooks.write = False
+            with root.start_span(name="dropped"):
+                pass
+            hooks.write = True
+    finally:
+        braintrust.logger._internal_reset_span_hooks(token)
+
+    with test_logger.start_span(name="after_reset") as after_reset:
+        pass
+
+    rows = {row["span_attributes"]["name"]: row for row in with_memory_logger.pop()}
+    assert set(rows) == {"root", "child", "explicit", "after_reset"}
+    assert (rows["root"]["id"], rows["root"]["span_id"], rows["root"]["root_span_id"]) == (
+        "row-1",
+        "span-1",
+        "trace-1",
+    )
+    assert (rows["child"]["id"], rows["child"]["span_id"], rows["child"]["root_span_id"]) == (
+        "row-2",
+        "span-2",
+        "trace-1",
+    )
+    assert rows["child"]["span_parents"] == ["span-1"]
+    assert (rows["explicit"]["id"], rows["explicit"]["span_id"]) == ("explicit-row", "explicit-span")
+    assert hooks.counter == 3
+    assert not after_reset.span_id.startswith("span-")

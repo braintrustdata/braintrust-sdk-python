@@ -35,6 +35,7 @@ from typing import (
     Any,
     Generic,
     Literal,
+    Protocol,
     TypedDict,
     TypeVar,
     cast,
@@ -4987,6 +4988,40 @@ _EXEC_COUNTER_LOCK = threading.Lock()
 _EXEC_COUNTER = 0
 
 
+class _SpanHooks(Protocol):
+    """Internal hooks that let a runtime control span IDs and writes in its own context.
+
+    Used by the Temporal integration: spans opened in workflow code need deterministic IDs and must
+    not be written while the workflow replays its history. Not a public API.
+    """
+
+    def next_ids(self) -> tuple[str, str, str]:
+        """Return ``(row_id, span_id, trace_id)`` for a new span that has no explicit IDs."""
+        ...
+
+    def should_write(self) -> bool:
+        """Return False to drop a span write."""
+        ...
+
+
+_span_hooks: contextvars.ContextVar["_SpanHooks | None"] = contextvars.ContextVar(
+    "braintrust_span_hooks", default=None
+)
+# Flipped the first time hooks are installed, so spans skip the context lookup until a runtime uses them.
+_span_hooks_enabled = False
+
+
+def _internal_set_span_hooks(hooks: "_SpanHooks | None") -> contextvars.Token:
+    """Install span hooks for the current context. Returns a token for `_internal_reset_span_hooks`."""
+    global _span_hooks_enabled
+    _span_hooks_enabled = True
+    return _span_hooks.set(hooks)
+
+
+def _internal_reset_span_hooks(token: contextvars.Token) -> None:
+    _span_hooks.reset(token)
+
+
 class SpanImpl(Span):
     """Primary implementation of the `Span` interface. See the `Span` interface for full details on each method.
 
@@ -5091,14 +5126,26 @@ class SpanImpl(Span):
 
         # TODO: can be simplified after `event` is typed.
         id = event.pop("id", None)
-        if id is None or not isinstance(id, str):
+        if not isinstance(id, str):
+            id = None
+        span_id = internal.get("span_id", span_id)
+        root_span_id = internal.get("root_span_id", root_span_id)
+
+        self._hooks = _span_hooks.get() if _span_hooks_enabled else None
+        if self._hooks is not None and (id is None or span_id is None):
+            hook_row_id, hook_span_id, hook_trace_id = self._hooks.next_ids()
+            id = id or hook_row_id
+            span_id = span_id or hook_span_id
+            root_span_id = root_span_id or hook_trace_id
+
+        if id is None:
             id = str(uuid.uuid4())
         self._id = id
 
         # Resolve all span IDs (span_id, root_span_id, span_parents)
         span_ids = _resolve_span_ids(
-            span_id=internal.get("span_id", span_id),
-            root_span_id=internal.get("root_span_id", root_span_id),
+            span_id=span_id,
+            root_span_id=root_span_id,
             parent_span_ids=parent_span_ids,
             lookup_span_parent=lookup_span_parent,
             id_generator=self.state.id_generator,
@@ -5148,6 +5195,8 @@ class SpanImpl(Span):
         return self.log_internal(event=event, internal_data=None)
 
     def log_internal(self, event: dict[str, Any] | None = None, internal_data: dict[str, Any] | None = None) -> None:
+        if self._hooks is not None and not self._hooks.should_write():
+            return
         serializable_partial_record, lazy_partial_record = split_logging_data(event, internal_data)
 
         # We both check for serializability and round-trip `partial_record`

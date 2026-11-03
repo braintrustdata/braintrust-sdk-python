@@ -827,6 +827,11 @@ TEMPORAL_VERSIONS = _get_matrix_versions("temporalio")
 def test_temporal(session, version):
     _install_test_deps(session)
     _install_matrix_dep(session, "temporalio", version)
+    # Pydantic AI's Temporal durability extra needs temporalio>=1.27 and Python 3.11+,
+    # so the Temporal + Pydantic AI tests only run against the latest temporalio pin.
+    if version == LATEST and sys.version_info >= (3, 11):
+        pydantic_ai_version = _MATRIX["pydantic-ai-integration"]["latest"].split("==", 1)[1]
+        _session_install(session, f"pydantic-ai-slim[temporal]=={pydantic_ai_version}", silent=SILENT_INSTALLS)
     _run_tests(session, f"{INTEGRATION_DIR}/temporal", version=version)
 
 
