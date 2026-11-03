@@ -76,6 +76,7 @@ The integration will automatically:
 - Trace local activities
 - Maintain parent-child relationships between client calls, workflows, and activities
 - Handle child workflows
+- Preserve trace context across continue-as-new runs
 - Respect Temporal replay safety (no duplicate spans during replay)
 - Record cancellations as ``metadata["temporal.cancelled"] = True`` instead of errors
 """
@@ -85,7 +86,7 @@ import dataclasses
 import hashlib
 import uuid
 from collections.abc import Callable, Mapping
-from typing import Any
+from typing import Any, NoReturn
 
 import braintrust
 import temporalio.activity
@@ -405,6 +406,10 @@ class _BraintrustWorkflowOutboundInterceptor(temporalio.worker.WorkflowOutboundI
     ) -> temporalio.workflow.ChildWorkflowHandle:
         input.headers = self._add_span_context_to_headers(input.headers)
         return super().start_child_workflow(input)
+
+    def continue_as_new(self, input: temporalio.worker.ContinueAsNewInput) -> NoReturn:
+        input.headers = self._add_span_context_to_headers(input.headers)
+        super().continue_as_new(input)
 
 
 def _modify_workflow_runner(existing: WorkflowRunner | None) -> WorkflowRunner | None:

@@ -6,6 +6,7 @@ import os
 import threading
 import uuid
 from collections import Counter
+from contextlib import nullcontext
 from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any, cast
@@ -330,6 +331,20 @@ class CancellationWorkflow:
         return "waiting"
 
 
+@temporalio.workflow.defn
+class ContinueAsNewWorkflow:
+    @temporalio.workflow.run
+    async def run(self, iteration: int) -> int:
+        await temporalio.workflow.execute_activity(
+            simple_activity, TaskInput(value=iteration), start_to_close_timeout=timedelta(seconds=10)
+        )
+        if iteration < 2:
+            # Cover both workflow-level parenting and a nested span in the same chain.
+            with braintrust.start_span(name="continue") if iteration == 1 else nullcontext():
+                temporalio.workflow.continue_as_new(iteration + 1)
+        return iteration
+
+
 class TestAutoInstrumentation:
     """Tests for Temporal auto-instrumentation helpers."""
 
@@ -457,6 +472,62 @@ class TestBraintrustPluginIntegration:
             else:
                 assert span["metadata"]["temporal.cancelled"] is True
                 assert not span.get("error")
+
+    @pytest.mark.parametrize("with_client_parent", [False, True])
+    @pytest.mark.parametrize("max_cached_workflows", [1000, 0], ids=["cached", "replay"])
+    @pytest.mark.asyncio
+    async def test_continue_as_new_preserves_trace_context(
+        self, temporal_env, memory_logger, with_client_parent, max_cached_workflows
+    ):
+        client = temporal_env.client
+        if with_client_parent:
+            client = await Client.connect(
+                client.service_client.config.target_host,
+                namespace=client.namespace,
+                plugins=[BraintrustPlugin(logger=memory_logger)],
+            )
+        task_queue = f"test-queue-continue-{uuid.uuid4()}"
+        async with Worker(
+            temporal_env.client,
+            task_queue=task_queue,
+            workflows=[ContinueAsNewWorkflow],
+            activities=[simple_activity],
+            max_cached_workflows=max_cached_workflows,
+            plugins=[BraintrustPlugin(logger=memory_logger)],
+        ):
+            with braintrust.start_span(name="client-continue") if with_client_parent else nullcontext():
+                assert (
+                    await client.execute_workflow(
+                        ContinueAsNewWorkflow.run,
+                        0,
+                        id=f"test-workflow-{uuid.uuid4()}",
+                        task_queue=task_queue,
+                    )
+                    == 2
+                )
+
+        braintrust.flush()
+        spans = memory_logger.pop()
+        workflows = sorted(
+            _spans_named(spans, "temporal.workflow.ContinueAsNewWorkflow"), key=lambda span: span["metrics"]["start"]
+        )
+        assert len(workflows) == 3
+        assert len({span["metadata"]["temporal.run_id"] for span in workflows}) == 3
+        assert len({span["span_id"] for span in workflows}) == 3
+        assert len({span["root_span_id"] for span in spans}) == 1
+        for span in workflows:
+            assert not span.get("error"), span
+        first, second, third = workflows
+        (continuation_span,) = _spans_named(spans, "continue")
+        assert second["span_parents"] == [first["span_id"]]
+        assert continuation_span["span_parents"] == [second["span_id"]]
+        assert third["span_parents"] == [continuation_span["span_id"]]
+        activities = _spans_named(spans, "temporal.activity.simple_activity")
+        assert len(activities) == 3
+        assert {span["span_parents"][0] for span in activities} == {span["span_id"] for span in workflows}
+        if with_client_parent:
+            (client_span,) = _spans_named(spans, "client-continue")
+            assert workflows[0]["span_parents"] == [client_span["span_id"]]
 
     @pytest.mark.parametrize("with_client_parent", [False, True])
     @pytest.mark.asyncio
