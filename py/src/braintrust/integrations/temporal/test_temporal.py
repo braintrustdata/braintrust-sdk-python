@@ -329,6 +329,8 @@ class CancellationWorkflow:
     @temporalio.workflow.query
     def state(self) -> str:
         return "waiting"
+
+
 @temporalio.workflow.defn
 class ContinueAsNewWorkflow:
     @temporalio.workflow.run
