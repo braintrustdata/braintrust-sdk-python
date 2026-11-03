@@ -1041,11 +1041,16 @@ def pylint(session):
     # The lint group skips crewai to avoid vulnerable transitive chromadb
     # versions, so skip the matching example too.
     files = [f for f in files if not f.startswith("../examples/crewai/")]
+    # Tests outside an integration's own directory that import it.
+    cross_integration_files = {
+        "pydantic_ai": {f"src/{INTEGRATION_DIR}/temporal/test_temporal_pydantic_ai.py"},
+    }
     for integration in sorted(unlintable_integrations):
         files = [
             f
             for f in files
             if not f.startswith(f"src/{INTEGRATION_DIR}/{integration}/")
+            and f not in cross_integration_files.get(integration, set())
             and f != f"src/{INTEGRATION_DIR}/auto_test_scripts/test_auto_{integration}.py"
             and not f.startswith(f"src/{INTEGRATION_DIR}/auto_test_scripts/test_manual_wrap_{integration}_")
             and not f.startswith(f"../examples/{integration}/")
