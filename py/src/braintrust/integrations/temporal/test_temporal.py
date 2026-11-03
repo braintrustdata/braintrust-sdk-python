@@ -2,6 +2,7 @@
 
 import asyncio
 import concurrent.futures
+import dataclasses
 import os
 import threading
 import uuid
@@ -678,3 +679,34 @@ class TestBraintrustPluginIntegration:
         assert sorted(a["span_parents"][0] for a in activities) == sorted(
             [first_tool["span_id"], second_tool["span_id"]]
         )
+
+    @pytest.mark.asyncio
+    async def test_plugin_workflow_span_records_original_execution_run_id(self, temporal_env, memory_logger):
+        task_queue = f"test-queue-original-run-{uuid.uuid4()}"
+        async with Worker(
+            temporal_env.client,
+            task_queue=task_queue,
+            workflows=[WorkflowWithLocalActivity],
+            activities=[simple_local_activity],
+            plugins=[BraintrustPlugin(logger=memory_logger)],
+        ):
+            handle = await temporal_env.client.start_workflow(
+                WorkflowWithLocalActivity.run,
+                TaskInput(value=100),
+                id=f"test-workflow-original-run-{uuid.uuid4()}",
+                task_queue=task_queue,
+            )
+            assert await handle.result() == 105
+
+        spans = memory_logger.pop()
+        workflow_spans = _spans_named(spans, "temporal.workflow.WorkflowWithLocalActivity")
+        assert len(workflow_spans) == 1
+        metadata = workflow_spans[0]["metadata"]
+        assert metadata["temporal.run_id"] == handle.first_execution_run_id
+
+        # temporalio 1.34.0 added Info.original_execution_run_id, which survives workflow resets
+        # (run_id changes on reset). Older pins don't have it, so the key is omitted there.
+        if "original_execution_run_id" in {field.name for field in dataclasses.fields(temporalio.workflow.Info)}:
+            assert metadata["temporal.original_execution_run_id"] == handle.first_execution_run_id
+        else:
+            assert "temporal.original_execution_run_id" not in metadata
