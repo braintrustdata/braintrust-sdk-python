@@ -3871,6 +3871,10 @@ ModelParams: TypeAlias = (
 
 class OnlineScoreConfig(TypedDict):
     status: NotRequired[AutomationStatus | None]
+    service_tier: NotRequired[Literal['standard', 'flex'] | None]
+    """
+    Service tier for online scoring. If omitted, prompt-level service tiers are preserved.
+    """
     sampling_rate: float
     """
     The sampling rate for online scoring
