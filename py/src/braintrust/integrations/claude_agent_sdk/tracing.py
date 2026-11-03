@@ -797,23 +797,8 @@ class ContextTracker:
         self._active_key = incoming_parent
         ctx = self._get_context(incoming_parent)
 
-        # Close dangling tool spans from the previous turn in this context.
-        #
-        # Only run cleanup when a user tool_result has advanced the clock
-        # (``ctx.next_llm_start`` is set), which marks a real turn boundary.
-        # Starting in claude-agent-sdk 0.1.61, a subagent may emit multiple
-        # ``tool_use`` AssistantMessages back-to-back (merged into one LLM
-        # turn) before any ``tool_result`` arrives. In that case the earlier
-        # tool spans are still awaiting their results and must not be closed.
         if incoming_parent is not None:
             self._maybe_synthesize_task_span(str(incoming_parent), ctx)
-
-        if ctx.llm_span and ctx.next_llm_start is not None and self._tool_tracker.has_active_spans:
-            self._tool_tracker.cleanup_context(
-                incoming_parent,
-                end_time=ctx.next_llm_start,
-                exclude_ids=self._live_agent_tool_use_ids(),
-            )
 
         parent_export = self._llm_parent_for_message(message)
         final_content, extended = self._start_or_merge_llm_span(message, parent_export, ctx)
@@ -1042,6 +1027,16 @@ class ContextTracker:
                 ctx.llm_output_logged = False
             self._log_assistant_usage(message, ctx, message_id)
             return merged, True
+
+        # A tool result can arrive while sibling tool_use messages from the
+        # same provider response are still streaming. Only a new response may
+        # close dangling tools; merged snapshots must keep awaiting results.
+        if ctx.llm_span and ctx.next_llm_start is not None and self._tool_tracker.has_active_spans:
+            self._tool_tracker.cleanup_context(
+                getattr(message, "parent_tool_use_id", None),
+                end_time=ctx.next_llm_start,
+                exclude_ids=self._live_agent_tool_use_ids(),
+            )
 
         resolved_start = ctx.next_llm_start or time.time()
         first_token_time = time.time()
