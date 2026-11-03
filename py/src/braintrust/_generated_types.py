@@ -3267,7 +3267,7 @@ class WindowedAutomationConfigWindow(TypedDict):
 
 class WindowedAutomationConfigLoopTarget(TypedDict):
     type: Literal['dashboard']
-    id: str | Literal['overview']
+    id: Literal['overview']
 
 
 class WindowedAutomationConfigLoop(TypedDict):
