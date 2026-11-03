@@ -21,6 +21,7 @@ import braintrust
 import temporalio.activity
 import temporalio.api.common.v1
 import temporalio.converter
+import temporalio.exceptions
 import temporalio.testing
 import temporalio.worker
 import temporalio.workflow
@@ -29,7 +30,7 @@ from braintrust.integrations.temporal.plugin import _workflow_span_context, _wor
 from braintrust.span_identifier_v3 import SpanComponentsV3, SpanObjectTypeV3
 from braintrust.span_identifier_v4 import SpanComponentsV4
 from braintrust.test_helpers import init_test_logger, preserve_env_vars
-from temporalio.client import Client
+from temporalio.client import Client, WorkflowFailureError
 from temporalio.common import RetryPolicy
 from temporalio.worker import Worker
 
@@ -308,6 +309,42 @@ class InWorkflowSpanReplayWorkflow:
         return self._state
 
 
+@temporalio.activity.defn
+async def waiting_activity() -> None:
+    while True:
+        temporalio.activity.heartbeat()
+        await asyncio.sleep(0.1)
+
+
+@temporalio.workflow.defn
+class CancellationWorkflow:
+    @temporalio.workflow.run
+    async def run(self, mode: str) -> None:
+        if mode == "temporal":
+            raise temporalio.exceptions.CancelledError("Chat stopped")
+        if mode == "failure":
+            raise temporalio.exceptions.ApplicationError("Cancellation failed", non_retryable=True)
+        if mode == "activity":
+            await temporalio.workflow.execute_activity(
+                waiting_activity,
+                start_to_close_timeout=timedelta(minutes=5),
+                heartbeat_timeout=timedelta(seconds=5),
+                cancellation_type=temporalio.workflow.ActivityCancellationType.WAIT_CANCELLATION_COMPLETED,
+            )
+        elif mode == "child":
+            await temporalio.workflow.execute_child_workflow(
+                CancellationWorkflow.run,
+                "timer",
+                id=f"child-{temporalio.workflow.info().workflow_id}",
+            )
+        else:
+            await temporalio.workflow.wait_condition(lambda: False)
+
+    @temporalio.workflow.query
+    def state(self) -> str:
+        return "waiting"
+
+
 class TestAutoInstrumentation:
     """Tests for Temporal auto-instrumentation helpers."""
 
@@ -393,6 +430,48 @@ async def _wait_for_workflow_state(handle: Any, expected: str) -> None:
 
 class TestBraintrustPluginIntegration:
     """Integration tests for BraintrustPlugin with real Temporal workflows."""
+
+    @pytest.mark.parametrize("mode", ["temporal", "activity", "child", "failure"])
+    @pytest.mark.asyncio
+    async def test_workflow_cancellation_metadata(self, temporal_env, memory_logger, mode):
+        task_queue = f"test-queue-{uuid.uuid4()}"
+        async with Worker(
+            temporal_env.client,
+            task_queue=task_queue,
+            workflows=[CancellationWorkflow],
+            activities=[waiting_activity],
+            plugins=[BraintrustPlugin(logger=memory_logger)],
+        ):
+            handle = await temporal_env.client.start_workflow(
+                CancellationWorkflow.run,
+                mode,
+                id=f"test-workflow-{uuid.uuid4()}",
+                task_queue=task_queue,
+            )
+            if mode not in {"temporal", "failure"}:
+                await _wait_for_workflow_state(handle, "waiting")
+                await handle.cancel()
+            with pytest.raises(WorkflowFailureError) as exc:
+                await handle.result()
+            if mode == "failure":
+                assert isinstance(exc.value.cause, temporalio.exceptions.ApplicationError)
+            else:
+                assert isinstance(exc.value.cause, temporalio.exceptions.CancelledError)
+
+        spans = memory_logger.pop()
+        expected_span_counts = {"temporal.workflow.CancellationWorkflow": 2 if mode == "child" else 1}
+        if mode == "activity":
+            expected_span_counts["temporal.activity.waiting_activity"] = 1
+        assert Counter(span["span_attributes"]["name"] for span in spans) == expected_span_counts
+        for span in spans:
+            assert span["context"]["span_origin"]["instrumentation"]["name"] == "temporal-auto"
+            assert "end" in span["metrics"]
+            if mode == "failure":
+                assert "Cancellation failed" in span["error"]
+                assert "temporal.cancelled" not in span["metadata"]
+            else:
+                assert span["metadata"]["temporal.cancelled"] is True
+                assert not span.get("error")
 
     @pytest.mark.parametrize("with_client_parent", [False, True])
     @pytest.mark.asyncio
