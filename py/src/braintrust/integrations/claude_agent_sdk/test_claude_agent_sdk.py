@@ -2412,104 +2412,76 @@ async def test_identical_concurrent_tool_calls_from_sibling_subagents_disambigua
     )
 
 
-def test_context_tracker_preserves_bash_output_when_next_tool_use_arrives_before_result(memory_logger):
-    """Regression for claude-agent-sdk 0.1.61 interleaved subagent event stream.
+@pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("interleave_result", [False, True], ids=["back_to_back", "interleaved_result"])
+async def test_tool_outputs_survive_same_provider_message(memory_logger, interleave_result):
+    """Sibling tools retain their outputs with results arriving during or after streaming."""
+    options = claude_agent_sdk.ClaudeAgentOptions(
+        model=TEST_MODEL,
+        permission_mode="bypassPermissions",
+        allowed_tools=["Bash"],
+        include_partial_messages=True,
+    )
+    transport = make_cassette_transport(
+        cassette_name="test_tool_results_interleaved_with_same_provider_message",
+        prompt="",
+        options=options,
+    )
+    async with claude_agent_sdk.ClaudeSDKClient(options=options, transport=transport) as client:
+        await client.query(
+            "Make exactly three parallel Bash tool calls in a single response: "
+            "`echo alpha`, `echo beta`, and `echo gamma`. Then reply done."
+        )
+        messages = [message async for message in client.receive_response()]
 
-    In 0.1.61 a subagent can emit two ``tool_use`` AssistantMessages back-to-back
-    (e.g. Bash then Read) before either ``tool_result`` arrives. The first
-    tool span must not be closed when the second AssistantMessage arrives for
-    the same subagent context, so its ``tool_result`` can still be attached.
-    """
-    assert not memory_logger.pop()
-
+    tool_messages = [
+        message
+        for message in messages
+        if type(message).__name__ == "AssistantMessage"
+        and any(type(block).__name__ == "ToolUseBlock" for block in message.content)
+    ]
+    assert len(tool_messages) == 3
+    results = {
+        block.tool_use_id: message
+        for message in messages
+        if type(message).__name__ == "UserMessage" and isinstance(message.content, list)
+        for block in message.content
+        if type(block).__name__ == "ToolResultBlock"
+    }
+    tool_ids = [
+        next(block.id for block in message.content if type(block).__name__ == "ToolUseBlock")
+        for message in tool_messages
+    ]
+    # Replay real provider messages in the reported race order, independent of
+    # subprocess scheduling. The cassette itself remains an unmodified recording.
     with start_span(name="Claude Agent", type=SpanTypeAttribute.TASK) as root_span:
-        tracker = ContextTracker(root_span=root_span, prompt="go")
+        tracker = ContextTracker(root_span=root_span, prompt="parallel tools")
         try:
-            # Parent orchestrator dispatches one Agent subagent tool call.
-            tracker.add(
-                AssistantMessage(
-                    content=[ToolUseBlock(id="call-alpha", name="Agent", input={"prompt": "do stuff"})],
-                    parent_tool_use_id=None,
-                )
+            first_message_start = next(
+                message
+                for message in messages
+                if type(message).__name__ == "StreamEvent" and message.event.get("type") == "message_start"
             )
-            tracker.add(
-                TaskStartedMessage(
-                    subtype="task_started",
-                    data={},
-                    task_id="task-alpha",
-                    description="alpha task",
-                    uuid="uuid-alpha",
-                    session_id="session-1",
-                    tool_use_id="call-alpha",
-                )
-            )
-            # Alpha's subagent issues Bash tool_use, then Read tool_use, WITHOUT
-            # any tool_result between them (new behavior in claude-agent-sdk 0.1.61).
-            tracker.add(
-                AssistantMessage(
-                    content=[
-                        ToolUseBlock(
-                            id="bash-alpha",
-                            name="Bash",
-                            input={"command": "echo alpha-bash-output"},
-                        )
-                    ],
-                    parent_tool_use_id="call-alpha",
-                )
-            )
-            tracker.add(
-                AssistantMessage(
-                    content=[
-                        ToolUseBlock(
-                            id="read-alpha",
-                            name="Read",
-                            input={"file_path": "/tmp/alpha.txt"},
-                        )
-                    ],
-                    parent_tool_use_id="call-alpha",
-                )
-            )
-            # Tool results arrive in reverse order (Read first, then Bash).
-            tracker.add(
-                UserMessage(
-                    content=[
-                        ToolResultBlock(
-                            tool_use_id="read-alpha",
-                            content=[TextBlock("alpha_file_contents")],
-                        )
-                    ],
-                    parent_tool_use_id="call-alpha",
-                )
-            )
-            tracker.add(
-                UserMessage(
-                    content=[
-                        ToolResultBlock(
-                            tool_use_id="bash-alpha",
-                            content=[TextBlock("alpha-bash-output")],
-                        )
-                    ],
-                    parent_tool_use_id="call-alpha",
-                )
-            )
+            tracker.add(first_message_start)
+            tracker.add(tool_messages[0])
+            if interleave_result:
+                tracker.add(results[tool_ids[0]])
+            tracker.add(tool_messages[1])
+            tracker.add(tool_messages[2])
+            tracker.add(results[tool_ids[2]])
+            tracker.add(results[tool_ids[1]])
+            if not interleave_result:
+                tracker.add(results[tool_ids[0]])
         finally:
             tracker.cleanup()
 
     spans = memory_logger.pop()
     tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
-    bash_spans = [s for s in tool_spans if s["span_attributes"]["name"] == "Bash"]
-    read_spans = [s for s in tool_spans if s["span_attributes"]["name"] == "Read"]
-
-    assert len(bash_spans) == 1, f"Expected exactly one Bash span, got {len(bash_spans)}"
-    assert len(read_spans) == 1, f"Expected exactly one Read span, got {len(read_spans)}"
-
-    bash_output = bash_spans[0].get("output")
-    assert bash_output is not None, (
-        "Bash tool output was dropped when a second tool_use arrived before its tool_result. "
-        "cleanup_context must not close active tool spans while the LLM turn is still ongoing."
-    )
-    assert bash_output["content"] == "alpha-bash-output"
-
-    read_output = read_spans[0].get("output")
-    assert read_output is not None
-    assert read_output["content"] == "alpha_file_contents"
+    assert len(tool_spans) == 3
+    assert len(find_spans_by_type(spans, SpanTypeAttribute.LLM)) == 1
+    assert len({span["span_parents"][0] for span in tool_spans}) == 1
+    for span in tool_spans:
+        assert span.get("output") is not None
+        assert span["output"]["content"] == span["input"]["command"].removeprefix("echo ")
+        assert span["metrics"]["end"] >= span["metrics"]["start"]
