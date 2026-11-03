@@ -77,8 +77,10 @@ The integration will automatically:
 - Maintain parent-child relationships between client calls, workflows, and activities
 - Handle child workflows
 - Respect Temporal replay safety (no duplicate spans during replay)
+- Record cancellations as ``metadata["temporal.cancelled"] = True`` instead of errors
 """
 
+import asyncio
 import dataclasses
 import hashlib
 import uuid
@@ -90,6 +92,7 @@ import temporalio.activity
 import temporalio.api.common.v1
 import temporalio.client
 import temporalio.converter
+import temporalio.exceptions
 import temporalio.worker
 import temporalio.workflow
 from braintrust.span_identifier_v3 import SpanComponentsV3
@@ -235,8 +238,11 @@ class _BraintrustActivityInboundInterceptor(temporalio.worker.ActivityInboundInt
 
         try:
             return await super().execute_activity(input)
-        except Exception as e:
-            span.log(error=e)
+        except (Exception, asyncio.CancelledError) as e:
+            if temporalio.exceptions.is_cancelled_exception(e):
+                span.log(metadata={"temporal.cancelled": True})
+            else:
+                span.log(error=e)
             raise
         finally:
             span.unset_current()
@@ -330,10 +336,13 @@ class BraintrustWorkflowInboundInterceptor(temporalio.worker.WorkflowInboundInte
 
         try:
             return await super().execute_workflow(input)
-        except Exception as e:
+        except (Exception, asyncio.CancelledError) as e:
             if self._workflow_span:
                 with temporalio.workflow.unsafe.sandbox_unrestricted():
-                    self._workflow_span.log(error=e)
+                    if temporalio.exceptions.is_cancelled_exception(e):
+                        self._workflow_span.log(metadata={"temporal.cancelled": True})
+                    else:
+                        self._workflow_span.log(error=e)
             raise
         finally:
             with temporalio.workflow.unsafe.sandbox_unrestricted():
