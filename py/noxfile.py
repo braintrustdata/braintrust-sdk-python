@@ -827,6 +827,11 @@ TEMPORAL_VERSIONS = _get_matrix_versions("temporalio")
 def test_temporal(session, version):
     _install_test_deps(session)
     _install_matrix_dep(session, "temporalio", version)
+    # Pydantic AI's Temporal durability extra needs temporalio>=1.27 and Python 3.11+,
+    # so the Temporal + Pydantic AI tests only run against the latest temporalio pin.
+    if version == LATEST and sys.version_info >= (3, 11):
+        pydantic_ai_version = _MATRIX["pydantic-ai-integration"]["latest"].split("==", 1)[1]
+        _session_install(session, f"pydantic-ai-slim[temporal]=={pydantic_ai_version}", silent=SILENT_INSTALLS)
     _run_tests(session, f"{INTEGRATION_DIR}/temporal", version=version)
 
 
@@ -1036,11 +1041,16 @@ def pylint(session):
     # The lint group skips crewai to avoid vulnerable transitive chromadb
     # versions, so skip the matching example too.
     files = [f for f in files if not f.startswith("../examples/crewai/")]
+    # Tests outside an integration's own directory that import it.
+    cross_integration_files = {
+        "pydantic_ai": {f"src/{INTEGRATION_DIR}/temporal/test_temporal_pydantic_ai.py"},
+    }
     for integration in sorted(unlintable_integrations):
         files = [
             f
             for f in files
             if not f.startswith(f"src/{INTEGRATION_DIR}/{integration}/")
+            and f not in cross_integration_files.get(integration, set())
             and f != f"src/{INTEGRATION_DIR}/auto_test_scripts/test_auto_{integration}.py"
             and not f.startswith(f"src/{INTEGRATION_DIR}/auto_test_scripts/test_manual_wrap_{integration}_")
             and not f.startswith(f"../examples/{integration}/")

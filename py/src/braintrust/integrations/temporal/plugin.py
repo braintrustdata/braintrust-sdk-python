@@ -82,7 +82,7 @@ The integration will automatically:
 import dataclasses
 import hashlib
 import uuid
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from typing import Any
 
 import braintrust
@@ -256,6 +256,8 @@ class BraintrustWorkflowInboundInterceptor(temporalio.worker.WorkflowInboundInte
         self.payload_converter = temporalio.converter.PayloadConverter.default
         self._parent_span_context: Any | None = None
         self._workflow_span: Any | None = None
+        self._span_hooks: _WorkflowSpanHooks | None = None
+        self._span_hooks_token: Any | None = None
 
     def init(self, outbound: temporalio.worker.WorkflowOutboundInterceptor) -> None:
         super().init(_BraintrustWorkflowOutboundInterceptor(outbound, self))
@@ -282,25 +284,33 @@ class BraintrustWorkflowInboundInterceptor(temporalio.worker.WorkflowInboundInte
                 parent = parent_span_context or logger.export()
                 if temporalio.workflow.patched(_SPAN_CONTEXT_PATCH_ID):
                     ids = _workflow_span_ids(info, parent)
-                    if temporalio.workflow.unsafe.is_replaying():
-                        self._parent_span_context = _workflow_span_context(parent, ids)
-                    else:
-                        span = logger.start_span(
-                            internal={"instrumentation": "temporal-auto"},
-                            name=f"temporal.workflow.{info.workflow_type}",
-                            type="task",
-                            parent=parent,
-                            id=ids["row_id"],
-                            span_id=ids["span_id"],
-                            root_span_id=ids["root_span_id"],
-                            metadata={
-                                "temporal.workflow_type": info.workflow_type,
-                                "temporal.workflow_id": info.workflow_id,
-                                "temporal.run_id": info.run_id,
-                            },
-                        )
-                        span.set_current()
-                        self._parent_span_context = _workflow_span_context(parent, ids)
+                    # Spans opened in workflow code (the workflow span, user spans, Pydantic AI
+                    # agent/tool spans) get deterministic IDs and are not written while replaying,
+                    # so a replay rebuilds the same span tree instead of logging a second copy.
+                    self._span_hooks = _WorkflowSpanHooks(
+                        _workflow_span_id_base(info),
+                        legacy_ids=SpanComponentsV4.get_version(parent) < 4,
+                        bind_logger=get_logger,
+                    )
+                    self._span_hooks_token = braintrust.logger._internal_set_span_hooks(self._span_hooks)
+                    # Always create the workflow span, even on replay, so it is the current span for
+                    # in-workflow spans and its end is logged if the workflow finishes after a replay.
+                    span = logger.start_span(
+                        internal={"instrumentation": "temporal-auto"},
+                        name=f"temporal.workflow.{info.workflow_type}",
+                        type="task",
+                        parent=parent,
+                        id=ids["row_id"],
+                        span_id=ids["span_id"],
+                        root_span_id=ids["root_span_id"],
+                        metadata={
+                            "temporal.workflow_type": info.workflow_type,
+                            "temporal.workflow_id": info.workflow_id,
+                            "temporal.run_id": info.run_id,
+                        },
+                    )
+                    span.set_current()
+                    self._parent_span_context = _workflow_span_context(parent, ids)
                 elif not temporalio.workflow.unsafe.is_replaying():
                     span = logger.start_span(
                         internal={"instrumentation": "temporal-auto"},
@@ -326,10 +336,13 @@ class BraintrustWorkflowInboundInterceptor(temporalio.worker.WorkflowInboundInte
                     self._workflow_span.log(error=e)
             raise
         finally:
-            if self._workflow_span:
-                with temporalio.workflow.unsafe.sandbox_unrestricted():
+            with temporalio.workflow.unsafe.sandbox_unrestricted():
+                if self._workflow_span:
                     self._workflow_span.unset_current()
                     self._workflow_span.end()
+                if self._span_hooks_token is not None:
+                    braintrust.logger._internal_reset_span_hooks(self._span_hooks_token)
+                    self._span_hooks_token = None
 
 
 class _BraintrustWorkflowOutboundInterceptor(temporalio.worker.WorkflowOutboundInterceptor):
@@ -348,11 +361,24 @@ class _BraintrustWorkflowOutboundInterceptor(temporalio.worker.WorkflowOutboundI
     ) -> Mapping[str, temporalio.api.common.v1.Payload]:
         # Always propagate context — even during replay — so activities can find their parent.
         # Replay safety is enforced in the activity interceptor, which only spans on real execution.
-        if self.root._parent_span_context:
-            payloads = self.root.payload_converter.to_payloads([self.root._parent_span_context])
+        parent = self._current_parent_span_context()
+        if parent:
+            payloads = self.root.payload_converter.to_payloads([parent])
             if payloads:
                 return {**headers, _HEADER_KEY: payloads[0]}
         return headers
+
+    def _current_parent_span_context(self) -> Any | None:
+        # Prefer a span opened inside workflow code (e.g. a Pydantic AI tool span) so activities
+        # and child workflows nest under it. Without span hooks (workflows started before the
+        # span-context patch), spans created during replay have fresh IDs, so only trust the
+        # current span on real execution there.
+        if self.root._span_hooks is not None or not temporalio.workflow.unsafe.is_replaying():
+            with temporalio.workflow.unsafe.sandbox_unrestricted():
+                span = _current_span()
+                if span is not braintrust.logger.NOOP_SPAN and span is not self.root._workflow_span:
+                    return span.export()
+        return self.root._parent_span_context
 
     def start_activity(self, input: temporalio.worker.StartActivityInput) -> temporalio.workflow.ActivityHandle:
         input.headers = self._add_span_context_to_headers(input.headers)
@@ -378,10 +404,48 @@ def _modify_workflow_runner(existing: WorkflowRunner | None) -> WorkflowRunner |
     return existing
 
 
-def _workflow_span_ids(info: temporalio.workflow.Info, parent: str) -> dict[str, str]:
+class _WorkflowSpanHooks:
+    """Span hooks for one workflow run: deterministic IDs and no writes while replaying.
+
+    Workflow code is deterministic, so the Nth span opened in a run is the same span on every
+    replay. Numbering spans per run therefore gives a replayed span the ID it was first logged with.
+    """
+
+    def __init__(self, base: str, legacy_ids: bool, bind_logger: Callable[[], Any]) -> None:
+        self._base = base
+        self._legacy_ids = legacy_ids
+        # Points this thread at the plugin's logger. The logger override is thread-local, and
+        # Temporal can run each activation of a workflow on a different worker thread.
+        self._bind_logger = bind_logger
+        self._counter = 0
+
+    def next_ids(self) -> tuple[str, str, str]:
+        self._counter += 1
+        ids = _deterministic_span_ids(f"{self._base}:span:{self._counter}", self._legacy_ids)
+        return ids["row_id"], ids["span_id"], ids["root_span_id"]
+
+    def should_write(self) -> bool:
+        try:
+            if temporalio.workflow.unsafe.is_replaying():
+                return False
+        except Exception:
+            # Not in workflow code (e.g. the span is ended from outside the workflow event loop).
+            return True
+        self._bind_logger()
+        return True
+
+
+def _workflow_span_id_base(info: temporalio.workflow.Info) -> str:
     namespace = getattr(info, "namespace", "")
-    base = f"{_SPAN_ID_NAMESPACE}:{namespace}:{info.workflow_type}:{info.workflow_id}:{info.run_id}"
-    if SpanComponentsV4.get_version(parent) >= 4:
+    return f"{_SPAN_ID_NAMESPACE}:{namespace}:{info.workflow_type}:{info.workflow_id}:{info.run_id}"
+
+
+def _workflow_span_ids(info: temporalio.workflow.Info, parent: str) -> dict[str, str]:
+    return _deterministic_span_ids(_workflow_span_id_base(info), SpanComponentsV4.get_version(parent) < 4)
+
+
+def _deterministic_span_ids(base: str, legacy_ids: bool) -> dict[str, str]:
+    if not legacy_ids:
         digest = hashlib.sha256(base.encode()).hexdigest()
         return {
             "row_id": str(uuid.uuid5(uuid.NAMESPACE_URL, base)),
