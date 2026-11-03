@@ -230,6 +230,7 @@ class _BraintrustActivityInboundInterceptor(temporalio.worker.ActivityInboundInt
             metadata={
                 "temporal.activity_type": info.activity_type,
                 "temporal.activity_id": info.activity_id,
+                "temporal.activity_attempt": info.attempt,
                 "temporal.workflow_id": info.workflow_id,
                 "temporal.workflow_run_id": info.workflow_run_id,
             },

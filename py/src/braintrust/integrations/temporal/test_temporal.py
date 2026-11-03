@@ -207,22 +207,6 @@ class ChildWorkflow:
 
 
 @temporalio.workflow.defn
-class ParentWorkflow:
-    """Parent workflow that spawns a child workflow."""
-
-    @temporalio.workflow.run
-    async def run(self, input: TaskInput) -> int:
-        # Execute child workflow
-        child_result = await temporalio.workflow.execute_child_workflow(
-            ChildWorkflow.run,
-            input,
-            id=f"child-{temporalio.workflow.info().workflow_id}",
-        )
-
-        return child_result
-
-
-@temporalio.workflow.defn
 class DelegatingParentWorkflow:
     """Parent workflow that starts a child workflow and an activity inside an in-workflow span.
 
@@ -541,7 +525,7 @@ class TestBraintrustPluginIntegration:
             assert workflow_span["root_span_id"] == client_spans[0]["root_span_id"]
 
     @pytest.mark.parametrize(
-        "workflow,input_value,expected_result,expected_span_counts,expected_activity_errors",
+        "workflow,input_value,expected_result,expected_span_counts,expected_activity_errors,expected_activity_attempts",
         [
             # failing_activity fails its first attempt, so the retry yields a second activity span.
             pytest.param(
@@ -550,19 +534,8 @@ class TestBraintrustPluginIntegration:
                 50,
                 {"temporal.workflow.WorkflowWithRetry": 1, "temporal.activity.failing_activity": 2},
                 [True, False],
+                [1, 2],
                 id="activity_retry",
-            ),
-            pytest.param(
-                ParentWorkflow,
-                40,
-                50,
-                {
-                    "temporal.workflow.ParentWorkflow": 1,
-                    "temporal.workflow.ChildWorkflow": 1,
-                    "temporal.activity.simple_activity": 1,
-                },
-                [False],
-                id="child_workflow",
             ),
             # Local activities execute in the worker process and are traced like regular activities.
             pytest.param(
@@ -571,6 +544,7 @@ class TestBraintrustPluginIntegration:
                 105,
                 {"temporal.workflow.WorkflowWithLocalActivity": 1, "temporal.activity.simple_local_activity": 1},
                 [False],
+                [1],
                 id="local_activity",
             ),
         ],
@@ -585,13 +559,14 @@ class TestBraintrustPluginIntegration:
         expected_result,
         expected_span_counts,
         expected_activity_errors,
+        expected_activity_attempts,
     ):
         task_queue = f"test-queue-{uuid.uuid4()}"
         async with Worker(
             temporal_env.client,
             task_queue=task_queue,
-            workflows=[WorkflowWithRetry, ParentWorkflow, ChildWorkflow, WorkflowWithLocalActivity],
-            activities=[failing_activity, simple_activity, simple_local_activity],
+            workflows=[WorkflowWithRetry, WorkflowWithLocalActivity],
+            activities=[failing_activity, simple_local_activity],
             plugins=[BraintrustPlugin(logger=memory_logger)],
         ):
             result = await temporal_env.client.execute_workflow(
@@ -610,6 +585,7 @@ class TestBraintrustPluginIntegration:
             key=lambda span: span["metrics"]["start"],
         )
         assert [bool(span.get("error")) for span in activity_spans] == expected_activity_errors
+        assert [span["metadata"]["temporal.activity_attempt"] for span in activity_spans] == expected_activity_attempts
         if any(expected_activity_errors):
             assert "Simulated failure on first attempt" in activity_spans[0]["error"]
 
@@ -628,22 +604,31 @@ class TestBraintrustPluginIntegration:
             workflow_task_executor=executor,
             plugins=[BraintrustPlugin(logger=memory_logger)],
         ):
-            await temporal_env.client.execute_workflow(
+            result = await temporal_env.client.execute_workflow(
                 DelegatingParentWorkflow.run,
                 TaskInput(value=1),
                 id=f"test-workflow-{uuid.uuid4()}",
                 task_queue=task_queue,
             )
+        assert result == 21
 
         braintrust.flush()
         spans = memory_logger.pop()
         # Every row of every span reaches the plugin's logger, whichever thread ran the activation.
         assert all("span_attributes" in span for span in spans)
         assert all(span["metrics"].get("end") is not None for span in spans)
+        assert Counter(span["span_attributes"]["name"] for span in spans) == {
+            "temporal.workflow.DelegatingParentWorkflow": 1,
+            "delegate_task": 1,
+            "temporal.workflow.ChildWorkflow": 1,
+            "temporal.activity.simple_activity": 2,
+        }
         (parent_wf,) = _spans_named(spans, "temporal.workflow.DelegatingParentWorkflow")
         (tool,) = _spans_named(spans, "delegate_task")
         (child_wf,) = _spans_named(spans, "temporal.workflow.ChildWorkflow")
         activities = _spans_named(spans, "temporal.activity.simple_activity")
+        assert all(not span.get("error") for span in activities)
+        assert all(span["metadata"]["temporal.activity_attempt"] == 1 for span in activities)
 
         assert tool["span_parents"] == [parent_wf["span_id"]]
         assert child_wf["span_parents"] == [tool["span_id"]]
@@ -653,6 +638,8 @@ class TestBraintrustPluginIntegration:
             if a["metadata"]["temporal.workflow_id"] != child_wf["metadata"]["temporal.workflow_id"]
         )
         assert parent_activity["span_parents"] == [tool["span_id"]]
+        (child_activity,) = [span for span in activities if span is not parent_activity]
+        assert child_activity["span_parents"] == [child_wf["span_id"]]
 
     @pytest.mark.asyncio
     async def test_in_workflow_spans_are_not_duplicated_on_replay(self, temporal_env, memory_logger):
