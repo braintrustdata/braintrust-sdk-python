@@ -1,7 +1,9 @@
 """Unit tests for Braintrust Temporal interceptor."""
 
 import asyncio
+import concurrent.futures
 import os
+import threading
 import uuid
 from collections import Counter
 from dataclasses import dataclass
@@ -326,6 +328,28 @@ class TestAutoInstrumentation:
 # Integration Tests
 
 
+class _NewThreadPerTaskExecutor(concurrent.futures.ThreadPoolExecutor):
+    """Runs every workflow activation on a new thread.
+
+    A shared worker pool can hand each activation of a workflow to a different thread; this makes
+    that happen every time, so thread-local state cannot be relied on between activations.
+    """
+
+    def submit(self, fn, /, *args, **kwargs):
+        future: concurrent.futures.Future = concurrent.futures.Future()
+
+        def run() -> None:
+            if not future.set_running_or_notify_cancel():
+                return
+            try:
+                future.set_result(fn(*args, **kwargs))
+            except BaseException as e:
+                future.set_exception(e)
+
+        threading.Thread(target=run, daemon=True).start()
+        return future
+
+
 @pytest_asyncio.fixture(scope="function")
 async def temporal_env():
     """Create a Temporal test environment.
@@ -508,13 +532,18 @@ class TestBraintrustPluginIntegration:
             assert "Simulated failure on first attempt" in activity_spans[0]["error"]
 
     @pytest.mark.asyncio
-    async def test_child_workflow_and_activity_nest_under_in_workflow_span(self, temporal_env, memory_logger):
+    @pytest.mark.parametrize("new_thread_per_task", [False, True], ids=["shared_pool", "new_thread_per_task"])
+    async def test_child_workflow_and_activity_nest_under_in_workflow_span(
+        self, temporal_env, memory_logger, new_thread_per_task
+    ):
         task_queue = f"test-queue-delegate-{uuid.uuid4()}"
+        executor = _NewThreadPerTaskExecutor() if new_thread_per_task else None
         async with Worker(
             temporal_env.client,
             task_queue=task_queue,
             workflows=[DelegatingParentWorkflow, ChildWorkflow],
             activities=[simple_activity],
+            workflow_task_executor=executor,
             plugins=[BraintrustPlugin(logger=memory_logger)],
         ):
             await temporal_env.client.execute_workflow(
@@ -526,6 +555,9 @@ class TestBraintrustPluginIntegration:
 
         braintrust.flush()
         spans = memory_logger.pop()
+        # Every row of every span reaches the plugin's logger, whichever thread ran the activation.
+        assert all("span_attributes" in span for span in spans)
+        assert all(span["metrics"].get("end") is not None for span in spans)
         (parent_wf,) = _spans_named(spans, "temporal.workflow.DelegatingParentWorkflow")
         (tool,) = _spans_named(spans, "delegate_task")
         (child_wf,) = _spans_named(spans, "temporal.workflow.ChildWorkflow")

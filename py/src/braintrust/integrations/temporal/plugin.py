@@ -82,7 +82,7 @@ The integration will automatically:
 import dataclasses
 import hashlib
 import uuid
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from typing import Any
 
 import braintrust
@@ -288,7 +288,9 @@ class BraintrustWorkflowInboundInterceptor(temporalio.worker.WorkflowInboundInte
                     # agent/tool spans) get deterministic IDs and are not written while replaying,
                     # so a replay rebuilds the same span tree instead of logging a second copy.
                     self._span_hooks = _WorkflowSpanHooks(
-                        _workflow_span_id_base(info), legacy_ids=SpanComponentsV4.get_version(parent) < 4
+                        _workflow_span_id_base(info),
+                        legacy_ids=SpanComponentsV4.get_version(parent) < 4,
+                        bind_logger=get_logger,
                     )
                     self._span_hooks_token = braintrust.logger._internal_set_span_hooks(self._span_hooks)
                     # Always create the workflow span, even on replay, so it is the current span for
@@ -409,9 +411,12 @@ class _WorkflowSpanHooks:
     replay. Numbering spans per run therefore gives a replayed span the ID it was first logged with.
     """
 
-    def __init__(self, base: str, legacy_ids: bool) -> None:
+    def __init__(self, base: str, legacy_ids: bool, bind_logger: Callable[[], Any]) -> None:
         self._base = base
         self._legacy_ids = legacy_ids
+        # Points this thread at the plugin's logger. The logger override is thread-local, and
+        # Temporal can run each activation of a workflow on a different worker thread.
+        self._bind_logger = bind_logger
         self._counter = 0
 
     def next_ids(self) -> tuple[str, str, str]:
@@ -421,10 +426,13 @@ class _WorkflowSpanHooks:
 
     def should_write(self) -> bool:
         try:
-            return not temporalio.workflow.unsafe.is_replaying()
+            if temporalio.workflow.unsafe.is_replaying():
+                return False
         except Exception:
             # Not in workflow code (e.g. the span is ended from outside the workflow event loop).
             return True
+        self._bind_logger()
+        return True
 
 
 def _workflow_span_id_base(info: temporalio.workflow.Info) -> str:
