@@ -5541,6 +5541,14 @@
           "status": {
             "$ref": "#/components/schemas/AutomationStatus"
           },
+          "service_tier": {
+            "type": "string",
+            "enum": [
+              "standard",
+              "flex"
+            ],
+            "description": "Service tier for online scoring. If omitted, prompt-level service tiers are preserved."
+          },
           "sampling_rate": {
             "type": "number",
             "minimum": 0,
