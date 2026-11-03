@@ -336,6 +336,7 @@ class CancellationWorkflow:
                 CancellationWorkflow.run,
                 "timer",
                 id=f"child-{temporalio.workflow.info().workflow_id}",
+                cancellation_type=temporalio.workflow.ChildWorkflowCancellationType.WAIT_CANCELLATION_COMPLETED,
             )
         else:
             await temporalio.workflow.wait_condition(lambda: False)
@@ -523,6 +524,8 @@ class TestBraintrustPluginIntegration:
         assert len(workflow_spans) == 1
         assert len(activity_spans) == 2
         workflow_span = workflow_spans[0]
+        assert "temporal.cancelled" not in workflow_span["metadata"]
+        assert not workflow_span.get("error")
         # Evicting the workflow between tasks unwinds its coroutine; the span must still end when the
         # workflow really finishes, not when it was first evicted.
         assert workflow_span["metrics"]["end"] >= max(span["metrics"]["start"] for span in activity_spans)
