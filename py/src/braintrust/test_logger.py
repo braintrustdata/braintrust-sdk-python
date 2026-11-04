@@ -2543,6 +2543,34 @@ def test_masking_function_with_error(with_memory_logger, with_simulate_login):
     assert "private" not in json.dumps(record)
 
 
+@pytest.mark.parametrize("timeout", [None, 12.5])
+def test_attachment_internal_timeout_preserves_ordinary_behavior(monkeypatch, with_simulate_login, timeout):
+    requests_seen = []
+
+    def post(connection, path, *args, **kwargs):
+        requests_seen.append(kwargs.get("timeout"))
+        response = requests.Response()
+        response.status_code = 200
+        response._content = json.dumps(
+            {"signedUrl": "https://objectstore.example/upload", "headers": {}} if path == "/attachment" else {}
+        ).encode()
+        return response
+
+    def put(connection, path, *args, **kwargs):
+        requests_seen.append(kwargs.get("timeout"))
+        response = requests.Response()
+        response.status_code = 200
+        return response
+
+    monkeypatch.setattr(logger.HTTPConnection, "post", post)
+    monkeypatch.setattr(logger.HTTPConnection, "put", put)
+    attachment = Attachment(data=b"audio", filename="part.pcm", content_type="audio/pcm")
+    attachment._upload_timeout_seconds = timeout
+    assert attachment.upload()["upload_status"] == "done"
+    assert attachment.upload()["upload_status"] == "done"
+    assert requests_seen == [timeout, timeout, timeout]
+
+
 def test_attachment_unreadable_path_logs_warning(caplog):
     with caplog.at_level(logging.WARNING, logger="braintrust"):
         Attachment(
