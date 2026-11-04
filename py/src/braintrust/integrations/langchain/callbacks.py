@@ -246,15 +246,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
             dataset_record_id=dataset_record_id,
         )
 
-        # Async callbacks may unset from a different context; span state is
-        # tracked in self.spans, so this ValueError is benign.
-        try:
-            span.unset_current()
-        except ValueError as e:
-            if "was created in a different Context" in str(e):
-                pass
-            else:
-                raise
+        span.unset_current()
 
         span.end()
 

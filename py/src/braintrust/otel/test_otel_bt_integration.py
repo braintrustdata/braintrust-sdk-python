@@ -5,6 +5,8 @@ Tests that OTEL and Braintrust spans are properly grouped in unified traces
 when created in mixed contexts.
 """
 
+import contextvars
+import logging
 import os
 
 import pytest
@@ -385,6 +387,73 @@ def test_bt_span_without_explicit_parent_inherits_from_otel(otel_fixture):
 
     # BT span should have OTEL span as parent
     assert bt_child["span_parents"] == [otel_span_id]
+
+
+def test_unset_current_span_restores_previous_context(otel_fixture):
+    from opentelemetry import context
+
+    logger = init_test_logger(__name__)
+    with logger.start_span(name="parent") as parent:
+        child = logger.start_span(name="child")
+        child.set_current()
+        assert context.get_value("braintrust_span") is child
+
+        child.unset_current()
+        child.end()
+
+        assert context.get_value("braintrust_span") is parent
+
+
+def test_unset_current_span_from_another_context_does_not_log_error(otel_fixture, caplog):
+    """Regression for #1062: LangGraph-style async callbacks start and end a span
+    in different contextvars Contexts; that must not log an OTel ERROR."""
+    from opentelemetry import context
+
+    logger = init_test_logger(__name__)
+    owner = contextvars.copy_context()
+    other = contextvars.copy_context()
+
+    span = logger.start_span(name="cross_context")
+    other_span = logger.start_span(name="other_active")
+    owner.run(span.set_current)
+    other.run(other_span.set_current)
+
+    with caplog.at_level(logging.DEBUG):
+        other.run(span.unset_current)
+    span.end()
+    other_span.end()
+
+    otel_errors = [r for r in caplog.records if r.levelno >= logging.ERROR and r.name.startswith("opentelemetry")]
+    assert not otel_errors, [r.getMessage() for r in otel_errors]
+    # The destination context's own active span must be left untouched.
+    assert other.run(context.get_value, "braintrust_span") is other_span
+
+
+def test_unset_current_span_reused_token_still_logs_without_raising(otel_fixture, caplog):
+    from braintrust.otel.context import ContextManager
+    from opentelemetry import context
+
+    otel_context_manager = ContextManager()
+    token = context.attach(context.set_value("braintrust_span", "child"))
+    otel_context_manager.unset_current_span(token)
+
+    with caplog.at_level(logging.ERROR, logger="braintrust.otel.context"):
+        otel_context_manager.unset_current_span(token)
+
+    assert any(r.getMessage() == "Failed to detach context" for r in caplog.records)
+
+
+def test_unset_current_span_non_contextvars_token_uses_otel_detach(otel_fixture, monkeypatch):
+    from braintrust.otel.context import ContextManager
+    from opentelemetry import context
+
+    token = object()
+    calls = []
+    monkeypatch.setattr(context, "detach", calls.append)
+
+    ContextManager().unset_current_span(token)
+
+    assert calls == [token]
 
 
 if __name__ == "__main__":

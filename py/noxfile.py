@@ -929,7 +929,7 @@ def test_otel(session, version):
     _install_matrix_dep(session, "opentelemetry-api", version)
     _install_matrix_dep(session, "opentelemetry-sdk", version)
     _install_matrix_dep(session, "opentelemetry-exporter-otlp-proto-http", version)
-    _run_tests(session, "braintrust/test_otel.py", version=version)
+    _run_tests(session, ["braintrust/test_otel.py", "braintrust/otel/"], version=version)
 
 
 @nox.session()
