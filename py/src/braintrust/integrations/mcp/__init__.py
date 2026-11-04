@@ -2,7 +2,7 @@
 
 import logging
 import sys
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, overload
 
 from braintrust.integrations.versioning import version_satisfies
 
@@ -10,6 +10,24 @@ from ._client import CLIENT_CONFIG_ATTR, ClientConfig, configure_session, set_se
 from .integration import MCPIntegration
 from .patchers import ClientEnterPatcher, ServerRunPatcher
 from .tracing import SERVER_CONFIG_ATTR, MCPServerConfig
+
+
+if TYPE_CHECKING:
+    import fastmcp
+    import mcp
+
+    SessionT = TypeVar("SessionT", bound="mcp.ClientSession")
+    ClientT = TypeVar("ClientT", bound="mcp.Client")
+    FastClientT = TypeVar("FastClientT", bound="fastmcp.Client")
+
+    @overload
+    def wrap_mcp_client(client_or_session: SessionT, capture_content: bool = True) -> SessionT: ...
+
+    @overload
+    def wrap_mcp_client(client_or_session: ClientT, capture_content: bool = True) -> ClientT: ...
+
+    @overload
+    def wrap_mcp_client(client_or_session: FastClientT, capture_content: bool = True) -> FastClientT: ...
 
 
 logger = logging.getLogger(__name__)
@@ -61,7 +79,9 @@ def wrap_mcp_server(server: ServerT, capture_content: bool = True) -> ServerT:
     return server
 
 
-def wrap_mcp_client(client_or_session: ServerT, capture_content: bool = True) -> ServerT:
+def wrap_mcp_client(
+    client_or_session: "mcp.ClientSession | mcp.Client | fastmcp.Client", capture_content: bool = True
+) -> "mcp.ClientSession | mcp.Client | fastmcp.Client":
     """Trace outgoing MCP round trips and propagate W3C context in ``params._meta``.
 
     Accepts an official ``mcp.ClientSession`` (1.x/2.x), ``mcp.Client`` (2.x),
