@@ -58,6 +58,8 @@ _PROJECT_DIR = str(pathlib.Path(__file__).parent)
 
 def _ensure_livekit_server(session: nox.Session) -> str:
     """Ensure a standalone livekit-server binary is available for LiveKit e2e tests."""
+    if os.environ.get("BRAINTRUST_LIVEKIT_SERVER_EXTERNAL") == "1":
+        return os.getcwd()
     existing = shutil.which("livekit-server")
     if existing:
         return os.path.dirname(existing)
@@ -508,7 +510,7 @@ def test_livekit_agents(session, version):
     _skip_if_incompatible(session)
     _install_test_deps(session)
     # Install the locked plugins first so the matrix pin decides livekit-agents.
-    _install_group_locked(session, "test-livekit-agents-1-8" if version == "1.8.8" else "test-livekit-agents")
+    _install_group_locked(session, "test-livekit-agents")
     _install_matrix_dep(session, "livekit-agents", version)
     livekit_server_dir = _ensure_livekit_server(session)
     env = {
@@ -517,7 +519,7 @@ def test_livekit_agents(session, version):
         "LIVEKIT_API_SECRET": os.environ.get("LIVEKIT_API_SECRET", "secret"),
         "PATH": f"{livekit_server_dir}{os.pathsep}{os.environ.get('PATH', '')}",
     }
-    _run_tests(session, f"{INTEGRATION_DIR}/livekit_agents/test_livekit_agents.py", version=version, env=env)
+    _run_tests(session, f"{INTEGRATION_DIR}/livekit_agents", version=version, env=env)
 
 
 PIPECAT_VERSIONS = _get_matrix_versions("pipecat-ai")

@@ -1,1045 +1,746 @@
+"""Braintrust-owned cascade spans from qualified LiveKit framework hooks."""
+
 import asyncio
 import contextlib
-import json
+import inspect
+import logging
+import re
 import time
+import weakref
 from contextvars import ContextVar
-from typing import Any
+from fractions import Fraction
 
-from braintrust.env import BraintrustEnv
-from braintrust.integrations.utils import _pcm_to_wav
-from braintrust.logger import (
-    NOOP_SPAN,
-    Attachment,
-    SpanTypeAttribute,
-    _state,
-    current_span,
-    parent_context,
-)
-from braintrust.logger import (
-    start_span as _bt_start_span,
-)
+from braintrust._audio.session import AudioSessionRecorder
+from braintrust._instrumentation import provider_content_allowed, provider_spans_owned
+from braintrust.audio import AudioRecordingOptions
+from braintrust.logger import parent_context, start_span
+
+from .compat import STATE_ATTR, arguments, chat_messages, state_for
+from .privacy import Privacy, PrivacyCustomizer, opted_in
 
 
-_INSTRUMENTATION = "livekit-agents-auto"
+_ACTIVE: ContextVar[object] = ContextVar("braintrust_livekit_owner", default=None)
+_HANDLE: ContextVar[object] = ContextVar("braintrust_livekit_speech", default=None)
+_REPLY_TO: ContextVar[object] = ContextVar("braintrust_livekit_reply_to", default=None)
+_SYNTHESIS: ContextVar[object] = ContextVar("braintrust_livekit_synthesis", default=None)
+_OPTIONS = AudioRecordingOptions()
+_warned_links = False
 
 
-def start_span(*args, **kwargs):
-    internal = dict(kwargs.get("internal") or {})
-    internal.setdefault("instrumentation", _INSTRUMENTATION)
-    kwargs["internal"] = internal
-    return _bt_start_span(*args, **kwargs)
+def configure(audio):
+    global _OPTIONS
+    if audio is not None:
+        if audio.encoding is not None:
+            from braintrust._audio.middleware import encoding_stack
+
+            directions = sum(opted_in(direction) for direction in ("USER", "AGENT"))
+            encoding_stack(audio.encoding, channels=directions or None)
+        _OPTIONS = audio
 
 
-_SESSION_PARENT_ATTR = "__braintrust_livekit_session_parent__"
-_SESSION_SPAN_ATTR = "__braintrust_livekit_session_span__"
-_USER_SPEAKING_SPAN_ATTR = "__braintrust_livekit_user_speaking_span__"
-_PLAYBACK_HANDLER_ATTACHED_ATTR = "__braintrust_livekit_playback_handler_attached__"
-_PLAYBACK_START_ATTR = "__braintrust_livekit_playback_start__"
-_PLAYBACK_AUDIO_ATTR = "__braintrust_livekit_playback_audio__"
-_PLAYBACK_AUDIO_METADATA_ATTR = "__braintrust_livekit_playback_audio_metadata__"
-_PLAYBACK_SESSION_STATE_ATTR = "__braintrust_livekit_playback_session_state__"
-_METRICS_HANDLER_ATTACHED_ATTR = "__braintrust_livekit_metrics_handler_attached__"
-_TTS_INPUT_TEXT_ATTR = "__braintrust_livekit_tts_input_text__"
-_STT_SUPPRESS_METRICS_ATTR = "__braintrust_livekit_stt_suppress_metrics__"
-_STT_LAST_METRICS_ATTR = "__braintrust_livekit_stt_last_metrics__"
-_OUTER_PARENT_TO_SESSION_PARENT: dict[str, str] = {}
-_OUTER_SPAN_ID_TO_SESSION_PARENT: dict[str, str] = {}
-_LATEST_SESSION_PARENT: str | None = None
-_ACTIVE_SESSION_PARENT: ContextVar[str | None] = ContextVar("braintrust_livekit_active_session_parent", default=None)
-
-
-def attach_metrics_handler(obj: Any) -> bool:
-    if getattr(obj, _METRICS_HANDLER_ATTACHED_ATTR, False):
-        return True
-    on = getattr(obj, "on", None)
-    if not callable(on):
-        return False
-
-    def on_metrics_collected(event: Any) -> None:
-        metrics_obj = getattr(event, "metrics", event)
-        if metrics_obj is None:
-            return
-        metrics_type = getattr(metrics_obj, "type", None)
-        parent = getattr(obj, _SESSION_PARENT_ATTR, None)
-        with parent_context(parent if isinstance(parent, str) else None):
-            if metrics_type == "llm_metrics":
-                _log_metric_on_existing_span(obj, metrics_obj)
-            elif metrics_type == "realtime_model_metrics":
-                _log_metric_on_existing_span(obj, metrics_obj)
-            elif metrics_type == "tts_metrics":
-                _log_metric_span(
-                    "tts_request",
-                    metrics_obj,
-                    SpanTypeAttribute.TASK,
-                    parent=parent if isinstance(parent, str) else None,
-                    input={"text": getattr(obj, _TTS_INPUT_TEXT_ATTR, None)},
-                    first_response_kind="audio",
-                )
-            elif metrics_type == "stt_metrics":
-                if getattr(obj, _STT_SUPPRESS_METRICS_ATTR, False):
-                    setattr(obj, _STT_LAST_METRICS_ATTR, metrics_obj)
-                    return
-                _log_metric_span(
-                    "stt_processing",
-                    metrics_obj,
-                    SpanTypeAttribute.TASK,
-                    parent=parent if isinstance(parent, str) else None,
-                )
-            elif metrics_type == "eou_metrics":
-                _log_metric_span(
-                    "eou_detection",
-                    metrics_obj,
-                    SpanTypeAttribute.TASK,
-                    parent=parent if isinstance(parent, str) else None,
-                )
-
-    on("metrics_collected", on_metrics_collected)
-    setattr(obj, _METRICS_HANDLER_ATTACHED_ATTR, True)
-    return True
-
-
-async def traced_session_start(wrapped: Any, instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
-    global _LATEST_SESSION_PARENT  # pylint: disable=global-statement
-    parent = getattr(instance, _SESSION_PARENT_ATTR, None)
-    if not isinstance(parent, str):
-        outer_parent = _current_span_export()
-        outer_span_id = _current_span_id()
-        span = start_span(name="livekit_agent_session", type=SpanTypeAttribute.TASK, set_current=False)
-        parent = span.export()
-        setattr(instance, _SESSION_SPAN_ATTR, span)
-        setattr(instance, _SESSION_PARENT_ATTR, parent)
-        if outer_parent is not None:
-            _OUTER_PARENT_TO_SESSION_PARENT[outer_parent] = parent
-        if outer_span_id is not None:
-            _OUTER_SPAN_ID_TO_SESSION_PARENT[outer_span_id] = parent
-        _LATEST_SESSION_PARENT = parent
-        _propagate_session_parent_to_start_args(instance, args, kwargs)
-    try:
-        result = await wrapped(*args, **kwargs)
-    except BaseException:
-        _end_session_span(instance)
-        raise
-    _propagate_session_parent_to_components(instance)
-    _attach_session_playback_handler(instance)
-    return result
-
-
-async def traced_session_aexit(wrapped: Any, instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
-    try:
-        return await wrapped(*args, **kwargs)
-    finally:
-        _end_session_span(instance)
-
-
-async def traced_session_close(wrapped: Any, instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
-    try:
-        return await wrapped(*args, **kwargs)
-    finally:
-        _end_session_span(instance)
-
-
-def traced_update_user_state(wrapped: Any, instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
-    global _LATEST_SESSION_PARENT  # pylint: disable=global-statement
-    state = args[0] if args else kwargs.get("state")
-    session_parent = getattr(instance, _SESSION_PARENT_ATTR, None)
-    if isinstance(session_parent, str):
-        _LATEST_SESSION_PARENT = session_parent
-    if state == "speaking" and getattr(instance, _USER_SPEAKING_SPAN_ATTR, None) is None:
-        parent = getattr(instance, _SESSION_PARENT_ATTR, None)
-        span = start_span(
-            name="user_speaking",
-            type=SpanTypeAttribute.TASK,
-            parent=parent if isinstance(parent, str) else None,
-            set_current=False,
-        )
-        setattr(instance, _USER_SPEAKING_SPAN_ATTR, span)
-    elif state != "speaking":
-        _end_user_speaking_span(instance)
-    try:
-        return wrapped(*args, **kwargs)
-    except BaseException:
-        if state == "speaking":
-            _end_user_speaking_span(instance)
-        raise
-
-
-async def traced_stt_recognize(wrapped: Any, instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
-    setattr(instance, _STT_LAST_METRICS_ATTR, None)
-    setattr(instance, _STT_SUPPRESS_METRICS_ATTR, True)
-    try:
-        result = await wrapped(*args, **kwargs)
-    finally:
-        setattr(instance, _STT_SUPPRESS_METRICS_ATTR, False)
-    metrics_obj = getattr(instance, _STT_LAST_METRICS_ATTR, None)
-    parent = getattr(instance, _SESSION_PARENT_ATTR, None)
-    if metrics_obj is not None:
-        _log_metric_span(
-            "stt_processing",
-            metrics_obj,
-            SpanTypeAttribute.TASK,
-            parent=parent if isinstance(parent, str) else None,
-            output=_speech_event_output(result),
-        )
-    return result
-
-
-def traced_llm_chat(wrapped: Any, instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
-    stream = wrapped(*args, **kwargs)
-    parent = getattr(instance, _SESSION_PARENT_ATTR, None) or _LATEST_SESSION_PARENT or _state.current_parent.get()
-    if isinstance(parent, str):
-        _set_component_session(stream, parent, getattr(instance, _SESSION_SPAN_ATTR, None))
-    return stream
-
-
-def traced_llm_stream_init(wrapped: Any, instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
-    result = wrapped(*args, **kwargs)
-    if _LATEST_SESSION_PARENT is not None:
-        _set_component_session(instance, _LATEST_SESSION_PARENT, None)
-    return result
-
-
-async def traced_llm_stream_run(wrapped: Any, instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
-    llm = getattr(instance, "_llm", None)
-    parent = (
-        getattr(instance, _SESSION_PARENT_ATTR, None)
-        or getattr(llm, _SESSION_PARENT_ATTR, None)
-        or _ACTIVE_SESSION_PARENT.get()
-        or _session_parent_for_current_span()
-        or _LATEST_SESSION_PARENT
-        or _state.current_parent.get()
-    )
-    if _LATEST_SESSION_PARENT is not None:
-        parent = _LATEST_SESSION_PARENT
-    if llm is not None:
-        attach_metrics_handler(llm)
-    parent_arg = parent if isinstance(parent, str) else None
-    with parent_context(parent_arg):
-        return await _traced_async_span(
-            "llm_request_run",
-            SpanTypeAttribute.TASK,
-            wrapped,
-            args,
-            kwargs,
-            parent=parent_arg,
-        )
-
-
-async def traced_execute_tools_task(wrapped: Any, instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
-    session = kwargs.get("session")
-    parent = getattr(session, _SESSION_PARENT_ATTR, None)
-    parent_arg = parent if isinstance(parent, str) else None
-    start_time = time.time()
-    try:
-        with _without_current_span(parent_arg):
-            result = await wrapped(*args, **kwargs)
-    except Exception as exc:
-        end_time = time.time()
-        event = _tool_execution_event(kwargs.get("tool_output"))
-        if event:
-            _log_function_tool_span(event, parent=parent_arg, start_time=start_time, end_time=end_time, error=exc)
-        raise
-    end_time = time.time()
-    event = _tool_execution_event(kwargs.get("tool_output"))
-    if event:
-        _log_function_tool_span(event, parent=parent_arg, start_time=start_time, end_time=end_time)
-    return result
-
-
-def _log_function_tool_span(
-    event: dict[str, Any],
-    *,
-    parent: str | None,
-    start_time: float,
-    end_time: float,
-    error: Exception | None = None,
-) -> None:
-    span = start_span(
-        name="function_tool",
-        type=SpanTypeAttribute.TOOL,
-        parent=parent,
+def _new(parent, name, *, kind="task", start_time=None, metadata=None, privacy=None):
+    filters = (PrivacyCustomizer(privacy),) if privacy is not None else getattr(parent, "_export_customizers", ())
+    kwargs = dict(
+        name=name,
+        type=kind,
         start_time=start_time,
         set_current=False,
+        internal={"instrumentation": "livekit-agents-auto", "export_customizers": filters},
+        metadata={"audio.schema.version": "3.0.0", **(metadata or {})},
     )
-    span.log(error=error, **event)
-    span.end(end_time=end_time)
+    return parent.start_span(**kwargs) if parent is not None else start_span(**kwargs)
 
 
-async def _traced_async_span(
-    name: str,
-    span_type: str,
-    wrapped: Any,
-    args: tuple[Any, ...],
-    kwargs: dict[str, Any],
-    parent: str | None = None,
-    event_builder: Any | None = None,
-    **event: Any,
-) -> Any:
-    with _without_current_span(parent):
-        span = start_span(name=name, type=span_type, parent=parent, set_current=False)
-    exported = span.export()
-    try:
-        with _without_current_span(parent), parent_context(exported):
-            result = await wrapped(*args, **kwargs)
-    except asyncio.CancelledError:
-        span.end()
-        raise
-    except Exception as exc:
-        span.log(error=exc, **event)
-        span.end()
-        raise
-    except BaseException:
-        span.end()
-        raise
-    if callable(event_builder):
-        event.update(event_builder())
-    span.log(**event)
-    span.end()
-    return result
-
-
-@contextlib.contextmanager
-def _without_current_span(parent: str | None):
-    if parent is None:
-        yield
-        return
-    token = _state.context_manager.set_current_span(None)
-    legacy_token = _state.current_span.set(NOOP_SPAN)
-    try:
-        yield
-    finally:
-        _state.current_span.reset(legacy_token)
-        _state.context_manager.unset_current_span(token)
-
-
-@contextlib.contextmanager
-def _current_span_context(span: Any):
-    if span is None:
-        yield
-        return
-    token = _state.context_manager.set_current_span(span)
-    try:
-        yield
-    finally:
-        _state.context_manager.unset_current_span(token)
-
-
-def _parse_jsonish(value: Any) -> Any:
-    if not isinstance(value, str) or not value or value[0] not in '[{"':
-        return value
-    try:
-        return json.loads(value)
-    except json.JSONDecodeError:
-        return value
-
-
-def _tool_execution_event(tool_output: Any) -> dict[str, Any]:
-    outputs = getattr(tool_output, "output", None)
-    if not isinstance(outputs, list) or not outputs:
-        return {}
-    calls = []
-    for item in outputs:
-        fnc_call = getattr(item, "fnc_call", None)
-        fnc_call_out = getattr(item, "fnc_call_out", None)
-        call = {
-            "name": getattr(fnc_call, "name", None),
-            "arguments": _parse_jsonish(getattr(fnc_call, "arguments", None)),
-            "call_id": getattr(fnc_call, "call_id", None),
-            "output": getattr(fnc_call_out, "output", None),
-            "is_error": getattr(fnc_call_out, "is_error", None),
-        }
-        calls.append({key: value for key, value in call.items() if value is not None})
-    if len(calls) == 1:
-        call = calls[0]
+def link(target, relationship):
+    global _warned_links
+    trace_id, span_id = getattr(target, "root_span_id", ""), getattr(target, "span_id", "")
+    if re.fullmatch("[0-9a-f]{32}", trace_id) and re.fullmatch("[0-9a-f]{16}", span_id):
         return {
-            "input": {"name": call.get("name"), "arguments": call.get("arguments")},
-            "output": {"output": call.get("output"), "is_error": call.get("is_error")},
-            "metadata": {"call_id": call.get("call_id")},
+            "context": {"traceId": trace_id, "spanId": span_id, "traceFlags": 1},
+            "attributes": {"braintrust.relationship.type": relationship},
         }
-    return {"output": {"tool_calls": calls}, "metadata": {"tool_call_count": len(calls)}}
+    if not _warned_links:
+        _warned_links = True
+        logging.getLogger("braintrust").debug("LiveKit links omitted: span IDs do not use W3C format")
+    return None
 
 
-async def traced_session_run(wrapped: Any, instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
-    global _LATEST_SESSION_PARENT  # pylint: disable=global-statement
-    parent = getattr(instance, _SESSION_PARENT_ATTR, None)
-    token = None
-    if isinstance(parent, str):
-        _LATEST_SESSION_PARENT = parent
-        token = _ACTIVE_SESSION_PARENT.set(parent)
+class Session:
+    def __init__(self, native, record):
+        self.native = native
+        self.privacy = Privacy(native, record)
+        self.options = _OPTIONS
+        self.span = _new(None, "session", privacy=self.privacy)
+        self.directions = tuple(direction for direction in ("USER", "AGENT") if opted_in(direction))
+        sources = tuple({"USER": "session-input", "AGENT": "agent-output"}[d] for d in self.directions)
+        try:
+            self.audio = AudioSessionRecorder(
+                self.span,
+                sources=sources if self.privacy.allows_content() else (),
+                options=self.options,
+                allowed=self.audio_allowed,
+            )
+        except BaseException:
+            self.span.end()
+            raise
+        self.audio.source("session-input")
+        self.audio.source("agent-output")
+        self.tap = None
+        self.input_end: Fraction | None = None
+        self.user = None
+        self.user_started = None
+        self.pending_users = set()
+        self.user_speech = None
+        self.user_selection = None
+        self.user_start = None
+        self.user_end = None
+        self.turns: dict[object, object] = {}
+        self.requests: dict[object, dict[str, object]] = {}
+        self.tool_results: dict[object, dict[str, object]] = {}
+        self.participants = {}
+        self.stt = None
+        self.closed = False
+        self._finishing = None
+        if self.privacy.job is not None:
+            reference = weakref.ref(self)
+
+            async def shutdown():
+                if (owner := reference()) is not None:
+                    # LiveKit runs job callbacks concurrently. Settle its media
+                    # lifecycle before sealing, even when its own close callback
+                    # is running alongside this idempotent fallback.
+                    if owner.native is not None:
+                        await owner.native.aclose()
+                    else:
+                        await owner.finish()
+
+            self.privacy.job.add_shutdown_callback(shutdown)
+
+    def permits(self):
+        allowed = self.privacy.allows_content()
+        if not allowed:
+            if self.tap is not None:
+                self.tap.discard_private()
+            if self.audio.recorder is not None:
+                self.audio.recorder.discard("privacy_restricted")
+        return allowed
+
+    def audio_allowed(self):
+        return self.privacy.allows_content() and all(opted_in(d) for d in self.directions)
+
+    def capture_output(self):
+        return not self.closed and "AGENT" in self.directions and self.permits() and opted_in("AGENT")
+
+    def log(self, span, **event):
+        # Per-span privacy customizers recheck at lazy export.
+        for field in ("input", "output", "error"):
+            if field in event:
+                if not self.permits():
+                    del event[field]
+        span.log(**event)
+
+    def ensure_user(self, start=None):
+        if self.user is None:
+            self.user_started = start if start is not None else time.time()
+            self.user = _new(self.span, "user_turn", start_time=self.user_started)
+            self.user.log(metadata={"turn.id": self.user.span_id})
+            self.user_start = self.user_end = None
+        elif start is not None and start < self.user_started:
+            self.user_started = start
+            self.user.log(metrics={"start": start})
+        return self.user
+
+    def agent_parent(self):
+        return self.turns.get(_HANDLE.get(), self.span)
+
+    def source_metadata(self, source):
+        metadata = {"audio.source_id": source}
+        if self.permits() and (participant := self.participants.get(source)):
+            metadata["audio.participant_ids"] = [participant]
+        return metadata
+
+    def attach_media(self):
+        from .playback import PlaybackTap
+
+        if self.tap is None and self.native.output.audio is not None:
+            self.tap = PlaybackTap(self.native.output.audio, self)
+            self.native.output.audio = self.tap
+        room_io = self.native._room_io
+        if room_io is not None and self.permits():
+            for source, participant, kind in (
+                ("session-input", room_io.linked_participant, "user"),
+                ("agent-output", room_io.room.local_participant, "agent"),
+            ):
+                if participant is not None and participant.sid:
+                    identifier = self.audio.participant(participant.sid, {"type": kind})
+                    if identifier:
+                        self.participants[source] = identifier
+
+    def input(self, frame):
+        if self.closed:
+            return
+        duration = Fraction(frame.samples_per_channel * 1_000_000_000, frame.sample_rate)
+        if self.input_end is None:
+            self.input_end = max(0, self.audio.elapsed_ns() - duration)
+        start = self.input_end
+        self.input_end += duration
+        if "USER" in self.directions and self.permits() and opted_in("USER"):
+            self.audio.record(
+                "session-input",
+                bytes(frame.data),
+                sample_rate_hz=frame.sample_rate,
+                channels=frame.num_channels,
+                offset_ns=start,
+            )
+        self.advance()
+
+    def advance(self):
+        watermark = self.audio.elapsed_ns()
+        if "USER" in self.directions:
+            watermark = min(watermark, max(0, (self.input_end or 0) - 1_000_000))
+        if self.tap is not None:
+            watermark = min(watermark, self.tap.watermark())
+        self.audio.advance(watermark)
+
+    def played(self, run, start, end):
+        if run.speech is None:
+            run.speech = _new(
+                run.parent,
+                "agent_speech",
+                start_time=(self.audio.wall_ns + start) / 1e9,
+                metadata=self.source_metadata("agent-output"),
+            )
+            target = getattr(run, "synthesis", None)
+            if target is not None and (relationship := link(target, "generated_by")):
+                run.speech.log(metadata={"links": [relationship]})
+        left, right = round(start / 1_000_000), round(end / 1_000_000)
+        last = next(reversed(run.selections.values()), None) if run.selections else None
+        if last is not None and last["end_offset_ms"] == left:
+            last["end_offset_ms"] = right
+        else:
+            run.selections[f"selection-{len(run.selections)}"] = {"start_offset_ms": left, "end_offset_ms": right}
+        run.speech.log(metadata={"audio.selections": run.selections})
+
+    def end_playback(self, run):
+        if run.speech is None:
+            return
+        transcript = getattr(run.finished, "synchronized_transcript", None)
+        if transcript is not None:
+            self.log(run.speech, output=[{"role": "assistant", "content": transcript}])
+        run.speech.end((self.audio.wall_ns + (run.played_end or run.queued_ns)) / 1e9)
+        run.speech = None
+
+    async def finish(self):
+        if self._finishing is None:
+            self._finishing = asyncio.create_task(self._finish())
+        await asyncio.shield(self._finishing)
+
+    async def _finish(self):
+        if self.closed:
+            return
+        self.closed = True
+        end = time.time()
+        if self.tap is not None:
+            self.tap.close()
+            self.tap = None
+        for span in (self.user_speech, self.stt, self.user, *self.pending_users, *self.turns.values()):
+            if span is not None:
+                span.log(metadata={"turn.incomplete": True})
+                span.end(end)
+        self.span.end(end)
+        self.turns.clear()
+        self.pending_users.clear()
+        self.requests.clear()
+        self.tool_results.clear()
+        self.user = self.stt = self.user_speech = None
+        try:
+            await self.audio.finish()
+        finally:
+            self.native = None
+            self.privacy.session = None
+            self.privacy.job = None
+
+
+async def session_start(wrapped, instance, args, kwargs):
+    owner = state_for(instance)
+    if owner is not None and not owner.closed:
+        return await wrapped(*args, **kwargs)
+    owner = Session(instance, kwargs.get("record"))
+    setattr(instance, STATE_ATTR, owner)
+    token = _ACTIVE.set(owner)
+    policy_token = provider_content_allowed.set(owner.privacy.allows_content)
     try:
-        with (
-            _current_span_context(getattr(instance, _SESSION_SPAN_ATTR, None)),
-            parent_context(parent if isinstance(parent, str) else None),
-        ):
-            result = await wrapped(*args, **kwargs)
+        result = await wrapped(*args, **kwargs)
+        owner.attach_media()
+        return result
+    except BaseException:
+        await owner.finish()
+        delattr(instance, STATE_ATTR)
+        raise
     finally:
-        if token is not None:
-            _ACTIVE_SESSION_PARENT.reset(token)
-    metadata = _agent_turn_metadata(result)
-    if metadata:
-        span = getattr(instance, _SESSION_SPAN_ATTR, None)
-        if span is not None:
-            span.log(metadata=metadata)
-        else:
-            with start_span(name="livekit_agent_session", type=SpanTypeAttribute.TASK) as fallback_span:
-                fallback_span.log(metadata=metadata)
-    return result
+        provider_content_allowed.reset(policy_token)
+        _ACTIVE.reset(token)
 
 
-def traced_session_say(wrapped: Any, instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
-    return wrapped(*args, **kwargs)
+async def session_close(wrapped, instance, args, kwargs):
+    owner = state_for(instance)
+    try:
+        return await wrapped(*args, **kwargs)
+    finally:
+        if owner is not None:
+            await owner.finish()
+            if getattr(instance, STATE_ATTR, None) is owner:
+                delattr(instance, STATE_ATTR)
 
 
-def traced_vad_stream(wrapped: Any, instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
-    return wrapped(*args, **kwargs)
-
-
-async def traced_vad_stream_anext(wrapped: Any, instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
-    event = await wrapped(*args, **kwargs)
-    _log_vad_endpointing_event(getattr(instance, "_vad", None), event)
-    return event
-
-
-def _log_vad_endpointing_event(vad: Any, event: Any) -> None:
-    event_type = getattr(event, "type", None)
-    event_type_value = getattr(event_type, "value", event_type)
-    if event_type_value != "end_of_speech":
-        return
-    silence_duration = getattr(event, "silence_duration", None)
-    if not isinstance(silence_duration, (int, float)) or isinstance(silence_duration, bool) or silence_duration <= 0:
-        return
-    end_time = time.time()
-    parent = getattr(vad, _SESSION_PARENT_ATTR, None)
-    metadata = {
-        "speech_duration": getattr(event, "speech_duration", None),
-        "silence_duration": silence_duration,
-        "samples_index": getattr(event, "samples_index", None),
-    }
-    metadata = {key: value for key, value in metadata.items() if value is not None}
-    span = start_span(
-        name="vad_endpointing",
-        type=SpanTypeAttribute.TASK,
-        start_time=end_time - silence_duration,
-        set_current=False,
-        parent=parent if isinstance(parent, str) else None,
-    )
-    span.log(metadata=metadata)
-    span.end(end_time=end_time)
-
-
-def traced_session_audio_output_changed(
-    wrapped: Any, instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]
-) -> Any:
-    _propagate_session_parent_to_components(instance)
-    _attach_session_playback_handler(instance)
-    return wrapped(*args, **kwargs)
-
-
-async def traced_audio_output_capture_frame(
-    wrapped: Any, instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]
-) -> Any:
-    if getattr(instance, _PLAYBACK_HANDLER_ATTACHED_ATTR, False):
-        if getattr(instance, _PLAYBACK_START_ATTR, None) is None:
-            setattr(instance, _PLAYBACK_START_ATTR, time.time())
-        if BraintrustEnv.CAPTURE_AGENT_AUDIO_ATTACHMENTS.get(False):
-            _capture_playback_audio(instance, args[0] if args else kwargs.get("frame"))
-        else:
-            _clear_playback_audio(instance)
+async def activity_start(wrapped, instance, args, kwargs):
+    if (owner := state_for(instance)) is not None:
+        owner.attach_media()
     return await wrapped(*args, **kwargs)
 
 
-def traced_tts_synthesize(wrapped: Any, instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
-    stream = wrapped(*args, **kwargs)
-    text = args[0] if args else kwargs.get("text")
+def push_audio(wrapped, instance, args, kwargs):
+    if (owner := state_for(instance)) is not None:
+        owner.input(args[0] if args else kwargs["frame"])
+    return wrapped(*args, **kwargs)
+
+
+def create_speech_task(wrapped, instance, args, kwargs):
+    owner = state_for(instance)
+    handle = kwargs.get("speech_handle")
+    if owner is not None and handle is not None:
+        setattr(handle, STATE_ATTR, owner)
+        setattr(handle, "_braintrust_reply_to", _REPLY_TO.get())
+    token, handle_token = _ACTIVE.set(owner), _HANDLE.set(handle)
+    policy_token = provider_content_allowed.set(owner.privacy.allows_content if owner is not None else None)
     try:
-        setattr(instance, _TTS_INPUT_TEXT_ATTR, text)
-    except Exception:
-        pass
-    return _TTSStreamProxy(stream, text)
+        return wrapped(*args, **kwargs)
+    finally:
+        provider_content_allowed.reset(policy_token)
+        _HANDLE.reset(handle_token)
+        _ACTIVE.reset(token)
 
 
-class _TTSStreamProxy:
-    def __init__(self, stream: Any, text: Any):
-        self._stream = stream
-        self._start = time.time()
-        self._first_chunk_time = None
-        self._ended = False
-        self._span = start_span(name="tts_request", type=SpanTypeAttribute.TASK, input={"text": text})
+def agent_turn(wrapped, instance, args, kwargs):
+    handle = args[0]
+    owner = getattr(handle, STATE_ATTR, None)
 
-    def __aiter__(self):
-        return self
+    @contextlib.contextmanager
+    def context():
+        if owner is not None and handle not in owner.turns:
+            span = _new(owner.span, "agent_turn", metadata={"contrib.livekit.speech_id": handle.id})
+            owner.turns[handle] = span
+            owner.requests[handle] = {}
+            metadata = {"turn.id": span.span_id}
+            if (reply := getattr(handle, "_braintrust_reply_to", None)) is not None:
+                metadata["turn.reply_to"] = reply.span_id
+            span.log(metadata=metadata)
+        with wrapped(*args, **kwargs) as native:
+            yield native
 
-    async def __aenter__(self):
-        enter = getattr(self._stream, "__aenter__", None)
-        if callable(enter):
-            await enter()
-        return self
+    return context()
 
-    async def __aexit__(self, exc_type: Any, exc: Any, tb: Any) -> Any:
-        exit_ = getattr(self._stream, "__aexit__", None)
+
+def speech_done(wrapped, instance, args, kwargs):
+    owner = getattr(instance, STATE_ATTR, None)
+    try:
+        return wrapped(*args, **kwargs)
+    finally:
+        if owner is not None:
+            if (span := owner.turns.pop(instance, None)) is not None:
+                span.log(metadata={"contrib.livekit.interrupted": instance.interrupted})
+                span.end()
+            owner.requests.pop(instance, None)
+            owner.tool_results.pop(instance, None)
+            if hasattr(instance, STATE_ATTR):
+                delattr(instance, STATE_ATTR)
+            if hasattr(instance, "_braintrust_reply_to"):
+                delattr(instance, "_braintrust_reply_to")
+
+
+def continue_turn(wrapped, instance, args, kwargs):
+    discarded, successor = args[:2]
+    owner = getattr(discarded, STATE_ATTR, None)
+    if owner is not None and discarded in owner.turns:
+        owner.turns[successor] = owner.turns.pop(discarded)
+        owner.requests[successor] = owner.requests.pop(discarded, {})
+        owner.tool_results[successor] = owner.tool_results.pop(discarded, {})
+        setattr(successor, STATE_ATTR, owner)
+    return wrapped(*args, **kwargs)
+
+
+def ensure_user(wrapped, instance, args, kwargs):
+    if (owner := state_for(instance)) is not None:
+        owner.ensure_user(arguments(wrapped, args, kwargs).get("start_time"))
+    return wrapped(*args, **kwargs)
+
+
+def user_speech_start(wrapped, instance, args, kwargs):
+    owner = state_for(instance)
+    values = arguments(wrapped, args, kwargs)
+    event = values.get("ev")
+    if owner is not None:
+        parent = owner.ensure_user()
+        if event is not None and owner.user_speech is None:
+            start = values["speech_start_time"]
+            owner.user_speech = _new(
+                parent, "user_speech", start_time=start, metadata=owner.source_metadata("session-input")
+            )
+            owner.user_selection = owner.audio.from_wall(start)
+            owner.user_start = owner.user_start if owner.user_start is not None else owner.user_selection
+    return wrapped(*args, **kwargs)
+
+
+def user_speech_end(wrapped, instance, args, kwargs):
+    owner = state_for(instance)
+    event = arguments(wrapped, args, kwargs).get("ev")
+    if owner is not None and owner.user_speech is not None:
+        end = time.time() - event.silence_duration - event.inference_duration if event is not None else time.time()
+        if event is not None:
+            end_ns = owner.audio.from_wall(end)
+            owner.user_end = end_ns
+            selection = {
+                "selection-0": {
+                    "start_offset_ms": round(owner.user_selection / 1e6),
+                    "end_offset_ms": round(max(end_ns, owner.user_selection) / 1e6),
+                }
+            }
+            owner.user_speech.log(metadata={"audio.selections": selection})
+        owner.user_speech.end(end)
+        owner.user_speech = None
+    return wrapped(*args, **kwargs)
+
+
+def process_stt(wrapped, instance, args, kwargs):
+    owner = state_for(instance)
+    event = args[0] if args else kwargs["ev"]
+    kind = event.type.value
+    if (
+        owner is not None
+        and kind in ("interim_transcript", "preflight_transcript", "final_transcript")
+        and event.alternatives
+    ):
+        parent = owner.ensure_user()
+        received_at = time.time()
+        if owner.stt is None:
+            owner.stt = _new(parent, "stt", start_time=received_at, metadata=owner.source_metadata("session-input"))
+        if kind == "final_transcript":
+            span, owner.stt = owner.stt, None
+            result = event.alternatives[0]
+            scope = getattr(event, "_braintrust_source_run", None)
+            # Native timestamp alignment can replace the event and drop this
+            # attribute. Without recognition ownership, omit attribution.
+            if scope is not None and result.speaker_id is not None and owner.permits():
+                speaker = owner.audio.speaker("session-input", (scope, result.speaker_id), {"type": "user"})
+                if speaker is not None:
+                    span.log(metadata={"audio.speaker_ids": [speaker]})
+            owner.log(span, output=[{"role": "user", "content": result.text}])
+            span.end(received_at)
+    return wrapped(*args, **kwargs)
+
+
+def end_of_turn(wrapped, instance, args, kwargs):
+    owner = state_for(instance)
+    info = args[0] if args else kwargs["info"]
+    if owner is not None:
+        user = owner.ensure_user()
+        setattr(info, "_braintrust_turn", user)
+        setattr(info, "_braintrust_owner", owner)
+        owner.log(user, input=[{"role": "user", "content": info.new_transcript}])
+        if owner.user_start is not None and owner.user_end is not None:
+            user.log(
+                metadata={
+                    "audio.selections": {
+                        "selection-0": {
+                            "start_offset_ms": round(owner.user_start / 1e6),
+                            "end_offset_ms": round(owner.user_end / 1e6),
+                        }
+                    },
+                    "audio.source_id": "session-input",
+                }
+            )
+        token = _REPLY_TO.set(user)
         try:
-            if callable(exit_):
-                return await exit_(exc_type, exc, tb)
-            close = getattr(self._stream, "aclose", None)
-            if callable(close):
-                await close()
-            return None
+            committed = wrapped(*args, **kwargs)
+            if committed:
+                owner.user = None
+                if info.user_turn_span_adopted:
+                    owner.pending_users.add(user)
+                else:
+                    user.end()
+            return committed
         finally:
-            self._end()
-
-    async def __anext__(self):
-        try:
-            item = await self._stream.__anext__()
-        except StopAsyncIteration:
-            self._end()
-            raise
-        except Exception as exc:
-            self._span.log(error=exc)
-            self._span.end()
-            self._ended = True
-            raise
-        if self._first_chunk_time is None:
-            self._first_chunk_time = time.time()
-        return item
-
-    async def aclose(self) -> None:
-        close = getattr(self._stream, "aclose", None)
-        try:
-            if callable(close):
-                await close()
-        finally:
-            self._end()
-
-    def __getattr__(self, name: str) -> Any:
-        return getattr(self._stream, name)
-
-    def _end(self) -> None:
-        if self._ended:
-            return
-        self._ended = True
-        metrics = {}
-        if self._first_chunk_time is not None:
-            ttfb = self._first_chunk_time - self._start
-            metrics["time_to_first_token"] = ttfb
-        self._span.log(metrics=metrics, metadata={"first_response_kind": "audio"})
-        self._span.end()
+            _REPLY_TO.reset(token)
+    return wrapped(*args, **kwargs)
 
 
-def _propagate_session_parent_to_start_args(instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]) -> None:
-    parent = getattr(instance, _SESSION_PARENT_ATTR, None)
-    if not isinstance(parent, str):
-        return
-    span = getattr(instance, _SESSION_SPAN_ATTR, None)
-    agent = args[0] if args else kwargs.get("agent")
-    if agent is not None:
-        _set_component_session(agent, parent, span)
-        for attr in ("llm", "stt", "tts", "vad", "_llm", "_stt", "_tts", "_vad"):
-            component = getattr(agent, attr, None)
-            if component is not None:
-                _set_component_session(component, parent, span)
-
-
-def _propagate_session_parent_to_components(instance: Any) -> None:
-    parent = getattr(instance, _SESSION_PARENT_ATTR, None)
-    if not isinstance(parent, str):
-        return
-    span = getattr(instance, _SESSION_SPAN_ATTR, None)
-    _set_component_session(instance, parent, span)
-    for attr in ("llm", "stt", "tts", "vad", "_llm", "_stt", "_tts", "_vad", "_agent", "agent", "output"):
-        component = getattr(instance, attr, None)
-        if component is not None:
-            _set_component_session(component, parent, span)
-            for nested_attr in ("llm", "stt", "tts", "vad", "audio", "_llm", "_stt", "_tts", "_vad", "_audio"):
-                nested_component = getattr(component, nested_attr, None)
-                if nested_component is not None:
-                    _set_component_session(nested_component, parent, span)
-
-
-def _set_component_session(component: Any, parent: str, span: Any) -> None:
+def preemptive(wrapped, instance, args, kwargs):
+    owner = state_for(instance)
+    token = _REPLY_TO.set(owner.ensure_user() if owner is not None else None)
     try:
-        setattr(component, _SESSION_PARENT_ATTR, parent)
-        if span is not None:
-            setattr(component, _SESSION_SPAN_ATTR, span)
-    except Exception:
-        pass
+        return wrapped(*args, **kwargs)
+    finally:
+        _REPLY_TO.reset(token)
 
 
-def _attach_session_playback_handler(instance: Any) -> None:
-    parent = getattr(instance, _SESSION_PARENT_ATTR, None)
-    span = getattr(instance, _SESSION_SPAN_ATTR, None)
-    output = getattr(instance, "output", None)
-    audio_output = getattr(output, "audio", None)
-    state = getattr(instance, _PLAYBACK_SESSION_STATE_ATTR, None)
-    if state is None:
-        state = {}
-        setattr(instance, _PLAYBACK_SESSION_STATE_ATTR, state)
-    for sink in _iter_audio_outputs(audio_output):
-        if isinstance(parent, str):
-            _set_component_session(sink, parent, span)
-        setattr(sink, _PLAYBACK_SESSION_STATE_ATTR, state)
-    if audio_output is not None:
-        attach_playback_handler(audio_output)
-
-
-def _iter_audio_outputs(audio_output: Any):
-    current = audio_output
-    seen = set()
-    while current is not None and id(current) not in seen:
-        seen.add(id(current))
-        yield current
-        current = getattr(current, "next_in_chain", None)
-
-
-def attach_playback_handler(obj: Any) -> bool:
-    if getattr(obj, _PLAYBACK_HANDLER_ATTACHED_ATTR, False):
-        return True
-    on = getattr(obj, "on", None)
-    if not callable(on):
-        return False
-
-    def on_playback_finished(event: Any) -> None:
-        playback_position = getattr(event, "playback_position", None)
-        if _is_duplicate_playback_event(obj, playback_position, getattr(event, "interrupted", None)):
-            _clear_playback_audio(obj)
-            return
-        end = time.time()
-        start = getattr(obj, _PLAYBACK_START_ATTR, None)
-        if not isinstance(start, (int, float)):
-            start = end - playback_position if isinstance(playback_position, (int, float)) else end
-        metadata = {
-            "audio_duration": playback_position,
-            "interrupted": getattr(event, "interrupted", None),
-            "output_label": getattr(obj, "label", None),
-        }
-        metadata = {key: value for key, value in metadata.items() if value is not None}
-        output = {}
-        audio = _pop_playback_audio(obj)
-        if audio is not None:
-            output["audio"] = audio
-        synchronized_transcript = getattr(event, "synchronized_transcript", None)
-        if synchronized_transcript:
-            output["text"] = synchronized_transcript
-        parent = getattr(obj, _SESSION_PARENT_ATTR, None)
-        span = start_span(
-            name="agent_speaking",
-            type=SpanTypeAttribute.TASK,
-            start_time=start,
-            set_current=False,
-            parent=parent if isinstance(parent, str) else None,
-        )
-        span.log(metadata=metadata, output=output or None)
-        span.end()
-        setattr(obj, _PLAYBACK_START_ATTR, None)
-
-    on("playback_finished", on_playback_finished)
-    setattr(obj, _PLAYBACK_HANDLER_ATTACHED_ATTR, True)
-    return True
-
-
-def _is_duplicate_playback_event(obj: Any, playback_position: Any, interrupted: Any) -> bool:
-    state = getattr(obj, _PLAYBACK_SESSION_STATE_ATTR, None)
-    if not isinstance(state, dict):
-        return False
-    now = time.time()
-    key = (playback_position, interrupted)
-    last_key = state.get("last_key")
-    last_time = state.get("last_time")
-    state["last_key"] = key
-    state["last_time"] = now
-    return key == last_key and isinstance(last_time, (int, float)) and now - last_time < 1.0
-
-
-def _capture_playback_audio(obj: Any, frame: Any) -> None:
-    data = getattr(frame, "data", None)
-    if data is None:
-        return
+async def user_completed(wrapped, instance, args, kwargs):
+    info = arguments(wrapped, args, kwargs).get("info")
+    token = _REPLY_TO.set(getattr(info, "_braintrust_turn", None))
     try:
-        chunk = bytes(data)
-    except Exception:
-        return
-    if not chunk:
-        return
-    audio = getattr(obj, _PLAYBACK_AUDIO_ATTR, None)
-    if audio is None:
-        audio = bytearray()
-        setattr(obj, _PLAYBACK_AUDIO_ATTR, audio)
-        metadata = {
-            "sample_rate": getattr(frame, "sample_rate", None),
-            "num_channels": getattr(frame, "num_channels", None),
-            "samples_per_channel": getattr(frame, "samples_per_channel", None),
-        }
-        setattr(obj, _PLAYBACK_AUDIO_METADATA_ATTR, metadata)
-    audio.extend(chunk)
+        return await wrapped(*args, **kwargs)
+    finally:
+        _REPLY_TO.reset(token)
 
 
-def _clear_playback_audio(obj: Any) -> None:
-    setattr(obj, _PLAYBACK_AUDIO_ATTR, None)
-    setattr(obj, _PLAYBACK_AUDIO_METADATA_ATTR, None)
+def end_user_turn(wrapped, instance, args, kwargs):
+    info = args[0] if args else kwargs["info"]
+    owner = getattr(info, "_braintrust_owner", None)
+    span = getattr(info, "_braintrust_turn", None)
+    try:
+        return wrapped(*args, **kwargs)
+    finally:
+        if owner is not None and span in owner.pending_users:
+            owner.pending_users.remove(span)
+            span.end()
 
 
-def _pop_playback_audio(obj: Any) -> Attachment | None:
-    audio = getattr(obj, _PLAYBACK_AUDIO_ATTR, None)
-    metadata = getattr(obj, _PLAYBACK_AUDIO_METADATA_ATTR, None) or {}
-    _clear_playback_audio(obj)
-    if not BraintrustEnv.CAPTURE_AGENT_AUDIO_ATTACHMENTS.get(False) or not audio:
-        return None
-    sample_rate = metadata.get("sample_rate")
-    num_channels = metadata.get("num_channels")
-    suffix = f"_{sample_rate}hz_{num_channels}ch" if sample_rate and num_channels else ""
-    if isinstance(sample_rate, int) and isinstance(num_channels, int) and sample_rate > 0 and num_channels > 0:
-        return Attachment(
-            data=_pcm_to_wav(bytes(audio), sample_rate=sample_rate, num_channels=num_channels),
-            filename=f"agent_speaking{suffix}.wav",
-            content_type="audio/wav",
-        )
-    return Attachment(
-        data=bytes(audio),
-        filename=f"agent_speaking{suffix}.pcm",
-        content_type="audio/pcm",
+def recognition_end(wrapped, instance, args, kwargs):
+    owner = state_for(instance)
+    try:
+        return wrapped(*args, **kwargs)
+    finally:
+        if owner is not None and owner.user is not None:
+            owner.user.log(metadata={"turn.incomplete": True})
+            owner.user.end()
+            owner.user = None
+
+
+def session_run(wrapped, instance, args, kwargs):
+    owner = state_for(instance)
+    user_input = arguments(wrapped, args, kwargs).get("user_input")
+    if owner is None or not isinstance(user_input, str):
+        return wrapped(*args, **kwargs)
+    user = _new(owner.span, "user_turn")
+    user.log(metadata={"turn.id": user.span_id})
+    owner.log(user, input=[{"role": "user", "content": user_input}])
+    user.end()
+    token = _REPLY_TO.set(user)
+    try:
+        return wrapped(*args, **kwargs)
+    finally:
+        _REPLY_TO.reset(token)
+
+
+async def llm_operation(wrapped, instance, args, kwargs):
+    owner = _ACTIVE.get()
+    if owner is None:
+        return await wrapped(*args, **kwargs)
+    values = arguments(wrapped, args, kwargs)
+    span = _new(
+        owner.agent_parent(),
+        "llm_response",
+        kind="llm",
+        metadata={key: values[key] for key in ("model", "provider") if values.get(key)},
     )
+    if owner.permits():
+        owner.log(span, input=chat_messages(values["chat_ctx"]))
+    data, node, usage, handle = values["data"], values["node"], None, _HANDLE.get()
+    relationships = []
+    for item in values["chat_ctx"].items:
+        if getattr(item, "type", None) == "function_call_output":
+            target = owner.tool_results.get(handle, {}).get(item.call_id)
+            if target is not None and (relationship := link(target, "consumes_tool_result")):
+                relationships.append(relationship)
+    if relationships:
+        span.log(metadata={"links": relationships})
 
+    async def observed_node(*node_args, **node_kwargs):
+        result = node(*node_args, **node_kwargs)
+        if inspect.isawaitable(result):
+            result = await result
+        if not hasattr(result, "__aiter__"):
+            return result
 
-_AGENT_TURN_METADATA_FIELDS = (
-    "generation_id",
-    "speech_id",
-    "interrupted",
-    "function_calls",
-    "function_tools",
-)
-
-
-def _agent_turn_metadata(result: Any) -> dict[str, Any]:
-    metadata: dict[str, Any] = {}
-    for source in _iter_agent_turn_metadata_sources(result):
-        for field in _AGENT_TURN_METADATA_FIELDS:
-            value = _get_metadata_value(source, field)
-            if value is not None and field not in metadata:
-                metadata[field] = value
-    return metadata
-
-
-def _iter_agent_turn_metadata_sources(result: Any) -> list[Any]:
-    sources = [result]
-    events = getattr(result, "events", None)
-    if isinstance(events, list):
-        sources.extend(events)
-    return sources
-
-
-def _get_metadata_value(source: Any, field: str) -> Any:
-    for key in (field, f"lk.{field}", f"lk.response.{field}"):
-        if isinstance(source, dict) and key in source:
-            return source[key]
-        value = getattr(source, key, None)
-        if value is not None:
-            return value
-    return None
-
-
-def _end_user_speaking_span(instance: Any) -> None:
-    span = getattr(instance, _USER_SPEAKING_SPAN_ATTR, None)
-    if span is None:
-        return
-    span.end()
-    setattr(instance, _USER_SPEAKING_SPAN_ATTR, None)
-
-
-def _end_session_span(instance: Any) -> None:
-    parent = getattr(instance, _SESSION_PARENT_ATTR, None)
-    span = getattr(instance, _SESSION_SPAN_ATTR, None)
-    if span is not None:
-        span.end()
-        setattr(instance, _SESSION_SPAN_ATTR, None)
-    setattr(instance, _SESSION_PARENT_ATTR, None)
-
-
-def _current_span_export() -> str | None:
-    span = current_span()
-    if span == NOOP_SPAN:
-        return None
-    try:
-        return span.export()
-    except Exception:
-        return None
-
-
-def _current_span_id() -> str | None:
-    span = current_span()
-    if span == NOOP_SPAN:
-        return None
-    span_id = getattr(span, "span_id", None)
-    return span_id if isinstance(span_id, str) else None
-
-
-def _session_parent_for_current_span() -> str | None:
-    outer_span_id = _current_span_id()
-    if outer_span_id is not None:
-        parent = _OUTER_SPAN_ID_TO_SESSION_PARENT.get(outer_span_id)
-        if parent is not None:
-            return parent
-    outer_parent = _current_span_export()
-    if outer_parent is None:
-        return None
-    return _OUTER_PARENT_TO_SESSION_PARENT.get(outer_parent)
-
-
-def _log_metric_span(
-    name: str,
-    metrics_obj: Any,
-    span_type: str,
-    parent: str | None = None,
-    input: dict[str, Any] | None = None,
-    output: dict[str, Any] | None = None,
-    **metadata: Any,
-) -> None:
-    metrics_type = _get_str(metrics_obj, "type")
-    event = _metric_event(metrics_obj, metrics_type, **metadata)
-    if name == "eou_detection":
-        event.update(_eou_detection_io(metrics_obj))
-    if output is not None:
-        event["output"] = output
-    if name == "eou_detection":
-        start_time, end_time = _eou_detection_span_times(metrics_obj)
-    else:
-        start_time, end_time = _metric_span_times(metrics_obj)
-    span = start_span(name=name, type=span_type, start_time=start_time, set_current=False, parent=parent, input=input)
-    span.log(**event)
-    span.end(end_time=end_time)
-
-
-def _eou_detection_span_times(metrics_obj: Any) -> tuple[float | None, float | None]:
-    timestamp = _get_number(metrics_obj, "timestamp")
-    if timestamp is None:
-        return _metric_span_times(metrics_obj)
-    eou_delay = _first_numeric(
-        metrics_obj,
-        "end_of_utterance_delay",
-        "end_of_turn_delay",
-        "endpointing_delay",
-        "eou_delay",
-    )
-    if eou_delay is None or eou_delay <= 0:
-        return _metric_span_times(metrics_obj)
-    return timestamp - eou_delay, timestamp
-
-
-def _first_numeric(metrics_obj: Any, *keys: str) -> float | None:
-    for key in keys:
-        value = _get_number(metrics_obj, key)
-        if value is not None:
-            return float(value)
-    return None
-
-
-def _eou_detection_io(metrics_obj: Any) -> dict[str, Any]:
-    event: dict[str, Any] = {}
-    text = _latest_user_text(metrics_obj)
-    if text:
-        event["input"] = {"text": text}
-    probability = _get_number(metrics_obj, "probability")
-    threshold = _get_number(metrics_obj, "unlikely_threshold")
-    language = _get_str(metrics_obj, "language")
-    output: dict[str, Any] = {}
-    if probability is not None:
-        output["probability"] = probability
-    if language is not None:
-        output["language"] = language
-    if threshold is not None:
-        output["unlikely_threshold"] = threshold
-    if probability is not None and threshold is not None:
-        output["is_end_of_turn"] = probability >= threshold
-    if output:
-        event["output"] = output
-    return event
-
-
-def _latest_user_text(metrics_obj: Any) -> str | None:
-    for key in ("text", "user_text", "transcript", "user_transcript"):
-        value = _get_str(metrics_obj, key)
-        if value:
-            return value
-    parsed = _parse_jsonish(getattr(metrics_obj, "chat_ctx", None))
-    if hasattr(parsed, "model_dump"):
-        try:
-            parsed = parsed.model_dump(mode="python")
-        except Exception:
-            parsed = None
-    items = parsed.get("items") if isinstance(parsed, dict) else None
-    if not isinstance(items, list):
-        return None
-    for item in reversed(items):
-        if not isinstance(item, dict) or item.get("role") != "user":
-            continue
-        content = item.get("content")
-        if isinstance(content, str) and content:
-            return content
-        if isinstance(content, list):
-            text = " ".join(part for part in content if isinstance(part, str) and part)
-            if text:
-                return text
-    return None
-
-
-def _speech_event_output(event: Any) -> dict[str, Any]:
-    alternatives = getattr(event, "alternatives", None)
-    if not alternatives:
-        return {}
-    alternative = alternatives[0]
-    output = {
-        "text": getattr(alternative, "text", None),
-        "language": getattr(alternative, "language", None),
-        "confidence": getattr(alternative, "confidence", None),
-    }
-    return {key: value for key, value in output.items() if value is not None}
-
-
-def _metric_span_times(metrics_obj: Any) -> tuple[float | None, float | None]:
-    timestamp = _get_number(metrics_obj, "timestamp")
-    if timestamp is None:
-        return None, None
-    duration = _get_positive_number(metrics_obj, "duration")
-    if duration is not None:
-        return timestamp - duration, timestamp
-    audio_duration = _get_positive_number(metrics_obj, "audio_duration")
-    if audio_duration is not None:
-        return timestamp - audio_duration, timestamp
-    return timestamp, timestamp
-
-
-def _log_metric_on_existing_span(obj: Any, metrics_obj: Any) -> None:
-    span = getattr(obj, _SESSION_SPAN_ATTR, None)
-    if span is None:
-        return
-    metrics_type = _get_str(metrics_obj, "type")
-    event = _metric_event(metrics_obj, metrics_type)
-    span.log(**event)
-
-
-def _metric_event(metrics_obj: Any, metrics_type: str | None, **metadata: Any) -> dict[str, Any]:
-    bt_metrics = _promoted_metrics(metrics_obj, metrics_type)
-    promoted_metadata = _promoted_metadata(metrics_obj)
-    metadata_payload = {**promoted_metadata, **metadata}
-    livekit_metrics = _livekit_metrics_from_allowlist(metrics_obj, metrics_type)
-    if livekit_metrics:
-        metadata_payload["livekit_metrics"] = livekit_metrics
-    return {"metrics": bt_metrics, "metadata": metadata_payload}
-
-
-_LIVEKIT_METRICS_METADATA_ALLOWLIST: dict[str, tuple[str, ...]] = {
-    "llm_metrics": (
-        "cancelled",
-        "completion_tokens",
-        "prompt_cached_tokens",
-        "prompt_tokens",
-        "tokens_per_second",
-        "total_tokens",
-    ),
-    "realtime_model_metrics": (
-        "cancelled",
-        "duration",
-        "input_audio_tokens",
-        "input_cached_audio_tokens",
-        "input_cached_tokens",
-        "input_text_tokens",
-        "input_tokens",
-        "output_audio_tokens",
-        "output_text_tokens",
-        "output_tokens",
-        "tokens_per_second",
-        "total_tokens",
-        "ttft",
-    ),
-    "tts_metrics": ("audio_duration", "cancelled", "characters_count", "streamed"),
-    "stt_metrics": ("audio_duration", "input_audio_tokens", "streamed", "total_tokens"),
-    "eou_metrics": (
-        "end_of_turn_delay",
-        "end_of_utterance_delay",
-        "endpointing_delay",
-        "eou_delay",
-        "on_user_turn_completed_delay",
-        "transcription_delay",
-    ),
-    "vad_metrics": ("idle_time", "inference_count", "inference_duration_total"),
-}
-
-
-def _livekit_metrics_from_allowlist(metrics_obj: Any, metrics_type: str | None) -> dict[str, Any]:
-    allowlist = _LIVEKIT_METRICS_METADATA_ALLOWLIST.get(metrics_type or "", ())
-    ret: dict[str, Any] = {}
-    for field in allowlist:
-        value = getattr(metrics_obj, field, None)
-        if value is None:
-            continue
-        if hasattr(value, "model_dump"):
+        async def chunks():
+            nonlocal usage
             try:
-                value = value.model_dump(mode="python")
-            except Exception:
-                continue
-        ret[field] = value
-    return ret
+                async for chunk in result:
+                    if getattr(chunk, "usage", None) is not None:
+                        usage = chunk.usage
+                    delta = getattr(chunk, "delta", None)
+                    for call in getattr(delta, "tool_calls", ()) or ():
+                        owner.requests.setdefault(handle, {})[call.call_id] = span
+                    yield chunk
+            finally:
+                if hasattr(result, "aclose"):
+                    await result.aclose()
+
+        return chunks()
+
+    values["node"] = observed_node
+    token = provider_spans_owned.set(True)
+    try:
+        return await wrapped(**values)
+    except asyncio.CancelledError:
+        span.log(metadata={"contrib.livekit.cancelled": True})
+        raise
+    except Exception:
+        span.log(error="LiveKit LLM operation failed")
+        raise
+    finally:
+        provider_spans_owned.reset(token)
+        output = [{"role": "assistant", "content": data.generated_text}]
+        if functions := data.generated_functions:
+            output[0]["tool_calls"] = [
+                {
+                    "id": fn.call_id,
+                    "type": "function",
+                    "function": {
+                        "name": fn.name,
+                        "arguments": fn.arguments,
+                    },
+                }
+                for fn in functions
+            ]
+            owner.requests.setdefault(handle, {}).update({fn.call_id: span for fn in functions})
+        owner.log(span, output=output)
+        metrics = {}
+        if usage is not None:
+            for native, target in (
+                ("prompt_tokens", "prompt_tokens"),
+                ("completion_tokens", "completion_tokens"),
+                ("total_tokens", "tokens"),
+                ("prompt_cached_tokens", "cache_read_input_tokens"),
+            ):
+                value = getattr(usage, native, None)
+                if value is not None:
+                    metrics[target] = value
+            metrics["cache_creation_input_tokens"] = usage.cache_creation_tokens
+            metrics["cache_read_input_tokens"] = max(usage.prompt_cached_tokens, usage.cache_read_tokens)
+            metrics["reasoning_tokens"] = usage.reasoning_tokens
+        if data.ttft is not None:
+            metrics["time_to_first_token"] = data.ttft
+        span.log(metrics=metrics)
+        span.end()
 
 
-_PROMOTED_METADATA_STRING_FIELDS = (
-    "label",
-    "request_id",
-    "speech_id",
-    "segment_id",
-    "generation_id",
-    "function_calls",
-    "function_tools",
-)
+async def tts_operation(wrapped, instance, args, kwargs):
+    owner = _ACTIVE.get()
+    if owner is None:
+        return await wrapped(*args, **kwargs)
+    values = arguments(wrapped, args, kwargs)
+    span = _new(
+        owner.agent_parent(), "tts", metadata={key: values[key] for key in ("model", "provider") if values.get(key)}
+    )
+    data = values["data"]
+    setattr(data, "_braintrust_span", span)
+    stream, text = values["input"], []
+
+    async def observed_input():
+        async for item in stream:
+            if owner.permits() and isinstance(item, str):
+                text.append(item)
+            yield item
+
+    values["input"] = observed_input()
+    token = provider_spans_owned.set(True)
+    try:
+        return await wrapped(**values)
+    except asyncio.CancelledError:
+        span.log(metadata={"contrib.livekit.cancelled": True})
+        raise
+    except Exception:
+        span.log(error="LiveKit TTS operation failed")
+        raise
+    finally:
+        provider_spans_owned.reset(token)
+        owner.log(span, input="".join(text))
+        if data.ttfb is not None:
+            span.log(metrics={"time_to_first_audio": data.ttfb})
+        span.end()
 
 
-def _promoted_metadata(metrics_obj: Any) -> dict[str, Any]:
-    ret: dict[str, Any] = {}
-    nested_metadata = getattr(metrics_obj, "metadata", None)
-    model = _get_str(nested_metadata, "model_name") if nested_metadata is not None else None
-    provider = _get_str(nested_metadata, "model_provider") if nested_metadata is not None else None
-    if model is not None:
-        ret["model"] = model
-    if provider is not None:
-        ret["provider"] = provider
-    for field in _PROMOTED_METADATA_STRING_FIELDS:
-        value = _get_str(metrics_obj, field)
-        if value is not None:
-            ret[field] = value
-    interrupted = getattr(metrics_obj, "interrupted", None)
-    if isinstance(interrupted, bool):
-        ret["interrupted"] = interrupted
-    return ret
+async def stt_pump(wrapped, instance, args, kwargs):
+    _wrap_stt_node(instance)
+    token = provider_spans_owned.set(True)
+    try:
+        return await wrapped(*args, **kwargs)
+    finally:
+        provider_spans_owned.reset(token)
 
 
-_PROMOTED_METRICS_BY_TYPE: dict[str, tuple[tuple[str, str], ...]] = {
-    "tts_metrics": (("duration", "duration"), ("ttfb", "time_to_first_token")),
-    "stt_metrics": (("duration", "duration"),),
-    "llm_metrics": (("ttft", "time_to_first_token"),),
-    "realtime_model_metrics": (("ttft", "time_to_first_token"),),
-    "eou_metrics": (),
-    "vad_metrics": (),
-}
+def _wrap_stt_node(pipeline):
+    node = pipeline._stt_node
+    if getattr(node, "_braintrust_stt", False):
+        return
+
+    async def observed(*args, **kwargs):
+        scope = object()
+        result = node(*args, **kwargs)
+        if inspect.isawaitable(result):
+            result = await result
+        if not hasattr(result, "__aiter__"):
+            return result
+
+        async def events():
+            try:
+                async for event in result:
+                    event._braintrust_source_run = scope
+                    yield event
+            finally:
+                if hasattr(result, "aclose"):
+                    await result.aclose()
+
+        return events()
+
+    observed._braintrust_stt = True
+    pipeline._stt_node = observed
 
 
-def _promoted_metrics(metrics_obj: Any, metrics_type: str | None) -> dict[str, Any]:
-    promotions = _PROMOTED_METRICS_BY_TYPE.get(metrics_type or "", (("duration", "duration"),))
-    ret: dict[str, Any] = {}
-    for source, dest in promotions:
-        value = _get_number(metrics_obj, source)
-        if value is not None:
-            ret[dest] = value
-    return ret
+def rebind_stt(wrapped, instance, args, kwargs):
+    result = wrapped(*args, **kwargs)
+    _wrap_stt_node(instance)
+    return result
 
 
-def _get_number(obj: Any, name: str) -> float | int | None:
-    value = getattr(obj, name, None)
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        return None
-    return value
+async def audio_forward(wrapped, instance, args, kwargs):
+    data = arguments(wrapped, args, kwargs).get("tts_data")
+    token = _SYNTHESIS.set(getattr(data, "_braintrust_span", None))
+    try:
+        return await wrapped(*args, **kwargs)
+    finally:
+        _SYNTHESIS.reset(token)
 
 
-def _get_positive_number(obj: Any, name: str) -> float | int | None:
-    value = _get_number(obj, name)
-    return value if value is not None and value > 0 else None
-
-
-def _get_str(obj: Any, name: str) -> str | None:
-    value = obj.get(name) if isinstance(obj, dict) else getattr(obj, name, None)
-    return value if isinstance(value, str) else None
+async def execute_tool(wrapped, instance, args, kwargs):
+    values = arguments(wrapped, args, kwargs)
+    context = values["run_ctx"]
+    owner = state_for(context.session)
+    if owner is None:
+        return await wrapped(*args, **kwargs)
+    handle, call = context.speech_handle, context.function_call
+    span = _new(
+        owner.turns.get(handle, owner.span), "tool", kind="tool", metadata={"gen_ai.tool.call.id": call.call_id}
+    )
+    if owner.permits():
+        span.log(span_attributes={"name": call.name})
+        owner.log(span, input=values["raw_arguments"])
+    if (target := owner.requests.get(handle, {}).get(call.call_id)) is not None:
+        if relationship := link(target, "requested_by"):
+            span.log(metadata={"links": [relationship]})
+    token = provider_spans_owned.set(not owner.permits())
+    try:
+        with parent_context(span.export()):
+            result = await wrapped(*args, **kwargs)
+        owner.log(span, output=result)
+        owner.tool_results.setdefault(handle, {})[call.call_id] = span
+        return result
+    except asyncio.CancelledError:
+        span.log(metadata={"contrib.livekit.cancelled": True})
+        raise
+    except Exception:
+        span.log(error="LiveKit tool operation failed")
+        raise
+    finally:
+        provider_spans_owned.reset(token)
+        span.end()

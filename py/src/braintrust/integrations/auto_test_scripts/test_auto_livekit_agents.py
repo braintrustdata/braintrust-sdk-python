@@ -1,47 +1,20 @@
-"""Test auto_instrument for LiveKit Agents."""
+"""Auto setup uses the same framework-level cascade hooks after imports."""
 
 import inspect
 
 from braintrust.auto import auto_instrument
+from livekit.agents import AgentSession
+from livekit.agents.voice import generation
+from livekit.agents.voice.agent_activity import AgentActivity
 from wrapt import FunctionWrapper
 
 
-def _is_braintrust_wrapped(target, attr: str) -> bool:
-    return isinstance(inspect.getattr_static(target, attr, None), FunctionWrapper)
-
-
-# Import the provider classes before auto-instrumentation to verify setup handles
-# normal user import order in a fresh process.
-from livekit.agents import AgentSession  # noqa: E402
-from livekit.agents.inference.llm import LLMStream  # noqa: E402
-from livekit.agents.stt import STT  # noqa: E402
-from livekit.agents.tts import TTS  # noqa: E402
-from livekit.agents.voice import generation  # noqa: E402
-from livekit.agents.voice.io import AudioOutput  # noqa: E402
-
-
-assert not _is_braintrust_wrapped(AgentSession, "run")
-assert not _is_braintrust_wrapped(AgentSession, "_on_audio_output_changed")
-assert not _is_braintrust_wrapped(AgentSession, "_update_user_state")
-assert not isinstance(generation._execute_tools_task, FunctionWrapper)
-assert not _is_braintrust_wrapped(LLMStream, "_run")
-assert not _is_braintrust_wrapped(STT, "recognize")
-assert not _is_braintrust_wrapped(TTS, "synthesize")
-assert not _is_braintrust_wrapped(AudioOutput, "capture_frame")
-
-results = auto_instrument()
-assert results.get("livekit_agents") is True
-assert _is_braintrust_wrapped(AgentSession, "run")
-assert _is_braintrust_wrapped(AgentSession, "_on_audio_output_changed")
-assert _is_braintrust_wrapped(AgentSession, "_update_user_state")
-assert isinstance(generation._execute_tools_task, FunctionWrapper)
-assert _is_braintrust_wrapped(LLMStream, "_run")
-assert _is_braintrust_wrapped(STT, "recognize")
-assert _is_braintrust_wrapped(TTS, "synthesize")
-assert _is_braintrust_wrapped(AudioOutput, "capture_frame")
-
-# Idempotent.
-results2 = auto_instrument()
-assert results2.get("livekit_agents") is True
-
+assert not isinstance(inspect.getattr_static(AgentSession, "start"), FunctionWrapper)
+assert auto_instrument().get("livekit_agents") is True
+assert isinstance(inspect.getattr_static(AgentSession, "start"), FunctionWrapper)
+assert isinstance(inspect.getattr_static(AgentSession, "_aclose_impl"), FunctionWrapper)
+assert isinstance(inspect.getattr_static(AgentActivity, "push_audio"), FunctionWrapper)
+assert isinstance(generation._llm_inference_task, FunctionWrapper)
+assert isinstance(generation._tts_inference_task, FunctionWrapper)
+assert auto_instrument().get("livekit_agents") is True
 print("SUCCESS")

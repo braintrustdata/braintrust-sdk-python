@@ -12,7 +12,7 @@ CONSTRAINTS = {
     # or packages that declare Requires-Python < 3.15. Drop each cap once the
     # session installs cleanly on 3.15.
     "test_litellm": {"versions": {"latest": {"min_python": "3.11", "max_python_exclusive": "3.15"}}},  # fastuuid
-    "test_livekit_agents": {"max_python_exclusive": "3.14", "ci_platforms": ["linux"]},
+    "test_livekit_agents": {"max_python_exclusive": "3.15", "ci_platforms": ["linux"]},
     "test_pipecat": {"min_python": "3.11", "max_python_exclusive": "3.14"},
     "test_agentscope": {"versions": {"latest": {"min_python": "3.11"}}},
     "test_google_adk": {"versions": {"latest": {"min_python": "3.11"}}},  # google-adk 2.12 requires 3.11
