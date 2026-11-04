@@ -242,6 +242,9 @@ class SpanInternalOptions(TypedDict, total=False):
     `context.span_origin.instrumentation.name`. Set by SDK integrations
     (`openai-auto`, `anthropic-auto`, etc.)."""
 
+    export_customizers: tuple[SpanCustomizer, ...]
+    """Internal per-span privacy filters, applied before user customizers."""
+
     initial_span_write_as_merge: bool
     """Emit the initial row as a merge for an SDK-owned deterministic span."""
 
@@ -3314,6 +3317,27 @@ def start_span(
     See `Span.start_span` for full details.
     """
 
+    if internal and internal.get("instrumentation"):
+        from ._instrumentation import (
+            AUTOMATIC_PROVIDERS,
+            _ProviderPrivacyCustomizer,
+            provider_content_allowed,
+            provider_spans_owned,
+        )
+
+        if internal["instrumentation"] in AUTOMATIC_PROVIDERS:
+            policy = provider_content_allowed.get()
+            if provider_spans_owned.get() or (policy is not None and not policy()):
+                return NOOP_SPAN
+            if policy is not None:
+                internal = {
+                    **internal,
+                    "export_customizers": (
+                        *internal.get("export_customizers", ()),
+                        _ProviderPrivacyCustomizer(policy),
+                    ),
+                }
+
     if not state:
         state = _state
 
@@ -5124,6 +5148,7 @@ class SpanImpl(Span):
         internal = internal or {}
         # Integration consumers use this provenance independently of export hooks.
         self._instrumentation = internal.get("instrumentation") or "braintrust-python-logger"
+        self._export_customizers = internal.get("export_customizers", ())
         internal_data["context"] = merge_span_origin_context(
             caller_location or {},
             self._instrumentation,
@@ -5225,7 +5250,7 @@ class SpanImpl(Span):
 
         # Snapshot at log time so the span cache and the export agree on whether
         # (and how) this record is customized.
-        customizers = _get_span_customizers()
+        customizers = self._export_customizers + _get_span_customizers()
         pending_cache_key = (
             object()
             if customizers
