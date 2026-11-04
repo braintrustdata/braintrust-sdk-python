@@ -1,0 +1,15 @@
+[project]
+name = "braintrust-livekit-cascade-example"
+version = "0.1.0"
+requires-python = ">=3.10,<3.15"
+dependencies = [
+    "braintrust",
+    "braintrust-audio",
+    "livekit-agents==1.8.10",
+    "livekit-plugins-openai==1.8.10",
+    "livekit-plugins-silero==1.8.10",
+]
+
+[tool.uv.sources]
+braintrust = {path = "../../py", editable = true}
+braintrust-audio = {path = "../../integrations/audio-py", editable = true}
