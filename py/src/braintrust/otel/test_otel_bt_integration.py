@@ -5,7 +5,9 @@ Tests that OTEL and Braintrust spans are properly grouped in unified traces
 when created in mixed contexts.
 """
 
+import logging
 import os
+from contextvars import copy_context
 
 import pytest
 from braintrust import current_span
@@ -389,3 +391,69 @@ def test_bt_span_without_explicit_parent_inherits_from_otel(otel_fixture):
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+
+
+def test_otel_context_token_reset_restores_previous_context():
+    """A token from the active context must restore its previous span."""
+    from braintrust.otel.context import ContextManager
+    from opentelemetry import context
+
+    parent_token = context.attach(context.set_value("braintrust_span", "parent"))
+    try:
+        child_token = context.attach(context.set_value("braintrust_span", "child"))
+        assert context.get_value("braintrust_span") == "child"
+
+        ContextManager().unset_current_span(child_token)
+
+        assert context.get_value("braintrust_span") == "parent"
+    finally:
+        context.detach(parent_token)
+
+
+def test_otel_context_token_from_another_context_does_not_log_error(caplog):
+    """Async callbacks ending in a different context should not log OTel errors."""
+    from braintrust.otel.context import ContextManager
+    from opentelemetry import context
+
+    owner = copy_context()
+    previous_span = owner.run(context.get_value, "braintrust_span")
+    token = owner.run(lambda: context.attach(context.set_value("braintrust_span", "child")))
+    other = copy_context()
+    manager = ContextManager()
+
+    with caplog.at_level(logging.ERROR, logger="opentelemetry.context"):
+        other.run(manager.unset_current_span, token)
+
+    assert not any("Failed to detach context" in record.message for record in caplog.records)
+    assert owner.run(context.get_value, "braintrust_span") == "child"
+
+    # The failed cross-context detach must not consume the owner's token.
+    owner.run(manager.unset_current_span, token)
+    assert owner.run(context.get_value, "braintrust_span") == previous_span
+
+
+def test_otel_context_token_reset_does_not_hide_unrelated_errors():
+    """A used token is a programming error, not a benign context mismatch."""
+    from braintrust.otel.context import ContextManager
+    from opentelemetry import context
+
+    manager = ContextManager()
+    token = context.attach(context.set_value("braintrust_span", "child"))
+    manager.unset_current_span(token)
+
+    with pytest.raises(RuntimeError, match="has already been used"):
+        manager.unset_current_span(token)
+
+
+def test_otel_context_supports_non_contextvar_runtime_tokens(monkeypatch):
+    """Other OTel runtime implementations still use their detach method."""
+    from braintrust.otel.context import ContextManager
+    from opentelemetry import context
+
+    token = object()
+    calls = []
+    monkeypatch.setattr(context, "detach", calls.append)
+
+    ContextManager().unset_current_span(token)
+
+    assert calls == [token]
