@@ -1,5 +1,6 @@
 """Unified context management using OTEL's built-in context."""
 
+import contextvars
 import logging
 from typing import Any
 
@@ -90,8 +91,19 @@ class ContextManager:
         """Unset the current active span from OTEL context."""
 
         if context_token:
-            # Detaching the token restores the previous context
-            context.detach(context_token)
+            if isinstance(context_token, contextvars.Token):
+                # Reset the token ourselves: ``context.detach`` swallows the
+                # ValueError raised when async code ends a span in a different
+                # Context than the one that started it, and logs it at ERROR.
+                # That case is expected, so clear the span instead, as
+                # BraintrustContextManager does.
+                try:
+                    context_token.var.reset(context_token)
+                except ValueError:
+                    context.attach(context.set_value("braintrust_span", None))
+            else:
+                # Detaching the token restores the previous context
+                context.detach(context_token)
         else:
             # No token means we need to explicitly clear the span
             # This shouldn't normally happen, but handle it gracefully

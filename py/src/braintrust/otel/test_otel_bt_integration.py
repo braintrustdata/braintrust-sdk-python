@@ -350,6 +350,39 @@ def test_uses_otel_context_manager_when_enabled():
         assert hasattr(cm, "unset_current_span")
 
 
+def test_unset_current_span_from_another_context_does_not_log_an_error(caplog):
+    """An async framework may end a span in a different contextvars Context than
+    the one that started it (LangGraph's async callbacks do). That is expected,
+    so detaching must not make OpenTelemetry log "Failed to detach context"."""
+    if not OTEL_AVAILABLE:
+        pytest.skip("OpenTelemetry not installed")
+
+    import contextvars
+    import logging
+
+    from braintrust.otel.context import ContextManager
+    from opentelemetry import context as otel_context
+
+    class _Span:
+        root_span_id = "0123456789abcdef0123456789abcdef"
+        span_id = "0123456789abcdef"
+
+        def _get_otel_parent(self):
+            return "project_name:test"
+
+    cm = ContextManager()
+    token = contextvars.copy_context().run(cm.set_current_span, _Span())
+    assert token is not None
+
+    with caplog.at_level(logging.DEBUG):
+        contextvars.copy_context().run(cm.unset_current_span, token)
+
+    errors = [r for r in caplog.records if r.levelno >= logging.ERROR]
+    assert not errors, [r.getMessage() for r in errors]
+    # the other context still has no Braintrust span in it
+    assert otel_context.get_value("braintrust_span") is None
+
+
 def test_bt_span_without_explicit_parent_inherits_from_otel(otel_fixture):
     """Test that a BT span created without explicit parent inherits from OTEL context.
 
