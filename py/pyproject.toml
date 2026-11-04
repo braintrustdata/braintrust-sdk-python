@@ -121,6 +121,11 @@ test = [
     "vcrpy>=8.5.0",
 ]
 
+test-audio-codecs = [
+    {include-group = "test"},
+    "av==16.1.0; python_version<'3.15'",
+]
+
 # -- Session-specific auxiliary deps -------------------------------------------
 
 test-openai-http2 = [
