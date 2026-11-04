@@ -1,0 +1,32 @@
+name: audio-py
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-build:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        os: [ubuntu-24.04, windows-2025, macos-15]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-python-env
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Qualify codecs and build standalone artifacts
+        shell: bash
+        run: |
+          mise exec python@${{ matrix.python }} -- uv run --project py nox -f py/noxfile.py --force-python ${{ matrix.python }} -s test_audio_codecs
+          mise exec -- uv build --project integrations/audio-py --out-dir integrations/audio-py/dist
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: audio-py-${{ matrix.os }}-${{ matrix.python }}
+          path: integrations/audio-py/dist/*
+          retention-days: 5

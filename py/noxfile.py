@@ -884,6 +884,15 @@ def test_audio(session):
     _run_tests(session, "braintrust/_audio")
 
 
+@nox.session()
+def test_audio_codecs(session):
+    if sys.version_info >= (3, 15):
+        session.skip("PyAV wheels are qualified on Python 3.10–3.14")
+    _install_test_deps(session, "test-audio-codecs")
+    _session_install(session, "--no-deps", "-e", "../integrations/audio-py")
+    session.run("pytest", "../integrations/audio-py/tests", *session.posargs)
+
+
 # Not a default session: it needs a wheel from `make build`, so a bare `nox`
 # (`make test`) must not pick it up.
 @nox.session(default=False)

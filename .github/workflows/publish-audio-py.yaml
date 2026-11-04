@@ -1,0 +1,44 @@
+name: Publish Python audio extension
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: Commit SHA containing the reviewed audio package version
+        required: true
+        type: string
+      dry_run:
+        description: Build and validate without publishing
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: ${{ inputs.dry_run && 'publish-dry-run' || 'publish' }}
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.sha }}
+      - uses: jdx/mise-action@7e36c90d9ab29c415a2384db3006f3ec8a8cc654 # v4.2.4
+        with:
+          cache: true
+          experimental: true
+      - name: Validate and build
+        run: |
+          mise exec -- uv run --project py nox -f py/noxfile.py -s test_audio test_audio_codecs
+          mise exec -- uv build --project integrations/audio-py --out-dir integrations/audio-py/dist
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: braintrust-audio-dist
+          path: integrations/audio-py/dist/*
+      - name: Publish using PyPI trusted publishing
+        if: ${{ !inputs.dry_run }}
+        run: mise exec -- uv publish --trusted-publishing always integrations/audio-py/dist/*
