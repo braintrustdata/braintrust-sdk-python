@@ -4,6 +4,7 @@ import re
 
 
 CONSTRAINTS = {
+    "test_audio_codecs": {"max_python_exclusive": "3.15"},
     "test_ai_sdk": {"min_python": "3.12"},
     # Python 3.15 gaps below are upstream packaging, not SDK code: dependencies
     # without cp315 wheels whose sdists cannot build yet (mostly PyO3 < 0.27
