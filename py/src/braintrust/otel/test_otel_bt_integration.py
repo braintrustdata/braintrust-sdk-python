@@ -389,9 +389,6 @@ def test_bt_span_without_explicit_parent_inherits_from_otel(otel_fixture):
     assert bt_child["span_parents"] == [otel_span_id]
 
 
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
-
 
 def test_otel_context_token_reset_restores_previous_context():
     """A token from the active context must restore its previous span."""
@@ -457,3 +454,8 @@ def test_otel_context_supports_non_contextvar_runtime_tokens(monkeypatch):
     ContextManager().unset_current_span(token)
 
     assert calls == [token]
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])
+
