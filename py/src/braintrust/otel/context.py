@@ -1,6 +1,7 @@
 """Unified context management using OTEL's built-in context."""
 
 import logging
+from contextvars import Token
 from typing import Any
 
 from braintrust.context import ParentSpanIds, SpanInfo
@@ -90,8 +91,12 @@ class ContextManager:
         """Unset the current active span from OTEL context."""
 
         if context_token:
-            # Detaching the token restores the previous context
-            context.detach(context_token)
+            # OTel's default ContextVarsRuntimeContext hands out contextvars tokens.
+            if isinstance(context_token, Token):
+                _reset_contextvars_token(context_token)
+            else:
+                # Non-contextvars OTel runtimes keep their own detach semantics.
+                context.detach(context_token)
         else:
             # No token means we need to explicitly clear the span
             # This shouldn't normally happen, but handle it gracefully
@@ -106,6 +111,21 @@ class ContextManager:
             root_span_id=span_info.trace_id,
             span_parents=[span_info.span_id],
         )
+
+
+def _reset_contextvars_token(token: Token) -> None:
+    """Reset like ``context.detach()``, but treat a cross-Context reset as benign.
+
+    Async frameworks (e.g. LangGraph) often end a span in a different Context than
+    it started in; ``context.detach()`` would log that at ERROR.
+    """
+    try:
+        token.var.reset(token)
+    except ValueError:
+        # Only raised for a token from another Context; leave both contexts as-is.
+        log.debug("Skipping detach of span context token created in a different Context")
+    except Exception:  # pylint: disable=broad-except
+        log.exception("Failed to detach context")
 
 
 def _is_otel_span(span: Any) -> bool:
