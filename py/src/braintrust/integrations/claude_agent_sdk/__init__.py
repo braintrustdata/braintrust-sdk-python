@@ -7,7 +7,7 @@ Usage (imports can be before or after setup):
     setup_claude_agent_sdk(project="my-project")
 
     # Use normally - all calls are automatically traced
-    options = ClaudeAgentOptions(model="claude-sonnet-4-5-20250929")
+    options = ClaudeAgentOptions(model="claude-sonnet-5")
     async with ClaudeSDKClient(options=options) as client:
         await client.query("Hello!")
         async for message in client.receive_response():
@@ -50,7 +50,7 @@ def setup_claude_agent_sdk(
         setup_claude_agent_sdk(project="my-project")
 
         # Now use claude_agent_sdk normally - all calls automatically traced
-        options = claude_agent_sdk.ClaudeAgentOptions(model="claude-sonnet-4-5-20250929")
+        options = claude_agent_sdk.ClaudeAgentOptions(model="claude-sonnet-5")
         async with claude_agent_sdk.ClaudeSDKClient(options=options) as client:
             await client.query("Hello!")
             async for message in client.receive_response():

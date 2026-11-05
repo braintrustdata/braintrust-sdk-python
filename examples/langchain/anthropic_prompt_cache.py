@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(ROOT / ".env")
 
 PROJECT_NAME = os.environ.get("BRAINTRUST_PROJECT", "py-sdk-demo-langchain-anthropic-cache")
-MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-5-20250929")
+MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5")
 
 # Anthropic prompt caching requires a sufficiently long cacheable prefix.
 CACHEABLE_SYSTEM_PROMPT = "\n".join(
