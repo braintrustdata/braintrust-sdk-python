@@ -234,6 +234,16 @@ async def run_eval(request: Request) -> JSONResponse | StreamingResponse:
     # registered against.
     project_id = eval_data.get("project_id") or evaluator.project_id
 
+    # The request can lower the evaluator's max_concurrency but never raise it,
+    # so the playground's default slider value can't exceed a limit set in code.
+    request_max_concurrency = eval_data.get("max_concurrency")
+    if request_max_concurrency is not None:
+        eval_kwargs["max_concurrency"] = (
+            request_max_concurrency
+            if evaluator.max_concurrency is None
+            else min(request_max_concurrency, evaluator.max_concurrency)
+        )
+
     try:
         eval_task = asyncio.create_task(
             EvalAsync(

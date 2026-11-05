@@ -480,3 +480,93 @@ def test_eval_request_project_id_overrides_evaluator(api_key, org_name, monkeypa
 
     assert response.status_code == 200
     assert captured["project_id"] == "request-explicit-project-id"
+
+
+_OMIT = object()
+
+
+@pytest.mark.parametrize(
+    "evaluator_max_concurrency,request_max_concurrency,expected",
+    [
+        pytest.param(5, 2, 2, id="request-lowers-evaluator"),
+        pytest.param(5, 10, 5, id="request-cannot-raise-evaluator"),
+        pytest.param(None, 3, 3, id="request-applies-when-evaluator-unset"),
+        pytest.param(5, None, 5, id="null-request-keeps-evaluator"),
+        pytest.param(5, _OMIT, 5, id="omitted-request-keeps-evaluator"),
+        pytest.param(None, _OMIT, None, id="both-unset"),
+    ],
+)
+def test_eval_request_max_concurrency_caps_evaluator(
+    api_key, org_name, monkeypatch, evaluator_max_concurrency, request_max_concurrency, expected
+):
+    """The playground's max concurrency can lower, but never raise, the evaluator's own limit."""
+    from braintrust import Evaluator
+    from braintrust.devserver import server as devserver_module
+    from braintrust.devserver.server import create_app
+    from braintrust.logger import BraintrustState
+    from starlette.testclient import TestClient
+
+    evaluator = Evaluator(
+        project_name="test-max-concurrency",
+        eval_name="max-concurrency-eval",
+        data=lambda: [{"input": "ping", "expected": "pong"}],
+        task=lambda input, _hooks: "pong",
+        scores=[],
+        experiment_name=None,
+        metadata=None,
+        max_concurrency=evaluator_max_concurrency,
+    )
+
+    captured: dict[str, Any] = {}
+
+    async def fake_cached_login(**_kwargs):
+        return BraintrustState()
+
+    class FakeSummary:
+        def as_dict(self):
+            return {"experiment_name": evaluator.eval_name, "project_name": "", "scores": {}}
+
+    class FakeResult:
+        summary = FakeSummary()
+
+    async def fake_eval_async(*, max_concurrency, **_kwargs):
+        captured["max_concurrency"] = max_concurrency
+        return FakeResult()
+
+    monkeypatch.setattr(devserver_module, "cached_login", fake_cached_login)
+    monkeypatch.setattr(devserver_module, "EvalAsync", fake_eval_async)
+
+    eval_request: dict[str, Any] = {
+        "name": "max-concurrency-eval",
+        "stream": False,
+        "data": [{"input": "ping", "expected": "pong"}],
+    }
+    if request_max_concurrency is not _OMIT:
+        eval_request["max_concurrency"] = request_max_concurrency
+
+    response = TestClient(create_app([evaluator])).post(
+        "/eval",
+        headers={
+            "x-bt-auth-token": api_key,
+            "x-bt-org-name": org_name,
+            "Content-Type": "application/json",
+        },
+        json=eval_request,
+    )
+
+    assert response.status_code == 200
+    assert captured["max_concurrency"] == expected
+
+
+def test_parse_eval_body_rounds_down_fractional_max_concurrency():
+    from braintrust.devserver.schemas import parse_eval_body
+
+    assert parse_eval_body({"name": "eval", "max_concurrency": 2.5})["max_concurrency"] == 2
+
+
+@pytest.mark.parametrize("max_concurrency", [0, -1, 0.5, "2", True])
+def test_parse_eval_body_rejects_invalid_max_concurrency(max_concurrency):
+    from braintrust.devserver.schemas import ValidationError, parse_eval_body
+
+    with pytest.raises(ValidationError, match="max_concurrency must be a number greater than or equal to 1"):
+        parse_eval_body({"name": "eval", "max_concurrency": max_concurrency})
