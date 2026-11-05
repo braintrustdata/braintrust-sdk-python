@@ -42,6 +42,7 @@ class ParsedEvalBody(TypedDict, total=False):
     project_id: str
     parent: str | ParsedParent
     stream: bool
+    max_concurrency: int
 
 
 def validate_typed_dict(data: Any, typed_dict_class: type, path: str = "") -> dict[str, Any]:
@@ -259,5 +260,11 @@ def parse_eval_body(request_data: str | bytes | dict) -> ParsedEvalBody:
         if not isinstance(data["stream"], bool):
             raise ValidationError("stream must be a boolean")
         parsed["stream"] = data["stream"]
+
+    if data.get("max_concurrency") is not None:
+        max_concurrency = data["max_concurrency"]
+        if not isinstance(max_concurrency, (int, float)) or isinstance(max_concurrency, bool) or max_concurrency < 1:
+            raise ValidationError("max_concurrency must be a number greater than or equal to 1")
+        parsed["max_concurrency"] = int(max_concurrency)
 
     return parsed
