@@ -128,8 +128,11 @@ def invoke(
         input: The input to the function. This will be logged as the `input` field in the span.
         messages: Additional OpenAI-style messages to add to the prompt (only works for llm functions).
         metadata: Additional metadata to add to the span. This will be logged as the `metadata` field in the span.
-            It will also be available as the {{metadata}} field in the prompt and as the `metadata` argument
-            to the function.
+            It will also be available as the {{metadata}} field in the prompt. For code functions, it is passed
+            through the hooks (`hooks.metadata` in Python, the handler's second argument in TypeScript), not
+            as the handler's `metadata` argument, which is read from `input`. To fill
+            the handler's `metadata` argument, nest it in `input`, e.g.
+            `invoke(..., input={"input": ..., "metadata": {...}})`.
         tags: Tags to add to the span. This will be logged as the `tags` field in the span.
         parent: The parent of the function. This can be an existing span, logger, or experiment, or
             the output of `.export()` if you are distributed tracing. If unspecified, will use
