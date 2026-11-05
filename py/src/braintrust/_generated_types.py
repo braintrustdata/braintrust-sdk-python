@@ -2239,9 +2239,119 @@ class PromptBlockDataPromptBlockData1(TypedDict):
     content: str
 
 
+class PromptBlockDataPromptBlockData2InputItem(TypedDict):
+    role: Literal['system', 'developer', 'user', 'assistant']
+    content: str | Sequence[ChatCompletionContentPartText]
+
+
+class QuestionQuestion(TypedDict):
+    type: Literal['predicate']
+
+
+class QuestionQuestion1Choice(TypedDict):
+    value: str | bool
+    description: NotRequired[str | None]
+
+
+class QuestionQuestion1(TypedDict):
+    type: Literal['choice']
+    choices: Sequence[QuestionQuestion1Choice]
+
+
+class QuestionQuestion2Level(TypedDict):
+    label: str
+    description: NotRequired[str | None]
+
+
+class QuestionQuestion2(TypedDict):
+    type: Literal['score']
+    levels: Sequence[QuestionQuestion2Level]
+
+
+class QuestionQuestion3(TypedDict):
+    name: NotRequired[str | None]
+    instructions: str
+
+
+class QuestionQuestion4(QuestionQuestion, QuestionQuestion3):
+    pass
+
+
+class QuestionQuestion5(QuestionQuestion1, QuestionQuestion3):
+    pass
+
+
+class QuestionQuestion6(QuestionQuestion2, QuestionQuestion3):
+    pass
+
+
+Question: TypeAlias = QuestionQuestion4 | QuestionQuestion5 | QuestionQuestion6
+
+
+class PromptBlockDataPromptBlockData2(TypedDict):
+    type: Literal['decisions']
+    input: str | Sequence[PromptBlockDataPromptBlockData2InputItem]
+    questions: Sequence[Question]
+
+
 class PromptBlockDataNullishPromptBlockDataNullish1(TypedDict):
     type: Literal['completion']
     content: str
+
+
+class PromptBlockDataNullishPromptBlockDataNullish2InputItem(TypedDict):
+    role: Literal['system', 'developer', 'user', 'assistant']
+    content: str | Sequence[ChatCompletionContentPartText]
+
+
+class Question1Question1(TypedDict):
+    type: Literal['predicate']
+
+
+class Question1Question11Choice(TypedDict):
+    value: str | bool
+    description: NotRequired[str | None]
+
+
+class Question1Question11(TypedDict):
+    type: Literal['choice']
+    choices: Sequence[Question1Question11Choice]
+
+
+class Question1Question12Level(TypedDict):
+    label: str
+    description: NotRequired[str | None]
+
+
+class Question1Question12(TypedDict):
+    type: Literal['score']
+    levels: Sequence[Question1Question12Level]
+
+
+class Question1Question13(TypedDict):
+    name: NotRequired[str | None]
+    instructions: str
+
+
+class Question1Question14(Question1Question1, Question1Question13):
+    pass
+
+
+class Question1Question15(Question1Question11, Question1Question13):
+    pass
+
+
+class Question1Question16(Question1Question12, Question1Question13):
+    pass
+
+
+Question1: TypeAlias = Question1Question14 | Question1Question15 | Question1Question16
+
+
+class PromptBlockDataNullishPromptBlockDataNullish2(TypedDict):
+    type: Literal['decisions']
+    input: str | Sequence[PromptBlockDataNullishPromptBlockDataNullish2InputItem]
+    questions: Sequence[Question1]
 
 
 class PromptDataOrigin(TypedDict):
@@ -3267,7 +3377,7 @@ class WindowedAutomationConfigWindow(TypedDict):
 
 class WindowedAutomationConfigLoopTarget(TypedDict):
     type: Literal['dashboard']
-    id: str | Literal['overview']
+    id: Literal['overview']
 
 
 class WindowedAutomationConfigLoop(TypedDict):
@@ -3766,7 +3876,7 @@ class InvokeFunctionInvokeFunction7(TypedDict):
     """
     metadata: NotRequired[Mapping[str, Any] | None]
     """
-    Any relevant metadata. This will be logged and available as the `metadata` argument.
+    Any relevant metadata to log on the span. For prompts, this is available as the `metadata` template variable. For code functions, this is passed through hooks and is not added to `input`.
     """
     tags: NotRequired[Sequence[str] | None]
     """
@@ -4054,7 +4164,9 @@ class PromptBlockDataPromptBlockData(TypedDict):
 
 
 PromptBlockData: TypeAlias = (
-    PromptBlockDataPromptBlockData | PromptBlockDataPromptBlockData1
+    PromptBlockDataPromptBlockData
+    | PromptBlockDataPromptBlockData1
+    | PromptBlockDataPromptBlockData2
 )
 
 
@@ -4067,6 +4179,7 @@ class PromptBlockDataNullishPromptBlockDataNullish(TypedDict):
 PromptBlockDataNullish: TypeAlias = (
     PromptBlockDataNullishPromptBlockDataNullish
     | PromptBlockDataNullishPromptBlockDataNullish1
+    | PromptBlockDataNullishPromptBlockDataNullish2
     | None
 )
 
