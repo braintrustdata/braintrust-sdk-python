@@ -213,11 +213,18 @@ async def test_native_work_completes_after_awaiter_cancellation():
 
 
 @pytest.mark.asyncio
-async def test_native_worker_admits_waiting_sessions_in_order_and_removes_cancelled_waiters():
-    from braintrust._audio import worker
-
+@pytest.mark.parametrize("separate_loop", [False, True])
+async def test_native_worker_admits_waiting_sessions_in_order_and_removes_cancelled_waiters(separate_loop):
     started = [threading.Event() for _ in range(4)]
     release = [threading.Event() for _ in range(3)]
+    loop = asyncio.get_running_loop()
+    queued = asyncio.Event()
+
+    async def first_waiter():
+        task = asyncio.create_task(run_native(blocking, 2))
+        # Notify after the task has had a turn to request admission on its loop.
+        asyncio.get_running_loop().call_soon(loop.call_soon_threadsafe, queued.set)
+        return await task
 
     def blocking(index):
         started[index].set()
@@ -227,16 +234,18 @@ async def test_native_worker_admits_waiting_sessions_in_order_and_removes_cancel
     try:
         for event in started[:2]:
             assert await asyncio.to_thread(event.wait, 5)
-        first = asyncio.create_task(run_native(blocking, 2))
+        first = asyncio.create_task(
+            asyncio.to_thread(asyncio.run, first_waiter()) if separate_loop else first_waiter()
+        )
+        tasks.append(first)
+        await asyncio.wait_for(queued.wait(), 5)
         cancelled = asyncio.create_task(run_native(lambda: pytest.fail("Cancelled job was submitted")))
         last = asyncio.create_task(run_native(started[3].set))
-        tasks.extend([first, cancelled, last])
+        tasks.extend([cancelled, last])
 
-        async def wait_for_queue():
-            while worker._waiters is None or len(worker._waiters) != 3:
-                await asyncio.sleep(0.005)
-
-        await asyncio.wait_for(wait_for_queue(), 5)
+        queue_ready = asyncio.Event()
+        loop.call_soon(queue_ready.set)
+        await asyncio.wait_for(queue_ready.wait(), 5)
         cancelled.cancel()
         with pytest.raises(asyncio.CancelledError):
             await cancelled
