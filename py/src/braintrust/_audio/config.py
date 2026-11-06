@@ -6,15 +6,16 @@ opt-ins and enforce their framework's privacy policy independently.
 
 import math
 from dataclasses import dataclass
+from typing import Literal
 
 
 @dataclass(frozen=True, kw_only=True)
 class AudioEncoding:
-    codec: str = "opus"
-    container: str | None = "ogg"
+    codec: Literal["opus", "pcm"] = "opus"
+    container: Literal["ogg", "wav"] | None = "ogg"
     bitrate_bps: int = 64000
     complexity: int = 10
-    application: str = "audio"
+    application: Literal["audio", "voip", "lowdelay"] = "audio"
 
     def __post_init__(self):
         if (self.codec, self.container) not in (("opus", "ogg"), ("pcm", None), ("pcm", "wav")):
