@@ -288,6 +288,46 @@ async def test_run_evaluator_basic():
 
 
 @pytest.mark.parametrize("is_async", [False, True], ids=["Eval", "EvalAsync"])
+@pytest.mark.parametrize("data_kind", ["iterator", "factory", "awaitable", "async-factory"])
+def test_eval_resolves_awaitable_data(is_async, data_kind):
+    cases = [EvalCase(input=1, expected=2), EvalCase(input=2, expected=4)]
+
+    async def load_data():
+        await asyncio.sleep(0)
+        return iter(cases)
+
+    if data_kind == "iterator":
+        data = iter(cases)
+    elif data_kind == "factory":
+        data = lambda: iter(cases)
+    elif data_kind == "awaitable":
+        data = load_data()
+    else:
+        data = load_data
+
+    def exact_match(output, expected):
+        return float(output == expected)
+
+    evaluate = EvalAsync if is_async else Eval
+    result = evaluate(
+        "test-awaitable-data",
+        data=data,
+        task=lambda input_value: input_value * 2,
+        scores=[exact_match],
+        no_send_logs=True,
+        enable_cache=False,
+    )
+    if is_async:
+        result = asyncio.run(result)
+
+    assert [(row.input, row.output, row.scores, row.error) for row in result.results] == [
+        (1, 2, {"exact_match": 1.0}, None),
+        (2, 4, {"exact_match": 1.0}, None),
+    ]
+    assert result.summary.scores["exact_match"].score == 1.0
+
+
+@pytest.mark.parametrize("is_async", [False, True], ids=["Eval", "EvalAsync"])
 @pytest.mark.parametrize("outcome", ["task_error", "scorer_error", "success"])
 @pytest.mark.parametrize("handler_result", ["score", "none", "default"])
 def test_eval_error_score_handler(is_async, outcome, handler_result):
