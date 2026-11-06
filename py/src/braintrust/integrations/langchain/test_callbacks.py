@@ -1,5 +1,6 @@
 # pyright: reportTypedDictNotRequiredAccess=none
 import base64
+import contextlib
 import time
 import uuid
 from pathlib import Path
@@ -1060,3 +1061,53 @@ def test_tool_use_with_result(logger_memory_logger):
             ]
         ],
     )
+
+
+@pytest.mark.asyncio
+async def test_langgraph_astream_early_exit_is_not_an_error(logger_memory_logger):
+    """Leaving an ``astream()`` loop early closes the stream with ``GeneratorExit``.
+
+    LangGraph reports that via ``on_chain_error``; it is intentional cleanup, not a
+    failure, so the spans must not be marked as errored.
+    """
+    test_logger, memory_logger = logger_memory_logger
+    assert not memory_logger.pop()
+
+    try:
+        from langgraph.graph import END, START, StateGraph
+    except ImportError:
+        pytest.skip("langgraph not installed")
+
+    handler = BraintrustCallbackHandler(logger=test_logger)
+
+    def step_one(state: dict[str, str]):
+        return {"step": "one"}
+
+    def step_two(state: dict[str, str]):
+        return {"step": "two"}
+
+    graph = (
+        StateGraph(state_schema=dict[str, str])
+        .add_node("stepOne", step_one)
+        .add_node("stepTwo", step_two)
+        .add_edge(START, "stepOne")
+        .add_edge("stepOne", "stepTwo")
+        .add_edge("stepTwo", END)
+        .compile()
+    )
+
+    # ``aclosing`` closes the stream as soon as we stop iterating, rather than whenever
+    # the event loop finalizes the abandoned async generator.
+    async with contextlib.aclosing(
+        graph.astream({}, config={"callbacks": [handler]}, stream_mode="updates")
+    ) as stream:
+        async for chunk in stream:
+            assert "stepOne" in chunk
+            break
+    flush()
+
+    spans = memory_logger.pop()
+    langgraph_spans = find_spans_by_attributes(spans, name="LangGraph")
+    assert len(langgraph_spans) == 1
+    assert langgraph_spans[0].get("metrics", {}).get("end") is not None
+    assert [span.get("error") for span in spans] == [None] * len(spans)

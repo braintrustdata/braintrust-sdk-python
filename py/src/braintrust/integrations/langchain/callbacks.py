@@ -72,6 +72,13 @@ def _provider_from_serialized(serialized: Mapping[str, Any] | None) -> str | Non
     return None
 
 
+def _error_for_span(error: BaseException) -> str | None:
+    """``GeneratorExit`` means the consumer stopped a stream early, which is not a failure."""
+    if isinstance(error, GeneratorExit):
+        return None
+    return str(error)
+
+
 def _resolve_name(name: str | None, serialized: Mapping[str, Any] | None, default: str) -> str:
     return name or (serialized or {}).get("name") or last_item((serialized or {}).get("id") or []) or default
 
@@ -258,7 +265,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> None:
-        self._end_span(run_id, error=str(error))
+        self._end_span(run_id, error=_error_for_span(error))
         self._start_times.pop(run_id, None)
         self._first_token_times.pop(run_id, None)
         self._ttft_ms.pop(run_id, None)
@@ -271,7 +278,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> None:
-        self._end_span(run_id, error=str(error))
+        self._end_span(run_id, error=_error_for_span(error))
 
     def on_tool_error(
         self,
@@ -281,7 +288,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> None:
-        self._end_span(run_id, error=str(error))
+        self._end_span(run_id, error=_error_for_span(error))
 
     def on_retriever_error(
         self,
@@ -291,7 +298,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> None:
-        self._end_span(run_id, error=str(error))
+        self._end_span(run_id, error=_error_for_span(error))
 
     def on_agent_action(
         self,
