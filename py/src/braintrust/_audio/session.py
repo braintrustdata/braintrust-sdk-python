@@ -182,10 +182,7 @@ class AudioSessionRecorder:
             for meta in tuple(self._inflight.values()):
                 self.omitted(meta, "shutdown_timeout")
             if self.recorder is not None:
-                self.recorder.discard("shutdown_timeout")
-                if self.recorder._task is not None:
-                    self.recorder._task.cancel()
-                    await asyncio.gather(self.recorder._task, return_exceptions=True)
+                await self.recorder.abort("shutdown_timeout")
             result = RecordingResult(len(self._terminal), "shutdown_timeout")
             if isinstance(error, asyncio.CancelledError):
                 raise

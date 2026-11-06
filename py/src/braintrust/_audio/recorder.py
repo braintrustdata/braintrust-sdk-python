@@ -267,6 +267,13 @@ class AudioRecorder:
             self._packets = [packet for packet in self._packets if packet.end > end]
             self._processing = None
 
+    async def abort(self, reason: str) -> None:
+        """Discard queued audio and wait for the background task to cancel."""
+        self.discard(reason)
+        if self._task is not None:
+            self._task.cancel()
+            await asyncio.gather(self._task, return_exceptions=True)
+
     async def finish(self) -> RecordingResult:
         self._finishing = True
         # The adapter settles pending playback before calling finish.
