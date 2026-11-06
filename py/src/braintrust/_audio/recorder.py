@@ -7,7 +7,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from fractions import Fraction
 
-from braintrust.audio import AudioRecordingOptions
+from braintrust._audio.config import AudioRecordingOptions
 
 from .middleware import AudioMiddleware, run_middleware
 from .types import AudioChannel, AudioResult, RecordingResult, SegmentMeta
