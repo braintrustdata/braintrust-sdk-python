@@ -43,27 +43,26 @@ async def run_middleware(stack: Sequence[AudioMiddleware], payload: bytes, meta:
     async def run(index, data, current):
         _validate(current, meta)
         if index == len(stack):
-            result = AudioResult(data, current)
-        else:
-            called = False
+            return AudioResult(data, current)
+        called = False
 
-            def next(data, new_meta):
-                nonlocal called
-                if called:
-                    raise ValueError("Audio middleware called next more than once")
-                called = True
-                return run(index + 1, data, new_meta)
+        def next(data, new_meta):
+            nonlocal called
+            if called:
+                raise ValueError("Audio middleware called next more than once")
+            called = True
+            return run(index + 1, data, new_meta)
 
-            result = await stack[index](data, current, next)
-        if not isinstance(result, AudioResult) or not isinstance(result.data, bytes):
-            raise ValueError("Audio middleware must return final bytes")
-        _validate(result.meta, meta)
-        if result.meta.encoding == "pcm" and result.meta.mime_type == "audio/pcm":
-            if len(result.data) != result.meta.sample_count * len(result.meta.channels) * 2:
-                raise ValueError("PCM byte length does not match playable duration")
-        return result
+        return await stack[index](data, current, next)
 
-    return await run(0, payload, meta)
+    result = await run(0, payload, meta)
+    if not isinstance(result, AudioResult) or not isinstance(result.data, bytes):
+        raise ValueError("Audio middleware must return final bytes")
+    _validate(result.meta, meta)
+    if result.meta.encoding == "pcm" and result.meta.mime_type == "audio/pcm":
+        if len(result.data) != result.meta.sample_count * len(result.meta.channels) * 2:
+            raise ValueError("PCM byte length does not match playable duration")
+    return result
 
 
 def _wav(data, meta):

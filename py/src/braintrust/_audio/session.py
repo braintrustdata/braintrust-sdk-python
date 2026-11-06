@@ -9,7 +9,7 @@ from braintrust.logger import Attachment
 
 from .middleware import encoding_stack
 from .recorder import AudioRecorder
-from .types import AudioResult, RecordingResult, SegmentMeta, thaw
+from .types import AudioResult, RecordingResult, SegmentMeta
 from .worker import run_native
 
 
@@ -162,9 +162,9 @@ class AudioSessionRecorder:
                             "encoding": meta.encoding,
                             "sample_rate_hz": meta.sample_rate_hz,
                             "channels": {
-                                str(i): {"sources": list(channel.sources)} for i, channel in enumerate(meta.channels)
+                                str(i): {"sources": channel.sources} for i, channel in enumerate(meta.channels)
                             },
-                            "attributes": thaw(meta.attributes),
+                            "attributes": meta.attributes,
                         }
                     }
                 },

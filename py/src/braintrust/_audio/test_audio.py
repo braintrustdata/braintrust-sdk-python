@@ -142,6 +142,38 @@ async def test_middleware_validates_duration_sources_bytes_and_deep_freeze():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("data", "message"),
+    [(None, "final bytes"), (bytearray(96), "final bytes"), (bytes(94), "PCM byte length")],
+)
+async def test_middleware_validates_final_result_after_nested_layers(data, message):
+    meta = SegmentMeta(0, 0, 48, 48000, (AudioChannel(("input",)),))
+
+    async def passthrough(data, current, next):
+        return await next(data, current)
+
+    async def invalid(payload, current, next):
+        return None if data is None else AudioResult(data, current)
+
+    with pytest.raises(ValueError, match=message):
+        await run_middleware((passthrough, passthrough, invalid), bytes(96), meta)
+
+
+@pytest.mark.asyncio
+async def test_middleware_rejects_invalid_metadata_before_calling_downstream():
+    meta = SegmentMeta(0, 0, 48, 48000, (AudioChannel(("input",)),))
+
+    async def invalid(data, current, next):
+        return await next(data, replace(current, sample_count=49))
+
+    async def downstream(data, current, next):
+        pytest.fail("Invalid segment metadata reached downstream middleware")
+
+    with pytest.raises(ValueError, match="identity, placement"):
+        await run_middleware((invalid, downstream), bytes(96), meta)
+
+
+@pytest.mark.asyncio
 async def test_wav_requires_no_optional_backend_and_preserves_tiny_tail():
     meta = SegmentMeta(0, 0, 137, 48000, (AudioChannel(("input",)),))
     result = await run_middleware(encoding_stack(AudioEncoding(codec="pcm", container="wav")), pcm(range(137)), meta)
