@@ -3,6 +3,7 @@ import logging
 import math
 import sys
 from array import array
+from bisect import insort_right
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from fractions import Fraction
@@ -157,7 +158,9 @@ class AudioRecorder:
         if self._limit is not None and start >= self._limit:
             return False
         packet = Packet(source_id, bytes(pcm), sample_rate_hz, channels, start)
-        self._packets.append(packet)
+        # Rendering and flush eligibility both need each source's lookahead in
+        # timeline order, even when packets arrive out of order.
+        insort_right(self._packets, packet, key=lambda packet: packet.start)
         self._end = max(self._end, math.ceil(packet.end))
         if self._limit is not None:
             self._end = min(self._end, self._limit)
