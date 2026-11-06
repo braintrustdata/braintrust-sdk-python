@@ -9,11 +9,11 @@ from dataclasses import replace
 from fractions import Fraction
 
 import pytest
+from braintrust._audio.config import AudioEncoding, AudioRecordingOptions
 from braintrust._audio.middleware import encoding_stack, run_middleware
 from braintrust._audio.recorder import AudioRecorder
 from braintrust._audio.types import AudioChannel, AudioResult, SegmentMeta
 from braintrust._audio.worker import run_native
-from braintrust.audio import AudioEncoding, AudioRecordingOptions
 
 
 def pcm(values):

@@ -3,7 +3,7 @@ import logging
 import time
 from collections.abc import Callable
 
-from braintrust.audio import AudioRecordingOptions
+from braintrust._audio.config import AudioRecordingOptions
 from braintrust.env import BraintrustEnv
 from braintrust.logger import Attachment
 

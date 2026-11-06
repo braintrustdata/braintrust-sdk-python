@@ -3,8 +3,8 @@ import threading
 
 import pytest
 from braintrust import SpanCustomizer, logger, set_span_customizers
+from braintrust._audio.config import AudioEncoding, AudioRecordingOptions
 from braintrust._audio.session import AudioSessionRecorder
-from braintrust.audio import AudioEncoding, AudioRecordingOptions
 from braintrust.test_helpers import init_test_logger
 
 

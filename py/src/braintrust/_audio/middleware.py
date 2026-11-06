@@ -7,7 +7,7 @@ from dataclasses import replace
 from fractions import Fraction
 from typing import Any, Protocol
 
-from braintrust.audio import AudioEncoding
+from braintrust._audio.config import AudioEncoding
 
 from .types import AudioResult, SegmentMeta
 from .worker import run_native
