@@ -3205,14 +3205,14 @@ def traced(*span_args: Any, **span_kwargs: Any) -> Callable[[F], F]:
                 # Get max items from environment or default
                 max_items = BraintrustEnv.MAX_GENERATOR_ITEMS.get(1000)
 
-                if trace_io and max_items != 0:
-                    # Collect output up to limit
-                    collected = []
-                    truncated = False
-
-                    async_gen = f(*f_args, **f_kwargs)
-                    try:
-                        async for value in async_gen:
+                collect_output = trace_io and max_items != 0
+                collected = []
+                truncated = False
+                async_gen = f(*f_args, **f_kwargs)
+                try:
+                    value = await async_gen.__anext__()
+                    while True:
+                        if collect_output:
                             if max_items == -1 or (not truncated and len(collected) < max_items):
                                 collected.append(value)
                             else:
@@ -3222,20 +3222,23 @@ def traced(*span_args: Any, **span_kwargs: Any) -> Callable[[F], F]:
                                     f"Generator output exceeded limit of {max_items} items, output not logged. "
                                     "Increase BRAINTRUST_MAX_GENERATOR_ITEMS or set to -1 to disable limit."
                                 )
-                            yield value
-
-                        if not truncated:
-                            _try_log_output(span, collected)
-                    except Exception as e:
-                        # Log partial output on error
-                        if collected and not truncated:
-                            _try_log_output(span, collected)
-                        raise
-                else:
-                    # Original behavior - no collection
-                    async_gen = f(*f_args, **f_kwargs)
-                    async for value in async_gen:
-                        yield value
+                        try:
+                            sent = yield value
+                        except GeneratorExit:
+                            await async_gen.aclose()
+                            raise
+                        except BaseException as exc:
+                            value = await async_gen.athrow(exc)
+                        else:
+                            value = await async_gen.asend(sent)
+                except StopAsyncIteration:
+                    if collect_output and not truncated:
+                        _try_log_output(span, collected)
+                except Exception:
+                    # Log partial output on error
+                    if collect_output and collected and not truncated:
+                        _try_log_output(span, collected)
+                    raise
 
         @wraps(f)
         def wrapper_sync_gen(*f_args, **f_kwargs):
@@ -3246,14 +3249,14 @@ def traced(*span_args: Any, **span_kwargs: Any) -> Callable[[F], F]:
                 # Get max items from environment or default
                 max_items = BraintrustEnv.MAX_GENERATOR_ITEMS.get(1000)
 
-                if trace_io and max_items != 0:
-                    # Collect output up to limit
-                    collected = []
-                    truncated = False
-
-                    sync_gen = f(*f_args, **f_kwargs)
-                    try:
-                        for value in sync_gen:
+                collect_output = trace_io and max_items != 0
+                collected = []
+                truncated = False
+                sync_gen = f(*f_args, **f_kwargs)
+                try:
+                    value = next(sync_gen)
+                    while True:
+                        if collect_output:
                             if max_items == -1 or (not truncated and len(collected) < max_items):
                                 collected.append(value)
                             else:
@@ -3263,20 +3266,24 @@ def traced(*span_args: Any, **span_kwargs: Any) -> Callable[[F], F]:
                                     f"Generator output exceeded limit of {max_items} items, output not logged. "
                                     "Increase BRAINTRUST_MAX_GENERATOR_ITEMS or set to -1 to disable limit."
                                 )
-                            yield value
-
-                        if not truncated:
-                            _try_log_output(span, collected)
-                    except Exception as e:
-                        # Log partial output on error
-                        if collected and not truncated:
-                            _try_log_output(span, collected)
-                        raise
-                else:
-                    # Original behavior - no collection
-                    sync_gen = f(*f_args, **f_kwargs)
-                    for value in sync_gen:
-                        yield value
+                        try:
+                            sent = yield value
+                        except GeneratorExit:
+                            sync_gen.close()
+                            raise
+                        except BaseException as exc:
+                            value = sync_gen.throw(exc)
+                        else:
+                            value = sync_gen.send(sent)
+                except StopIteration as done:
+                    if collect_output and not truncated:
+                        _try_log_output(span, collected)
+                    return done.value
+                except Exception:
+                    # Log partial output on error
+                    if collect_output and collected and not truncated:
+                        _try_log_output(span, collected)
+                    raise
 
         if inspect.isasyncgenfunction(f):
             return cast(F, wrapper_async_gen)

@@ -2213,6 +2213,171 @@ def test_traced_sync_generator(with_memory_logger):
     )
 
 
+@pytest.mark.parametrize("notrace_io", [False, True])
+@pytest.mark.parametrize("operation", ["send", "throw"])
+def test_traced_sync_generator_delegates_protocol(with_memory_logger, notrace_io, operation):
+    init_test_logger(__name__)
+    closed = []
+
+    @logger.traced(notrace_io=notrace_io)
+    def exchange():
+        try:
+            try:
+                value = yield "ready"
+            except ValueError as exc:
+                value = str(exc)
+            yield value
+            return "complete"
+        finally:
+            closed.append(True)
+
+    generator = exchange()
+    try:
+        assert next(generator) == "ready"
+        if operation == "send":
+            assert generator.send("response") == "response"
+        else:
+            assert generator.throw(ValueError("response")) == "response"
+        with pytest.raises(StopIteration) as done:
+            next(generator)
+        assert done.value.value == "complete"
+    finally:
+        generator.close()
+    assert closed == [True]
+
+    [log] = with_memory_logger.pop()
+    assert log.get("output") == (None if notrace_io else ["ready", "response"])
+    assert not log.get("error")
+
+
+@pytest.mark.parametrize("notrace_io", [False, True])
+def test_traced_sync_generator_delegates_close(with_memory_logger, notrace_io):
+    init_test_logger(__name__)
+    closed = []
+
+    @logger.traced(notrace_io=notrace_io)
+    def source():
+        try:
+            yield "ready"
+        finally:
+            closed.append(True)
+
+    generator = source()
+    assert next(generator) == "ready"
+    generator.close()
+    assert closed == [True]
+    [log] = with_memory_logger.pop()
+    assert "end" in log["metrics"]
+
+
+@pytest.mark.parametrize("notrace_io", [False, True])
+def test_traced_sync_generator_preserves_generator_exit(with_memory_logger, notrace_io):
+    init_test_logger(__name__)
+    closed = []
+
+    @logger.traced(notrace_io=notrace_io)
+    def source():
+        try:
+            yield "ready"
+        finally:
+            closed.append(True)
+
+    generator = source()
+    assert next(generator) == "ready"
+    error = GeneratorExit("cancel")
+    with pytest.raises(GeneratorExit, match="^cancel$") as raised:
+        generator.throw(error)
+    assert raised.value is error
+    assert closed == [True]
+
+    [log] = with_memory_logger.pop()
+    assert "GeneratorExit: cancel" in log["error"]
+
+
+@pytest.mark.parametrize("notrace_io", [False, True])
+@pytest.mark.parametrize("operation", ["send", "throw"])
+@pytest.mark.asyncio
+async def test_traced_async_generator_delegates_protocol(with_memory_logger, notrace_io, operation):
+    init_test_logger(__name__)
+    closed = []
+
+    @logger.traced(notrace_io=notrace_io)
+    async def exchange():
+        try:
+            try:
+                value = yield "ready"
+            except ValueError as exc:
+                value = str(exc)
+            yield value
+        finally:
+            closed.append(True)
+
+    generator = exchange()
+    try:
+        assert await generator.__anext__() == "ready"
+        if operation == "send":
+            assert await generator.asend("response") == "response"
+        else:
+            assert await generator.athrow(ValueError("response")) == "response"
+        with pytest.raises(StopAsyncIteration):
+            await generator.__anext__()
+    finally:
+        await generator.aclose()
+    assert closed == [True]
+
+    [log] = with_memory_logger.pop()
+    assert log.get("output") == (None if notrace_io else ["ready", "response"])
+    assert not log.get("error")
+
+
+@pytest.mark.parametrize("notrace_io", [False, True])
+@pytest.mark.asyncio
+async def test_traced_async_generator_delegates_close(with_memory_logger, notrace_io):
+    init_test_logger(__name__)
+    closed = []
+
+    @logger.traced(notrace_io=notrace_io)
+    async def source():
+        try:
+            yield "ready"
+        finally:
+            await asyncio.sleep(0)
+            closed.append(True)
+
+    generator = source()
+    assert await generator.__anext__() == "ready"
+    await generator.aclose()
+    assert closed == [True]
+    [log] = with_memory_logger.pop()
+    assert "end" in log["metrics"]
+
+
+@pytest.mark.parametrize("notrace_io", [False, True])
+@pytest.mark.asyncio
+async def test_traced_async_generator_preserves_generator_exit(with_memory_logger, notrace_io):
+    init_test_logger(__name__)
+    closed = []
+
+    @logger.traced(notrace_io=notrace_io)
+    async def source():
+        try:
+            yield "ready"
+        finally:
+            await asyncio.sleep(0)
+            closed.append(True)
+
+    generator = source()
+    assert await generator.__anext__() == "ready"
+    error = GeneratorExit("cancel")
+    with pytest.raises(GeneratorExit, match="^cancel$") as raised:
+        await generator.athrow(error)
+    assert raised.value is error
+    assert closed == [True]
+
+    [log] = with_memory_logger.pop()
+    assert "GeneratorExit: cancel" in log["error"]
+
+
 def test_traced_sync_generator_with_exception(with_memory_logger):
     """Test sync generator that raises an exception."""
     init_test_logger(__name__)
