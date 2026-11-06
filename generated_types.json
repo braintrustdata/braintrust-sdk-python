@@ -2525,7 +2525,7 @@
           },
           "xact_id": {
             "type": "string",
-            "description": "Transaction id of the brainstore version at the time of the snapshot"
+            "description": "Transaction ID of the dataset version at the time of the snapshot"
           },
           "created": {
             "type": [
@@ -2635,7 +2635,7 @@
               "automation_integration"
             ],
             "default": "env_var",
-            "description": "The category of the secret: env_var for regular environment variables, ai_provider for AI provider API keys"
+            "description": "The category of the secret: env_var for regular environment variables, ai_provider for AI provider API keys, sandbox_provider for sandbox provider credentials, automation_integration for automation delivery credentials"
           }
         },
         "required": [
@@ -2847,7 +2847,7 @@
               "minimum": 0,
               "maximum": 1
             },
-            "description": "A dictionary of numeric values (between 0 and 1) to log. The scores should give you a variety of signals that help you determine how accurate the outputs are compared to what you expect and diagnose failures. For example, a summarization app might have one score that tells you how accurate the summary is, and another that measures the word similarity between the generated and grouth truth summary. The word similarity score could help you determine whether the summarization was covering similar concepts or not. You can use these scores to help you sort, filter, and compare experiments"
+            "description": "A dictionary of numeric values (between 0 and 1) to log. The scores should give you a variety of signals that help you determine how accurate the outputs are compared to what you expect and diagnose failures. For example, a summarization app might have one score that tells you how accurate the summary is, and another that measures the word similarity between the generated and ground truth summary. The word similarity score could help you determine whether the summarization was covering similar concepts or not. You can use these scores to help you sort, filter, and compare experiments."
           },
           "metadata": {
             "type": [
@@ -3453,7 +3453,7 @@
                   "boolean",
                   "null"
                 ],
-                "description": "The function exists for internal purposes and should not be displayed in the list of functions."
+                "description": "If true, the function was created for use by another Braintrust object and is hidden from function lists in the Braintrust UI."
               }
             },
             "required": [
@@ -4862,7 +4862,8 @@
             "type": "object",
             "properties": {
               "request_source": {
-                "type": "string"
+                "type": "string",
+                "description": "A label identifying the caller, used to attribute usage"
               },
               "input": {
                 "description": "Argument to the function, which can be any JSON serializable value"
@@ -4989,7 +4990,7 @@
                   "span_id",
                   "root_span_id"
                 ],
-                "description": "Identifiers for the row to to log a subspan under"
+                "description": "Identifiers for the row to log a subspan under"
               },
               "propagated_event": {
                 "type": [
@@ -5632,31 +5633,36 @@
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "URL of the organization's data plane API. If unset, the Braintrust-hosted API is used."
           },
           "is_universal_api": {
             "type": [
               "boolean",
               "null"
-            ]
+            ],
+            "description": "Whether the data plane at `api_url` also serves the AI proxy, at `api_url` with `/v1/proxy` appended"
           },
           "is_dataplane_private": {
             "type": [
               "boolean",
               "null"
-            ]
+            ],
+            "description": "Whether the organization's data plane is only reachable from a private network"
           },
           "proxy_url": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "URL of the organization's AI proxy"
           },
           "realtime_url": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "URL of the organization's realtime service"
           },
           "created": {
             "type": [
@@ -5671,14 +5677,16 @@
               "string",
               "null"
             ],
-            "format": "date-time"
+            "format": "date-time",
+            "description": "Date the organization was archived"
           },
           "deleted_at": {
             "type": [
               "string",
               "null"
             ],
-            "format": "date-time"
+            "format": "date-time",
+            "description": "Date the organization was deleted"
           },
           "image_rendering_mode": {
             "$ref": "#/components/schemas/ImageRenderingMode"
@@ -5775,7 +5783,7 @@
           "update_acls",
           "delete_acls"
         ],
-        "description": "Each permission permits a certain type of operation on an object in the system\n\nPermissions can be assigned to to objects on an individual basis, or grouped into roles"
+        "description": "Each permission permits a certain type of operation on an object in the system\n\nPermissions can be assigned to objects on an individual basis, or grouped into roles"
       },
       "PreprocessorId": {
         "anyOf": [
@@ -6640,7 +6648,7 @@
               "minimum": 0,
               "maximum": 1
             },
-            "description": "A dictionary of numeric values (between 0 and 1) to log. The scores should give you a variety of signals that help you determine how accurate the outputs are compared to what you expect and diagnose failures. For example, a summarization app might have one score that tells you how accurate the summary is, and another that measures the word similarity between the generated and grouth truth summary. The word similarity score could help you determine whether the summarization was covering similar concepts or not. You can use these scores to help you sort, filter, and compare logs."
+            "description": "A dictionary of numeric values (between 0 and 1) to log. The scores should give you a variety of signals that help you determine how accurate the outputs are compared to what you expect and diagnose failures. For example, a summarization app might have one score that tells you how accurate the summary is, and another that measures the word similarity between the generated and ground truth summary. The word similarity score could help you determine whether the summarization was covering similar concepts or not. You can use these scores to help you sort, filter, and compare logs."
           },
           "metadata": {
             "type": [
@@ -8656,7 +8664,8 @@
                       "object",
                       "null"
                     ],
-                    "additionalProperties": {}
+                    "additionalProperties": {},
+                    "description": "Internal BTQL query overrides in parsed JSON form that select which dataset rows to evaluate. `filter` is a BTQL expression object, `sort` is an array of BTQL sort expressions, and `limit` is an integer."
                   }
                 },
                 "required": [
@@ -8693,7 +8702,8 @@
                       "object",
                       "null"
                     ],
-                    "additionalProperties": {}
+                    "additionalProperties": {},
+                    "description": "Internal BTQL query overrides in parsed JSON form that select which dataset rows to evaluate. `filter` is a BTQL expression object, `sort` is an array of BTQL sort expressions, and `limit` is an integer."
                   }
                 },
                 "required": [
