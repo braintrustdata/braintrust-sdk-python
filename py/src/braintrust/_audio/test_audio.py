@@ -7,6 +7,7 @@ import wave
 from array import array
 from dataclasses import replace
 from fractions import Fraction
+from itertools import permutations
 from types import MappingProxyType
 
 import pytest
@@ -112,6 +113,35 @@ async def test_progressive_resampling_waits_for_packet_lookahead(rate, threshold
         return b"".join(s.data for s in segments)
 
     assert await record(True) == await record(False)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("order", list(permutations(range(3))))
+@pytest.mark.parametrize("progressive", [False, True])
+async def test_resampling_is_independent_of_packet_arrival_order(order, progressive):
+    async def record(indices):
+        instance, segments, omitted = recorder()
+        for index in indices:
+            assert instance.record(
+                "input",
+                pcm([index * 10000] * 240),
+                sample_rate_hz=24000,
+                channels=1,
+                offset_ns=index * 10_000_000,
+            )
+        if progressive:
+            instance.advance(20_000_000)
+            await instance._task
+            assert len(segments) == 2  # Both boundaries have contiguous lookahead.
+        await instance.finish()
+        assert not omitted
+        return b"".join(s.data for s in segments)
+
+    expected = await record(range(3))
+    samples = array("h")
+    samples.frombytes(expected)
+    assert samples[959 * 2] == 15000
+    assert await record(order) == expected
 
 
 @pytest.mark.asyncio
