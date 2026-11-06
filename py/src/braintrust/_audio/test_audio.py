@@ -21,7 +21,7 @@ def pcm(values):
     return array("h", values).tobytes()
 
 
-def recorder(*, duration=0.01, threshold=1024 * 1024, middleware=(), on_segment=None):
+def recorder(*, duration=0.01, threshold=1024 * 1024, middleware=(), on_segment=None, max_duration=None):
     segments, omitted = [], []
 
     async def collect(result):
@@ -34,6 +34,7 @@ def recorder(*, duration=0.01, threshold=1024 * 1024, middleware=(), on_segment=
         options=AudioRecordingOptions(
             segment_duration_seconds=duration,
             flush_threshold_bytes=threshold,
+            max_duration_seconds=max_duration,
         ),
         middleware=middleware,
         on_segment=collect,
@@ -64,6 +65,84 @@ async def test_packet_splits_keep_exact_phase_and_length(rate):
         return b"".join(s.data for s in segments)
 
     assert await record(137) == await record(rate)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("advance", [False, True])
+@pytest.mark.parametrize("count", [480, 960])
+async def test_duration_limit_waits_for_all_sources(advance, count):
+    instance, segments, omitted = recorder(max_duration=0.01)
+    assert instance.record("input", pcm([100] * count), sample_rate_hz=48000, channels=1, offset_ns=0)
+    assert instance.record("output", pcm([200] * 480), sample_rate_hz=48000, channels=1, offset_ns=0)
+    assert not instance.record("output", pcm([300] * 480), sample_rate_hz=48000, channels=1, offset_ns=10_000_000)
+    if advance:
+        instance.advance(10_000_000)
+        assert instance.reason == "duration_limit"
+        assert not instance.record("input", pcm([400]), sample_rate_hz=48000, channels=1, offset_ns=10_000_000)
+    result = await instance.finish()
+    samples = array("h")
+    samples.frombytes(b"".join(s.data for s in segments))
+    assert samples == array("h", [100, 200] * 480)
+    assert result.reason == "duration_limit"
+    assert not omitted
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("rate", [16000, 24000, 44100, 48000])
+@pytest.mark.parametrize("threshold", [1, 1024 * 1024])
+async def test_progressive_resampling_waits_for_packet_lookahead(rate, threshold):
+    async def record(progressive):
+        instance, segments, omitted = recorder(threshold=threshold)
+        for index, value in enumerate((0, 10000, -10000)):
+            assert instance.record(
+                "input",
+                pcm([value] * (rate // 100)),
+                sample_rate_hz=rate,
+                channels=1,
+                offset_ns=index * 10_000_000,
+            )
+            if progressive:
+                instance.advance((index + 1) * 10_000_000)
+                if instance._task is not None:
+                    await instance._task
+                if index == 1:
+                    assert segments  # Lookahead releases audio before finish.
+        await instance.finish()
+        assert not omitted
+        return b"".join(s.data for s in segments)
+
+    assert await record(True) == await record(False)
+
+
+@pytest.mark.asyncio
+async def test_resampling_tail_released_when_watermark_passes_packet_end():
+    instance, segments, omitted = recorder()
+    instance.record("input", pcm([100] * 240), sample_rate_hz=24000, channels=1, offset_ns=0)
+    instance.advance(10_000_000)
+    if instance._task is not None:
+        await instance._task
+    assert not segments
+    # No contiguous packet can arrive once the watermark passes its start.
+    instance.advance(10_100_000)
+    await instance._task
+    assert len(segments) == 1
+    samples = array("h")
+    samples.frombytes(segments[0].data)
+    assert samples == array("h", [100, 0] * 480)
+    await instance.finish()
+    assert not omitted
+
+
+@pytest.mark.asyncio
+async def test_unavailable_audio_is_clamped_to_duration_limit():
+    instance, segments, omitted = recorder(max_duration=0.01)
+    instance.unavailable(0, 20_000_000, "unavailable")
+    instance.unavailable(20_000_000, 30_000_000, "unavailable")
+    result = await instance.finish()
+    assert not segments
+    assert len(omitted) == 1
+    assert omitted[0][0].sample_count == 480
+    assert result.reason == "duration_limit"
 
 
 @pytest.mark.asyncio

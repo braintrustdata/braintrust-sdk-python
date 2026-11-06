@@ -43,6 +43,12 @@ def _samples(data):
     return result
 
 
+def _continues(packet: Packet, following: Packet | None):
+    return following is not None and (
+        following.start == packet.end and following.rate == packet.rate and following.channels == packet.channels
+    )
+
+
 def render(packets: tuple[Packet, ...], sources: tuple[str, ...], start: int, end: int):
     """Sparse placement and phase-continuous linear resampling, in a worker.
 
@@ -71,7 +77,7 @@ def render(packets: tuple[Packet, ...], sources: tuple[str, ...], start: int, en
             following = mono[-1]
             if index + 1 < len(stream):
                 other = stream[index + 1]
-                if other.start == packet.end and other.rate == packet.rate and other.channels == packet.channels:
+                if _continues(packet, other):
                     frame = _samples(other.data[: other.channels * 2])
                     following = sum(frame) // other.channels
             phase = (Fraction(first) - packet.start) * packet.rate / SAMPLE_RATE
@@ -114,6 +120,9 @@ class AudioRecorder:
         self.sources = tuple(sources)
         self.options = options
         self.middleware = middleware
+        self._limit = (
+            round(options.max_duration_seconds * SAMPLE_RATE) if options.max_duration_seconds is not None else None
+        )
         self.on_segment = on_segment
         self.on_omitted = on_omitted
         self._packets: list[Packet] = []
@@ -145,14 +154,13 @@ class AudioRecorder:
         start = Fraction(offset_ns) * SAMPLE_RATE / NS
         if start < self._sealed or start < 0:
             raise ValueError("Audio arrived before the sealed recording watermark")
+        if self._limit is not None and start >= self._limit:
+            return False
         packet = Packet(source_id, bytes(pcm), sample_rate_hz, channels, start)
         self._packets.append(packet)
         self._end = max(self._end, math.ceil(packet.end))
-        if self.options.max_duration_seconds is not None:
-            limit = round(self.options.max_duration_seconds * SAMPLE_RATE)
-            if self._end >= limit:
-                self._end = limit
-                self.stop("duration_limit")
+        if self._limit is not None:
+            self._end = min(self._end, self._limit)
         buffered = self.buffered_bytes
         if buffered > self.options.flush_threshold_bytes * 4 and not self._warned_backlog:
             self._warned_backlog = True
@@ -164,12 +172,18 @@ class AudioRecorder:
 
     def advance(self, through_ns: int | Fraction):
         self._watermark = max(self._watermark, math.floor(Fraction(through_ns) * SAMPLE_RATE / NS))
+        # Only the adapter's watermark establishes that every source has had a
+        # chance to deliver its in-window audio.
+        if self._limit is not None and self._watermark >= self._limit:
+            self.stop("duration_limit")
         self._pump()
 
     def unavailable(self, start_ns, end_ns, reason):
         """Known bounds of unavailable audio; never encode it as real silence."""
         start = max(0, math.floor(Fraction(start_ns) * SAMPLE_RATE / NS))
         end = math.ceil(Fraction(end_ns) * SAMPLE_RATE / NS)
+        if self._limit is not None:
+            end = min(end, self._limit)
         if end <= start or self._discarded:
             return
         if start < self._sealed:
@@ -205,6 +219,18 @@ class AudioRecorder:
 
     def _cut(self):
         eligible = min(self._end, self._watermark)
+        if not self._finishing and self.reason != "duration_limit":
+            following: dict[str, Packet] = {}
+            for packet in reversed(self._packets):
+                if self._watermark <= packet.end and not _continues(packet, following.get(packet.source)):
+                    # A packet starting exactly at the watermark may still
+                    # arrive. Keep its predecessor's interpolation tail until
+                    # that lookahead arrives, the watermark passes the boundary,
+                    # or capture is finalized. Partial flushes retain the packet
+                    # because its end remains beyond the sealed position.
+                    last_sample = packet.start + Fraction((packet.count - 1) * SAMPLE_RATE, packet.rate)
+                    eligible = min(eligible, math.floor(last_sample) + 1)
+                following[packet.source] = packet
         target = self._sealed + max(1, round(self.options.segment_duration_seconds * SAMPLE_RATE))
         if eligible <= self._sealed:
             return None
@@ -278,6 +304,8 @@ class AudioRecorder:
         self._finishing = True
         # The adapter settles pending playback before calling finish.
         self._watermark = max(self._watermark, self._end)
+        if self._limit is not None and self._end >= self._limit:
+            self.stop("duration_limit")
         self._pump()
         if self._task is not None:
             await asyncio.shield(self._task)
