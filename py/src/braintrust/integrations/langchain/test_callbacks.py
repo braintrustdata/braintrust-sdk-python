@@ -17,7 +17,6 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
-from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel, Field
 
 from .helpers import ANY, assert_matches_object, expected_prompt_chain_spans, find_spans_by_attributes
@@ -231,6 +230,11 @@ def test_tool_usage(logger_memory_logger):
 def test_langgraph_state_management(logger_memory_logger):
     test_logger, memory_logger = logger_memory_logger
     assert not memory_logger.pop()
+
+    try:
+        from langgraph.graph import END, START, StateGraph
+    except ImportError:
+        pytest.skip("langgraph not installed")
 
     handler = BraintrustCallbackHandler(logger=test_logger)
     model = ChatOpenAI(
@@ -1068,6 +1072,11 @@ async def test_langgraph_astream_early_exit_is_not_an_error(logger_memory_logger
     """
     test_logger, memory_logger = logger_memory_logger
     assert not memory_logger.pop()
+
+    try:
+        from langgraph.graph import END, START, StateGraph
+    except ImportError:
+        pytest.skip("langgraph not installed")
 
     handler = BraintrustCallbackHandler(logger=test_logger)
 
