@@ -124,6 +124,8 @@ def test_segment_attributes_are_reused_and_isolated_from_caller_mutations(mappin
         meta.attributes["extra"] = True
     with pytest.raises(TypeError):
         meta.attributes["nested"]["extra"] = True
+    with pytest.raises(TypeError):
+        meta.attributes["nested"]["list"][0] = 2
 
     replacement = {"nested": {"list": [3]}}
     changed = replace(meta, attributes=mapping(replacement))
@@ -133,50 +135,35 @@ def test_segment_attributes_are_reused_and_isolated_from_caller_mutations(mappin
 
 
 @pytest.mark.asyncio
-async def test_middleware_validates_duration_sources_bytes_and_deep_freeze():
-    meta = SegmentMeta(
-        0,
-        0,
-        48,
-        48000,
-        (AudioChannel(("input",)),),
-        attributes={
-            "nested": {"list": [1]},
-            "pcm.sample_format": "s16le",
-            "pcm.channel_layout": "interleaved",
-        },
-    )
-    with pytest.raises(TypeError):
-        meta.attributes["nested"]["list"][0] = 2
-
-    async def invalid(data, current, next):
-        return AudioResult(data, replace(current, sample_count=49))
-
-    with pytest.raises(ValueError, match="identity, placement"):
-        await run_middleware((invalid,), bytes(96), meta)
+async def test_middleware_rejects_calling_next_twice():
+    meta = SegmentMeta(0, 0, 48, 48000, (AudioChannel(("input",)),))
 
     async def twice(data, current, next):
         await next(data, current)
         return await next(data, current)
 
-    meta = replace(meta, attributes={"pcm.sample_format": "s16le", "pcm.channel_layout": "interleaved"})
     with pytest.raises(ValueError, match="more than once"):
         await run_middleware((twice,), bytes(96), meta)
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    ("data", "message"),
-    [(None, "final bytes"), (bytearray(96), "final bytes"), (bytes(94), "PCM byte length")],
+    ("data", "sample_count", "message"),
+    [
+        (None, 48, "final bytes"),
+        (bytearray(96), 48, "final bytes"),
+        (bytes(94), 48, "PCM byte length"),
+        (bytes(96), 49, "identity, placement"),
+    ],
 )
-async def test_middleware_validates_final_result_after_nested_layers(data, message):
+async def test_middleware_validates_final_result_after_nested_layers(data, sample_count, message):
     meta = SegmentMeta(0, 0, 48, 48000, (AudioChannel(("input",)),))
 
     async def passthrough(data, current, next):
         return await next(data, current)
 
     async def invalid(payload, current, next):
-        return None if data is None else AudioResult(data, current)
+        return None if data is None else AudioResult(data, replace(current, sample_count=sample_count))
 
     with pytest.raises(ValueError, match=message):
         await run_middleware((passthrough, passthrough, invalid), bytes(96), meta)
@@ -206,7 +193,7 @@ async def test_wav_requires_no_optional_backend_and_preserves_tiny_tail():
 
 
 @pytest.mark.asyncio
-async def test_native_worker_cancellation_keeps_buffer_owned_until_completion():
+async def test_native_work_completes_after_awaiter_cancellation():
     started, release, completed = threading.Event(), threading.Event(), threading.Event()
     payload = bytearray(b"owned")
 
