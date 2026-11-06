@@ -69,6 +69,8 @@ async def test_ready_only_after_success_and_reference_is_not_reuploaded(memory, 
     records = memory.pop()
     segment = records[0]["metadata"]["audio.segments"]["part-0"]
     assert segment["state"] == "ready"
+    assert segment["channels"] == {"0": {"sources": ["session-input"]}}
+    assert segment["attributes"] == {"pcm.sample_format": "s16le", "pcm.channel_layout": "interleaved"}
     assert records[0]["input"]["audio"]["part-0"] == uploads[0].reference
     assert not memory.upload_attempts
     assert len(uploads) == 1

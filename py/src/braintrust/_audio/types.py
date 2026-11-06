@@ -14,14 +14,6 @@ def freeze(value):
     raise TypeError("Audio attributes must contain JSON values")
 
 
-def thaw(value):
-    if isinstance(value, Mapping):
-        return {key: thaw(item) for key, item in value.items()}
-    if isinstance(value, tuple):
-        return [thaw(item) for item in value]
-    return value
-
-
 @dataclass(frozen=True)
 class AudioChannel:
     sources: tuple[str, ...]
