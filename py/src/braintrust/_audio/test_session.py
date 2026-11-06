@@ -10,6 +10,8 @@ from braintrust.test_helpers import init_test_logger
 
 @pytest.fixture
 def memory(monkeypatch):
+    # init_test_logger replaces this global; restore it after each test.
+    monkeypatch.setattr(logger, "_compute_logger_metadata", logger._compute_logger_metadata)
     init_test_logger("audio-tests")
     with logger._internal_with_memory_background_logger() as bgl:
         monkeypatch.setattr(logger._state, "_global_bg_logger", logger.LazyValue(lambda: bgl, use_mutex=False))
