@@ -127,6 +127,38 @@ async def test_terminal_upload_failure_preserves_known_placement(memory, monkeyp
 
 
 @pytest.mark.asyncio
+async def test_finish_propagates_cancellation_after_cleanup(memory):
+    entered, cleaned_up = asyncio.Event(), asyncio.Event()
+
+    async def blocking(data, meta, next):
+        entered.set()
+        try:
+            await asyncio.Event().wait()
+        finally:
+            cleaned_up.set()
+
+    session = recording()
+    session.recorder.middleware = (blocking,)
+    session.record("session-input", bytes(96), sample_rate_hz=48000, channels=1, offset_ns=0)
+    finishing = asyncio.create_task(session.finish())
+    try:
+        await asyncio.wait_for(entered.wait(), 5)
+        finishing.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await finishing
+        assert cleaned_up.is_set()
+        assert finishing.cancelled()
+        assert session.recorder.buffered_bytes == 0
+        assert not session.record("session-input", bytes(96), sample_rate_hz=48000, channels=1, offset_ns=0)
+        segment = memory.pop()[0]["metadata"]["audio.segments"]["part-0"]
+        assert segment["state"] == "omitted"
+        assert "attachment" not in segment
+    finally:
+        finishing.cancel()
+        await asyncio.gather(finishing, return_exceptions=True)
+
+
+@pytest.mark.asyncio
 async def test_shutdown_deadline_fences_late_success(memory, monkeypatch):
     entered, release = threading.Event(), threading.Event()
 
