@@ -1,12 +1,33 @@
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, field
 from types import MappingProxyType
 from typing import Any
 
 
+@dataclass(frozen=True, eq=False)
+class _FrozenMapping(Mapping[str, Any]):
+    """A snapshot whose values have been recursively frozen."""
+
+    _data: Mapping[str, Any]
+
+    def __post_init__(self):
+        object.__setattr__(self, "_data", MappingProxyType({key: freeze(value) for key, value in self._data.items()}))
+
+    def __getitem__(self, key: str) -> Any:
+        return self._data[key]
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._data)
+
+    def __len__(self) -> int:
+        return len(self._data)
+
+
 def freeze(value):
+    if isinstance(value, _FrozenMapping):
+        return value
     if isinstance(value, Mapping):
-        return MappingProxyType({key: freeze(item) for key, item in value.items()})
+        return _FrozenMapping(value)
     if isinstance(value, (list, tuple)):
         return tuple(freeze(item) for item in value)
     if value is None or isinstance(value, (str, bool, int, float)):

@@ -7,6 +7,7 @@ import wave
 from array import array
 from dataclasses import replace
 from fractions import Fraction
+from types import MappingProxyType
 
 import pytest
 from braintrust._audio.config import AudioEncoding, AudioRecordingOptions
@@ -107,6 +108,28 @@ async def test_size_threshold_waits_for_watermark_and_congestion_preserves_sampl
     samples.frombytes(b"".join(s.data for s in segments))
     assert samples[::2] == array("h", (value for index in range(20) for value in [index] * 480))
     assert not omitted
+
+
+@pytest.mark.parametrize("mapping", [dict, MappingProxyType])
+def test_segment_attributes_are_reused_and_isolated_from_caller_mutations(mapping):
+    attributes = {"nested": {"list": [1]}}
+    meta = SegmentMeta(0, 0, 48, 48000, (AudioChannel(("input",)),), attributes=mapping(attributes))
+    changed = replace(meta, mime_type="audio/wav")
+    assert changed.attributes is meta.attributes
+
+    attributes["nested"]["list"].append(2)
+    attributes["extra"] = True
+    assert meta.attributes == {"nested": {"list": (1,)}}
+    with pytest.raises(TypeError):
+        meta.attributes["extra"] = True
+    with pytest.raises(TypeError):
+        meta.attributes["nested"]["extra"] = True
+
+    replacement = {"nested": {"list": [3]}}
+    changed = replace(meta, attributes=mapping(replacement))
+    replacement["nested"]["list"].append(4)
+    assert changed.attributes is not meta.attributes
+    assert changed.attributes == {"nested": {"list": (3,)}}
 
 
 @pytest.mark.asyncio
