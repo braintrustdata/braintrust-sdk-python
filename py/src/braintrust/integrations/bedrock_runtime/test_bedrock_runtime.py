@@ -248,6 +248,52 @@ def test_wrap_bedrock_invoke_model_preserves_response_body_and_logs_json(memory_
     assert_metrics_are_valid(span["metrics"], start, end)
 
 
+@pytest.mark.vcr
+def test_wrap_bedrock_invoke_model_titan_embedding_logs_token_metrics(memory_logger):
+    assert not memory_logger.pop()
+    client = wrap_bedrock(_bedrock_client())
+
+    response = client.invoke_model(
+        modelId="amazon.titan-embed-text-v2:0",
+        body=json.dumps({"inputText": "hello", "dimensions": 256}),
+        contentType="application/json",
+        accept="application/json",
+    )
+    response_body = json.loads(response["body"].read())
+    assert len(response_body["embedding"]) == 256
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metrics"]["prompt_tokens"] == 2
+    assert span["metrics"]["tokens"] == 2
+    # The embedding vector is summarized instead of logged in full.
+    assert span["output"] == {"embedding_length": 256, "inputTextTokenCount": 2}
+
+
+@pytest.mark.vcr
+def test_wrap_bedrock_invoke_model_cohere_embedding_summarizes_vectors(memory_logger):
+    assert not memory_logger.pop()
+    client = wrap_bedrock(_bedrock_client())
+
+    response = client.invoke_model(
+        modelId="cohere.embed-english-v3",
+        body=json.dumps({"texts": ["hello", "hi"], "input_type": "search_document"}),
+        contentType="application/json",
+        accept="application/json",
+    )
+    assert len(json.loads(response["body"].read())["embeddings"]) == 2
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    # Cohere reports no token counts in the body; Bedrock sends them in response headers.
+    assert span["metrics"]["prompt_tokens"] == 2
+    assert span["output"]["embedding_count"] == 2
+    assert span["output"]["embedding_length"] == 1024
+    assert "embeddings" not in span["output"]
+
+
 # A 1x1 transparent PNG for image tests.
 _TINY_PNG_BYTES = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
@@ -492,3 +538,23 @@ def test_wrap_bedrock_invoke_model_service_tier(memory_logger):
 @pytest.mark.vcr
 def test_auto_instrument_bedrock_runtime_subprocess():
     verify_autoinstrument_script("test_auto_bedrock_runtime.py", timeout=60)
+
+
+@pytest.mark.parametrize(
+    "output, expected",
+    [
+        ({"embeddings": {"float": [[0.1, 0.2], [0.3, 0.4]]}}, {"embedding_count": 2, "embedding_length": 2}),
+        (
+            {"embeddingsByType": {"binary": [1, 0, 1]}, "inputTextTokenCount": 3},
+            {"embedding_length": 3, "inputTextTokenCount": 3},
+        ),
+        ({"embedding": [0.1, 0.2]}, {"embedding_length": 2}),
+        ({"embeddings": [[0.1, 0.2]]}, {"embedding_count": 1, "embedding_length": 2}),
+        ({"embeddings": {}}, {"embeddings": {}}),
+        ({"message": "text"}, {"message": "text"}),
+    ],
+)
+def test_summarize_embeddings(output, expected):
+    from braintrust.integrations.bedrock_runtime.tracing import _summarize_embeddings
+
+    assert _summarize_embeddings(output) == expected
