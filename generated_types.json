@@ -7311,6 +7311,134 @@
             ],
             "description": "If true, automatically complete a review after every assigned reviewer fills all human review scores visible to them."
           },
+          "user_id_fields": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "minItems": 2,
+              "maxItems": 32,
+              "description": "Path to the application's end-user identifier in metadata or span_attributes, for example [\"metadata\", \"customer_id\"]. This identifies an end user, not a session, request, organization, or the Braintrust user who created the project."
+            }
+          },
+          "pattern_alert_destinations": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "webhook"
+                      ],
+                      "description": "The type of action to take"
+                    },
+                    "url": {
+                      "type": "string",
+                      "description": "The webhook URL to send the request to"
+                    },
+                    "formatting_prompt": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 10000,
+                      "description": "Instructions for Loop to format content sent to this destination"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "url"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "slack"
+                      ],
+                      "description": "The type of action to take"
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "description": "The Slack workspace ID to post to"
+                    },
+                    "channel": {
+                      "type": "string",
+                      "description": "The Slack channel ID to post to"
+                    },
+                    "message_template": {
+                      "type": "string",
+                      "description": "Custom message template for the alert"
+                    },
+                    "formatting_prompt": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 10000,
+                      "description": "Instructions for Loop to format content sent to this destination"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "workspace_id",
+                    "channel"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "pagerduty"
+                      ],
+                      "description": "The type of action to take"
+                    },
+                    "routing_key_secret_name": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "The data-plane secret containing the PagerDuty routing key"
+                    },
+                    "severity": {
+                      "type": "string",
+                      "enum": [
+                        "critical",
+                        "error",
+                        "warning",
+                        "info"
+                      ]
+                    },
+                    "formatting_prompt": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 10000,
+                      "description": "Instructions for Loop to format content sent to this destination"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "routing_key_secret_name",
+                    "severity"
+                  ]
+                }
+              ],
+              "description": "A delivery action available to an automation"
+            },
+            "maxItems": 20,
+            "description": "Project-wide Slack, webhook, and PagerDuty destinations for new and reactivated Pattern alerts. An empty array disables alerts."
+          },
           "default_preprocessor": {
             "$ref": "#/components/schemas/NullableSavedFunctionId"
           }
@@ -10495,7 +10623,8 @@
             ],
             "enum": [
               "patterns",
-              "dashboard"
+              "dashboard",
+              "digest"
             ],
             "description": "The product surface that created and manages the automation"
           },
@@ -10716,6 +10845,21 @@
                 "minLength": 1,
                 "maxLength": 10000,
                 "description": "Instructions for the Loop agent"
+              },
+              "digest": {
+                "type": "object",
+                "properties": {
+                  "writing_style": {
+                    "type": "string",
+                    "enum": [
+                      "compact",
+                      "detailed"
+                    ]
+                  }
+                },
+                "required": [
+                  "writing_style"
+                ]
               },
               "include_trigger_input": {
                 "type": "boolean",

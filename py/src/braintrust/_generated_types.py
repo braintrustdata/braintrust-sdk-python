@@ -2183,6 +2183,63 @@ class ProjectSettingsRemoteEvalSource(TypedDict):
     description: NotRequired[str | None]
 
 
+ProjectSettingsUserIdField: TypeAlias = str
+
+
+class ProjectSettingsPatternAlertDestinations(TypedDict):
+    type: Literal['webhook']
+    """
+    The type of action to take
+    """
+    url: str
+    """
+    The webhook URL to send the request to
+    """
+    formatting_prompt: NotRequired[str | None]
+    """
+    Instructions for Loop to format content sent to this destination
+    """
+
+
+class ProjectSettingsPatternAlertDestinations1(TypedDict):
+    type: Literal['slack']
+    """
+    The type of action to take
+    """
+    workspace_id: str
+    """
+    The Slack workspace ID to post to
+    """
+    channel: str
+    """
+    The Slack channel ID to post to
+    """
+    message_template: NotRequired[str | None]
+    """
+    Custom message template for the alert
+    """
+    formatting_prompt: NotRequired[str | None]
+    """
+    Instructions for Loop to format content sent to this destination
+    """
+
+
+class ProjectSettingsPatternAlertDestinations2(TypedDict):
+    type: Literal['pagerduty']
+    """
+    The type of action to take
+    """
+    routing_key_secret_name: str
+    """
+    The data-plane secret containing the PagerDuty routing key
+    """
+    severity: Literal['critical', 'error', 'warning', 'info']
+    formatting_prompt: NotRequired[str | None]
+    """
+    Instructions for Loop to format content sent to this destination
+    """
+
+
 class ProjectSettings(TypedDict):
     comparison_key: NotRequired[str | None]
     """
@@ -2219,6 +2276,17 @@ class ProjectSettings(TypedDict):
     require_all_human_review_scores: NotRequired[bool | None]
     """
     If true, automatically complete a review after every assigned reviewer fills all human review scores visible to them.
+    """
+    user_id_fields: NotRequired[Sequence[Sequence[ProjectSettingsUserIdField]] | None]
+    pattern_alert_destinations: NotRequired[
+        Sequence[
+            ProjectSettingsPatternAlertDestinations
+            | ProjectSettingsPatternAlertDestinations1
+            | ProjectSettingsPatternAlertDestinations2
+        ]
+    ]
+    """
+    Project-wide Slack, webhook, and PagerDuty destinations for new and reactivated Pattern alerts. An empty array disables alerts.
     """
     default_preprocessor: NotRequired[NullableSavedFunctionId | None]
 
@@ -3402,6 +3470,10 @@ class WindowedAutomationConfigWindow(TypedDict):
     """
 
 
+class WindowedAutomationConfigLoopDigest(TypedDict):
+    writing_style: Literal['compact', 'detailed']
+
+
 class WindowedAutomationConfigLoopTarget(TypedDict):
     type: Literal['dashboard']
     id: Literal['overview']
@@ -3412,6 +3484,7 @@ class WindowedAutomationConfigLoop(TypedDict):
     """
     Instructions for the Loop agent
     """
+    digest: NotRequired[WindowedAutomationConfigLoopDigest | None]
     include_trigger_input: NotRequired[bool | None]
     """
     Whether to include the automation trigger payload as input
@@ -3501,7 +3574,7 @@ class WindowedAutomationConfig(TypedDict):
     """
     The type of automation.
     """
-    product_origin: NotRequired[Literal['patterns', 'dashboard'] | None]
+    product_origin: NotRequired[Literal['patterns', 'dashboard', 'digest'] | None]
     """
     The product surface that created and manages the automation
     """
