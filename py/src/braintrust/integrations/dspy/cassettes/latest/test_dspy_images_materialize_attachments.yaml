@@ -1,15 +1,16 @@
 interactions:
 - request:
-    body: '{"messages":[{"role":"system","content":"Your input fields are:\n1. `image`
-      (Image): \n2. `page` (Page):\nYour output fields are:\n1. `answer` (str):\nAll
-      interactions will be structured in the following way, with the appropriate values
-      filled in.\n\n[[ ## image ## ]]\n{image}\n\n[[ ## page ## ]]\n{page}\n\n[[ ##
-      answer ## ]]\n{answer}\n\n[[ ## completed ## ]]\nIn adhering to this structure,
-      your objective is: \n        Describe the colors in these two page images."},{"role":"user","content":[{"type":"text","text":"[[
-      ## image ## ]]\n"},{"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="}},{"type":"text","text":"\n\n[[
+    body: '{"model":"gpt-4o-mini","messages":[{"role":"system","content":"Your input
+      fields are:\n1. `image` (Image): \n2. `page` (Page):\nYour output fields are:\n1.
+      `answer` (str):\nAll interactions will be structured in the following way, with
+      the appropriate values filled in.\n\n[[ ## image ## ]]\n{image}\n\n[[ ## page
+      ## ]]\n{page}\n\n[[ ## answer ## ]]\n{answer}\n\n[[ ## completed ## ]]\nIn adhering
+      to this structure, your objective is: \n        Describe the colors in these
+      two page images."},{"role":"user","content":[{"type":"text","text":"[[ ## image
+      ## ]]\n"},{"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="}},{"type":"text","text":"\n\n[[
       ## page ## ]]\n{\"number\": 2, \"image\": \""},{"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="}},{"type":"text","text":"\"}\n\nRespond
       with the corresponding output fields, starting with the field `[[ ## answer
-      ## ]]`, and then ending with the marker for `[[ ## completed ## ]]`."}]}],"model":"gpt-4o-mini"}'
+      ## ]]`, and then ending with the marker for `[[ ## completed ## ]]`."}]}]}'
     headers:
       accept:
       - application/json
@@ -34,7 +35,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.54.0
+      - 3.46.0
       x-stainless-raw-response:
       - 'true'
       x-stainless-read-timeout:
@@ -49,18 +50,18 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EalGDvpwMTM1cmOIXawhPVUNjZfUe\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1792430185,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiMm5uH245ZLbw582bTGoKIaNFzuk\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794242685,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"[[ ## answer ## ]]\\nThe image displays
-        a solid color, specifically a vibrant red.\\n\\n[[ ## completed ## ]]\",\n
-        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
-        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        17167,\n    \"completion_tokens\": 22,\n    \"total_tokens\": 17189,\n    \"prompt_tokens_details\":
-        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        \"assistant\",\n        \"content\": \"[[ ## answer ## ]]\\nBoth images display
+        a solid color of bright red.\\n\\n[[ ## completed ## ]]\",\n        \"refusal\":
+        null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
+        \     \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        17167,\n    \"completion_tokens\": 20,\n    \"total_tokens\": 17187,\n    \"prompt_tokens_details\":
+        {\n      \"cached_tokens\": 17152,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_6548d98151\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_5632fb73e4\"\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -71,17 +72,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a4d16e300e7a72fa-SJC
+      - a57e48ae1b182116-YYZ
       connection:
       - keep-alive
       content-length:
-      - '919'
+      - '910'
       content-type:
       - application/json
       date:
-      - Mon, 19 Oct 2026 17:16:25 GMT
+      - Mon, 09 Nov 2026 16:44:46 GMT
       openai-processing-ms:
-      - '746'
+      - '1507'
       openai-version:
       - '2020-10-01'
       server:
@@ -113,7 +114,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_c52ee958b0484dd2b27e8378e17589af
+      - req_54686dbcd5914e4f9e06b9d83eaf32ee
     status:
       code: 200
       message: OK

@@ -15,7 +15,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - AsyncOpenAI/Python 3.24.0
+      - AsyncOpenAI/Python 3.46.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +25,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.24.0
+      - 3.46.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -43,7 +43,7 @@ interactions:
         \   \"param\": null,\n    \"code\": \"model_not_found\"\n  }\n}"
     headers:
       access-control-expose-headers:
-      - X-Request-ID
+      - X-Request-ID, Server-Timing-Total
       - CF-Ray
       - CF-Ray
       alt-svc:
@@ -51,7 +51,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a45d35b71c8e3b8e-YYZ
+      - a57e481bb97228db-YYZ
       connection:
       - keep-alive
       content-length:
@@ -59,9 +59,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 05 Oct 2026 14:45:24 GMT
+      - Mon, 09 Nov 2026 16:44:21 GMT
       openai-processing-ms:
-      - '254'
+      - '124'
       openai-version:
       - '2020-10-01'
       server:
@@ -73,7 +73,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-id:
-      - req_71e553917e794d44ba1211a763ed8642
+      - req_e7e7efef127a446098e95e45325691be
     status:
       code: 404
       message: Not Found

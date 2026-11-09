@@ -16,19 +16,20 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - litellm/1.106.0
+      - litellm/1.108.3
     method: POST
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_078d3dea4766e2ff006ad6504863cc87d0953c2f1b66b78499\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1792430152,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0c45dbe98b0d2f7a016af1f83ab3dc87d2950ce0759353026e\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1794242618,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1792430152,\n  \"error\":
-        null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
-        \"Just the number please\",\n  \"max_output_tokens\": null,\n  \"max_tool_calls\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794242619,\n  \"error\":
+        null,\n  \"frequency_penalty\": 0.0,\n  \"image\": {\n    \"context_compression\":
+        \"disabled\"\n  },\n  \"incomplete_details\": null,\n  \"instructions\": \"Just
+        the number please\",\n  \"max_output_tokens\": null,\n  \"max_tool_calls\":
         null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n
-        \ \"output\": [\n    {\n      \"id\": \"msg_078d3dea4766e2ff006ad65048c87887d0a323185784ef3055\",\n
+        \ \"output\": [\n    {\n      \"id\": \"msg_0c45dbe98b0d2f7a016af1f83b4fd087d2b002256834d9a3c8\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"24\"\n        }\n
@@ -37,7 +38,7 @@ interactions:
         null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
         \   \"context\": null,\n    \"effort\": null,\n    \"summary\": null\n  },\n
         \ \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n  \"store\":
-        true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
+        false,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
         \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
         \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\":
         0,\n      \"input_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
@@ -52,7 +53,7 @@ interactions:
         {}\n}"
     headers:
       access-control-expose-headers:
-      - X-Request-ID
+      - X-Request-ID, Server-Timing-Total
       - CF-Ray
       - CF-Ray
       alt-svc:
@@ -60,17 +61,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a4d16d63495dfb34-SJC
+      - a57e470e7d47de44-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2018'
+      - '2075'
       content-type:
       - application/json
       date:
-      - Mon, 19 Oct 2026 17:15:53 GMT
+      - Mon, 09 Nov 2026 16:43:39 GMT
       openai-processing-ms:
-      - '603'
+      - '693'
       openai-version:
       - '2020-10-01'
       server:
@@ -88,13 +89,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999960'
+      - '149999957'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_52eaccaf6a004f1db7cfba6d189646f3
+      - req_177a6181a7b74ff287e1b4d67ab0e2bc
     status:
       code: 200
       message: OK

@@ -6,7 +6,7 @@ interactions:
       accept:
       - '*/*'
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
@@ -16,11 +16,11 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.34.0 gl-python/3.14.7
+      - google-genai-sdk/3.0.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/2.34.0 gl-python/3.14.7
+      - google-genai-sdk/3.0.0 gl-python/3.14.7
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:streamGenerateContent?alt=sse
+    uri: https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-lite:streamGenerateContent?alt=sse
   response:
     body:
       string: "data: {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"The
@@ -28,12 +28,12 @@ interactions:
         {\"promptTokenCount\": 8,\"candidatesTokenCount\": 6,\"totalTokenCount\":
         14,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\": 8}],\"serviceTier\":
         \"standard\"},\"modelVersion\": \"gemini-2.5-flash-lite\",\"responseId\":
-        \"q5Toatm8Do3R0_gP0LLh2Qk\"}\r\n\r\ndata: {\"candidates\": [{\"content\":
+        \"rPzxauKRApzLytMP1vzWmQ4\"}\r\n\r\ndata: {\"candidates\": [{\"content\":
         {\"parts\": [{\"text\": \"Paris**.\"}],\"role\": \"model\"},\"finishReason\":
         \"STOP\",\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\": 8,\"candidatesTokenCount\":
         8,\"totalTokenCount\": 16,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
         8}],\"serviceTier\": \"standard\"},\"modelVersion\": \"gemini-2.5-flash-lite\",\"responseId\":
-        \"q5Toatm8Do3R0_gP0LLh2Qk\"}\r\n\r\n"
+        \"rPzxauKRApzLytMP1vzWmQ4\"}\r\n\r\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
@@ -42,11 +42,11 @@ interactions:
       content-type:
       - text/event-stream
       date:
-      - Mon, 02 Nov 2026 13:48:27 GMT
+      - Mon, 09 Nov 2026 17:02:36 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=407
+      - gfet4t7; dur=434
       transfer-encoding:
       - chunked
       vary:

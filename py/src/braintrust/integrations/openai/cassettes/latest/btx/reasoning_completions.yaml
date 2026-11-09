@@ -20,20 +20,21 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EfoS71mGBQexHsZNa0Zy3W7KGTcSW\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1793634095,\n  \"model\": \"gpt-6-luna\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiMn2n8YEWQYe7cjsFyYmnJg8BW9H\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794242744,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"The terms follow the pattern \\\\(1\\\\cdot2,\\\\;2\\\\cdot3,\\\\;3\\\\cdot4,\\\\;4\\\\cdot5,\\\\;5\\\\cdot6\\\\).
-        So, starting with \\\\(n=1\\\\), the \\\\(n\\\\)th term is\\n\\n\\\\[\\na_n=n(n+1).\\n\\\\]\\n\\nThe
-        differences between consecutive terms are \\\\(4,6,8,10,\\\\ldots\\\\), increasing
-        by 2 each time.\",\n        \"refusal\": null,\n        \"annotations\": []\n
-        \     },\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n
-        \   \"prompt_tokens\": 41,\n    \"completion_tokens\": 173,\n    \"total_tokens\":
-        214,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\": 0,\n      \"cache_write_tokens\":
-        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 67,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": null\n}\n"
+        \"assistant\",\n        \"content\": \"The differences are \\\\(4, 6, 8, 10\\\\),
+        increasing by 2 each time. The terms follow the pattern \\\\(1\\\\cdot2,\\\\
+        2\\\\cdot3,\\\\ 3\\\\cdot4,\\\\ldots\\\\), so the \\\\(n\\\\)th term is\\n\\n\\\\[\\na_n=n(n+1).\\n\\\\]\\n\\nThe
+        next term is \\\\(6\\\\cdot7=\\\\boxed{42}\\\\).\",\n        \"refusal\":
+        null,\n        \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 41,\n    \"completion_tokens\":
+        143,\n    \"total_tokens\": 184,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"cache_write_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n
+        \   \"completion_tokens_details\": {\n      \"reasoning_tokens\": 44,\n      \"audio_tokens\":
+        0,\n      \"accepted_prediction_tokens\": 0,\n      \"rejected_prediction_tokens\":
+        0\n    }\n  },\n  \"service_tier\": \"default\",\n  \"system_fingerprint\":
+        null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -42,13 +43,13 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '1062'
+      - '1034'
       content-type:
       - application/json
       date:
-      - Mon, 02 Nov 2026 15:41:37 GMT
+      - Mon, 09 Nov 2026 16:45:47 GMT
       openai-processing-ms:
-      - '2080'
+      - '2644'
       openai-version:
       - '2020-10-01'
       server:

@@ -12,7 +12,7 @@ interactions:
       accept:
       - '*/*'
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
@@ -22,9 +22,72 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.34.0 gl-python/3.14.7
+      - google-genai-sdk/3.0.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/2.34.0 gl-python/3.14.7
+      - google-genai-sdk/3.0.0 gl-python/3.14.7
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent
+  response:
+    body:
+      string: "{\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Function
+        calling is not enabled for api version v1. Use api version v1beta instead.\",\n
+        \   \"status\": \"INVALID_ARGUMENT\"\n  }\n}\n"
+    headers:
+      alt-svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      content-length:
+      - '173'
+      content-type:
+      - application/json; charset=UTF-8
+      date:
+      - Mon, 09 Nov 2026 17:02:45 GMT
+      server:
+      - scaffolding on HTTPServer2
+      server-timing:
+      - gfet4t7; dur=221
+      transfer-encoding:
+      - chunked
+      vary:
+      - Origin
+      - X-Origin
+      - Referer
+      x-content-type-options:
+      - nosniff
+      x-frame-options:
+      - SAMEORIGIN
+      x-gemini-service-tier:
+      - standard
+      x-xss-protection:
+      - '0'
+    status:
+      code: 400
+      message: Bad Request
+- request:
+    body: '{"contents": [{"parts": [{"text": "What is 127 multiplied by 49?"}], "role":
+      "user"}], "tools": [{"functionDeclarations": [{"description": "Perform a mathematical
+      calculation", "name": "calculate", "parameters_json_schema": {"type": "object",
+      "properties": {"operation": {"type": "string", "enum": ["add", "subtract", "multiply",
+      "divide"], "description": "The mathematical operation"}, "a": {"type": "number",
+      "description": "First number"}, "b": {"type": "number", "description": "Second
+      number"}}, "required": ["operation", "a", "b"]}}]}], "generationConfig": {"maxOutputTokens":
+      500}}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '588'
+      content-type:
+      - application/json
+      host:
+      - generativelanguage.googleapis.com
+      user-agent:
+      - google-genai-sdk/3.0.0 gl-python/3.14.7
+      x-goog-api-client:
+      - google-genai-sdk/3.0.0 gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
   response:
@@ -33,27 +96,27 @@ interactions:
         [\n          {\n            \"functionCall\": {\n              \"name\": \"calculate\",\n
         \             \"args\": {\n                \"b\": 49,\n                \"operation\":
         \"multiply\",\n                \"a\": 127\n              }\n            },\n
-        \           \"thoughtSignature\": \"CokCAWkUfRO6M6p1wNvpAQv2kqREXIZnfqkirbxiBA07jKucv7JFigOdGzLvXh+Wnsuxel3SvcpmHcRc7BfYTGzCCsmsDbwZnau4tGQikhpZBM05nMT23vHwKbwFbn38PsypBwqZUAfaAaUWHxUF81fYFIvodSPvFkg7EYSmor/MhDi19/HtzcMjZjtvYsD4RAcs9kjFeuyJ68hnS62/Yw5Krgri/koQPeIdBLOKrQWz0QgJczlo+pzq9Z0xRJzUymd2wpmjs5BFmBIJCe0RWXMvgVEGGtGP0vsYjW+sKfdUOepoVlPHb3F/YKQ3+dWo6Rl5YG4qIQO51T1FA1SWQ6hwS68PoWjHt9FwqQ==\"\n
+        \           \"thoughtSignature\": \"CscBAWkUfRP87MJsRPznl9lC0xV5P5gdAms3JZdJ3pOaLbhoNz37wqpdzIfNcLxS4vipYjBS1Wh6s6JGx1EfmIZ56TnJfD11WXcrCqBqlkHA59CJL9l1xN2Ioin+8dGgz5g4bP11XUVD3cLVXwEEYtAxVzZ9S+pWQxYkWFidDX4PY9gtQ+nCNynDPPUqiYFAZGKfBc24DqtJXqDhdKu0rE5q9JEPyhX5ujr1u6qviou/8gBaSueNwbiMq0b61yM1zHgCYH5RFgasnw==\"\n
         \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
         \"STOP\",\n      \"index\": 0,\n      \"finishMessage\": \"Model generated
         function call(s).\"\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
-        84,\n    \"candidatesTokenCount\": 26,\n    \"totalTokenCount\": 162,\n    \"promptTokensDetails\":
+        84,\n    \"candidatesTokenCount\": 26,\n    \"totalTokenCount\": 155,\n    \"promptTokensDetails\":
         [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 84\n
-        \     }\n    ],\n    \"thoughtsTokenCount\": 52,\n    \"serviceTier\": \"standard\"\n
-        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"uZToaoivEuKO1sgPg8b9CA\"\n}\n"
+        \     }\n    ],\n    \"thoughtsTokenCount\": 45,\n    \"serviceTier\": \"standard\"\n
+        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"E_3xaoTTEN6qytMP2-XHyQM\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '1216'
+      - '1129'
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Mon, 02 Nov 2026 13:48:41 GMT
+      - Mon, 09 Nov 2026 17:04:20 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=758
+      - gfet4t7; dur=907
       transfer-encoding:
       - chunked
       vary:
@@ -74,7 +137,7 @@ interactions:
 - request:
     body: '{"contents": [{"parts": [{"text": "What is 127 multiplied by 49?"}], "role":
       "user"}, {"parts": [{"functionCall": {"args": {"b": 49, "operation": "multiply",
-      "a": 127}, "name": "calculate"}, "thoughtSignature": "CokCAWkUfRO6M6p1wNvpAQv2kqREXIZnfqkirbxiBA07jKucv7JFigOdGzLvXh-Wnsuxel3SvcpmHcRc7BfYTGzCCsmsDbwZnau4tGQikhpZBM05nMT23vHwKbwFbn38PsypBwqZUAfaAaUWHxUF81fYFIvodSPvFkg7EYSmor_MhDi19_HtzcMjZjtvYsD4RAcs9kjFeuyJ68hnS62_Yw5Krgri_koQPeIdBLOKrQWz0QgJczlo-pzq9Z0xRJzUymd2wpmjs5BFmBIJCe0RWXMvgVEGGtGP0vsYjW-sKfdUOepoVlPHb3F_YKQ3-dWo6Rl5YG4qIQO51T1FA1SWQ6hwS68PoWjHt9FwqQ=="}],
+      "a": 127}, "name": "calculate"}, "thoughtSignature": "CscBAWkUfRP87MJsRPznl9lC0xV5P5gdAms3JZdJ3pOaLbhoNz37wqpdzIfNcLxS4vipYjBS1Wh6s6JGx1EfmIZ56TnJfD11WXcrCqBqlkHA59CJL9l1xN2Ioin-8dGgz5g4bP11XUVD3cLVXwEEYtAxVzZ9S-pWQxYkWFidDX4PY9gtQ-nCNynDPPUqiYFAZGKfBc24DqtJXqDhdKu0rE5q9JEPyhX5ujr1u6qviou_8gBaSueNwbiMq0b61yM1zHgCYH5RFgasnw=="}],
       "role": "model"}, {"parts": [{"functionResponse": {"name": "calculate", "response":
       {"result": 6223}}}], "role": "user"}], "tools": [{"functionDeclarations": [{"description":
       "Perform a mathematical calculation", "name": "calculate", "parameters_json_schema":
@@ -87,19 +150,19 @@ interactions:
       accept:
       - '*/*'
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
-      - '1201'
+      - '1113'
       content-type:
       - application/json
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.34.0 gl-python/3.14.7
+      - google-genai-sdk/3.0.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/2.34.0 gl-python/3.14.7
+      - google-genai-sdk/3.0.0 gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
   response:
@@ -111,7 +174,7 @@ interactions:
         126,\n    \"candidatesTokenCount\": 15,\n    \"totalTokenCount\": 141,\n    \"promptTokensDetails\":
         [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 126\n
         \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
-        \"gemini-2.5-flash\",\n  \"responseId\": \"upToat--BcmP1sgPhvCLsQM\"\n}\n"
+        \"gemini-2.5-flash\",\n  \"responseId\": \"FP3xaovwDYS1ytMPvfzL2AM\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
@@ -120,11 +183,11 @@ interactions:
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Mon, 02 Nov 2026 13:48:42 GMT
+      - Mon, 09 Nov 2026 17:04:20 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=543
+      - gfet4t7; dur=512
       transfer-encoding:
       - chunked
       vary:

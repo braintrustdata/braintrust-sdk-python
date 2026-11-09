@@ -106,7 +106,7 @@ interactions:
       accept:
       - '*/*'
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
@@ -116,16 +116,163 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.34.0 gl-python/3.14.7
+      - google-genai-sdk/3.0.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/2.34.0 gl-python/3.14.7
+      - google-genai-sdk/3.0.0 gl-python/3.14.7
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1/cachedContents
+  response:
+    body:
+      string: ''
+    headers:
+      alt-svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      content-length:
+      - '0'
+      content-type:
+      - text/html
+      date:
+      - Mon, 09 Nov 2026 17:02:58 GMT
+      server:
+      - scaffolding on HTTPServer2
+      server-timing:
+      - gfet4t7; dur=22
+      x-content-type-options:
+      - nosniff
+      x-frame-options:
+      - SAMEORIGIN
+      x-xss-protection:
+      - '0'
+    status:
+      code: 404
+      message: Not Found
+- request:
+    body: '{"model": "models/gemini-2.5-flash", "ttl": "300s", "displayName": "braintrust-google-genai-vcr-test",
+      "contents": [{"parts": [{"text": "The sky is blue because molecules scatter
+      blue light. The sky is blue because molecules scatter blue light. The sky is
+      blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. The sky is blue because molecules
+      scatter blue light. The sky is blue because molecules scatter blue light. The
+      sky is blue because molecules scatter blue light. "}], "role": "user"}]}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '8259'
+      content-type:
+      - application/json
+      host:
+      - generativelanguage.googleapis.com
+      user-agent:
+      - google-genai-sdk/3.0.0 gl-python/3.14.7
+      x-goog-api-client:
+      - google-genai-sdk/3.0.0 gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/cachedContents
   response:
     body:
-      string: "{\n  \"name\": \"cachedContents/j432ngigun19bxl2xi6tegzqcsntsxmf67o6j563\",\n
-        \ \"model\": \"models/gemini-2.5-flash\",\n  \"createTime\": \"2026-11-02T13:49:18.571306Z\",\n
-        \ \"updateTime\": \"2026-11-02T13:49:18.571306Z\",\n  \"expireTime\": \"2026-11-02T13:54:17.957662496Z\",\n
+      string: "{\n  \"name\": \"cachedContents/6hp5dztdf6csxchxbs0nkch1pfpmqvay02fwsm9f\",\n
+        \ \"model\": \"models/gemini-2.5-flash\",\n  \"createTime\": \"2026-11-09T17:04:53.992035Z\",\n
+        \ \"updateTime\": \"2026-11-09T17:04:53.992035Z\",\n  \"expireTime\": \"2026-11-09T17:09:53.247022035Z\",\n
         \ \"displayName\": \"braintrust-google-genai-vcr-test\",\n  \"usageMetadata\":
         {\n    \"totalTokenCount\": 1502\n  }\n}\n"
     headers:
@@ -136,11 +283,11 @@ interactions:
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Mon, 02 Nov 2026 13:49:18 GMT
+      - Mon, 09 Nov 2026 17:04:54 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=935
+      - gfet4t7; dur=1164
       transfer-encoding:
       - chunked
       vary:
@@ -158,13 +305,13 @@ interactions:
       message: OK
 - request:
     body: '{"contents": [{"parts": [{"text": "In one sentence, why is the sky blue?"}],
-      "role": "user"}], "cachedContent": "cachedContents/j432ngigun19bxl2xi6tegzqcsntsxmf67o6j563",
+      "role": "user"}], "cachedContent": "cachedContents/6hp5dztdf6csxchxbs0nkch1pfpmqvay02fwsm9f",
       "generationConfig": {"maxOutputTokens": 100}}'
     headers:
       accept:
       - '*/*'
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
@@ -174,37 +321,37 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.34.0 gl-python/3.14.7
+      - google-genai-sdk/3.0.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/2.34.0 gl-python/3.14.7
+      - google-genai-sdk/3.0.0 gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"The sky is\"\n          }\n        ],\n
+        [\n          {\n            \"text\": \"The sky\"\n          }\n        ],\n
         \       \"role\": \"model\"\n      },\n      \"finishReason\": \"MAX_TOKENS\",\n
         \     \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
-        1513,\n    \"candidatesTokenCount\": 3,\n    \"totalTokenCount\": 1609,\n
+        1513,\n    \"candidatesTokenCount\": 2,\n    \"totalTokenCount\": 1609,\n
         \   \"cachedContentTokenCount\": 1502,\n    \"promptTokensDetails\": [\n      {\n
         \       \"modality\": \"TEXT\",\n        \"tokenCount\": 1513\n      }\n    ],\n
         \   \"cacheTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
         \       \"tokenCount\": 1502\n      }\n    ],\n    \"thoughtsTokenCount\":
-        93,\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash\",\n
-        \ \"responseId\": \"3pToasLENpi-xdIPtcDF2Qk\"\n}\n"
+        94,\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash\",\n
+        \ \"responseId\": \"Nv3xaqz4EvOuxdIPyoCQ0Ao\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '737'
+      - '734'
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Mon, 02 Nov 2026 13:49:19 GMT
+      - Mon, 09 Nov 2026 17:04:55 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=1018
+      - gfet4t7; dur=1035
       transfer-encoding:
       - chunked
       vary:
@@ -228,7 +375,7 @@ interactions:
       accept:
       - '*/*'
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-type:
@@ -236,11 +383,11 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.34.0 gl-python/3.14.7
+      - google-genai-sdk/3.0.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/2.34.0 gl-python/3.14.7
+      - google-genai-sdk/3.0.0 gl-python/3.14.7
     method: DELETE
-    uri: https://generativelanguage.googleapis.com/v1beta/cachedContents/j432ngigun19bxl2xi6tegzqcsntsxmf67o6j563
+    uri: https://generativelanguage.googleapis.com/v1beta/cachedContents/6hp5dztdf6csxchxbs0nkch1pfpmqvay02fwsm9f
   response:
     body:
       string: '{}
@@ -254,11 +401,11 @@ interactions:
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Mon, 02 Nov 2026 13:49:20 GMT
+      - Mon, 09 Nov 2026 17:04:55 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=293
+      - gfet4t7; dur=341
       transfer-encoding:
       - chunked
       vary:

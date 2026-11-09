@@ -21,7 +21,7 @@ interactions:
       host:
       - api.anthropic.com
       user-agent:
-      - Anthropic/Python 2.3.0
+      - Anthropic/Python 2.6.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -31,7 +31,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.3.0
+      - 2.6.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -46,26 +46,29 @@ interactions:
     uri: https://api.anthropic.com/v1/messages
   response:
     body:
-      string: '{"model":"claude-haiku-4-5-20251001","id":"msg_011CgQrrJMnbc1kU5xirCULz","type":"message","role":"assistant","content":[{"type":"mcp_tool_listing","mcp_server_name":"braintrust-test","tools":[{"name":"ask_wiki_question","description":"Ask
+      string: '{"model":"claude-haiku-4-5-20251001","id":"msg_011CgshRGiutK9WGzAy7qmnA","type":"message","role":"assistant","content":[{"type":"mcp_tool_listing","mcp_server_name":"braintrust-test","tools":[{"name":"ask_wiki_question","description":"Ask
         any question about a GitHub repository''s codebase and get an AI-powered answer\ngrounded
-        in its DeepWiki.","input_schema":{"properties":{"repoName":{"anyOf":[{"type":"string"},{"items":{"type":"string"},"type":"array"}],"description":"GitHub
+        in its DeepWiki.","input_schema":{"type":"object","additionalProperties":false,"properties":{"repoName":{"anyOf":[{"type":"string"},{"items":{"type":"string"},"type":"array"}],"description":"GitHub
         repository or list of repositories (max 10) in owner/repo format."},"question":{"description":"The
-        question to ask about the repository.","type":"string"}},"required":["repoName","question"],"type":"object"}},{"name":"read_wiki_contents","description":"View
-        documentation about a GitHub repository.","input_schema":{"properties":{"repoName":{"description":"GitHub
-        repository in owner/repo format (e.g. \"facebook/react\").","type":"string"}},"required":["repoName"],"type":"object"}},{"name":"read_wiki_structure","description":"Get
-        a list of documentation topics for a GitHub repository.","input_schema":{"properties":{"repoName":{"description":"GitHub
-        repository in owner/repo format (e.g. \"facebook/react\").","type":"string"}},"required":["repoName"],"type":"object"}}]},{"type":"mcp_tool_use","id":"mcptoolu_01XNKRHvkyY15zpuU5Wpr9Da","name":"ask_wiki_question","input":{"repoName":"braintrustdata/braintrust-sdk-python","question":"What
-        language is the SDK written in?"},"server_name":"braintrust-test"},{"type":"mcp_tool_result","tool_use_id":"mcptoolu_01XNKRHvkyY15zpuU5Wpr9Da","is_error":false,"content":[{"type":"text","text":"The
-        Braintrust SDK is primarily written in Python.  This is evident from the repository
-        name `braintrust-sdk-python`  and the file structure, which includes a `py/`
-        directory containing the main package.    The SDK is published as the `braintrust`
-        package on PyPI and targets Python 3.10+. \n\n## Notes\n\nThe provided context
-        clearly indicates that the SDK is a Python SDK.  The `setup.py` file also
-        specifies `python_requires=\">=3.10.0\"`, further confirming the language.
-        \n\nWiki pages you might want to explore:\n- [Overview (braintrustdata/braintrust-sdk-python)](/wiki/braintrustdata/braintrust-sdk-python#1)\n\nView
-        this search on DeepWiki: https://deepwiki.com/search/what-language-is-the-sdk-writt_1bd1a01c-85e3-4c60-97b9-2ba4d4ffc658\n"}]},{"type":"text","text":"The
-        Braintrust SDK for Python is written in **Python**. Specifically, it targets
-        Python 3.10 and above, and is published as the `braintrust` package on PyPI."}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":2102,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":147,"service_tier":"standard","inference_geo":"not_available","speed":"standard","server_tool_use":{"web_search_requests":0,"web_fetch_requests":0}},"diagnostics":null}'
+        question to ask about the repository.","type":"string"}},"required":["repoName","question"]}},{"name":"read_wiki_contents","description":"View
+        documentation about a GitHub repository.","input_schema":{"type":"object","additionalProperties":false,"properties":{"repoName":{"description":"GitHub
+        repository in owner/repo format (e.g. \"facebook/react\").","type":"string"}},"required":["repoName"]}},{"name":"read_wiki_structure","description":"Get
+        a list of documentation topics for a GitHub repository.","input_schema":{"type":"object","additionalProperties":false,"properties":{"repoName":{"description":"GitHub
+        repository in owner/repo format (e.g. \"facebook/react\").","type":"string"}},"required":["repoName"]}}]},{"type":"mcp_tool_use","id":"mcptoolu_012pkCnfKAf7a8fKdQW17mP6","name":"ask_wiki_question","input":{"repoName":"braintrustdata/braintrust-sdk-python","question":"What
+        language is the SDK written in?"},"server_name":"braintrust-test"},{"type":"mcp_tool_result","tool_use_id":"mcptoolu_012pkCnfKAf7a8fKdQW17mP6","is_error":false,"content":[{"type":"text","text":"The
+        Braintrust SDK is primarily written in Python . This is indicated by the `python_requires`
+        field in the `setup.py` file, which specifies `\">=3.10.0\"` . Additionally,
+        the project structure, with a `py/` directory containing the main package
+        `py/src/braintrust/`, further confirms its Python implementation .\n\n## Notes\n\nThe
+        codebase also contains integration packages like `braintrust-langchain` ,
+        which is also written in Python and has a dependency on the core `braintrust`
+        SDK .\n\nWiki pages you might want to explore:\n- [Overview (braintrustdata/braintrust-sdk-python)](/wiki/braintrustdata/braintrust-sdk-python#1)\n-
+        [LangChain Integration (braintrustdata/braintrust-sdk-python)](/wiki/braintrustdata/braintrust-sdk-python#6.3)\n\nView
+        this search on DeepWiki: https://deepwiki.com/search/what-language-is-the-sdk-writt_370673d4-2704-4f0d-93d8-b21f0780e66c\n"}]},{"type":"text","text":"The
+        **Braintrust SDK for Python** is written in **Python**. It requires Python
+        3.10.0 or higher, as specified in the project''s setup.py file. The SDK also
+        includes integration packages like braintrust-langchain, which are also built
+        in Python."}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":2185,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":165,"service_tier":"standard","inference_geo":"not_available","speed":"standard","server_tool_use":{"web_search_requests":0,"web_fetch_requests":0}},"diagnostics":null}'
     headers:
       anthropic-organization-id:
       - 27796668-7351-40ac-acc4-024aee8995a5
@@ -74,51 +77,51 @@ interactions:
       anthropic-ratelimit-input-tokens-remaining:
       - '9999000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-10-26T12:37:27Z'
+      - '2026-11-09T16:49:48Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-10-26T12:37:27Z'
+      - '2026-11-09T16:49:49Z'
       anthropic-ratelimit-requests-limit:
       - '20000'
       anthropic-ratelimit-requests-remaining:
       - '19999'
       anthropic-ratelimit-requests-reset:
-      - '2026-10-26T12:37:17Z'
+      - '2026-11-09T16:49:38Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
       - '11999000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-10-26T12:37:27Z'
+      - '2026-11-09T16:49:48Z'
       anthropic-workspace-id:
       - wrkspc_018bFG1FgNVWqx5pthtdGTzS
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a50982e65c6eaafd-YYZ
+      - a57e4fd16f06c8b2-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2989'
+      - '3289'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - application/json
       date:
-      - Mon, 26 Oct 2026 12:37:27 GMT
+      - Mon, 09 Nov 2026 16:49:49 GMT
       request-id:
-      - req_011CgQrrJ5udu4bVMi99YbEv
+      - req_011CgshRGVmP8X7qkt7Z6dRQ
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=11989
+      - x-originResponse;dur=11848
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-76e1081d2ef5abaddc5c98deefccb708-5130a044c134c19a-01
+      - 00-1295c5bfa0efbdf0ac50e3f424fbba98-027332d19968cf34-01
       transfer-encoding:
       - chunked
       vary:

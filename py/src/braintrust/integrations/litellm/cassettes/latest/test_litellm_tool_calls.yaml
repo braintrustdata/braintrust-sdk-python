@@ -1,6 +1,7 @@
 interactions:
 - request:
-    body: '{"messages":[{"role":"user","content":"What''s the weather in New York?"}],"model":"gpt-4o-mini","temperature":0,"tools":[{"type":"function","function":{"name":"get_weather","description":"Get
+    body: '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"What''s the
+      weather in New York?"}],"temperature":0,"tools":[{"type":"function","function":{"name":"get_weather","description":"Get
       the weather for a location","parameters":{"type":"object","properties":{"location":{"type":"string","description":"The
       location to get weather for"}},"required":["location"]}}}]}'
     headers:
@@ -17,7 +18,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 2.54.0
+      - OpenAI/Python 3.46.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -27,7 +28,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.54.0
+      - 3.46.0
       x-stainless-raw-response:
       - 'true'
       x-stainless-read-timeout:
@@ -42,11 +43,11 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EalFlBaDq6kSmfQ7s6flowisgMVBi\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1792430157,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiMlauq4qDkDCsE41ySGEBJbcumQN\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794242654,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
-        \           \"id\": \"call_bYx3wlXyBYmjYEtfaiQIwXA6\",\n            \"type\":
+        \           \"id\": \"call_mjZBJBZ9oOtPTukR77OHiAIF\",\n            \"type\":
         \"function\",\n            \"function\": {\n              \"name\": \"get_weather\",\n
         \             \"arguments\": \"{\\\"location\\\":\\\"New York\\\"}\"\n            }\n
         \         }\n        ],\n        \"refusal\": null,\n        \"annotations\":
@@ -56,7 +57,7 @@ interactions:
         0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_734e12a708\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_40057a9dcc\"\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -67,7 +68,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a4d16d80ad4f909c-SJC
+      - a57e47eddb1aade0-YYZ
       connection:
       - keep-alive
       content-length:
@@ -75,9 +76,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 19 Oct 2026 17:15:57 GMT
+      - Mon, 09 Nov 2026 16:44:15 GMT
       openai-processing-ms:
-      - '656'
+      - '914'
       openai-version:
       - '2020-10-01'
       server:
@@ -95,15 +96,15 @@ interactions:
       x-ratelimit-limit-tokens:
       - '150000000'
       x-ratelimit-remaining-requests:
-      - '29997'
+      - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999910'
+      - '149999990'
       x-ratelimit-reset-requests:
-      - 6ms
+      - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_126539acd33f4ebbb25009a89dc7f1ed
+      - req_b1ba395725b54de49e9667a5916e0e92
     status:
       code: 200
       message: OK
