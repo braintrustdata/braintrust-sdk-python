@@ -46,6 +46,19 @@ LATEST_ONLY = pytest.mark.skipif(
     reason="model is only covered by the latest google-genai matrix entry",
 )
 
+
+def _v1beta_client():
+    """Client pinned to the Developer API ``v1beta`` surface.
+
+    google-genai 3.0 switched the Developer API default to ``v1``, which rejects
+    tools, system instructions, thinking, speech config, code execution, cached
+    content, and parts of the Interactions API ("... is not enabled for api
+    version v1. Use api version v1beta instead."). ``v1beta`` was the default
+    before 3.0, so older matrix versions keep requesting the same URLs.
+    """
+    return Client(http_options=types.HttpOptions(api_version="v1beta"))
+
+
 # google-genai 2.20.0 restricted ``generate_images`` to Vertex AI ("Gemini
 # Enterprise Agent Platform") mode.  On the Developer API (API-key) path it now
 # raises ValueError client-side before issuing a request, so the call cannot be
@@ -612,7 +625,7 @@ async def test_tool_use(memory_logger, mode):
     """Test function calling / tool use in sync and async modes."""
     assert not memory_logger.pop()
 
-    client = Client()
+    client = _v1beta_client()
     start = time.time()
     has_function_call = False
 
@@ -678,7 +691,7 @@ def test_system_prompt(memory_logger):
     """Test system instruction handling."""
     assert not memory_logger.pop()
 
-    client = Client()
+    client = _v1beta_client()
     response = client.models.generate_content(
         model=MODEL,
         contents="Tell me about the weather.",
@@ -793,7 +806,7 @@ def test_tool_use_with_result(memory_logger):
     assert not memory_logger.pop()
     model = TOOL_MODEL
 
-    client = Client()
+    client = _v1beta_client()
 
     function = types.FunctionDeclaration(
         name="calculate",
@@ -872,7 +885,7 @@ def test_reasoning(memory_logger):
     """Verify reasoning-enabled responses log reasoning metrics across follow-up calls."""
     assert not memory_logger.pop()
 
-    client = Client()
+    client = _v1beta_client()
 
     first_prompt = (
         "Look at this sequence: 2, 6, 12, 20, 30. What is the pattern and what would be the formula for the nth term?"
@@ -929,7 +942,7 @@ def test_generated_audio_usage(memory_logger):
     """Map Google candidate-side audio modality details to completion_audio_tokens."""
     assert not memory_logger.pop()
 
-    client = Client()
+    client = _v1beta_client()
     response = client.models.generate_content(
         model=GENERATED_AUDIO_MODEL,
         contents="Read this sentence aloud in a warm voice: Hello and welcome to Braintrust.",
@@ -1094,7 +1107,7 @@ def test_generate_content_stream_preserves_code_execution_parts():
 def test_generate_content_stream_code_execution_part_order(memory_logger):
     assert not memory_logger.pop()
 
-    client = Client()
+    client = _v1beta_client()
     model = "gemini-2.5-flash"
     chunks = list(
         client.models.generate_content_stream(
@@ -1214,7 +1227,7 @@ def _assert_url_context_metadata(span_output):
 def test_url_context_metadata_stream(memory_logger):
     assert not memory_logger.pop()
 
-    client = Client()
+    client = _v1beta_client()
     stream = client.models.generate_content_stream(
         model=GROUNDING_MODEL,
         contents="Summarize the article at https://ai.google.dev/gemini-api/docs/url-context",
@@ -1238,7 +1251,7 @@ def test_url_context_metadata_stream(memory_logger):
 async def test_url_context_metadata_async_stream(memory_logger):
     assert not memory_logger.pop()
 
-    client = Client()
+    client = _v1beta_client()
     stream = await client.aio.models.generate_content_stream(
         model=GROUNDING_MODEL,
         contents="Summarize the article at https://ai.google.dev/gemini-api/docs/url-context",
@@ -1269,7 +1282,7 @@ async def test_google_search_grounding(memory_logger, mode):
     """Test that Google Search grounding metadata is captured in span output."""
     assert not memory_logger.pop()
 
-    client = Client()
+    client = _v1beta_client()
     start = time.time()
 
     usage_metadata = None
@@ -1362,7 +1375,7 @@ def test_cached_content_usage_metadata(memory_logger):
     """Preserve Google's cache modality details as provider-specific metadata."""
     assert not memory_logger.pop()
 
-    client = Client()
+    client = _v1beta_client()
     cached_content = client.caches.create(
         model=REASONING_MODEL,
         config=types.CreateCachedContentConfig(
@@ -1429,7 +1442,7 @@ def _function_result_content(**kwargs):
 def test_interactions_create_and_get(memory_logger):
     assert not memory_logger.pop()
 
-    client = Client()
+    client = _v1beta_client()
     response = client.interactions.create(
         model=INTERACTIONS_MODEL,
         input="What is the capital of France?",
@@ -1511,7 +1524,7 @@ def test_interactions_create_stream(memory_logger):
 def test_interactions_tool_call_and_follow_up(memory_logger):
     assert not memory_logger.pop()
 
-    client = Client()
+    client = _v1beta_client()
     tool = _interaction_function_tool()
 
     first_response = client.interactions.create(
@@ -1600,7 +1613,7 @@ def test_interactions_delete(memory_logger):
 async def test_interactions_async_round_trip(memory_logger):
     assert not memory_logger.pop()
 
-    client = Client()
+    client = _v1beta_client()
     response = await client.aio.interactions.create(
         model=INTERACTIONS_MODEL,
         input="What is the capital of Italy?",
