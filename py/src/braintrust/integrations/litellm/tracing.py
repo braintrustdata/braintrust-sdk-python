@@ -11,10 +11,10 @@ from typing import Any
 from braintrust.integrations.openai.tracing import _decisions_input, _decisions_output, _process_attachments_in_input
 from braintrust.integrations.utils import (
     _extract_audio_output,
+    _image_attachment_from_base64,
     _materialize_attachment,
     _parse_openai_usage_metrics,
     _prettify_response_params,
-    _ResolvedAttachment,
     _timing_metrics,
     _try_to_dict,
 )
@@ -438,24 +438,6 @@ async def _adecisions_wrapper_async(wrapped, instance, args, kwargs):
             metrics=_decisions_metrics(_get_field(response, "usage")),
         )
         return response
-
-
-def _image_attachment_from_base64(
-    data: Any, *, output_format: Any, index: int
-) -> tuple[_ResolvedAttachment | None, int | None]:
-    if not isinstance(data, str):
-        return None, None
-
-    extension = output_format if isinstance(output_format, str) and output_format else "png"
-    mime_type = extension if "/" in extension else f"image/{extension}"
-    resolved_attachment = _materialize_attachment(
-        data,
-        mime_type=mime_type,
-        prefix=f"generated_image_{index}",
-    )
-    if resolved_attachment is None:
-        return None, None
-    return resolved_attachment, len(resolved_attachment.attachment.data)
 
 
 def _extract_image_generation_output(response: Any) -> Any:

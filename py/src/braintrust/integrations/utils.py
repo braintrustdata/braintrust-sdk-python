@@ -428,6 +428,34 @@ def _normalize_chat_messages(messages: Any) -> Any:
     return normalized
 
 
+# Image `output_format` values whose MIME type is not `image/<format>`.
+_IMAGE_FORMAT_TO_MIME_TYPE = {
+    "svg": "image/svg+xml",
+}
+
+
+def _image_attachment_from_base64(
+    data: Any,
+    *,
+    output_format: Any,
+    index: int,
+) -> tuple[_ResolvedAttachment | None, int | None]:
+    """Materialize a generated base64 image as an attachment, returning it and its size in bytes."""
+    if not isinstance(data, str):
+        return None, None
+
+    extension = output_format if isinstance(output_format, str) and output_format else "png"
+    mime_type = extension if "/" in extension else _IMAGE_FORMAT_TO_MIME_TYPE.get(extension, f"image/{extension}")
+    resolved_attachment = _materialize_attachment(
+        data,
+        mime_type=mime_type,
+        prefix=f"generated_image_{index}",
+    )
+    if resolved_attachment is None:
+        return None, None
+    return resolved_attachment, len(resolved_attachment.attachment.data)
+
+
 _AUDIO_FORMAT_TO_MIME_TYPE = {
     "mp3": "audio/mpeg",
     "wav": "audio/wav",
