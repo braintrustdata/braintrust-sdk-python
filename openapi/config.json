@@ -3,8 +3,8 @@
   "spec": {
     "repository": "braintrustdata/braintrust-openapi",
     "path": "openapi/spec.json",
-    "commit": "3384e4be354ec957292f986fcf3e3a4009907651",
-    "sha256": "cbb5046620f73b5bf4e1e73c0eb12542ab9cbd3393ec568eda3f1a20f0f90a44"
+    "commit": "4cc0615694512d6e77fce6bff2c70d1531208daa",
+    "sha256": "ed5153cb78828024c12575df294a886624341065e9e9dd5095d52992087db1be"
   },
   "tools": {
     "datamodel-code-generator": "0.81.0",
@@ -36,7 +36,6 @@
       "Prompts",
       "Functions",
       "Acls",
-      "Agents",
       "AiSecrets",
       "ApiKeys",
       "DatasetSnapshots",
@@ -44,7 +43,6 @@
       "Environments",
       "Groups",
       "McpServers",
-      "OrgAutomations",
       "Organizations",
       "ProjectAutomations",
       "ProjectGroups",
@@ -58,7 +56,9 @@
     ],
     "unsupported_tags": {
       "CrossObject": "Cross-object event insertion belongs to the specialized at-least-once log-ingestion path.",
+      "CustomColumns": "Custom column management is not yet part of the reviewed public REST client surface.",
       "Evals": "Eval launch is a long-running, payload-dependent workflow that can stream and requires a specialized client.",
+      "Ingest keys": "Ingest key management is not yet part of the reviewed public REST client surface.",
       "Logs": "Project-log event ingestion, fetching, and feedback remain on the specialized logging path.",
       "Other": "The unauthenticated text-only hello-world endpoint is a service diagnostic, not a public resource.",
       "Proxy": "Provider passthrough requires proxy routing and streaming support, and the catch-all operationId is not valid Python."

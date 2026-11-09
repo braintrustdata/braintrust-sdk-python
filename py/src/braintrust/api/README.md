@@ -88,7 +88,6 @@ The table lists every reviewed generated method. Consult the method's Python sig
 | `client.prompts` | `post_prompt` — `POST /v1/prompt`<br>`put_prompt` — `PUT /v1/prompt`<br>`get_prompt` — `GET /v1/prompt`<br>`get_prompt_id` — `GET /v1/prompt/{prompt_id}`<br>`patch_prompt_id` — `PATCH /v1/prompt/{prompt_id}`<br>`delete_prompt_id` — `DELETE /v1/prompt/{prompt_id}` |
 | `client.functions` | `post_function` — `POST /v1/function`<br>`put_function` — `PUT /v1/function`<br>`get_function` — `GET /v1/function`<br>`get_function_id` — `GET /v1/function/{function_id}`<br>`patch_function_id` — `PATCH /v1/function/{function_id}`<br>`delete_function_id` — `DELETE /v1/function/{function_id}` |
 | `client.acls` | `post_acl` — `POST /v1/acl`<br>`delete_acl` — `DELETE /v1/acl`<br>`get_acl` — `GET /v1/acl`<br>`get_acl_id` — `GET /v1/acl/{acl_id}`<br>`delete_acl_id` — `DELETE /v1/acl/{acl_id}`<br>`acl_batch_update` — `POST /v1/acl/batch_update`<br>`acl_list_org` — `GET /v1/acl/list_org` |
-| `client.agents` | `post_agent` — `POST /v1/agent`<br>`put_agent` — `PUT /v1/agent`<br>`get_agent` — `GET /v1/agent`<br>`get_agent_id` — `GET /v1/agent/{agent_id}`<br>`patch_agent_id` — `PATCH /v1/agent/{agent_id}`<br>`delete_agent_id` — `DELETE /v1/agent/{agent_id}` |
 | `client.ai_secrets` | `post_ai_secret` — `POST /v1/ai_secret`<br>`put_ai_secret` — `PUT /v1/ai_secret`<br>`delete_ai_secret` — `DELETE /v1/ai_secret`<br>`get_ai_secret` — `GET /v1/ai_secret`<br>`get_ai_secret_id` — `GET /v1/ai_secret/{ai_secret_id}`<br>`patch_ai_secret_id` — `PATCH /v1/ai_secret/{ai_secret_id}`<br>`delete_ai_secret_id` — `DELETE /v1/ai_secret/{ai_secret_id}` |
 | `client.api_keys` | `get_api_key` — `GET /v1/api_key`<br>`get_api_key_id` — `GET /v1/api_key/{api_key_id}`<br>`delete_api_key_id` — `DELETE /v1/api_key/{api_key_id}` |
 | `client.dataset_snapshots` | `post_dataset_snapshot` — `POST /v1/dataset_snapshot`<br>`put_dataset_snapshot` — `PUT /v1/dataset_snapshot`<br>`get_dataset_snapshot` — `GET /v1/dataset_snapshot`<br>`get_dataset_snapshot_id` — `GET /v1/dataset_snapshot/{dataset_snapshot_id}`<br>`patch_dataset_snapshot_id` — `PATCH /v1/dataset_snapshot/{dataset_snapshot_id}`<br>`delete_dataset_snapshot_id` — `DELETE /v1/dataset_snapshot/{dataset_snapshot_id}` |
@@ -96,7 +95,6 @@ The table lists every reviewed generated method. Consult the method's Python sig
 | `client.environments` | `list_environments` — `GET /environment`<br>`create_environment` — `POST /environment`<br>`get_environment` — `GET /environment/{environment_id}`<br>`update_environment` — `PATCH /environment/{environment_id}`<br>`delete_environment` — `DELETE /environment/{environment_id}` |
 | `client.groups` | `post_group` — `POST /v1/group`<br>`put_group` — `PUT /v1/group`<br>`get_group` — `GET /v1/group`<br>`get_group_id` — `GET /v1/group/{group_id}`<br>`patch_group_id` — `PATCH /v1/group/{group_id}`<br>`delete_group_id` — `DELETE /v1/group/{group_id}` |
 | `client.mcp_servers` | `post_mcp_server` — `POST /v1/mcp_server`<br>`put_mcp_server` — `PUT /v1/mcp_server`<br>`get_mcp_server` — `GET /v1/mcp_server`<br>`get_mcp_server_id` — `GET /v1/mcp_server/{mcp_server_id}`<br>`patch_mcp_server_id` — `PATCH /v1/mcp_server/{mcp_server_id}`<br>`delete_mcp_server_id` — `DELETE /v1/mcp_server/{mcp_server_id}` |
-| `client.org_automations` | `post_org_automation` — `POST /v1/org_automation`<br>`put_org_automation` — `PUT /v1/org_automation`<br>`get_org_automation` — `GET /v1/org_automation`<br>`get_org_automation_id` — `GET /v1/org_automation/{org_automation_id}`<br>`patch_org_automation_id` — `PATCH /v1/org_automation/{org_automation_id}`<br>`delete_org_automation_id` — `DELETE /v1/org_automation/{org_automation_id}` |
 | `client.organizations` | `get_organization` — `GET /v1/organization`<br>`get_organization_id` — `GET /v1/organization/{organization_id}`<br>`patch_organization_id` — `PATCH /v1/organization/{organization_id}`<br>`patch_organization_members` — `PATCH /v1/organization/members`<br>`get_organization_api_keys` — `GET /v1/organization/api_keys` |
 | `client.project_automations` | `post_project_automation` — `POST /v1/project_automation`<br>`put_project_automation` — `PUT /v1/project_automation`<br>`get_project_automation` — `GET /v1/project_automation`<br>`get_project_automation_id` — `GET /v1/project_automation/{project_automation_id}`<br>`patch_project_automation_id` — `PATCH /v1/project_automation/{project_automation_id}`<br>`delete_project_automation_id` — `DELETE /v1/project_automation/{project_automation_id}` |
 | `client.project_groups` | `post_project_group` — `POST /v1/project_group`<br>`put_project_group` — `PUT /v1/project_group`<br>`get_project_group` — `GET /v1/project_group`<br>`get_project_group_id` — `GET /v1/project_group/{project_group_id}`<br>`patch_project_group_id` — `PATCH /v1/project_group/{project_group_id}`<br>`delete_project_group_id` — `DELETE /v1/project_group/{project_group_id}` |
@@ -132,10 +130,9 @@ Only request and response models reachable directly from reviewed resource metho
 | --- | --- | --- |
 | `AISecret` | `Acl` | `AclBatchUpdateRequest` |
 | `AclBatchUpdateResponse` | `AclItem` | `AclListOrgResponse` |
-| `Agent` | `ApiKey` | `CreateAISecret` |
-| `CreateAgent` | `CreateDataset` | `CreateDatasetSnapshot` |
-| `CreateEnvironment` | `CreateExperiment` | `CreateFunction` |
-| `CreateGroup` | `CreateMCPServer` | `CreateOrgAutomation` |
+| `ApiKey` | `CreateAISecret` | `CreateDataset` |
+| `CreateDatasetSnapshot` | `CreateEnvironment` | `CreateExperiment` |
+| `CreateFunction` | `CreateGroup` | `CreateMCPServer` |
 | `CreateProject` | `CreateProjectAutomation` | `CreateProjectGroup` |
 | `CreateProjectScore` | `CreateProjectTag` | `CreatePrompt` |
 | `CreateRole` | `CreateServiceTokenOutput` | `CreateSpanIFrame` |
@@ -145,29 +142,28 @@ Only request and response models reachable directly from reviewed resource metho
 | `EnvVar` | `Environment` | `Experiment` |
 | `FeedbackDatasetEventRequest` | `FeedbackExperimentEventRequest` | `FeedbackResponseSchema` |
 | `FetchDatasetEventsResponse` | `FetchEventsRequest` | `FetchExperimentEventsResponse` |
-| `Function` | `GetAclResponse` | `GetAgentResponse` |
-| `GetAiSecretResponse` | `GetApiKeyResponse` | `GetDatasetResponse` |
-| `GetDatasetSnapshotResponse` | `GetEnvVarResponse` | `GetExperimentResponse` |
-| `GetFunctionResponse` | `GetGroupResponse` | `GetMcpServerResponse` |
-| `GetOrgAutomationResponse` | `GetOrganizationApiKeysResponse` | `GetOrganizationResponse` |
-| `GetProjectAutomationResponse` | `GetProjectGroupResponse` | `GetProjectResponse` |
-| `GetProjectScoreResponse` | `GetProjectTagResponse` | `GetPromptResponse` |
-| `GetRoleResponse` | `GetServiceTokenResponse` | `GetSpanIframeResponse` |
-| `GetUserResponse` | `GetViewResponse` | `Group` |
-| `InsertDatasetEventRequest` | `InsertEventsResponse` | `InsertExperimentEventRequest` |
-| `ListEnvironmentsResponse` | `MCPServer` | `OrgAutomation` |
-| `Organization` | `PatchAISecret` | `PatchAgent` |
-| `PatchDataset` | `PatchDatasetSnapshot` | `PatchEnvironment` |
-| `PatchExperiment` | `PatchFunction` | `PatchGroup` |
-| `PatchMCPServer` | `PatchOrgAutomation` | `PatchOrganization` |
-| `PatchOrganizationMembers` | `PatchOrganizationMembersOutput` | `PatchProject` |
-| `PatchProjectAutomation` | `PatchProjectGroup` | `PatchProjectScore` |
-| `PatchProjectTag` | `PatchPrompt` | `PatchRole` |
-| `PatchSpanIFrame` | `PatchView` | `Project` |
-| `ProjectAutomation` | `ProjectGroup` | `ProjectScore` |
-| `ProjectTag` | `Prompt` | `Role` |
-| `ServiceToken` | `SpanIFrame` | `SummarizeDatasetResponse` |
-| `SummarizeExperimentResponse` | `User` | `View` |
+| `Function` | `GetAclResponse` | `GetAiSecretResponse` |
+| `GetApiKeyResponse` | `GetDatasetResponse` | `GetDatasetSnapshotResponse` |
+| `GetEnvVarResponse` | `GetExperimentResponse` | `GetFunctionResponse` |
+| `GetGroupResponse` | `GetMcpServerResponse` | `GetOrganizationApiKeysResponse` |
+| `GetOrganizationResponse` | `GetProjectAutomationResponse` | `GetProjectGroupResponse` |
+| `GetProjectResponse` | `GetProjectScoreResponse` | `GetProjectTagResponse` |
+| `GetPromptResponse` | `GetRoleResponse` | `GetServiceTokenResponse` |
+| `GetSpanIframeResponse` | `GetUserResponse` | `GetViewResponse` |
+| `Group` | `InsertDatasetEventRequest` | `InsertEventsResponse` |
+| `InsertExperimentEventRequest` | `ListEnvironmentsResponse` | `MCPServer` |
+| `Organization` | `PatchAISecret` | `PatchDataset` |
+| `PatchDatasetSnapshot` | `PatchEnvironment` | `PatchExperiment` |
+| `PatchFunction` | `PatchGroup` | `PatchMCPServer` |
+| `PatchOrganization` | `PatchOrganizationMembers` | `PatchOrganizationMembersOutput` |
+| `PatchProject` | `PatchProjectAutomation` | `PatchProjectGroup` |
+| `PatchProjectScore` | `PatchProjectTag` | `PatchPrompt` |
+| `PatchRole` | `PatchSpanIFrame` | `PatchView` |
+| `Project` | `ProjectAutomation` | `ProjectGroup` |
+| `ProjectScore` | `ProjectTag` | `Prompt` |
+| `Role` | `ServiceToken` | `SpanIFrame` |
+| `SummarizeDatasetResponse` | `SummarizeExperimentResponse` | `User` |
+| `View` |  |  |
 <!-- END GENERATED REST TYPES -->
 
 The reference sections above are synchronized with the Python surface by `make generate-api-client`; do not edit those sections manually.

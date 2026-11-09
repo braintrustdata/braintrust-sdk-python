@@ -8,7 +8,6 @@ from typing import get_type_hints, is_typeddict
 
 GENERATED_RESOURCE_NAMES = (
     "acls",
-    "agents",
     "ai_secrets",
     "api_keys",
     "dataset_snapshots",
@@ -19,7 +18,6 @@ GENERATED_RESOURCE_NAMES = (
     "functions",
     "groups",
     "mcp_servers",
-    "org_automations",
     "organizations",
     "project_automations",
     "project_groups",
@@ -153,7 +151,6 @@ def test_rest_and_logging_type_surfaces_have_reviewed_overlap():
     assert overlap == {
         "AISecret",
         "Acl",
-        "Agent",
         "ApiKey",
         "Dataset",
         "DatasetSnapshot",
@@ -162,7 +159,6 @@ def test_rest_and_logging_type_surfaces_have_reviewed_overlap():
         "Function",
         "Group",
         "MCPServer",
-        "OrgAutomation",
         "Organization",
         "Project",
         "ProjectAutomation",

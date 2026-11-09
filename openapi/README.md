@@ -25,8 +25,7 @@ The reviewed generated surface includes these tags:
 - access and organization resources: Acls, Groups, ProjectGroups, Roles, Users, Organizations,
   ApiKeys, and ServiceTokens;
 - configuration resources: AiSecrets, EnvVars, Environments, and McpServers;
-- project resources: Agents, ProjectAutomations, OrgAutomations, ProjectScores, ProjectTags,
-  SpanIframes, and Views; and
+- project resources: ProjectAutomations, ProjectScores, ProjectTags, SpanIframes, and Views; and
 - versioned data resources: DatasetSnapshots.
 
 Each tag produces one resource and operation registry. Models used by one resource stay in that
@@ -37,8 +36,12 @@ Every tag in the pinned spec must be either selected or present in `unsupported_
 
 - **CrossObject:** cross-object event insertion belongs to the specialized at-least-once
   log-ingestion path.
+- **CustomColumns:** custom column management is not yet part of the reviewed public REST client
+  surface.
 - **Evals:** eval launch is a long-running, payload-dependent workflow that can stream and needs a
   specialized client.
+- **Ingest keys:** ingest key management is not yet part of the reviewed public REST client
+  surface.
 - **Logs:** project-log event ingestion, fetching, and feedback remain on the specialized logging
   path.
 - **Other:** the unauthenticated, text-only hello-world endpoint is a service diagnostic rather

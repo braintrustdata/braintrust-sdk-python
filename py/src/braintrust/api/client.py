@@ -15,7 +15,6 @@ from .auth import AuthAPI
 
 if TYPE_CHECKING:
     from ._generated.acls import AclsAPI
-    from ._generated.agents import AgentsAPI
     from ._generated.ai_secrets import AiSecretsAPI
     from ._generated.api_keys import ApiKeysAPI
     from ._generated.dataset_snapshots import DatasetSnapshotsAPI
@@ -26,7 +25,6 @@ if TYPE_CHECKING:
     from ._generated.functions import FunctionsAPI
     from ._generated.groups import GroupsAPI
     from ._generated.mcp_servers import McpServersAPI
-    from ._generated.org_automations import OrgAutomationsAPI
     from ._generated.organizations import OrganizationsAPI
     from ._generated.project_automations import ProjectAutomationsAPI
     from ._generated.project_groups import ProjectGroupsAPI
@@ -208,12 +206,6 @@ class BraintrustOpenApiClient:
         return self._service("acls", AclsAPI)
 
     @property
-    def agents(self) -> "AgentsAPI":
-        from ._generated.agents import AgentsAPI
-
-        return self._service("agents", AgentsAPI)
-
-    @property
     def ai_secrets(self) -> "AiSecretsAPI":
         from ._generated.ai_secrets import AiSecretsAPI
 
@@ -272,12 +264,6 @@ class BraintrustOpenApiClient:
         from ._generated.mcp_servers import McpServersAPI
 
         return self._service("mcp_servers", McpServersAPI)
-
-    @property
-    def org_automations(self) -> "OrgAutomationsAPI":
-        from ._generated.org_automations import OrgAutomationsAPI
-
-        return self._service("org_automations", OrgAutomationsAPI)
 
     @property
     def organizations(self) -> "OrganizationsAPI":
