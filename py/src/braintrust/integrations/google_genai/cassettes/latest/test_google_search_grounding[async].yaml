@@ -7,7 +7,7 @@ interactions:
       accept:
       - '*/*'
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
@@ -17,16 +17,74 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.34.0 gl-python/3.14.7
+      - google-genai-sdk/3.0.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/2.34.0 gl-python/3.14.7
+      - google-genai-sdk/3.0.0 gl-python/3.14.7
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent
+  response:
+    body:
+      string: "{\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Search as
+        tool is not enabled for api version v1. Use api version v1beta instead.\",\n
+        \   \"status\": \"INVALID_ARGUMENT\"\n  }\n}\n"
+    headers:
+      alt-svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      content-length:
+      - '171'
+      content-type:
+      - application/json; charset=UTF-8
+      date:
+      - Mon, 09 Nov 2026 17:02:57 GMT
+      server:
+      - scaffolding on HTTPServer2
+      server-timing:
+      - gfet4t7; dur=226
+      transfer-encoding:
+      - chunked
+      vary:
+      - Origin
+      - X-Origin
+      - Referer
+      x-content-type-options:
+      - nosniff
+      x-frame-options:
+      - SAMEORIGIN
+      x-gemini-service-tier:
+      - standard
+      x-xss-protection:
+      - '0'
+    status:
+      code: 400
+      message: Bad Request
+- request:
+    body: '{"contents": [{"parts": [{"text": "What is the current population of Tokyo,
+      Japan?"}], "role": "user"}], "tools": [{"googleSearch": {}}], "generationConfig":
+      {"maxOutputTokens": 300}}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '183'
+      content-type:
+      - application/json
+      host:
+      - generativelanguage.googleapis.com
+      user-agent:
+      - google-genai-sdk/3.0.0 gl-python/3.14.7
+      x-goog-api-client:
+      - google-genai-sdk/3.0.0 gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"The current population of Tokyo, Japan,
-        varies depending on\"\n          }\n        ],\n        \"role\": \"model\"\n
+        [\n          {\n            \"text\": \"The current population of Tokyo Metropolis
+        is estimated to be\"\n          }\n        ],\n        \"role\": \"model\"\n
         \     },\n      \"finishReason\": \"MAX_TOKENS\",\n      \"index\": 0,\n      \"groundingMetadata\":
         {\n        \"searchEntryPoint\": {\n          \"renderedContent\": \"\\u003cstyle\\u003e\\n.container
         {\\n  align-items: center;\\n  border-radius: 8px;\\n  display: flex;\\n  font-family:
@@ -91,31 +149,35 @@ interactions:
         \   \\u003c/svg\\u003e\\n    \\u003cdiv class=\\\"gradient-container\\\"\\u003e\\u003cdiv
         class=\\\"gradient\\\"\\u003e\\u003c/div\\u003e\\u003c/div\\u003e\\n  \\u003c/div\\u003e\\n
         \ \\u003cdiv class=\\\"carousel\\\"\\u003e\\n    \\u003ca class=\\\"chip\\\"
-        href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFIjraNZOHCkxLP_Y_gorRjsM5yCfcVlBnpoXXf3m13Sop0UkAEFfPfoT4SFQpf4a6U-xng1vr-Gei0sTWQZXx_TZsv3tkqpAd5v7u4UxJosvIE2Ad3qSZVPhIIUxZ5DNqU09BpWVHCoGxkPf8vVP1xGfrxr7wwYSn1uv1UfHNMwmuHgeZLJChNP3GvWZu8w-ANpMOLZFidZg==\\\"\\u003eTokyo
-        population 2026\\u003c/a\\u003e\\n    \\u003ca class=\\\"chip\\\" href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGyvzA8180r7mw_paBF52k0X902EOPk4G3z1PQR5B99dy60LVTAlAsOHGzAKoPTFE3R675TCSsGDDaK4YIa8QBlj07feQ9i4pfCPabxlg005EHzeJrw_zcjtHtfx8qwTWE6e6dbbmTDo0uyxiKJirPD_Zf2vAWBrH6cjfX1XCDZsYTI13PPERuPeelUdNC9KbDCIG1A2enaZxZl37L0ag==\\\"\\u003ecurrent
-        population of Tokyo\\u003c/a\\u003e\\n  \\u003c/div\\u003e\\n\\u003c/div\\u003e\\n\"\n
+        href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHD_M6SVU5iNik-m7Pv2KTS_f2nrmQmcTSmdJkSgCRuYtsvCA5OifDqA7DGk_0w5x5ScjbQpDjvAdOyOB4cXy6V2TKcwrz_Jl9UEXukIMx2JYHtieRQcY9i6LVdBuEysW-qs8sQA0ulRqlunuxkQAnVQR2T915-5tbPvTKGy8TGIDgTL565EF-h_wkgyw4mU_VUvN3l6QEA2A==\\\"\\u003eTokyo
+        population 2024\\u003c/a\\u003e\\n    \\u003ca class=\\\"chip\\\" href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFSSR0YtaaJ2psy-BJ_391pIwFhz7uaJKAlc6x6DTJk7tyW1OiVTKl4s7-NzMmTkBvMlSc09f4HaY2ql08U1WOLbw0dpRabXNWv8C8CJMlCjKeFuU6o8KJY8b8nQ3MMuzx9coHtq5afJG_s1R0glyktDEP59HPMi7LAq0OnHitIM8BvHVMmVushAWBiT_e7ooQfGL6bK_R-Ag==\\\"\\u003eTokyo
+        population 2026\\u003c/a\\u003e\\n    \\u003ca class=\\\"chip\\\" href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQE3EyW4TqCXJeuDP_qOLsg3YBxBT-2WCMPmhBAFJON8zh5SyqVlSqouo5lj7oxS3xlSv_He90aPzlJWPOvC7jmTaFs7YCYGbbg9Sg8I7IWvbCpNJz-diTcO1SMKae-SBvY82bCw-5Ob8fpcElBhgw4fbVzY52wQ8oaU0fmJXjfGKJgv-ZY_HZ9NBfVh30vfSiOW56lV3_G21ktxQC-Lj44gAgbe6Q==\\\"\\u003ecurrent
+        population of Tokyo Japan\\u003c/a\\u003e\\n    \\u003ca class=\\\"chip\\\"
+        href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEmNqhM1kJxaIwExhhWPn0c9j4nA3R-4F3ysgfvelvDYJV52K5FiVrCr3t22ZYJOkfXVlk2HAXzp9N8OHlsGNtjfCgJDcxYwQzIqG4jykmQSD1O1MSfUhngvNJdE51dfLE5Aaeis3VkNDk7PN2ND1koEWWdoc2IlWk-8sHQLYRM2zmv_YOTm59XK4dIqgnBhdUPIJAh7YTdJA==\\\"\\u003eTokyo
+        population 2025\\u003c/a\\u003e\\n  \\u003c/div\\u003e\\n\\u003c/div\\u003e\\n\"\n
         \       },\n        \"webSearchQueries\": [\n          \"current population
-        of Tokyo\",\n          \"Tokyo population 2026\"\n        ]\n      }\n    }\n
-        \ ],\n  \"usageMetadata\": {\n    \"promptTokenCount\": 11,\n    \"candidatesTokenCount\":
-        35,\n    \"totalTokenCount\": 468,\n    \"promptTokensDetails\": [\n      {\n
+        of Tokyo Japan\",\n          \"Tokyo population 2026\",\n          \"Tokyo
+        population 2025\",\n          \"Tokyo population 2024\"\n        ]\n      }\n
+        \   }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\": 11,\n    \"candidatesTokenCount\":
+        53,\n    \"totalTokenCount\": 508,\n    \"promptTokensDetails\": [\n      {\n
         \       \"modality\": \"TEXT\",\n        \"tokenCount\": 11\n      }\n    ],\n
-        \   \"toolUsePromptTokenCount\": 86,\n    \"toolUsePromptTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 86\n
-        \     }\n    ],\n    \"thoughtsTokenCount\": 336,\n    \"serviceTier\": \"standard\"\n
-        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"15ToaueiFt3BxdIPhtbc2Qs\"\n}\n"
+        \   \"toolUsePromptTokenCount\": 106,\n    \"toolUsePromptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 106\n
+        \     }\n    ],\n    \"thoughtsTokenCount\": 338,\n    \"serviceTier\": \"standard\"\n
+        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"Lf3xaruVEsyO1sgP-Le7qQ8\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '6510'
+      - '7312'
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Mon, 02 Nov 2026 13:49:14 GMT
+      - Mon, 09 Nov 2026 17:04:48 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=3210
+      - gfet4t7; dur=3720
       transfer-encoding:
       - chunked
       vary:

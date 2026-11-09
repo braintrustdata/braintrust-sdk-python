@@ -6,7 +6,7 @@ interactions:
       accept:
       - '*/*'
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
@@ -16,11 +16,11 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.34.0 gl-python/3.14.7
+      - google-genai-sdk/3.0.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/2.34.0 gl-python/3.14.7
+      - google-genai-sdk/3.0.0 gl-python/3.14.7
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
+    uri: https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
@@ -30,7 +30,7 @@ interactions:
         3,\n    \"candidatesTokenCount\": 10,\n    \"totalTokenCount\": 13,\n    \"promptTokensDetails\":
         [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 3\n      }\n
         \   ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n
-        \ \"responseId\": \"85ToatDkONHt5NoP0e6_8AY\"\n}\n"
+        \ \"responseId\": \"0fzxatjYEI_9ytMPtJTyqA8\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
@@ -39,11 +39,11 @@ interactions:
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Mon, 02 Nov 2026 13:49:40 GMT
+      - Mon, 09 Nov 2026 17:03:13 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=372
+      - gfet4t7; dur=419
       transfer-encoding:
       - chunked
       vary:

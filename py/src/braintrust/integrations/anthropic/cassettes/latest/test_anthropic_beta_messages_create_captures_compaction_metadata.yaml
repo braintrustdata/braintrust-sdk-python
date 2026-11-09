@@ -1,128 +1,5 @@
 interactions:
 - request:
-    body: '{"max_tokens":512,"messages":[{"role":"user","content":"Summarize this
-      sentence: compaction captures request metadata."}],"model":"claude-opus-5","compaction":{"type":"summarize"}}'
-    headers:
-      accept:
-      - application/json
-      accept-encoding:
-      - gzip, deflate, zstd
-      anthropic-beta:
-      - compact-2026-09-04
-      anthropic-version:
-      - '2026-10-21'
-      connection:
-      - keep-alive
-      content-length:
-      - '180'
-      content-type:
-      - application/json
-      host:
-      - api.anthropic.com
-      user-agent:
-      - Anthropic/Python 2.3.0
-      x-stainless-arch:
-      - arm64
-      x-stainless-async:
-      - 'false'
-      x-stainless-lang:
-      - python
-      x-stainless-os:
-      - MacOS
-      x-stainless-package-version:
-      - 2.3.0
-      x-stainless-read-timeout:
-      - '600'
-      x-stainless-retry-count:
-      - '0'
-      x-stainless-runtime:
-      - CPython
-      x-stainless-runtime-version:
-      - 3.14.7
-      x-stainless-timeout:
-      - '600'
-    method: POST
-    uri: https://api.anthropic.com/v1/messages
-  response:
-    body:
-      string: "{\"model\":\"claude-opus-5\",\"id\":\"msg_011CgeEGq3uYJXbuYpJdT6sJ\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"compaction\",\"content\":\"##
-        Conversation Summary\\n\\n**Context:** This conversation consists of a single
-        user request with no prior exchanges, tool calls, or completed work.\\n\\n**User's
-        request:** The user asked me to summarize the sentence: \\\"compaction captures
-        request metadata.\\\"\\n\\n**Work completed:** None yet \u2014 no response
-        had been produced before the summarization request.\\n\\n**Task remaining:**
-        Provide a summary/restatement of the sentence \\\"compaction captures request
-        metadata.\\\" Since the input is already a single short sentence, an appropriate
-        response would be a concise paraphrase, e.g.: \\\"Compaction records (or preserves)
-        metadata about the request.\\\" Optionally, the response could note that the
-        sentence is already maximally brief and offer a brief explanation of its meaning
-        \u2014 that during a compaction process, information describing the request
-        is retained/collected.\\n\\n**Notes:** No files, code, or external resources
-        were involved. No special user preferences or constraints were stated beyond
-        the summarization instruction.\",\"signature\":\"CAIS9ggKHggTGALyARdjb21wYWN0aW9uX3NpZ25hdHVyZV92MRIMI4CyXKog2kgiDyEXGgw5CmJi15Gf24HurmUiMKtUMPohrYJ1IP3SjoA5e8FkcJP0QoFSdt24hnBSmOX2NTok8Xg83qQKrE5K8LFKMyqFCA/QzkrLIGLFMuvjCgTN/5mqjymUs0sbxCygUtSNatNrQE+Q4MSAD7PagJhIFOz7F3gBuNSdjWzhMDDHE2atOgYLugyrcJdkr6Lw6HgZhMExpdzo++IVmrBGMEkqQ9ZYVGd7YfK/ApmbjfTofDk841xf+MH6dtPiOe4HZKSr85321m5inA8OhuhMSgA/a8+gIegTeE0cLoTWXlvrzCkPN62rkHwZGzCAgcpbOED024Dy5ctex4h1Qrb+1LWHFEQ4q4Omz9kQwICp0Lw+df3heJ7pwcD7GA9QQ6pdsMArn07uLjxs4UdsHo/OhWLb6P3Yw//CySLDDLbu6Ur7ThYIXRwunsepVLKtktb/mAl3i43P8QE3z2jsqQpCWVa7heQ+4lP8EtmGWq8MonH3HDGjngVQgq+PJcWIG/v+OwPKv0ZJooYBxcvmHR96YrK7uvrWIbu+C8R64DOMziNJ5Gz4lNQ47DqI7q23aiMN8aVJ8MhiM/wgAQyFjvN2PK38OZP2+qG1gEBClBtH1uNdBt0reqPH1mUKR2SAUsXclKWRKY6VMCzyIGu9Yu56SMGB0mg4aL2/oe6PrSnoFQ9Yvr8ruQLp/nF7plKREYoodfk+4MOLXibcdwez8eYRsiRb7iR0stCAGpFu2DK6JlvLxoitvpYKw3HFe7NJ/nCPVlOj5wMV/rgrWe4cj0iQVC+9tNUJ3Mx2qmCMhXcbxKGZMp1s7FvJ0723vsuJz5kcxZbjw7r7YRhdYFaoxKE0cXQov8utz5xJu3wy1wziFo5csVVlBvVQarfVJtTE6OO9IagDL/uBN0JWkDuFqwP/1Iaq5aetWRprdjiOsIxEDTmualS+kcSNpTLvIQVlF6e0n+n6rtobYa2XgrVR/VoqJPYseN74e+fAT3VDnJPs95um3eekQMXYdB5OOhNKo2zJhFZO58BlNxIyb4OGnrvFpM76+Tkjfm7gsJhjgOIi/54R3Eq8rSOUhmqg3PGCafe9Q94NSpy1TjX4AlPjVmQHtdGZR1sPZ1SCMfiv4mTyZ9BNErPrmAjki1+2jVbnXnZfP2CXtoBrFoSoXWqYZFG/5eVPnWpWgMNhIiMRGMDoNcP0K80xbtHAnn+rhAp/AeWpNCoa/+t87a8EwBcTHihem4v8zhvMkQ4+C9V8w4Tj2hT56BI3N19oKeFrWyhEoQAyrixun8TGD9Ap3qG+zy5TJM9EtnsiY/INd0DJwKakUiSJOqH+rSAArUcrhyILybhyhUy35yGU0kqa5Cwb+tCye6dvnREcz21cxXY7EUH8+kvx9aFsrEFC7y95WDK1/t7fWIcwqWi2DvQNjmQ00VUM/yxGnIShJdNWdd4Wrb+K+AR1ZP38+5h0nM5jcRgL\"}],\"container\":null,\"stop_reason\":\"compaction\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"iterations\":[{\"input_tokens\":82,\"output_tokens\":452,\"cache_read_input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"type\":\"compaction\"}],\"output_tokens\":0,\"service_tier\":\"standard\",\"inference_geo\":\"global\",\"speed\":\"standard\"},\"diagnostics\":null}"
-    headers:
-      anthropic-organization-id:
-      - 27796668-7351-40ac-acc4-024aee8995a5
-      anthropic-ratelimit-input-tokens-limit:
-      - '10000000'
-      anthropic-ratelimit-input-tokens-remaining:
-      - '10000000'
-      anthropic-ratelimit-input-tokens-reset:
-      - '2026-11-02T14:06:02Z'
-      anthropic-ratelimit-output-tokens-limit:
-      - '2000000'
-      anthropic-ratelimit-output-tokens-remaining:
-      - '2000000'
-      anthropic-ratelimit-output-tokens-reset:
-      - '2026-11-02T14:06:02Z'
-      anthropic-ratelimit-requests-limit:
-      - '20000'
-      anthropic-ratelimit-requests-remaining:
-      - '19999'
-      anthropic-ratelimit-requests-reset:
-      - '2026-11-02T14:05:55Z'
-      anthropic-ratelimit-tokens-limit:
-      - '12000000'
-      anthropic-ratelimit-tokens-remaining:
-      - '12000000'
-      anthropic-ratelimit-tokens-reset:
-      - '2026-11-02T14:06:02Z'
-      anthropic-workspace-id:
-      - wrkspc_018bFG1FgNVWqx5pthtdGTzS
-      cf-cache-status:
-      - DYNAMIC
-      cf-ray:
-      - a543b264291a5383-YYZ
-      connection:
-      - keep-alive
-      content-length:
-      - '3292'
-      content-security-policy:
-      - default-src 'none'; frame-ancestors 'none'
-      content-type:
-      - application/json
-      date:
-      - Mon, 02 Nov 2026 14:06:02 GMT
-      request-id:
-      - req_011CgeEGpLzojtCMdkoiEVpN
-      server:
-      - cloudflare
-      server-timing:
-      - x-originResponse;dur=6874
-      strict-transport-security:
-      - max-age=31536000; includeSubDomains; preload
-      traceresponse:
-      - 00-96e4ad02a231b0245cd35b2d32b52067-a4ac47abddd53dfc-01
-      transfer-encoding:
-      - chunked
-      vary:
-      - Accept-Encoding
-      x-robots-tag:
-      - none
-    status:
-      code: 200
-      message: OK
-- request:
     body: '{"max_tokens":4096,"messages":[{"role":"user","content":"Summarize this
       sentence: compaction captures request metadata."}],"model":"claude-opus-5","compaction":{"type":"summarize"}}'
     headers:
@@ -143,7 +20,7 @@ interactions:
       host:
       - api.anthropic.com
       user-agent:
-      - Anthropic/Python 2.3.0
+      - Anthropic/Python 2.6.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -153,7 +30,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.3.0
+      - 2.6.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -168,19 +45,21 @@ interactions:
     uri: https://api.anthropic.com/v1/messages
   response:
     body:
-      string: "{\"model\":\"claude-opus-5\",\"id\":\"msg_011CgeEKW5UTMoW56UELfu1e\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"compaction\",\"content\":\"**Conversation
-        so far:**\\n\\nThe user made a single, short request: \\\"Summarize this sentence:
-        compaction captures request metadata.\\\"\\n\\nNo other context, files, tools,
-        or prior work exist in this conversation. Nothing has been produced yet besides
-        this summary.\\n\\n**Task status / what remains:**\\n\\nThe only outstanding
-        task is to deliver a concise summary/restatement of the sentence \\\"compaction
-        captures request metadata.\\\"\\n\\nSuitable responses would be a brief paraphrase
-        such as:\\n- \\\"Compaction records (retains) metadata about requests.\\\"\\n-
-        \\\"The compaction process preserves request metadata.\\\"\\n\\nIf the user
-        follows up, they may want variations, a shorter form, or an explanation of
-        the sentence's meaning (i.e., that when data or context is compacted/condensed,
-        information describing the requests \u2014 such as identifiers, timestamps,
-        parameters, or other descriptive attributes \u2014 is captured and kept).\",\"signature\":\"CAIS9ggKHggTGALyARdjb21wYWN0aW9uX3NpZ25hdHVyZV92MRIMjwVJZIc1BUNGwVFKGgw1DvaQ8SYUIytdU40iMKCGg/aSVCPHDwH54IRbBs5MuEI8ECZSmc77+PI+CAlaR4zH2sxHArraTWYMY9TlUCqFCMw8EduYw+3g5x6jLU9epPwV31CFBL1yhTeVcTvSA26MBMLxWZr2Qzufny1QgTm0PDpm6CsZygZleWoG4ev1mMO51fZeX7026FCQPOBBo2l+utz7joIY33HNo9yuL/pv7H5736yDJNmkuI1vyB2OGAmvLYdVEDCyGeke1tOd+9Kbu1gCBLg5B+1acvrl9Tthq2XmVz6iMVAb8xGxbccgdNX3GSCWsgEKgJ6wa+sxybXkZbVDZCgoRdOVcfHddAFk8+vuKm+LHbHD8zz5mgBQfcAB9o6h4zzssRZb4KJVWRv9zrK79mgFe93wL/pMyRngpBzMRpHAL/UzJtAoMT3mx1tUk10c17ozdl2dCsb9QHYPbh9K32PjnVOWZ8fLA00ZJVTLuIztnZB/4UQC8C9KNKUCybSdXRvhnVp0AZyTsGMacmO9P8dZ6+O/HUebvA2EyRbRr+hzL0N8tjJP7V+4X5K3t6Ce3gxm3vrcyo1/4qgbxZQpZIF2TeZonIvzft/+uAGnOj2R6t7BL6TsUlGc3XTpqCpQbjuprghCLujguzEpMLtzyQpYO9Q7Ba9lagkEagWN9KR5sAfsNcJOH/H9WbtyhVBDy3e9bSH1e8igfF3h+pghd/SmLBCkGJ9rahdd+j3sJ5O7Ia3jOeD8pgTmxcYnhM21Ro01MrXMnJCaKF8WcYGNR3Oq3KUmA/cB00F7K0/61LeJBLsDFlfXoE7Q1edgPvZcjsuw8nAcnbCr3gJyxWR2o1HkdsgT5ckHbba9pI5N2s5+z6axjOE8BWEA0fhl/XN6sPP9IjrG9wxvU8F81fkN61LS7pFXNMHOOtnqHE5DqLCAe/J/uvH6YY0PGJ0swAOkw83bDzzQASF+K+P3qklwzmufNLCwHSqqAAnkRac0O1vArNrqjf2ufDSW0jnOTVeDyYasbop3rOaLtfCmp11YDDNvVBdw0y6Bkmz8Ldb6gGrdAb8MHNdYxJ3xN4+0teiOOSDHkcMt6iZ1VUbQlFbaQKXzeFYQWK1A9uwQVr+8QlGjLM7swNzMS3ddiSN07GB2623T/Eev94qllG07EXLMi6ZdQ2ecrx0lRsWCpj40aatcmHke/YV+LGQ36mHFtd0gPEkhmo6bkuaUY38c6ozPWUEnSpwQq2TrxlfX8uwCw/0CVNqIGrv96rOud5FBSPZ4KIfA4EAewfIT/tagbsfI4TnpqD1M8JDzP1kTJwbN6Z6bS31mIpiQzsUv90Tv+6poLvtxS8owJJ/TOEqOQb0AidiZq1Mq3v+dLPlWyu8oXO0mX3FsySgGKxymlD2hiraVsp8yqp4wsxpDmBh9ncknsdBMBGc9G0iCamgZTveOWJZqS4+zFBmW8tRu5rTdj5s96xgL\"}],\"container\":null,\"stop_reason\":\"compaction\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"iterations\":[{\"input_tokens\":82,\"output_tokens\":501,\"cache_read_input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"type\":\"compaction\"}],\"output_tokens\":0,\"service_tier\":\"standard\",\"inference_geo\":\"global\",\"speed\":\"standard\"},\"diagnostics\":null}"
+      string: "{\"model\":\"claude-opus-5\",\"id\":\"msg_011CgsgxpjFC7jZmzL16VN7z\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"compaction\",\"content\":\"**Context:**
+        This conversation contains no prior substantive work \u2014 there is no multi-turn
+        history, no files examined, no code written, and no ongoing task beyond a
+        single request.\\n\\n**The entire exchange:** The user provided one instruction:
+        \\\"Summarize this sentence: compaction captures request metadata.\\\" This
+        was followed by a directive to produce the summary inside `<summary></summary>`
+        tags, including any information relevant for continuing the task in the next
+        context window, and to respond with text only without calling tools.\\n\\n**Summary
+        of the sentence in question:** \\\"Compaction captures request metadata\\\"
+        means that the compaction process records or preserves metadata associated
+        with requests.\\n\\n**State / next steps:** The only outstanding deliverable
+        was the summary itself, which is provided above. No tools were called, no
+        files were created or modified, and no further pending work exists. If the
+        conversation continues, it would start fresh from this point \u2014 any new
+        task would need to be specified by the user.\",\"signature\":\"CAIS9ggKHggTGALyARdjb21wYWN0aW9uX3NpZ25hdHVyZV92MRIMqCu2jTkK081Knja0Ggzka6bnUHhWKhxbpLwiMDn6inhwdFPmo82zAF/DfS3bgS8U4NwWv4eTdKyVWWmIQB4UWMMk+6vFD+Ww+xZfBCqFCCHd/CThl1RqyDFD8oq7sENGz+4mWZysLLQLak7Xk4lHeQSu873DAjEYhMMjNsWLjrQ/9rbPkt1KKWeN5Hhedr/f0Zee11AElmSz07XV6y4O92rSD6dVMhim9fpk9E5zoXXiFZrvfkhwJA7VyXmetnbm5axLD+i2iCbx8d81RhfWkTrobUNlF1gK8Q8t6aZBG47pmYMhwxLS8+6BirHcPa08ojQsCvsYkZhMwJLBMGl6QN+iLQEBZVTDQsbGKBrKeUMY4tV1XIQWtiCzRO8oYikacgfTT2Xb5AjJ9DzPm5t7GEkF3+T0HqhWTaaZ7a7tc91UBNSrg6GHGxm47vX0kWkSTZjbbT//SUv8AA4ZJFUaITacRGClFuOwm1TQXD4Ydc4+y3rOe3CKx0Ir6B8trlUWTNyDemDNg7/w+MAjd8EAvW08LQWjA5yuK4VRZFtNgRvEwqBdQ2kX+DiVjJpG2bKPT4jd0aT6g8FP85Gr/YhY/1He3c35YGswJ9ER761PkTeqmFNyuawFR9stcOAL4M2vRm5Na+arlnrCRvAQdlQJr1dyHl4YgxXOrMwpoX1e7QkFb/UuIzrWB6PXd3OyAVa2qN1G5l2wVKjTStNQctNn70V2sVh++1JZ47jqkXIHjpSe408asMhNDfKcgBsc0Ja/xcVWpLXE6uyofgekMQgFsSjYO3TXuuJv3BYsDwxF3ufbzysds03toQ1/LImkXUZSI1uVARBGQo5I8s3RgIZAs/lPDC8mHD2d6u0SHX8OZyYFPlLRq57adE6zS9wIpQPZwfo9pIoT1I07t5lg1xhRH+ygSXttVhvqdHM4YpU6IhRhJls5047RZsqF15iAZKZU2oDRsqKBmt6n00Q0ElkqtUiHB1O/zGYok/gimgNiHr2Ujn/DpLFmyC4OLASFvxRXUV3Tdiosmvhq0X8d+8+BDY29tEVJHmKeIeEyg3AYF4E+iXQYsF0JZsLVclLau5qSL5FP2CNRl7QUJ3pz0pmGA1FFxCfW8UUUqmJwtKAPXK03PJIRDzRvx8LhTR1vVLmVGMX7rdkpqrcQ6h8yuRIbAJKkIiJdsrrTvfOypjmNMkmWDP7TVA/WToa86XinjClXgC8sA88O6N9aHGBvgGmGsfGt2D8VEvhqS8LnldME4x0/hErzF7SvpkhKcAQ5h7q1iuJWkAhE2huS91agDb489meQSrg6sHHQMs5cdyAk1sW6O1wW5sNHJj+HFS5TNbRRijx4wyGzP/Q9fm4SiPYeY7Mpct8Hwj6aC35NlDM4BY5I1tJ3CKCFeXrLzfVkDZ+4A4ge+BOCvdgB1+2WQDhGP+T40kfHRpQ35aD8TCXzzEWXxKjepbWOU/uF7xdDbP3kHh+vhxgL\"}],\"container\":null,\"stop_reason\":\"compaction\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"iterations\":[{\"input_tokens\":82,\"output_tokens\":464,\"cache_read_input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"type\":\"compaction\"}],\"output_tokens\":0,\"service_tier\":\"standard\",\"inference_geo\":\"global\",\"speed\":\"standard\"},\"diagnostics\":null}"
     headers:
       anthropic-organization-id:
       - 27796668-7351-40ac-acc4-024aee8995a5
@@ -189,51 +68,51 @@ interactions:
       anthropic-ratelimit-input-tokens-remaining:
       - '10000000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-11-02T14:06:39Z'
+      - '2026-11-09T16:43:45Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
-      - '1999000'
+      - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-11-02T14:06:39Z'
+      - '2026-11-09T16:43:45Z'
       anthropic-ratelimit-requests-limit:
       - '20000'
       anthropic-ratelimit-requests-remaining:
       - '19999'
       anthropic-ratelimit-requests-reset:
-      - '2026-11-02T14:06:31Z'
+      - '2026-11-09T16:43:38Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
-      - '11999000'
+      - '12000000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-11-02T14:06:39Z'
+      - '2026-11-09T16:43:45Z'
       anthropic-workspace-id:
       - wrkspc_018bFG1FgNVWqx5pthtdGTzS
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a543b3479b07abd9-YYZ
+      - a57e470eff0a5d15-YYZ
       connection:
       - keep-alive
       content-length:
-      - '3183'
+      - '3308'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - application/json
       date:
-      - Mon, 02 Nov 2026 14:06:39 GMT
+      - Mon, 09 Nov 2026 16:43:45 GMT
       request-id:
-      - req_011CgeEKVqbU6UU4eWkonkYS
+      - req_011CgsgxpXrGkhBS1qLBPGCt
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=8018
+      - x-originResponse;dur=7250
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-bb638af6bdc309755ddbe75d916ce5b2-ca219aa62f79f7cc-01
+      - 00-6602abb9fcf6df2c78b146f0f959689b-1a9904af9ccd9fa2-01
       transfer-encoding:
       - chunked
       vary:

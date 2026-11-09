@@ -15,7 +15,7 @@ interactions:
       host:
       - api.cohere.com
       user-agent:
-      - cohere/7.3.0
+      - cohere/7.3.1
       x-fern-language:
       - Python
       x-fern-platform:
@@ -25,32 +25,32 @@ interactions:
       x-fern-sdk-name:
       - cohere
       x-fern-sdk-version:
-      - 7.3.0
+      - 7.3.1
     method: POST
     uri: https://api.cohere.com/v1/chat
   response:
     body:
-      string: '{"is_finished":false,"event_type":"stream-start","generation_id":"a3416091-148b-4a14-8299-e77daf352376"}
+      string: '{"is_finished":false,"event_type":"stream-start","generation_id":"5687fc9d-68b4-485d-ad85-216c7c85aac5"}
 
         {"is_finished":false,"event_type":"text-generation","text":"Hi"}
 
         {"is_finished":false,"event_type":"text-generation","text":"!"}
 
-        {"is_finished":true,"event_type":"stream-end","response":{"response_id":"cb23c7c2-ec37-4f48-841e-2ba5d07384d1","text":"Hi!","generation_id":"a3416091-148b-4a14-8299-e77daf352376","chat_history":[{"role":"USER","message":"Say
-        hi in one word."},{"role":"CHATBOT","message":"Hi!"}],"finish_reason":"COMPLETE","meta":{"api_version":{"version":"1"},"billed_units":{"input_tokens":6,"output_tokens":2},"tokens":{"input_tokens":501,"output_tokens":5},"cached_tokens":448}},"finish_reason":"COMPLETE"}
+        {"is_finished":true,"event_type":"stream-end","response":{"response_id":"3a3c53ac-7779-4884-929d-2f86820c8447","text":"Hi!","generation_id":"5687fc9d-68b4-485d-ad85-216c7c85aac5","chat_history":[{"role":"USER","message":"Say
+        hi in one word."},{"role":"CHATBOT","message":"Hi!"}],"finish_reason":"COMPLETE","meta":{"api_version":{"version":"1"},"billed_units":{"input_tokens":6,"output_tokens":2},"tokens":{"input_tokens":501,"output_tokens":5},"cached_tokens":464}},"finish_reason":"COMPLETE"}
 
         '
     headers:
       access-control-expose-headers:
       - X-Debug-Trace-ID
       alt-svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      - h3=":443"; ma=2592000
       cache-control:
       - no-cache, no-store, no-transform, must-revalidate, private, max-age=0
       content-type:
       - application/stream+json
       date:
-      - Mon, 26 Oct 2026 12:30:59 GMT
+      - Mon, 09 Nov 2026 16:43:27 GMT
       expires:
       - Thu, 01 Jan 1970 00:00:00 GMT
       pragma:
@@ -66,11 +66,11 @@ interactions:
       x-accel-expires:
       - '0'
       x-debug-trace-id:
-      - 5a7b62af91d073eba40ae51b94449e35
+      - ddd73b0a429eb84d1d5c5c89532b3b20
       x-endpoint-monthly-call-limit:
       - '1000'
       x-envoy-upstream-service-time:
-      - '11752'
+      - '8980'
       x-trial-endpoint-call-limit:
       - '20'
       x-trial-endpoint-call-remaining:

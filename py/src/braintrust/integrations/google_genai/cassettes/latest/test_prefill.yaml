@@ -7,7 +7,7 @@ interactions:
       accept:
       - '*/*'
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
@@ -17,35 +17,35 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.34.0 gl-python/3.14.7
+      - google-genai-sdk/3.0.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/2.34.0 gl-python/3.14.7
+      - google-genai-sdk/3.0.0 gl-python/3.14.7
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
+    uri: https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
         [\n          {\n            \"text\": \"\\n\\nLines of code appear,\\nLogic
-        flows, a digital art,\\nWorld takes on new form.\"\n          }\n        ],\n
+        flows, a world is born,\\nSoftware comes alive.\"\n          }\n        ],\n
         \       \"role\": \"model\"\n      },\n      \"finishReason\": \"STOP\",\n
         \     \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
-        15,\n    \"candidatesTokenCount\": 20,\n    \"totalTokenCount\": 35,\n    \"promptTokensDetails\":
+        15,\n    \"candidatesTokenCount\": 19,\n    \"totalTokenCount\": 34,\n    \"promptTokensDetails\":
         [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 15\n
         \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
-        \"gemini-2.5-flash-lite\",\n  \"responseId\": \"uJToapKTDbqQytMPhNSmWQ\"\n}\n"
+        \"gemini-2.5-flash-lite\",\n  \"responseId\": \"tPzxapCbL6qawbUP2OjZCA\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '627'
+      - '626'
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Mon, 02 Nov 2026 13:48:40 GMT
+      - Mon, 09 Nov 2026 17:02:45 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=457
+      - gfet4t7; dur=518
       transfer-encoding:
       - chunked
       vary:

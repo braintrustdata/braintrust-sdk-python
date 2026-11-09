@@ -17,7 +17,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.64.0
+      - pydantic-ai/2.66.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -27,7 +27,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.42.1
+      - 3.46.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -40,16 +40,16 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0fea8d57a7f69275016ae8944b82c087d1828a43f21fbb8656\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1793627211,\n  \"status\":
+      string: "{\n  \"id\": \"resp_089c7e64ed7d61e9016af1f84dd7cc87d2aff68576104e2f9e\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1794242637,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1793627212,\n  \"error\":
-        null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
-        null,\n  \"max_output_tokens\": 200,\n  \"max_tool_calls\": null,\n  \"model\":
-        \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"fc_0fea8d57a7f69275016ae8944c596087d19a5ba22c0924dd72\",\n
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794242638,\n  \"error\":
+        null,\n  \"frequency_penalty\": 0.0,\n  \"image\": {\n    \"context_compression\":
+        \"disabled\"\n  },\n  \"incomplete_details\": null,\n  \"instructions\": null,\n
+        \ \"max_output_tokens\": 200,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"moderation\": null,\n  \"output\": [\n    {\n      \"id\": \"fc_089c7e64ed7d61e9016af1f84e6ac887d292916c7adbe2e02e\",\n
         \     \"type\": \"function_call\",\n      \"status\": \"completed\",\n      \"arguments\":
-        \"{\\\"path\\\":\\\"/tmp/report.txt\\\"}\",\n      \"call_id\": \"call_ZMKWEbIIeE1dJKN7cIxFQaor\",\n
+        \"{\\\"path\\\":\\\"/tmp/report.txt\\\"}\",\n      \"call_id\": \"call_0ZR8YBWKS6xLLcRE6HseCMcH\",\n
         \     \"name\": \"delete_file\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n
         \ \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
         null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
@@ -84,17 +84,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a54396776a25a1fe-YYZ
+      - a57e47861b356e57-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2370'
+      - '2426'
       content-type:
       - application/json
       date:
-      - Mon, 02 Nov 2026 13:46:52 GMT
+      - Mon, 09 Nov 2026 16:43:58 GMT
       openai-processing-ms:
-      - '916'
+      - '800'
       openai-version:
       - '2020-10-01'
       server:
@@ -118,13 +118,13 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_b6d80d5791984ab8b0c3f5cf2d9fb285
+      - req_b0f66ec4a4f94f8d83eab547d1f4825d
     status:
       code: 200
       message: OK
 - request:
     body: '{"model":"gpt-4o-mini","stream":false,"input":[{"role":"user","content":"Delete
-      the file at /tmp/report.txt."},{"name":"delete_file","arguments":"{\"path\":\"/tmp/report.txt\"}","call_id":"call_ZMKWEbIIeE1dJKN7cIxFQaor","type":"function_call"},{"type":"function_call_output","call_id":"call_ZMKWEbIIeE1dJKN7cIxFQaor","output":"Deleted
+      the file at /tmp/report.txt."},{"name":"delete_file","arguments":"{\"path\":\"/tmp/report.txt\"}","call_id":"call_0ZR8YBWKS6xLLcRE6HseCMcH","type":"function_call"},{"type":"function_call_output","call_id":"call_0ZR8YBWKS6xLLcRE6HseCMcH","output":"Deleted
       /tmp/report.txt"}],"max_output_tokens":200,"tool_choice":"auto","tools":[{"name":"delete_file","parameters":{"additionalProperties":false,"properties":{"path":{"type":"string"}},"required":["path"],"type":"object"},"type":"function","description":"Delete
       the file at the given path.","strict":true}]}'
     headers:
@@ -141,7 +141,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.64.0
+      - pydantic-ai/2.66.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -151,7 +151,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.42.1
+      - 3.46.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -164,14 +164,14 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0f6b64023c09927e016ae8944c969487d18aeeadd907523b8d\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1793627212,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0dbfcefafc828f55016af1f84ed79487d2b269a46af2bdd67f\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1794242638,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1793627213,\n  \"error\":
-        null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
-        null,\n  \"max_output_tokens\": 200,\n  \"max_tool_calls\": null,\n  \"model\":
-        \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_0f6b64023c09927e016ae8944d0f5487d19038022b2ce99610\",\n
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794242639,\n  \"error\":
+        null,\n  \"frequency_penalty\": 0.0,\n  \"image\": {\n    \"context_compression\":
+        \"disabled\"\n  },\n  \"incomplete_details\": null,\n  \"instructions\": null,\n
+        \ \"max_output_tokens\": 200,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"moderation\": null,\n  \"output\": [\n    {\n      \"id\": \"msg_0dbfcefafc828f55016af1f84f511487d29f73df098f60183b\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"The file at `/tmp/report.txt`
@@ -209,17 +209,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a543967e0fc8a1fe-YYZ
+      - a57e478c59056e57-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2477'
+      - '2533'
       content-type:
       - application/json
       date:
-      - Mon, 02 Nov 2026 13:46:53 GMT
+      - Mon, 09 Nov 2026 16:43:59 GMT
       openai-processing-ms:
-      - '741'
+      - '714'
       openai-version:
       - '2020-10-01'
       server:
@@ -237,13 +237,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999707'
+      - '149999705'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_58388938a2064470a0df5ae48a5946ba
+      - req_0a7a407d8cab4f069697ad255afa746f
     status:
       code: 200
       message: OK

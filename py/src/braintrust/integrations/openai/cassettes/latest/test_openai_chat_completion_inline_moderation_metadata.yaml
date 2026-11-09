@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 3.42.1
+      - OpenAI/Python 3.46.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.42.1
+      - 3.46.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,8 +39,8 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EfmedY7OUTKxrY0IJmfxD2ePAmqhd\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1793627183,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiMksZGd4wjmH7nuPCbmts753cGI7\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794242610,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"Hello!\",\n        \"refusal\": null,\n
         \       \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\":
@@ -92,12 +92,12 @@ interactions:
         false,\n            \"violence\": false,\n            \"violence/graphic\":
         false\n          },\n          \"category_scores\": {\n            \"harassment\":
         0.00001535623976496012,\n            \"harassment/threatening\": 2.212566909570261e-6,\n
-        \           \"sexual\": 0.00005193048644949271,\n            \"hate\": 4.331903899346328e-6,\n
+        \           \"sexual\": 0.0000527478412523148,\n            \"hate\": 4.264746818557914e-6,\n
         \           \"hate/threatening\": 2.0580491096133835e-7,\n            \"illicit\":
         0.000013765463368900109,\n            \"illicit/violent\": 7.722191834067996e-6,\n
         \           \"self-harm/intent\": 1.8631746484712008e-6,\n            \"self-harm/instructions\":
         7.889262586245034e-7,\n            \"self-harm\": 3.8831109868779005e-6,\n
-        \           \"sexual/minors\": 4.069457790466838e-6,\n            \"violence\":
+        \           \"sexual/minors\": 4.1335397768930325e-6,\n            \"violence\":
         0.0004942623523511968,\n            \"violence/graphic\": 2.355261854303796e-6\n
         \         },\n          \"category_applied_input_types\": {\n            \"harassment\":
         [\n              \"text\"\n            ],\n            \"harassment/threatening\":
@@ -112,7 +112,7 @@ interactions:
         \             \"text\"\n            ],\n            \"violence\": [\n              \"text\"\n
         \           ],\n            \"violence/graphic\": [\n              \"text\"\n
         \           ]\n          }\n        }\n      ]\n    }\n  },\n  \"system_fingerprint\":
-        \"fp_efe5482bd3\"\n}\n"
+        \"fp_eb86cfd659\"\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -123,7 +123,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a54395c50c638816-YYZ
+      - a57e46db8e8b11fc-YYZ
       connection:
       - keep-alive
       content-length:
@@ -131,9 +131,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 02 Nov 2026 13:46:23 GMT
+      - Mon, 09 Nov 2026 16:43:31 GMT
       openai-processing-ms:
-      - '438'
+      - '652'
       openai-version:
       - '2020-10-01'
       server:
@@ -153,13 +153,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999990'
+      - '149999992'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_e588a47ce9a142d9a5eacefbc4b933e7
+      - req_441d783e7deb4a19bce084c51b54146c
     status:
       code: 200
       message: OK

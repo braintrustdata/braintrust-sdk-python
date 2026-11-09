@@ -35,16 +35,16 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.7
+      - 3.13.13
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EdE9TcqRVNtHGJwxGxo9B3CGmNwZg\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1793017899,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiMkujkg3VLqqFpuTXKUpU2RKzFDO\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794242612,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
-        \           \"id\": \"call_wKSoTwhJCWxAXfQz0x2ZkbCZ\",\n            \"type\":
+        \           \"id\": \"call_35GpRGyPrzfuy6XBK3PaNgsF\",\n            \"type\":
         \"function\",\n            \"function\": {\n              \"name\": \"calculate\",\n
         \             \"arguments\": \"{\\\"operation\\\":\\\"multiply\\\",\\\"a\\\":127,\\\"b\\\":49}\"\n
         \           }\n          }\n        ],\n        \"refusal\": null,\n        \"annotations\":
@@ -54,7 +54,7 @@ interactions:
         0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_e9e83bb9dc\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_9fb70b4f64\"\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -65,7 +65,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5097aafca7cac6c-YYZ
+      - a57e46e35c27ab7b-YYZ
       connection:
       - keep-alive
       content-length:
@@ -73,9 +73,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 26 Oct 2026 12:31:40 GMT
+      - Mon, 09 Nov 2026 16:43:32 GMT
       openai-processing-ms:
-      - '675'
+      - '748'
       openai-version:
       - '2020-10-01'
       server:
@@ -101,13 +101,13 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_5aca7bc976f949cc91bf5f6d94a7ca18
+      - req_95db081c327147b690d530ec5ff6f025
     status:
       code: 200
       message: OK
 - request:
-    body: '{"messages":[{"content":"What is 127 multiplied by 49?","role":"user"},{"content":null,"role":"assistant","tool_calls":[{"type":"function","id":"call_wKSoTwhJCWxAXfQz0x2ZkbCZ","function":{"name":"calculate","arguments":"{\"operation\":
-      \"multiply\", \"a\": 127, \"b\": 49}"}}]},{"content":"6223","role":"tool","tool_call_id":"call_wKSoTwhJCWxAXfQz0x2ZkbCZ"}],"model":"gpt-4o-mini","stream":false,"tools":[{"type":"function","function":{"name":"calculate","description":"Perform
+    body: '{"messages":[{"content":"What is 127 multiplied by 49?","role":"user"},{"content":null,"role":"assistant","tool_calls":[{"type":"function","id":"call_35GpRGyPrzfuy6XBK3PaNgsF","function":{"name":"calculate","arguments":"{\"operation\":
+      \"multiply\", \"a\": 127, \"b\": 49}"}}]},{"content":"6223","role":"tool","tool_call_id":"call_35GpRGyPrzfuy6XBK3PaNgsF"}],"model":"gpt-4o-mini","stream":false,"tools":[{"type":"function","function":{"name":"calculate","description":"Perform
       a mathematical calculation.\n\nArgs:\n    operation: The mathematical operation
       (add, subtract, multiply, divide)\n    a: First number\n    b: Second number","parameters":{"properties":{"operation":{"type":"string"},"a":{"type":"number"},"b":{"type":"number"}},"required":["operation","a","b"],"type":"object"}}}]}'
     headers:
@@ -142,22 +142,22 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.7
+      - 3.13.13
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EdE9U5vc6cn4KCokUuo4S781FZbHy\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1793017900,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiMkuLjMcu3Ua2m30G2df2YKkvn40\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794242612,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"127 multiplied by 49 is 6223.\",\n
+        \"assistant\",\n        \"content\": \"127 multiplied by 49 equals 6223.\",\n
         \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
         null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
         115,\n    \"completion_tokens\": 11,\n    \"total_tokens\": 126,\n    \"prompt_tokens_details\":
         {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_e9e83bb9dc\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_9fb70b4f64\"\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -168,17 +168,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5097ab4cf2eac6c-YYZ
+      - a57e46e8ea83ab7b-YYZ
       connection:
       - keep-alive
       content-length:
-      - '838'
+      - '842'
       content-type:
       - application/json
       date:
-      - Mon, 26 Oct 2026 12:31:40 GMT
+      - Mon, 09 Nov 2026 16:43:33 GMT
       openai-processing-ms:
-      - '514'
+      - '499'
       openai-version:
       - '2020-10-01'
       server:
@@ -204,7 +204,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_a9ce8fae3a3844e3bad70286a575bdec
+      - req_51bf2323830240c5a970e755561fbf11
     status:
       code: 200
       message: OK

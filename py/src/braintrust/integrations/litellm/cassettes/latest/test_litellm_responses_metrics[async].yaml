@@ -16,19 +16,20 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - litellm/1.106.0
+      - litellm/1.108.3
     method: POST
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_035c1e3258370925006ad650494d1887d080005a5fc24fc82f\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1792430153,\n  \"status\":
+      string: "{\n  \"id\": \"resp_09ff12b2ce60441f016af1f83b8ebc87d2a999a713a8945f55\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1794242619,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1792430154,\n  \"error\":
-        null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
-        \"Just the number please\",\n  \"max_output_tokens\": null,\n  \"max_tool_calls\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794242620,\n  \"error\":
+        null,\n  \"frequency_penalty\": 0.0,\n  \"image\": {\n    \"context_compression\":
+        \"disabled\"\n  },\n  \"incomplete_details\": null,\n  \"instructions\": \"Just
+        the number please\",\n  \"max_output_tokens\": null,\n  \"max_tool_calls\":
         null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n
-        \ \"output\": [\n    {\n      \"id\": \"msg_035c1e3258370925006ad6504a310487d09526cd1b61e16090\",\n
+        \ \"output\": [\n    {\n      \"id\": \"msg_09ff12b2ce60441f016af1f83c01b087d2a2522de8d4404b2d\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"24\"\n        }\n
@@ -37,7 +38,7 @@ interactions:
         null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
         \   \"context\": null,\n    \"effort\": null,\n    \"summary\": null\n  },\n
         \ \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n  \"store\":
-        true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
+        false,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
         \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
         \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\":
         0,\n      \"input_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
@@ -52,7 +53,7 @@ interactions:
         {}\n}"
     headers:
       Access-Control-Expose-Headers:
-      - X-Request-ID
+      - X-Request-ID, Server-Timing-Total
       - CF-Ray
       - CF-Ray
       Alt-Svc:
@@ -60,13 +61,13 @@ interactions:
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - a4d16d698db5cdb3-SJC
+      - a57e4713c9dbb405-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Mon, 19 Oct 2026 17:15:54 GMT
+      - Mon, 09 Nov 2026 16:43:40 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -76,11 +77,11 @@ interactions:
       X-Content-Type-Options:
       - nosniff
       X-Request-ID:
-      - req_2e391734f58a4aab9ab40374a309715c
+      - req_5459830adf504898a592ae11e37317e0
       content-length:
-      - '2018'
+      - '2075'
       openai-processing-ms:
-      - '1155'
+      - '538'
       openai-version:
       - '2020-10-01'
       x-ratelimit-limit-requests:
@@ -88,11 +89,11 @@ interactions:
       x-ratelimit-limit-tokens:
       - '150000000'
       x-ratelimit-remaining-requests:
-      - '29998'
+      - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999920'
+      - '149999960'
       x-ratelimit-reset-requests:
-      - 4ms
+      - 2ms
       x-ratelimit-reset-tokens:
       - 0s
     status:

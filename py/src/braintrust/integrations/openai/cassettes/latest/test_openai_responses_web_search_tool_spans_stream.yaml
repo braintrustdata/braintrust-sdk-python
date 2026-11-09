@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 3.42.1
+      - OpenAI/Python 3.46.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.42.1
+      - 3.46.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,155 +39,148 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "event: response.created\ndata: {\"type\":\"response.created\",\"response\":{\"id\":\"resp_05dfa648c9e9fa53016ae89436c1b487d195731e9a98b107b4\",\"object\":\"response\",\"created_at\":1793627190,\"status\":\"in_progress\",\"access_programs\":null,\"background\":false,\"completed_at\":null,\"error\":null,\"frequency_penalty\":0.0,\"incomplete_details\":null,\"instructions\":null,\"max_output_tokens\":null,\"max_tool_calls\":null,\"model\":\"gpt-4.1-mini-2025-04-14\",\"moderation\":null,\"output\":[],\"parallel_tool_calls\":true,\"presence_penalty\":0.0,\"previous_response_id\":null,\"prompt_cache_key\":null,\"prompt_cache_retention\":\"in_memory\",\"reasoning\":{\"context\":null,\"effort\":null,\"summary\":null},\"safety_identifier\":null,\"service_tier\":\"auto\",\"store\":false,\"temperature\":1.0,\"text\":{\"format\":{\"type\":\"text\"},\"verbosity\":\"medium\"},\"tool_choice\":{\"type\":\"web_search_preview\"},\"tool_usage\":{\"image_gen\":{\"input_tokens\":0,\"input_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"output_tokens\":0,\"output_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"total_tokens\":0},\"web_search\":{\"num_requests\":0}},\"tools\":[{\"type\":\"web_search_preview\",\"search_content_types\":[\"text\"],\"search_context_size\":\"low\",\"user_location\":{\"type\":\"approximate\",\"city\":null,\"country\":\"US\",\"region\":null,\"timezone\":null}}],\"top_logprobs\":0,\"top_p\":1.0,\"truncation\":\"disabled\",\"usage\":null,\"user\":null,\"metadata\":{}},\"sequence_number\":0}\n\nevent:
-        response.in_progress\ndata: {\"type\":\"response.in_progress\",\"response\":{\"id\":\"resp_05dfa648c9e9fa53016ae89436c1b487d195731e9a98b107b4\",\"object\":\"response\",\"created_at\":1793627190,\"status\":\"in_progress\",\"access_programs\":null,\"background\":false,\"completed_at\":null,\"error\":null,\"frequency_penalty\":0.0,\"incomplete_details\":null,\"instructions\":null,\"max_output_tokens\":null,\"max_tool_calls\":null,\"model\":\"gpt-4.1-mini-2025-04-14\",\"moderation\":null,\"output\":[],\"parallel_tool_calls\":true,\"presence_penalty\":0.0,\"previous_response_id\":null,\"prompt_cache_key\":null,\"prompt_cache_retention\":\"in_memory\",\"reasoning\":{\"context\":null,\"effort\":null,\"summary\":null},\"safety_identifier\":null,\"service_tier\":\"auto\",\"store\":false,\"temperature\":1.0,\"text\":{\"format\":{\"type\":\"text\"},\"verbosity\":\"medium\"},\"tool_choice\":{\"type\":\"web_search_preview\"},\"tool_usage\":{\"image_gen\":{\"input_tokens\":0,\"input_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"output_tokens\":0,\"output_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"total_tokens\":0},\"web_search\":{\"num_requests\":0}},\"tools\":[{\"type\":\"web_search_preview\",\"search_content_types\":[\"text\"],\"search_context_size\":\"low\",\"user_location\":{\"type\":\"approximate\",\"city\":null,\"country\":\"US\",\"region\":null,\"timezone\":null}}],\"top_logprobs\":0,\"top_p\":1.0,\"truncation\":\"disabled\",\"usage\":null,\"user\":null,\"metadata\":{}},\"sequence_number\":1}\n\nevent:
-        response.output_item.added\ndata: {\"type\":\"response.output_item.added\",\"item\":{\"id\":\"ws_05dfa648c9e9fa53016ae89436ec7087d1a380c564363881e5\",\"type\":\"web_search_call\",\"status\":\"in_progress\",\"action\":{\"type\":\"search\"}},\"output_index\":0,\"sequence_number\":2}\n\nevent:
-        response.web_search_call.in_progress\ndata: {\"type\":\"response.web_search_call.in_progress\",\"item_id\":\"ws_05dfa648c9e9fa53016ae89436ec7087d1a380c564363881e5\",\"output_index\":0,\"sequence_number\":3}\n\nevent:
-        response.web_search_call.searching\ndata: {\"type\":\"response.web_search_call.searching\",\"item_id\":\"ws_05dfa648c9e9fa53016ae89436ec7087d1a380c564363881e5\",\"output_index\":0,\"sequence_number\":4}\n\nevent:
-        response.web_search_call.completed\ndata: {\"type\":\"response.web_search_call.completed\",\"item_id\":\"ws_05dfa648c9e9fa53016ae89436ec7087d1a380c564363881e5\",\"output_index\":0,\"sequence_number\":5}\n\nevent:
-        response.output_item.done\ndata: {\"type\":\"response.output_item.done\",\"item\":{\"id\":\"ws_05dfa648c9e9fa53016ae89436ec7087d1a380c564363881e5\",\"type\":\"web_search_call\",\"status\":\"completed\",\"action\":{\"type\":\"search\",\"queries\":[\"Search
+      string: "event: response.created\ndata: {\"type\":\"response.created\",\"response\":{\"id\":\"resp_08580733cc2e6625016af1f836c4ec87d2aa221035cedccf79\",\"object\":\"response\",\"created_at\":1794242614,\"status\":\"in_progress\",\"access_programs\":null,\"background\":false,\"completed_at\":null,\"error\":null,\"frequency_penalty\":0.0,\"image\":{\"context_compression\":\"disabled\"},\"incomplete_details\":null,\"instructions\":null,\"max_output_tokens\":null,\"max_tool_calls\":null,\"model\":\"gpt-4.1-mini-2025-04-14\",\"moderation\":null,\"output\":[],\"parallel_tool_calls\":true,\"presence_penalty\":0.0,\"previous_response_id\":null,\"prompt_cache_key\":null,\"prompt_cache_retention\":\"in_memory\",\"reasoning\":{\"context\":null,\"effort\":null,\"summary\":null},\"safety_identifier\":null,\"service_tier\":\"auto\",\"store\":false,\"temperature\":1.0,\"text\":{\"format\":{\"type\":\"text\"},\"verbosity\":\"medium\"},\"tool_choice\":{\"type\":\"web_search_preview\"},\"tool_usage\":{\"image_gen\":{\"input_tokens\":0,\"input_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"output_tokens\":0,\"output_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"total_tokens\":0},\"web_search\":{\"num_requests\":0}},\"tools\":[{\"type\":\"web_search_preview\",\"search_content_types\":[\"text\"],\"search_context_size\":\"low\",\"user_location\":{\"type\":\"approximate\",\"city\":null,\"country\":\"US\",\"region\":null,\"timezone\":null}}],\"top_logprobs\":0,\"top_p\":1.0,\"truncation\":\"disabled\",\"usage\":null,\"user\":null,\"metadata\":{}},\"sequence_number\":0}\n\nevent:
+        response.in_progress\ndata: {\"type\":\"response.in_progress\",\"response\":{\"id\":\"resp_08580733cc2e6625016af1f836c4ec87d2aa221035cedccf79\",\"object\":\"response\",\"created_at\":1794242614,\"status\":\"in_progress\",\"access_programs\":null,\"background\":false,\"completed_at\":null,\"error\":null,\"frequency_penalty\":0.0,\"image\":{\"context_compression\":\"disabled\"},\"incomplete_details\":null,\"instructions\":null,\"max_output_tokens\":null,\"max_tool_calls\":null,\"model\":\"gpt-4.1-mini-2025-04-14\",\"moderation\":null,\"output\":[],\"parallel_tool_calls\":true,\"presence_penalty\":0.0,\"previous_response_id\":null,\"prompt_cache_key\":null,\"prompt_cache_retention\":\"in_memory\",\"reasoning\":{\"context\":null,\"effort\":null,\"summary\":null},\"safety_identifier\":null,\"service_tier\":\"auto\",\"store\":false,\"temperature\":1.0,\"text\":{\"format\":{\"type\":\"text\"},\"verbosity\":\"medium\"},\"tool_choice\":{\"type\":\"web_search_preview\"},\"tool_usage\":{\"image_gen\":{\"input_tokens\":0,\"input_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"output_tokens\":0,\"output_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"total_tokens\":0},\"web_search\":{\"num_requests\":0}},\"tools\":[{\"type\":\"web_search_preview\",\"search_content_types\":[\"text\"],\"search_context_size\":\"low\",\"user_location\":{\"type\":\"approximate\",\"city\":null,\"country\":\"US\",\"region\":null,\"timezone\":null}}],\"top_logprobs\":0,\"top_p\":1.0,\"truncation\":\"disabled\",\"usage\":null,\"user\":null,\"metadata\":{}},\"sequence_number\":1}\n\nevent:
+        response.output_item.added\ndata: {\"type\":\"response.output_item.added\",\"item\":{\"id\":\"ws_08580733cc2e6625016af1f83701bc87d2bd3bd5344f9f2a45\",\"type\":\"web_search_call\",\"status\":\"in_progress\",\"action\":{\"type\":\"search\"}},\"output_index\":0,\"sequence_number\":2}\n\nevent:
+        response.web_search_call.in_progress\ndata: {\"type\":\"response.web_search_call.in_progress\",\"item_id\":\"ws_08580733cc2e6625016af1f83701bc87d2bd3bd5344f9f2a45\",\"output_index\":0,\"sequence_number\":3}\n\nevent:
+        response.web_search_call.searching\ndata: {\"type\":\"response.web_search_call.searching\",\"item_id\":\"ws_08580733cc2e6625016af1f83701bc87d2bd3bd5344f9f2a45\",\"output_index\":0,\"sequence_number\":4}\n\nevent:
+        response.web_search_call.completed\ndata: {\"type\":\"response.web_search_call.completed\",\"item_id\":\"ws_08580733cc2e6625016af1f83701bc87d2bd3bd5344f9f2a45\",\"output_index\":0,\"sequence_number\":5}\n\nevent:
+        response.output_item.done\ndata: {\"type\":\"response.output_item.done\",\"item\":{\"id\":\"ws_08580733cc2e6625016af1f83701bc87d2bd3bd5344f9f2a45\",\"type\":\"web_search_call\",\"status\":\"completed\",\"action\":{\"type\":\"search\",\"queries\":[\"Search
         the web for the latest weather in Paris and answer briefly.\"],\"query\":\"Search
         the web for the latest weather in Paris and answer briefly.\"}},\"output_index\":0,\"sequence_number\":6}\n\nevent:
-        response.output_item.added\ndata: {\"type\":\"response.output_item.added\",\"item\":{\"id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"type\":\"message\",\"status\":\"in_progress\",\"content\":[],\"role\":\"assistant\"},\"output_index\":1,\"sequence_number\":7}\n\nevent:
-        response.content_part.added\ndata: {\"type\":\"response.content_part.added\",\"content_index\":0,\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"output_index\":1,\"part\":{\"type\":\"output_text\",\"annotations\":[],\"logprobs\":[],\"text\":\"\"},\"sequence_number\":8}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"As\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"Nx5Z9JIIthZxoT\",\"output_index\":1,\"sequence_number\":9}\n\nevent:
+        response.output_item.added\ndata: {\"type\":\"response.output_item.added\",\"item\":{\"id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"type\":\"message\",\"status\":\"in_progress\",\"content\":[],\"role\":\"assistant\"},\"output_index\":1,\"sequence_number\":7}\n\nevent:
+        response.content_part.added\ndata: {\"type\":\"response.content_part.added\",\"content_index\":0,\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"output_index\":1,\"part\":{\"type\":\"output_text\",\"annotations\":[],\"logprobs\":[],\"text\":\"\"},\"sequence_number\":8}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"As\",\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"obfuscation\":\"UFRB4hVsromnUK\",\"output_index\":1,\"sequence_number\":9}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        of\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"lkLg20S7FCyQT\",\"output_index\":1,\"sequence_number\":10}\n\nevent:
+        of\",\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"obfuscation\":\"D6tWAznm2g6qa\",\"output_index\":1,\"sequence_number\":10}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        \",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"ywrfn0wWH3cdzrp\",\"output_index\":1,\"sequence_number\":11}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"2\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"eicOEU6fL3X8aQK\",\"output_index\":1,\"sequence_number\":12}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\":\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"Q8bFI8smrxVF9Bz\",\"output_index\":1,\"sequence_number\":13}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"46\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"WPJh7Yky8by8pf\",\"output_index\":1,\"sequence_number\":14}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"\u202F\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"uzuUtoPDt0MdAgt\",\"output_index\":1,\"sequence_number\":15}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"PM\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"NK4S3wYkN4ijAF\",\"output_index\":1,\"sequence_number\":16}\n\nevent:
+        \",\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"obfuscation\":\"pbevdRPUTFWZep9\",\"output_index\":1,\"sequence_number\":11}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"5\",\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"obfuscation\":\"PNqD3wKjgAwHUbZ\",\"output_index\":1,\"sequence_number\":12}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\":\",\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"obfuscation\":\"8Yx6zMZPnMNw3Te\",\"output_index\":1,\"sequence_number\":13}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"43\",\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"obfuscation\":\"Mvz6Tk43PW5UpL\",\"output_index\":1,\"sequence_number\":14}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        on\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"pK7KjRmUN0PsM\",\"output_index\":1,\"sequence_number\":17}\n\nevent:
+        PM\",\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"obfuscation\":\"KsUiFyJgjTOec\",\"output_index\":1,\"sequence_number\":15}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        Monday\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"83MLWdVvp\",\"output_index\":1,\"sequence_number\":18}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\",\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"aS2nIytuumAtWgy\",\"output_index\":1,\"sequence_number\":19}\n\nevent:
+        local\",\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"obfuscation\":\"oLULnElFNO\",\"output_index\":1,\"sequence_number\":16}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        November\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"Vf5PzxJ\",\"output_index\":1,\"sequence_number\":20}\n\nevent:
+        time\",\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"obfuscation\":\"6nMmha1TtqB\",\"output_index\":1,\"sequence_number\":17}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        \",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"VqLHfKNEe6N4gZO\",\"output_index\":1,\"sequence_number\":21}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"2\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"yYMmhUwTtVrkXlE\",\"output_index\":1,\"sequence_number\":22}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\",\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"sZwHdAqhBsHQhWO\",\"output_index\":1,\"sequence_number\":23}\n\nevent:
+        in\",\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"obfuscation\":\"UFIQhZTmMtN2J\",\"output_index\":1,\"sequence_number\":18}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        \",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"5MpW4dZCWeecx0d\",\"output_index\":1,\"sequence_number\":24}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"202\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"qKYl4Ezl2pxOB\",\"output_index\":1,\"sequence_number\":25}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"6\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"q1tVtGe8KoyEdcs\",\"output_index\":1,\"sequence_number\":26}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\",\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"V46LpdyVEDC8nlY\",\"output_index\":1,\"sequence_number\":27}\n\nevent:
+        Paris\",\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"obfuscation\":\"4zebiCRKjA\",\"output_index\":1,\"sequence_number\":19}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\",\",\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"obfuscation\":\"QwMnVmZClPHT3vW\",\"output_index\":1,\"sequence_number\":20}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        in\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"jnXg4OPqJoyW5\",\"output_index\":1,\"sequence_number\":28}\n\nevent:
+        the\",\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"obfuscation\":\"HfSWEt4IGtf6\",\"output_index\":1,\"sequence_number\":21}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        Paris\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"EmKYWj5WHP\",\"output_index\":1,\"sequence_number\":29}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\",\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"GQEHcQUjFfJQa7M\",\"output_index\":1,\"sequence_number\":30}\n\nevent:
+        current\",\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"obfuscation\":\"xDmLBEcM\",\"output_index\":1,\"sequence_number\":22}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        France\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"0JxEFCw60\",\"output_index\":1,\"sequence_number\":31}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\",\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"9qAlhJe9UTMgj3l\",\"output_index\":1,\"sequence_number\":32}\n\nevent:
+        weather\",\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"obfuscation\":\"2Q7qL7Bc\",\"output_index\":1,\"sequence_number\":23}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        the\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"Tn9xedB37MHX\",\"output_index\":1,\"sequence_number\":33}\n\nevent:
+        is\",\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"obfuscation\":\"tZUuy4XCS14sf\",\"output_index\":1,\"sequence_number\":24}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        weather\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"jzNDK5yv\",\"output_index\":1,\"sequence_number\":34}\n\nevent:
+        cloudy\",\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"obfuscation\":\"r3bWUoLm6\",\"output_index\":1,\"sequence_number\":25}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        is\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"glTXFWUNDuydp\",\"output_index\":1,\"sequence_number\":35}\n\nevent:
+        with\",\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"obfuscation\":\"glU1GsehOQH\",\"output_index\":1,\"sequence_number\":26}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        cloudy\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"0lONKSq4v\",\"output_index\":1,\"sequence_number\":36}\n\nevent:
+        a\",\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"obfuscation\":\"CNXWU4CWoic40f\",\"output_index\":1,\"sequence_number\":27}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        with\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"aub8O1PkJ8c\",\"output_index\":1,\"sequence_number\":37}\n\nevent:
+        temperature\",\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"obfuscation\":\"TYTD\",\"output_index\":1,\"sequence_number\":28}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        a\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"XLLFmE12WaWey5\",\"output_index\":1,\"sequence_number\":38}\n\nevent:
+        of\",\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"obfuscation\":\"HuSQWDY4QIg8E\",\"output_index\":1,\"sequence_number\":29}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        temperature\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"Gp70\",\"output_index\":1,\"sequence_number\":39}\n\nevent:
+        \",\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"obfuscation\":\"Txqi1HtNTfDSeU7\",\"output_index\":1,\"sequence_number\":30}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"49\",\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"obfuscation\":\"Cdd5D8V3PllgNu\",\"output_index\":1,\"sequence_number\":31}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"\xB0F\",\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"obfuscation\":\"B1dN3AWCS615dK\",\"output_index\":1,\"sequence_number\":32}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        of\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"BSYtCV6E0Por7\",\"output_index\":1,\"sequence_number\":40}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        \",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"Xk7e9xcuTdFFNJ0\",\"output_index\":1,\"sequence_number\":41}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"53\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"Rtvj7uaaglzqU2\",\"output_index\":1,\"sequence_number\":42}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"\xB0F\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"DILdcuYCAFfska\",\"output_index\":1,\"sequence_number\":43}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        (\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"zywB7UPZRRX3jG\",\"output_index\":1,\"sequence_number\":44}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"12\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"4uIdPFCfPUKwfZ\",\"output_index\":1,\"sequence_number\":45}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"\xB0C\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"jb9XNmp3lzGpyF\",\"output_index\":1,\"sequence_number\":46}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\").\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"zU73C8p5jopTi6\",\"output_index\":1,\"sequence_number\":47}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"\\n\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"wtBHdMTC3nz2jy2\",\"output_index\":1,\"sequence_number\":48}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"\\n\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"8MnTKhbkmUgx2JU\",\"output_index\":1,\"sequence_number\":49}\n\nevent:
+        (\",\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"obfuscation\":\"HcAhBFZlmjoTc9\",\"output_index\":1,\"sequence_number\":33}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"10\",\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"obfuscation\":\"nKH9KDJbTPqR2x\",\"output_index\":1,\"sequence_number\":34}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"\xB0C\",\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"obfuscation\":\"QvWz8FI4z9vNb2\",\"output_index\":1,\"sequence_number\":35}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\").\",\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"obfuscation\":\"QLVTrmKfJyP9fb\",\"output_index\":1,\"sequence_number\":36}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"\\n\",\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"obfuscation\":\"iLejMIEZP4Zlu7v\",\"output_index\":1,\"sequence_number\":37}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"\\n\",\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"obfuscation\":\"fkUFPurVSxwW4zc\",\"output_index\":1,\"sequence_number\":38}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"##
-        Weather for Paris, Paris, France:\\nCurrent Conditions: Cloudy, 53\xB0F (12\xB0C)\\n\\nDaily
-        Forecast:\\n* Monday, November 2: Low: 46\xB0F (8\xB0C), High: 54\xB0F (12\xB0C),
-        Description: Some sun, then turning cloudy\\n* Tuesday, November 3: Low: 39\xB0F
-        (4\xB0C), High: 53\xB0F (12\xB0C), Description: After a cloudy start, sunshine
-        returns\\n* Wednesday, November 4: Low: 38\xB0F (3\xB0C), High: 51\xB0F (11\xB0C),
-        Description: Becoming cloudy\\n* Thursday, November 5: Low: 39\xB0F (4\xB0C),
-        High: 52\xB0F (11\xB0C), Description: Some sun\\n* Friday, November 6: Low:
-        37\xB0F (3\xB0C), High: 52\xB0F (11\xB0C), Description: A thick cloud cover
-        with a couple of showers around, mainly late in the day\\n* Saturday, November
-        7: Low: 44\xB0F (6\xB0C), High: 51\xB0F (10\xB0C), Description: Rather cloudy
-        with a couple of showers in the afternoon\\n* Sunday, November 8: Low: 45\xB0F
-        (7\xB0C), High: 53\xB0F (11\xB0C), Description: Partly sunny\\n\",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"J0VAcPtNKI\",\"output_index\":1,\"sequence_number\":50}\n\nevent:
+        Weather for Paris, \xCEle-de-France, France:\\nCurrent Conditions: Cloudy,
+        49\xB0F (10\xB0C)\\n\\nDaily Forecast:\\n* Monday, November 9: Low: 46\xB0F
+        (8\xB0C), High: 50\xB0F (10\xB0C), Description: Variable clouds with showers\\n*
+        Tuesday, November 10: Low: 53\xB0F (12\xB0C), High: 58\xB0F (14\xB0C), Description:
+        A passing morning shower or two; otherwise, cloudy\\n* Wednesday, November
+        11: Low: 51\xB0F (10\xB0C), High: 58\xB0F (14\xB0C), Description: A thunderstorm
+        in spots in the morning; otherwise, cloudy\\n* Thursday, November 12: Low:
+        39\xB0F (4\xB0C), High: 53\xB0F (12\xB0C), Description: Occasional rain and
+        drizzle in the morning; otherwise, remaining cloudy\\n* Friday, November 13:
+        Low: 35\xB0F (2\xB0C), High: 51\xB0F (10\xB0C), Description: Sunny to partly
+        cloudy\\n* Saturday, November 14: Low: 36\xB0F (2\xB0C), High: 49\xB0F (10\xB0C),
+        Description: Plenty of sunshine\\n* Sunday, November 15: Low: 48\xB0F (9\xB0C),
+        High: 52\xB0F (11\xB0C), Description: High thin cloudiness in the morning;
+        a blanket of clouds in the afternoon\\n\",\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"obfuscation\":\"KLE\",\"output_index\":1,\"sequence_number\":39}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        \",\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"obfuscation\":\"3WP1204KynG2AKy\",\"output_index\":1,\"sequence_number\":51}\n\nevent:
-        response.output_text.done\ndata: {\"type\":\"response.output_text.done\",\"content_index\":0,\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"logprobs\":[],\"output_index\":1,\"sequence_number\":52,\"text\":\"As
-        of 2:46\u202FPM on Monday, November 2, 2026, in Paris, France, the weather
-        is cloudy with a temperature of 53\xB0F (12\xB0C).\\n\\n## Weather for Paris,
-        Paris, France:\\nCurrent Conditions: Cloudy, 53\xB0F (12\xB0C)\\n\\nDaily
-        Forecast:\\n* Monday, November 2: Low: 46\xB0F (8\xB0C), High: 54\xB0F (12\xB0C),
-        Description: Some sun, then turning cloudy\\n* Tuesday, November 3: Low: 39\xB0F
-        (4\xB0C), High: 53\xB0F (12\xB0C), Description: After a cloudy start, sunshine
-        returns\\n* Wednesday, November 4: Low: 38\xB0F (3\xB0C), High: 51\xB0F (11\xB0C),
-        Description: Becoming cloudy\\n* Thursday, November 5: Low: 39\xB0F (4\xB0C),
-        High: 52\xB0F (11\xB0C), Description: Some sun\\n* Friday, November 6: Low:
-        37\xB0F (3\xB0C), High: 52\xB0F (11\xB0C), Description: A thick cloud cover
-        with a couple of showers around, mainly late in the day\\n* Saturday, November
-        7: Low: 44\xB0F (6\xB0C), High: 51\xB0F (10\xB0C), Description: Rather cloudy
-        with a couple of showers in the afternoon\\n* Sunday, November 8: Low: 45\xB0F
-        (7\xB0C), High: 53\xB0F (11\xB0C), Description: Partly sunny\\n \"}\n\nevent:
-        response.content_part.done\ndata: {\"type\":\"response.content_part.done\",\"content_index\":0,\"item_id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"output_index\":1,\"part\":{\"type\":\"output_text\",\"annotations\":[],\"logprobs\":[],\"text\":\"As
-        of 2:46\u202FPM on Monday, November 2, 2026, in Paris, France, the weather
-        is cloudy with a temperature of 53\xB0F (12\xB0C).\\n\\n## Weather for Paris,
-        Paris, France:\\nCurrent Conditions: Cloudy, 53\xB0F (12\xB0C)\\n\\nDaily
-        Forecast:\\n* Monday, November 2: Low: 46\xB0F (8\xB0C), High: 54\xB0F (12\xB0C),
-        Description: Some sun, then turning cloudy\\n* Tuesday, November 3: Low: 39\xB0F
-        (4\xB0C), High: 53\xB0F (12\xB0C), Description: After a cloudy start, sunshine
-        returns\\n* Wednesday, November 4: Low: 38\xB0F (3\xB0C), High: 51\xB0F (11\xB0C),
-        Description: Becoming cloudy\\n* Thursday, November 5: Low: 39\xB0F (4\xB0C),
-        High: 52\xB0F (11\xB0C), Description: Some sun\\n* Friday, November 6: Low:
-        37\xB0F (3\xB0C), High: 52\xB0F (11\xB0C), Description: A thick cloud cover
-        with a couple of showers around, mainly late in the day\\n* Saturday, November
-        7: Low: 44\xB0F (6\xB0C), High: 51\xB0F (10\xB0C), Description: Rather cloudy
-        with a couple of showers in the afternoon\\n* Sunday, November 8: Low: 45\xB0F
-        (7\xB0C), High: 53\xB0F (11\xB0C), Description: Partly sunny\\n \"},\"sequence_number\":53}\n\nevent:
-        response.output_item.done\ndata: {\"type\":\"response.output_item.done\",\"item\":{\"id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"type\":\"message\",\"status\":\"completed\",\"content\":[{\"type\":\"output_text\",\"annotations\":[],\"logprobs\":[],\"text\":\"As
-        of 2:46\u202FPM on Monday, November 2, 2026, in Paris, France, the weather
-        is cloudy with a temperature of 53\xB0F (12\xB0C).\\n\\n## Weather for Paris,
-        Paris, France:\\nCurrent Conditions: Cloudy, 53\xB0F (12\xB0C)\\n\\nDaily
-        Forecast:\\n* Monday, November 2: Low: 46\xB0F (8\xB0C), High: 54\xB0F (12\xB0C),
-        Description: Some sun, then turning cloudy\\n* Tuesday, November 3: Low: 39\xB0F
-        (4\xB0C), High: 53\xB0F (12\xB0C), Description: After a cloudy start, sunshine
-        returns\\n* Wednesday, November 4: Low: 38\xB0F (3\xB0C), High: 51\xB0F (11\xB0C),
-        Description: Becoming cloudy\\n* Thursday, November 5: Low: 39\xB0F (4\xB0C),
-        High: 52\xB0F (11\xB0C), Description: Some sun\\n* Friday, November 6: Low:
-        37\xB0F (3\xB0C), High: 52\xB0F (11\xB0C), Description: A thick cloud cover
-        with a couple of showers around, mainly late in the day\\n* Saturday, November
-        7: Low: 44\xB0F (6\xB0C), High: 51\xB0F (10\xB0C), Description: Rather cloudy
-        with a couple of showers in the afternoon\\n* Sunday, November 8: Low: 45\xB0F
-        (7\xB0C), High: 53\xB0F (11\xB0C), Description: Partly sunny\\n \"}],\"role\":\"assistant\"},\"output_index\":1,\"sequence_number\":54}\n\nevent:
-        response.completed\ndata: {\"type\":\"response.completed\",\"response\":{\"id\":\"resp_05dfa648c9e9fa53016ae89436c1b487d195731e9a98b107b4\",\"object\":\"response\",\"created_at\":1793627190,\"status\":\"completed\",\"access_programs\":null,\"background\":false,\"completed_at\":1793627195,\"error\":null,\"frequency_penalty\":0.0,\"incomplete_details\":null,\"instructions\":null,\"max_output_tokens\":null,\"max_tool_calls\":null,\"model\":\"gpt-4.1-mini-2025-04-14\",\"moderation\":null,\"output\":[{\"id\":\"ws_05dfa648c9e9fa53016ae89436ec7087d1a380c564363881e5\",\"type\":\"web_search_call\",\"status\":\"completed\",\"action\":{\"type\":\"search\",\"queries\":[\"Search
+        \",\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"obfuscation\":\"l5GZevYdY5tuO7B\",\"output_index\":1,\"sequence_number\":40}\n\nevent:
+        response.output_text.done\ndata: {\"type\":\"response.output_text.done\",\"content_index\":0,\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"logprobs\":[],\"output_index\":1,\"sequence_number\":41,\"text\":\"As
+        of 5:43 PM local time in Paris, the current weather is cloudy with a temperature
+        of 49\xB0F (10\xB0C).\\n\\n## Weather for Paris, \xCEle-de-France, France:\\nCurrent
+        Conditions: Cloudy, 49\xB0F (10\xB0C)\\n\\nDaily Forecast:\\n* Monday, November
+        9: Low: 46\xB0F (8\xB0C), High: 50\xB0F (10\xB0C), Description: Variable clouds
+        with showers\\n* Tuesday, November 10: Low: 53\xB0F (12\xB0C), High: 58\xB0F
+        (14\xB0C), Description: A passing morning shower or two; otherwise, cloudy\\n*
+        Wednesday, November 11: Low: 51\xB0F (10\xB0C), High: 58\xB0F (14\xB0C), Description:
+        A thunderstorm in spots in the morning; otherwise, cloudy\\n* Thursday, November
+        12: Low: 39\xB0F (4\xB0C), High: 53\xB0F (12\xB0C), Description: Occasional
+        rain and drizzle in the morning; otherwise, remaining cloudy\\n* Friday, November
+        13: Low: 35\xB0F (2\xB0C), High: 51\xB0F (10\xB0C), Description: Sunny to
+        partly cloudy\\n* Saturday, November 14: Low: 36\xB0F (2\xB0C), High: 49\xB0F
+        (10\xB0C), Description: Plenty of sunshine\\n* Sunday, November 15: Low: 48\xB0F
+        (9\xB0C), High: 52\xB0F (11\xB0C), Description: High thin cloudiness in the
+        morning; a blanket of clouds in the afternoon\\n \"}\n\nevent: response.content_part.done\ndata:
+        {\"type\":\"response.content_part.done\",\"content_index\":0,\"item_id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"output_index\":1,\"part\":{\"type\":\"output_text\",\"annotations\":[],\"logprobs\":[],\"text\":\"As
+        of 5:43 PM local time in Paris, the current weather is cloudy with a temperature
+        of 49\xB0F (10\xB0C).\\n\\n## Weather for Paris, \xCEle-de-France, France:\\nCurrent
+        Conditions: Cloudy, 49\xB0F (10\xB0C)\\n\\nDaily Forecast:\\n* Monday, November
+        9: Low: 46\xB0F (8\xB0C), High: 50\xB0F (10\xB0C), Description: Variable clouds
+        with showers\\n* Tuesday, November 10: Low: 53\xB0F (12\xB0C), High: 58\xB0F
+        (14\xB0C), Description: A passing morning shower or two; otherwise, cloudy\\n*
+        Wednesday, November 11: Low: 51\xB0F (10\xB0C), High: 58\xB0F (14\xB0C), Description:
+        A thunderstorm in spots in the morning; otherwise, cloudy\\n* Thursday, November
+        12: Low: 39\xB0F (4\xB0C), High: 53\xB0F (12\xB0C), Description: Occasional
+        rain and drizzle in the morning; otherwise, remaining cloudy\\n* Friday, November
+        13: Low: 35\xB0F (2\xB0C), High: 51\xB0F (10\xB0C), Description: Sunny to
+        partly cloudy\\n* Saturday, November 14: Low: 36\xB0F (2\xB0C), High: 49\xB0F
+        (10\xB0C), Description: Plenty of sunshine\\n* Sunday, November 15: Low: 48\xB0F
+        (9\xB0C), High: 52\xB0F (11\xB0C), Description: High thin cloudiness in the
+        morning; a blanket of clouds in the afternoon\\n \"},\"sequence_number\":42}\n\nevent:
+        response.output_item.done\ndata: {\"type\":\"response.output_item.done\",\"item\":{\"id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"type\":\"message\",\"status\":\"completed\",\"content\":[{\"type\":\"output_text\",\"annotations\":[],\"logprobs\":[],\"text\":\"As
+        of 5:43 PM local time in Paris, the current weather is cloudy with a temperature
+        of 49\xB0F (10\xB0C).\\n\\n## Weather for Paris, \xCEle-de-France, France:\\nCurrent
+        Conditions: Cloudy, 49\xB0F (10\xB0C)\\n\\nDaily Forecast:\\n* Monday, November
+        9: Low: 46\xB0F (8\xB0C), High: 50\xB0F (10\xB0C), Description: Variable clouds
+        with showers\\n* Tuesday, November 10: Low: 53\xB0F (12\xB0C), High: 58\xB0F
+        (14\xB0C), Description: A passing morning shower or two; otherwise, cloudy\\n*
+        Wednesday, November 11: Low: 51\xB0F (10\xB0C), High: 58\xB0F (14\xB0C), Description:
+        A thunderstorm in spots in the morning; otherwise, cloudy\\n* Thursday, November
+        12: Low: 39\xB0F (4\xB0C), High: 53\xB0F (12\xB0C), Description: Occasional
+        rain and drizzle in the morning; otherwise, remaining cloudy\\n* Friday, November
+        13: Low: 35\xB0F (2\xB0C), High: 51\xB0F (10\xB0C), Description: Sunny to
+        partly cloudy\\n* Saturday, November 14: Low: 36\xB0F (2\xB0C), High: 49\xB0F
+        (10\xB0C), Description: Plenty of sunshine\\n* Sunday, November 15: Low: 48\xB0F
+        (9\xB0C), High: 52\xB0F (11\xB0C), Description: High thin cloudiness in the
+        morning; a blanket of clouds in the afternoon\\n \"}],\"role\":\"assistant\"},\"output_index\":1,\"sequence_number\":43}\n\nevent:
+        response.completed\ndata: {\"type\":\"response.completed\",\"response\":{\"id\":\"resp_08580733cc2e6625016af1f836c4ec87d2aa221035cedccf79\",\"object\":\"response\",\"created_at\":1794242614,\"status\":\"completed\",\"access_programs\":null,\"background\":false,\"completed_at\":1794242616,\"error\":null,\"frequency_penalty\":0.0,\"image\":{\"context_compression\":\"disabled\"},\"incomplete_details\":null,\"instructions\":null,\"max_output_tokens\":null,\"max_tool_calls\":null,\"model\":\"gpt-4.1-mini-2025-04-14\",\"moderation\":null,\"output\":[{\"id\":\"ws_08580733cc2e6625016af1f83701bc87d2bd3bd5344f9f2a45\",\"type\":\"web_search_call\",\"status\":\"completed\",\"action\":{\"type\":\"search\",\"queries\":[\"Search
         the web for the latest weather in Paris and answer briefly.\"],\"query\":\"Search
-        the web for the latest weather in Paris and answer briefly.\"}},{\"id\":\"msg_05dfa648c9e9fa53016ae8943ac6b487d1b2b260be9bbdb65f\",\"type\":\"message\",\"status\":\"completed\",\"content\":[{\"type\":\"output_text\",\"annotations\":[],\"logprobs\":[],\"text\":\"As
-        of 2:46\u202FPM on Monday, November 2, 2026, in Paris, France, the weather
-        is cloudy with a temperature of 53\xB0F (12\xB0C).\\n\\n## Weather for Paris,
-        Paris, France:\\nCurrent Conditions: Cloudy, 53\xB0F (12\xB0C)\\n\\nDaily
-        Forecast:\\n* Monday, November 2: Low: 46\xB0F (8\xB0C), High: 54\xB0F (12\xB0C),
-        Description: Some sun, then turning cloudy\\n* Tuesday, November 3: Low: 39\xB0F
-        (4\xB0C), High: 53\xB0F (12\xB0C), Description: After a cloudy start, sunshine
-        returns\\n* Wednesday, November 4: Low: 38\xB0F (3\xB0C), High: 51\xB0F (11\xB0C),
-        Description: Becoming cloudy\\n* Thursday, November 5: Low: 39\xB0F (4\xB0C),
-        High: 52\xB0F (11\xB0C), Description: Some sun\\n* Friday, November 6: Low:
-        37\xB0F (3\xB0C), High: 52\xB0F (11\xB0C), Description: A thick cloud cover
-        with a couple of showers around, mainly late in the day\\n* Saturday, November
-        7: Low: 44\xB0F (6\xB0C), High: 51\xB0F (10\xB0C), Description: Rather cloudy
-        with a couple of showers in the afternoon\\n* Sunday, November 8: Low: 45\xB0F
-        (7\xB0C), High: 53\xB0F (11\xB0C), Description: Partly sunny\\n \"}],\"role\":\"assistant\"}],\"parallel_tool_calls\":true,\"presence_penalty\":0.0,\"previous_response_id\":null,\"prompt_cache_key\":null,\"prompt_cache_retention\":\"in_memory\",\"reasoning\":{\"context\":null,\"effort\":null,\"summary\":null},\"safety_identifier\":null,\"service_tier\":\"auto\",\"store\":false,\"temperature\":1.0,\"text\":{\"format\":{\"type\":\"text\"},\"verbosity\":\"medium\"},\"tool_choice\":{\"type\":\"web_search_preview\"},\"tool_usage\":{\"image_gen\":{\"input_tokens\":0,\"input_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"output_tokens\":0,\"output_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"total_tokens\":0},\"web_search\":{\"num_requests\":1}},\"tools\":[{\"type\":\"web_search_preview\",\"search_content_types\":[\"text\"],\"search_context_size\":\"low\",\"user_location\":{\"type\":\"approximate\",\"city\":null,\"country\":\"US\",\"region\":null,\"timezone\":null}}],\"top_logprobs\":0,\"top_p\":1.0,\"truncation\":\"disabled\",\"usage\":{\"input_tokens\":319,\"input_tokens_details\":{\"cache_write_tokens\":0,\"cached_tokens\":0},\"output_tokens\":307,\"output_tokens_details\":{\"reasoning_tokens\":0},\"total_tokens\":626},\"user\":null,\"metadata\":{}},\"sequence_number\":55}\n\n"
+        the web for the latest weather in Paris and answer briefly.\"}},{\"id\":\"msg_08580733cc2e6625016af1f837b19487d2a6eed09ab9e68a78\",\"type\":\"message\",\"status\":\"completed\",\"content\":[{\"type\":\"output_text\",\"annotations\":[],\"logprobs\":[],\"text\":\"As
+        of 5:43 PM local time in Paris, the current weather is cloudy with a temperature
+        of 49\xB0F (10\xB0C).\\n\\n## Weather for Paris, \xCEle-de-France, France:\\nCurrent
+        Conditions: Cloudy, 49\xB0F (10\xB0C)\\n\\nDaily Forecast:\\n* Monday, November
+        9: Low: 46\xB0F (8\xB0C), High: 50\xB0F (10\xB0C), Description: Variable clouds
+        with showers\\n* Tuesday, November 10: Low: 53\xB0F (12\xB0C), High: 58\xB0F
+        (14\xB0C), Description: A passing morning shower or two; otherwise, cloudy\\n*
+        Wednesday, November 11: Low: 51\xB0F (10\xB0C), High: 58\xB0F (14\xB0C), Description:
+        A thunderstorm in spots in the morning; otherwise, cloudy\\n* Thursday, November
+        12: Low: 39\xB0F (4\xB0C), High: 53\xB0F (12\xB0C), Description: Occasional
+        rain and drizzle in the morning; otherwise, remaining cloudy\\n* Friday, November
+        13: Low: 35\xB0F (2\xB0C), High: 51\xB0F (10\xB0C), Description: Sunny to
+        partly cloudy\\n* Saturday, November 14: Low: 36\xB0F (2\xB0C), High: 49\xB0F
+        (10\xB0C), Description: Plenty of sunshine\\n* Sunday, November 15: Low: 48\xB0F
+        (9\xB0C), High: 52\xB0F (11\xB0C), Description: High thin cloudiness in the
+        morning; a blanket of clouds in the afternoon\\n \"}],\"role\":\"assistant\"}],\"parallel_tool_calls\":true,\"presence_penalty\":0.0,\"previous_response_id\":null,\"prompt_cache_key\":null,\"prompt_cache_retention\":\"in_memory\",\"reasoning\":{\"context\":null,\"effort\":null,\"summary\":null},\"safety_identifier\":null,\"service_tier\":\"auto\",\"store\":false,\"temperature\":1.0,\"text\":{\"format\":{\"type\":\"text\"},\"verbosity\":\"medium\"},\"tool_choice\":{\"type\":\"web_search_preview\"},\"tool_usage\":{\"image_gen\":{\"input_tokens\":0,\"input_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"output_tokens\":0,\"output_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"total_tokens\":0},\"web_search\":{\"num_requests\":1}},\"tools\":[{\"type\":\"web_search_preview\",\"search_content_types\":[\"text\"],\"search_context_size\":\"low\",\"user_location\":{\"type\":\"approximate\",\"city\":null,\"country\":\"US\",\"region\":null,\"timezone\":null}}],\"top_logprobs\":0,\"top_p\":1.0,\"truncation\":\"disabled\",\"usage\":{\"input_tokens\":319,\"input_tokens_details\":{\"cache_write_tokens\":0,\"cached_tokens\":0},\"output_tokens\":314,\"output_tokens_details\":{\"reasoning_tokens\":0},\"total_tokens\":633},\"user\":null,\"metadata\":{}},\"sequence_number\":44}\n\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID, Server-Timing-Total
@@ -198,15 +191,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a54395f58de4ac0c-YYZ
+      - a57e46f5cbc1aa71-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 02 Nov 2026 13:46:35 GMT
+      - Mon, 09 Nov 2026 16:43:36 GMT
       openai-processing-ms:
-      - '4722'
+      - '1536'
       openai-version:
       - '2020-10-01'
       server:
@@ -218,7 +211,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-id:
-      - req_e11cd13e3fd141cebbe78e15403c2403
+      - req_66a7a38fd52a4a21882ad6219222b9f2
     status:
       code: 200
       message: OK

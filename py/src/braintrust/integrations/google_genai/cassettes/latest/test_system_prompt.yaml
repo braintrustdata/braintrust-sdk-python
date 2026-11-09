@@ -8,7 +8,7 @@ interactions:
       accept:
       - '*/*'
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
@@ -18,37 +18,100 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.34.0 gl-python/3.14.7
+      - google-genai-sdk/3.0.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/2.34.0 gl-python/3.14.7
+      - google-genai-sdk/3.0.0 gl-python/3.14.7
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-lite:generateContent
+  response:
+    body:
+      string: "{\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Developer
+        instruction is not enabled for api version v1. Use api version v1beta instead.\",\n
+        \   \"status\": \"INVALID_ARGUMENT\"\n  }\n}\n"
+    headers:
+      alt-svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      content-length:
+      - '178'
+      content-type:
+      - application/json; charset=UTF-8
+      date:
+      - Mon, 09 Nov 2026 17:02:44 GMT
+      server:
+      - scaffolding on HTTPServer2
+      server-timing:
+      - gfet4t7; dur=229
+      transfer-encoding:
+      - chunked
+      vary:
+      - Origin
+      - X-Origin
+      - Referer
+      x-content-type-options:
+      - nosniff
+      x-frame-options:
+      - SAMEORIGIN
+      x-gemini-service-tier:
+      - standard
+      x-xss-protection:
+      - '0'
+    status:
+      code: 400
+      message: Bad Request
+- request:
+    body: '{"contents": [{"parts": [{"text": "Tell me about the weather."}], "role":
+      "user"}], "systemInstruction": {"parts": [{"text": "You are a pirate. Always
+      respond in pirate speak."}], "role": "user"}, "generationConfig": {"maxOutputTokens":
+      150}}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '242'
+      content-type:
+      - application/json
+      host:
+      - generativelanguage.googleapis.com
+      user-agent:
+      - google-genai-sdk/3.0.0 gl-python/3.14.7
+      x-goog-api-client:
+      - google-genai-sdk/3.0.0 gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"Ahoy there, matey!  The winds be fair
-        and the skies be mostly clear, with nary a squall on the horizon.  A fine
-        day for sailin', if ye ask me.  Though, ye never know when a rogue wave or
-        a kraken might show its ugly head.  Best keep a weather eye out, always!\"\n
+        [\n          {\n            \"text\": \"Ahoy there, matey! The weather today
+        be a bit of a mixed bag, like a treasure chest with both gold doubloons and
+        scurvy-ridden limes.\\n\\nThe **sky** be mostly clear, with only a few fluffy
+        white clouds driftin' by like lazy galleons on a calm sea. The **sun** be
+        shinin' bright, a fine sight to warm yer old bones after a night on the grog.\\n\\nBut
+        keep yer wits about ye! There be a **breeze** blowin' in from the west, a
+        gentle caress now, but it might pick up later. It smells of salt and distant
+        lands, so it does. The **sea** be relatively calm, with only a gentle\"\n
         \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
-        \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
-        19,\n    \"candidatesTokenCount\": 72,\n    \"totalTokenCount\": 91,\n    \"promptTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 19\n
-        \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
-        \"gemini-2.5-flash-lite\",\n  \"responseId\": \"t5ToasnjBsuH1sgPw9qkgQQ\"\n}\n"
+        \"MAX_TOKENS\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n
+        \   \"promptTokenCount\": 19,\n    \"candidatesTokenCount\": 150,\n    \"totalTokenCount\":
+        169,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
+        \       \"tokenCount\": 19\n      }\n    ],\n    \"serviceTier\": \"standard\"\n
+        \ },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n  \"responseId\": \"Ev3xaozbBMnv5NoPjKfQ0Qw\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '807'
+      - '1124'
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Mon, 02 Nov 2026 13:48:39 GMT
+      - Mon, 09 Nov 2026 17:04:18 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=756
+      - gfet4t7; dur=1082
       transfer-encoding:
       - chunked
       vary:
