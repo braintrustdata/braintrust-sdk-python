@@ -45,15 +45,15 @@ if TYPE_CHECKING:
     api_url: str | None = client.router.api_url
 
     openapi_client.acls.get_acl_id("acl-id")
-    openapi_client.agents.get_agent()
     openapi_client.ai_secrets.get_ai_secret()
     openapi_client.api_keys.get_api_key()
+    openapi_client.custom_columns.get_custom_column("project", "project-id")
     openapi_client.dataset_snapshots.get_dataset_snapshot()
     openapi_client.env_vars.get_env_var()
     openapi_client.environments.list_environments()
     openapi_client.groups.get_group()
+    openapi_client.ingest_keys.list_ingest_keys("project-id")
     openapi_client.mcp_servers.get_mcp_server()
-    openapi_client.org_automations.get_org_automation()
     openapi_client.organizations.get_organization()
     openapi_client.project_automations.get_project_automation()
     openapi_client.project_groups.get_project_group()

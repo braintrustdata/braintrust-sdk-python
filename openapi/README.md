@@ -23,10 +23,10 @@ The reviewed generated surface includes these tags:
 
 - core resources: Projects, Experiments, Datasets, Prompts, and Functions;
 - access and organization resources: Acls, Groups, ProjectGroups, Roles, Users, Organizations,
-  ApiKeys, and ServiceTokens;
+  ApiKeys, Ingest keys, and ServiceTokens;
 - configuration resources: AiSecrets, EnvVars, Environments, and McpServers;
-- project resources: Agents, ProjectAutomations, OrgAutomations, ProjectScores, ProjectTags,
-  SpanIframes, and Views; and
+- project resources: CustomColumns, ProjectAutomations, ProjectScores, ProjectTags, SpanIframes,
+  and Views; and
 - versioned data resources: DatasetSnapshots.
 
 Each tag produces one resource and operation registry. Models used by one resource stay in that
