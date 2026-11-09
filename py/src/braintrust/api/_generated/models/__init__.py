@@ -4,7 +4,7 @@
 # datamodel-code-generator: 0.81.0
 # ruff: 0.15.21
 # Generator Python: 3.14
-# Content SHA-256: 7449300131300c48ced696901bd49dbded916981b57e4f378c2dc1bc34f16793
+# Content SHA-256: d57ff9ed5fd9d4eacd668b35394bdfb60c1c6b8e5c37add78d86c9c2980e1a70
 
 """Generated private model types with lazy package-level imports."""
 
@@ -149,13 +149,6 @@ if TYPE_CHECKING:
         ToolFunction7,
         TraceScope,
         Version,
-    )
-    from .custom_columns import (
-        CreateCustomColumn,
-        CustomColumn,
-        CustomColumnVariant,
-        GetCustomColumnResponse,
-        PatchCustomColumn,
     )
     from .dataset_snapshots import (
         CreateDatasetSnapshot,
@@ -311,7 +304,6 @@ if TYPE_CHECKING:
         TopicMapGenerationSettings,
     )
     from .groups import CreateGroup, GetGroupResponse, Group, GroupIdParam, GroupName, PatchGroup
-    from .ingest_keys import CreateIngestKeyResponse, IngestKey, ListIngestKeysResponse, Object
     from .mcp_servers import (
         CreateMCPServer,
         GetMcpServerResponse,
@@ -652,14 +644,12 @@ _MODEL_MODULES = {
     "Config9": "project_automations",
     "Context": "experiments",
     "CreateAISecret": "ai_secrets",
-    "CreateCustomColumn": "custom_columns",
     "CreateDataset": "datasets",
     "CreateDatasetSnapshot": "dataset_snapshots",
     "CreateEnvironment": "environments",
     "CreateExperiment": "experiments",
     "CreateFunction": "functions",
     "CreateGroup": "groups",
-    "CreateIngestKeyResponse": "ingest_keys",
     "CreateMCPServer": "mcp_servers",
     "CreateProject": "projects",
     "CreateProjectAutomation": "project_automations",
@@ -679,8 +669,6 @@ _MODEL_MODULES = {
     "Credentials3": "project_automations",
     "Credentials4": "project_automations",
     "Credentials5": "project_automations",
-    "CustomColumn": "custom_columns",
-    "CustomColumnVariant": "custom_columns",
     "Data": "functions",
     "Data1": "functions",
     "Data2": "functions",
@@ -781,7 +769,6 @@ _MODEL_MODULES = {
     "GetAclResponse": "acls",
     "GetAiSecretResponse": "ai_secrets",
     "GetApiKeyResponse": "api_keys",
-    "GetCustomColumnResponse": "custom_columns",
     "GetDatasetResponse": "datasets",
     "GetDatasetSnapshotResponse": "dataset_snapshots",
     "GetEnvVarResponse": "env_vars",
@@ -820,7 +807,6 @@ _MODEL_MODULES = {
     "Ids": "common",
     "ImageRenderingMode": "organizations",
     "ImageUrl": "common",
-    "IngestKey": "ingest_keys",
     "InputAudio": "common",
     "InputItem": "common",
     "InsertDatasetEvent": "datasets",
@@ -832,7 +818,6 @@ _MODEL_MODULES = {
     "InviteUsers": "organizations",
     "Level": "common",
     "ListEnvironmentsResponse": "environments",
-    "ListIngestKeysResponse": "ingest_keys",
     "Location": "functions",
     "Location1": "functions",
     "Location2": "functions",
@@ -858,7 +843,6 @@ _MODEL_MODULES = {
     "NullableSavedFunctionId": "projects",
     "NullableSavedFunctionId1": "projects",
     "NullableSavedFunctionId2": "projects",
-    "Object": "ingest_keys",
     "ObjectReferenceNullish": "common",
     "OnlineScoreConfig": "project_scores",
     "Options": "views",
@@ -870,7 +854,6 @@ _MODEL_MODULES = {
     "Origin2": "common",
     "Output": "project_automations",
     "PatchAISecret": "ai_secrets",
-    "PatchCustomColumn": "custom_columns",
     "PatchDataset": "datasets",
     "PatchDatasetSnapshot": "dataset_snapshots",
     "PatchEnvironment": "environments",
@@ -1172,14 +1155,12 @@ __all__ = [
     "Config9",
     "Context",
     "CreateAISecret",
-    "CreateCustomColumn",
     "CreateDataset",
     "CreateDatasetSnapshot",
     "CreateEnvironment",
     "CreateExperiment",
     "CreateFunction",
     "CreateGroup",
-    "CreateIngestKeyResponse",
     "CreateMCPServer",
     "CreateProject",
     "CreateProjectAutomation",
@@ -1199,8 +1180,6 @@ __all__ = [
     "Credentials3",
     "Credentials4",
     "Credentials5",
-    "CustomColumn",
-    "CustomColumnVariant",
     "Data",
     "Data1",
     "Data2",
@@ -1301,7 +1280,6 @@ __all__ = [
     "GetAclResponse",
     "GetAiSecretResponse",
     "GetApiKeyResponse",
-    "GetCustomColumnResponse",
     "GetDatasetResponse",
     "GetDatasetSnapshotResponse",
     "GetEnvVarResponse",
@@ -1340,7 +1318,6 @@ __all__ = [
     "Ids",
     "ImageRenderingMode",
     "ImageUrl",
-    "IngestKey",
     "InputAudio",
     "InputItem",
     "InsertDatasetEvent",
@@ -1352,7 +1329,6 @@ __all__ = [
     "InviteUsers",
     "Level",
     "ListEnvironmentsResponse",
-    "ListIngestKeysResponse",
     "Location",
     "Location1",
     "Location2",
@@ -1378,7 +1354,6 @@ __all__ = [
     "NullableSavedFunctionId",
     "NullableSavedFunctionId1",
     "NullableSavedFunctionId2",
-    "Object",
     "ObjectReferenceNullish",
     "OnlineScoreConfig",
     "Options",
@@ -1390,7 +1365,6 @@ __all__ = [
     "Origin2",
     "Output",
     "PatchAISecret",
-    "PatchCustomColumn",
     "PatchDataset",
     "PatchDatasetSnapshot",
     "PatchEnvironment",

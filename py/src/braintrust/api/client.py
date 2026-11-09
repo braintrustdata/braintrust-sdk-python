@@ -17,7 +17,6 @@ if TYPE_CHECKING:
     from ._generated.acls import AclsAPI
     from ._generated.ai_secrets import AiSecretsAPI
     from ._generated.api_keys import ApiKeysAPI
-    from ._generated.custom_columns import CustomColumnsAPI
     from ._generated.dataset_snapshots import DatasetSnapshotsAPI
     from ._generated.datasets import DatasetsAPI
     from ._generated.env_vars import EnvVarsAPI
@@ -25,7 +24,6 @@ if TYPE_CHECKING:
     from ._generated.experiments import ExperimentsAPI
     from ._generated.functions import FunctionsAPI
     from ._generated.groups import GroupsAPI
-    from ._generated.ingest_keys import IngestKeysAPI
     from ._generated.mcp_servers import McpServersAPI
     from ._generated.organizations import OrganizationsAPI
     from ._generated.project_automations import ProjectAutomationsAPI
@@ -220,12 +218,6 @@ class BraintrustOpenApiClient:
         return self._service("api_keys", ApiKeysAPI)
 
     @property
-    def custom_columns(self) -> "CustomColumnsAPI":
-        from ._generated.custom_columns import CustomColumnsAPI
-
-        return self._service("custom_columns", CustomColumnsAPI)
-
-    @property
     def dataset_snapshots(self) -> "DatasetSnapshotsAPI":
         from ._generated.dataset_snapshots import DatasetSnapshotsAPI
 
@@ -266,12 +258,6 @@ class BraintrustOpenApiClient:
         from ._generated.groups import GroupsAPI
 
         return self._service("groups", GroupsAPI)
-
-    @property
-    def ingest_keys(self) -> "IngestKeysAPI":
-        from ._generated.ingest_keys import IngestKeysAPI
-
-        return self._service("ingest_keys", IngestKeysAPI)
 
     @property
     def mcp_servers(self) -> "McpServersAPI":

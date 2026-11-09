@@ -38,12 +38,10 @@
       "Acls",
       "AiSecrets",
       "ApiKeys",
-      "CustomColumns",
       "DatasetSnapshots",
       "EnvVars",
       "Environments",
       "Groups",
-      "Ingest keys",
       "McpServers",
       "Organizations",
       "ProjectAutomations",
@@ -58,7 +56,9 @@
     ],
     "unsupported_tags": {
       "CrossObject": "Cross-object event insertion belongs to the specialized at-least-once log-ingestion path.",
+      "CustomColumns": "Custom column management is not yet part of the reviewed public REST client surface.",
       "Evals": "Eval launch is a long-running, payload-dependent workflow that can stream and requires a specialized client.",
+      "Ingest keys": "Ingest key management is not yet part of the reviewed public REST client surface.",
       "Logs": "Project-log event ingestion, fetching, and feedback remain on the specialized logging path.",
       "Other": "The unauthenticated text-only hello-world endpoint is a service diagnostic, not a public resource.",
       "Proxy": "Provider passthrough requires proxy routing and streaming support, and the catch-all operationId is not valid Python."

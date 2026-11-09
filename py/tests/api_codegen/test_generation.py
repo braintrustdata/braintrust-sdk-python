@@ -109,7 +109,9 @@ def test_pinned_unsupported_tags_are_explicit_and_proxy_is_excluded():
 
     assert set(endpoint_config["unsupported_tags"]) == {
         "CrossObject",
+        "CustomColumns",
         "Evals",
+        "Ingest keys",
         "Logs",
         "Other",
         "Proxy",
