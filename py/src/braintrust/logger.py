@@ -3830,6 +3830,9 @@ class Attachment(BaseAttachment):
             "key": str(uuid.uuid4()),
         }
         self._data_debug_string = data if isinstance(data, str) else "<in-memory data>"
+        # Internal audio uploads opt into finite request timeouts. Ordinary
+        # attachments retain their existing transport behavior.
+        self._upload_timeout_seconds: float | None = None
 
         self._data = self._init_data(data)
         self._uploader = self._init_uploader()
@@ -3861,6 +3864,9 @@ class Attachment(BaseAttachment):
         return {"input_data": self._data_debug_string, "reference": self._reference}
 
     def _init_uploader(self) -> LazyValue[AttachmentStatus]:
+        def request_options():
+            return {"timeout": self._upload_timeout_seconds} if self._upload_timeout_seconds is not None else {}
+
         def do_upload(api_conn: HTTPConnection, org_id: str) -> Mapping[str, Any]:
             assert self._reference["type"] == "braintrust_attachment"
 
@@ -3872,7 +3878,7 @@ class Attachment(BaseAttachment):
             }
 
             try:
-                metadata_response = api_conn.post("/attachment", json=request_params)
+                metadata_response = api_conn.post("/attachment", json=request_params, **request_options())
                 metadata_response.raise_for_status()
                 metadata = metadata_response.json()
             except Exception as e:
@@ -3893,7 +3899,7 @@ class Attachment(BaseAttachment):
             # TODO multipart upload.
             try:
                 obj_conn = HTTPConnection(base_url="", adapter=_http_adapter)
-                obj_response = obj_conn.put(signed_url, headers=headers, data=data)
+                obj_response = obj_conn.put(signed_url, headers=headers, data=data, **request_options())
                 obj_response.raise_for_status()
             except Exception as e:
                 raise RuntimeError(f"Failed to upload attachment to object store: {e}") from e
@@ -3925,7 +3931,7 @@ class Attachment(BaseAttachment):
                 "status": status,
             }
             try:
-                status_response = api_conn.post("/attachment/status", json=request_params)
+                status_response = api_conn.post("/attachment/status", json=request_params, **request_options())
                 status_response.raise_for_status()
             except Exception as e:
                 raise RuntimeError(f"Couldn't log attachment status: {e}") from e
