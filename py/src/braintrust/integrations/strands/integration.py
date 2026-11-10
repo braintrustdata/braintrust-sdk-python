@@ -2,7 +2,7 @@
 
 from braintrust.integrations.base import BaseIntegration
 
-from .patchers import TracerPatcher
+from .patchers import DecisionModelPatcher, TracerPatcher
 
 
 class StrandsIntegration(BaseIntegration):
@@ -11,4 +11,4 @@ class StrandsIntegration(BaseIntegration):
     name = "strands"
     import_names = ("strands",)
     min_version = "1.20.0"
-    patchers = (TracerPatcher,)
+    patchers = (TracerPatcher, DecisionModelPatcher)

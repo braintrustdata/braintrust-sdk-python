@@ -5,6 +5,7 @@ from typing import Any
 from braintrust.integrations.base import CompositeFunctionWrapperPatcher, FunctionWrapperPatcher
 
 from .tracing import (
+    _decision_model_ask_wrapper,
     _end_agent_span_wrapper,
     _end_event_loop_cycle_span_wrapper,
     _end_model_invoke_span_wrapper,
@@ -86,6 +87,20 @@ class TracerPatcher(CompositeFunctionWrapperPatcher):
         _StartToolCallSpanPatcher,
         _EndToolCallSpanPatcher,
     )
+
+
+class DecisionModelPatcher(FunctionWrapperPatcher):
+    """Trace ``DecisionModel.ask`` (strands-agents >= 1.63.0).
+
+    Every decision model (``LLMDecisionModel``, ``DecisionsAPIDecisionModel``,
+    ``TypeSafeDecisionModel``) inherits ``ask`` from this base class and none
+    of them go through ``strands.telemetry.Tracer``.
+    """
+
+    name = "strands.decision_model.ask"
+    target_module = "strands.decisions.decision_model"
+    target_path = "DecisionModel.ask"
+    wrapper = _decision_model_ask_wrapper
 
 
 def wrap_strands_tracer(Tracer: Any) -> Any:

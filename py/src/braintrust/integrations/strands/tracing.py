@@ -1,16 +1,19 @@
 """Strands Agents tracing helpers."""
 
+import logging
 import uuid
 import weakref
 from typing import Any
 
-from braintrust.integrations.utils import _is_supported_metric_value
+from braintrust.integrations.question import _question_span_input, _question_span_output
+from braintrust.integrations.utils import _is_supported_metric_value, _materialize_attachment
 from braintrust.logger import Span
 from braintrust.logger import start_span as _bt_start_span
 from braintrust.span_types import SpanTypeAttribute
 
 
 _INSTRUMENTATION = "strands-auto"
+_log = logging.getLogger(__name__)
 
 _SPANS_BY_OTEL_SPAN: "weakref.WeakKeyDictionary[Any, Span]" = weakref.WeakKeyDictionary()
 _SPANS_BY_INVALID_OTEL_KEY: dict[uuid.UUID, Span] = {}
@@ -292,3 +295,153 @@ def _end_tool_call_span_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: 
             metadata={"status": tool_result.get("status") if isinstance(tool_result, dict) else None},
             error=error,
         )
+
+
+def _current_parent_span() -> Span | None:
+    """Return the Braintrust span mirroring the active Strands OTEL span, if any."""
+    try:
+        from opentelemetry import context as context_api
+        from opentelemetry.trace.propagation import _SPAN_KEY
+    except ImportError:
+        return None
+    # Read the raw context value: without an OTEL SDK, Strands' spans are invalid and we hand back
+    # an ``_InvalidOtelSpanKey`` in their place, which ``get_current_span()`` rejects (not a ``Span``).
+    return _span_for_otel(context_api.get_value(_SPAN_KEY))
+
+
+def _decision_questions(questions: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """Map Strands questions to the shared decision question shape, keyed by question ID."""
+    normalized = {}
+    for question_id, question in questions.items():
+        choices = question["choices"]
+        if choices == "boolean":
+            normalized[question_id] = {"type": "boolean", "instructions": question["question"]}
+        else:
+            normalized[question_id] = {
+                "type": "choice",
+                "instructions": question["question"],
+                "criteria": {choice: None for choice in choices},
+            }
+    return normalized
+
+
+def _decision_answers(result: Any, questions: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """Map a Strands ``DecisionResult`` to the shared decision answer shape, keyed by question ID.
+
+    Boolean answers carry ``probability`` and choice answers carry ``choice``. System One
+    providers return probabilities, which are preserved. ``LLMDecisionModel`` forces a
+    categorical answer, so a boolean is recorded with probability 1.0 or 0.0. ``Uncertain`` is
+    recorded as the provider's underlying answer when probabilities are available, since
+    Strands only applied a confidence cutoff. Otherwise the model declined, which is a ``refusal``.
+    """
+    probabilities = result.metadata.probabilities or {}
+    confidence = result.metadata.confidence or {}
+    normalized: dict[str, dict[str, Any]] = {}
+    for question_id, answer in result.answers.items():
+        question_probabilities = probabilities.get(question_id)
+        payload: dict[str, Any] | None
+        if questions[question_id]["choices"] == "boolean":
+            probability = question_probabilities["true"] if question_probabilities else None
+            if probability is None and isinstance(answer, bool):
+                probability = 1.0 if answer else 0.0
+            payload = None if probability is None else {"type": "boolean", "probability": probability}
+        else:
+            choice = answer if isinstance(answer, str) else None
+            if choice is None and question_probabilities:
+                # Strands validated that the provider's choice has the highest probability.
+                choice = max(question_probabilities, key=question_probabilities.__getitem__)
+            payload = None if choice is None else {"type": "choice", "choice": choice}
+            if payload is not None and question_probabilities:
+                payload["probabilities"] = question_probabilities
+            if payload is not None and question_id in confidence:
+                payload["confidence"] = confidence[question_id]
+        normalized[question_id] = payload or {"type": "refusal"}
+    return normalized
+
+
+def _decision_media_transform(value: Any) -> Any:
+    """Convert inline bytes in Strands ``image``/``document``/``video`` content blocks to attachments."""
+    if not isinstance(value, dict) or len(value) != 1:
+        return value
+    ((kind, media),) = value.items()
+    if kind not in ("image", "document", "video") or not isinstance(media, dict):
+        return value
+    source = media.get("source")
+    if not isinstance(source, dict) or not isinstance(source.get("bytes"), (bytes, bytearray)):
+        return value
+    resolved = _materialize_attachment(source["bytes"], filename=f"{kind}.{media.get('format')}")
+    if resolved is None or resolved.attachment.reference.get("content_type") == "application/octet-stream":
+        return value
+    return {kind: {**media, "source": {**source, "bytes": resolved.attachment}}}
+
+
+def _decision_model_metadata(instance: Any) -> dict[str, Any]:
+    metadata: dict[str, Any] = {"decision_model": type(instance).__name__}
+    provider_config = getattr(instance, "_provider_config", None)
+    if provider_config is not None:
+        # System One models (TypeSafeDecisionModel, DecisionsAPIDecisionModel).
+        metadata["provider"] = provider_config.provider_name
+        metadata["model"] = provider_config.model_id
+    model = getattr(instance, "_model", None)
+    if model is not None:
+        # LLMDecisionModel wraps a vended Strands ``Model`` such as ``OpenAIModel``.
+        model_class = type(model).__name__
+        metadata["provider"] = model_class.removesuffix("Model").lower() or model_class
+        metadata["model"] = model.get_config().get("model_id")
+    return {key: value for key, value in metadata.items() if value is not None}
+
+
+def _log_decision_result(span: Span, instance: Any, result: Any, questions: dict[str, Any]) -> None:
+    metadata: dict[str, Any] = {"latency_ms": result.metadata.latency_ms}
+    if result.metadata.model_id is not None:
+        # The provider-reported model, e.g. ``jev-1.14.0`` for a requested ``jev-latest``.
+        metadata["model"] = result.metadata.model_id
+
+    metrics: dict[str, Any] = {}
+    usage = _pick_numeric(result.usage, _STRANDS_USAGE_KEYS)
+    if getattr(instance, "_model", None) is not None:
+        # LLMDecisionModel calls a vended model whose provider integration already records these
+        # tokens on a child LLM span; recording them as metrics here would double count.
+        if usage:
+            metadata["strands_usage"] = usage
+    else:
+        # System One providers are called over raw HTTP, so this span is the only one with these tokens.
+        for src_key, dst_key in (
+            ("input_tokens", "prompt_tokens"),
+            ("output_tokens", "completion_tokens"),
+            ("total_tokens", "tokens"),
+        ):
+            if src_key in usage:
+                metrics[dst_key] = usage[src_key]
+
+    span.log(output=_question_span_output(_decision_answers(result, questions)), metadata=metadata)
+    if metrics:
+        span.log(metrics=metrics)
+
+
+async def _decision_model_ask_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
+    try:
+        state = _arg(args, kwargs, 0, "state")
+        questions = _arg(args, kwargs, 1, "questions")
+        parent = _current_parent_span()
+        start = parent.start_span if parent is not None else start_span
+        span = start(
+            name=f"{type(instance).__name__}.ask",
+            type=SpanTypeAttribute.DECISION,
+            input=_question_span_input(
+                state, _decision_questions(questions), media_transform=_decision_media_transform
+            ),
+            metadata=_decision_model_metadata(instance),
+            internal={"instrumentation": _INSTRUMENTATION},
+        )
+    except Exception:
+        _log.debug("Failed to start Strands decision span", exc_info=True)
+        return await wrapped(*args, **kwargs)
+
+    with span:
+        result = await wrapped(*args, **kwargs)
+        try:
+            _log_decision_result(span, instance, result, questions)
+        except Exception:
+            _log.debug("Failed to log Strands decision result", exc_info=True)
+        return result
