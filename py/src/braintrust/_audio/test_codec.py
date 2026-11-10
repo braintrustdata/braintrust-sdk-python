@@ -2,11 +2,13 @@ import io
 import math
 from array import array
 
-import av
 import pytest
 from braintrust._audio.config import AudioEncoding
 from braintrust._audio.middleware import encoding_stack, run_middleware
 from braintrust._audio.types import AudioChannel, SegmentMeta
+
+
+av = pytest.importorskip("av")
 
 
 @pytest.mark.asyncio

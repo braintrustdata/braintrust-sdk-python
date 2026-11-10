@@ -1,4 +1,3 @@
-import importlib
 import io
 import logging
 import wave
@@ -9,6 +8,7 @@ from typing import Any, Protocol
 
 from braintrust._audio.config import AudioEncoding
 
+from .codec import create_stack
 from .types import AudioResult, SegmentMeta
 from .worker import run_native
 
@@ -80,11 +80,11 @@ async def wav_middleware(data, meta, next):
     return await next(data, replace(meta, mime_type="audio/wav"))
 
 
-_warned_missing_extension = False
+_warned_missing_codec = False
 
 
 def encoding_stack(config: AudioEncoding | None, *, channels: int | None = None) -> tuple[AudioMiddleware, ...]:
-    global _warned_missing_extension
+    global _warned_missing_codec
     selected = config or AudioEncoding()
     if selected.codec == "pcm":
         return (wav_middleware,) if selected.container == "wav" else ()
@@ -94,17 +94,13 @@ def encoding_stack(config: AudioEncoding | None, *, channels: int | None = None)
         if selected.bitrate_bps > 256000 * channels:
             raise ValueError("Opus bitrate exceeds 256000 bits/s per output channel")
     try:
-        extension = importlib.import_module("braintrust_audio")
-        stack = tuple(extension.create_stack(selected, contract_version=1))
-        if not all(callable(layer) for layer in stack):
-            raise ValueError("Invalid audio extension middleware contract")
-        return stack
+        return create_stack(selected)
     except Exception as error:
         if config is not None:
-            raise ValueError("Opus/Ogg requires a compatible braintrust-audio installation") from error
-        if not _warned_missing_extension:
-            _warned_missing_extension = True
+            raise ValueError("Opus/Ogg requires PyAV. Install braintrust[audio].") from error
+        if not _warned_missing_codec:
+            _warned_missing_codec = True
             logging.getLogger("braintrust").warning(
-                "braintrust-audio is unavailable; recording raw PCM. Install braintrust-audio for Opus/Ogg."
+                "PyAV is unavailable; recording raw PCM. Install braintrust[audio] for Opus/Ogg."
             )
         return ()

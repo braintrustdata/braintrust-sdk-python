@@ -1,4 +1,4 @@
-"""Versioned optional codec factory. Importing this module does not import PyAV."""
+"""Optional Opus/Ogg encoding. PyAV is loaded only during codec setup."""
 
 import io
 from dataclasses import replace
@@ -35,9 +35,7 @@ def _encode(data, meta, config):
     return destination.getvalue()
 
 
-def create_stack(config, *, contract_version=1):
-    if contract_version != 1 or (config.codec, config.container) != ("opus", "ogg"):
-        raise ValueError("Unsupported Braintrust audio contract or encoding")
+def create_stack(config):
     # Qualify backend availability during explicit setup, before sessions begin.
     import av
 

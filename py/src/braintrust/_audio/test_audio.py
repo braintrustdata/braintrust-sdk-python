@@ -389,14 +389,15 @@ async def test_unavailable_audio_is_omitted_instead_of_encoded_as_silence():
     assert omitted[0][1] == "playback_timing_unavailable"
 
 
-def test_missing_extension_warns_once_and_explicit_opus_fails(caplog, monkeypatch):
+def test_missing_codec_warns_once_and_explicit_opus_fails(caplog, monkeypatch):
     from braintrust._audio import middleware
 
-    monkeypatch.setattr(middleware, "_warned_missing_extension", False)
+    monkeypatch.setattr(middleware, "_warned_missing_codec", False)
+    monkeypatch.setitem(sys.modules, "av", None)
     assert encoding_stack(None) == ()
     assert encoding_stack(None) == ()
     assert len([record for record in caplog.records if "recording raw PCM" in record.message]) == 1
-    with pytest.raises(ValueError, match="requires a compatible"):
+    with pytest.raises(ValueError, match=r"Install braintrust\[audio\]"):
         encoding_stack(AudioEncoding(codec="opus", container="ogg"))
 
 
@@ -413,7 +414,7 @@ from braintrust._audio import worker
 session = AudioSessionRecorder(NOOP_SPAN)
 assert session.recorder is None
 assert worker._executor is None
-assert not {'av', 'braintrust_audio', 'livekit', 'numpy'} & sys.modules.keys()
+assert not {'av', 'livekit', 'numpy'} & sys.modules.keys()
 """,
         ],
         check=True,
