@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"model":"command-a-03-2025","messages":[{"role":"user","content":"Say
+    body: '{"model":"command-r7b-12-2024","messages":[{"role":"user","content":"Say
       hi in one word."}],"max_tokens":10,"stream":false}'
     headers:
       accept:
@@ -10,7 +10,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '121'
+      - '123'
       content-type:
       - application/json
       host:
@@ -31,7 +31,7 @@ interactions:
     uri: https://api.cohere.com/v2/chat
   response:
     body:
-      string: '{"id":"f4688547-2b22-4a86-b464-aa674778233d","message":{"role":"assistant","content":[{"type":"text","text":"Hi!"}]},"finish_reason":"COMPLETE","usage":{"billed_units":{"input_tokens":6,"output_tokens":2},"tokens":{"input_tokens":501,"output_tokens":5},"cached_tokens":464}}'
+      string: '{"id":"630b7e53-1818-4617-9b70-23c64f7b59e2","message":{"role":"assistant","content":[{"type":"text","text":"Hello!"}]},"finish_reason":"COMPLETE","usage":{"billed_units":{"input_tokens":6,"output_tokens":2},"tokens":{"input_tokens":501,"output_tokens":5},"cached_tokens":496}}'
     headers:
       access-control-expose-headers:
       - X-Debug-Trace-ID
@@ -40,11 +40,11 @@ interactions:
       cache-control:
       - no-cache, no-store, no-transform, must-revalidate, private, max-age=0
       content-length:
-      - '274'
+      - '277'
       content-type:
       - application/json
       date:
-      - Mon, 09 Nov 2026 16:44:08 GMT
+      - Tue, 10 Nov 2026 15:53:32 GMT
       expires:
       - Thu, 01 Jan 1970 00:00:00 GMT
       num_chars:
@@ -64,11 +64,11 @@ interactions:
       x-accel-expires:
       - '0'
       x-debug-trace-id:
-      - a50d2fd6755ad4f3984cb817e5b0b1ac
+      - 3a86dfbcd1894b645a569c4049117f82
       x-endpoint-monthly-call-limit:
       - '1000'
       x-envoy-upstream-service-time:
-      - '13494'
+      - '141'
       x-trial-endpoint-call-limit:
       - '20'
       x-trial-endpoint-call-remaining:

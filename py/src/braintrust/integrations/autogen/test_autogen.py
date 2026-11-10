@@ -6,6 +6,9 @@ from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import init_test_logger
 
 
+TEST_MODEL = "gpt-6-luna"
+MODEL_OPTIONS = {"reasoning_effort": "none"}
+
 PROJECT_NAME = "test_autogen"
 setup_autogen(project_name=PROJECT_NAME)
 
@@ -26,7 +29,17 @@ def _make_agent(*, tools=None, stream=False):
     from autogen_agentchat.agents import AssistantAgent
     from autogen_ext.models.openai import OpenAIChatCompletionClient
 
-    model_client = OpenAIChatCompletionClient(model="gpt-4o-mini", temperature=0)
+    model_client = OpenAIChatCompletionClient(
+        model=TEST_MODEL,
+        model_info={
+            "vision": True,
+            "function_calling": True,
+            "json_output": True,
+            "family": "unknown",
+            "structured_output": True,
+        },
+        **MODEL_OPTIONS,
+    )
     return AssistantAgent(
         "assistant",
         model_client=model_client,

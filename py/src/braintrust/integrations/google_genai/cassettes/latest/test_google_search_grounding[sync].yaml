@@ -21,71 +21,20 @@ interactions:
       x-goog-api-client:
       - google-genai-sdk/3.0.0 gl-python/3.14.7
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent
-  response:
-    body:
-      string: "{\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Search as
-        tool is not enabled for api version v1. Use api version v1beta instead.\",\n
-        \   \"status\": \"INVALID_ARGUMENT\"\n  }\n}\n"
-    headers:
-      alt-svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      content-length:
-      - '171'
-      content-type:
-      - application/json; charset=UTF-8
-      date:
-      - Mon, 09 Nov 2026 17:02:56 GMT
-      server:
-      - scaffolding on HTTPServer2
-      server-timing:
-      - gfet4t7; dur=241
-      transfer-encoding:
-      - chunked
-      vary:
-      - Origin
-      - X-Origin
-      - Referer
-      x-content-type-options:
-      - nosniff
-      x-frame-options:
-      - SAMEORIGIN
-      x-gemini-service-tier:
-      - standard
-      x-xss-protection:
-      - '0'
-    status:
-      code: 400
-      message: Bad Request
-- request:
-    body: '{"contents": [{"parts": [{"text": "What is the current population of Tokyo,
-      Japan?"}], "role": "user"}], "tools": [{"googleSearch": {}}], "generationConfig":
-      {"maxOutputTokens": 300}}'
-    headers:
-      accept:
-      - '*/*'
-      accept-encoding:
-      - gzip, deflate, zstd
-      connection:
-      - keep-alive
-      content-length:
-      - '183'
-      content-type:
-      - application/json
-      host:
-      - generativelanguage.googleapis.com
-      user-agent:
-      - google-genai-sdk/3.0.0 gl-python/3.14.7
-      x-goog-api-client:
-      - google-genai-sdk/3.0.0 gl-python/3.14.7
-    method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"As of October 1, 2025\"\n          }\n
-        \       ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
-        \"MAX_TOKENS\",\n      \"index\": 0,\n      \"groundingMetadata\": {\n        \"searchEntryPoint\":
+        [\n          {\n            \"text\": \"The population of Tokyo depends on
+        how the boundaries are measured:\\n\\n* **Tokyo Metropolis (City Proper/Prefecture):**
+        The total population is approximately **14.2 million** people. \\n* **Greater
+        Tokyo Area (Metropolitan Area):** If you include the wider urban agglomeration
+        spanning the surrounding suburban prefectures, the population is estimated
+        to be around **33.4 million** (according to UN metrics) up to over **37 million**
+        people, making it one of the largest metropolitan areas in the world.\",\n
+        \           \"thoughtSignature\": \"EmAKXgFpFH0TBPxY0J+xM5IRECvy428XCVsRPS2RhQt83NK1PTNWIml750oQuPt/3FdeGDpxkgeitYeH+tDj0foUfqCQrehPgMsV3rJ1BRGHymU7brRUqlmuOxuE6j144d4=\"\n
+        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        \"STOP\",\n      \"index\": 0,\n      \"groundingMetadata\": {\n        \"searchEntryPoint\":
         {\n          \"renderedContent\": \"\\u003cstyle\\u003e\\n.container {\\n
         \ align-items: center;\\n  border-radius: 8px;\\n  display: flex;\\n  font-family:
         Google Sans, Roboto, sans-serif;\\n  font-size: 14px;\\n  line-height: 20px;\\n
@@ -148,31 +97,55 @@ interactions:
         0-11.01 3.4-13.45 8.36l5.03 3.85A8.86 8.86 0 0 1 24 14.14z\\\" fill=\\\"#EA4335\\\"/\\u003e\\n
         \   \\u003c/svg\\u003e\\n    \\u003cdiv class=\\\"gradient-container\\\"\\u003e\\u003cdiv
         class=\\\"gradient\\\"\\u003e\\u003c/div\\u003e\\u003c/div\\u003e\\n  \\u003c/div\\u003e\\n
-        \ \\u003cdiv class=\\\"carousel\\\"\\u003e\\n    \\u003ca class=\\\"chip\\\"
-        href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEg-LGbLc7MSxdiWRvN3xCUV6SdOJQDoIyDbv_c8Gl79jjnDOQJjKYcMyxno2bm_5TQaki8h0P1lc5zGcJVBK0MmPBJugUNiH-exJPiyp1dZXvLsyxwo83XE3GtnGCjmFZ2iiMG4CpkynAybZnovQdK7NPj1wf6qgsu-8qOSMDW02GlW-VEZpS2D2bMxtPisKZPHGNurC4sJAgQ4TEYQTfXSz6-\\\"\\u003ecurrent
-        population of Tokyo Japan\\u003c/a\\u003e\\n  \\u003c/div\\u003e\\n\\u003c/div\\u003e\\n\"\n
-        \       },\n        \"webSearchQueries\": [\n          \"current population
-        of Tokyo Japan\"\n        ]\n      }\n    }\n  ],\n  \"usageMetadata\": {\n
-        \   \"promptTokenCount\": 11,\n    \"candidatesTokenCount\": 27,\n    \"totalTokenCount\":
-        416,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
-        \       \"tokenCount\": 11\n      }\n    ],\n    \"toolUsePromptTokenCount\":
-        60,\n    \"toolUsePromptTokensDetails\": [\n      {\n        \"modality\":
-        \"TEXT\",\n        \"tokenCount\": 60\n      }\n    ],\n    \"thoughtsTokenCount\":
-        318,\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash\",\n
-        \ \"responseId\": \"Jv3xao7wMaGJiLMPxN6PmAk\"\n}\n"
+        \ \\u003cdiv class=\\\"carousel\\\"\\u003e\\n\\u003ca class=\\\"chip\\\" href=\\\"https://www.google.com/search?q=Tokyo+population+latest+statistics&client=app-vertex-grounding&safesearch=active\\\"\\u003eTokyo
+        population latest statistics\\u003c/a\\u003e\\n\\u003ca class=\\\"chip\\\"
+        href=\\\"https://www.google.com/search?q=current+population+of+Tokyo+Japan+2026&client=app-vertex-grounding&safesearch=active\\\"\\u003ecurrent
+        population of Tokyo Japan 2026\\u003c/a\\u003e\\n  \\u003c/div\\u003e\\n\\u003c/div\\u003e\"\n
+        \       },\n        \"groundingChunks\": [\n          {\n            \"web\":
+        {\n              \"uri\": \"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGjOzYUsf7FaQJawg8lLGRA8jgM5niyBEPPl3t9pkc5p-oGhg4udyZA5rSo5tsAYgN2WlseJsASDQJ2dAI0h2wyXj9MM9MOY3VvK3gFwHeyhk_cf0VH7b9Pp4QtTIW00AC5bs4jfDtk6nQ=\",\n
+        \             \"title\": \"wikipedia.org\"\n            }\n          },\n
+        \         {\n            \"web\": {\n              \"uri\": \"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQF2YuuBmZ-15JFBrb7Cx400RpIL-vDFFfRC0owUoKQ9HdZ026NMmCdu-r0grPe6bX52g_PkqPwNv-cPJowjobE1Zv2W_usNHTQL5VfX5Mbx5cH0Xy2eyOuqUZRmFtGvbmc=\",\n
+        \             \"title\": \"nippon.com\"\n            }\n          },\n          {\n
+        \           \"web\": {\n              \"uri\": \"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQF2YuuBmZ-15JFBrb7Cx400RpIL-vDFFfRC0owUoKQ9HdZ026NMmCdu-r0grPe6bX52g_PkqPwNv-cPJowjobE1Zv2W_usNHTQL5VfX5Mbx5cH0Xy2eyOuqUZRmFtGvbmc=\",\n
+        \             \"title\": \"nippon.com\"\n            }\n          },\n          {\n
+        \           \"web\": {\n              \"uri\": \"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGj-qN7xKB3uRz6mibMyZ7fJaBeJpPauEPnTi-voF4ESsaWrqz7tBdbjRoqP7BtyuXLDfuAJmJBzG3HqifwdDfIE4-svqguicEBM82rzJ_dUtKiNXq4OyH17x0LqK2Hw_ahE5nFoR6mngKZR8R6_H_fEyZ9MSGSUWFHf2n5XaSU3sI=\",\n
+        \             \"title\": \"worldpopulationclock.net\"\n            }\n          }\n
+        \       ],\n        \"groundingSupports\": [\n          {\n            \"segment\":
+        {\n              \"startIndex\": 71,\n              \"endIndex\": 179,\n              \"text\":
+        \"**Tokyo Metropolis (City Proper/Prefecture):** The total population is approximately
+        **14.2 million** people\"\n            },\n            \"groundingChunkIndices\":
+        [\n              0\n            ]\n          },\n          {\n            \"segment\":
+        {\n              \"startIndex\": 184,\n              \"endIndex\": 403,\n
+        \             \"text\": \"**Greater Tokyo Area (Metropolitan Area):** If you
+        include the wider urban agglomeration spanning the surrounding suburban prefectures,
+        the population is estimated to be around **33.4 million** (according to UN
+        metrics)\"\n            },\n            \"groundingChunkIndices\": [\n              1,\n
+        \             2\n            ]\n          },\n          {\n            \"segment\":
+        {\n              \"startIndex\": 184,\n              \"endIndex\": 436,\n
+        \             \"text\": \"**Greater Tokyo Area (Metropolitan Area):** If you
+        include the wider urban agglomeration spanning the surrounding suburban prefectures,
+        the population is estimated to be around **33.4 million** (according to UN
+        metrics) up to over **37 million** people\"\n            },\n            \"groundingChunkIndices\":
+        [\n              3\n            ]\n          }\n        ],\n        \"webSearchQueries\":
+        [\n          \"Tokyo population latest statistics\",\n          \"current
+        population of Tokyo Japan 2026\"\n        ]\n      }\n    }\n  ],\n  \"usageMetadata\":
+        {\n    \"promptTokenCount\": 11,\n    \"candidatesTokenCount\": 135,\n    \"totalTokenCount\":
+        146,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
+        \       \"tokenCount\": 11\n      }\n    ],\n    \"serviceTier\": \"standard\"\n
+        \ },\n  \"modelVersion\": \"gemini-3.5-flash-lite\",\n  \"responseId\": \"HD7zatGfEai3xdIP2vyhwQs\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '6099'
+      - '9348'
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Mon, 09 Nov 2026 17:04:41 GMT
+      - Tue, 10 Nov 2026 15:54:06 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=3313
+      - gfet4t7; dur=2317
       transfer-encoding:
       - chunked
       vary:

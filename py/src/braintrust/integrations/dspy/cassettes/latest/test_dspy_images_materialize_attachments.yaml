@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"model":"gpt-4o-mini","messages":[{"role":"system","content":"Your input
+    body: '{"model":"gpt-6-luna","messages":[{"role":"system","content":"Your input
       fields are:\n1. `image` (Image): \n2. `page` (Page):\nYour output fields are:\n1.
       `answer` (str):\nAll interactions will be structured in the following way, with
       the appropriate values filled in.\n\n[[ ## image ## ]]\n{image}\n\n[[ ## page
@@ -10,7 +10,7 @@ interactions:
       ## ]]\n"},{"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="}},{"type":"text","text":"\n\n[[
       ## page ## ]]\n{\"number\": 2, \"image\": \""},{"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="}},{"type":"text","text":"\"}\n\nRespond
       with the corresponding output fields, starting with the field `[[ ## answer
-      ## ]]`, and then ending with the marker for `[[ ## completed ## ]]`."}]}]}'
+      ## ]]`, and then ending with the marker for `[[ ## completed ## ]]`."}]}],"reasoning_effort":"none"}'
     headers:
       accept:
       - application/json
@@ -19,7 +19,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '1154'
+      - '1179'
       content-type:
       - application/json
       host:
@@ -50,18 +50,19 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EiMm5uH245ZLbw582bTGoKIaNFzuk\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1794242685,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiiT3sZfuGpind0t8ipLR768H16nW\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794326073,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"[[ ## answer ## ]]\\nBoth images display
-        a solid color of bright red.\\n\\n[[ ## completed ## ]]\",\n        \"refusal\":
-        null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
-        \     \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        17167,\n    \"completion_tokens\": 20,\n    \"total_tokens\": 17187,\n    \"prompt_tokens_details\":
-        {\n      \"cached_tokens\": 17152,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_5632fb73e4\"\n}\n"
+        \"assistant\",\n        \"content\": \"[[ ## answer ## ]]\\nThe page is mostly
+        white, with a small red and yellow mark near the upper-left corner.\\n[[ ##
+        completed ## ]]\",\n        \"refusal\": null,\n        \"annotations\": []\n
+        \     },\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n
+        \   \"prompt_tokens\": 168,\n    \"completion_tokens\": 32,\n    \"total_tokens\":
+        200,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\": 0,\n      \"audio_tokens\":
+        0\n    },\n    \"completion_tokens_details\": {\n      \"reasoning_tokens\":
+        0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\": 0,\n
+        \     \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -72,17 +73,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a57e48ae1b182116-YYZ
+      - a5863c851923df5a-YYZ
       connection:
       - keep-alive
       content-length:
-      - '910'
+      - '891'
       content-type:
       - application/json
       date:
-      - Mon, 09 Nov 2026 16:44:46 GMT
+      - Tue, 10 Nov 2026 15:54:40 GMT
       openai-processing-ms:
-      - '1507'
+      - '6749'
       openai-version:
       - '2020-10-01'
       server:
@@ -100,13 +101,13 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-input-images:
       - '49998'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149998310'
+      - '179998311'
       x-ratelimit-reset-input-images:
       - 2ms
       x-ratelimit-reset-requests:
@@ -114,7 +115,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_54686dbcd5914e4f9e06b9d83eaf32ee
+      - req_082db506fbe14719b41ef7946e9aa711
     status:
       code: 200
       message: OK

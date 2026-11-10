@@ -22,91 +22,29 @@ interactions:
       x-goog-api-client:
       - google-genai-sdk/3.0.0 gl-python/3.14.7
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-preview-tts:generateContent
-  response:
-    body:
-      string: "{\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Invalid JSON
-        payload received. Unknown name \\\"speechConfig\\\" at 'generation_config':
-        Cannot find field.\",\n    \"status\": \"INVALID_ARGUMENT\",\n    \"details\":
-        [\n      {\n        \"@type\": \"type.googleapis.com/google.rpc.BadRequest\",\n
-        \       \"fieldViolations\": [\n          {\n            \"field\": \"generation_config\",\n
-        \           \"description\": \"Invalid JSON payload received. Unknown name
-        \\\"speechConfig\\\" at 'generation_config': Cannot find field.\"\n          }\n
-        \       ]\n      }\n    ]\n  }\n}\n"
-    headers:
-      alt-svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      content-length:
-      - '533'
-      content-type:
-      - application/json; charset=UTF-8
-      date:
-      - Mon, 09 Nov 2026 17:02:46 GMT
-      server:
-      - scaffolding on HTTPServer2
-      server-timing:
-      - gfet4t7; dur=28
-      transfer-encoding:
-      - chunked
-      vary:
-      - Origin
-      - X-Origin
-      - Referer
-      x-content-type-options:
-      - nosniff
-      x-frame-options:
-      - SAMEORIGIN
-      x-xss-protection:
-      - '0'
-    status:
-      code: 400
-      message: Bad Request
-- request:
-    body: '{"contents": [{"parts": [{"text": "Read this sentence aloud in a warm voice:
-      Hello and welcome to Braintrust."}], "role": "user"}], "generationConfig": {"responseModalities":
-      ["AUDIO"], "speechConfig": {"voice_config": {"prebuilt_voice_config": {"voice_name":
-      "Kore"}}}}}'
-    headers:
-      accept:
-      - '*/*'
-      accept-encoding:
-      - gzip, deflate, zstd
-      connection:
-      - keep-alive
-      content-length:
-      - '271'
-      content-type:
-      - application/json
-      host:
-      - generativelanguage.googleapis.com
-      user-agent:
-      - google-genai-sdk/3.0.0 gl-python/3.14.7
-      x-goog-api-client:
-      - google-genai-sdk/3.0.0 gl-python/3.14.7
-    method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash-lite-tts:generateContent
   response:
     body:
       string: '{"candidates": [{"content": {"parts": [{"inlineData": {"mimeType":
-        "audio/L16;codec=pcm;rate=24000", "data": "UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA="}}],
+        "audio/wav", "data": "UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA="}}],
         "role": "model"}, "finishReason": "STOP", "index": 0}], "usageMetadata": {"promptTokenCount":
-        18, "candidatesTokenCount": 76, "totalTokenCount": 94, "promptTokensDetails":
+        18, "candidatesTokenCount": 150, "totalTokenCount": 168, "promptTokensDetails":
         [{"modality": "TEXT", "tokenCount": 18}], "candidatesTokensDetails": [{"modality":
-        "AUDIO", "tokenCount": 76}], "serviceTier": "standard"}, "modelVersion": "gemini-2.5-flash-preview-tts",
-        "responseId": "HP3xatyUJZvh0_gP_JGw6AU"}'
+        "AUDIO", "tokenCount": 150}], "serviceTier": "standard"}, "modelVersion":
+        "gemini-3.8-flash-lite-tts", "responseId": "Dz7zat7dIaWfytMP7Pqy4Ac"}'
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '196033'
+      - '392908'
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Mon, 09 Nov 2026 17:04:30 GMT
+      - Tue, 10 Nov 2026 15:53:53 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=2293
+      - gfet4t7; dur=2262
       transfer-encoding:
       - chunked
       vary:

@@ -21,30 +21,24 @@ try:
 except ImportError:
     interactions = None
 
-_needs_interactions = pytest.mark.skipif(interactions is None, reason="google-genai too old for interactions API")
+_needs_interactions = pytest.mark.skipif(
+    interactions is None or tuple(int(p) for p in genai.__version__.split(".")[:2]) < (2, 0),
+    reason="current Interactions API requires the google-genai 2.0+ wire schema",
+)
 from google.genai.client import Client
 
 
 PROJECT_NAME = "test-genai-app"
-MODEL = (
-    "gemini-2.5-flash-lite"
-    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
-    else "gemini-2.0-flash-001"
-)
+MODEL = "gemini-2.5-flash-lite"
 EMBEDDING_MODEL = "gemini-embedding-001"
-IMAGE_MODEL = "imagen-4.0-fast-generate-001"
-REASONING_MODEL = "gemini-2.5-flash"
-TOOL_MODEL = "gemini-2.5-flash" if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest" else MODEL
-INTERACTIONS_MODEL = "gemini-2.5-flash"
-GENERATED_AUDIO_MODEL = "gemini-2.5-flash-preview-tts"
-GENERATED_IMAGE_MODEL = "gemini-2.5-flash-image"
+REASONING_MODEL = "gemini-3.5-flash-lite"
+TOOL_MODEL = "gemini-3.5-flash-lite"
+INTERACTIONS_MODEL = REASONING_MODEL
+GENERATED_AUDIO_MODEL = "gemini-3.8-flash-lite-tts"
+GENERATED_IMAGE_MODEL = "gemini-3.1-flash-lite-image"
 FIXTURES_DIR = Path(__file__).parent.parent.parent / "fixtures"
 TINY_PNG_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="
 TINY_WAV_BASE64 = "UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA="
-LATEST_ONLY = pytest.mark.skipif(
-    os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest",
-    reason="model is only covered by the latest google-genai matrix entry",
-)
 
 
 def _v1beta_client():
@@ -59,19 +53,9 @@ def _v1beta_client():
     return Client(http_options=types.HttpOptions(api_version="v1beta"))
 
 
-# google-genai 2.20.0 restricted ``generate_images`` to Vertex AI ("Gemini
-# Enterprise Agent Platform") mode.  On the Developer API (API-key) path it now
-# raises ValueError client-side before issuing a request, so the call cannot be
-# exercised -- or re-recorded -- without Vertex credentials.
-_GENAI_VERSION = detect_module_version(genai, ("google.genai",))
-DEVELOPER_API_IMAGEN_ONLY = pytest.mark.skipif(
-    not version_satisfies(_GENAI_VERSION, "<2.20.0"),
-    reason="google-genai >=2.20.0 supports generate_images only in Vertex AI mode",
-)
-
-
 # ``types.ServiceTier`` / ``GenerateContentConfig.service_tier`` were added
 # after google-genai 1.30.0; older SDKs cannot request a tier.
+_GENAI_VERSION = detect_module_version(genai, ("google.genai",))
 _HAS_GENERATE_CONTENT_SERVICE_TIER = hasattr(types, "ServiceTier")
 NEEDS_GENERATE_CONTENT_SERVICE_TIER = pytest.mark.skipif(
     not _HAS_GENERATE_CONTENT_SERVICE_TIER,
@@ -232,30 +216,6 @@ def _assert_embed_span(span, start, end):
     _assert_timing_metrics_are_valid(span["metrics"], start, end)
 
 
-def _assert_generate_images_span(span, start, end):
-    assert span["metadata"]["model"] == IMAGE_MODEL
-    assert span["input"]["prompt"] == "A watercolor fox in a forest"
-    assert span["input"]["config"]["number_of_images"] == 1
-    assert span["input"]["config"]["aspect_ratio"] == "1:1"
-    assert span["input"]["config"]["safety_filter_level"] == "BLOCK_LOW_AND_ABOVE"
-    assert span["input"]["config"]["include_rai_reason"] is True
-    assert span["output"]["generated_images_count"] == 1
-    generated_image = span["output"]["generated_images"][0]
-    assert generated_image["image_size_bytes"] > 0
-    assert generated_image["mime_type"] in {"image/png", "image/jpeg", "image/webp"}
-
-    # Verify the image bytes are stored as an Attachment for upload to object storage
-    assert "image_url" in generated_image
-    attachment = generated_image["image_url"]["url"]
-    assert isinstance(attachment, Attachment)
-    assert attachment.reference["type"] == "braintrust_attachment"
-    assert attachment.reference["content_type"] == generated_image["mime_type"]
-    assert attachment.reference["filename"].startswith("generated_image_")
-    assert attachment.reference["key"]
-
-    _assert_timing_metrics_are_valid(span["metrics"], start, end)
-
-
 def _assert_attachment_part(part, *, content_type, filename):
     if content_type.startswith("image/"):
         assert "image_url" in part
@@ -293,7 +253,10 @@ def _serialized_modality_details(details):
 
 
 # Test 1: Basic Completion
-@LATEST_ONLY
+@pytest.mark.skipif(
+    not hasattr(genai.models.Models, "_generate_content_with_continuation"),
+    reason="installed Google GenAI SDK does not support automatic continuation",
+)
 @pytest.mark.vcr
 @pytest.mark.asyncio
 @pytest.mark.parametrize("mode", ["sync", "async"])
@@ -404,9 +367,8 @@ async def test_basic_completion(memory_logger, mode):
     assert span["output"]
     assert "Paris" in str(span["output"])
     _assert_metrics_are_valid(span["metrics"], start, end)
-    # No tier was requested, but the reported usageMetadata.serviceTier is still
-    # recorded. The 1.30.0 cassettes predate serviceTier in responses.
-    assert_service_tiers(span["metadata"], served="standard" if _HAS_GENERATE_CONTENT_SERVICE_TIER else None)
+    # Fresh responses report a tier even when the SDK cannot request one.
+    assert_service_tiers(span["metadata"], served="standard")
 
 
 async def _start_text_stream(client, mode):
@@ -546,7 +508,6 @@ def test_binary_input(memory_logger, fixture_name, mime_type, filename, prompt):
     _assert_metrics_are_valid(span["metrics"], start, end)
 
 
-@LATEST_ONLY
 @pytest.mark.vcr
 def test_audio_input_usage(memory_logger):
     """Map Google prompt-side audio modality details to prompt_audio_tokens."""
@@ -648,6 +609,7 @@ async def test_tool_use(memory_logger, mode):
             contents="What is the weather like in Paris, France?",
             config=types.GenerateContentConfig(
                 tools=[get_weather],
+                automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
                 max_output_tokens=500,
             ),
         )
@@ -658,6 +620,7 @@ async def test_tool_use(memory_logger, mode):
             contents="What is the weather like in Paris, France?",
             config=types.GenerateContentConfig(
                 tools=[get_weather],
+                automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
                 max_output_tokens=500,
             ),
         )
@@ -669,6 +632,7 @@ async def test_tool_use(memory_logger, mode):
             contents="What is the weather like in Paris, France?",
             config=types.GenerateContentConfig(
                 tools=[get_weather],
+                automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
                 max_output_tokens=500,
             ),
         )
@@ -679,6 +643,7 @@ async def test_tool_use(memory_logger, mode):
             contents="What is the weather like in Paris, France?",
             config=types.GenerateContentConfig(
                 tools=[get_weather],
+                automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
                 max_output_tokens=500,
             ),
         )
@@ -925,8 +890,9 @@ def test_reasoning(memory_logger):
     )
     follow_up_prompt = "Using the pattern you discovered, what would be the 10th term? And can you find the sum of the first 10 terms?"
     reasoning_config = types.GenerateContentConfig(
-        max_output_tokens=512,
-        thinking_config=types.ThinkingConfig(include_thoughts=True, thinking_budget=128),
+        max_output_tokens=2048,
+        thinking_config=types.ThinkingConfig(include_thoughts=True),
+        http_options=types.HttpOptions(extra_body={"generationConfig": {"thinkingConfig": {"thinkingLevel": "high"}}}),
     )
 
     first_response = client.models.generate_content(
@@ -969,7 +935,6 @@ def test_reasoning(memory_logger):
     assert follow_up_prompt in str(second_span["input"])
 
 
-@LATEST_ONLY
 @pytest.mark.vcr
 def test_generated_audio_usage(memory_logger):
     """Map Google candidate-side audio modality details to completion_audio_tokens."""
@@ -999,7 +964,6 @@ def test_generated_audio_usage(memory_logger):
     assert spans[0]["metrics"]["completion_audio_tokens"] == expected_audio_tokens
 
 
-@LATEST_ONLY
 @pytest.mark.vcr
 def test_generated_image_usage(memory_logger):
     """Map Google candidate-side image modality details to completion_image_tokens."""
@@ -1020,41 +984,6 @@ def test_generated_image_usage(memory_logger):
     spans = memory_logger.pop()
     assert len(spans) == 1
     assert spans[0]["metrics"]["completion_image_tokens"] == expected_image_tokens
-
-
-@DEVELOPER_API_IMAGEN_ONLY
-@pytest.mark.vcr
-@pytest.mark.asyncio
-@pytest.mark.parametrize("mode", ["sync", "async"])
-async def test_generate_images(memory_logger, mode):
-    assert not memory_logger.pop()
-
-    client = Client()
-    start = time.time()
-
-    kwargs = {
-        "model": IMAGE_MODEL,
-        "prompt": "A watercolor fox in a forest",
-        "config": types.GenerateImagesConfig(
-            number_of_images=1,
-            aspect_ratio="1:1",
-            safety_filter_level="BLOCK_LOW_AND_ABOVE",
-            include_rai_reason=True,
-        ),
-    }
-    if mode == "async":
-        response = await client.aio.models.generate_images(**kwargs)
-    else:
-        response = client.models.generate_images(**kwargs)
-    end = time.time()
-
-    assert len(response.generated_images) == 1
-    assert response.generated_images[0].image
-    assert response.generated_images[0].image.image_bytes
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    _assert_generate_images_span(spans[0], start, end)
 
 
 def test_interaction_materialization_only_converts_multimodal_payloads():
@@ -1141,7 +1070,7 @@ def test_generate_content_stream_code_execution_part_order(memory_logger):
     assert not memory_logger.pop()
 
     client = _v1beta_client()
-    model = "gemini-2.5-flash"
+    model = TOOL_MODEL
     chunks = list(
         client.models.generate_content_stream(
             model=model,
@@ -1205,9 +1134,7 @@ def test_generate_content_stream_code_execution_part_order(memory_logger):
     assert logged_part_kinds == raw_part_kinds
 
 
-GROUNDING_MODEL = (
-    "gemini-2.5-flash" if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest" else "gemini-2.0-flash-001"
-)
+GROUNDING_MODEL = "gemini-3.5-flash-lite"
 
 
 def _assert_grounding_metadata(span_output):
@@ -1255,7 +1182,6 @@ def _assert_url_context_metadata(span_output):
     assert any(item.get("retrieved_url") for item in url_metadata)
 
 
-@LATEST_ONLY
 @pytest.mark.vcr
 def test_url_context_metadata_stream(memory_logger):
     assert not memory_logger.pop()
@@ -1278,7 +1204,6 @@ def test_url_context_metadata_stream(memory_logger):
     _assert_url_context_metadata(spans[0]["output"])
 
 
-@LATEST_ONLY
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_url_context_metadata_async_stream(memory_logger):
@@ -1402,7 +1327,6 @@ async def test_google_search_grounding(memory_logger, mode):
     _assert_grounding_metadata(span["output"])
 
 
-@LATEST_ONLY
 @pytest.mark.vcr
 def test_cached_content_usage_metadata(memory_logger):
     """Preserve Google's cache modality details as provider-specific metadata."""

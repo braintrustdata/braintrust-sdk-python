@@ -1,107 +1,102 @@
 interactions:
 - request:
-    body: '{"messages":[{"role":"user","content":"Say hello"}],"model":"gpt-4o-mini","stream":false,"temperature":0.0}'
+    body: '{"messages":[{"role":"user","content":"Say hello"}],"model":"gpt-6-luna","reasoning_effort":"none","stream":false,"temperature":1.0}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
-      - '107'
-      Content-Type:
+      content-length:
+      - '132'
+      content-type:
       - application/json
-      Host:
+      host:
       - api.openai.com
-      User-Agent:
+      user-agent:
       - AsyncOpenAI/Python 2.32.0
-      X-Stainless-Arch:
+      x-stainless-arch:
       - arm64
-      X-Stainless-Async:
+      x-stainless-async:
       - async:asyncio
-      X-Stainless-Lang:
+      x-stainless-lang:
       - python
-      X-Stainless-OS:
+      x-stainless-os:
       - MacOS
-      X-Stainless-Package-Version:
+      x-stainless-package-version:
       - 2.32.0
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.12.12
       x-stainless-read-timeout:
       - '60.0'
       x-stainless-retry-count:
       - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-DZMXAB4oesrxIlqnnViCLLersRrMY\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1777320472,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiiM6HB1O3DU2wvF2NmJhGOxnCdzb\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794325642,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"Hello! How can I assist you today?\",\n
-        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
-        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        9,\n    \"completion_tokens\": 9,\n    \"total_tokens\": 18,\n    \"prompt_tokens_details\":
-        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_de7acce317\"\n}\n"
+        \"assistant\",\n        \"content\": \"Hello!\",\n        \"refusal\": null,\n
+        \       \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 8,\n    \"completion_tokens\":
+        5,\n    \"total_tokens\": 13,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"cache_write_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n
+        \   \"completion_tokens_details\": {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\":
+        0,\n      \"accepted_prediction_tokens\": 0,\n      \"rejected_prediction_tokens\":
+        0\n    }\n  },\n  \"service_tier\": \"default\",\n  \"system_fingerprint\":
+        null\n}\n"
     headers:
-      CF-Cache-Status:
-      - DYNAMIC
-      CF-Ray:
-      - 9f3074b81fbbd5f4-YYZ
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json
-      Date:
-      - Mon, 27 Apr 2026 20:07:52 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
       access-control-expose-headers:
       - X-Request-ID
+      - CF-Ray
+      - CF-Ray
       alt-svc:
       - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a58632019c0eabfa-YYZ
+      connection:
+      - keep-alive
       content-length:
-      - '839'
-      openai-organization:
-      - braintrust-data
+      - '795'
+      content-type:
+      - application/json
+      date:
+      - Tue, 10 Nov 2026 15:47:23 GMT
       openai-processing-ms:
-      - '520'
-      openai-project:
-      - proj_vsCSXafhhByzWOThMrJcZiw9
+      - '840'
       openai-version:
       - '2020-10-01'
-      set-cookie:
-      - __cf_bm=ylzd22MxGnW6ukdewFSryhIUMYoGWxwoLGyWIgUy7YA-1777320472.3309484-1.0.1.1-_RHXPIXhCCT8Xr._lCmYzEV_3hxeLPiVF7UViAII3LU_aW6fo.IeY6.sw3jW1Ypx7JB_a7LjRUYR44hsgeSMSQ7BlyPWAd60HeooOUG8dX5WgQTmPPFePGhcp405JyiP;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Mon, 27 Apr 2026
-        20:37:52 GMT
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999995'
+      - '179999997'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_cb46ed4f84074f71bdb34c444de266be
+      - req_b2b875ad5dc74d29b0329f681c0544c1
     status:
       code: 200
       message: OK

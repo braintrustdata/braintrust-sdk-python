@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"model":"command-a-03-2025","messages":[{"role":"user","content":"What
+    body: '{"model":"command-r7b-12-2024","messages":[{"role":"user","content":"What
       is Braintrust? Cite the provided document."}],"documents":[{"data":{"title":"Braintrust
       overview","snippet":"Braintrust is a platform for evaluating, logging, and improving
       AI applications."}}],"citation_options":{"mode":"fast"},"max_tokens":80,"stream":true}'
@@ -12,7 +12,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '331'
+      - '333'
       content-type:
       - application/json
       host:
@@ -35,7 +35,7 @@ interactions:
     body:
       string: 'event: message-start
 
-        data: {"id":"e33fd44b-25b1-4cf8-b122-e339dec2f279","type":"message-start","delta":{"message":{"role":"assistant","content":[],"tool_plan":"","tool_calls":[],"citations":[]}}}
+        data: {"id":"2c6ff969-57bb-4707-b609-51870ef149e4","type":"message-start","delta":{"message":{"role":"assistant","content":[],"tool_plan":"","tool_calls":[],"citations":[]}}}
 
 
         event: content-start
@@ -153,7 +153,7 @@ interactions:
 
         event: message-end
 
-        data: {"type":"message-end","delta":{"finish_reason":"COMPLETE","usage":{"billed_units":{"input_tokens":34,"output_tokens":15},"tokens":{"input_tokens":1677,"output_tokens":28},"cached_tokens":128}}}
+        data: {"type":"message-end","delta":{"finish_reason":"COMPLETE","usage":{"billed_units":{"input_tokens":34,"output_tokens":15},"tokens":{"input_tokens":1677,"output_tokens":28},"cached_tokens":1664}}}
 
 
         data: [DONE]
@@ -164,13 +164,13 @@ interactions:
       access-control-expose-headers:
       - X-Debug-Trace-ID
       alt-svc:
-      - h3=":443"; ma=2592000
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       cache-control:
       - no-cache, no-store, no-transform, must-revalidate, private, max-age=0
       content-type:
       - text/event-stream
       date:
-      - Mon, 09 Nov 2026 16:43:31 GMT
+      - Tue, 10 Nov 2026 15:53:30 GMT
       expires:
       - Thu, 01 Jan 1970 00:00:00 GMT
       pragma:
@@ -186,11 +186,11 @@ interactions:
       x-accel-expires:
       - '0'
       x-debug-trace-id:
-      - 8345c234a1215aec6a6dfdcbff81544b
+      - d9152c0ad7ae5673f7266dc8a24fe3a8
       x-endpoint-monthly-call-limit:
       - '1000'
       x-envoy-upstream-service-time:
-      - '9'
+      - '10'
       x-trial-endpoint-call-limit:
       - '20'
       x-trial-endpoint-call-remaining:

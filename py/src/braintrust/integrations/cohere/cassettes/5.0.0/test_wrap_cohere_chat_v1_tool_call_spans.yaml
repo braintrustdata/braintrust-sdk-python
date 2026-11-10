@@ -1,0 +1,79 @@
+interactions:
+- request:
+    body: '{"message":"Use the get_weather tool for Paris.","stream":false,"model":"command-r7b-12-2024","max_tokens":64,"tools":[{"name":"get_weather","description":"Get
+      the weather for a city.","parameter_definitions":{"city":{"description":"City
+      name","type":"str","required":true}}}],"force_single_step":true}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '302'
+      content-type:
+      - application/json
+      host:
+      - api.cohere.ai
+      user-agent:
+      - python-httpx/0.28.1
+      x-fern-language:
+      - Python
+      x-fern-sdk-name:
+      - cohere
+      x-fern-sdk-version:
+      - 5.0.0
+    method: POST
+    uri: https://api.cohere.ai/v1/chat
+  response:
+    body:
+      string: '{"response_id":"c0660c6e-7f31-4b7b-bd4e-dd3a38f42f51","text":"I will
+        use one or more of the available tools to find the answer","generation_id":"c93871f6-2cf6-444d-9e81-96f09032ebe6","chat_history":[{"role":"USER","message":"Use
+        the get_weather tool for Paris."},{"role":"CHATBOT","message":"I will use
+        one or more of the available tools to find the answer","tool_calls":[{"name":"get_weather","parameters":{"city":"Paris"}}]}],"finish_reason":"COMPLETE","meta":{"api_version":{"version":"1"},"billed_units":{"input_tokens":42,"output_tokens":22},"tokens":{"input_tokens":1462,"output_tokens":34},"cached_tokens":1024},"tool_calls":[{"name":"get_weather","parameters":{"city":"Paris"}}]}'
+    headers:
+      access-control-expose-headers:
+      - X-Debug-Trace-ID
+      alt-svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      cache-control:
+      - no-cache, no-store, no-transform, must-revalidate, private, max-age=0
+      content-length:
+      - '687'
+      content-type:
+      - application/json
+      date:
+      - Tue, 10 Nov 2026 16:15:11 GMT
+      expires:
+      - Thu, 01 Jan 1970 00:00:00 GMT
+      num_chars:
+      - '6894'
+      num_tokens:
+      - '64'
+      pragma:
+      - no-cache
+      server:
+      - envoy
+      transfer-encoding:
+      - chunked
+      vary:
+      - Origin,Accept-Encoding
+      via:
+      - 1.1 google
+      x-accel-expires:
+      - '0'
+      x-debug-trace-id:
+      - 396c5dce315fd365fbae236e2725456b
+      x-endpoint-monthly-call-limit:
+      - '1000'
+      x-envoy-upstream-service-time:
+      - '543'
+      x-trial-endpoint-call-limit:
+      - '20'
+      x-trial-endpoint-call-remaining:
+      - '19'
+    status:
+      code: 200
+      message: OK
+version: 1

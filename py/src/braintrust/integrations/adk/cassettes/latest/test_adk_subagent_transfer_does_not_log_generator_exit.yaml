@@ -29,31 +29,32 @@ interactions:
       x-goog-api-client:
       - google-genai-sdk/2.34.0 gl-python/3.14.7 google-adk/2.14.0 gl-python/3.14.7
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
         [\n          {\n            \"functionCall\": {\n              \"name\": \"transfer_to_agent\",\n
         \             \"args\": {\n                \"agent_name\": \"capital_specialist\"\n
-        \             }\n            },\n            \"thoughtSignature\": \"Ct8CAWkUfRMet6uyIKUihlzp5Imq0hdQQMxcD96BRgiuBA78yYrUTfTnk1MweHdPjN2rZF19XHokdrquctMNyex6SETh/JZVKKMea336Lq/f8kUFt8koZguO9TjoIUJhJMPhZJfoqrSI/qfBBcoP5p00pOwXNdoBhnyqSll3MC3jCJ5yTuRT3AnpCEsEdWWFFASxrZeJkW2kpIv5ixzGBqFRYYcX24AFXicwGSfbGKZKDwTOZPTsPsu39mcY0gJzrvsQC44otDuxTiZqn7Gr8TK6rFiSGIAzBRy1B2MPOxJem9gEYnuKtxAe3w7W9zJLtFmCu87+aFV17rMefc4g3Brsamvpyich/kDPZIA2pBtKTfUsbpCkEn2+P8oNyN6hwnt9B3iIGZ9zxTMBAOWKMIfNysOg7AvdsPogmpa6qCaONZn2BZhk+GB1vp3Sh/RWOlv2a9UeQnXf8xllWZjUGLCk\"\n
+        \             },\n              \"id\": \"call_11904137668068014867\"\n            },\n
+        \           \"thoughtSignature\": \"EmAKXgFpFH0T83isH1gIvx8AXZulVq4srTsB9hC0zknK6foAbMc0UMb+xPJjjY9Vwbh0b8mrKqErlFVGiTvNaUNBGk86A6vIGlulDyhFZIXjG/29ypjrpAISTqGbqCwA+0c=\"\n
         \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
         \"STOP\",\n      \"index\": 0,\n      \"finishMessage\": \"Model generated
         function call(s).\"\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
-        301,\n    \"candidatesTokenCount\": 22,\n    \"totalTokenCount\": 387,\n    \"promptTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 301\n
-        \     }\n    ],\n    \"thoughtsTokenCount\": 64,\n    \"serviceTier\": \"standard\"\n
-        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"2fnxas7ML4-PytMP9rOr8A0\"\n}\n"
+        331,\n    \"candidatesTokenCount\": 23,\n    \"totalTokenCount\": 354,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 331\n
+        \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
+        \"gemini-3.5-flash-lite\",\n  \"responseId\": \"rD_zauSpMvSpxdIProK7oAk\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Mon, 09 Nov 2026 16:50:34 GMT
+      - Tue, 10 Nov 2026 16:00:45 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=1000
+      - gfet4t7; dur=791
       Transfer-Encoding:
       - chunked
       Vary:
@@ -69,7 +70,7 @@ interactions:
       X-XSS-Protection:
       - '0'
       content-length:
-      - '1299'
+      - '983'
     status:
       code: 200
       message: OK
@@ -118,29 +119,29 @@ interactions:
       x-goog-api-client:
       - google-genai-sdk/2.34.0 gl-python/3.14.7 google-adk/2.14.0 gl-python/3.14.7
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
         [\n          {\n            \"text\": \"The capital of France is Paris.\",\n
-        \           \"thoughtSignature\": \"CscDAWkUfRNetGNUVEDUGN8m5sJYkj/coG4MlH9yAJS5/XJDaW2N5iNGjRCLBy6zMBRII0o5520clxH06+8JZSTI0WWbvXXzs299pXcux+ICZ+fA/qCh32ISgbeUUGoRhjDRTnjNU5N7uoix8/IRXgaoie3jvjDEwXtepiS2ntjTUfZIOBwTL4DKUVMva4nAiWtPwcIxLojY+wulZWWX+sGUABQo1NmvO1AeCz5iJ8SV6GlXdv8uD4JOzWxrz6MjFCqMNKZxVRDAqjqXRUFLSic/jBLC+jXOjAYPi6WmMNf/7YoTuy0ApAWwt53z0/+6I1JS/20e7Vk1k0R1d/mM28uUE1acDbcEj2IYIz0upCDfk4H6043e3saAHbcx7RPRMyWUXSi9Wv8JM46MQ8yS8vcysMst2LdW/2ILgK5XrSPMvLaBqg/7oA8JnnvpwoYSVrPLBKmilp8FHJ/eJ6Rp8sney+87qmx77sXwefFHbQD3NTabP/C80z+jawN3e7iLOcnz4rsgiDGNyxoEWfP3KZHzJiGeKL/ui4C9RCDlK8+t0HLimIRAVeevD1FCmBlku+jHfC1GRs9RWm0kJ77l/SlgqULoJ2s67RM=\"\n
+        \           \"thoughtSignature\": \"EmAKXgFpFH0T1oMdsirVoTK2HEeWxBTjWMTCaG1plex3vnUFfbrSsVl19Q/rkxqhHnTK2rH7V1kj8ZDNBJvtOBuUGw4DRdwnFcUphGqKuBAKbSexcZL0+RIh1pBiv9iIGI8=\"\n
         \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
         \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
-        574,\n    \"candidatesTokenCount\": 7,\n    \"totalTokenCount\": 666,\n    \"promptTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 574\n
-        \     }\n    ],\n    \"thoughtsTokenCount\": 85,\n    \"serviceTier\": \"standard\"\n
-        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"2vnxaoyQNqKC1sgP4YrY-A0\"\n}\n"
+        604,\n    \"candidatesTokenCount\": 7,\n    \"totalTokenCount\": 611,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 604\n
+        \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
+        \"gemini-3.5-flash-lite\",\n  \"responseId\": \"rT_zas_WLbK5uMYP2MzdgQk\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Mon, 09 Nov 2026 16:50:35 GMT
+      - Tue, 10 Nov 2026 16:00:46 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=836
+      - gfet4t7; dur=773
       Transfer-Encoding:
       - chunked
       Vary:
@@ -156,7 +157,7 @@ interactions:
       X-XSS-Protection:
       - '0'
       content-length:
-      - '1254'
+      - '749'
     status:
       code: 200
       message: OK

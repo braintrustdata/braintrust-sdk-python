@@ -1,65 +1,64 @@
 interactions:
 - request:
-    body: '{"model": "openai/gpt-4o-mini", "messages": [{"role": "user", "content":
-      "What is 2+2? Reply with just the number."}], "max_tokens": 10, "usage": {"include":
-      true}}'
+    body: '{"model": "openai/gpt-6-luna", "messages": [{"role": "user", "content":
+      "What is 2+2? Reply with just the number."}], "max_tokens": 10, "reasoning_effort":
+      "none"}'
     headers:
-      Accept:
+      accept:
       - '*/*'
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
-      - '164'
-      Content-Type:
+      content-length:
+      - '163'
+      content-type:
       - application/json
-      HTTP-Referer:
-      - https://litellm.ai
-      Host:
+      host:
       - openrouter.ai
-      User-Agent:
-      - litellm/1.81.10
-      X-Title:
+      http-referer:
+      - https://litellm.ai
+      user-agent:
+      - litellm/1.74.0
+      x-title:
       - liteLLM
     method: POST
     uri: https://openrouter.ai/api/v1/chat/completions
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAAA+JSgAEuAAAAAP//fJBPT+MwEMW/yzs7bApRC77BjcuuxIGutEKR60xSU8djeZxq
-        UZXvjkL/gVTwcfzm/d68HVwDjY5CMVssytub2eJuVjwt7x+2vx9s8+o38e/yafn8fA2FmHjrGkrQ
-        +BMp3D9CoeeGPDQ4UjDuVxdzUXHRu+CgwKtXshkadm3yleU+esqOAxRsIpOpgT5jFeyanSWB/reD
-        5y4mXgl0GLxXaF1wsq4TGeEADckcoRBMdluqv/l1oaH/0KVCTyKmI+gdEnuChhFxkk3IUxoOmcKU
-        tIJConYQ44/kvakL3X4wji8K8iaZ+gnbUYrJfey2sW4rQ7dVNb+bfIYjMSbuY64zbygI9HU5EY9l
-        nMYzhczZ+LNuqoQlfxzgpF698QY6p4HUV8u6oWycl4lljV1Tc/IoFczQOD4Pxr3p550hSk5k+tqF
-        lhIFS/WBe1VO72auLmkOGb5K1WW347VykM+pWIwXavgc61T8T9eM4zsAAAD//wMATEiLMc8CAAA=
+      string: "\n         \n{\"id\":\"gen-1794327097-FioiXgbhJ2trEb1Q6GIq\",\"object\":\"chat.completion\",\"created\":1794327097,\"model\":\"openai/gpt-6-luna\",\"provider\":\"OpenAI\",\"system_fingerprint\":null,\"service_tier\":\"default\",\"choices\":[{\"index\":0,\"logprobs\":null,\"finish_reason\":\"stop\",\"native_finish_reason\":\"completed\",\"message\":{\"role\":\"assistant\",\"content\":\"4\",\"refusal\":null,\"reasoning\":null}}],\"usage\":{\"prompt_tokens\":19,\"completion_tokens\":5,\"total_tokens\":24,\"cost\":0.0000044,\"is_byok\":false,\"prompt_tokens_details\":{\"cached_tokens\":0,\"cache_write_tokens\":0,\"audio_tokens\":0,\"video_tokens\":0},\"cost_details\":{\"upstream_inference_cost\":0.0000044,\"upstream_inference_prompt_cost\":0.0000019,\"upstream_inference_completions_cost\":0.0000025},\"completion_tokens_details\":{\"reasoning_tokens\":0,\"image_tokens\":0,\"audio_tokens\":0}}}"
     headers:
-      Access-Control-Allow-Origin:
+      access-control-allow-origin:
       - '*'
-      CF-RAY:
-      - 9cc5a5a678259471-MIA
-      Connection:
+      access-control-expose-headers:
+      - WWW-Authenticate,PAYMENT-REQUIRED,Payment-Receipt,PAYMENT-RESPONSE,Location,X-Generation-Id,x-openrouter-error-origin,x-openrouter-error-tool,X-Provider-Name,request-id,cf-ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-ray:
+      - a5865584ff420c69-YYZ
+      connection:
       - keep-alive
-      Content-Encoding:
-      - gzip
-      Content-Type:
+      content-length:
+      - '809'
+      content-type:
       - application/json
-      Date:
-      - Wed, 11 Feb 2026 17:43:11 GMT
-      Permissions-Policy:
+      date:
+      - Tue, 10 Nov 2026 16:11:37 GMT
+      permissions-policy:
       - payment=(self "https://checkout.stripe.com" "https://connect-js.stripe.com"
         "https://js.stripe.com" "https://*.js.stripe.com" "https://hooks.stripe.com")
-      Referrer-Policy:
+      referrer-policy:
       - no-referrer, strict-origin-when-cross-origin
-      Server:
+      server:
       - cloudflare
-      Transfer-Encoding:
+      transfer-encoding:
       - chunked
-      Vary:
-      - Accept-Encoding
-      X-Content-Type-Options:
+      x-content-type-options:
       - nosniff
+      x-generation-id:
+      - gen-1794327097-FioiXgbhJ2trEb1Q6GIq
+      x-openrouter-release:
+      - api;42ddd65c-b5ba-49a4-b9a4-8405b32343e2
     status:
       code: 200
       message: OK

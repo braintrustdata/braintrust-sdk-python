@@ -17,7 +17,8 @@ from openai import OpenAI
 
 
 PROJECT_NAME = "test-openrouter"
-TEST_MODEL = "openai/gpt-4o-mini"
+TEST_MODEL = "openai/gpt-6-luna"
+CHAT_OPTIONS = {"reasoning_effort": "none"}
 
 
 @pytest.fixture
@@ -52,6 +53,7 @@ def test_openrouter_chat_completion(memory_logger, stream, prompt, expected):
     start = time.time()
     response = client.chat.completions.create(
         model=TEST_MODEL,
+        **CHAT_OPTIONS,
         messages=[{"role": "user", "content": prompt}],
         max_tokens=10,
         stream=stream,

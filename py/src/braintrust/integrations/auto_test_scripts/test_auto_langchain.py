@@ -31,9 +31,10 @@ assert get_global_handler() is handler
 
 # 4. Make an API call and verify spans.
 with autoinstrument_test_context("test_global_handler", integration="langchain") as memory_logger:
-    prompt = ChatPromptTemplate.from_template("What is 1 + {number}?")
+    prompt = ChatPromptTemplate.from_template("What is 1 + {number}? Reply exactly: 1 + {number} equals 3.")
     model = ChatOpenAI(
-        model="gpt-4o-mini",
+        model="gpt-6-luna",
+        reasoning_effort="none",
         temperature=1,
         top_p=1,
         frequency_penalty=0,

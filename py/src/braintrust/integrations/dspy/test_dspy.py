@@ -20,11 +20,12 @@ from pydantic import BaseModel, Field, RootModel, field_serializer, model_serial
 
 
 PROJECT_NAME = "test-dspy-app"
-MODEL = "openai/gpt-4o-mini"
+MODEL = "openai/gpt-6-luna"
 # DSPy >= 3.4 defaults to engine="auto", which routes OpenAI calls through the
 # vendored lm15 raw-socket transport that VCR cannot intercept. Pin LiteLLM so
 # the request is recorded.
 LM_KWARGS = {"engine": "litellm"} if "engine" in inspect.signature(dspy.LM.__init__).parameters else {}
+LM_KWARGS.update({"reasoning_effort": "none"})
 
 
 def test_dspy_image_conversion_preserves_other_model_serializers():
@@ -124,6 +125,8 @@ def test_dspy_images_materialize_attachments(memory_logger, model_kind):
 
     patch_litellm()
     lm = dspy.LM(MODEL, cache=False, **LM_KWARGS)
+    # Older DSPy forwards its default max_tokens without translating the name.
+    lm.kwargs["max_completion_tokens"] = lm.kwargs.pop("max_tokens", 1000)
     image = dspy.Image(url=image_url)
     page = Page(number=2, image=dspy.Image(url=image_url))
     if model_kind == "root":

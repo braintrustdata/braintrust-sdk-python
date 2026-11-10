@@ -9,6 +9,9 @@ from braintrust.auto import auto_instrument
 from braintrust.integrations.test_utils import autoinstrument_test_context
 
 
+TEST_MODEL = "gpt-6-luna"
+
+
 def _ensure_nltk_punkt_tab():
     data_dir = Path(tempfile.gettempdir()) / "braintrust-pipecat-nltk-data"
     punkt_tab = data_dir / "tokenizers" / "punkt_tab"
@@ -65,8 +68,9 @@ async def main():
         llm = OpenAILLMService(
             api_key=os.environ["OPENAI_API_KEY"],
             settings=OpenAILLMService.Settings(
-                model="gpt-4o-mini",
-                temperature=0.0,
+                model=TEST_MODEL,
+                temperature=1.0,
+                extra={"reasoning_effort": "none"},
                 max_completion_tokens=20,
             ),
         )

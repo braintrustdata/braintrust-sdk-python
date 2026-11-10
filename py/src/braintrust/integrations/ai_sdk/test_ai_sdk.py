@@ -15,8 +15,30 @@ from braintrust.test_helpers import init_test_logger
 from pydantic import BaseModel
 
 
+TEST_MODEL = "gpt-6-luna"
+
 PROJECT_NAME = "test-ai-sdk"
-MODEL = "openai:gpt-4o-mini"
+MODEL = f"openai:{TEST_MODEL}"
+
+
+def _model():
+    from ai.providers import openai as provider
+
+    # Older AI SDKs cannot disable Responses item references for ZDR accounts.
+    if not hasattr(provider, "OpenAIParams"):
+        return ai.get_model(MODEL, protocol=provider.OpenAIChatCompletionsProtocol())
+    return ai.get_model(MODEL)
+
+
+def _model_params():
+    from ai.providers import openai as provider
+
+    params = ai.InferenceRequestParams().with_reasoning_effort(None)
+    if hasattr(provider, "OpenAIParams"):
+        params = params.with_provider_params(provider.OpenAIParams(store=False))
+    return params
+
+
 _RED_PIXEL_PNG = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC"
 )
@@ -60,7 +82,7 @@ def _assert_ai_sdk_origin(span):
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_stream_structured_multimodal_response(memory_logger):
-    model = ai.get_model(MODEL)
+    model = _model()
     messages = [
         ai.system_message("Return the requested value exactly."),
         ai.user_message(
@@ -70,7 +92,7 @@ async def test_stream_structured_multimodal_response(memory_logger):
     ]
 
     chunks = []
-    async with ai.stream(model, messages, output_type=ImageAnswer) as stream:
+    async with ai.stream(model, messages, output_type=ImageAnswer, params=_model_params()) as stream:
         async for event in stream:
             if isinstance(event, ai.events.TextDelta):
                 chunks.append(event.chunk)
@@ -86,7 +108,7 @@ async def test_stream_structured_multimodal_response(memory_logger):
     assert span["output"][0]["message"]["role"] == "assistant"
     assert "red" in span["output"][0]["message"]["content"].lower()
     assert span["metadata"]["provider"] == "openai"
-    assert "gpt-4o-mini" in span["metadata"]["model"]
+    assert TEST_MODEL in span["metadata"]["model"]
     assert span["metadata"]["response_id"]
     assert span["metadata"]["output_type"] == "ImageAnswer"
     for token_metric in ("tokens", "prompt_tokens", "completion_tokens"):
@@ -103,7 +125,7 @@ async def test_agent_tool_loop_emits_run_model_and_tool_hierarchy(memory_logger)
         """Get the current temperature for a city."""
         return {"city": city, "temperature": 21, "unit": "celsius"}
 
-    model = ai.get_model(MODEL)
+    model = _model()
     agent = ai.Agent(tools=[get_temperature])
     messages = [
         ai.system_message("Always use get_temperature once before answering. Be concise."),
@@ -111,7 +133,7 @@ async def test_agent_tool_loop_emits_run_model_and_tool_hierarchy(memory_logger)
     ]
 
     text_chunks = []
-    async with agent.run(model, messages) as stream:
+    async with agent.run(model, messages, params=_model_params()) as stream:
         async for event in stream:
             if isinstance(event, ai.events.TextDelta):
                 text_chunks.append(event.chunk)

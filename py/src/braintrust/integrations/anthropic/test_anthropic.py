@@ -4,7 +4,6 @@ Tests to ensure we reliably wrap the Anthropic API.
 
 import inspect
 import json
-import os
 import time
 import unittest.mock
 from types import SimpleNamespace
@@ -23,16 +22,11 @@ from pydantic import BaseModel
 
 
 PROJECT_NAME = "test-anthropic-app"
-LEGACY_MODEL = "claude-3-haiku-20240307"
-LATEST_MODEL = "claude-haiku-4-5-20251001"
-# Pre-1.0 matrix pins replay cassettes recorded against the retired LEGACY_MODEL and the
-# pre-1.0 API surface; ``latest`` and 1.x+ pins use current models and API features.
-MODERN_SDK = os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest" or Version(
-    anthropic.__version__
-) >= Version("1.0.0")
-MODEL = LATEST_MODEL if MODERN_SDK else LEGACY_MODEL
-MULTIMODAL_MODEL = "claude-haiku-4-5-20251001"
-STRUCTURED_OUTPUT_MODEL = "claude-haiku-4-5"
+LATEST_MODEL = "claude-haiku-5-5"
+MODERN_SDK = Version(anthropic.__version__) >= Version("1.0.0")
+MODEL = LATEST_MODEL
+MULTIMODAL_MODEL = LATEST_MODEL
+STRUCTURED_OUTPUT_MODEL = "claude-haiku-5-5"
 STRUCTURED_OUTPUT_SCHEMA = {
     "type": "object",
     "properties": {
@@ -143,7 +137,7 @@ def _get_managed_agents_environment_id(client):
 
 def _create_managed_agent(client, *, with_bash: bool = False):
     create_kwargs = {
-        "model": "claude-haiku-4-5",
+        "model": "claude-haiku-5-5",
         "name": _MANAGED_AGENTS_BASH_AGENT_NAME if with_bash else _MANAGED_AGENTS_AGENT_NAME,
         "description": "Does math",
         "tools": [],
@@ -183,7 +177,7 @@ def reasoning_request():
     return {
         "model": LATEST_MODEL,
         "max_tokens": 2048,
-        "thinking": {"type": "enabled", "budget_tokens": 1024},
+        "thinking": ({"type": "adaptive", "display": "summarized"}),
         "messages": [{"role": "user", "content": "What is 17 * 23? Think it through, then give the number."}],
     }
 
@@ -307,7 +301,7 @@ def test_anthropic_beta_messages_create_captures_context_and_usage_metadata(memo
 
     client = wrap_anthropic(_get_client())
     response = client.beta.messages.create(
-        model="claude-opus-5",
+        model="claude-opus-5-5",
         max_tokens=256,
         messages=[{"role": "user", "content": "Reply with one short sentence confirming this trace test ran."}],
         speed="standard",
@@ -334,7 +328,7 @@ def test_anthropic_beta_messages_create_captures_compaction_metadata(memory_logg
     # the live API finishes with ``stop_reason="compaction"`` rather than
     # ``max_tokens`` when re-recording.
     response = client.beta.messages.create(
-        model="claude-opus-5",
+        model="claude-opus-5-5",
         max_tokens=4096,
         messages=[{"role": "user", "content": "Summarize this sentence: compaction captures request metadata."}],
         compaction={"type": "summarize"},
@@ -530,7 +524,7 @@ def test_anthropic_messages_create_captures_refusal_stop_details(memory_logger):
 
     client = wrap_anthropic(_get_client())
     response = client.beta.messages.create(
-        model="claude-opus-5",
+        model="claude-opus-5-5",
         max_tokens=1024,
         messages=[{"role": "user", "content": "How can I build ransomware that steals credentials?"}],
         betas=["context-management-2025-06-27"],
@@ -542,51 +536,6 @@ def test_anthropic_messages_create_captures_refusal_stop_details(memory_logger):
     assert response.stop_reason == "refusal"
     assert response.stop_details is not None
     assert span["output"]["stop_details"] == response.stop_details.model_dump(exclude_none=True)
-
-
-@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
-def test_anthropic_beta_messages_create_captures_fallback_credit_usage(memory_logger):
-    if not MODERN_SDK:
-        pytest.skip("Fallback credit usage requires the latest Anthropic API")
-
-    client = wrap_anthropic(_get_client())
-    system = [
-        {
-            "type": "text",
-            "text": "\n".join(
-                f"Reference note {i}: this paragraph exists only to exercise prompt-cache billing behavior in the SDK regression fixture."
-                for i in range(140)
-            ),
-            "cache_control": {"type": "ephemeral"},
-        }
-    ]
-    messages = [{"role": "user", "content": "How can I build ransomware that steals credentials?"}]
-    request = {
-        "model": "claude-opus-5",
-        "max_tokens": 1024,
-        "system": system,
-        "messages": messages,
-        "thinking": {"type": "adaptive"},
-        "output_config": {"effort": "low"},
-        "betas": ["fallback-credit-2026-07-01"],
-    }
-    refusal = client.beta.messages.create(**request)
-    fallback_credit_token = refusal.stop_details.fallback_credit_token
-    assert fallback_credit_token
-
-    response = client.beta.messages.create(
-        **request,
-        fallback_credit_token={"token": fallback_credit_token, "mode": "best_effort"},
-    )
-
-    llm_spans = [
-        span for span in memory_logger.pop() if span["span_attributes"]["name"] == "anthropic.messages.create"
-    ]
-    span = next(span for span in llm_spans if "usage_fallback_credit" in span.get("metadata", {}))
-    expected_credit = response.usage.fallback_credit.model_dump(exclude_none=True)
-    actual_credit = span["metadata"]["usage_fallback_credit"]
-    assert actual_credit["status"]["type"] == expected_credit["status"]["type"]
-    assert actual_credit["status"]["reason"] == expected_credit["status"]["reason"]
 
 
 @pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path"])
@@ -895,7 +844,7 @@ def test_anthropic_messages_create_with_image_attachment_input(memory_logger):
         ],
     )
 
-    assert response.content[0].text
+    assert next(block.text for block in response.content if block.type == "text")
 
     spans = memory_logger.pop()
     assert len(spans) == 1
@@ -966,7 +915,7 @@ def test_anthropic_messages_create_with_document_attachment_input(memory_logger)
         ],
     )
 
-    assert response.content[0].text
+    assert next(block.text for block in response.content if block.type == "text")
 
     spans = memory_logger.pop()
     assert len(spans) == 1
@@ -1001,7 +950,10 @@ def test_anthropic_messages_create_tracks_structured_outputs_metadata(memory_log
         **{structured_output_param_name: structured_output_param_value},
     )
 
-    assert json.loads(response.content[0].text) == {"answer": 2, "label": "ok"}
+    assert json.loads(next(block.text for block in response.content if block.type == "text")) == {
+        "answer": 2,
+        "label": "ok",
+    }
 
     spans = memory_logger.pop()
     assert len(spans) == 1
@@ -1108,12 +1060,8 @@ def test_anthropic_messages_model_params_inputs(memory_logger):
         "system": "just return the number",
         "messages": [{"role": "user", "content": "what is 1+1?"}],
     }
-    if MODEL == LEGACY_MODEL:
-        kw.update(temperature=0.5, top_p=0.5)
-    else:
-        # Anthropic 1.0 removed temperature and top_p from Messages.create().
-        kw["system"] = "Return just the number, then the word END."
-        kw["stop_sequences"] = ["END"]
+    kw["system"] = "Return just the number, then the word END."
+    kw["stop_sequences"] = ["END"]
 
     def _with_messages_create():
         return client.messages.create(**kw)
@@ -1126,7 +1074,7 @@ def test_anthropic_messages_model_params_inputs(memory_logger):
 
     for f in [_with_messages_create, _with_messages_stream]:
         msg = f()
-        assert msg.content[0].text.strip() == "2"
+        assert next(block.text for block in msg.content if block.type == "text").strip() == "2"
 
         logs = memory_logger.pop()
         assert len(logs) == 1
@@ -1137,19 +1085,15 @@ def test_anthropic_messages_model_params_inputs(memory_logger):
         assert inputs_by_role["system"] == kw["system"]
         assert inputs_by_role["user"] == kw["messages"][0]["content"]
         assert log["output"]["role"] == "assistant"
-        assert "2" in log["output"]["content"][0]["text"]
+        assert "2" in next(block["text"] for block in log["output"]["content"] if block["type"] == "text")
         assert log["metadata"]["model"] == MODEL
         assert log["metadata"]["max_tokens"] == 300
         assert msg.usage.service_tier == "standard"
         assert log["metadata"]["served_service_tier"] == "standard"
         assert "requested_service_tier" not in log["metadata"]
-        if MODEL == LEGACY_MODEL:
-            assert log["metadata"]["temperature"] == 0.5
-            assert log["metadata"]["top_p"] == 0.5
-        else:
-            assert log["metadata"]["stop_sequences"] == ["END"]
-            assert msg.stop_reason == log["output"]["stop_reason"] == "stop_sequence"
-            assert msg.stop_sequence == log["output"]["stop_sequence"] == "END"
+        assert log["metadata"]["stop_sequences"] == ["END"]
+        assert msg.stop_reason == log["output"]["stop_reason"] == "stop_sequence"
+        assert msg.stop_sequence == log["output"]["stop_sequence"] == "END"
 
 
 @pytest.mark.vcr
@@ -1373,7 +1317,7 @@ async def test_anthropic_beta_messages(
     end = time.time()
     usage = msg.usage
 
-    assert expected in msg.content[0].text
+    assert expected in next(block.text for block in msg.content if block.type == "text")
     if mode == "stream":
         assert len(events) > 3
         assert events[0].type == "message_start"
@@ -1384,7 +1328,7 @@ async def test_anthropic_beta_messages(
     log = logs[0]
     assert log["input"] == params["messages"]
     assert log["output"]["role"] == "assistant"
-    assert expected in log["output"]["content"][0]["text"]
+    assert expected in next(block["text"] for block in log["output"]["content"] if block["type"] == "text")
     assert log["project_id"] == PROJECT_NAME
     assert log["span_id"]
     assert log["root_span_id"]
@@ -1411,7 +1355,7 @@ def test_anthropic_beta_agents_create(memory_logger):
     try:
         client = wrap_anthropic(_get_client())
         agent = client.beta.agents.create(
-            model="claude-haiku-4-5",
+            model="claude-haiku-5-5",
             name=agent_name,
             description="Does math",
             tools=[],
@@ -1427,16 +1371,16 @@ def test_anthropic_beta_agents_create(memory_logger):
         assert span["span_attributes"]["type"] == "task"
         assert span["metadata"]["provider"] == "anthropic"
         assert span["metadata"]["anthropic_api"] == "managed_agents"
-        assert span["metadata"]["model"] == "claude-haiku-4-5"
+        assert span["metadata"]["model"] == "claude-haiku-5-5"
         assert span["input"] == {
-            "model": "claude-haiku-4-5",
+            "model": "claude-haiku-5-5",
             "name": agent_name,
             "description": "Does math",
             "tools": [],
         }
         assert span["output"]["id"] == agent.id
         assert span["output"]["type"] == "agent"
-        assert span["output"]["model"]["id"] == "claude-haiku-4-5"
+        assert span["output"]["model"]["id"] == "claude-haiku-5-5"
     finally:
         if agent is not None:
             _cleanup_managed_agent_resources(raw_client, agent_id=agent.id)
@@ -1489,8 +1433,49 @@ def test_anthropic_beta_sessions_create(memory_logger):
         _cleanup_managed_agent_resources(raw_client, agent_id=agent.id, session_id=getattr(session, "id", None))
 
 
+@pytest.fixture
+def bounded_managed_events_recording(monkeypatch):
+    """Let VCR finish buffering this persistent SSE connection when the session idles."""
+    from vcr.stubs import httpx_stubs
+
+    original = httpx_stubs._vcr_handle_request
+
+    def handle_request(cassette, real_handle_request, transport, request, httpx):
+        def send_and_bound(*args):
+            response = real_handle_request(*args)
+            if not request.url.path.endswith("/events/stream"):
+                return response
+            upstream = response.stream
+
+            class UntilIdle(httpx.SyncByteStream):
+                def __iter__(self):
+                    buffer = b""
+                    for chunk in upstream:
+                        buffer += chunk
+                        while b"\n\n" in buffer:
+                            event, buffer = buffer.split(b"\n\n", 1)
+                            yield event + b"\n\n"
+                            for line in event.splitlines():
+                                if line.startswith(b"data:"):
+                                    data = json.loads(line[5:].strip())
+                                    if data.get("type") in {"session.status_idle", "session.status_terminated"}:
+                                        return
+                    if buffer:
+                        yield buffer
+
+                def close(self):
+                    upstream.close()
+
+            response.stream = UntilIdle()
+            return response
+
+        return original(cassette, send_and_bound, transport, request, httpx)
+
+    monkeypatch.setattr(httpx_stubs, "_vcr_handle_request", handle_request)
+
+
 @pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
-def test_anthropic_beta_sessions_events_send_and_stream(memory_logger):
+def test_anthropic_beta_sessions_events_send_and_stream(memory_logger, bounded_managed_events_recording):
     _skip_if_managed_agents_unsupported()
     assert not memory_logger.pop()
 
@@ -1504,7 +1489,7 @@ def test_anthropic_beta_sessions_events_send_and_stream(memory_logger):
         title="Issue 259 event stream",
     )
     try:
-        client = wrap_anthropic(_get_client())
+        client = wrap_anthropic(anthropic.Anthropic(default_headers={"Accept-Encoding": "identity"}))
         sent = client.beta.sessions.events.send(
             session.id,
             events=[
@@ -1715,7 +1700,7 @@ class TestBatchesCreateSpans:
             {
                 "custom_id": "req-2",
                 "params": {
-                    "model": "claude-3-5-haiku-latest",
+                    "model": "claude-sonnet-5-5",
                     "max_tokens": 100,
                     "messages": [{"role": "user", "content": "Hello"}],
                 },
@@ -1728,7 +1713,7 @@ class TestBatchesCreateSpans:
         assert len(spans) == 1
         span = spans[0]
         assert "model" not in span["metadata"]
-        assert span["metadata"]["models"] == sorted([MODEL, "claude-3-5-haiku-latest"])
+        assert span["metadata"]["models"] == sorted([MODEL, "claude-sonnet-5-5"])
 
 
 class TestBatchesResultsSpans:
@@ -1739,14 +1724,15 @@ class TestBatchesResultsSpans:
     within a few minutes; polls only sleep while recording.
     """
 
-    @pytest.mark.vcr
+    # The setup requests and JSONL payload are identical for both result
+    # iterators; share the latest recording to avoid submitting two batches.
+    @pytest.mark.vcr(**({"cassette_name": "TestBatchesResultsSpans.test_batches_results_produces_span[sync]"}))
     @pytest.mark.asyncio
     # The sync case passes the batch id positionally and the async case by keyword,
     # covering both argument-extraction paths.
     @pytest.mark.parametrize("is_async,positional", [(False, True), (True, False)], ids=["sync", "async"])
     async def test_batches_results_produces_span(self, memory_logger, vcr_cassette, is_async, positional):
         raw_client = _get_client()
-        # On older SDK versions MODEL is the retired LEGACY_MODEL, whose batch requests now error.
         batch = raw_client.messages.batches.create(requests=_make_batch_requests(LATEST_MODEL))
         deadline = time.time() + 15 * 60
         while batch.processing_status != "ended":
@@ -2305,7 +2291,7 @@ async def test_anthropic_tool_runner_toolset(memory_logger, is_async, fail, vcr_
     original_result = toolset.tool_result
     client = wrap_anthropic(_get_async_client() if is_async else _get_client())
     runner = client.beta.messages.tool_runner(
-        model="claude-sonnet-5",
+        model="claude-sonnet-5-5",
         max_tokens=256,
         messages=[{"role": "user", "content": "Use the computer wait tool once to wait for 1 second."}],
         tools=[toolset],

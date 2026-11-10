@@ -25,7 +25,7 @@ interactions:
       You must only compare the agent_output to the expected_output. The expected_output
       is correct as it was provided by the user.\"},{\"role\":\"user\",\"content\":\"<agent_input>\\nWhat
       is 10*5?\\n</agent_input>\\n\\n<expected_output>\\n50\\n</expected_output>\\n\\n<agent_output>\\n50\\n</agent_output>
-      \           \"}],\"model\":\"gpt-4o-mini\",\"response_format\":{\"type\":\"json_schema\",\"json_schema\":{\"name\":\"AccuracyAgentResponse\",\"schema\":{\"properties\":{\"accuracy_score\":{\"description\":\"Accuracy
+      \           \"}],\"model\":\"gpt-6-luna\",\"reasoning_effort\":\"none\",\"response_format\":{\"type\":\"json_schema\",\"json_schema\":{\"name\":\"AccuracyAgentResponse\",\"schema\":{\"properties\":{\"accuracy_score\":{\"description\":\"Accuracy
       Score between 1 and 10 assigned to the Agent's answer.\",\"title\":\"Accuracy
       Score\",\"type\":\"integer\"},\"accuracy_reason\":{\"description\":\"Detailed
       reasoning for the accuracy score.\",\"title\":\"Accuracy Reason\",\"type\":\"string\"}},\"required\":[\"accuracy_score\",\"accuracy_reason\"],\"title\":\"AccuracyAgentResponse\",\"type\":\"object\",\"additionalProperties\":false},\"strict\":true}}}"
@@ -37,7 +37,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '2561'
+      - '2586'
       content-type:
       - application/json
       host:
@@ -61,25 +61,24 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.6
+      - 3.13.16
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EIywo1M8zeCpFVniQiR2O8uoP28pO\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1788192894,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiijEz787WjZ28VSpUgrkpjO3XlmC\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794327076,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"{\\\"accuracy_score\\\":10,\\\"accuracy_reason\\\":\\\"The
-        agent_output matches the expected_output exactly. Both the agent_output and
-        expected_output state '50', which is the correct result of the multiplication.
-        There are no discrepancies, omissions, or inaccuracies present.\\\"}\",\n
-        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
-        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        494,\n    \"completion_tokens\": 50,\n    \"total_tokens\": 544,\n    \"prompt_tokens_details\":
-        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        agent output is exactly \\\\\\\"50,\\\\\\\" matching the expected output.
+        It is accurate and complete.\\\"}\",\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\":
+        {\n    \"prompt_tokens\": 491,\n    \"completion_tokens\": 37,\n    \"total_tokens\":
+        528,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\": 0,\n      \"cache_write_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_d2f20b69d0\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -90,17 +89,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a33d54b80bd00c26-YYZ
+      - a5865500ccdfb405-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1079'
+      - '939'
       content-type:
       - application/json
       date:
-      - Mon, 31 Aug 2026 16:14:56 GMT
+      - Tue, 10 Nov 2026 16:11:17 GMT
       openai-processing-ms:
-      - '1447'
+      - '1021'
       openai-version:
       - '2020-10-01'
       server:
@@ -116,22 +115,22 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999517'
+      - '179999517'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_3201ba3ccc1d483fa0e2af6bfe5ae2a4
+      - req_02524fc3210b45e5a6c237836ef469b0
     status:
       code: 200
       message: OK
 - request:
-    body: '{"session_id":"f38c407d-de64-4a5a-99bf-a463ca41833e","run_id":"c5c26cc5-8a81-4686-aa9c-43c205bd21d6","data":{"agent_id":"d132b542-b4c1-4bcb-ada6-277ae0e381b7","db_type":null,"model_provider":"OpenAI","model_name":"OpenAIChat","model_id":"gpt-4o-mini","parser_model":null,"output_model":null,"has_tools":true,"has_memory":false,"has_reasoning":false,"has_knowledge":false,"has_input_schema":false,"has_output_schema":true,"has_team":false},"sdk_version":"2.1.0","type":"agent"}'
+    body: '{"session_id":"c73c6dbf-800d-4e4d-8326-3aa99c71651d","run_id":"bb292755-581b-4a31-9d1f-4b49218ef640","data":{"agent_id":"19fc4dd8-42ca-4cf1-a096-01c0f9167b77","db_type":null,"model_provider":"OpenAI","model_name":"OpenAIChat","model_id":"gpt-6-luna","parser_model":null,"output_model":null,"has_tools":true,"has_memory":false,"has_reasoning":false,"has_knowledge":false,"has_input_schema":false,"has_output_schema":true,"has_team":false},"sdk_version":"2.1.0","type":"agent"}'
     headers:
       accept:
       - '*/*'
@@ -140,7 +139,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '476'
+      - '475'
       content-type:
       - application/json
       host:
@@ -151,7 +150,7 @@ interactions:
     uri: https://os-api.agno.com/telemetry/runs
   response:
     body:
-      string: '{"message":"Run creation acknowledged: c5c26cc5-8a81-4686-aa9c-43c205bd21d6","status":"success"}'
+      string: '{"message":"Run creation acknowledged: bb292755-581b-4a31-9d1f-4b49218ef640","status":"success"}'
     headers:
       connection:
       - keep-alive
@@ -164,7 +163,7 @@ interactions:
       cross-origin-resource-policy:
       - same-origin
       date:
-      - Mon, 31 Aug 2026 16:14:56 GMT
+      - Tue, 10 Nov 2026 16:11:17 GMT
       permissions-policy:
       - camera=(), microphone=(), geolocation=()
       referrer-policy:
@@ -181,7 +180,7 @@ interactions:
       code: 201
       message: Created
 - request:
-    body: '{"run_id":"88e1ff0b-df9d-4cc9-a525-91fb596c862d","eval_type":"accuracy","data":{"agent_id":null,"team_id":null,"model_id":"gpt-4o-mini","model_provider":"OpenAI","num_iterations":1},"sdk_version":"2.1.0"}'
+    body: '{"run_id":"1be230a0-0f5e-4eb4-80c1-21d7c10fe55d","eval_type":"accuracy","data":{"agent_id":null,"team_id":null,"model_id":"gpt-6-luna","model_provider":"OpenAI","num_iterations":1},"sdk_version":"2.1.0"}'
     headers:
       accept:
       - '*/*'
@@ -190,7 +189,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '204'
+      - '203'
       content-type:
       - application/json
       host:
@@ -201,7 +200,7 @@ interactions:
     uri: https://os-api.agno.com/telemetry/evals
   response:
     body:
-      string: '{"message":"Eval creation acknowledged: 88e1ff0b-df9d-4cc9-a525-91fb596c862d","status":"success"}'
+      string: '{"message":"Eval creation acknowledged: 1be230a0-0f5e-4eb4-80c1-21d7c10fe55d","status":"success"}'
     headers:
       connection:
       - keep-alive
@@ -214,7 +213,7 @@ interactions:
       cross-origin-resource-policy:
       - same-origin
       date:
-      - Mon, 31 Aug 2026 16:14:56 GMT
+      - Tue, 10 Nov 2026 16:11:17 GMT
       permissions-policy:
       - camera=(), microphone=(), geolocation=()
       referrer-policy:

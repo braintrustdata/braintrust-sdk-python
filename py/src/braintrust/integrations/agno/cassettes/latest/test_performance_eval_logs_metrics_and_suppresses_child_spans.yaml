@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"run_id":"60cbc58e-bb53-43d8-a152-d1fd5cd1d312","eval_type":"reliability","data":{"team_id":null,"agent_id":"calculator-agent","model_id":"gpt-4o-mini","model_provider":"OpenAI"},"sdk_version":"3.1.1"}'
+    body: '{"run_id":"2ef3e139-4a15-4967-b1ce-3cda6899c3cc","eval_type":"reliability","data":{"team_id":null,"agent_id":"calculator-agent","model_id":"gpt-6-luna","model_provider":"OpenAI"},"sdk_version":"3.1.12"}'
     headers:
       accept:
       - '*/*'
@@ -15,12 +15,12 @@ interactions:
       host:
       - os-api.agno.com
       user-agent:
-      - agno/3.1.1
+      - agno/3.1.12
     method: POST
     uri: https://os-api.agno.com/telemetry/evals
   response:
     body:
-      string: '{"message":"Eval creation acknowledged: 60cbc58e-bb53-43d8-a152-d1fd5cd1d312","status":"success"}'
+      string: '{"message":"Eval creation acknowledged: 2ef3e139-4a15-4967-b1ce-3cda6899c3cc","status":"success"}'
     headers:
       content-length:
       - '97'
@@ -31,7 +31,7 @@ interactions:
       cross-origin-resource-policy:
       - same-origin
       date:
-      - Mon, 05 Oct 2026 14:46:00 GMT
+      - Tue, 10 Nov 2026 15:50:09 GMT
       permissions-policy:
       - camera=(), microphone=(), geolocation=()
       referrer-policy:
@@ -49,7 +49,7 @@ interactions:
       message: Created
 - request:
     body: '{"messages":[{"role":"developer","content":"Answer with the final number
-      only."},{"role":"user","content":"What is 2+2?"}],"model":"gpt-4o-mini"}'
+      only."},{"role":"user","content":"What is 2+2?"}],"model":"gpt-6-luna","reasoning_effort":"none"}'
     headers:
       accept:
       - application/json
@@ -58,7 +58,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '145'
+      - '170'
       content-type:
       - application/json
       host:
@@ -87,17 +87,18 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EVeEyOFxdpekIr5TyALladzQRM78F\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1791211560,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiiOozQaLWRdErD9P1raUy0PVWL3X\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794325810,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"4\",\n        \"refusal\": null,\n
-        \       \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\":
-        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 25,\n    \"completion_tokens\":
-        1,\n    \"total_tokens\": 26,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
-        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_94ff9edbd5\"\n}\n"
+        \       \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 24,\n    \"completion_tokens\":
+        4,\n    \"total_tokens\": 28,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"cache_write_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n
+        \   \"completion_tokens_details\": {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\":
+        0,\n      \"accepted_prediction_tokens\": 0,\n      \"rejected_prediction_tokens\":
+        0\n    }\n  },\n  \"service_tier\": \"default\",\n  \"system_fingerprint\":
+        null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -108,17 +109,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a45d369e8a7660a9-YYZ
+      - a58636187b11aaa8-YYZ
       connection:
       - keep-alive
       content-length:
-      - '807'
+      - '791'
       content-type:
       - application/json
       date:
-      - Mon, 05 Oct 2026 14:46:01 GMT
+      - Tue, 10 Nov 2026 15:50:12 GMT
       openai-processing-ms:
-      - '323'
+      - '2169'
       openai-version:
       - '2020-10-01'
       server:
@@ -134,22 +135,22 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
-      - '29997'
+      - '29999'
       x-ratelimit-remaining-tokens:
-      - '149998957'
+      - '179999988'
       x-ratelimit-reset-requests:
-      - 6ms
+      - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_96428c13111a487c9de355b96c044b3f
+      - req_8321bf4736554b328ee65d174ade2824
     status:
       code: 200
       message: OK
 - request:
-    body: '{"session_id":"7293934a-644b-4669-8be8-63d8d76946cb","run_id":"4b2b5101-b851-426c-ba47-63909a6b9a64","data":{"agent_id":"perf-agent","db_type":null,"model_provider":"OpenAI","model_name":"OpenAIChat","model_id":"gpt-4o-mini","parser_model":null,"output_model":null,"has_tools":true,"has_memory":false,"has_learnings":false,"has_reasoning":false,"has_knowledge":false,"has_input_schema":false,"has_output_schema":false,"has_team":false},"sdk_version":"3.1.1","type":"agent"}'
+    body: '{"session_id":"29b4a7a3-775f-44f6-a910-60737691e830","run_id":"414693c4-17ba-4eee-a455-d2ed5f889ca9","data":{"agent_id":"perf-agent","db_type":null,"model_provider":"OpenAI","model_name":"OpenAIChat","model_id":"gpt-6-luna","parser_model":null,"output_model":null,"has_tools":true,"has_memory":false,"has_learnings":false,"has_reasoning":false,"has_knowledge":false,"has_input_schema":false,"has_output_schema":false,"has_team":false},"sdk_version":"3.1.12","type":"agent"}'
     headers:
       accept:
       - '*/*'
@@ -164,12 +165,12 @@ interactions:
       host:
       - os-api.agno.com
       user-agent:
-      - agno/3.1.1
+      - agno/3.1.12
     method: POST
     uri: https://os-api.agno.com/telemetry/runs
   response:
     body:
-      string: '{"message":"Run creation acknowledged: 4b2b5101-b851-426c-ba47-63909a6b9a64","status":"success"}'
+      string: '{"message":"Run creation acknowledged: 414693c4-17ba-4eee-a455-d2ed5f889ca9","status":"success"}'
     headers:
       content-length:
       - '96'
@@ -180,7 +181,7 @@ interactions:
       cross-origin-resource-policy:
       - same-origin
       date:
-      - Mon, 05 Oct 2026 14:46:01 GMT
+      - Tue, 10 Nov 2026 15:50:12 GMT
       permissions-policy:
       - camera=(), microphone=(), geolocation=()
       referrer-policy:
@@ -198,7 +199,7 @@ interactions:
       message: Created
 - request:
     body: '{"messages":[{"role":"developer","content":"Answer with the final number
-      only."},{"role":"user","content":"What is 2+2?"}],"model":"gpt-4o-mini"}'
+      only."},{"role":"user","content":"What is 2+2?"}],"model":"gpt-6-luna","reasoning_effort":"none"}'
     headers:
       accept:
       - application/json
@@ -207,7 +208,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '145'
+      - '170'
       content-type:
       - application/json
       host:
@@ -236,17 +237,18 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EVeEzfZYP18OqQXUO0Q1AzoERPbDT\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1791211561,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiiOqJdR7vCBc5y8PJMKKmWv0BTJN\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794325812,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"4\",\n        \"refusal\": null,\n
-        \       \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\":
-        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 25,\n    \"completion_tokens\":
-        1,\n    \"total_tokens\": 26,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
-        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_94ff9edbd5\"\n}\n"
+        \       \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 24,\n    \"completion_tokens\":
+        4,\n    \"total_tokens\": 28,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"cache_write_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n
+        \   \"completion_tokens_details\": {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\":
+        0,\n      \"accepted_prediction_tokens\": 0,\n      \"rejected_prediction_tokens\":
+        0\n    }\n  },\n  \"service_tier\": \"default\",\n  \"system_fingerprint\":
+        null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -257,17 +259,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a45d36a14eaf60a9-YYZ
+      - a58636271cfcaaa8-YYZ
       connection:
       - keep-alive
       content-length:
-      - '807'
+      - '791'
       content-type:
       - application/json
       date:
-      - Mon, 05 Oct 2026 14:46:01 GMT
+      - Tue, 10 Nov 2026 15:50:14 GMT
       openai-processing-ms:
-      - '428'
+      - '1648'
       openai-version:
       - '2020-10-01'
       server:
@@ -283,17 +285,17 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
-      - '29995'
+      - '29999'
       x-ratelimit-remaining-tokens:
-      - '149998662'
+      - '179999985'
       x-ratelimit-reset-requests:
-      - 10ms
+      - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_1f8ff17c4bbe469f910a12de0750c5c6
+      - req_5914f2ab05b748c99375cbc6200ff015
     status:
       code: 200
       message: OK

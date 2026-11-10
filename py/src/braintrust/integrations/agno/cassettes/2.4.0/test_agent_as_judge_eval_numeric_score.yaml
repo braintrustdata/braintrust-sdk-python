@@ -10,7 +10,7 @@ interactions:
       detailed reasoning that references specific parts of the output\n\nBe objective
       and thorough in your evaluation."},{"role":"user","content":"<input>\nTell me
       about renewable energy.\n</input>\n\n<output>\nCertainly! Renewable energy comes
-      from sources like wind and solar power.\n</output>\n"}],"model":"gpt-4o-mini","response_format":{"type":"json_schema","json_schema":{"name":"NumericJudgeResponse","schema":{"description":"Response
+      from sources like wind and solar power.\n</output>\n"}],"model":"gpt-6-luna","reasoning_effort":"none","response_format":{"type":"json_schema","json_schema":{"name":"NumericJudgeResponse","schema":{"description":"Response
       schema for numeric scoring mode.","properties":{"score":{"description":"Score
       between 1 and 10.","maximum":10,"minimum":1,"title":"Score","type":"integer"},"reason":{"description":"Detailed
       reasoning for the evaluation.","title":"Reason","type":"string"}},"required":["score","reason"],"title":"NumericJudgeResponse","type":"object","additionalProperties":false},"strict":true}}}'
@@ -22,7 +22,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '1353'
+      - '1378'
       content-type:
       - application/json
       host:
@@ -46,26 +46,26 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.6
+      - 3.13.16
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EIywOHF8v9p3H76XnhIGxL42X1rXB\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1788192868,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiikTai6Ui2fzavbuslNaUxdUTzok\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794327153,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"{\\\"score\\\":6,\\\"reason\\\":\\\"The
-        response mentions renewable energy and provides examples of sources like wind
-        and solar power, which is a positive aspect. However, it lacks politeness
-        such as a greeting or closing remark. While it is informative, a more engaging
-        and respectful tone would enhance the overall quality of the response.\\\"}\",\n
-        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
-        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        255,\n    \"completion_tokens\": 64,\n    \"total_tokens\": 319,\n    \"prompt_tokens_details\":
-        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_75a1a369d7\"\n}\n"
+        \"assistant\",\n        \"content\": \"{\\\"score\\\":10,\\\"reason\\\":\\\"The
+        response is polite, beginning with \u201CCertainly!\u201D, and it explicitly
+        mentions renewable energy. It also gives clear examples\u2014wind and solar
+        power\u2014so it fully meets the criteria.\\\"}\",\n        \"refusal\": null,\n
+        \       \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 252,\n    \"completion_tokens\":
+        51,\n    \"total_tokens\": 303,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"cache_write_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n
+        \   \"completion_tokens_details\": {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\":
+        0,\n      \"accepted_prediction_tokens\": 0,\n      \"rejected_prediction_tokens\":
+        0\n    }\n  },\n  \"service_tier\": \"default\",\n  \"system_fingerprint\":
+        null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -76,17 +76,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a33d541258a864a6-YYZ
+      - a58656e269f0dde5-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1143'
+      - '1010'
       content-type:
       - application/json
       date:
-      - Mon, 31 Aug 2026 16:14:29 GMT
+      - Tue, 10 Nov 2026 16:12:34 GMT
       openai-processing-ms:
-      - '923'
+      - '1195'
       openai-version:
       - '2020-10-01'
       server:
@@ -102,22 +102,22 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999812'
+      - '179999814'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_91e8f78720bd460db176e1e8fe798fa5
+      - req_aef5bfcf3cdc4b0e9bf4f5473bebc659
     status:
       code: 200
       message: OK
 - request:
-    body: '{"session_id":"c359cf17-eb42-4db5-bcdc-1d085ece22d7","run_id":"a46b8c96-125c-43e6-8ad3-ad08b886bda2","data":{"agent_id":"fad36f29-8415-4ddd-ae84-4dc02a34853b","db_type":null,"model_provider":"OpenAI","model_name":"OpenAIChat","model_id":"gpt-4o-mini","parser_model":null,"output_model":null,"has_tools":true,"has_memory":false,"has_learnings":false,"has_culture":false,"has_reasoning":false,"has_knowledge":false,"has_input_schema":false,"has_output_schema":true,"has_team":false},"sdk_version":"2.4.0","type":"agent"}'
+    body: '{"session_id":"376438de-1a4c-4889-abac-1d5dc58967b9","run_id":"26db0c5a-74db-4e42-83ca-7d46aa221308","data":{"agent_id":"c66933e9-72f7-46c5-98d0-91d057c8fcdb","db_type":null,"model_provider":"OpenAI","model_name":"OpenAIChat","model_id":"gpt-6-luna","parser_model":null,"output_model":null,"has_tools":true,"has_memory":false,"has_learnings":false,"has_culture":false,"has_reasoning":false,"has_knowledge":false,"has_input_schema":false,"has_output_schema":true,"has_team":false},"sdk_version":"2.4.0","type":"agent"}'
     headers:
       accept:
       - '*/*'
@@ -126,7 +126,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '518'
+      - '517'
       content-type:
       - application/json
       host:
@@ -137,7 +137,7 @@ interactions:
     uri: https://os-api.agno.com/telemetry/runs
   response:
     body:
-      string: '{"message":"Run creation acknowledged: a46b8c96-125c-43e6-8ad3-ad08b886bda2","status":"success"}'
+      string: '{"message":"Run creation acknowledged: 26db0c5a-74db-4e42-83ca-7d46aa221308","status":"success"}'
     headers:
       content-length:
       - '96'
@@ -148,7 +148,7 @@ interactions:
       cross-origin-resource-policy:
       - same-origin
       date:
-      - Mon, 31 Aug 2026 16:14:29 GMT
+      - Tue, 10 Nov 2026 16:12:34 GMT
       permissions-policy:
       - camera=(), microphone=(), geolocation=()
       referrer-policy:
@@ -165,7 +165,7 @@ interactions:
       code: 201
       message: Created
 - request:
-    body: '{"run_id":"4527ea38-c581-433b-864e-deba822baf37","eval_type":"agent_as_judge","data":{"criteria_length":53,"scoring_strategy":"numeric","threshold":7,"num_results":1},"sdk_version":"2.4.0"}'
+    body: '{"run_id":"9b864355-dac1-408a-8768-002988a51dd3","eval_type":"agent_as_judge","data":{"criteria_length":53,"scoring_strategy":"numeric","threshold":7,"num_results":1},"sdk_version":"2.4.0"}'
     headers:
       accept:
       - '*/*'
@@ -198,7 +198,7 @@ interactions:
       cross-origin-resource-policy:
       - same-origin
       date:
-      - Mon, 31 Aug 2026 16:14:29 GMT
+      - Tue, 10 Nov 2026 16:12:34 GMT
       permissions-policy:
       - camera=(), microphone=(), geolocation=()
       referrer-policy:

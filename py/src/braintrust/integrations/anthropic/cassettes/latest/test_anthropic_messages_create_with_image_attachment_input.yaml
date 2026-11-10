@@ -1,7 +1,7 @@
 interactions:
 - request:
     body: '{"max_tokens":100,"messages":[{"role":"user","content":[{"type":"text","text":"Respond
-      with one word: what color is this image?"},{"type":"image","source":{"type":"base64","media_type":"image/png","data":"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="}}]}],"model":"claude-haiku-4-5-20251001"}'
+      with one word: what color is this image?"},{"type":"image","source":{"type":"base64","media_type":"image/png","data":"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="}}]}],"model":"claude-haiku-5-5"}'
     headers:
       accept:
       - application/json
@@ -12,7 +12,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '344'
+      - '335'
       content-type:
       - application/json
       host:
@@ -43,7 +43,7 @@ interactions:
     uri: https://api.anthropic.com/v1/messages
   response:
     body:
-      string: '{"model":"claude-haiku-4-5-20251001","id":"msg_011Cgsh2S2ruLCvtCMWkNTwz","type":"message","role":"assistant","content":[{"type":"text","text":"Red"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":23,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":4,"service_tier":"standard","inference_geo":"not_available","speed":"standard"},"diagnostics":null}'
+      string: '{"model":"claude-haiku-5-5","id":"msg_011CguWUu2mubpYj2jqDQHEp","type":"message","role":"assistant","content":[{"type":"thinking","thinking":"","signature":"CAQS1AUKEAgTGAI4AUIIdGhpbmtpbmcSDN/fAnxGByZd6FEJhhoMH3d2aAAa2fDfYxvHIjBB2mUdPUSljpCpciE5vUfyL0hsdETv7OorLsNnyUImyZx1R7IUU9mmGQNEngfxL8kq8QSl9sCSDX2hFm2tyjYFGDj6ghZALtXpZLWvw83wKgSv4/JvQpwCq+2d8sANrKALaU5c7UejxFFpm0jlNId2jY0oINmwxeckBrJxZMLcsZgqSgSekk9Q41gDG+4LmeIvlxckXouKdOVsyzV5lw2cvErKBIXrE49GUJYZq/H2mAETYF02BQdEKXx5ai7PyN7AXCJexA/WCJ244VnKaiDLcie1ZibxlNcbg2c2edipls6HefJleyiMB0bKjqHX0XzfAbG9tcToWyX5872K9TVCAR41vHqbnqbQuRMZu17kWVcDkoQ3T/nbH4Zfz0D2JWifi3amTZpxl2pSYt6Fv6VW2GfKI1FmnUAAFfg5e+pCtNdnltXEUtC0fe3PQdkUeALUQ8I89HwPgfZJY5kWOd7wqJWfSjUPe78Ij3xk6ITknznLWvudCvhtf6jxDZzrdyd6+1S9nFS2EFvc2m2E0UFwxJelxFu/mHHL26yTOSsgYupoVd1oH78DIDdWWrJsjNVutrn5TC+3Wprc7g/08NWMgrnMIDCGmT1KOs+7jjQ+3nC54RuLY8MTFuFEb2e2ab5xrvKTaM0CnmJmczjTFUlB+Q9oPikyjBjjdhUlWBsTdkx99MkvjsPnPY0ZFmmBvTmnEzDsvpI2c/P1Mth3IJ8YP9zo93MPfJiAOVdBak0viIStXiLuiqIHmKfSZZEPwVg4Ee9ssnDkQmmHJhSF+wr0Z6ixIlHkSe39ecWO6lijPFiQds06dWSChSnl0cmsT3It+wlfBEvLMvqXBEtSZV3v4clFGpvuYGr0R2jL3OMkhJMIDlGztijpwXtS7z+m8TdgkIm6GAE="},{"type":"text","text":"Red"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":25,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":43,"output_tokens_details":{"thinking_tokens":39},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
     headers:
       anthropic-organization-id:
       - 27796668-7351-40ac-acc4-024aee8995a5
@@ -52,51 +52,51 @@ interactions:
       anthropic-ratelimit-input-tokens-remaining:
       - '10000000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-11-09T16:44:28Z'
+      - '2026-11-10T15:47:23Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-11-09T16:44:28Z'
+      - '2026-11-10T15:47:23Z'
       anthropic-ratelimit-requests-limit:
-      - '20000'
+      - '45000'
       anthropic-ratelimit-requests-remaining:
-      - '19999'
+      - '44999'
       anthropic-ratelimit-requests-reset:
-      - '2026-11-09T16:44:27Z'
+      - '2026-11-10T15:47:23Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
       - '12000000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-11-09T16:44:28Z'
+      - '2026-11-10T15:47:23Z'
       anthropic-workspace-id:
       - wrkspc_018bFG1FgNVWqx5pthtdGTzS
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a57e4840ece9c45b-YYZ
+      - a58632047b61f54f-YYZ
       connection:
       - keep-alive
       content-length:
-      - '514'
+      - '1571'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - application/json
       date:
-      - Mon, 09 Nov 2026 16:44:28 GMT
+      - Tue, 10 Nov 2026 15:47:23 GMT
       request-id:
-      - req_011Cgsh2RnySBzocBLT7nxGt
+      - req_011CguWUtpsacpd4kpJ3zGN2
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=376
+      - x-originResponse;dur=749
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-c95c0b8211e3915fa9949d45b6c85b73-2d1a06af0bbc216a-01
+      - 00-e45e8629320f52ba48bae0325da1e5ee-fe3e6673472fc509-01
       transfer-encoding:
       - chunked
       vary:

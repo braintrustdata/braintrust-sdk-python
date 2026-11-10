@@ -22,95 +22,43 @@ interactions:
       x-goog-api-client:
       - google-genai-sdk/3.0.0 gl-python/3.14.7
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:streamGenerateContent?alt=sse
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:streamGenerateContent?alt=sse
   response:
     body:
-      string: "{\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Code execution
-        is not enabled for api version v1. Use api version v1beta instead.\",\n    \"status\":
-        \"INVALID_ARGUMENT\"\n  }\n}\n"
-    headers:
-      alt-svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      content-length:
-      - '171'
-      content-type:
-      - text/event-stream
-      date:
-      - Mon, 09 Nov 2026 17:02:55 GMT
-      server:
-      - scaffolding on HTTPServer2
-      server-timing:
-      - gfet4t7; dur=239
-      vary:
-      - Origin
-      - X-Origin
-      - Referer
-      x-content-type-options:
-      - nosniff
-      x-frame-options:
-      - SAMEORIGIN
-      x-xss-protection:
-      - '0'
-    status:
-      code: 400
-      message: Bad Request
-- request:
-    body: '{"contents": [{"parts": [{"text": "Use the code execution tool to calculate
-      17 * 19. Include one short sentence before the code, then give the answer after
-      the code execution result."}], "role": "user"}], "tools": [{"codeExecution":
-      {}}], "generationConfig": {"temperature": 0.0, "maxOutputTokens": 200}}'
-    headers:
-      accept:
-      - '*/*'
-      accept-encoding:
-      - gzip, deflate, zstd
-      connection:
-      - keep-alive
-      content-length:
-      - '304'
-      content-type:
-      - application/json
-      host:
-      - generativelanguage.googleapis.com
-      user-agent:
-      - google-genai-sdk/3.0.0 gl-python/3.14.7
-      x-goog-api-client:
-      - google-genai-sdk/3.0.0 gl-python/3.14.7
-    method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse
-  response:
-    body:
-      string: "data: {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"Let's
-        calculate the product of 17 and 19.\\n\\n\"}],\"role\": \"model\"},\"index\":
-        0}],\"usageMetadata\": {\"promptTokenCount\": 34,\"candidatesTokenCount\":
-        15,\"totalTokenCount\": 132,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
-        34}],\"thoughtsTokenCount\": 83,\"serviceTier\": \"standard\"},\"modelVersion\":
-        \"gemini-2.5-flash\",\"responseId\": \"H_3xatyUCMzZytMP157bwQ8\"}\r\n\r\ndata:
-        {\"candidates\": [{\"content\": {\"parts\": [{\"executableCode\": {\"language\":
-        \"PYTHON\",\"code\": \"print(17 * 19)\\n\"}}],\"role\": \"model\"},\"index\":
-        0}],\"usageMetadata\": {\"promptTokenCount\": 34,\"candidatesTokenCount\":
-        24,\"totalTokenCount\": 141,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
-        34}],\"thoughtsTokenCount\": 83,\"serviceTier\": \"standard\"},\"modelVersion\":
-        \"gemini-2.5-flash\",\"responseId\": \"H_3xatyUCMzZytMP157bwQ8\"}\r\n\r\ndata:
-        {\"candidates\": [{\"content\": {\"parts\": [{\"codeExecutionResult\": {\"outcome\":
-        \"OUTCOME_OK\",\"output\": \"323\\n\"}}],\"role\": \"model\"},\"index\": 0}],\"usageMetadata\":
-        {\"promptTokenCount\": 34,\"candidatesTokenCount\": 24,\"totalTokenCount\":
-        141,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\": 34}],\"thoughtsTokenCount\":
-        83,\"serviceTier\": \"standard\"},\"modelVersion\": \"gemini-2.5-flash\",\"responseId\":
-        \"H_3xatyUCMzZytMP157bwQ8\"}\r\n\r\ndata: {\"candidates\": [{\"content\":
-        {\"parts\": [{\"text\": \"The product of \"}],\"role\": \"model\"},\"index\":
-        0}],\"usageMetadata\": {\"promptTokenCount\": 34,\"candidatesTokenCount\":
-        27,\"totalTokenCount\": 290,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
-        34}],\"toolUsePromptTokenCount\": 146,\"toolUsePromptTokensDetails\": [{\"modality\":
-        \"TEXT\",\"tokenCount\": 146}],\"thoughtsTokenCount\": 83,\"serviceTier\":
-        \"standard\"},\"modelVersion\": \"gemini-2.5-flash\",\"responseId\": \"H_3xatyUCMzZytMP157bwQ8\"}\r\n\r\ndata:
-        {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"17 and 19 is 323.\"}],\"role\":
+      string: "data: {\"candidates\": [{\"content\": {\"parts\": [{\"executableCode\":
+        {\"language\": \"PYTHON\",\"code\": \"print(17 * 19)\\n\",\"id\": \"call_12596391896527727520\"},\"thoughtSignature\":
+        \"EmAKXgFpFH0TLPcSLjaZXYDChPI/9Ti4q5k39bkp+T604PbNM0ikbe70sI1dkMWR3iSDhKBtdXTGP3Qng8VCk2LoGsehwjk9mT21m3qDMC6m8lZFcdn3O/MJ89HV/Y/vX5U=\"}],\"role\":
+        \"model\"},\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\": 34,\"candidatesTokenCount\":
+        23,\"totalTokenCount\": 57,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
+        34}],\"serviceTier\": \"standard\"},\"modelVersion\": \"gemini-3.5-flash-lite\",\"responseId\":
+        \"NkXzara-CvfFxdIPnvSyoA0\"}\r\n\r\ndata: {\"candidates\": [{\"content\":
+        {\"parts\": [{\"codeExecutionResult\": {\"outcome\": \"OUTCOME_OK\",\"output\":
+        \"323\\n\",\"id\": \"call_12596391896527727520\"}}],\"role\": \"model\"}}],\"usageMetadata\":
+        {\"promptTokenCount\": 34,\"totalTokenCount\": 34,\"promptTokensDetails\":
+        [{\"modality\": \"TEXT\",\"tokenCount\": 34}],\"serviceTier\": \"standard\"},\"modelVersion\":
+        \"gemini-3.5-flash-lite\",\"responseId\": \"NkXzara-CvfFxdIPnvSyoA0\"}\r\n\r\ndata:
+        {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"Here is\"}],\"role\":
+        \"model\"},\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\": 34,\"candidatesTokenCount\":
+        2,\"totalTokenCount\": 36,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
+        34}],\"serviceTier\": \"standard\"},\"modelVersion\": \"gemini-3.5-flash-lite\",\"responseId\":
+        \"NkXzara-CvfFxdIPnvSyoA0\"}\r\n\r\ndata: {\"candidates\": [{\"content\":
+        {\"parts\": [{\"text\": \" the calculation for the product of 17 and 19.\\n\\nThe
+        result\"}],\"role\": \"model\"},\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\":
+        34,\"candidatesTokenCount\": 19,\"totalTokenCount\": 53,\"promptTokensDetails\":
+        [{\"modality\": \"TEXT\",\"tokenCount\": 34}],\"serviceTier\": \"standard\"},\"modelVersion\":
+        \"gemini-3.5-flash-lite\",\"responseId\": \"NkXzara-CvfFxdIPnvSyoA0\"}\r\n\r\ndata:
+        {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \" of 17 * 19 is 323.\"}],\"role\":
+        \"model\"},\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\": 34,\"candidatesTokenCount\":
+        33,\"totalTokenCount\": 67,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
+        34}],\"serviceTier\": \"standard\"},\"modelVersion\": \"gemini-3.5-flash-lite\",\"responseId\":
+        \"NkXzara-CvfFxdIPnvSyoA0\"}\r\n\r\ndata: {\"candidates\": [{\"content\":
+        {\"parts\": [{\"text\": \"\",\"thoughtSignature\": \"EmAKXgFpFH0TysMNfmLFWwn9+0mW72CgxYSXRqGAHI0bPCBc083q4IpLTm188foMnFCS3waWa37qauEMO/Gxce7Uf4L9Ncoxha+lO29Sy9tczEu1Gi14JKHTReigXDgTAx0=\"}],\"role\":
         \"model\"},\"finishReason\": \"STOP\",\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\":
-        34,\"candidatesTokenCount\": 39,\"totalTokenCount\": 302,\"promptTokensDetails\":
+        34,\"candidatesTokenCount\": 56,\"totalTokenCount\": 149,\"promptTokensDetails\":
         [{\"modality\": \"TEXT\",\"tokenCount\": 34}],\"toolUsePromptTokenCount\":
-        146,\"toolUsePromptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
-        146}],\"thoughtsTokenCount\": 83,\"serviceTier\": \"standard\"},\"modelVersion\":
-        \"gemini-2.5-flash\",\"responseId\": \"H_3xatyUCMzZytMP157bwQ8\"}\r\n\r\n"
+        59,\"toolUsePromptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
+        59}],\"serviceTier\": \"standard\"},\"modelVersion\": \"gemini-3.5-flash-lite\",\"responseId\":
+        \"NkXzara-CvfFxdIPnvSyoA0\"}\r\n\r\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
@@ -119,11 +67,11 @@ interactions:
       content-type:
       - text/event-stream
       date:
-      - Mon, 09 Nov 2026 17:04:32 GMT
+      - Tue, 10 Nov 2026 16:24:23 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=1148
+      - gfet4t7; dur=1292
       transfer-encoding:
       - chunked
       vary:

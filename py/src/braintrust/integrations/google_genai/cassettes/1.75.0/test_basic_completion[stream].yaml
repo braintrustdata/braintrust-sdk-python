@@ -3,64 +3,61 @@ interactions:
     body: '{"contents": [{"parts": [{"text": "What is the capital of France?"}], "role":
       "user"}], "generationConfig": {"maxOutputTokens": 100}}'
     headers:
-      Accept:
+      accept:
       - '*/*'
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '133'
-      Content-Type:
+      content-type:
       - application/json
-      Host:
+      host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.75.0 gl-python/3.12.12
+      - google-genai-sdk/1.75.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/1.75.0 gl-python/3.12.12
+      - google-genai-sdk/1.75.0 gl-python/3.14.7
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:streamGenerateContent?alt=sse
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:streamGenerateContent?alt=sse
   response:
     body:
-      string: "data: {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"The\"}],\"role\":
-        \"model\"}}],\"usageMetadata\": {\"promptTokenCount\": 8,\"totalTokenCount\":
-        8,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\": 8}],\"serviceTier\":
-        \"standard\"},\"modelVersion\": \"gemini-2.0-flash-001\",\"responseId\": \"qucBapXpCNPT6MEP44Tv2Q8\"}\r\n\r\ndata:
-        {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \" capital of France\"}],\"role\":
-        \"model\"}}],\"usageMetadata\": {\"promptTokenCount\": 8,\"totalTokenCount\":
-        8,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\": 8}],\"serviceTier\":
-        \"standard\"},\"modelVersion\": \"gemini-2.0-flash-001\",\"responseId\": \"qucBapXpCNPT6MEP44Tv2Q8\"}\r\n\r\ndata:
-        {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \" is **Paris**.\\n\"}],\"role\":
-        \"model\"},\"finishReason\": \"STOP\"}],\"usageMetadata\": {\"promptTokenCount\":
-        7,\"candidatesTokenCount\": 9,\"totalTokenCount\": 16,\"promptTokensDetails\":
-        [{\"modality\": \"TEXT\",\"tokenCount\": 7}],\"candidatesTokensDetails\":
-        [{\"modality\": \"TEXT\",\"tokenCount\": 9}],\"serviceTier\": \"standard\"},\"modelVersion\":
-        \"gemini-2.0-flash-001\",\"responseId\": \"qucBapXpCNPT6MEP44Tv2Q8\"}\r\n\r\n"
+      string: "data: {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"The
+        capital of France is **\"}],\"role\": \"model\"},\"index\": 0}],\"usageMetadata\":
+        {\"promptTokenCount\": 8,\"candidatesTokenCount\": 6,\"totalTokenCount\":
+        14,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\": 8}],\"serviceTier\":
+        \"standard\"},\"modelVersion\": \"gemini-2.5-flash-lite\",\"responseId\":
+        \"vkLzaqfPCYDhytMPmf7P8Qg\"}\r\n\r\ndata: {\"candidates\": [{\"content\":
+        {\"parts\": [{\"text\": \"Paris**.\"}],\"role\": \"model\"},\"finishReason\":
+        \"STOP\",\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\": 8,\"candidatesTokenCount\":
+        8,\"totalTokenCount\": 16,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
+        8}],\"serviceTier\": \"standard\"},\"modelVersion\": \"gemini-2.5-flash-lite\",\"responseId\":
+        \"vkLzaqfPCYDhytMPmf7P8Qg\"}\r\n\r\n"
     headers:
-      Alt-Svc:
+      alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Content-Disposition:
+      content-disposition:
       - attachment
-      Content-Type:
+      content-type:
       - text/event-stream
-      Date:
-      - Mon, 11 May 2026 14:28:58 GMT
-      Server:
+      date:
+      - Tue, 10 Nov 2026 16:13:50 GMT
+      server:
       - scaffolding on HTTPServer2
-      Server-Timing:
-      - gfet4t7; dur=466
-      Transfer-Encoding:
+      server-timing:
+      - gfet4t7; dur=333
+      transfer-encoding:
       - chunked
-      Vary:
+      vary:
       - Origin
       - X-Origin
       - Referer
-      X-Content-Type-Options:
+      x-content-type-options:
       - nosniff
-      X-Frame-Options:
+      x-frame-options:
       - SAMEORIGIN
-      X-XSS-Protection:
+      x-xss-protection:
       - '0'
     status:
       code: 200

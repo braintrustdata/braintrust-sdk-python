@@ -29,6 +29,10 @@ from ._test_agno_helpers import (
 )
 
 
+TEST_MODEL = "gpt-6-luna"
+MODEL_OPTIONS = {"reasoning_effort": "none"}
+
+
 @pytest.fixture
 def memory_logger():
     init_test_logger(PROJECT_NAME)
@@ -74,7 +78,7 @@ async def _cancel_weather_agent_during_tool(run_id, start_run):
 
     agent = Agent(
         name="Weather Agent",
-        model=OpenAIChat(id="gpt-4o-mini"),
+        model=OpenAIChat(id=TEST_MODEL, **MODEL_OPTIONS),
         tools=[get_weather],
         instructions="Use the get_weather tool to answer questions.",
     )
@@ -105,7 +109,7 @@ async def test_agno_agent_cancellation_stage_metadata(memory_logger):
     from agno.models.openai import OpenAIChat
     from agno.team import Team
 
-    team = Team(name="Weather Team", model=OpenAIChat(id="gpt-4o-mini"), members=[])
+    team = Team(name="Weather Team", model=OpenAIChat(id=TEST_MODEL, **MODEL_OPTIONS), members=[])
     team_run_id = "agno-team-cancellation-stage-test"
     assert not team.cancel_run(team_run_id)
     team_response = await team.arun("Cancel before starting", run_id=team_run_id)
@@ -156,8 +160,11 @@ def test_agno_simple_agent_execution(memory_logger):
 
     agent = Agent(
         name="Author Agent",
-        model=OpenAIChat(id="gpt-4o-mini"),
-        instructions="You are librarian. Answer the questions by only replying with the author that wrote the book.",
+        model=OpenAIChat(id=TEST_MODEL, **MODEL_OPTIONS),
+        instructions=(
+            "You are librarian. Answer the questions by only replying with the author that wrote the book."
+            " Format initials as E.B., with no space between the initials."
+        ),
     )
 
     response = agent.run("Charlotte's Web")
@@ -182,7 +189,7 @@ def test_agno_simple_agent_execution(memory_logger):
         assert root_input["run_response"]["input"]["input_content"] == "Charlotte's Web"
     assert root_span["output"]["content"] == "E.B. White"
     assert root_span["output"]["status"] == "COMPLETED"
-    assert root_span["output"]["model"] == "gpt-4o-mini"
+    assert root_span["output"]["model"] == TEST_MODEL
     assert root_span["output"]["model_provider"] == "OpenAI"
     assert root_span["metrics"]["prompt_tokens"] > 0
     assert root_span["metrics"]["completion_tokens"] > 0
@@ -198,7 +205,7 @@ def test_agno_simple_agent_execution(memory_logger):
     assert llm_span_name.endswith(".response")
     assert llm_span["span_attributes"]["type"].value == "llm"
     assert llm_span["span_parents"] == [root_span["span_id"]]
-    assert llm_span["metadata"]["model"] == "gpt-4o-mini"
+    assert llm_span["metadata"]["model"] == TEST_MODEL
     assert llm_span["metadata"]["provider"] == "OpenAI"
 
     messages = llm_span["input"]["messages"]
@@ -236,7 +243,7 @@ async def _pause_agno_run(memory_logger, component, async_mode):
 
     instance = cls(
         name="Weather Assistant",
-        model=OpenAIChat(id="gpt-4o-mini"),
+        model=OpenAIChat(id=TEST_MODEL, **MODEL_OPTIONS),
         tools=[get_weather],
         instructions="Use get_weather to find the weather. Report the result briefly.",
         session_id="configured-session",
@@ -435,7 +442,7 @@ def test_agno_agent_tools_metadata_placement(memory_logger):
 
     agent = Agent(
         name="Weather Agent",
-        model=OpenAIChat(id="gpt-4o-mini"),
+        model=OpenAIChat(id=TEST_MODEL, **MODEL_OPTIONS),
         tools=[get_weather],
         instructions="Use the get_weather tool to answer questions.",
     )
@@ -491,7 +498,7 @@ def test_agno_agent_image_input_materializes_attachment(memory_logger):
 
     agent = Agent(
         name="Vision Agent",
-        model=OpenAIChat(id="gpt-4o-mini"),
+        model=OpenAIChat(id=TEST_MODEL, **MODEL_OPTIONS),
         instructions="Describe the image in one word.",
     )
 

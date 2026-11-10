@@ -18,12 +18,15 @@ results2 = auto_instrument()
 assert results2.get("cohere") is True
 
 
+TEST_MODEL = "command-r7b-12-2024"
+
+
 with autoinstrument_test_context("test_auto_cohere", integration="cohere") as memory_logger:
     use_v2 = hasattr(cohere, "ClientV2") and hasattr(cohere.ClientV2, "chat")
     if use_v2:
         client = cohere.ClientV2(api_key=os.environ["CO_API_KEY"])
         response = client.chat(
-            model="command-a-03-2025",
+            model=TEST_MODEL,
             messages=[{"role": "user", "content": "Say hi in one word."}],
             max_tokens=10,
         )
@@ -31,7 +34,7 @@ with autoinstrument_test_context("test_auto_cohere", integration="cohere") as me
     else:
         client = cohere.Client(api_key=os.environ["CO_API_KEY"])
         response = client.chat(
-            model="command-a-03-2025",
+            model=TEST_MODEL,
             message="Say hi in one word.",
             max_tokens=10,
         )
@@ -41,7 +44,7 @@ with autoinstrument_test_context("test_auto_cohere", integration="cohere") as me
     assert len(spans) == 1, f"Expected 1 span, got {len(spans)}"
     span = spans[0]
     assert span["metadata"]["provider"] == "cohere"
-    assert span["metadata"]["model"] == "command-a-03-2025"
+    assert span["metadata"]["model"] == TEST_MODEL
     assert span["span_attributes"]["name"] == "cohere.chat"
 
 print("SUCCESS")

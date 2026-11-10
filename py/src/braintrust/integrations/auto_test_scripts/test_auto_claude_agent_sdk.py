@@ -18,7 +18,7 @@ with autoinstrument_test_context("test_auto_claude_agent_sdk", use_vcr=False) as
     import claude_agent_sdk  # pylint: disable=import-error
 
     options = claude_agent_sdk.ClaudeAgentOptions(
-        model="claude-3-5-haiku-20241022",
+        model=("claude-haiku-5-5"),
         permission_mode="bypassPermissions",
     )
     transport = make_cassette_transport(

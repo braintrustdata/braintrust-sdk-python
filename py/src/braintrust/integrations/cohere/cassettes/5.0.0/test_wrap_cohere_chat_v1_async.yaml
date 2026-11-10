@@ -1,127 +1,46 @@
 interactions:
 - request:
-    body: '{"message":"Say hi in one word.","model":"command-a-03-2025","max_tokens":10,"stream":false}'
+    body: '{"message":"Say hi in one word.","stream":false,"model":"command-r7b-12-2024","max_tokens":10}'
     headers:
-      Accept:
+      accept:
       - '*/*'
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
-      - '92'
-      Host:
-      - api.cohere.ai
-      User-Agent:
-      - cohere/5.0.0
-      X-Fern-Language:
-      - Python
-      X-Fern-Platform:
-      - darwin/25.2.0
-      X-Fern-Runtime:
-      - python/3.14.3
-      X-Fern-SDK-Name:
-      - cohere
-      X-Fern-SDK-Version:
-      - 6.1.0
-      content-type:
-      - application/json
-    method: POST
-    uri: https://api.cohere.ai/v1/chat
-  response:
-    body:
-      string: '{"response_id":"76b2f707-8d6a-4896-8ee8-fbaa221243e1","text":"Hi!","generation_id":"b412953d-f738-499a-aad0-4cc9e233f08c","chat_history":[{"role":"USER","message":"Say
-        hi in one word."},{"role":"CHATBOT","message":"Hi!"}],"finish_reason":"COMPLETE","meta":{"api_version":{"version":"1"},"billed_units":{"input_tokens":6,"output_tokens":2},"tokens":{"input_tokens":501,"output_tokens":4},"cached_tokens":0}}'
-    headers:
-      Alt-Svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Transfer-Encoding:
-      - chunked
-      Via:
-      - 1.1 google
-      access-control-expose-headers:
-      - X-Debug-Trace-ID
-      cache-control:
-      - no-cache, no-store, no-transform, must-revalidate, private, max-age=0
       content-length:
-      - '406'
+      - '94'
       content-type:
       - application/json
-      date:
-      - Thu, 16 Apr 2026 22:25:14 GMT
-      expires:
-      - Thu, 01 Jan 1970 00:00:00 GMT
-      num_chars:
-      - '2597'
-      num_tokens:
-      - '8'
-      pragma:
-      - no-cache
-      server:
-      - envoy
-      vary:
-      - Origin,Accept-Encoding
-      x-accel-expires:
-      - '0'
-      x-debug-trace-id:
-      - a5de506dc00bef0202d424fa37ff108e
-      x-endpoint-monthly-call-limit:
-      - '1000'
-      x-envoy-upstream-service-time:
-      - '712'
-      x-trial-endpoint-call-limit:
-      - '20'
-      x-trial-endpoint-call-remaining:
-      - '16'
-    status:
-      code: 200
-      message: OK
-- request:
-    body: '{"message":"Say hi in one word.","stream":false,"model":"command-a-03-2025","max_tokens":10}'
-    headers:
-      Accept:
-      - '*/*'
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '92'
-      Content-Type:
-      - application/json
-      Host:
+      host:
       - api.cohere.ai
-      User-Agent:
+      user-agent:
       - python-httpx/0.28.1
-      X-Fern-Language:
+      x-fern-language:
       - Python
-      X-Fern-SDK-Name:
+      x-fern-sdk-name:
       - cohere
-      X-Fern-SDK-Version:
+      x-fern-sdk-version:
       - 5.0.0
     method: POST
     uri: https://api.cohere.ai/v1/chat
   response:
     body:
-      string: '{"response_id":"a7f45637-099f-4881-bb58-37b994c4e1cc","text":"Hi!","generation_id":"a5bdcd43-7470-45e4-ab4e-650f107c0f63","chat_history":[{"role":"USER","message":"Say
-        hi in one word."},{"role":"CHATBOT","message":"Hi!"}],"finish_reason":"COMPLETE","meta":{"api_version":{"version":"1"},"billed_units":{"input_tokens":6,"output_tokens":2},"tokens":{"input_tokens":501,"output_tokens":4},"cached_tokens":0}}'
+      string: '{"response_id":"117bd89f-a133-4e33-92f1-41547cc5fa9c","text":"Hello!","generation_id":"41889406-4eea-4c6c-b5c0-5237bc2f64bd","chat_history":[{"role":"USER","message":"Say
+        hi in one word."},{"role":"CHATBOT","message":"Hello!"}],"finish_reason":"COMPLETE","meta":{"api_version":{"version":"1"},"billed_units":{"input_tokens":6,"output_tokens":2},"tokens":{"input_tokens":501,"output_tokens":5},"cached_tokens":496}}'
     headers:
-      Alt-Svc:
-      - h3=":443"; ma=2592000
-      Transfer-Encoding:
-      - chunked
-      Via:
-      - 1.1 google
       access-control-expose-headers:
       - X-Debug-Trace-ID
+      alt-svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       cache-control:
       - no-cache, no-store, no-transform, must-revalidate, private, max-age=0
       content-length:
-      - '406'
+      - '414'
       content-type:
       - application/json
       date:
-      - Thu, 16 Apr 2026 23:21:12 GMT
+      - Tue, 10 Nov 2026 16:13:17 GMT
       expires:
       - Thu, 01 Jan 1970 00:00:00 GMT
       num_chars:
@@ -132,20 +51,24 @@ interactions:
       - no-cache
       server:
       - envoy
+      transfer-encoding:
+      - chunked
       vary:
       - Origin,Accept-Encoding
+      via:
+      - 1.1 google
       x-accel-expires:
       - '0'
       x-debug-trace-id:
-      - d536dc7bb4b116e4fbb60304a07e5b05
+      - a5689743cf480899bb90e24b9d565d09
       x-endpoint-monthly-call-limit:
       - '1000'
       x-envoy-upstream-service-time:
-      - '419'
+      - '142'
       x-trial-endpoint-call-limit:
       - '20'
       x-trial-endpoint-call-remaining:
-      - '17'
+      - '18'
     status:
       code: 200
       message: OK

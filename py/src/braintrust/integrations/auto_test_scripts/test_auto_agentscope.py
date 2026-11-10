@@ -1,12 +1,16 @@
 """Test auto_instrument for AgentScope."""
-# pylint: disable=import-error,no-name-in-module,no-value-for-parameter,no-member,unexpected-keyword-arg
 
+# pylint: disable=import-error,no-name-in-module,no-value-for-parameter,no-member,unexpected-keyword-arg
 import asyncio
 import importlib
+import os
 
 from braintrust.auto import auto_instrument
 from braintrust.integrations.test_utils import autoinstrument_test_context
 
+
+TEST_MODEL = "gpt-6-luna"
+MODEL_OPTIONS = {"reasoning_effort": "none"}
 
 results = auto_instrument(openai=False)
 assert results.get("agentscope") == True, "auto_instrument should return True for agentscope"
@@ -29,9 +33,9 @@ if HAS_AGENT_REPLY_API:
     assert hasattr(OpenAIChatModel.__call__, "__wrapped__"), "OpenAIChatModel.__call__ should be wrapped"
 
     model = OpenAIChatModel(
-        credential=OpenAICredential(api_key="test-api-key"),
-        model="gpt-4o-mini",
-        parameters=OpenAIChatModel.Parameters(temperature=0),
+        credential=OpenAICredential(api_key=os.environ["OPENAI_API_KEY"]),
+        model=TEST_MODEL,
+        parameters=OpenAIChatModel.Parameters(thinking_enable=True, **MODEL_OPTIONS),
         stream=False,
         max_retries=0,
     )
@@ -67,8 +71,8 @@ else:
         name="Test Agent",
         sys_prompt="You are a helpful assistant. Be brief.",
         model=OpenAIChatModel(
-            model_name="gpt-4o-mini",
-            generate_kwargs={"temperature": 0},
+            model_name=TEST_MODEL,
+            generate_kwargs=MODEL_OPTIONS,
         ),
         formatter=OpenAIChatFormatter(),
         toolkit=Toolkit(),
@@ -97,7 +101,7 @@ with autoinstrument_test_context("test_auto_agentscope", integration="agentscope
 
     assert agent_span["span_attributes"]["type"].value == "task"
     assert llm_spans, "Should have at least one LLM span"
-    assert llm_spans[0]["metadata"]["model"] == "gpt-4o-mini"
+    assert llm_spans[0]["metadata"]["model"] == TEST_MODEL
     assert llm_spans[0]["metadata"]["provider"] == "openai"
     assert agent_span["span_id"] in llm_spans[0]["span_parents"]
 

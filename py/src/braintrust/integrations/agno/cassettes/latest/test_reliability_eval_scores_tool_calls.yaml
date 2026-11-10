@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"run_id":"9589dea0-6054-47d1-8355-2351415f36f4","eval_type":"agent_as_judge","data":{"criteria_length":43,"scoring_strategy":"binary","threshold":null,"num_results":1},"sdk_version":"3.1.1"}'
+    body: '{"run_id":"94914560-bf24-490f-949e-8a41480578e1","eval_type":"agent_as_judge","data":{"criteria_length":43,"scoring_strategy":"binary","threshold":null,"num_results":1},"sdk_version":"3.1.12"}'
     headers:
       accept:
       - '*/*'
@@ -9,13 +9,13 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '191'
+      - '192'
       content-type:
       - application/json
       host:
       - os-api.agno.com
       user-agent:
-      - agno/3.1.1
+      - agno/3.1.12
     method: POST
     uri: https://os-api.agno.com/telemetry/evals
   response:
@@ -33,7 +33,7 @@ interactions:
       cross-origin-resource-policy:
       - same-origin
       date:
-      - Mon, 05 Oct 2026 14:45:59 GMT
+      - Tue, 10 Nov 2026 15:50:08 GMT
       permissions-policy:
       - camera=(), microphone=(), geolocation=()
       referrer-policy:
@@ -50,7 +50,7 @@ interactions:
       code: 422
       message: Unprocessable Entity
 - request:
-    body: '{"session_id":"f937875c-98df-446e-bc70-e6734c4f2aab","run_id":"7f42b434-31bb-434b-8475-a72634b7566a","data":{"agent_id":"post-hook-agent","db_type":null,"model_provider":"OpenAI","model_name":"OpenAIChat","model_id":"gpt-4o-mini","parser_model":null,"output_model":null,"has_tools":true,"has_memory":false,"has_learnings":false,"has_reasoning":false,"has_knowledge":false,"has_input_schema":false,"has_output_schema":false,"has_team":false},"sdk_version":"3.1.1","type":"agent"}'
+    body: '{"session_id":"cfcaec40-2662-4775-bf01-a20d36308656","run_id":"fb2da8b7-4b0d-420e-815a-bba961e4d703","data":{"agent_id":"post-hook-agent","db_type":null,"model_provider":"OpenAI","model_name":"OpenAIChat","model_id":"gpt-6-luna","parser_model":null,"output_model":null,"has_tools":true,"has_memory":false,"has_learnings":false,"has_reasoning":false,"has_knowledge":false,"has_input_schema":false,"has_output_schema":false,"has_team":false},"sdk_version":"3.1.12","type":"agent"}'
     headers:
       accept:
       - '*/*'
@@ -65,12 +65,12 @@ interactions:
       host:
       - os-api.agno.com
       user-agent:
-      - agno/3.1.1
+      - agno/3.1.12
     method: POST
     uri: https://os-api.agno.com/telemetry/runs
   response:
     body:
-      string: '{"message":"Run creation acknowledged: 7f42b434-31bb-434b-8475-a72634b7566a","status":"success"}'
+      string: '{"message":"Run creation acknowledged: fb2da8b7-4b0d-420e-815a-bba961e4d703","status":"success"}'
     headers:
       content-length:
       - '96'
@@ -81,7 +81,7 @@ interactions:
       cross-origin-resource-policy:
       - same-origin
       date:
-      - Mon, 05 Oct 2026 14:45:59 GMT
+      - Tue, 10 Nov 2026 15:50:08 GMT
       permissions-policy:
       - camera=(), microphone=(), geolocation=()
       referrer-policy:
@@ -99,7 +99,7 @@ interactions:
       message: Created
 - request:
     body: '{"messages":[{"role":"developer","content":"Answer with the final number
-      only."},{"role":"user","content":"What is 10*5? Use your tools."}],"model":"gpt-4o-mini","tools":[{"type":"function","function":{"name":"add","description":"Add
+      only."},{"role":"user","content":"What is 10*5? Use your tools."}],"model":"gpt-6-luna","reasoning_effort":"none","tools":[{"type":"function","function":{"name":"add","description":"Add
       two numbers and return the result.","parameters":{"type":"object","properties":{"a":{"type":"number","description":"(float)
       First number."},"b":{"type":"number","description":"(float) Second number."}},"required":["a","b"]},"requires_confirmation":false,"external_execution":false}},{"type":"function","function":{"name":"divide","description":"Divide
       first number by second and return the result.","parameters":{"type":"object","properties":{"a":{"type":"number","description":"(float)
@@ -124,7 +124,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '2955'
+      - '2980'
       content-type:
       - application/json
       host:
@@ -153,21 +153,21 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EVeEx1GxILV0r6Kr31VXnfWorf0mR\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1791211559,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiiOmx97zYNsxGykFYgvMbUFTepEK\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794325808,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
-        \           \"id\": \"call_owekc53Zy0ey1YNY7qU5SeD0\",\n            \"type\":
+        \           \"id\": \"call_Y21gnA7PYQjKOdFFzPLwgTeS\",\n            \"type\":
         \"function\",\n            \"function\": {\n              \"name\": \"multiply\",\n
         \             \"arguments\": \"{\\\"a\\\":10,\\\"b\\\":5}\"\n            }\n
         \         }\n        ],\n        \"refusal\": null,\n        \"annotations\":
-        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"tool_calls\"\n
-        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 351,\n    \"completion_tokens\":
-        17,\n    \"total_tokens\": 368,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        []\n      },\n      \"finish_reason\": \"tool_calls\"\n    }\n  ],\n  \"usage\":
+        {\n    \"prompt_tokens\": 435,\n    \"completion_tokens\": 20,\n    \"total_tokens\":
+        455,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\": 0,\n      \"cache_write_tokens\":
         0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_e9ab34331d\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -178,17 +178,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a45d36961d0aac63-YYZ
+      - a586360c89aeab7b-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1081'
+      - '1065'
       content-type:
       - application/json
       date:
-      - Mon, 05 Oct 2026 14:46:00 GMT
+      - Tue, 10 Nov 2026 15:50:09 GMT
       openai-processing-ms:
-      - '633'
+      - '908'
       openai-version:
       - '2020-10-01'
       server:
@@ -204,24 +204,24 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
-      - '29994'
+      - '29999'
       x-ratelimit-remaining-tokens:
-      - '149998602'
+      - '179999982'
       x-ratelimit-reset-requests:
-      - 12ms
+      - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_b9391afce96d471f91a259f87617b6d5
+      - req_1d29ab0e2e3140dfab5b48ecbb9d9d02
     status:
       code: 200
       message: OK
 - request:
     body: '{"messages":[{"role":"developer","content":"Answer with the final number
-      only."},{"role":"user","content":"What is 10*5? Use your tools."},{"role":"assistant","tool_calls":[{"id":"call_owekc53Zy0ey1YNY7qU5SeD0","function":{"arguments":"{\"a\":10,\"b\":5}","name":"multiply"},"type":"function"}],"content":""},{"role":"tool","content":"{\"operation\":
-      \"multiplication\", \"result\": 50.0}","tool_call_id":"call_owekc53Zy0ey1YNY7qU5SeD0"}],"model":"gpt-4o-mini","tools":[{"type":"function","function":{"name":"add","description":"Add
+      only."},{"role":"user","content":"What is 10*5? Use your tools."},{"role":"assistant","tool_calls":[{"id":"call_Y21gnA7PYQjKOdFFzPLwgTeS","function":{"arguments":"{\"a\":10,\"b\":5}","name":"multiply"},"type":"function"}],"content":""},{"role":"tool","content":"{\"operation\":
+      \"multiplication\", \"result\": 50.0}","tool_call_id":"call_Y21gnA7PYQjKOdFFzPLwgTeS"}],"model":"gpt-6-luna","reasoning_effort":"none","tools":[{"type":"function","function":{"name":"add","description":"Add
       two numbers and return the result.","parameters":{"type":"object","properties":{"a":{"type":"number","description":"(float)
       First number."},"b":{"type":"number","description":"(float) Second number."}},"required":["a","b"]},"requires_confirmation":false,"external_execution":false}},{"type":"function","function":{"name":"divide","description":"Divide
       first number by second and return the result.","parameters":{"type":"object","properties":{"a":{"type":"number","description":"(float)
@@ -246,7 +246,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '3254'
+      - '3279'
       content-type:
       - application/json
       host:
@@ -275,17 +275,18 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EVeEy0sLJ7AeTYVVnB93SCB8SYCpz\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1791211560,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiiOn8KAo7zCmMRQHaSSg9BIOxe6B\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794325809,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"50.0\",\n        \"refusal\": null,\n
-        \       \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\":
-        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 390,\n    \"completion_tokens\":
-        4,\n    \"total_tokens\": 394,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
-        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_e9ab34331d\"\n}\n"
+        \"assistant\",\n        \"content\": \"50\",\n        \"refusal\": null,\n
+        \       \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 480,\n    \"completion_tokens\":
+        4,\n    \"total_tokens\": 484,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"cache_write_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n
+        \   \"completion_tokens_details\": {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\":
+        0,\n      \"accepted_prediction_tokens\": 0,\n      \"rejected_prediction_tokens\":
+        0\n    }\n  },\n  \"service_tier\": \"default\",\n  \"system_fingerprint\":
+        null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -296,17 +297,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a45d369b1a3eac63-YYZ
+      - a58636132b11ab7b-YYZ
       connection:
       - keep-alive
       content-length:
-      - '812'
+      - '794'
       content-type:
       - application/json
       date:
-      - Mon, 05 Oct 2026 14:46:00 GMT
+      - Tue, 10 Nov 2026 15:50:09 GMT
       openai-processing-ms:
-      - '381'
+      - '654'
       openai-version:
       - '2020-10-01'
       server:
@@ -322,17 +323,17 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
-      - '29998'
+      - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999340'
+      - '179999967'
       x-ratelimit-reset-requests:
-      - 4ms
+      - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_3d4c5e9d39934c56b2fca1371a4002a3
+      - req_2f92a510b45d472a8dbc4e93388540ec
     status:
       code: 200
       message: OK

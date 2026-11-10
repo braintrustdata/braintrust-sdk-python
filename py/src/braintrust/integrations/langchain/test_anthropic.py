@@ -14,7 +14,7 @@ from .helpers import assert_matches_object
 
 
 PROJECT_NAME = "langchain-anthropic"
-MODEL = "claude-haiku-4-5-20251001"
+MODEL = "claude-haiku-5-5"
 
 
 @pytest.fixture
@@ -52,8 +52,13 @@ def test_langchain_anthropic_integration(
 
     flush()
 
-    assert isinstance(result.content, str)
-    assert "3" in result.content.lower()
+    text = (
+        result.content
+        if isinstance(result.content, str)
+        else "".join(block["text"] for block in result.content if block["type"] == "text")
+    )
+    assert isinstance(text, str)
+    assert "3" in text.lower()
 
     spans = memory_logger.pop()
     assert len(spans) > 0
@@ -82,11 +87,11 @@ def test_langchain_anthropic_integration(
         assert False, "No LLM span contained the expected answer '3'"
 
     expected_metrics: dict[str, Any] = {
-        "completion_tokens": 13,
+        "completion_tokens": result.usage_metadata["output_tokens"],
         "end": ANY,
-        "prompt_tokens": 16,
+        "prompt_tokens": result.usage_metadata["input_tokens"],
         "start": ANY,
-        "total_tokens": 29,
+        "total_tokens": result.usage_metadata["total_tokens"],
     }
     assert_matches_object(
         llm_span["metrics"],

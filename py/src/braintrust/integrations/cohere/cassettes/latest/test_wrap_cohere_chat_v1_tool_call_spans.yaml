@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"message":"Use the get_weather tool for Paris.","model":"command-a-03-2025","max_tokens":64,"tools":[{"name":"get_weather","description":"Get
+    body: '{"message":"Use the get_weather tool for Paris.","model":"command-r7b-12-2024","max_tokens":64,"tools":[{"name":"get_weather","description":"Get
       the weather for a city.","parameter_definitions":{"city":{"description":"City
       name","type":"str","required":true}}}],"force_single_step":true,"stream":false}'
     headers:
@@ -11,7 +11,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '300'
+      - '302'
       content-type:
       - application/json
       host:
@@ -32,23 +32,23 @@ interactions:
     uri: https://api.cohere.com/v1/chat
   response:
     body:
-      string: '{"response_id":"5a144eac-1a93-4043-b26a-6a511e8c56bf","text":"I will
-        use one or more of the available tools to find the answer","generation_id":"3fb1cfaf-672a-4736-9242-3dd7d0e7d83c","chat_history":[{"role":"USER","message":"Use
+      string: '{"response_id":"42dd312c-d575-4066-91e9-98df38359f0b","text":"I will
+        use one or more of the available tools to find the answer","generation_id":"054d8ff8-055b-4a3a-929b-8ab198961c8e","chat_history":[{"role":"USER","message":"Use
         the get_weather tool for Paris."},{"role":"CHATBOT","message":"I will use
-        one or more of the available tools to find the answer","tool_calls":[{"name":"get_weather","parameters":{"city":"Paris"}}]}],"finish_reason":"COMPLETE","meta":{"api_version":{"version":"1"},"billed_units":{"input_tokens":42,"output_tokens":22},"tokens":{"input_tokens":1462,"output_tokens":34},"cached_tokens":128},"tool_calls":[{"name":"get_weather","parameters":{"city":"Paris"}}]}'
+        one or more of the available tools to find the answer","tool_calls":[{"name":"get_weather","parameters":{"city":"Paris"}}]}],"finish_reason":"COMPLETE","meta":{"api_version":{"version":"1"},"billed_units":{"input_tokens":42,"output_tokens":22},"tokens":{"input_tokens":1462,"output_tokens":34},"cached_tokens":1056},"tool_calls":[{"name":"get_weather","parameters":{"city":"Paris"}}]}'
     headers:
       access-control-expose-headers:
       - X-Debug-Trace-ID
       alt-svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      - h3=":443"; ma=2592000
       cache-control:
       - no-cache, no-store, no-transform, must-revalidate, private, max-age=0
       content-length:
-      - '686'
+      - '687'
       content-type:
       - application/json
       date:
-      - Mon, 09 Nov 2026 16:43:16 GMT
+      - Tue, 10 Nov 2026 15:53:29 GMT
       expires:
       - Thu, 01 Jan 1970 00:00:00 GMT
       num_chars:
@@ -68,11 +68,11 @@ interactions:
       x-accel-expires:
       - '0'
       x-debug-trace-id:
-      - 2f89b405fc3555ba396ddfc1a34e0fcf
+      - 4326b6a1e8ab4938b3ffa5ec443bc85a
       x-endpoint-monthly-call-limit:
       - '1000'
       x-envoy-upstream-service-time:
-      - '741'
+      - '522'
       x-trial-endpoint-call-limit:
       - '20'
       x-trial-endpoint-call-remaining:

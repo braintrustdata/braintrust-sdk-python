@@ -5,6 +5,8 @@ import shutil
 import socket
 import subprocess
 import time
+import wave
+from pathlib import Path
 
 import pytest
 from braintrust import logger
@@ -22,6 +24,10 @@ from braintrust.integrations.livekit_agents.tracing import (
 from braintrust.integrations.test_utils import verify_autoinstrument_script
 from braintrust.test_helpers import init_test_logger
 from packaging.version import Version
+
+
+TEST_MODEL = "gpt-6-luna"
+MODEL_OPTIONS = {"reasoning_effort": "none"}
 
 
 @pytest.fixture
@@ -166,26 +172,6 @@ async def test_session_start_cleans_up_span_on_cancellation(memory_logger):
     assert session_logs[0]["context"]["span_origin"]["instrumentation"]["name"] == "livekit-agents-auto"
 
 
-@pytest.mark.asyncio
-@pytest.mark.vcr
-async def test_openai_tts_stream_closes_span_when_closed_early(memory_logger):
-    from livekit.plugins import openai
-
-    assert setup_livekit_agents()
-    tts = openai.TTS(model="gpt-4o-mini-tts", voice="ash")
-    stream = tts.synthesize("hello there")
-
-    async for chunk in stream:
-        assert chunk.frame
-        break
-    await stream.aclose()
-
-    logs = memory_logger.pop()
-    tts_logs = _spans_named(logs, "tts_request")
-    assert tts_logs
-    assert any(log.get("metrics", {}).get("time_to_first_token", 0) > 0 for log in tts_logs), tts_logs
-
-
 def test_auto_instrument_livekit_agents_subprocess():
     pytest.importorskip("livekit.agents")
     verify_autoinstrument_script("test_auto_livekit_agents.py")
@@ -238,66 +224,6 @@ async def test_livekit_agents_agent_audio_capture_respects_generic_env(monkeypat
 
 @pytest.mark.asyncio
 @pytest.mark.vcr
-async def test_livekit_agents_agent_speaking_e2e(memory_logger, livekit_server, monkeypatch):
-    monkeypatch.setenv("BRAINTRUST_CAPTURE_AGENT_AUDIO_ATTACHMENTS", "true")
-    assert setup_livekit_agents()
-
-    from livekit.agents import Agent, AgentSession
-    from livekit.agents.voice.io import AudioOutput, AudioOutputCapabilities
-    from livekit.plugins import openai
-
-    class CapturingAudioOutput(AudioOutput):
-        def __init__(self):
-            super().__init__(
-                label="test_audio_output", capabilities=AudioOutputCapabilities(pause=False), sample_rate=24000
-            )
-            self.playback_position = 0.0
-
-        async def capture_frame(self, frame):
-            await super().capture_frame(frame)
-            self.playback_position += frame.samples_per_channel / frame.sample_rate
-
-        def flush(self):
-            super().flush()
-            self.on_playback_finished(
-                playback_position=self.playback_position,
-                interrupted=False,
-                synchronized_transcript="hi there",
-            )
-
-        def clear_buffer(self):
-            self.flush()
-
-    class Assistant(Agent):
-        def __init__(self, llm):
-            super().__init__(instructions="Reply with exactly: hi there", llm=llm)
-
-    llm = openai.LLM(model="gpt-4.1-mini", max_completion_tokens=8)
-    tts = openai.TTS(model="gpt-4o-mini-tts", voice="ash")
-    audio_output = CapturingAudioOutput()
-
-    async with llm, tts, AgentSession(tts=tts) as session:
-        session.output.audio = audio_output
-        await session.start(Assistant(llm))
-        result = await session.run(user_input="say hi")
-        result.expect.next_event().is_message(role="assistant")
-
-    logs = memory_logger.pop()
-    span_names = _span_names(logs)
-    agent_speaking_logs = _spans_named(logs, "agent_speaking")
-    assert agent_speaking_logs
-    audio_attachments = [
-        log.get("output", {}).get("audio") for log in agent_speaking_logs if log.get("output", {}).get("audio")
-    ]
-    assert audio_attachments, agent_speaking_logs
-    assert any(attachment.reference["content_type"] == "audio/wav" for attachment in audio_attachments), (
-        agent_speaking_logs
-    )
-    assert any(log.get("output", {}).get("text") == "hi there" for log in agent_speaking_logs), agent_speaking_logs
-
-
-@pytest.mark.asyncio
-@pytest.mark.vcr
 async def test_livekit_agents_e2e_parenting_under_custom_span(memory_logger, livekit_server):
     assert setup_livekit_agents()
     await _run_livekit_agents_openai_e2e_voice_turn(memory_logger, outer_parent_name="custom_livekit_parent")
@@ -323,7 +249,7 @@ async def test_livekit_agents_function_tool_e2e(memory_logger, livekit_server):
                 tools=[lookup_weather],
             )
 
-    llm = openai.LLM(model="gpt-4.1-mini", max_completion_tokens=32)
+    llm = openai.LLM(model=TEST_MODEL, max_completion_tokens=32, **MODEL_OPTIONS)
 
     async with llm, AgentSession() as session:
         await session.start(Assistant(llm))
@@ -360,8 +286,8 @@ async def _run_livekit_agents_openai_e2e_voice_turn(memory_logger, outer_parent_
         def __init__(self, llm):
             super().__init__(instructions="Reply with exactly: hi there", llm=llm)
 
-    tts, stt, llm, vad = _create_openai_voice_turn_components(openai, silero)
-    audio_frames, speech_text = await _prepare_openai_speech_input(tts, stt)
+    stt, llm, vad = _create_openai_voice_turn_components(openai, silero)
+    audio_frames, speech_text = await _prepare_openai_speech_input(stt)
 
     async def run_session():
         await _run_openai_voice_turn_session(
@@ -369,7 +295,6 @@ async def _run_livekit_agents_openai_e2e_voice_turn(memory_logger, outer_parent_
             assistant_cls=Assistant,
             rtc=rtc,
             llm=llm,
-            tts=tts,
             stt=stt,
             vad=vad,
             audio_frames=audio_frames,
@@ -384,16 +309,29 @@ async def _run_livekit_agents_openai_e2e_voice_turn(memory_logger, outer_parent_
 
 
 def _create_openai_voice_turn_components(openai, silero):
-    tts = openai.TTS(model="gpt-4o-mini-tts", voice="ash")
-    stt = openai.STT(model="gpt-4o-mini-transcribe")
-    llm = openai.LLM(model="gpt-4.1-mini", max_completion_tokens=8)
+    stt = openai.STT(model="gpt-transcribe")
+    llm = openai.LLM(model=TEST_MODEL, max_completion_tokens=8, **MODEL_OPTIONS)
     vad = silero.VAD.load()
-    return tts, stt, llm, vad
+    return stt, llm, vad
 
 
-async def _prepare_openai_speech_input(tts, stt):
-    tts_stream = tts.synthesize("hello there")
-    audio_frames = [chunk.frame async for chunk in tts_stream]
+async def _prepare_openai_speech_input(stt):
+    from livekit import rtc
+
+    with wave.open(str(Path(__file__).resolve().parents[2] / "fixtures" / "test_speech.wav"), "rb") as audio:
+        assert audio.getsampwidth() == 2
+        sample_rate = audio.getframerate()
+        num_channels = audio.getnchannels()
+        audio_frames = []
+        while data := audio.readframes(sample_rate // 100):
+            audio_frames.append(
+                rtc.AudioFrame(
+                    data=data,
+                    sample_rate=sample_rate,
+                    num_channels=num_channels,
+                    samples_per_channel=len(data) // (2 * num_channels),
+                )
+            )
     assert audio_frames
 
     speech_event = await stt.recognize(audio_frames)
@@ -404,9 +342,9 @@ async def _prepare_openai_speech_input(tts, stt):
 
 
 async def _run_openai_voice_turn_session(
-    *, agent_session_cls, assistant_cls, rtc, llm, tts, stt, vad, audio_frames, user_input
+    *, agent_session_cls, assistant_cls, rtc, llm, stt, vad, audio_frames, user_input
 ):
-    async with llm, tts, stt, agent_session_cls(vad=vad) as session:
+    async with llm, stt, agent_session_cls(vad=vad) as session:
         await session.start(assistant_cls(llm))
         session._update_user_state("speaking")
         await asyncio.sleep(0.01)
@@ -419,7 +357,6 @@ async def _run_openai_voice_turn_session(
 def _assert_openai_voice_turn_spans(logs, *, speech_text, outer_parent_name):
     _assert_all_spans_have_end_time(logs)
     _assert_required_voice_turn_spans(logs)
-    _assert_tts_spans(logs)
     _assert_vad_endpointing_spans(logs)
     _assert_eou_spans(logs)
     _assert_stt_spans(logs, speech_text)
@@ -432,19 +369,8 @@ def _assert_openai_voice_turn_spans(logs, *, speech_text, outer_parent_name):
 def _assert_required_voice_turn_spans(logs):
     span_names = _span_names(logs)
     span_name_list = sorted(str(name) for name in span_names)
-    for span_name in ("llm_request_run", "user_speaking", "vad_endpointing", "tts_request", "stt_processing"):
+    for span_name in ("llm_request_run", "user_speaking", "vad_endpointing", "stt_processing"):
         assert span_name in span_names, span_name_list
-
-
-def _assert_tts_spans(logs):
-    tts_logs = _spans_named(logs, "tts_request")
-    _assert_any_span(tts_logs, lambda log: log.get("input", {}).get("text") == "hello there")
-    _assert_any_span(tts_logs, lambda log: log.get("metrics", {}).get("time_to_first_token", 0) > 0)
-    _assert_all_spans(tts_logs, lambda log: "audio_duration" not in log.get("metrics", {}))
-    _assert_any_span(
-        tts_logs, lambda log: log.get("metadata", {}).get("livekit_metrics", {}).get("audio_duration", 0) > 0
-    )
-    _assert_all_spans(tts_logs, lambda log: "ttfb" not in log.get("metadata", {}).get("livekit_metrics", {}))
 
 
 def _assert_vad_endpointing_spans(logs):

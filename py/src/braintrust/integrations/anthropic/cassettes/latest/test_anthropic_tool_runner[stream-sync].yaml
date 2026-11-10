@@ -1,7 +1,7 @@
 interactions:
 - request:
     body: '{"max_tokens":256,"messages":[{"role":"user","content":"Use the add tool
-      to calculate 123 + 456. Reply with just the result."}],"model":"claude-haiku-4-5-20251001","stream":true,"thread":{"type":"create"},"tools":[{"name":"add","description":"Add
+      to calculate 123 + 456. Reply with just the result."}],"model":"claude-haiku-5-5","stream":true,"thread":{"type":"create"},"tools":[{"name":"add","description":"Add
       two integers.","input_schema":{"additionalProperties":false,"properties":{"a":{"description":"First
       integer.","title":"A","type":"integer"},"b":{"description":"Second integer.","title":"B","type":"integer"}},"required":["a","b"],"type":"object"}}]}'
     headers:
@@ -16,7 +16,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '495'
+      - '486'
       content-type:
       - application/json
       host:
@@ -55,12 +55,12 @@ interactions:
     body:
       string: 'event: message_start
 
-        data: {"type":"message_start","message":{"model":"claude-haiku-4-5-20251001","id":"msg_011Cgshh97htwv5Ja36Wgb5Z","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":617,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":21,"service_tier":"standard","inference_geo":"not_available","speed":"standard"},"diagnostics":null}       }
+        data: {"type":"message_start","message":{"model":"claude-haiku-5-5","id":"msg_011CguWe4JdZMNJvQQn16my1","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":442,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":16,"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}        }
 
 
         event: content_block_start
 
-        data: {"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"toolu_01KFpZnwKE4LbWevKSjiEm8T","name":"add","input":{},"caller":{"type":"direct"}}            }
+        data: {"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"toolu_017wxiDboBLQmNAeurjFxhDP","name":"add","input":{},"caller":{"type":"direct"}}            }
 
 
         event: ping
@@ -70,44 +70,44 @@ interactions:
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":""}           }
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":""}      }
 
 
         event: content_block_delta
 
         data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\"a\":
-        1"} }
+        1"}              }
 
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"23"}}
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"23"}  }
 
 
         event: content_block_delta
 
         data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":",
-        \"b\": "}          }
+        \"b\": "}   }
 
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"456}"}           }
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"456}"}   }
 
 
         event: content_block_stop
 
-        data: {"type":"content_block_stop","index":0}
+        data: {"type":"content_block_stop","index":0         }
 
 
         event: message_delta
 
-        data: {"type":"message_delta","delta":{"stop_reason":"tool_use","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":617,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":69}              }
+        data: {"type":"message_delta","delta":{"stop_reason":"tool_use","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":442,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":66,"output_tokens_details":{"thinking_tokens":0}}            }
 
 
         event: message_stop
 
-        data: {"type":"message_stop"             }
+        data: {"type":"message_stop"       }
 
 
         '
@@ -119,25 +119,25 @@ interactions:
       anthropic-ratelimit-input-tokens-remaining:
       - '10000000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-11-09T16:53:12Z'
+      - '2026-11-10T15:49:27Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-11-09T16:53:12Z'
+      - '2026-11-10T15:49:27Z'
       anthropic-ratelimit-requests-limit:
-      - '20000'
+      - '45000'
       anthropic-ratelimit-requests-remaining:
-      - '19999'
+      - '44999'
       anthropic-ratelimit-requests-reset:
-      - '2026-11-09T16:53:12Z'
+      - '2026-11-10T15:49:27Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
       - '12000000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-11-09T16:53:12Z'
+      - '2026-11-10T15:49:27Z'
       anthropic-workspace-id:
       - wrkspc_018bFG1FgNVWqx5pthtdGTzS
       cache-control:
@@ -145,27 +145,27 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a57e551258e4aab4-YYZ
+      - a586350d2a62cf1c-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1908'
+      - '1935'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 09 Nov 2026 16:53:13 GMT
+      - Tue, 10 Nov 2026 15:49:27 GMT
       request-id:
-      - req_011Cgshh8WViE5fvD46brmEP
+      - req_011CguWe46z9hroDBBk4WYGy
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=196
+      - x-originResponse;dur=95
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-1fe09a3f25d0bff42f4999ae8b55fc9a-e294f4b89773d59c-01
+      - 00-2f141d13967a837bf6c8c7fc8d386fda-894694f696a7c193-01
       transfer-encoding:
       - chunked
       vary:
@@ -176,7 +176,7 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"max_tokens":256,"messages":[{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_01KFpZnwKE4LbWevKSjiEm8T","content":"579"}]}],"model":"claude-haiku-4-5-20251001","stream":true,"thread":{"type":"continue","previous_message_id":"msg_011Cgshh97htwv5Ja36Wgb5Z"}}'
+    body: '{"max_tokens":256,"messages":[{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_017wxiDboBLQmNAeurjFxhDP","content":"579"}]}],"model":"claude-haiku-5-5","stream":true,"thread":{"type":"continue","previous_message_id":"msg_011CguWe4JdZMNJvQQn16my1"}}'
     headers:
       accept:
       - application/json
@@ -189,7 +189,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '277'
+      - '268'
       content-type:
       - application/json
       host:
@@ -228,13 +228,13 @@ interactions:
     body:
       string: 'event: message_start
 
-        data: {"type":"message_start","message":{"model":"claude-haiku-4-5-20251001","id":"msg_011CgshhCdJL8EHktQBw5CCg","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":699,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":1,"service_tier":"standard","inference_geo":"not_available","speed":"standard"},"diagnostics":null}
-        }
+        data: {"type":"message_start","message":{"model":"claude-haiku-5-5","id":"msg_011CguWe8TAwSExrzJLyywoe","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":514,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":1,"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}             }
 
 
         event: content_block_start
 
-        data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}  }
+        data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}
+        }
 
 
         event: ping
@@ -244,22 +244,22 @@ interactions:
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"579"}   }
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"579"}  }
 
 
         event: content_block_stop
 
-        data: {"type":"content_block_stop","index":0            }
+        data: {"type":"content_block_stop","index":0             }
 
 
         event: message_delta
 
-        data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":699,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":4}        }
+        data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":514,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":3,"output_tokens_details":{"thinking_tokens":0}}   }
 
 
         event: message_stop
 
-        data: {"type":"message_stop"  }
+        data: {"type":"message_stop"              }
 
 
         '
@@ -271,25 +271,25 @@ interactions:
       anthropic-ratelimit-input-tokens-remaining:
       - '10000000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-11-09T16:53:13Z'
+      - '2026-11-10T15:49:28Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-11-09T16:53:13Z'
+      - '2026-11-10T15:49:28Z'
       anthropic-ratelimit-requests-limit:
-      - '20000'
+      - '45000'
       anthropic-ratelimit-requests-remaining:
-      - '19999'
+      - '44999'
       anthropic-ratelimit-requests-reset:
-      - '2026-11-09T16:53:13Z'
+      - '2026-11-10T15:49:28Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
       - '12000000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-11-09T16:53:13Z'
+      - '2026-11-10T15:49:28Z'
       anthropic-workspace-id:
       - wrkspc_018bFG1FgNVWqx5pthtdGTzS
       cache-control:
@@ -297,27 +297,27 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a57e55180e63aab4-YYZ
+      - a58635133962cf1c-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1221'
+      - '1269'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 09 Nov 2026 16:53:13 GMT
+      - Tue, 10 Nov 2026 15:49:28 GMT
       request-id:
-      - req_011CgshhCT8hW2X27AD2qaX2
+      - req_011CguWe8HFzJDEeJPZ5xr59
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=93
+      - x-originResponse;dur=92
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-ffc410784e6e62088d25fe273e21f172-9123cf10d2feff2d-01
+      - 00-516faa51cda900d0e95783e8637a4c2a-b87663169130b57c-01
       transfer-encoding:
       - chunked
       vary:

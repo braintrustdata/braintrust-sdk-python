@@ -1,7 +1,7 @@
 interactions:
 - request:
     body: '{"messages":[{"role":"developer","content":"Answer with the final number
-      only."},{"role":"user","content":"What is 10*5?"}],"model":"gpt-4o-mini"}'
+      only."},{"role":"user","content":"What is 10*5?"}],"model":"gpt-6-luna","reasoning_effort":"none"}'
     headers:
       accept:
       - application/json
@@ -10,7 +10,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '146'
+      - '171'
       content-type:
       - application/json
       host:
@@ -34,22 +34,23 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.6
+      - 3.13.16
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EIywG7zJIm3rEjRqSka6Y05uoiaT6\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1788192860,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiikAgyvTlpNK9lwTRX030T6TXzTK\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794327134,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"50\",\n        \"refusal\": null,\n
-        \       \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\":
-        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 25,\n    \"completion_tokens\":
-        1,\n    \"total_tokens\": 26,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
-        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_70cf485092\"\n}\n"
+        \       \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 24,\n    \"completion_tokens\":
+        4,\n    \"total_tokens\": 28,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"cache_write_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n
+        \   \"completion_tokens_details\": {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\":
+        0,\n      \"accepted_prediction_tokens\": 0,\n      \"rejected_prediction_tokens\":
+        0\n    }\n  },\n  \"service_tier\": \"default\",\n  \"system_fingerprint\":
+        null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -60,17 +61,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a33d53e0b8f264a6-YYZ
+      - a586566cea7fb8f3-YYZ
       connection:
       - keep-alive
       content-length:
-      - '808'
+      - '792'
       content-type:
       - application/json
       date:
-      - Mon, 31 Aug 2026 16:14:20 GMT
+      - Tue, 10 Nov 2026 16:12:20 GMT
       openai-processing-ms:
-      - '354'
+      - '6349'
       openai-version:
       - '2020-10-01'
       server:
@@ -86,22 +87,22 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999985'
+      - '179999985'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_c4eba1a6ad8d4e56bbf325781955e0d1
+      - req_15b3b22fe0574f05af770c2f149fa070
     status:
       code: 200
       message: OK
 - request:
-    body: '{"session_id":"eval_18dd39fb-c74b-49ef-9a7d-bcb717cca9a5_1","run_id":"84f75567-8d13-44dd-ac0a-67f10de07dfb","data":{"agent_id":"math-agent","db_type":null,"model_provider":"OpenAI","model_name":"OpenAIChat","model_id":"gpt-4o-mini","parser_model":null,"output_model":null,"has_tools":true,"has_memory":false,"has_learnings":false,"has_culture":false,"has_reasoning":false,"has_knowledge":false,"has_input_schema":false,"has_output_schema":false,"has_team":false},"sdk_version":"2.4.0","type":"agent"}'
+    body: '{"session_id":"eval_a26522b8-11f0-4cbb-9c77-de5ec9a3152c_1","run_id":"8636b724-68aa-4c97-aa15-191ea5143e45","data":{"agent_id":"math-agent","db_type":null,"model_provider":"OpenAI","model_name":"OpenAIChat","model_id":"gpt-6-luna","parser_model":null,"output_model":null,"has_tools":true,"has_memory":false,"has_learnings":false,"has_culture":false,"has_reasoning":false,"has_knowledge":false,"has_input_schema":false,"has_output_schema":false,"has_team":false},"sdk_version":"2.4.0","type":"agent"}'
     headers:
       accept:
       - '*/*'
@@ -110,7 +111,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '500'
+      - '499'
       content-type:
       - application/json
       host:
@@ -121,7 +122,7 @@ interactions:
     uri: https://os-api.agno.com/telemetry/runs
   response:
     body:
-      string: '{"message":"Run creation acknowledged: 84f75567-8d13-44dd-ac0a-67f10de07dfb","status":"success"}'
+      string: '{"message":"Run creation acknowledged: 8636b724-68aa-4c97-aa15-191ea5143e45","status":"success"}'
     headers:
       content-length:
       - '96'
@@ -132,7 +133,7 @@ interactions:
       cross-origin-resource-policy:
       - same-origin
       date:
-      - Mon, 31 Aug 2026 16:14:21 GMT
+      - Tue, 10 Nov 2026 16:12:20 GMT
       permissions-policy:
       - camera=(), microphone=(), geolocation=()
       referrer-policy:
@@ -174,7 +175,7 @@ interactions:
       You must only compare the agent_output to the expected_output. The expected_output
       is correct as it was provided by the user.\"},{\"role\":\"user\",\"content\":\"<agent_input>\\nWhat
       is 10*5?\\n</agent_input>\\n\\n<expected_output>\\n50\\n</expected_output>\\n\\n<agent_output>\\n50\\n</agent_output>
-      \                   \"}],\"model\":\"gpt-4o-mini\",\"response_format\":{\"type\":\"json_schema\",\"json_schema\":{\"name\":\"AccuracyAgentResponse\",\"schema\":{\"properties\":{\"accuracy_score\":{\"description\":\"Accuracy
+      \                   \"}],\"model\":\"gpt-6-luna\",\"reasoning_effort\":\"none\",\"response_format\":{\"type\":\"json_schema\",\"json_schema\":{\"name\":\"AccuracyAgentResponse\",\"schema\":{\"properties\":{\"accuracy_score\":{\"description\":\"Accuracy
       Score between 1 and 10 assigned to the Agent's answer.\",\"title\":\"Accuracy
       Score\",\"type\":\"integer\"},\"accuracy_reason\":{\"description\":\"Detailed
       reasoning for the accuracy score.\",\"title\":\"Accuracy Reason\",\"type\":\"string\"}},\"required\":[\"accuracy_score\",\"accuracy_reason\"],\"title\":\"AccuracyAgentResponse\",\"type\":\"object\",\"additionalProperties\":false},\"strict\":true}}}"
@@ -186,7 +187,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '2569'
+      - '2594'
       content-type:
       - application/json
       host:
@@ -210,25 +211,25 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.6
+      - 3.13.16
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EIywI1zqV96n7bszIoWBYvxmQygqa\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1788192862,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiikHcZbtfyzF1ko5K8fnLbKe61yt\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794327141,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"{\\\"accuracy_score\\\":10,\\\"accuracy_reason\\\":\\\"The
-        agent_output is identical to the expected_output. It provided the correct
-        answer to the multiplication problem of 10*5, which is 50. There are no discrepancies
-        or omissions, making the response fully accurate and complete.\\\"}\",\n        \"refusal\":
-        null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
-        \     \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        494,\n    \"completion_tokens\": 55,\n    \"total_tokens\": 549,\n    \"prompt_tokens_details\":
-        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_d2f20b69d0\"\n}\n"
+        agent output is exactly \u201C50,\u201D matching the expected output. It is
+        accurate and complete, with no omissions or differences.\\\"}\",\n        \"refusal\":
+        null,\n        \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 491,\n    \"completion_tokens\":
+        43,\n    \"total_tokens\": 534,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"cache_write_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n
+        \   \"completion_tokens_details\": {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\":
+        0,\n      \"accepted_prediction_tokens\": 0,\n      \"rejected_prediction_tokens\":
+        0\n    }\n  },\n  \"service_tier\": \"default\",\n  \"system_fingerprint\":
+        null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -239,17 +240,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a33d53e61ce164a6-YYZ
+      - a5865696bb52b8f3-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1083'
+      - '971'
       content-type:
       - application/json
       date:
-      - Mon, 31 Aug 2026 16:14:23 GMT
+      - Tue, 10 Nov 2026 16:12:22 GMT
       openai-processing-ms:
-      - '1125'
+      - '1072'
       openai-version:
       - '2020-10-01'
       server:
@@ -265,22 +266,22 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999515'
+      - '179999517'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_e7a7225c06674f2ea8d414cbaff99bec
+      - req_15654c4511cb476e89264363c337dafb
     status:
       code: 200
       message: OK
 - request:
-    body: '{"session_id":"7ef8ab18-8bba-4bd0-ba26-9159e7a748cd","run_id":"81fd925a-d478-4d85-8f86-5874990cff5d","data":{"agent_id":"69898f54-b2b5-4cc3-9c99-70c8e12d8e5e","db_type":null,"model_provider":"OpenAI","model_name":"OpenAIChat","model_id":"gpt-4o-mini","parser_model":null,"output_model":null,"has_tools":true,"has_memory":false,"has_learnings":false,"has_culture":false,"has_reasoning":false,"has_knowledge":false,"has_input_schema":false,"has_output_schema":true,"has_team":false},"sdk_version":"2.4.0","type":"agent"}'
+    body: '{"session_id":"b2b38e01-7a14-4407-93fc-034a2f16fd30","run_id":"80a3b2d0-1bc0-43ff-9336-6d6a7d66f22d","data":{"agent_id":"147b31f8-894c-49af-9cbc-d7e50111736d","db_type":null,"model_provider":"OpenAI","model_name":"OpenAIChat","model_id":"gpt-6-luna","parser_model":null,"output_model":null,"has_tools":true,"has_memory":false,"has_learnings":false,"has_culture":false,"has_reasoning":false,"has_knowledge":false,"has_input_schema":false,"has_output_schema":true,"has_team":false},"sdk_version":"2.4.0","type":"agent"}'
     headers:
       accept:
       - '*/*'
@@ -289,7 +290,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '518'
+      - '517'
       content-type:
       - application/json
       host:
@@ -300,7 +301,7 @@ interactions:
     uri: https://os-api.agno.com/telemetry/runs
   response:
     body:
-      string: '{"message":"Run creation acknowledged: 81fd925a-d478-4d85-8f86-5874990cff5d","status":"success"}'
+      string: '{"message":"Run creation acknowledged: 80a3b2d0-1bc0-43ff-9336-6d6a7d66f22d","status":"success"}'
     headers:
       content-length:
       - '96'
@@ -311,7 +312,7 @@ interactions:
       cross-origin-resource-policy:
       - same-origin
       date:
-      - Mon, 31 Aug 2026 16:14:23 GMT
+      - Tue, 10 Nov 2026 16:12:22 GMT
       permissions-policy:
       - camera=(), microphone=(), geolocation=()
       referrer-policy:
@@ -328,7 +329,7 @@ interactions:
       code: 201
       message: Created
 - request:
-    body: '{"run_id":"18dd39fb-c74b-49ef-9a7d-bcb717cca9a5","eval_type":"accuracy","data":{"agent_id":"math-agent","team_id":null,"model_id":"gpt-4o-mini","model_provider":"OpenAI","num_iterations":1},"sdk_version":"2.4.0"}'
+    body: '{"run_id":"a26522b8-11f0-4cbb-9c77-de5ec9a3152c","eval_type":"accuracy","data":{"agent_id":"math-agent","team_id":null,"model_id":"gpt-6-luna","model_provider":"OpenAI","num_iterations":1},"sdk_version":"2.4.0"}'
     headers:
       accept:
       - '*/*'
@@ -337,7 +338,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '212'
+      - '211'
       content-type:
       - application/json
       host:
@@ -348,7 +349,7 @@ interactions:
     uri: https://os-api.agno.com/telemetry/evals
   response:
     body:
-      string: '{"message":"Eval creation acknowledged: 18dd39fb-c74b-49ef-9a7d-bcb717cca9a5","status":"success"}'
+      string: '{"message":"Eval creation acknowledged: a26522b8-11f0-4cbb-9c77-de5ec9a3152c","status":"success"}'
     headers:
       content-length:
       - '97'
@@ -359,7 +360,7 @@ interactions:
       cross-origin-resource-policy:
       - same-origin
       date:
-      - Mon, 31 Aug 2026 16:14:23 GMT
+      - Tue, 10 Nov 2026 16:12:22 GMT
       permissions-policy:
       - camera=(), microphone=(), geolocation=()
       referrer-policy:

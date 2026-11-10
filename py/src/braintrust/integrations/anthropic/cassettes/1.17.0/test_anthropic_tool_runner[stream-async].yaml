@@ -1,7 +1,7 @@
 interactions:
 - request:
     body: '{"max_tokens":256,"messages":[{"role":"user","content":"Use the add tool
-      to calculate 123 + 456. Reply with just the result."}],"model":"claude-haiku-4-5-20251001","tools":[{"name":"add","description":"Add
+      to calculate 123 + 456. Reply with just the result."}],"model":"claude-haiku-5-5","tools":[{"name":"add","description":"Add
       two integers.","input_schema":{"additionalProperties":false,"properties":{"a":{"description":"First
       integer.","title":"A","type":"integer"},"b":{"description":"Second integer.","title":"B","type":"integer"}},"required":["a","b"],"type":"object"}}],"stream":true}'
     headers:
@@ -14,7 +14,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '468'
+      - '459'
       content-type:
       - application/json
       host:
@@ -53,13 +53,12 @@ interactions:
     body:
       string: 'event: message_start
 
-        data: {"type":"message_start","message":{"model":"claude-haiku-4-5-20251001","id":"msg_011CgQuKyfehR3oRyup1oVjR","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":617,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":25,"service_tier":"standard","inference_geo":"not_available","speed":"standard"},"diagnostics":null}        }
+        data: {"type":"message_start","message":{"model":"claude-haiku-5-5","id":"msg_011CguZVoEQKgR1XvuwCB9aQ","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":442,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":16,"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}   }
 
 
         event: content_block_start
 
-        data: {"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"toolu_01W8LVhb1zxGJPTCZRxmNVCf","name":"add","input":{},"caller":{"type":"direct"}}
-        }
+        data: {"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"toolu_01E5qPxBAdJaULBatLXHsfJf","name":"add","input":{},"caller":{"type":"direct"}}            }
 
 
         event: ping
@@ -69,24 +68,24 @@ interactions:
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":""}        }
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":""}            }
 
 
         event: content_block_delta
 
         data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\"a\":
-        1"}           }
+        1"}      }
 
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"23"}               }
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"23"}  }
 
 
         event: content_block_delta
 
         data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":",
-        \"b\": "}              }
+        \"b\": "}       }
 
 
         event: content_block_delta
@@ -96,12 +95,12 @@ interactions:
 
         event: content_block_stop
 
-        data: {"type":"content_block_stop","index":0   }
+        data: {"type":"content_block_stop","index":0              }
 
 
         event: message_delta
 
-        data: {"type":"message_delta","delta":{"stop_reason":"tool_use","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":617,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":69}       }
+        data: {"type":"message_delta","delta":{"stop_reason":"tool_use","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":442,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":66,"output_tokens_details":{"thinking_tokens":0}}     }
 
 
         event: message_stop
@@ -118,25 +117,25 @@ interactions:
       anthropic-ratelimit-input-tokens-remaining:
       - '10000000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-10-26T13:09:45Z'
+      - '2026-11-10T16:26:55Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-10-26T13:09:45Z'
+      - '2026-11-10T16:26:55Z'
       anthropic-ratelimit-requests-limit:
-      - '20000'
+      - '45000'
       anthropic-ratelimit-requests-remaining:
-      - '19999'
+      - '44999'
       anthropic-ratelimit-requests-reset:
-      - '2026-10-26T13:09:45Z'
+      - '2026-11-10T16:26:55Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
       - '12000000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-10-26T13:09:45Z'
+      - '2026-11-10T16:26:55Z'
       anthropic-workspace-id:
       - wrkspc_018bFG1FgNVWqx5pthtdGTzS
       cache-control:
@@ -144,27 +143,27 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a509b27c5cdcac09-YYZ
+      - a5866bf1be1757af-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1910'
+      - '1934'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 26 Oct 2026 13:09:45 GMT
+      - Tue, 10 Nov 2026 16:26:56 GMT
       request-id:
-      - req_011CgQuKyUFNGGeyQxTDhpf7
+      - req_011CguZVo1WSyBTfFDz8nqH4
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=99
+      - x-originResponse;dur=94
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-7a74109481921ab436f53c26a4273a53-fe58203438d2d535-01
+      - 00-dd98b373f4b7a748581dab40613096fd-9339de2d98252fdf-01
       transfer-encoding:
       - chunked
       vary:
@@ -176,7 +175,7 @@ interactions:
       message: OK
 - request:
     body: '{"max_tokens":256,"messages":[{"role":"user","content":"Use the add tool
-      to calculate 123 + 456. Reply with just the result."},{"role":"assistant","content":[{"id":"toolu_01W8LVhb1zxGJPTCZRxmNVCf","input":{"a":123,"b":456},"name":"add","type":"tool_use","caller":{"type":"direct"}}]},{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_01W8LVhb1zxGJPTCZRxmNVCf","content":"579"}]}],"model":"claude-haiku-4-5-20251001","tools":[{"name":"add","description":"Add
+      to calculate 123 + 456. Reply with just the result."},{"role":"assistant","content":[{"id":"toolu_01E5qPxBAdJaULBatLXHsfJf","input":{"a":123,"b":456},"name":"add","type":"tool_use","caller":{"type":"direct"}}]},{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_01E5qPxBAdJaULBatLXHsfJf","content":"579"}]}],"model":"claude-haiku-5-5","tools":[{"name":"add","description":"Add
       two integers.","input_schema":{"additionalProperties":false,"properties":{"a":{"description":"First
       integer.","title":"A","type":"integer"},"b":{"description":"Second integer.","title":"B","type":"integer"}},"required":["a","b"],"type":"object"}}],"stream":true}'
     headers:
@@ -189,7 +188,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '739'
+      - '730'
       content-type:
       - application/json
       host:
@@ -228,12 +227,12 @@ interactions:
     body:
       string: 'event: message_start
 
-        data: {"type":"message_start","message":{"model":"claude-haiku-4-5-20251001","id":"msg_011CgQuL2TpQRGeTuBET329V","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":699,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":1,"service_tier":"standard","inference_geo":"not_available","speed":"standard"},"diagnostics":null}              }
+        data: {"type":"message_start","message":{"model":"claude-haiku-5-5","id":"msg_011CguZVsGV8GR2kAPUQuj1A","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":514,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":1,"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}      }
 
 
         event: content_block_start
 
-        data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}     }
+        data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}            }
 
 
         event: ping
@@ -243,22 +242,22 @@ interactions:
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"579"}  }
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"579"}     }
 
 
         event: content_block_stop
 
-        data: {"type":"content_block_stop","index":0       }
+        data: {"type":"content_block_stop","index":0           }
 
 
         event: message_delta
 
-        data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":699,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":4}       }
+        data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":514,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":3,"output_tokens_details":{"thinking_tokens":0}}               }
 
 
         event: message_stop
 
-        data: {"type":"message_stop"  }
+        data: {"type":"message_stop"    }
 
 
         '
@@ -270,25 +269,25 @@ interactions:
       anthropic-ratelimit-input-tokens-remaining:
       - '10000000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-10-26T13:09:45Z'
+      - '2026-11-10T16:26:56Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-10-26T13:09:45Z'
+      - '2026-11-10T16:26:56Z'
       anthropic-ratelimit-requests-limit:
-      - '20000'
+      - '45000'
       anthropic-ratelimit-requests-remaining:
-      - '19999'
+      - '44999'
       anthropic-ratelimit-requests-reset:
-      - '2026-10-26T13:09:45Z'
+      - '2026-11-10T16:26:56Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
       - '12000000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-10-26T13:09:45Z'
+      - '2026-11-10T16:26:56Z'
       anthropic-workspace-id:
       - wrkspc_018bFG1FgNVWqx5pthtdGTzS
       cache-control:
@@ -296,27 +295,27 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a509b2807b48ac09-YYZ
+      - a5866bf79ec957af-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1230'
+      - '1276'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 26 Oct 2026 13:09:46 GMT
+      - Tue, 10 Nov 2026 16:26:57 GMT
       request-id:
-      - req_011CgQuL2ES97YLGnSoMdU5Y
+      - req_011CguZVs6pJT4CHY8oRCfGZ
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=105
+      - x-originResponse;dur=94
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-f5e9880997618dcb3e47d60f6d600fe3-70d3a7ea8b005fd6-01
+      - 00-1a81f363deb26f2220428ee16cc793af-72ae81852a295722-01
       transfer-encoding:
       - chunked
       vary:

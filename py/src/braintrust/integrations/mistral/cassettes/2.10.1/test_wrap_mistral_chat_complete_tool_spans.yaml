@@ -1,7 +1,7 @@
 interactions:
 - request:
-    body: '{"model":"mistral-small-latest","messages":[{"content":"Use get_weather
-      for Paris. Do not answer directly.","role":"user"}],"max_tokens":100,"stream":false,"tools":[{"function":{"name":"get_weather","parameters":{"type":"object","properties":{"city":{"type":"string"}},"required":["city"]},"description":"Get
+    body: '{"model":"ministral-3b-2512","messages":[{"content":"Use get_weather for
+      Paris. Do not answer directly.","role":"user"}],"max_tokens":100,"stream":false,"tools":[{"function":{"name":"get_weather","parameters":{"type":"object","properties":{"city":{"type":"string"}},"required":["city"]},"description":"Get
       the weather for a city."},"type":"function"}],"tool_choice":"any"}'
     headers:
       accept:
@@ -11,18 +11,18 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '375'
+      - '372'
       content-type:
       - application/json
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.9.0
+      - mistral-client-python/2.10.1
     method: POST
     uri: https://api.mistral.ai/v1/chat/completions
   response:
     body:
-      string: '{"id":"e04a24cbd09b48b78ee190e16a7f0786","created":1785860146,"model":"mistral-small-latest","usage":{"prompt_tokens":88,"total_tokens":100,"completion_tokens":12,"prompt_tokens_details":{"cached_tokens":0},"service_tier":"standard"},"object":"chat.completion","choices":[{"index":0,"finish_reason":"tool_calls","message":{"role":"assistant","tool_calls":[{"id":"xiAXfaXKp","type":"function","function":{"name":"get_weather","arguments":"{\"city\":
+      string: '{"id":"ef0163c3b6184b9b8d1d104338c38bf5","created":1794327184,"model":"ministral-3b-2512","usage":{"prompt_tokens":76,"total_tokens":88,"completion_tokens":12,"prompt_tokens_details":{"cached_tokens":0},"completion_tokens_details":{"reasoning_tokens":0},"service_tier":"standard"},"object":"chat.completion","choices":[{"index":0,"finish_reason":"tool_calls","message":{"role":"assistant","tool_calls":[{"id":"nMbio2agf","type":"function","function":{"name":"get_weather","arguments":"{\"city\":
         \"Paris\"}"},"index":0}],"content":""}}]}'
     headers:
       access-control-allow-origin:
@@ -32,17 +32,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a25edcd969361117-YYZ
+      - a58657a7cc35ebb5-YYZ
       connection:
       - keep-alive
       content-length:
-      - '490'
+      - '537'
       content-type:
       - application/json
       date:
-      - Tue, 04 Aug 2026 16:15:46 GMT
+      - Tue, 10 Nov 2026 16:13:04 GMT
       mistral-correlation-id:
-      - 019fcd8f-4423-7b53-a68a-0026d9f5a0fc
+      - 01a1c63c-051a-7743-9383-06fc77258628
       server:
       - cloudflare
       strict-transport-security:
@@ -52,25 +52,25 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '363'
+      - '182'
       x-kong-proxy-latency:
-      - '12'
+      - '28'
       x-kong-request-id:
-      - 019fcd8f-4423-7b53-a68a-0026d9f5a0fc
+      - 01a1c63c-051a-7743-9383-06fc77258628
       x-kong-upstream-latency:
-      - '364'
+      - '183'
       x-max-retry-attempts-reached:
       - 'false'
       x-ratelimit-limit-req-minute:
-      - '50'
+      - '3000'
       x-ratelimit-limit-tokens-minute:
-      - '50000'
+      - '2000000'
       x-ratelimit-remaining-req-minute:
-      - '48'
+      - '2995'
       x-ratelimit-remaining-tokens-minute:
-      - '49870'
+      - '1999336'
       x-ratelimit-tokens-query-cost:
-      - '100'
+      - '88'
     status:
       code: 200
       message: OK

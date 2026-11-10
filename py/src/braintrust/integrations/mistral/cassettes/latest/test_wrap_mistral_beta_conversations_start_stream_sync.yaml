@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"inputs":"What is 3+4? Reply with just the number.","stream":true,"model":"mistral-small-latest"}'
+    body: '{"inputs":"What is 3+4? Reply with just the number.","stream":true,"model":"ministral-3b-2512"}'
     headers:
       accept:
       - text/event-stream
@@ -9,7 +9,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '98'
+      - '95'
       content-type:
       - application/json
       host:
@@ -22,17 +22,17 @@ interactions:
     body:
       string: 'event: conversation.response.started
 
-        data: {"type":"conversation.response.started","created_at":"2026-11-02T13:49:58.758015Z","conversation_id":"conv_01a19c862177752ba6a8287c56d1f2ba"}
+        data: {"type":"conversation.response.started","created_at":"2026-11-10T15:53:37.042622Z","conversation_id":"conv_01a1c62a3379735e8023d23e68ebbd84"}
 
 
         event: message.output.delta
 
-        data: {"type":"message.output.delta","created_at":"2026-11-02T13:49:58.764011Z","output_index":0,"id":"msg_01a19c86226b73bd8a24ec943867a599","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"7"}
+        data: {"type":"message.output.delta","created_at":"2026-11-10T15:53:37.045788Z","output_index":0,"id":"msg_01a1c62a34157791b8b59553e7907b25","content_index":0,"model":"ministral-3b-2512","role":"assistant","content":"7"}
 
 
         event: conversation.response.done
 
-        data: {"type":"conversation.response.done","created_at":"2026-11-02T13:49:58.800750Z","usage":{"prompt_tokens":16,"completion_tokens":2,"total_tokens":18}}
+        data: {"type":"conversation.response.done","created_at":"2026-11-10T15:53:37.064667Z","usage":{"prompt_tokens":16,"completion_tokens":2,"total_tokens":18}}
 
 
         '
@@ -44,15 +44,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5439b081f16961e-YYZ
+      - a5863b24ed41a450-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 02 Nov 2026 13:49:58 GMT
+      - Tue, 10 Nov 2026 15:53:37 GMT
       mistral-correlation-id:
-      - 01a19c86-2150-703c-a0a6-6dcb85aba29d
+      - 01a1c62a-3354-7964-9280-dc0b8b17f844
       server:
       - cloudflare
       strict-transport-security:
@@ -62,13 +62,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '269'
+      - '174'
       x-kong-proxy-latency:
       - '13'
       x-kong-request-id:
-      - 01a19c86-2150-703c-a0a6-6dcb85aba29d
+      - 01a1c62a-3354-7964-9280-dc0b8b17f844
       x-kong-upstream-latency:
-      - '271'
+      - '177'
     status:
       code: 200
       message: OK

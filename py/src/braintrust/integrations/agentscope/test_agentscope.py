@@ -13,6 +13,9 @@ from braintrust.test_helpers import init_test_logger
 from packaging.version import Version
 
 
+TEST_MODEL = "gpt-6-luna"
+MODEL_OPTIONS = {"reasoning_effort": "none"}
+
 PROJECT_NAME = "test_agentscope"
 
 setup_agentscope(project_name=PROJECT_NAME)
@@ -38,7 +41,7 @@ def _span_type(span):
     return span_type.value if hasattr(span_type, "value") else span_type
 
 
-def _make_model(*, stream: bool = False, api_key: str | None = None):
+def _make_model(*, stream: bool = False, api_key: str | None = None, tool_choice: str | None = None):
     from agentscope.model import OpenAIChatModel
 
     resolved_api_key = api_key if api_key is not None else os.environ["OPENAI_API_KEY"]
@@ -47,17 +50,17 @@ def _make_model(*, stream: bool = False, api_key: str | None = None):
 
         return OpenAIChatModel(
             credential=OpenAICredential(api_key=resolved_api_key),
-            model="gpt-4o-mini",
-            parameters=OpenAIChatModel.Parameters(temperature=0),
+            model=TEST_MODEL,
+            parameters=OpenAIChatModel.Parameters(thinking_enable=True, **MODEL_OPTIONS),
             stream=stream,
             max_retries=0,
         )
 
     return OpenAIChatModel(
-        model_name="gpt-4o-mini",
+        model_name=TEST_MODEL,
         api_key=resolved_api_key,
         stream=stream,
-        generate_kwargs={"temperature": 0},
+        generate_kwargs={**MODEL_OPTIONS, **({"tool_choice": tool_choice} if tool_choice else {})},
     )
 
 
@@ -116,6 +119,7 @@ async def test_agentscope_simple_agent_run(memory_logger):
     agent = _make_agent(
         "Friday",
         "You are a concise assistant. Answer in one sentence.",
+        model=_make_model(tool_choice="none"),
     )
 
     response = await _run_agent(agent, "Say hello in exactly two words.")
@@ -130,7 +134,7 @@ async def test_agentscope_simple_agent_run(memory_logger):
     assert _span_type(agent_span) == "task"
     assert llm_spans
     llm_span = llm_spans[0]
-    assert llm_span["metadata"]["model"] == "gpt-4o-mini"
+    assert llm_span["metadata"]["model"] == TEST_MODEL
     assert llm_span["metadata"]["provider"] == "openai"
     assert "args" not in llm_span["input"]
     assert llm_span["input"]["messages"][0]["role"] == "system"
@@ -248,7 +252,7 @@ async def test_agentscope_streaming_model_call(memory_logger):
     llm_span = llm_spans[0]
 
     assert llm_span["metadata"]["provider"] == "openai"
-    assert llm_span["metadata"]["model"] == "gpt-4o-mini"
+    assert llm_span["metadata"]["model"] == TEST_MODEL
     assert llm_span["output"]["role"] == "assistant"
     assert llm_span["output"]["content"]
     assert llm_span["metrics"]["time_to_first_token"] > 0

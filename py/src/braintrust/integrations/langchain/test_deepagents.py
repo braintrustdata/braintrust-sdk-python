@@ -28,7 +28,8 @@ def clear_langchain_handler():
 def _chat_model():
     langchain_openai = importlib.import_module("langchain_openai")
     return langchain_openai.ChatOpenAI(
-        model="gpt-4o-mini",
+        model="gpt-6-luna",
+        reasoning_effort="none",
         temperature=0,
         max_completion_tokens=20,
     )

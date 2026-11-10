@@ -21,7 +21,8 @@ from pydantic_ai.usage import UsageLimits
 
 
 PROJECT_NAME = "test-pydantic-ai-integration"
-MODEL = "openai:gpt-4o-mini"  # Use cheaper model for tests
+MODEL = "openai:gpt-6-luna"
+OPENAI_SETTINGS = {"openai_reasoning_effort": "none"}
 TEST_PROMPT = "What is 2+2? Answer with just the number."
 MAX_REASONABLE_TTFT_SECONDS = 30.0
 CONVERSATION_SUPPORTED = Version(pydantic_ai.__version__) >= Version("2.55.0")
@@ -232,14 +233,16 @@ async def test_agent_run_async(memory_logger, agent_kind):
     assert not memory_logger.pop()
     run_kwargs = {}
     if agent_kind == "runtime_model":
-        agent = Agent(model_settings=ModelSettings(max_tokens=50))
+        agent = Agent(model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=50))
         run_kwargs["model"] = MODEL
     elif agent_kind == "wrapper":
         from pydantic_ai.agent.wrapper import WrapperAgent
 
-        agent = WrapperAgent(Agent(MODEL, name="wrapped-agent", model_settings=ModelSettings(max_tokens=50)))
+        agent = WrapperAgent(
+            Agent(MODEL, name="wrapped-agent", model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=50))
+        )
     else:
-        agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=50))
+        agent = Agent(MODEL, model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=50))
 
     start = time.time()
     result = await agent.run(TEST_PROMPT, **run_kwargs)
@@ -257,9 +260,9 @@ async def test_agent_run_async(memory_logger, agent_kind):
     assert agent_span["input"]["user_prompt"] == TEST_PROMPT
     assert "4" in str(agent_span["output"])
     assert chat_span["span_parents"] == [agent_span["span_id"]]
-    assert chat_span["span_attributes"]["name"].startswith("chat gpt-4o-mini")
+    assert chat_span["span_attributes"]["name"].startswith("chat gpt-6-luna")
     for span in (agent_span, chat_span):
-        assert span["metadata"]["model"] == "gpt-4o-mini"
+        assert span["metadata"]["model"] == "gpt-6-luna"
         assert span["metadata"]["provider"] == "openai"
         assert span["context"]["span_origin"]["instrumentation"]["name"] == "pydantic-ai-auto"
         _assert_metrics_are_valid(span["metrics"], start, end)
@@ -276,7 +279,7 @@ def test_agent_run_sync(memory_logger):
     """Test Agent.run_sync() synchronous method."""
     assert not memory_logger.pop()
 
-    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=50))
+    agent = Agent(MODEL, model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=50))
 
     start = time.time()
     result = agent.run_sync(TEST_PROMPT)
@@ -299,7 +302,7 @@ def test_agent_run_sync(memory_logger):
 
     # Check agent span
     assert agent_sync_span["span_attributes"]["type"] == SpanTypeAttribute.TASK
-    assert agent_sync_span["metadata"]["model"] == "gpt-4o-mini"
+    assert agent_sync_span["metadata"]["model"] == "gpt-6-luna"
     assert agent_sync_span["metadata"]["provider"] == "openai"
     assert TEST_PROMPT in str(agent_sync_span["input"])
     assert "4" in str(agent_sync_span["output"])
@@ -312,7 +315,7 @@ def test_agent_run_sync(memory_logger):
     assert _is_descendant(span_by_id, chat_span, agent_sync_span["span_id"]), (
         "chat span should be nested under agent_run_sync"
     )
-    assert chat_span["metadata"]["model"] == "gpt-4o-mini"
+    assert chat_span["metadata"]["model"] == "gpt-6-luna"
     assert chat_span["metadata"]["provider"] == "openai"
     _assert_metrics_are_valid(chat_span["metrics"], start, end)
 
@@ -330,7 +333,7 @@ def test_agent_to_cli_sync(memory_logger, monkeypatch):
 
     cli_signature = inspect.signature(Agent.to_cli_sync)
     message_history = [ModelRequest(parts=[UserPromptPart(content="Previous question")])]
-    agent = Agent(MODEL, name="cli-agent", model_settings=ModelSettings(max_tokens=50))
+    agent = Agent(MODEL, name="cli-agent", model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=50))
     captured = {}
 
     async def fake_run_chat(
@@ -364,7 +367,7 @@ def test_agent_to_cli_sync(memory_logger, monkeypatch):
     # model, model_settings, and usage_limits, so accept the expanded run_chat
     # call and assert optional input fields only when present.
     if "model_settings" in cli_signature.parameters:
-        cli_kwargs["model_settings"] = ModelSettings(max_tokens=20, temperature=0.2)
+        cli_kwargs["model_settings"] = ModelSettings(**OPENAI_SETTINGS, max_tokens=20, temperature=0.2)
     if "usage_limits" in cli_signature.parameters:
         cli_kwargs["usage_limits"] = UsageLimits(request_limit=3)
 
@@ -378,7 +381,7 @@ def test_agent_to_cli_sync(memory_logger, monkeypatch):
     cli_span = spans[0]
     assert cli_span["span_attributes"]["type"] == SpanTypeAttribute.TASK
     assert cli_span["span_attributes"]["name"] == "agent_to_cli_sync [cli-agent]"
-    assert cli_span["metadata"]["model"] == "gpt-4o-mini"
+    assert cli_span["metadata"]["model"] == "gpt-6-luna"
     assert cli_span["metadata"]["provider"] == "openai"
     assert cli_span["input"]["prog_name"] == "braintrust-cli"
     assert "message_history" in cli_span["input"]
@@ -408,7 +411,7 @@ async def test_multiple_identical_sequential_streams(memory_logger):
     async def run_multiple_identical_streams():
         # Make 3 identical streaming calls
         for i in range(3):
-            agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=50))
+            agent = Agent(MODEL, model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=50))
             async with agent.run_stream("Count from 1 to 3.") as result:
                 full_text = ""
                 async for text in result.stream_text(delta=True):
@@ -465,7 +468,7 @@ async def test_agent_run_stream(memory_logger):
     """Test Agent.run_stream() streaming method."""
     assert not memory_logger.pop()
 
-    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=100))
+    agent = Agent(MODEL, model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=100))
 
     start = time.time()
     full_text = ""
@@ -491,13 +494,13 @@ async def test_agent_run_stream(memory_logger):
 
     # Check agent span
     assert agent_span["span_attributes"]["type"] == SpanTypeAttribute.TASK
-    assert agent_span["metadata"]["model"] == "gpt-4o-mini"
+    assert agent_span["metadata"]["model"] == "gpt-6-luna"
     assert "Count from 1 to 5" in str(agent_span["input"])
     _assert_metrics_are_valid(agent_span["metrics"], start, end)
 
     # Check chat span is nested under agent span
     assert chat_span["span_parents"] == [agent_span["span_id"]], "chat span should be nested under agent_run_stream"
-    assert chat_span["metadata"]["model"] == "gpt-4o-mini"
+    assert chat_span["metadata"]["model"] == "gpt-6-luna"
     assert chat_span["metadata"]["provider"] == "openai"
     _assert_metrics_are_valid(chat_span["metrics"], start, end)
 
@@ -534,7 +537,7 @@ async def test_direct_model_request(memory_logger, direct):
     messages = [ModelRequest(parts=[UserPromptPart(content=TEST_PROMPT)])]
 
     start = time.time()
-    response = await direct.model_request(model=model, messages=messages)
+    response = await direct.model_request(model=model, messages=messages, model_settings=OPENAI_SETTINGS)
     end = time.time()
 
     # Verify response
@@ -550,7 +553,7 @@ async def test_direct_model_request(memory_logger, direct):
     assert direct_span["context"]["span_origin"]["instrumentation"]["name"] == "pydantic-ai-auto"
 
     assert direct_span["span_attributes"]["type"] == SpanTypeAttribute.TASK
-    assert direct_span["metadata"]["model"] == "gpt-4o-mini"
+    assert direct_span["metadata"]["model"] == "gpt-6-luna"
     assert direct_span["metadata"]["provider"] == "openai"
     assert TEST_PROMPT in str(direct_span["input"])
     assert "4" in str(direct_span["output"])
@@ -565,7 +568,7 @@ def test_direct_model_request_sync(memory_logger, direct):
     messages = [ModelRequest(parts=[UserPromptPart(content=TEST_PROMPT)])]
 
     start = time.time()
-    response = direct.model_request_sync(model=MODEL, messages=messages)
+    response = direct.model_request_sync(model=MODEL, messages=messages, model_settings=OPENAI_SETTINGS)
     end = time.time()
 
     # Verify response
@@ -580,7 +583,7 @@ def test_direct_model_request_sync(memory_logger, direct):
     span = next((s for s in spans if s["span_attributes"]["name"] == "model_request_sync"), None)
     assert span is not None, "model_request_sync span not found"
     assert span["span_attributes"]["type"] == SpanTypeAttribute.TASK
-    assert span["metadata"]["model"] == "gpt-4o-mini"
+    assert span["metadata"]["model"] == "gpt-6-luna"
     assert TEST_PROMPT in str(span["input"])
     _assert_metrics_are_valid(span["metrics"], start, end)
 
@@ -593,7 +596,7 @@ async def test_direct_model_request_with_settings(memory_logger, direct):
     assert not memory_logger.pop()
 
     messages = [ModelRequest(parts=[UserPromptPart(content="Say hello")])]
-    custom_settings = ModelSettings(max_tokens=50, temperature=0.7)
+    custom_settings = ModelSettings(**OPENAI_SETTINGS, max_tokens=50, temperature=0.7)
 
     start = time.time()
     result = await direct.model_request(
@@ -628,11 +631,11 @@ async def test_direct_model_request_with_settings(memory_logger, direct):
     chat_span = next(span for span in spans if span["span_attributes"]["type"] == SpanTypeAttribute.LLM)
     assert direct_span["context"]["span_origin"]["instrumentation"]["name"] == "pydantic-ai-auto"
     assert chat_span["span_parents"] == [direct_span["span_id"]]
-    assert chat_span["metadata"]["model"] == "gpt-4o-mini"
+    assert chat_span["metadata"]["model"] == "gpt-6-luna"
     assert chat_span["metadata"]["provider"] == "openai"
     _assert_metrics_are_valid(chat_span["metrics"], start, end)
 
-    assert direct_span["metadata"]["model"] == "gpt-4o-mini"
+    assert direct_span["metadata"]["model"] == "gpt-6-luna"
     assert direct_span["metadata"]["provider"] == "openai"
 
     _assert_metrics_are_valid(direct_span["metrics"], start, end)
@@ -652,7 +655,7 @@ async def test_direct_model_request_stream(memory_logger, direct):
     chunk_count = 0
     collected_text = ""
     seen_delta = False
-    async with direct.model_request_stream(model=model, messages=messages) as stream:
+    async with direct.model_request_stream(model=model, messages=messages, model_settings=OPENAI_SETTINGS) as stream:
         async for chunk in stream:
             chunk_count += 1
             # Extract text, skipping final PartStartEvent after deltas
@@ -685,7 +688,7 @@ async def test_direct_model_request_stream(memory_logger, direct):
     assert direct_span is not None
 
     assert direct_span["span_attributes"]["type"] == SpanTypeAttribute.TASK
-    assert direct_span["metadata"]["model"] == "gpt-4o-mini"
+    assert direct_span["metadata"]["model"] == "gpt-6-luna"
     _assert_metrics_are_valid(direct_span["metrics"], start, end)
 
     # CRITICAL: Verify time_to_first_token is captured in direct streaming
@@ -723,7 +726,7 @@ async def test_agent_structured_output(memory_logger):
         answer: int
         explanation: str
 
-    agent = Agent(MODEL, output_type=MathAnswer, model_settings=ModelSettings(max_tokens=200))
+    agent = Agent(MODEL, output_type=MathAnswer, model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=200))
 
     start = time.time()
     result = await agent.run("What is 10 + 15?")
@@ -747,7 +750,7 @@ async def test_agent_structured_output(memory_logger):
 
     # Check agent span
     assert agent_span["span_attributes"]["type"] == SpanTypeAttribute.TASK
-    assert agent_span["metadata"]["model"] == "gpt-4o-mini"
+    assert agent_span["metadata"]["model"] == "gpt-6-luna"
     assert agent_span["metadata"]["provider"] == "openai"
     assert "10 + 15" in str(agent_span["input"])
     assert "25" in str(agent_span["output"])
@@ -757,7 +760,7 @@ async def test_agent_structured_output(memory_logger):
     span_by_id = {s["span_id"]: s for s in spans}
 
     assert _is_descendant(span_by_id, chat_span, agent_span["span_id"]), "chat span should be nested under agent_run"
-    assert chat_span["metadata"]["model"] == "gpt-4o-mini"
+    assert chat_span["metadata"]["model"] == "gpt-6-luna"
     assert chat_span["metadata"]["provider"] == "openai"
     output_tool = next(
         (
@@ -795,12 +798,12 @@ async def test_agent_model_settings(memory_logger, settings_source):
     assert not memory_logger.pop()
     run_kwargs = {}
     if settings_source == "run":
-        agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=50))
-        settings = ModelSettings(max_tokens=200, temperature=0.9)
+        agent = Agent(MODEL, model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=50))
+        settings = ModelSettings(**OPENAI_SETTINGS, max_tokens=200, temperature=0.9)
         prompt = "Tell me a story"
         run_kwargs = {"model_settings": settings, "infer_name": False, "usage": RunUsage()}
     else:
-        settings = ModelSettings(max_tokens=100, temperature=0.5)
+        settings = ModelSettings(**OPENAI_SETTINGS, max_tokens=100, temperature=0.5)
         agent = Agent(MODEL, model_settings=settings)
         prompt = "Say hello"
 
@@ -828,7 +831,7 @@ async def test_agent_model_settings(memory_logger, settings_source):
     assert "model_settings" not in chat_span["metadata"]
     assert chat_span["span_parents"] == [agent_span["span_id"]]
     for span in (agent_span, chat_span):
-        assert span["metadata"]["model"] == "gpt-4o-mini"
+        assert span["metadata"]["model"] == "gpt-6-luna"
         assert span["metadata"]["provider"] == "openai"
         _assert_metrics_are_valid(span["metrics"], start, end)
 
@@ -840,7 +843,7 @@ async def test_agent_with_system_prompt_in_metadata(memory_logger):
     assert not memory_logger.pop()
 
     system_prompt = "You are a helpful AI assistant who speaks like a pirate."
-    agent = Agent(MODEL, system_prompt=system_prompt, model_settings=ModelSettings(max_tokens=100))
+    agent = Agent(MODEL, system_prompt=system_prompt, model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=100))
 
     start = time.time()
     result = await agent.run("What is the weather?")
@@ -866,7 +869,7 @@ async def test_agent_with_system_prompt_in_metadata(memory_logger):
     assert "system_prompt" not in agent_span["metadata"], "system_prompt should NOT be in agent_run metadata"
 
     # Verify other metadata is present
-    assert agent_span["metadata"]["model"] == "gpt-4o-mini"
+    assert agent_span["metadata"]["model"] == "gpt-6-luna"
     assert agent_span["metadata"]["provider"] == "openai"
 
 
@@ -878,7 +881,7 @@ async def test_agent_with_instructions_and_dynamic_system_prompt(memory_logger):
 
     instructions = "Answer with only the number requested by the user."
     dynamic_system_prompt = "The user is currently taking a math quiz."
-    agent = Agent(MODEL, instructions=instructions, model_settings=ModelSettings(max_tokens=100))
+    agent = Agent(MODEL, instructions=instructions, model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=100))
 
     @agent.system_prompt
     def add_dynamic_system_prompt():
@@ -908,7 +911,7 @@ def test_agent_run_stream_sync(memory_logger):
     """Test Agent.run_stream_sync() synchronous streaming method - verifies time_to_first_token."""
     assert not memory_logger.pop()
 
-    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=100))
+    agent = Agent(MODEL, model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=100))
 
     start = time.time()
     full_text = ""
@@ -934,7 +937,7 @@ def test_agent_run_stream_sync(memory_logger):
 
     # Check agent span
     assert agent_span["span_attributes"]["type"] == SpanTypeAttribute.TASK
-    assert agent_span["metadata"]["model"] == "gpt-4o-mini"
+    assert agent_span["metadata"]["model"] == "gpt-6-luna"
     assert "Count from 1 to 3" in str(agent_span["input"])
     _assert_metrics_are_valid(agent_span["metrics"], start, end)
 
@@ -959,7 +962,7 @@ def test_agent_run_stream_sync(memory_logger):
     assert _is_descendant(span_by_id, chat_span, agent_span["span_id"]), (
         "chat span should be nested under agent_run_stream_sync"
     )
-    assert chat_span["metadata"]["model"] == "gpt-4o-mini"
+    assert chat_span["metadata"]["model"] == "gpt-6-luna"
     assert chat_span["metadata"]["provider"] == "openai"
     # Chat span may not have complete metrics since it's an intermediate span
     assert "start" in chat_span["metrics"]
@@ -975,7 +978,7 @@ async def test_agent_run_stream_events(memory_logger):
     """Test Agent.run_stream_events() event streaming method."""
     assert not memory_logger.pop()
 
-    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=100))
+    agent = Agent(MODEL, model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=100))
 
     start = time.time()
     event_count = 0
@@ -1008,7 +1011,7 @@ async def test_agent_run_stream_events(memory_logger):
 
     # Check agent span has basic structure
     assert agent_span["span_attributes"]["type"] == SpanTypeAttribute.TASK
-    assert agent_span["metadata"]["model"] == "gpt-4o-mini"
+    assert agent_span["metadata"]["model"] == "gpt-6-luna"
     assert "5+5" in str(agent_span["input"]) or "What" in str(agent_span["input"])
     assert agent_span["metrics"]["event_count"] == event_count
     assert agent_span["output"]
@@ -1030,7 +1033,7 @@ async def test_agent_run_stream_events_direct_async_for_compatibility(memory_log
     """The Braintrust wrapper keeps the pre-v2 direct async-for usage working."""
     assert not memory_logger.pop()
 
-    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=50))
+    agent = Agent(MODEL, model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=50))
 
     event_count = 0
     async for event in agent.run_stream_events("What is 3+7?"):
@@ -1054,7 +1057,7 @@ def test_direct_model_request_stream_sync(memory_logger, direct):
 
     start = time.time()
     chunk_count = 0
-    with direct.model_request_stream_sync(model=MODEL, messages=messages) as stream:
+    with direct.model_request_stream_sync(model=MODEL, messages=messages, model_settings=OPENAI_SETTINGS) as stream:
         for chunk in stream:
             chunk_count += 1
     end = time.time()
@@ -1069,7 +1072,7 @@ def test_direct_model_request_stream_sync(memory_logger, direct):
     span = next((s for s in spans if s["span_attributes"]["name"] == "model_request_stream_sync"), None)
     assert span is not None
     assert span["span_attributes"]["type"] == SpanTypeAttribute.TASK
-    assert span["metadata"]["model"] == "gpt-4o-mini"
+    assert span["metadata"]["model"] == "gpt-6-luna"
     assert "output" in span
     assert "parts" in span["output"]
     _assert_metrics_are_valid(span["metrics"], start, end)
@@ -1117,7 +1120,9 @@ async def test_stream_early_break_async_generator(memory_logger, direct):
 
     async def stream_wrapper():
         """Wrap the stream in an async generator (common customer pattern)."""
-        async with direct.model_request_stream(model=MODEL, messages=messages) as stream:
+        async with direct.model_request_stream(
+            model=MODEL, messages=messages, model_settings=OPENAI_SETTINGS
+        ) as stream:
             count = 0
             async for chunk in stream:
                 yield chunk
@@ -1157,7 +1162,7 @@ async def test_agent_stream_early_break(memory_logger):
     """
     assert not memory_logger.pop()
 
-    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=100))
+    agent = Agent(MODEL, model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=100))
 
     start = time.time()
     text_count = 0
@@ -1214,7 +1219,9 @@ async def test_stream_buffer_pattern_early_return(memory_logger, direct):
 
     async def _stream_single() -> AsyncIterator[LLMStreamResponse]:
         """Async generator that yields streaming chunks and final response."""
-        async with direct.model_request_stream(model=MODEL, messages=messages) as stream:
+        async with direct.model_request_stream(
+            model=MODEL, messages=messages, model_settings=OPENAI_SETTINGS
+        ) as stream:
             async for chunk in stream:
                 yield LLMStreamResponse(llm_response=chunk, is_final=False)
 
@@ -1278,7 +1285,7 @@ async def test_agent_stream_buffer_pattern_early_return(memory_logger):
 
     assert not memory_logger.pop()
 
-    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=100))
+    agent = Agent(MODEL, model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=100))
 
     class StreamEvent:
         """Wrapper for stream events."""
@@ -1357,7 +1364,7 @@ async def test_agent_with_binary_input(memory_logger, data, media_type, prompt, 
 
     assert not memory_logger.pop()
 
-    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=max_tokens))
+    agent = Agent(MODEL, model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=max_tokens))
 
     start = time.time()
     result = await agent.run(
@@ -1385,7 +1392,7 @@ async def test_agent_with_binary_input(memory_logger, data, media_type, prompt, 
 
     # Verify basic span structure
     assert agent_span["span_attributes"]["type"] == SpanTypeAttribute.TASK
-    assert agent_span["metadata"]["model"] == "gpt-4o-mini"
+    assert agent_span["metadata"]["model"] == "gpt-6-luna"
     _assert_metrics_are_valid(agent_span["metrics"], start, end)
     _assert_metrics_are_valid(chat_span["metrics"], start, end)
 
@@ -1416,7 +1423,7 @@ async def test_agent_with_tool_execution(memory_logger):
     """
     assert not memory_logger.pop()
 
-    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=200))
+    agent = Agent(MODEL, model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=200))
 
     @agent.tool_plain
     def calculate(operation: str, a: float, b: float) -> str:
@@ -1519,7 +1526,7 @@ async def test_tool_execution_tracing_does_not_depend_on_message_reconstruction(
 
     monkeypatch.setattr(pydantic_ai_tracing, "_create_tool_spans_from_messages_impl", fail_if_called)
 
-    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=200))
+    agent = Agent(MODEL, model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=200))
 
     @agent.tool_plain
     def get_weather(city: str) -> str:
@@ -1561,7 +1568,7 @@ def test_tool_execution_creates_spans(memory_logger):
 
     start = time.time()
 
-    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=500))
+    agent = Agent(MODEL, model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=500))
 
     @agent.tool_plain
     def calculate(operation: str, a: float, b: float) -> float:
@@ -1646,7 +1653,9 @@ async def test_call_deferred_tool_is_not_logged_as_error(memory_logger):
     # CallDeferred(metadata=...) is only available in newer pydantic_ai versions.
     supports_metadata = hasattr(CallDeferred(), "metadata")
 
-    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=200), output_type=[str, DeferredToolRequests])
+    agent = Agent(
+        MODEL, model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=200), output_type=[str, DeferredToolRequests]
+    )
 
     @agent.tool_plain
     def run_long_job(job_name: str) -> str:
@@ -1675,7 +1684,9 @@ async def test_approval_required_tool_is_not_logged_as_error_and_resumes(memory_
 
     assert not memory_logger.pop()
 
-    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=200), output_type=[str, DeferredToolRequests])
+    agent = Agent(
+        MODEL, model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=200), output_type=[str, DeferredToolRequests]
+    )
 
     @agent.tool
     def delete_file(ctx: RunContext[None], path: str) -> str:
@@ -1712,7 +1723,7 @@ async def test_tool_exception_is_logged_as_error(memory_logger):
     """Genuine tool failures must still be logged as errors on the tool span."""
     assert not memory_logger.pop()
 
-    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=200))
+    agent = Agent(MODEL, model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=200))
 
     @agent.tool_plain
     def publish_flow(flow_id: str) -> str:
@@ -1734,7 +1745,7 @@ def test_agent_tool_metadata_extraction(memory_logger):
     """
     from braintrust.integrations.pydantic_ai.tracing import _build_agent_input_and_metadata
 
-    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=100))
+    agent = Agent(MODEL, model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=100))
 
     # Add multiple tools with different signatures
     @agent.tool_plain
@@ -1837,14 +1848,14 @@ async def test_agent_run_anthropic_reasoning_tokens(memory_logger):
     assert not memory_logger.pop()
 
     model = AnthropicModel(
-        "claude-haiku-4-5-20251001",
+        "claude-haiku-5-5",
         provider=AnthropicProvider(anthropic_client=anthropic.AsyncAnthropic()),
     )
     agent = Agent(
         model,
         model_settings=AnthropicModelSettings(
             max_tokens=2048,
-            anthropic_thinking={"type": "enabled", "budget_tokens": 1024},
+            anthropic_thinking=({"type": "adaptive", "display": "summarized"}),
         ),
     )
 
@@ -1889,7 +1900,11 @@ async def test_agent_run_openai_web_search_usage(memory_logger):
     from pydantic_ai.capabilities import NativeTool
     from pydantic_ai.native_tools import WebSearchTool
 
-    agent = Agent("openai-responses:gpt-4.1-mini", capabilities=[NativeTool(WebSearchTool())])
+    agent = Agent(
+        "openai-responses:gpt-6-luna",
+        capabilities=[NativeTool(WebSearchTool())],
+        model_settings={"openai_reasoning_effort": "low"},
+    )
     result = await agent.run("Search the web for the current weather in Paris and answer in one sentence.")
     assert result.output
 
@@ -1944,7 +1959,7 @@ async def test_agent_run_stream_structured_output(memory_logger):
         name: str
         price: float
 
-    agent = Agent(MODEL, output_type=Product, model_settings=ModelSettings(max_tokens=200))
+    agent = Agent(MODEL, output_type=Product, model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=200))
 
     start = time.time()
     async with agent.run_stream("Create a product: wireless mouse for $29.99") as result:
@@ -1970,12 +1985,12 @@ async def test_agent_run_stream_structured_output(memory_logger):
 
     # Check agent span
     assert agent_span["span_attributes"]["type"] == SpanTypeAttribute.TASK
-    assert agent_span["metadata"]["model"] == "gpt-4o-mini"
+    assert agent_span["metadata"]["model"] == "gpt-6-luna"
     _assert_metrics_are_valid(agent_span["metrics"], start, end)
 
     # Check chat span is nested
     assert chat_span["span_parents"] == [agent_span["span_id"]], "chat span should be nested under agent_run_stream"
-    assert chat_span["metadata"]["model"] == "gpt-4o-mini"
+    assert chat_span["metadata"]["model"] == "gpt-6-luna"
     _assert_metrics_are_valid(chat_span["metrics"], start, end)
 
 
@@ -2060,7 +2075,7 @@ def test_shape_message_and_response_pass_through_when_no_binary():
     response = SimpleNamespace(
         kind="response",
         state="complete",
-        model_name="gpt-4o-mini",
+        model_name="gpt-6-luna",
         provider_name="openai",
         parts=["done"],
     )
@@ -2258,7 +2273,9 @@ def test_model_request_stream_sync_thread_context_propagation(memory_logger, dir
             messages = [ModelRequest(parts=[UserPromptPart(content="Hello")])]
 
             with start_span(name="outer_span") as outer_span:
-                with direct.model_request_stream_sync(model=MODEL, messages=messages) as stream:
+                with direct.model_request_stream_sync(
+                    model=MODEL, messages=messages, model_settings=OPENAI_SETTINGS
+                ) as stream:
                     # Consume the stream
                     for _ in stream:
                         pass
@@ -2328,7 +2345,7 @@ def _assert_conversation_input(spans, conversation, output, method):
 
     assert "Ada" in output
     chat_span = next(span for span in spans if span["span_attributes"]["name"].startswith("chat "))
-    assert chat_span["metadata"]["model"] == "gpt-4o-mini"
+    assert chat_span["metadata"]["model"] == "gpt-6-luna"
     assert chat_span["metadata"]["provider"] == "openai"
     assert chat_span["metrics"]["prompt_tokens"] > 0
     assert chat_span["metrics"]["completion_tokens"] > 0
@@ -2350,7 +2367,7 @@ async def test_agent_with_conversation(memory_logger, method):
     """Conversation history is captured on every async agent wrapper span."""
     # Python 3.10 lint uses an older SDK; the version gate excludes it at runtime.
     # pylint: disable=unexpected-keyword-arg
-    agent = Agent(MODEL, name="conversation-agent", model_settings=ModelSettings(max_tokens=50))
+    agent = Agent(MODEL, name="conversation-agent", model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=50))
     first_result = await agent.run("My name is Ada. Reply with just my name.")
     conversation = first_result.conversation
     memory_logger.pop()
@@ -2383,7 +2400,7 @@ def test_agent_with_conversation_sync(memory_logger, method):
     """Conversation history is captured on every sync agent wrapper span."""
     # Python 3.10 lint uses an older SDK; the version gate excludes it at runtime.
     # pylint: disable=unexpected-keyword-arg
-    agent = Agent(MODEL, name="conversation-agent", model_settings=ModelSettings(max_tokens=50))
+    agent = Agent(MODEL, name="conversation-agent", model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=50))
     first_result = agent.run_sync("My name is Ada. Reply with just my name.")
     conversation = first_result.conversation
     memory_logger.pop()
@@ -2411,7 +2428,7 @@ async def test_agent_with_prefill(memory_logger):
 
     assert not memory_logger.pop()
 
-    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=200))
+    agent = Agent(MODEL, model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=200))
 
     prefill_history = [
         ModelRequest(parts=[UserPromptPart(content="Write a haiku about coding.")]),
@@ -2429,7 +2446,7 @@ async def test_agent_with_prefill(memory_logger):
 
     agent_span = _find_agent_span(spans)
     assert agent_span is not None, "agent_run span not found"
-    assert agent_span["metadata"]["model"] == "gpt-4o-mini"
+    assert agent_span["metadata"]["model"] == "gpt-6-luna"
 
     # The prefill history (including the partial assistant TextPart) must appear
     # in the span input so that the trace is complete and auditable.
@@ -2451,11 +2468,11 @@ async def test_model_fallback_traces_each_attempt(memory_logger, candidate_kind)
         pytest.skip("ModelFallback is unavailable in this Pydantic AI version")
     from pydantic_ai.models.openai import OpenAIChatModel, OpenAIResponsesModel
 
-    fallback = "openai-responses:gpt-4o-mini" if candidate_kind == "string" else OpenAIResponsesModel("gpt-4o-mini")
+    fallback = "openai-responses:gpt-6-luna" if candidate_kind == "string" else OpenAIResponsesModel("gpt-6-luna")
     agent = Agent(
         OpenAIChatModel("braintrust-nonexistent-model-for-fallback-test"),
         capabilities=[ModelFallback(fallback, sticky=True)],
-        model_settings=ModelSettings(max_tokens=50),
+        model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=50),
     )
     result = await agent.run(TEST_PROMPT)
     assert "4" in result.output
@@ -2470,10 +2487,10 @@ async def test_model_fallback_traces_each_attempt(memory_logger, candidate_kind)
         for span in model_spans
         if span["metadata"].get("model") == "braintrust-nonexistent-model-for-fallback-test"
     )
-    answered = next(span for span in model_spans if span["metadata"].get("model") == "gpt-4o-mini")
+    answered = next(span for span in model_spans if span["metadata"].get("model") == "gpt-6-luna")
     assert failed.get("error")
     assert not answered.get("error")
-    assert agent_span["metadata"]["model"] == "gpt-4o-mini"
+    assert agent_span["metadata"]["model"] == "gpt-6-luna"
     assert agent_span["metadata"]["provider"] == "openai"
     for span in model_spans:
         assert span["metadata"]["provider"] == "openai"
@@ -2486,8 +2503,8 @@ async def test_model_fallback_traces_each_attempt(memory_logger, candidate_kind)
     agent_span = _find_agent_span(spans)
     model_spans = [span for span in spans if span["span_attributes"].get("type") == SpanTypeAttribute.LLM]
     assert len(model_spans) == 1
-    assert model_spans[0]["metadata"]["model"] == "gpt-4o-mini"
-    assert agent_span["metadata"]["model"] == "gpt-4o-mini"
+    assert model_spans[0]["metadata"]["model"] == "gpt-6-luna"
+    assert agent_span["metadata"]["model"] == "gpt-6-luna"
     assert agent_span["metadata"]["provider"] == "openai"
 
 
@@ -2502,8 +2519,8 @@ async def test_model_fallback_stream_closes_failed_attempt(memory_logger):
 
     agent = Agent(
         OpenAIChatModel("braintrust-nonexistent-model-for-fallback-test"),
-        capabilities=[ModelFallback(OpenAIResponsesModel("gpt-4o-mini"))],
-        model_settings=ModelSettings(max_tokens=50),
+        capabilities=[ModelFallback(OpenAIResponsesModel("gpt-6-luna"))],
+        model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=50),
     )
     async with agent.run_stream(TEST_PROMPT) as result:
         output = await result.get_output()
@@ -2519,7 +2536,7 @@ async def test_model_fallback_stream_closes_failed_attempt(memory_logger):
         for span in model_spans
         if span["metadata"].get("model") == "braintrust-nonexistent-model-for-fallback-test"
     )
-    answered = next(span for span in model_spans if span["metadata"].get("model") == "gpt-4o-mini")
+    answered = next(span for span in model_spans if span["metadata"].get("model") == "gpt-6-luna")
     assert failed.get("error")
     assert failed["metrics"].get("end") is not None
     assert not answered.get("error")
@@ -2539,7 +2556,7 @@ async def test_agent_with_error_handling(memory_logger):
 
     assert not memory_logger.pop()
 
-    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=100))
+    agent = Agent(MODEL, model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=100))
 
     corrupted_data = b"INVALID_PNG_DATA_NOT_A_REAL_IMAGE"
 

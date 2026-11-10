@@ -1,7 +1,7 @@
 interactions:
 - request:
     body: '{"max_tokens":256,"messages":[{"role":"user","content":"Use the computer
-      wait tool once to wait for 1 second."}],"model":"claude-sonnet-5","tools":[{"type":"computer_toolset_20260801","configs":{"key":{"enabled":false},"hold_key":{"enabled":false},"type":{"enabled":false},"cursor_position":{"enabled":false},"mouse_move":{"enabled":false},"left_mouse_down":{"enabled":false},"left_mouse_up":{"enabled":false},"left_click":{"enabled":false},"left_click_drag":{"enabled":false},"right_click":{"enabled":false},"middle_click":{"enabled":false},"double_click":{"enabled":false},"triple_click":{"enabled":false},"scroll":{"enabled":false},"screenshot":{"enabled":false},"zoom":{"enabled":false}}}]}'
+      wait tool once to wait for 1 second."}],"model":"claude-sonnet-5-5","tools":[{"type":"computer_toolset_20260801","configs":{"key":{"enabled":false},"hold_key":{"enabled":false},"type":{"enabled":false},"cursor_position":{"enabled":false},"mouse_move":{"enabled":false},"left_mouse_down":{"enabled":false},"left_mouse_up":{"enabled":false},"left_click":{"enabled":false},"left_click_drag":{"enabled":false},"right_click":{"enabled":false},"middle_click":{"enabled":false},"double_click":{"enabled":false},"triple_click":{"enabled":false},"scroll":{"enabled":false},"screenshot":{"enabled":false},"zoom":{"enabled":false}}}]}'
     headers:
       accept:
       - application/json
@@ -12,7 +12,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '694'
+      - '696'
       content-type:
       - application/json
       host:
@@ -45,7 +45,7 @@ interactions:
     uri: https://api.anthropic.com/v1/messages?beta=true
   response:
     body:
-      string: '{"model":"claude-sonnet-5","id":"msg_011CgR8YiMmfYUfmyKy1gD9Q","type":"message","role":"assistant","content":[{"type":"tool_use","id":"toolu_01Ja5LNYjEVDbACMJp2Tagj1","name":"wait","input":{"duration":1},"toolset_name":"computer","caller":{"type":"direct"}}],"container":null,"stop_reason":"tool_use","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":1875,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":63,"output_tokens_details":{"thinking_tokens":0},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
+      string: '{"model":"claude-sonnet-5-5","id":"msg_011CguZaSEEzWK4FXZAmxkaX","type":"message","role":"assistant","content":[{"type":"tool_use","id":"toolu_01VK2AoVVpQJVDRbEhKjqL2E","name":"wait","input":{"duration":1},"toolset_name":"computer","caller":{"type":"direct"}}],"container":null,"stop_reason":"tool_use","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":1813,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":63,"output_tokens_details":{"thinking_tokens":0},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
     headers:
       anthropic-organization-id:
       - 27796668-7351-40ac-acc4-024aee8995a5
@@ -54,51 +54,51 @@ interactions:
       anthropic-ratelimit-input-tokens-remaining:
       - '9999000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-10-26T16:03:07Z'
+      - '2026-11-10T16:27:59Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-10-26T16:03:07Z'
+      - '2026-11-10T16:27:59Z'
       anthropic-ratelimit-requests-limit:
-      - '20000'
+      - '45000'
       anthropic-ratelimit-requests-remaining:
-      - '19999'
+      - '44999'
       anthropic-ratelimit-requests-reset:
-      - '2026-10-26T16:03:06Z'
+      - '2026-11-10T16:27:58Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
       - '11999000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-10-26T16:03:07Z'
+      - '2026-11-10T16:27:59Z'
       anthropic-workspace-id:
       - wrkspc_018bFG1FgNVWqx5pthtdGTzS
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a50ab06cbb49f00c-YYZ
+      - a5866d7aee4ea20e-YYZ
       connection:
       - keep-alive
       content-length:
-      - '665'
+      - '667'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - application/json
       date:
-      - Mon, 26 Oct 2026 16:03:07 GMT
+      - Tue, 10 Nov 2026 16:27:59 GMT
       request-id:
-      - req_011CgR8YhbtVWWhV9cLFY3Nj
+      - req_011CguZaS3LMqJsewRxcyqfE
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=1085
+      - x-originResponse;dur=898
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-d150857c591f119c90e51776d0dd7ae8-3a8f63336d3b4026-01
+      - 00-06725e1e5bbc7740624f3a4ca8ebd36d-63f773e362c34a10-01
       transfer-encoding:
       - chunked
       vary:

@@ -1,7 +1,7 @@
 interactions:
 - request:
     body: '{"model":"zai-glm-5-3","messages":[{"content":"What is 5+5? Reply with
-      just the number.","role":"user"}],"max_tokens":256,"stream":true,"min_tokens":1,"repetition_penalty":1.1,"top_k":20,"logprobs":true,"top_logprobs":2}'
+      just the number.","role":"user"}],"max_tokens":256,"stream":true,"top_k":20,"logprobs":true,"top_logprobs":2}'
     headers:
       accept:
       - text/event-stream
@@ -10,7 +10,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '220'
+      - '180'
       content-type:
       - application/json
       host:
@@ -21,54 +21,78 @@ interactions:
     uri: https://api.mistral.ai/v1/chat/completions#stream
   response:
     body:
-      string: 'data: {"id":"eefeb44d70e040c7b032bc6332737ff0","object":"chat.completion.chunk","created":1793627387,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
+      string: 'data: {"id":"b87b11d4048e41139aa73267f3e252e0","object":"chat.completion.chunk","created":1794328401,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
 
 
-        data: {"id":"eefeb44d70e040c7b032bc6332737ff0","object":"chat.completion.chunk","created":1793627388,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"role":"assistant","index":0,"content":""},"finish_reason":null,"logprobs":null}]}
+        data: {"id":"b87b11d4048e41139aa73267f3e252e0","object":"chat.completion.chunk","created":1794328401,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"role":"assistant","index":0,"content":""},"finish_reason":null,"logprobs":null}]}
 
 
-        data: {"id":"eefeb44d70e040c7b032bc6332737ff0","object":"chat.completion.chunk","created":1793627388,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"index":0,"content":[{"type":"thinking","thinking":[{"type":"text","text":"The"}],"closed":true}]},"finish_reason":null,"logprobs":{"content":[{"token":"The","logprob":-0.05786751210689545,"bytes":[84,104,101],"token_id":-1,"top_logprobs":[{"token":"The","logprob":-0.05786751210689545,"bytes":[84,104,101],"token_id":-1},{"token":"This","logprob":-2.9328675270080566,"bytes":[84,104,105,115],"token_id":-1}]}]}}]}
+        data: {"id":"b87b11d4048e41139aa73267f3e252e0","object":"chat.completion.chunk","created":1794328401,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"index":0,"content":[{"type":"thinking","thinking":[{"type":"text","text":"The"}],"closed":true}]},"finish_reason":null,"logprobs":{"content":[{"token":"The","logprob":-0.04099726304411888,"bytes":[84,104,101],"token_id":-1,"top_logprobs":[{"token":"The","logprob":-0.04099726304411888,"bytes":[84,104,101],"token_id":-1},{"token":"This","logprob":-3.540997266769409,"bytes":[84,104,105,115],"token_id":-1}]}]}}]}
 
 
-        data: {"id":"eefeb44d70e040c7b032bc6332737ff0","object":"chat.completion.chunk","created":1793627388,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"index":0,"content":[{"type":"thinking","thinking":[{"type":"text","text":"
-        user asked a simple math question and wants just the number."}],"closed":true},{"type":"text","text":"10"}]},"finish_reason":null,"logprobs":{"content":[{"token":"
-        user","logprob":-0.004247691016644239,"bytes":[32,117,115,101,114],"token_id":-1,"top_logprobs":[{"token":"
-        user","logprob":-0.004247691016644239,"bytes":[32,117,115,101,114],"token_id":-1},{"token":"
-        question","logprob":-5.504247665405273,"bytes":[32,113,117,101,115,116,105,111,110],"token_id":-1}]},{"token":"
-        asked","logprob":-2.177358865737915,"bytes":[32,97,115,107,101,100],"token_id":-1,"top_logprobs":[{"token":"
-        asked","logprob":-2.177358865737915,"bytes":[32,97,115,107,101,100],"token_id":-1},{"token":"
-        is","logprob":-0.4273589253425598,"bytes":[32,105,115],"token_id":-1}]},{"token":"
-        a","logprob":-0.7293187975883484,"bytes":[32,97],"token_id":-1,"top_logprobs":[{"token":"
-        a","logprob":-0.7293187975883484,"bytes":[32,97],"token_id":-1},{"token":"
-        \"","logprob":-0.9793187975883484,"bytes":[32,34],"token_id":-1}]},{"token":"
-        simple","logprob":-0.018478158861398697,"bytes":[32,115,105,109,112,108,101],"token_id":-1,"top_logprobs":[{"token":"
-        simple","logprob":-0.018478158861398697,"bytes":[32,115,105,109,112,108,101],"token_id":-1},{"token":"
-        very","logprob":-4.0184783935546875,"bytes":[32,118,101,114,121],"token_id":-1}]},{"token":"
-        math","logprob":-0.5136129856109619,"bytes":[32,109,97,116,104],"token_id":-1,"top_logprobs":[{"token":"
-        math","logprob":-0.5136129856109619,"bytes":[32,109,97,116,104],"token_id":-1},{"token":"
-        arithmetic","logprob":-1.263612985610962,"bytes":[32,97,114,105,116,104,109,101,116,105,99],"token_id":-1}]},{"token":"
-        question","logprob":-0.0000792710343375802,"bytes":[32,113,117,101,115,116,105,111,110],"token_id":-1,"top_logprobs":[{"token":"
-        question","logprob":-0.0000792710343375802,"bytes":[32,113,117,101,115,116,105,111,110],"token_id":-1},{"token":"
-        problem","logprob":-9.500079154968262,"bytes":[32,112,114,111,98,108,101,109],"token_id":-1}]},{"token":"
-        and","logprob":-2.2388219833374023,"bytes":[32,97,110,100],"token_id":-1,"top_logprobs":[{"token":"
-        and","logprob":-2.2388219833374023,"bytes":[32,97,110,100],"token_id":-1},{"token":":","logprob":-0.11382200568914413,"bytes":[58],"token_id":-1}]},{"token":"
-        wants","logprob":-0.6292529106140137,"bytes":[32,119,97,110,116,115],"token_id":-1,"top_logprobs":[{"token":"
-        wants","logprob":-0.6292529106140137,"bytes":[32,119,97,110,116,115],"token_id":-1},{"token":"
-        explicitly","logprob":-1.1292529106140137,"bytes":[32,101,120,112,108,105,99,105,116,108,121],"token_id":-1}]},{"token":"
-        just","logprob":-0.016003375872969627,"bytes":[32,106,117,115,116],"token_id":-1,"top_logprobs":[{"token":"
-        just","logprob":-0.016003375872969627,"bytes":[32,106,117,115,116],"token_id":-1},{"token":"
-        me","logprob":-4.266003608703613,"bytes":[32,109,101],"token_id":-1}]},{"token":"
-        the","logprob":-0.0003367095487192273,"bytes":[32,116,104,101],"token_id":-1,"top_logprobs":[{"token":"
-        the","logprob":-0.0003367095487192273,"bytes":[32,116,104,101],"token_id":-1},{"token":"
-        a","logprob":-8.000336647033691,"bytes":[32,97],"token_id":-1}]},{"token":"
-        number","logprob":-0.00003397406908334233,"bytes":[32,110,117,109,98,101,114],"token_id":-1,"top_logprobs":[{"token":"
-        number","logprob":-0.00003397406908334233,"bytes":[32,110,117,109,98,101,114],"token_id":-1},{"token":"
-        answer","logprob":-10.37503433227539,"bytes":[32,97,110,115,119,101,114],"token_id":-1}]},{"token":".","logprob":-0.7673723101615906,"bytes":[46],"token_id":-1,"top_logprobs":[{"token":".","logprob":-0.7673723101615906,"bytes":[46],"token_id":-1},{"token":"
-        as","logprob":-0.6423723101615906,"bytes":[32,97,115],"token_id":-1}]},{"token":"</think>","logprob":-1.1534541845321655,"bytes":[60,47,116,104,105,110,107,62],"token_id":-1,"top_logprobs":[{"token":"</think>","logprob":-1.1534541845321655,"bytes":[60,47,116,104,105,110,107,62],"token_id":-1},{"token":"
-        ","logprob":-0.5284541845321655,"bytes":[32],"token_id":-1}]},{"token":"10","logprob":-0.0010080024367198348,"bytes":[49,48],"token_id":-1,"top_logprobs":[{"token":"10","logprob":-0.0010080024367198348,"bytes":[49,48],"token_id":-1},{"token":"**","logprob":-7.626008033752441,"bytes":[42,42],"token_id":-1}]},{"token":"<|user|>","logprob":-9.65590606938349e-6,"bytes":[60,124,117,115,101,114,124,62],"token_id":-1,"top_logprobs":[{"token":"<|user|>","logprob":-9.65590606938349e-6,"bytes":[60,124,117,115,101,114,124,62],"token_id":-1},{"token":"</arg_value>","logprob":-12.875009536743164,"bytes":[60,47,97,114,103,95,118,97,108,117,101,62],"token_id":-1}]}]}}]}
+        data: {"id":"b87b11d4048e41139aa73267f3e252e0","object":"chat.completion.chunk","created":1794328401,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"index":0,"content":[{"type":"thinking","thinking":[{"type":"text","text":"
+        user asks what"}],"closed":true}]},"finish_reason":null,"logprobs":{"content":[{"token":"
+        user","logprob":-0.004151773639023304,"bytes":[32,117,115,101,114],"token_id":-1,"top_logprobs":[{"token":"
+        user","logprob":-0.004151773639023304,"bytes":[32,117,115,101,114],"token_id":-1},{"token":"
+        question","logprob":-5.504151821136475,"bytes":[32,113,117,101,115,116,105,111,110],"token_id":-1}]},{"token":"
+        asks","logprob":-0.9703624248504639,"bytes":[32,97,115,107,115],"token_id":-1,"top_logprobs":[{"token":"
+        asks","logprob":-0.9703624248504639,"bytes":[32,97,115,107,115],"token_id":-1},{"token":"
+        is","logprob":-0.5953624248504639,"bytes":[32,105,115],"token_id":-1}]},{"token":"
+        what","logprob":-1.191723108291626,"bytes":[32,119,104,97,116],"token_id":-1,"top_logprobs":[{"token":"
+        what","logprob":-1.191723108291626,"bytes":[32,119,104,97,116],"token_id":-1},{"token":":","logprob":-1.191723108291626,"bytes":[58],"token_id":-1}]}]}}]}
 
 
-        data: {"id":"eefeb44d70e040c7b032bc6332737ff0","object":"chat.completion.chunk","created":1793627388,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"index":0,"content":""},"finish_reason":"stop","logprobs":null,"response_error":{"format_error":null,"content_validation":["valid_think_chunk","valid_text_chunk"],"tool_calls_validation":[],"extra_tags":[]}}],"usage":{"prompt_tokens":25,"total_tokens":41,"completion_tokens":16,"prompt_tokens_details":{"cached_tokens":0},"completion_tokens_details":{"reasoning_tokens":13}}}
+        data: {"id":"b87b11d4048e41139aa73267f3e252e0","object":"chat.completion.chunk","created":1794328401,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"index":0,"content":""},"finish_reason":null,"logprobs":{"content":[{"token":"
+        ","logprob":-0.20142404735088348,"bytes":[32],"token_id":-1,"top_logprobs":[{"token":"
+        ","logprob":-0.20142404735088348,"bytes":[32],"token_id":-1},{"token":" is","logprob":-1.7014240026474,"bytes":[32,105,115],"token_id":-1}]}]}}]}
+
+
+        data: {"id":"b87b11d4048e41139aa73267f3e252e0","object":"chat.completion.chunk","created":1794328401,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"index":0,"content":[{"type":"thinking","thinking":[{"type":"text","text":"
+        5+5 is,"}],"closed":true}]},"finish_reason":null,"logprobs":{"content":[{"token":"5","logprob":0.0,"bytes":[53],"token_id":-1,"top_logprobs":[{"token":"5","logprob":0.0,"bytes":[53],"token_id":-1},{"token":"10","logprob":-17.375,"bytes":[49,48],"token_id":-1}]},{"token":"+","logprob":-0.00001585470999998506,"bytes":[43],"token_id":-1,"top_logprobs":[{"token":"+","logprob":-0.00001585470999998506,"bytes":[43],"token_id":-1},{"token":"
+        +","logprob":-11.625016212463379,"bytes":[32,43],"token_id":-1}]},{"token":"5","logprob":-1.1920928244535389e-7,"bytes":[53],"token_id":-1,"top_logprobs":[{"token":"5","logprob":-1.1920928244535389e-7,"bytes":[53],"token_id":-1},{"token":"3","logprob":-16.875,"bytes":[51],"token_id":-1}]},{"token":"
+        is","logprob":-0.0007099968497641385,"bytes":[32,105,115],"token_id":-1,"top_logprobs":[{"token":"
+        is","logprob":-0.0007099968497641385,"bytes":[32,105,115],"token_id":-1},{"token":"
+        equals","logprob":-7.2507100105285645,"bytes":[32,101,113,117,97,108,115],"token_id":-1}]},{"token":",","logprob":-0.762214183807373,"bytes":[44],"token_id":-1,"top_logprobs":[{"token":",","logprob":-0.762214183807373,"bytes":[44],"token_id":-1},{"token":"
+        and","logprob":-0.637214183807373,"bytes":[32,97,110,100],"token_id":-1}]}]}}]}
+
+
+        data: {"id":"b87b11d4048e41139aa73267f3e252e0","object":"chat.completion.chunk","created":1794328401,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"index":0,"content":[{"type":"thinking","thinking":[{"type":"text","text":"
+        and wants just the number as"}],"closed":true}]},"finish_reason":null,"logprobs":{"content":[{"token":"
+        and","logprob":-0.07381121069192886,"bytes":[32,97,110,100],"token_id":-1,"top_logprobs":[{"token":"
+        and","logprob":-0.07381121069192886,"bytes":[32,97,110,100],"token_id":-1},{"token":"
+        requesting","logprob":-2.6988112926483154,"bytes":[32,114,101,113,117,101,115,116,105,110,103],"token_id":-1}]},{"token":"
+        wants","logprob":-0.38786283135414124,"bytes":[32,119,97,110,116,115],"token_id":-1,"top_logprobs":[{"token":"
+        wants","logprob":-0.38786283135414124,"bytes":[32,119,97,110,116,115],"token_id":-1},{"token":"
+        requests","logprob":-2.1378629207611084,"bytes":[32,114,101,113,117,101,115,116,115],"token_id":-1}]},{"token":"
+        just","logprob":-0.18030443787574768,"bytes":[32,106,117,115,116],"token_id":-1,"top_logprobs":[{"token":"
+        just","logprob":-0.18030443787574768,"bytes":[32,106,117,115,116],"token_id":-1},{"token":"
+        me","logprob":-1.8053044080734253,"bytes":[32,109,101],"token_id":-1}]},{"token":"
+        the","logprob":-0.000024318398573086597,"bytes":[32,116,104,101],"token_id":-1,"top_logprobs":[{"token":"
+        the","logprob":-0.000024318398573086597,"bytes":[32,116,104,101],"token_id":-1},{"token":"
+        a","logprob":-10.62502384185791,"bytes":[32,97],"token_id":-1}]},{"token":"
+        number","logprob":-3.6954811548639555e-6,"bytes":[32,110,117,109,98,101,114],"token_id":-1,"top_logprobs":[{"token":"
+        number","logprob":-3.6954811548639555e-6,"bytes":[32,110,117,109,98,101,114],"token_id":-1},{"token":"
+        answer","logprob":-13.000003814697266,"bytes":[32,97,110,115,119,101,114],"token_id":-1}]},{"token":"
+        as","logprob":-2.3201842308044434,"bytes":[32,97,115],"token_id":-1,"top_logprobs":[{"token":"
+        as","logprob":-2.3201842308044434,"bytes":[32,97,115],"token_id":-1},{"token":".","logprob":-0.19518424570560455,"bytes":[46],"token_id":-1}]}]}}]}
+
+
+        data: {"id":"b87b11d4048e41139aa73267f3e252e0","object":"chat.completion.chunk","created":1794328401,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"index":0,"content":[{"type":"thinking","thinking":[{"type":"text","text":"
+        a"}],"closed":true}]},"finish_reason":null,"logprobs":{"content":[{"token":"
+        a","logprob":-0.1839151531457901,"bytes":[32,97],"token_id":-1,"top_logprobs":[{"token":"
+        a","logprob":-0.1839151531457901,"bytes":[32,97],"token_id":-1},{"token":"
+        the","logprob":-1.808915138244629,"bytes":[32,116,104,101],"token_id":-1}]}]}}]}
+
+
+        data: {"id":"b87b11d4048e41139aa73267f3e252e0","object":"chat.completion.chunk","created":1794328401,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"index":0,"content":[{"type":"thinking","thinking":[{"type":"text","text":"
+        reply."}],"closed":true},{"type":"text","text":"10"}]},"finish_reason":null,"logprobs":{"content":[{"token":"
+        reply","logprob":-0.00033778208307921886,"bytes":[32,114,101,112,108,121],"token_id":-1,"top_logprobs":[{"token":"
+        reply","logprob":-0.00033778208307921886,"bytes":[32,114,101,112,108,121],"token_id":-1},{"token":"
+        response","logprob":-8.000337600708008,"bytes":[32,114,101,115,112,111,110,115,101],"token_id":-1}]},{"token":".","logprob":-0.1797996312379837,"bytes":[46],"token_id":-1,"top_logprobs":[{"token":".","logprob":-0.1797996312379837,"bytes":[46],"token_id":-1},{"token":".\n\n","logprob":-1.8047996759414673,"bytes":[46,10,10],"token_id":-1}]},{"token":"</think>","logprob":-1.5943422317504883,"bytes":[60,47,116,104,105,110,107,62],"token_id":-1,"top_logprobs":[{"token":"</think>","logprob":-1.5943422317504883,"bytes":[60,47,116,104,105,110,107,62],"token_id":-1},{"token":"
+        Simple","logprob":-1.0943422317504883,"bytes":[32,83,105,109,112,108,101],"token_id":-1}]},{"token":"10","logprob":-0.0000948860906646587,"bytes":[49,48],"token_id":-1,"top_logprobs":[{"token":"10","logprob":-0.0000948860906646587,"bytes":[49,48],"token_id":-1},{"token":"**","logprob":-10.875094413757324,"bytes":[42,42],"token_id":-1}]}]}}]}
+
+
+        data: {"id":"b87b11d4048e41139aa73267f3e252e0","object":"chat.completion.chunk","created":1794328401,"model":"zai-glm-5-3","choices":[{"index":0,"delta":{"index":0,"content":""},"finish_reason":"stop","logprobs":{"content":[{"token":"<|user|>","logprob":-6.794906312279636e-6,"bytes":[60,124,117,115,101,114,124,62],"token_id":-1,"top_logprobs":[{"token":"<|user|>","logprob":-6.794906312279636e-6,"bytes":[60,124,117,115,101,114,124,62],"token_id":-1},{"token":"</arg_value>","logprob":-13.562506675720215,"bytes":[60,47,97,114,103,95,118,97,108,117,101,62],"token_id":-1}]}]},"response_error":{"format_error":null,"content_validation":["valid_think_chunk","valid_text_chunk"],"tool_calls_validation":[],"extra_tags":[]}}],"usage":{"prompt_tokens":25,"total_tokens":47,"completion_tokens":22,"prompt_tokens_details":{"cached_tokens":0},"completion_tokens_details":{"reasoning_tokens":19}}}
 
 
         data: [DONE]
@@ -83,15 +107,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5439ac48b94c48a-YYZ
+      - a586755c68e2ac5e-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 02 Nov 2026 13:49:48 GMT
+      - Tue, 10 Nov 2026 16:33:23 GMT
       mistral-correlation-id:
-      - 01a19c85-f70d-7b7b-8a27-09e5ee994962
+      - 01a1c64e-9608-779f-8f7e-20a34ccb8dd7
       server:
       - cloudflare
       strict-transport-security:
@@ -101,13 +125,15 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '757'
+      - '1833'
       x-kong-proxy-latency:
-      - '20'
+      - '25'
       x-kong-request-id:
-      - 01a19c85-f70d-7b7b-8a27-09e5ee994962
+      - 01a1c64e-9608-779f-8f7e-20a34ccb8dd7
       x-kong-upstream-latency:
-      - '759'
+      - '1835'
+      x-max-retry-attempts-reached:
+      - 'false'
       x-ratelimit-limit-req-minute:
       - '1000'
       x-ratelimit-limit-tokens-minute:
@@ -115,7 +141,7 @@ interactions:
       x-ratelimit-remaining-req-minute:
       - '998'
       x-ratelimit-remaining-tokens-minute:
-      - '31999954'
+      - '31999807'
     status:
       code: 200
       message: OK

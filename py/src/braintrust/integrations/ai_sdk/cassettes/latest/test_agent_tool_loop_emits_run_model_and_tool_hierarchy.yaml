@@ -1,8 +1,8 @@
 interactions:
 - request:
-    body: '{"model":"gpt-4o-mini","stream":true,"input":[{"role":"system","content":"Always
+    body: '{"model":"gpt-6-luna","stream":true,"input":[{"role":"system","content":"Always
       use get_temperature once before answering. Be concise."},{"role":"user","content":[{"type":"input_text","text":"What
-      is the temperature in Paris?"}]}],"tools":[{"type":"function","name":"get_temperature","description":"Get
+      is the temperature in Paris?"}]}],"reasoning":{"effort":"none"},"store":false,"tools":[{"type":"function","name":"get_temperature","description":"Get
       the current temperature for a city.","parameters":{"properties":{"city":{"title":"City","type":"string"}},"required":["city"],"title":"get_temperature_Args","type":"object"}}]}'
     headers:
       accept:
@@ -12,13 +12,13 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '480'
+      - '523'
       content-type:
       - application/json
       host:
       - api.openai.com
       user-agent:
-      - AsyncOpenAI/Python 3.24.0
+      - AsyncOpenAI/Python 3.46.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -28,7 +28,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.24.0
+      - 3.46.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -43,66 +43,66 @@ interactions:
     body:
       string: 'event: response.created
 
-        data: {"type":"response.created","response":{"id":"resp_09f57d35b8d7f521006ac3b800dc1487d2aa474b0a2b71279f","object":"response","created_at":1791211520,"status":"in_progress","access_programs":null,"background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":null,"max_output_tokens":null,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"in_memory","reasoning":{"context":null,"effort":null,"summary":null},"safety_identifier":null,"service_tier":"auto","store":true,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[{"type":"function","description":"Get
-        the current temperature for a city.","name":"get_temperature","output_schema":null,"parameters":{"properties":{"city":{"title":"City","type":"string"}},"required":["city"],"title":"get_temperature_Args","type":"object","additionalProperties":false},"strict":true}],"top_logprobs":0,"top_p":1.0,"truncation":"disabled","usage":null,"user":null,"metadata":{}},"sequence_number":0}
+        data: {"type":"response.created","response":{"id":"resp_0beb7dd94e5d67ae016af33d70e98087d29aca0aa851287379","object":"response","created_at":1794325872,"status":"in_progress","access_programs":null,"background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"image":{"context_compression":"disabled"},"incomplete_details":null,"instructions":null,"max_output_tokens":null,"max_tool_calls":null,"model":"gpt-6-luna","moderation":null,"output":[],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"24h","reasoning":{"context":"all_turns","effort":"none","mode":"standard","summary":null},"safety_identifier":null,"service_tier":"auto","store":false,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[{"type":"function","description":"Get
+        the current temperature for a city.","name":"get_temperature","output_schema":null,"parameters":{"properties":{"city":{"title":"City","type":"string"}},"required":["city"],"title":"get_temperature_Args","type":"object","additionalProperties":false},"strict":true}],"top_logprobs":0,"top_p":0.98,"truncation":"disabled","usage":null,"user":null,"metadata":{}},"sequence_number":0}
 
 
         event: response.in_progress
 
-        data: {"type":"response.in_progress","response":{"id":"resp_09f57d35b8d7f521006ac3b800dc1487d2aa474b0a2b71279f","object":"response","created_at":1791211520,"status":"in_progress","access_programs":null,"background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":null,"max_output_tokens":null,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"in_memory","reasoning":{"context":null,"effort":null,"summary":null},"safety_identifier":null,"service_tier":"auto","store":true,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[{"type":"function","description":"Get
-        the current temperature for a city.","name":"get_temperature","output_schema":null,"parameters":{"properties":{"city":{"title":"City","type":"string"}},"required":["city"],"title":"get_temperature_Args","type":"object","additionalProperties":false},"strict":true}],"top_logprobs":0,"top_p":1.0,"truncation":"disabled","usage":null,"user":null,"metadata":{}},"sequence_number":1}
+        data: {"type":"response.in_progress","response":{"id":"resp_0beb7dd94e5d67ae016af33d70e98087d29aca0aa851287379","object":"response","created_at":1794325872,"status":"in_progress","access_programs":null,"background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"image":{"context_compression":"disabled"},"incomplete_details":null,"instructions":null,"max_output_tokens":null,"max_tool_calls":null,"model":"gpt-6-luna","moderation":null,"output":[],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"24h","reasoning":{"context":"all_turns","effort":"none","mode":"standard","summary":null},"safety_identifier":null,"service_tier":"auto","store":false,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[{"type":"function","description":"Get
+        the current temperature for a city.","name":"get_temperature","output_schema":null,"parameters":{"properties":{"city":{"title":"City","type":"string"}},"required":["city"],"title":"get_temperature_Args","type":"object","additionalProperties":false},"strict":true}],"top_logprobs":0,"top_p":0.98,"truncation":"disabled","usage":null,"user":null,"metadata":{}},"sequence_number":1}
 
 
         event: response.output_item.added
 
-        data: {"type":"response.output_item.added","item":{"id":"fc_09f57d35b8d7f521006ac3b802077887d2b6949b6c52f1ca6d","type":"function_call","status":"in_progress","arguments":"","call_id":"call_77swvgml1calIg6ztQB5otAT","name":"get_temperature"},"output_index":0,"sequence_number":2}
+        data: {"type":"response.output_item.added","item":{"id":"fc_0beb7dd94e5d67ae016af33d71773887d2a1a1393b97212d83","type":"function_call","status":"in_progress","arguments":"","call_id":"call_mW4sMmZgJzsaEzEmMDCG0zek","name":"get_temperature"},"output_index":0,"sequence_number":2}
 
 
         event: response.function_call_arguments.delta
 
-        data: {"type":"response.function_call_arguments.delta","delta":"{\"","item_id":"fc_09f57d35b8d7f521006ac3b802077887d2b6949b6c52f1ca6d","obfuscation":"wUxvfRwJnn0aTT","output_index":0,"sequence_number":3}
+        data: {"type":"response.function_call_arguments.delta","delta":"{\"","item_id":"fc_0beb7dd94e5d67ae016af33d71773887d2a1a1393b97212d83","obfuscation":"2RbAgR9271Hm4u","output_index":0,"sequence_number":3}
 
 
         event: response.function_call_arguments.delta
 
-        data: {"type":"response.function_call_arguments.delta","delta":"city","item_id":"fc_09f57d35b8d7f521006ac3b802077887d2b6949b6c52f1ca6d","obfuscation":"xivhB8GbXskM","output_index":0,"sequence_number":4}
+        data: {"type":"response.function_call_arguments.delta","delta":"city","item_id":"fc_0beb7dd94e5d67ae016af33d71773887d2a1a1393b97212d83","obfuscation":"j0jXnUNHu3fr","output_index":0,"sequence_number":4}
 
 
         event: response.function_call_arguments.delta
 
-        data: {"type":"response.function_call_arguments.delta","delta":"\":\"","item_id":"fc_09f57d35b8d7f521006ac3b802077887d2b6949b6c52f1ca6d","obfuscation":"6KgeeVluGIyKj","output_index":0,"sequence_number":5}
+        data: {"type":"response.function_call_arguments.delta","delta":"\":\"","item_id":"fc_0beb7dd94e5d67ae016af33d71773887d2a1a1393b97212d83","obfuscation":"tvYb8vRgQqT1b","output_index":0,"sequence_number":5}
 
 
         event: response.function_call_arguments.delta
 
-        data: {"type":"response.function_call_arguments.delta","delta":"Paris","item_id":"fc_09f57d35b8d7f521006ac3b802077887d2b6949b6c52f1ca6d","obfuscation":"00nG1nC7DYK","output_index":0,"sequence_number":6}
+        data: {"type":"response.function_call_arguments.delta","delta":"Paris","item_id":"fc_0beb7dd94e5d67ae016af33d71773887d2a1a1393b97212d83","obfuscation":"jmgbyj7kg2n","output_index":0,"sequence_number":6}
 
 
         event: response.function_call_arguments.delta
 
-        data: {"type":"response.function_call_arguments.delta","delta":"\"}","item_id":"fc_09f57d35b8d7f521006ac3b802077887d2b6949b6c52f1ca6d","obfuscation":"0VyhPZMhH7rxvP","output_index":0,"sequence_number":7}
+        data: {"type":"response.function_call_arguments.delta","delta":"\"}","item_id":"fc_0beb7dd94e5d67ae016af33d71773887d2a1a1393b97212d83","obfuscation":"B8cGFtXP4kRL0K","output_index":0,"sequence_number":7}
 
 
         event: response.function_call_arguments.done
 
-        data: {"type":"response.function_call_arguments.done","arguments":"{\"city\":\"Paris\"}","item_id":"fc_09f57d35b8d7f521006ac3b802077887d2b6949b6c52f1ca6d","output_index":0,"sequence_number":8}
+        data: {"type":"response.function_call_arguments.done","arguments":"{\"city\":\"Paris\"}","item_id":"fc_0beb7dd94e5d67ae016af33d71773887d2a1a1393b97212d83","output_index":0,"sequence_number":8}
 
 
         event: response.output_item.done
 
-        data: {"type":"response.output_item.done","item":{"id":"fc_09f57d35b8d7f521006ac3b802077887d2b6949b6c52f1ca6d","type":"function_call","status":"completed","arguments":"{\"city\":\"Paris\"}","call_id":"call_77swvgml1calIg6ztQB5otAT","name":"get_temperature"},"output_index":0,"sequence_number":9}
+        data: {"type":"response.output_item.done","item":{"id":"fc_0beb7dd94e5d67ae016af33d71773887d2a1a1393b97212d83","type":"function_call","status":"completed","arguments":"{\"city\":\"Paris\"}","call_id":"call_mW4sMmZgJzsaEzEmMDCG0zek","name":"get_temperature"},"output_index":0,"sequence_number":9}
 
 
         event: response.completed
 
-        data: {"type":"response.completed","response":{"id":"resp_09f57d35b8d7f521006ac3b800dc1487d2aa474b0a2b71279f","object":"response","created_at":1791211520,"status":"completed","access_programs":null,"background":false,"completed_at":1791211522,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":null,"max_output_tokens":null,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[{"id":"fc_09f57d35b8d7f521006ac3b802077887d2b6949b6c52f1ca6d","type":"function_call","status":"completed","arguments":"{\"city\":\"Paris\"}","call_id":"call_77swvgml1calIg6ztQB5otAT","name":"get_temperature"}],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"in_memory","reasoning":{"context":null,"effort":null,"summary":null},"safety_identifier":null,"service_tier":"default","store":true,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[{"type":"function","description":"Get
-        the current temperature for a city.","name":"get_temperature","output_schema":null,"parameters":{"properties":{"city":{"title":"City","type":"string"}},"required":["city"],"title":"get_temperature_Args","type":"object","additionalProperties":false},"strict":true}],"top_logprobs":0,"top_p":1.0,"truncation":"disabled","usage":{"input_tokens":70,"input_tokens_details":{"cache_write_tokens":0,"cached_tokens":0},"output_tokens":15,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":85},"user":null,"metadata":{}},"sequence_number":10}
+        data: {"type":"response.completed","response":{"id":"resp_0beb7dd94e5d67ae016af33d70e98087d29aca0aa851287379","object":"response","created_at":1794325872,"status":"completed","access_programs":null,"background":false,"completed_at":1794325873,"error":null,"frequency_penalty":0.0,"image":{"context_compression":"disabled"},"incomplete_details":null,"instructions":null,"max_output_tokens":null,"max_tool_calls":null,"model":"gpt-6-luna","moderation":null,"output":[{"id":"fc_0beb7dd94e5d67ae016af33d71773887d2a1a1393b97212d83","type":"function_call","status":"completed","arguments":"{\"city\":\"Paris\"}","call_id":"call_mW4sMmZgJzsaEzEmMDCG0zek","name":"get_temperature"}],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"24h","reasoning":{"context":"all_turns","effort":"none","mode":"standard","summary":null},"safety_identifier":null,"service_tier":"default","store":false,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[{"type":"function","description":"Get
+        the current temperature for a city.","name":"get_temperature","output_schema":null,"parameters":{"properties":{"city":{"title":"City","type":"string"}},"required":["city"],"title":"get_temperature_Args","type":"object","additionalProperties":false},"strict":true}],"top_logprobs":0,"top_p":0.98,"truncation":"disabled","usage":{"input_tokens":75,"input_tokens_details":{"cache_write_tokens":0,"cached_tokens":0},"output_tokens":18,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":93},"user":null,"metadata":{}},"sequence_number":10}
 
 
         '
     headers:
       access-control-expose-headers:
-      - X-Request-ID
+      - X-Request-ID, Server-Timing-Total
       - CF-Ray
       - CF-Ray
       alt-svc:
@@ -110,15 +110,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a45d35a48c79ebbd-YYZ
+      - a58637a12c41ac3c-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 05 Oct 2026 14:45:22 GMT
+      - Tue, 10 Nov 2026 15:51:13 GMT
       openai-processing-ms:
-      - '1158'
+      - '337'
       openai-version:
       - '2020-10-01'
       server:
@@ -132,24 +132,24 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
-      - '29997'
+      - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999670'
+      - '179999400'
       x-ratelimit-reset-requests:
-      - 6ms
+      - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_3d0460e4560141e2b9f6a7e296202860
+      - req_134477011b3f434ba6955b72eaf6faa9
     status:
       code: 200
       message: OK
 - request:
-    body: '{"model":"gpt-4o-mini","stream":true,"input":[{"role":"system","content":"Always
+    body: '{"model":"gpt-6-luna","stream":true,"input":[{"role":"system","content":"Always
       use get_temperature once before answering. Be concise."},{"role":"user","content":[{"type":"input_text","text":"What
-      is the temperature in Paris?"}]},{"type":"item_reference","id":"fc_09f57d35b8d7f521006ac3b802077887d2b6949b6c52f1ca6d"},{"type":"function_call_output","call_id":"call_77swvgml1calIg6ztQB5otAT","output":"{\"city\":\"Paris\",\"temperature\":21,\"unit\":\"celsius\"}"}],"tools":[{"type":"function","name":"get_temperature","description":"Get
+      is the temperature in Paris?"}]},{"arguments":"{\"city\":\"Paris\"}","call_id":"call_mW4sMmZgJzsaEzEmMDCG0zek","name":"get_temperature","type":"function_call","id":"fc_0beb7dd94e5d67ae016af33d71773887d2a1a1393b97212d83","status":"completed"},{"type":"function_call_output","call_id":"call_mW4sMmZgJzsaEzEmMDCG0zek","output":"{\"city\":\"Paris\",\"temperature\":21,\"unit\":\"celsius\"}"}],"reasoning":{"effort":"none"},"store":false,"tools":[{"type":"function","name":"get_temperature","description":"Get
       the current temperature for a city.","parameters":{"properties":{"city":{"title":"City","type":"string"}},"required":["city"],"title":"get_temperature_Args","type":"object"}}]}'
     headers:
       accept:
@@ -159,13 +159,13 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '713'
+      - '878'
       content-type:
       - application/json
       host:
       - api.openai.com
       user-agent:
-      - AsyncOpenAI/Python 3.24.0
+      - AsyncOpenAI/Python 3.46.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -175,7 +175,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.24.0
+      - 3.46.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -188,38 +188,34 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "event: response.created\ndata: {\"type\":\"response.created\",\"response\":{\"id\":\"resp_09f57d35b8d7f521006ac3b8025fc087d280743b785d438c92\",\"object\":\"response\",\"created_at\":1791211522,\"status\":\"in_progress\",\"access_programs\":null,\"background\":false,\"completed_at\":null,\"error\":null,\"frequency_penalty\":0.0,\"incomplete_details\":null,\"instructions\":null,\"max_output_tokens\":null,\"max_tool_calls\":null,\"model\":\"gpt-4o-mini-2024-07-18\",\"moderation\":null,\"output\":[],\"parallel_tool_calls\":true,\"presence_penalty\":0.0,\"previous_response_id\":null,\"prompt_cache_key\":null,\"prompt_cache_retention\":\"in_memory\",\"reasoning\":{\"context\":null,\"effort\":null,\"summary\":null},\"safety_identifier\":null,\"service_tier\":\"auto\",\"store\":true,\"temperature\":1.0,\"text\":{\"format\":{\"type\":\"text\"},\"verbosity\":\"medium\"},\"tool_choice\":\"auto\",\"tool_usage\":{\"image_gen\":{\"input_tokens\":0,\"input_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"output_tokens\":0,\"output_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"total_tokens\":0},\"web_search\":{\"num_requests\":0}},\"tools\":[{\"type\":\"function\",\"description\":\"Get
-        the current temperature for a city.\",\"name\":\"get_temperature\",\"output_schema\":null,\"parameters\":{\"properties\":{\"city\":{\"title\":\"City\",\"type\":\"string\"}},\"required\":[\"city\"],\"title\":\"get_temperature_Args\",\"type\":\"object\",\"additionalProperties\":false},\"strict\":true}],\"top_logprobs\":0,\"top_p\":1.0,\"truncation\":\"disabled\",\"usage\":null,\"user\":null,\"metadata\":{}},\"sequence_number\":0}\n\nevent:
-        response.in_progress\ndata: {\"type\":\"response.in_progress\",\"response\":{\"id\":\"resp_09f57d35b8d7f521006ac3b8025fc087d280743b785d438c92\",\"object\":\"response\",\"created_at\":1791211522,\"status\":\"in_progress\",\"access_programs\":null,\"background\":false,\"completed_at\":null,\"error\":null,\"frequency_penalty\":0.0,\"incomplete_details\":null,\"instructions\":null,\"max_output_tokens\":null,\"max_tool_calls\":null,\"model\":\"gpt-4o-mini-2024-07-18\",\"moderation\":null,\"output\":[],\"parallel_tool_calls\":true,\"presence_penalty\":0.0,\"previous_response_id\":null,\"prompt_cache_key\":null,\"prompt_cache_retention\":\"in_memory\",\"reasoning\":{\"context\":null,\"effort\":null,\"summary\":null},\"safety_identifier\":null,\"service_tier\":\"auto\",\"store\":true,\"temperature\":1.0,\"text\":{\"format\":{\"type\":\"text\"},\"verbosity\":\"medium\"},\"tool_choice\":\"auto\",\"tool_usage\":{\"image_gen\":{\"input_tokens\":0,\"input_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"output_tokens\":0,\"output_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"total_tokens\":0},\"web_search\":{\"num_requests\":0}},\"tools\":[{\"type\":\"function\",\"description\":\"Get
-        the current temperature for a city.\",\"name\":\"get_temperature\",\"output_schema\":null,\"parameters\":{\"properties\":{\"city\":{\"title\":\"City\",\"type\":\"string\"}},\"required\":[\"city\"],\"title\":\"get_temperature_Args\",\"type\":\"object\",\"additionalProperties\":false},\"strict\":true}],\"top_logprobs\":0,\"top_p\":1.0,\"truncation\":\"disabled\",\"usage\":null,\"user\":null,\"metadata\":{}},\"sequence_number\":1}\n\nevent:
-        response.output_item.added\ndata: {\"type\":\"response.output_item.added\",\"item\":{\"id\":\"msg_09f57d35b8d7f521006ac3b803391c87d29f262ab5513d64a4\",\"type\":\"message\",\"status\":\"in_progress\",\"content\":[],\"role\":\"assistant\"},\"output_index\":0,\"sequence_number\":2}\n\nevent:
-        response.content_part.added\ndata: {\"type\":\"response.content_part.added\",\"content_index\":0,\"item_id\":\"msg_09f57d35b8d7f521006ac3b803391c87d29f262ab5513d64a4\",\"output_index\":0,\"part\":{\"type\":\"output_text\",\"annotations\":[],\"logprobs\":[],\"text\":\"\"},\"sequence_number\":3}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"The\",\"item_id\":\"msg_09f57d35b8d7f521006ac3b803391c87d29f262ab5513d64a4\",\"logprobs\":[],\"obfuscation\":\"bS8CIyO9rSbgd\",\"output_index\":0,\"sequence_number\":4}\n\nevent:
+      string: "event: response.created\ndata: {\"type\":\"response.created\",\"response\":{\"id\":\"resp_0beb7dd94e5d67ae016af33d71c81c87d2b9572714f529e13b\",\"object\":\"response\",\"created_at\":1794325873,\"status\":\"in_progress\",\"access_programs\":null,\"background\":false,\"completed_at\":null,\"error\":null,\"frequency_penalty\":0.0,\"image\":{\"context_compression\":\"disabled\"},\"incomplete_details\":null,\"instructions\":null,\"max_output_tokens\":null,\"max_tool_calls\":null,\"model\":\"gpt-6-luna\",\"moderation\":null,\"output\":[],\"parallel_tool_calls\":true,\"presence_penalty\":0.0,\"previous_response_id\":null,\"prompt_cache_key\":null,\"prompt_cache_retention\":\"24h\",\"reasoning\":{\"context\":\"all_turns\",\"effort\":\"none\",\"mode\":\"standard\",\"summary\":null},\"safety_identifier\":null,\"service_tier\":\"auto\",\"store\":false,\"temperature\":1.0,\"text\":{\"format\":{\"type\":\"text\"},\"verbosity\":\"medium\"},\"tool_choice\":\"auto\",\"tool_usage\":{\"image_gen\":{\"input_tokens\":0,\"input_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"output_tokens\":0,\"output_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"total_tokens\":0},\"web_search\":{\"num_requests\":0}},\"tools\":[{\"type\":\"function\",\"description\":\"Get
+        the current temperature for a city.\",\"name\":\"get_temperature\",\"output_schema\":null,\"parameters\":{\"properties\":{\"city\":{\"title\":\"City\",\"type\":\"string\"}},\"required\":[\"city\"],\"title\":\"get_temperature_Args\",\"type\":\"object\",\"additionalProperties\":false},\"strict\":true}],\"top_logprobs\":0,\"top_p\":0.98,\"truncation\":\"disabled\",\"usage\":null,\"user\":null,\"metadata\":{}},\"sequence_number\":0}\n\nevent:
+        response.in_progress\ndata: {\"type\":\"response.in_progress\",\"response\":{\"id\":\"resp_0beb7dd94e5d67ae016af33d71c81c87d2b9572714f529e13b\",\"object\":\"response\",\"created_at\":1794325873,\"status\":\"in_progress\",\"access_programs\":null,\"background\":false,\"completed_at\":null,\"error\":null,\"frequency_penalty\":0.0,\"image\":{\"context_compression\":\"disabled\"},\"incomplete_details\":null,\"instructions\":null,\"max_output_tokens\":null,\"max_tool_calls\":null,\"model\":\"gpt-6-luna\",\"moderation\":null,\"output\":[],\"parallel_tool_calls\":true,\"presence_penalty\":0.0,\"previous_response_id\":null,\"prompt_cache_key\":null,\"prompt_cache_retention\":\"24h\",\"reasoning\":{\"context\":\"all_turns\",\"effort\":\"none\",\"mode\":\"standard\",\"summary\":null},\"safety_identifier\":null,\"service_tier\":\"auto\",\"store\":false,\"temperature\":1.0,\"text\":{\"format\":{\"type\":\"text\"},\"verbosity\":\"medium\"},\"tool_choice\":\"auto\",\"tool_usage\":{\"image_gen\":{\"input_tokens\":0,\"input_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"output_tokens\":0,\"output_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"total_tokens\":0},\"web_search\":{\"num_requests\":0}},\"tools\":[{\"type\":\"function\",\"description\":\"Get
+        the current temperature for a city.\",\"name\":\"get_temperature\",\"output_schema\":null,\"parameters\":{\"properties\":{\"city\":{\"title\":\"City\",\"type\":\"string\"}},\"required\":[\"city\"],\"title\":\"get_temperature_Args\",\"type\":\"object\",\"additionalProperties\":false},\"strict\":true}],\"top_logprobs\":0,\"top_p\":0.98,\"truncation\":\"disabled\",\"usage\":null,\"user\":null,\"metadata\":{}},\"sequence_number\":1}\n\nevent:
+        response.output_item.added\ndata: {\"type\":\"response.output_item.added\",\"item\":{\"id\":\"msg_0beb7dd94e5d67ae016af33d72487087d2bcb1e1d3659077d7\",\"type\":\"message\",\"status\":\"in_progress\",\"content\":[],\"phase\":\"final_answer\",\"role\":\"assistant\"},\"output_index\":0,\"sequence_number\":2}\n\nevent:
+        response.content_part.added\ndata: {\"type\":\"response.content_part.added\",\"content_index\":0,\"item_id\":\"msg_0beb7dd94e5d67ae016af33d72487087d2bcb1e1d3659077d7\",\"output_index\":0,\"part\":{\"type\":\"output_text\",\"annotations\":[],\"logprobs\":[],\"text\":\"\"},\"sequence_number\":3}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"It\",\"item_id\":\"msg_0beb7dd94e5d67ae016af33d72487087d2bcb1e1d3659077d7\",\"logprobs\":[],\"obfuscation\":\"mRhDuGyvUoGubc\",\"output_index\":0,\"sequence_number\":4}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"\u2019s\",\"item_id\":\"msg_0beb7dd94e5d67ae016af33d72487087d2bcb1e1d3659077d7\",\"logprobs\":[],\"obfuscation\":\"yhUHPSMnOKBdvS\",\"output_index\":0,\"sequence_number\":5}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        temperature\",\"item_id\":\"msg_09f57d35b8d7f521006ac3b803391c87d29f262ab5513d64a4\",\"logprobs\":[],\"obfuscation\":\"ATVE\",\"output_index\":0,\"sequence_number\":5}\n\nevent:
+        \",\"item_id\":\"msg_0beb7dd94e5d67ae016af33d72487087d2bcb1e1d3659077d7\",\"logprobs\":[],\"obfuscation\":\"QeZA2rUt4QRK4Au\",\"output_index\":0,\"sequence_number\":6}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"21\",\"item_id\":\"msg_0beb7dd94e5d67ae016af33d72487087d2bcb1e1d3659077d7\",\"logprobs\":[],\"obfuscation\":\"OVvtcSBEE2fnGA\",\"output_index\":0,\"sequence_number\":7}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"\xB0C\",\"item_id\":\"msg_0beb7dd94e5d67ae016af33d72487087d2bcb1e1d3659077d7\",\"logprobs\":[],\"obfuscation\":\"hMCpQLeHY6Fblt\",\"output_index\":0,\"sequence_number\":8}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        in\",\"item_id\":\"msg_09f57d35b8d7f521006ac3b803391c87d29f262ab5513d64a4\",\"logprobs\":[],\"obfuscation\":\"FumJDF1AYKF53\",\"output_index\":0,\"sequence_number\":6}\n\nevent:
+        in\",\"item_id\":\"msg_0beb7dd94e5d67ae016af33d72487087d2bcb1e1d3659077d7\",\"logprobs\":[],\"obfuscation\":\"XETnoF2wCzafh\",\"output_index\":0,\"sequence_number\":9}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        Paris\",\"item_id\":\"msg_09f57d35b8d7f521006ac3b803391c87d29f262ab5513d64a4\",\"logprobs\":[],\"obfuscation\":\"cCDXYBvcfE\",\"output_index\":0,\"sequence_number\":7}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        is\",\"item_id\":\"msg_09f57d35b8d7f521006ac3b803391c87d29f262ab5513d64a4\",\"logprobs\":[],\"obfuscation\":\"a4UQwqMiVJktu\",\"output_index\":0,\"sequence_number\":8}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        \",\"item_id\":\"msg_09f57d35b8d7f521006ac3b803391c87d29f262ab5513d64a4\",\"logprobs\":[],\"obfuscation\":\"CKySwHeqevkgfWC\",\"output_index\":0,\"sequence_number\":9}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"21\",\"item_id\":\"msg_09f57d35b8d7f521006ac3b803391c87d29f262ab5513d64a4\",\"logprobs\":[],\"obfuscation\":\"ZaNtLowUhgYOkN\",\"output_index\":0,\"sequence_number\":10}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"\xB0C\",\"item_id\":\"msg_09f57d35b8d7f521006ac3b803391c87d29f262ab5513d64a4\",\"logprobs\":[],\"obfuscation\":\"saUvgIDa8acx3H\",\"output_index\":0,\"sequence_number\":11}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\".\",\"item_id\":\"msg_09f57d35b8d7f521006ac3b803391c87d29f262ab5513d64a4\",\"logprobs\":[],\"obfuscation\":\"zaoTbZHWlclKsh1\",\"output_index\":0,\"sequence_number\":12}\n\nevent:
-        response.output_text.done\ndata: {\"type\":\"response.output_text.done\",\"content_index\":0,\"item_id\":\"msg_09f57d35b8d7f521006ac3b803391c87d29f262ab5513d64a4\",\"logprobs\":[],\"output_index\":0,\"sequence_number\":13,\"text\":\"The
-        temperature in Paris is 21\xB0C.\"}\n\nevent: response.content_part.done\ndata:
-        {\"type\":\"response.content_part.done\",\"content_index\":0,\"item_id\":\"msg_09f57d35b8d7f521006ac3b803391c87d29f262ab5513d64a4\",\"output_index\":0,\"part\":{\"type\":\"output_text\",\"annotations\":[],\"logprobs\":[],\"text\":\"The
-        temperature in Paris is 21\xB0C.\"},\"sequence_number\":14}\n\nevent: response.output_item.done\ndata:
-        {\"type\":\"response.output_item.done\",\"item\":{\"id\":\"msg_09f57d35b8d7f521006ac3b803391c87d29f262ab5513d64a4\",\"type\":\"message\",\"status\":\"completed\",\"content\":[{\"type\":\"output_text\",\"annotations\":[],\"logprobs\":[],\"text\":\"The
-        temperature in Paris is 21\xB0C.\"}],\"role\":\"assistant\"},\"output_index\":0,\"sequence_number\":15}\n\nevent:
-        response.completed\ndata: {\"type\":\"response.completed\",\"response\":{\"id\":\"resp_09f57d35b8d7f521006ac3b8025fc087d280743b785d438c92\",\"object\":\"response\",\"created_at\":1791211522,\"status\":\"completed\",\"access_programs\":null,\"background\":false,\"completed_at\":1791211523,\"error\":null,\"frequency_penalty\":0.0,\"incomplete_details\":null,\"instructions\":null,\"max_output_tokens\":null,\"max_tool_calls\":null,\"model\":\"gpt-4o-mini-2024-07-18\",\"moderation\":null,\"output\":[{\"id\":\"msg_09f57d35b8d7f521006ac3b803391c87d29f262ab5513d64a4\",\"type\":\"message\",\"status\":\"completed\",\"content\":[{\"type\":\"output_text\",\"annotations\":[],\"logprobs\":[],\"text\":\"The
-        temperature in Paris is 21\xB0C.\"}],\"role\":\"assistant\"}],\"parallel_tool_calls\":true,\"presence_penalty\":0.0,\"previous_response_id\":null,\"prompt_cache_key\":null,\"prompt_cache_retention\":\"in_memory\",\"reasoning\":{\"context\":null,\"effort\":null,\"summary\":null},\"safety_identifier\":null,\"service_tier\":\"default\",\"store\":true,\"temperature\":1.0,\"text\":{\"format\":{\"type\":\"text\"},\"verbosity\":\"medium\"},\"tool_choice\":\"auto\",\"tool_usage\":{\"image_gen\":{\"input_tokens\":0,\"input_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"output_tokens\":0,\"output_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"total_tokens\":0},\"web_search\":{\"num_requests\":0}},\"tools\":[{\"type\":\"function\",\"description\":\"Get
-        the current temperature for a city.\",\"name\":\"get_temperature\",\"output_schema\":null,\"parameters\":{\"properties\":{\"city\":{\"title\":\"City\",\"type\":\"string\"}},\"required\":[\"city\"],\"title\":\"get_temperature_Args\",\"type\":\"object\",\"additionalProperties\":false},\"strict\":true}],\"top_logprobs\":0,\"top_p\":1.0,\"truncation\":\"disabled\",\"usage\":{\"input_tokens\":107,\"input_tokens_details\":{\"cache_write_tokens\":0,\"cached_tokens\":0},\"output_tokens\":11,\"output_tokens_details\":{\"reasoning_tokens\":0},\"total_tokens\":118},\"user\":null,\"metadata\":{}},\"sequence_number\":16}\n\n"
+        Paris\",\"item_id\":\"msg_0beb7dd94e5d67ae016af33d72487087d2bcb1e1d3659077d7\",\"logprobs\":[],\"obfuscation\":\"SSDuvvPJC6\",\"output_index\":0,\"sequence_number\":10}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\".\",\"item_id\":\"msg_0beb7dd94e5d67ae016af33d72487087d2bcb1e1d3659077d7\",\"logprobs\":[],\"obfuscation\":\"awAPV1OjDHu7uRM\",\"output_index\":0,\"sequence_number\":11}\n\nevent:
+        response.output_text.done\ndata: {\"type\":\"response.output_text.done\",\"content_index\":0,\"item_id\":\"msg_0beb7dd94e5d67ae016af33d72487087d2bcb1e1d3659077d7\",\"logprobs\":[],\"output_index\":0,\"sequence_number\":12,\"text\":\"It\u2019s
+        21\xB0C in Paris.\"}\n\nevent: response.content_part.done\ndata: {\"type\":\"response.content_part.done\",\"content_index\":0,\"item_id\":\"msg_0beb7dd94e5d67ae016af33d72487087d2bcb1e1d3659077d7\",\"output_index\":0,\"part\":{\"type\":\"output_text\",\"annotations\":[],\"logprobs\":[],\"text\":\"It\u2019s
+        21\xB0C in Paris.\"},\"sequence_number\":13}\n\nevent: response.output_item.done\ndata:
+        {\"type\":\"response.output_item.done\",\"item\":{\"id\":\"msg_0beb7dd94e5d67ae016af33d72487087d2bcb1e1d3659077d7\",\"type\":\"message\",\"status\":\"completed\",\"content\":[{\"type\":\"output_text\",\"annotations\":[],\"logprobs\":[],\"text\":\"It\u2019s
+        21\xB0C in Paris.\"}],\"phase\":\"final_answer\",\"role\":\"assistant\"},\"output_index\":0,\"sequence_number\":14}\n\nevent:
+        response.completed\ndata: {\"type\":\"response.completed\",\"response\":{\"id\":\"resp_0beb7dd94e5d67ae016af33d71c81c87d2b9572714f529e13b\",\"object\":\"response\",\"created_at\":1794325873,\"status\":\"completed\",\"access_programs\":null,\"background\":false,\"completed_at\":1794325874,\"error\":null,\"frequency_penalty\":0.0,\"image\":{\"context_compression\":\"disabled\"},\"incomplete_details\":null,\"instructions\":null,\"max_output_tokens\":null,\"max_tool_calls\":null,\"model\":\"gpt-6-luna\",\"moderation\":null,\"output\":[{\"id\":\"msg_0beb7dd94e5d67ae016af33d72487087d2bcb1e1d3659077d7\",\"type\":\"message\",\"status\":\"completed\",\"content\":[{\"type\":\"output_text\",\"annotations\":[],\"logprobs\":[],\"text\":\"It\u2019s
+        21\xB0C in Paris.\"}],\"phase\":\"final_answer\",\"role\":\"assistant\"}],\"parallel_tool_calls\":true,\"presence_penalty\":0.0,\"previous_response_id\":null,\"prompt_cache_key\":null,\"prompt_cache_retention\":\"24h\",\"reasoning\":{\"context\":\"all_turns\",\"effort\":\"none\",\"mode\":\"standard\",\"summary\":null},\"safety_identifier\":null,\"service_tier\":\"default\",\"store\":false,\"temperature\":1.0,\"text\":{\"format\":{\"type\":\"text\"},\"verbosity\":\"medium\"},\"tool_choice\":\"auto\",\"tool_usage\":{\"image_gen\":{\"input_tokens\":0,\"input_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"output_tokens\":0,\"output_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"total_tokens\":0},\"web_search\":{\"num_requests\":0}},\"tools\":[{\"type\":\"function\",\"description\":\"Get
+        the current temperature for a city.\",\"name\":\"get_temperature\",\"output_schema\":null,\"parameters\":{\"properties\":{\"city\":{\"title\":\"City\",\"type\":\"string\"}},\"required\":[\"city\"],\"title\":\"get_temperature_Args\",\"type\":\"object\",\"additionalProperties\":false},\"strict\":true}],\"top_logprobs\":0,\"top_p\":0.98,\"truncation\":\"disabled\",\"usage\":{\"input_tokens\":118,\"input_tokens_details\":{\"cache_write_tokens\":0,\"cached_tokens\":0},\"output_tokens\":12,\"output_tokens_details\":{\"reasoning_tokens\":0},\"total_tokens\":130},\"user\":null,\"metadata\":{}},\"sequence_number\":15}\n\n"
     headers:
       access-control-expose-headers:
-      - X-Request-ID
+      - X-Request-ID, Server-Timing-Total
       - CF-Ray
       - CF-Ray
       alt-svc:
@@ -227,15 +223,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a45d35ae5c0eebbd-YYZ
+      - a58637a69bb1ac3c-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 05 Oct 2026 14:45:23 GMT
+      - Tue, 10 Nov 2026 15:51:14 GMT
       openai-processing-ms:
-      - '820'
+      - '341'
       openai-version:
       - '2020-10-01'
       server:
@@ -249,17 +245,17 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
-      - '29992'
+      - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999110'
+      - '179999355'
       x-ratelimit-reset-requests:
-      - 16ms
+      - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_59233ac1beae4a63a43332ced931256c
+      - req_3a7a195bf967410f9ec1fceb5f40d3fa
     status:
       code: 200
       message: OK

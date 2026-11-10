@@ -19,10 +19,13 @@ results2 = auto_instrument()
 assert results2.get("mistral") == True
 
 
+TEST_MODEL = "ministral-3b-2512"
+
+
 with autoinstrument_test_context("test_auto_mistral", integration="mistral") as memory_logger:
     client = Mistral(api_key=os.environ.get("MISTRAL_API_KEY"))
     response = client.chat.complete(
-        model="mistral-small-latest",
+        model=TEST_MODEL,
         messages=[{"role": "user", "content": "What is 2+2? Reply with just the number."}],
         max_tokens=10,
     )
@@ -32,7 +35,7 @@ with autoinstrument_test_context("test_auto_mistral", integration="mistral") as 
     assert len(spans) == 1, f"Expected 1 span, got {len(spans)}"
     span = spans[0]
     assert span["metadata"]["provider"] == "mistral"
-    assert span["metadata"]["model"] == "mistral-small-latest"
+    assert span["metadata"]["model"] == TEST_MODEL
     assert "4" in str(span["output"])
 
 print("SUCCESS")

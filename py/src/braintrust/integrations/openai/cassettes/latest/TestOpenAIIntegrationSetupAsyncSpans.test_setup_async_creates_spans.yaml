@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"Say hi async"}]}'
+    body: '{"model":"gpt-6-luna","messages":[{"role":"user","content":"Say hi async"}],"reasoning_effort":"none"}'
     headers:
       accept:
       - application/json
@@ -9,7 +9,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '77'
+      - '102'
       content-type:
       - application/json
       host:
@@ -38,17 +38,18 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EiMmQLcJAvdOqJeehpn3NMvSbICpm\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1794242706,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiiMVoClzCiyrq1CXvSLjnlDk3GXN\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794325667,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"Hello! How can I assist you today?\",\n
-        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
-        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        10,\n    \"completion_tokens\": 9,\n    \"total_tokens\": 19,\n    \"prompt_tokens_details\":
-        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_3a3c79652c\"\n}\n"
+        \"assistant\",\n        \"content\": \"Hi! \U0001F44B\",\n        \"refusal\":
+        null,\n        \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 9,\n    \"completion_tokens\":
+        7,\n    \"total_tokens\": 16,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"cache_write_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n
+        \   \"completion_tokens_details\": {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\":
+        0,\n      \"accepted_prediction_tokens\": 0,\n      \"rejected_prediction_tokens\":
+        0\n    }\n  },\n  \"service_tier\": \"default\",\n  \"system_fingerprint\":
+        null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -59,17 +60,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a57e4934bf3cb404-YYZ
+      - a5863299a9e4ac78-YYZ
       connection:
       - keep-alive
       content-length:
-      - '840'
+      - '797'
       content-type:
       - application/json
       date:
-      - Mon, 09 Nov 2026 16:45:07 GMT
+      - Tue, 10 Nov 2026 15:47:48 GMT
       openai-processing-ms:
-      - '639'
+      - '1607'
       openai-version:
       - '2020-10-01'
       server:
@@ -85,17 +86,17 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999995'
+      - '179999994'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_dd1e32ce4c104e47be3d7a4c70dd3f99
+      - req_126f236f59ff49d6939229f7961808ee
     status:
       code: 200
       message: OK

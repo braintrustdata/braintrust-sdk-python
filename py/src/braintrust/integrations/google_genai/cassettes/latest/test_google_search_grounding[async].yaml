@@ -21,73 +21,22 @@ interactions:
       x-goog-api-client:
       - google-genai-sdk/3.0.0 gl-python/3.14.7
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent
-  response:
-    body:
-      string: "{\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Search as
-        tool is not enabled for api version v1. Use api version v1beta instead.\",\n
-        \   \"status\": \"INVALID_ARGUMENT\"\n  }\n}\n"
-    headers:
-      alt-svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      content-length:
-      - '171'
-      content-type:
-      - application/json; charset=UTF-8
-      date:
-      - Mon, 09 Nov 2026 17:02:57 GMT
-      server:
-      - scaffolding on HTTPServer2
-      server-timing:
-      - gfet4t7; dur=226
-      transfer-encoding:
-      - chunked
-      vary:
-      - Origin
-      - X-Origin
-      - Referer
-      x-content-type-options:
-      - nosniff
-      x-frame-options:
-      - SAMEORIGIN
-      x-gemini-service-tier:
-      - standard
-      x-xss-protection:
-      - '0'
-    status:
-      code: 400
-      message: Bad Request
-- request:
-    body: '{"contents": [{"parts": [{"text": "What is the current population of Tokyo,
-      Japan?"}], "role": "user"}], "tools": [{"googleSearch": {}}], "generationConfig":
-      {"maxOutputTokens": 300}}'
-    headers:
-      accept:
-      - '*/*'
-      accept-encoding:
-      - gzip, deflate, zstd
-      connection:
-      - keep-alive
-      content-length:
-      - '183'
-      content-type:
-      - application/json
-      host:
-      - generativelanguage.googleapis.com
-      user-agent:
-      - google-genai-sdk/3.0.0 gl-python/3.14.7
-      x-goog-api-client:
-      - google-genai-sdk/3.0.0 gl-python/3.14.7
-    method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"The current population of Tokyo Metropolis
-        is estimated to be\"\n          }\n        ],\n        \"role\": \"model\"\n
-        \     },\n      \"finishReason\": \"MAX_TOKENS\",\n      \"index\": 0,\n      \"groundingMetadata\":
-        {\n        \"searchEntryPoint\": {\n          \"renderedContent\": \"\\u003cstyle\\u003e\\n.container
-        {\\n  align-items: center;\\n  border-radius: 8px;\\n  display: flex;\\n  font-family:
+        [\n          {\n            \"text\": \"The population of Tokyo depends on
+        how the boundaries are measured:\\n\\n* **Tokyo Metropolis (Prefecture):**
+        The total population for the entire Tokyo prefecture is estimated at approximately
+        **14.2 million to 14.3 million** people.\\n* **Greater Tokyo Area (Metropolitan
+        Area):** If you include the wider urban agglomeration spanning the surrounding
+        prefectures, the population is estimated to be around **33.4 million** people
+        according to United Nations demographic reports, making it one of the largest
+        metropolitan areas in the world.\",\n            \"thoughtSignature\": \"EmAKXgFpFH0Tm1CiZb7KTFzs9Tj6Q0UBaaDzwPaftT0JtRZzRKXTVotakTgZYtlwdjkeh8VljXjpHVHHMKFUmVUKXuSCQA8BFksSrsAzkmuuWSgGrXmmVyEzHxuI1KJ/jlE=\"\n
+        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        \"STOP\",\n      \"index\": 0,\n      \"groundingMetadata\": {\n        \"searchEntryPoint\":
+        {\n          \"renderedContent\": \"\\u003cstyle\\u003e\\n.container {\\n
+        \ align-items: center;\\n  border-radius: 8px;\\n  display: flex;\\n  font-family:
         Google Sans, Roboto, sans-serif;\\n  font-size: 14px;\\n  line-height: 20px;\\n
         \ padding: 8px 12px;\\n}\\n.chip {\\n  display: inline-block;\\n  border:
         solid 1px;\\n  border-radius: 16px;\\n  min-width: 14px;\\n  padding: 5px
@@ -148,36 +97,44 @@ interactions:
         0-11.01 3.4-13.45 8.36l5.03 3.85A8.86 8.86 0 0 1 24 14.14z\\\" fill=\\\"#EA4335\\\"/\\u003e\\n
         \   \\u003c/svg\\u003e\\n    \\u003cdiv class=\\\"gradient-container\\\"\\u003e\\u003cdiv
         class=\\\"gradient\\\"\\u003e\\u003c/div\\u003e\\u003c/div\\u003e\\n  \\u003c/div\\u003e\\n
-        \ \\u003cdiv class=\\\"carousel\\\"\\u003e\\n    \\u003ca class=\\\"chip\\\"
-        href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHD_M6SVU5iNik-m7Pv2KTS_f2nrmQmcTSmdJkSgCRuYtsvCA5OifDqA7DGk_0w5x5ScjbQpDjvAdOyOB4cXy6V2TKcwrz_Jl9UEXukIMx2JYHtieRQcY9i6LVdBuEysW-qs8sQA0ulRqlunuxkQAnVQR2T915-5tbPvTKGy8TGIDgTL565EF-h_wkgyw4mU_VUvN3l6QEA2A==\\\"\\u003eTokyo
-        population 2024\\u003c/a\\u003e\\n    \\u003ca class=\\\"chip\\\" href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFSSR0YtaaJ2psy-BJ_391pIwFhz7uaJKAlc6x6DTJk7tyW1OiVTKl4s7-NzMmTkBvMlSc09f4HaY2ql08U1WOLbw0dpRabXNWv8C8CJMlCjKeFuU6o8KJY8b8nQ3MMuzx9coHtq5afJG_s1R0glyktDEP59HPMi7LAq0OnHitIM8BvHVMmVushAWBiT_e7ooQfGL6bK_R-Ag==\\\"\\u003eTokyo
-        population 2026\\u003c/a\\u003e\\n    \\u003ca class=\\\"chip\\\" href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQE3EyW4TqCXJeuDP_qOLsg3YBxBT-2WCMPmhBAFJON8zh5SyqVlSqouo5lj7oxS3xlSv_He90aPzlJWPOvC7jmTaFs7YCYGbbg9Sg8I7IWvbCpNJz-diTcO1SMKae-SBvY82bCw-5Ob8fpcElBhgw4fbVzY52wQ8oaU0fmJXjfGKJgv-ZY_HZ9NBfVh30vfSiOW56lV3_G21ktxQC-Lj44gAgbe6Q==\\\"\\u003ecurrent
-        population of Tokyo Japan\\u003c/a\\u003e\\n    \\u003ca class=\\\"chip\\\"
-        href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEmNqhM1kJxaIwExhhWPn0c9j4nA3R-4F3ysgfvelvDYJV52K5FiVrCr3t22ZYJOkfXVlk2HAXzp9N8OHlsGNtjfCgJDcxYwQzIqG4jykmQSD1O1MSfUhngvNJdE51dfLE5Aaeis3VkNDk7PN2ND1koEWWdoc2IlWk-8sHQLYRM2zmv_YOTm59XK4dIqgnBhdUPIJAh7YTdJA==\\\"\\u003eTokyo
-        population 2025\\u003c/a\\u003e\\n  \\u003c/div\\u003e\\n\\u003c/div\\u003e\\n\"\n
-        \       },\n        \"webSearchQueries\": [\n          \"current population
-        of Tokyo Japan\",\n          \"Tokyo population 2026\",\n          \"Tokyo
-        population 2025\",\n          \"Tokyo population 2024\"\n        ]\n      }\n
+        \ \\u003cdiv class=\\\"carousel\\\"\\u003e\\n\\u003ca class=\\\"chip\\\" href=\\\"https://www.google.com/search?q=current+population+of+Tokyo+Japan+2026&client=app-vertex-grounding&safesearch=active\\\"\\u003ecurrent
+        population of Tokyo Japan 2026\\u003c/a\\u003e\\n  \\u003c/div\\u003e\\n\\u003c/div\\u003e\"\n
+        \       },\n        \"groundingChunks\": [\n          {\n            \"web\":
+        {\n              \"uri\": \"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEAdVe6dWdY5BfqL0X7WdCTobxK_b60oEENLEodSwdA6hKNtFvlDnCUM7R4hyVleILyCx2LFPqZSm8WUVN4PVnPpmLC3Gp-T42wKR88NFWsVBjhpuvop3blCguzVfOfcqLgyhC1OXhVlIg=\",\n
+        \             \"title\": \"wikipedia.org\"\n            }\n          },\n
+        \         {\n            \"web\": {\n              \"uri\": \"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQF6wpMUgAnPLyILcIE9HPz3EHU6HUnABGznxguvPWbuIzObiD4fo8UimgYAim0kHFYTntyXBO84sVxsxOxRwca2bP2Z3f9buT9KcCKiYnq-T9Oo-nHt21cAenhG0Lqer-w=\",\n
+        \             \"title\": \"nippon.com\"\n            }\n          }\n        ],\n
+        \       \"groundingSupports\": [\n          {\n            \"segment\": {\n
+        \             \"startIndex\": 71,\n              \"endIndex\": 228,\n              \"text\":
+        \"**Tokyo Metropolis (Prefecture):** The total population for the entire Tokyo
+        prefecture is estimated at approximately **14.2 million to 14.3 million**
+        people\"\n            },\n            \"groundingChunkIndices\": [\n              0\n
+        \           ]\n          },\n          {\n            \"segment\": {\n              \"startIndex\":
+        232,\n              \"endIndex\": 471,\n              \"text\": \"**Greater
+        Tokyo Area (Metropolitan Area):** If you include the wider urban agglomeration
+        spanning the surrounding prefectures, the population is estimated to be around
+        **33.4 million** people according to United Nations demographic reports\"\n
+        \           },\n            \"groundingChunkIndices\": [\n              1\n
+        \           ]\n          }\n        ],\n        \"webSearchQueries\": [\n
+        \         \"current population of Tokyo Japan 2026\"\n        ]\n      }\n
         \   }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\": 11,\n    \"candidatesTokenCount\":
-        53,\n    \"totalTokenCount\": 508,\n    \"promptTokensDetails\": [\n      {\n
+        122,\n    \"totalTokenCount\": 133,\n    \"promptTokensDetails\": [\n      {\n
         \       \"modality\": \"TEXT\",\n        \"tokenCount\": 11\n      }\n    ],\n
-        \   \"toolUsePromptTokenCount\": 106,\n    \"toolUsePromptTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 106\n
-        \     }\n    ],\n    \"thoughtsTokenCount\": 338,\n    \"serviceTier\": \"standard\"\n
-        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"Lf3xaruVEsyO1sgP-Le7qQ8\"\n}\n"
+        \   \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-3.5-flash-lite\",\n
+        \ \"responseId\": \"ID7zapbWNO79wbUPwK-FgA8\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '7312'
+      - '8014'
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Mon, 09 Nov 2026 17:04:48 GMT
+      - Tue, 10 Nov 2026 15:54:10 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=3720
+      - gfet4t7; dur=1869
       transfer-encoding:
       - chunked
       vary:

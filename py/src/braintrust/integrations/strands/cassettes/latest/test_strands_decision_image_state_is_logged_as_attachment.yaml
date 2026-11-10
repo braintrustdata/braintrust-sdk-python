@@ -10,10 +10,10 @@ interactions:
       the allowed options, or pick an answer for you.\n- For each question, you MUST
       return exactly one of its allowed option values through the structured-output
       tool, and nothing else."},{"role":"user","content":[{"text":"Describe the attached
-      image.","type":"text"},{"image_url":{"detail":"auto","format":"image/png","url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAFElEQVR42mP4z8DwnxjMMKqQvgoBksPHOXvuG4oAAAAASUVORK5CYII="},"type":"image_url"}]}],"model":"gpt-4o-mini","response_format":{"type":"json_schema","json_schema":{"schema":{"$defs":{"Answer0":{"description":"Is
+      image.","type":"text"},{"image_url":{"detail":"auto","format":"image/png","url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAFElEQVR42mP4z8DwnxjMMKqQvgoBksPHOXvuG4oAAAAASUVORK5CYII="},"type":"image_url"}]}],"model":"gpt-6.1-terra","reasoning_effort":"none","response_format":{"type":"json_schema","json_schema":{"schema":{"$defs":{"Answer0":{"description":"Is
       an image attached?","properties":{"answer":{"description":"Is an image attached?","enum":["true","false","uncertain"],"title":"Answer","type":"string"},"reason":{"anyOf":[{"type":"string"},{"type":"null"}],"description":"Explanation
       when answer is ''uncertain''; omit otherwise.","title":"Reason"}},"required":["answer","reason"],"title":"Answer0","type":"object","additionalProperties":false}},"description":"Answer
-      for each question in the input decision set.","properties":{"has_image":{"$ref":"#/$defs/Answer0"}},"required":["has_image"],"title":"DecisionAnswers","type":"object","additionalProperties":false},"name":"DecisionAnswers","strict":true}},"stream":false,"temperature":0,"tools":[]}'
+      for each question in the input decision set.","properties":{"has_image":{"$ref":"#/$defs/Answer0"}},"required":["has_image"],"title":"DecisionAnswers","type":"object","additionalProperties":false},"name":"DecisionAnswers","strict":true}},"stream":false,"tools":[]}'
     headers:
       accept:
       - application/json
@@ -22,7 +22,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '1859'
+      - '1871'
       content-type:
       - application/json
       host:
@@ -48,22 +48,22 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.7
+      - 3.13.16
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EiPf1WRQFluvlXMl047UC4rm7CEHU\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1794253779,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-Eiiigxrrb6Kb2ka0OP1AjbxLUhFk3\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794327042,\n  \"model\": \"gpt-6.1-terra\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"{\\\"has_image\\\":{\\\"answer\\\":\\\"true\\\",\\\"reason\\\":null}}\",\n
-        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
-        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        8803,\n    \"completion_tokens\": 17,\n    \"total_tokens\": 8820,\n    \"prompt_tokens_details\":
-        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"finish_reason\":
+        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 386,\n    \"completion_tokens\":
+        19,\n    \"total_tokens\": 405,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_5632fb73e4\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -74,17 +74,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a57f5789fe2bec6f-YYZ
+      - a586542b1a6fb5e5-YYZ
       connection:
       - keep-alive
       content-length:
-      - '864'
+      - '818'
       content-type:
       - application/json
       date:
-      - Mon, 09 Nov 2026 19:49:40 GMT
+      - Tue, 10 Nov 2026 16:10:43 GMT
       openai-processing-ms:
-      - '721'
+      - '1561'
       openai-version:
       - '2020-10-01'
       server:
@@ -98,25 +98,25 @@ interactions:
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-input-images:
-      - '50000'
+      - '250000'
       x-ratelimit-limit-requests:
-      - '30000'
+      - '15000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '40000000'
       x-ratelimit-remaining-input-images:
-      - '49999'
+      - '249999'
       x-ratelimit-remaining-requests:
-      - '29999'
+      - '14999'
       x-ratelimit-remaining-tokens:
-      - '149999050'
+      - '39999050'
       x-ratelimit-reset-input-images:
-      - 1ms
-      x-ratelimit-reset-requests:
-      - 2ms
-      x-ratelimit-reset-tokens:
       - 0s
+      x-ratelimit-reset-requests:
+      - 4ms
+      x-ratelimit-reset-tokens:
+      - 1ms
       x-request-id:
-      - req_f95623ed01504ce3a9c508edcbb07b23
+      - req_f6cb772d27424948b60bf315446ed54c
     status:
       code: 200
       message: OK

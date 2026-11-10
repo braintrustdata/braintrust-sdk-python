@@ -397,6 +397,10 @@ class ClaudeAgentSdkCassetteTransport(Transport):
         message_type = message.get("type") if isinstance(message, dict) else None
         if message_type in {"control_response", "control_request", "control_cancel_request"}:
             return
+        # Recent CLIs emit startup hook notifications before acknowledging
+        # initialize. Blocking them prevents the SDK client from connecting.
+        if message_type == "system" and message.get("subtype") in {"hook_started", "hook_progress", "hook_response"}:
+            return
         self._sdk_message_blocked.set()
         await self._sdk_message_gate.wait()
 

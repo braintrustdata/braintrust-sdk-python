@@ -9,7 +9,7 @@ from braintrust.test_helpers import init_test_logger
 
 
 PROJECT_NAME = "test-project-openai-agents-tracing"
-TEST_MODEL = "gpt-4o-mini"
+TEST_MODEL = "gpt-6-luna"
 TEST_PROMPT = "What is 2+2? Just the number."
 TEST_AGENT_INSTRUCTIONS = "You are a helpful assistant. Be very concise."
 
@@ -316,6 +316,7 @@ async def test_openai_agents_chat_completions_requested_service_tier(memory_logg
     from agents import Agent, ModelSettings, OpenAIChatCompletionsModel
     from agents.run import AgentRunner
     from openai import AsyncOpenAI
+    from openai.types.shared import Reasoning
 
     assert not memory_logger.pop()
 
@@ -328,7 +329,7 @@ async def test_openai_agents_chat_completions_requested_service_tier(memory_logg
             name="test-agent",
             model=OpenAIChatCompletionsModel(model=TEST_MODEL, openai_client=AsyncOpenAI()),
             instructions=TEST_AGENT_INSTRUCTIONS,
-            model_settings=ModelSettings(extra_args={"service_tier": "auto"}),
+            model_settings=ModelSettings(reasoning=Reasoning(effort="none"), extra_args={"service_tier": "auto"}),
         )
         result = await AgentRunner().run(agent, TEST_PROMPT)
         assert result.final_output

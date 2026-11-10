@@ -1,8 +1,8 @@
 interactions:
 - request:
-    body: '{"model":"gpt-4o-mini","include":[],"input":[{"content":"What is 2+2? Just
+    body: '{"model":"gpt-6-luna","include":[],"input":[{"content":"What is 2+2? Just
       the number.","role":"user"}],"instructions":"You are a helpful assistant. Be
-      very concise.","prompt_cache_key":"agents-sdk:run:b2e45a430ef04e7980228404c30583c0","tools":[]}'
+      very concise.","prompt_cache_key":"agents-sdk:run:5c8c2a4b4ee24a498fde22ca93abd692","tools":[]}'
     headers:
       accept:
       - application/json
@@ -11,7 +11,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '247'
+      - '246'
       content-type:
       - application/json
       host:
@@ -27,7 +27,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.35.1
+      - 3.46.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -40,38 +40,40 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_034da93cbd1ac836006ad64ffef75887d09092769818190707\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1792430078,\n  \"status\":
+      string: "{\n  \"id\": \"resp_01abd468fa3cb10f016af33c6b885087d2b5310ee2045c0007\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1794325611,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1792430079,\n  \"error\":
-        null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
-        \"You are a helpful assistant. Be very concise.\",\n  \"max_output_tokens\":
-        null,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
-        \ \"moderation\": null,\n  \"output\": [\n    {\n      \"id\": \"msg_034da93cbd1ac836006ad64fff456887d09c146ee46c376bff\",\n
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794325612,\n  \"error\":
+        null,\n  \"frequency_penalty\": 0.0,\n  \"image\": {\n    \"context_compression\":
+        \"disabled\"\n  },\n  \"incomplete_details\": null,\n  \"instructions\": \"You
+        are a helpful assistant. Be very concise.\",\n  \"max_output_tokens\": null,\n
+        \ \"max_tool_calls\": null,\n  \"model\": \"gpt-6-luna\",\n  \"moderation\":
+        null,\n  \"output\": [\n    {\n      \"id\": \"msg_01abd468fa3cb10f016af33c6c4a1087d2aa08de2c8f26e4bd\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"4\"\n        }\n      ],\n
-        \     \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n
-        \ \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
-        \"agents-sdk:run:b2e45a430ef04e7980228404c30583c0\",\n  \"prompt_cache_retention\":
-        \"in_memory\",\n  \"reasoning\": {\n    \"context\": null,\n    \"effort\":
-        null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
-        \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n
+        \     \"phase\": \"final_answer\",\n      \"role\": \"assistant\"\n    }\n
+        \ ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\":
+        null,\n  \"prompt_cache_key\": \"agents-sdk:run:5c8c2a4b4ee24a498fde22ca93abd692\",\n
+        \ \"prompt_cache_retention\": \"24h\",\n  \"reasoning\": {\n    \"context\":
+        \"all_turns\",\n    \"effort\": \"medium\",\n    \"mode\": \"standard\",\n
+        \   \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
+        \"default\",\n  \"store\": false,\n  \"temperature\": 1.0,\n  \"text\": {\n
         \   \"format\": {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n
         \ },\n  \"tool_choice\": \"auto\",\n  \"tool_usage\": {\n    \"image_gen\":
         {\n      \"input_tokens\": 0,\n      \"input_tokens_details\": {\n        \"image_tokens\":
         0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
         {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
         0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
-        \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
-        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 32,\n    \"input_tokens_details\":
+        \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 0.98,\n  \"truncation\":
+        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 31,\n    \"input_tokens_details\":
         {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 2,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 34\n  },\n  \"user\": null,\n  \"metadata\":
+        \   \"output_tokens\": 5,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        0\n    },\n    \"total_tokens\": 36\n  },\n  \"user\": null,\n  \"metadata\":
         {}\n}"
     headers:
       access-control-expose-headers:
-      - X-Request-ID
+      - X-Request-ID, Server-Timing-Total
       - CF-Ray
       - CF-Ray
       alt-svc:
@@ -79,17 +81,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a4d16b992ac9d3d7-SJC
+      - a586313fad781693-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2085'
+      - '2191'
       content-type:
       - application/json
       date:
-      - Mon, 19 Oct 2026 17:14:39 GMT
+      - Tue, 10 Nov 2026 15:46:52 GMT
       openai-processing-ms:
-      - '528'
+      - '927'
       openai-version:
       - '2020-10-01'
       server:
@@ -103,17 +105,17 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999950'
+      - '180000000'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_18361dacc02644c4b7b6a9d81e19b7c2
+      - req_416e4b80d5c84ad1aee6235d80dac94c
     status:
       code: 200
       message: OK

@@ -22,96 +22,38 @@ interactions:
       x-goog-api-client:
       - google-genai-sdk/3.0.0 gl-python/3.14.7
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-lite:generateContent
-  response:
-    body:
-      string: "{\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Developer
-        instruction is not enabled for api version v1. Use api version v1beta instead.\",\n
-        \   \"status\": \"INVALID_ARGUMENT\"\n  }\n}\n"
-    headers:
-      alt-svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      content-length:
-      - '178'
-      content-type:
-      - application/json; charset=UTF-8
-      date:
-      - Mon, 09 Nov 2026 17:02:44 GMT
-      server:
-      - scaffolding on HTTPServer2
-      server-timing:
-      - gfet4t7; dur=229
-      transfer-encoding:
-      - chunked
-      vary:
-      - Origin
-      - X-Origin
-      - Referer
-      x-content-type-options:
-      - nosniff
-      x-frame-options:
-      - SAMEORIGIN
-      x-gemini-service-tier:
-      - standard
-      x-xss-protection:
-      - '0'
-    status:
-      code: 400
-      message: Bad Request
-- request:
-    body: '{"contents": [{"parts": [{"text": "Tell me about the weather."}], "role":
-      "user"}], "systemInstruction": {"parts": [{"text": "You are a pirate. Always
-      respond in pirate speak."}], "role": "user"}, "generationConfig": {"maxOutputTokens":
-      150}}'
-    headers:
-      accept:
-      - '*/*'
-      accept-encoding:
-      - gzip, deflate, zstd
-      connection:
-      - keep-alive
-      content-length:
-      - '242'
-      content-type:
-      - application/json
-      host:
-      - generativelanguage.googleapis.com
-      user-agent:
-      - google-genai-sdk/3.0.0 gl-python/3.14.7
-      x-goog-api-client:
-      - google-genai-sdk/3.0.0 gl-python/3.14.7
-    method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"Ahoy there, matey! The weather today
-        be a bit of a mixed bag, like a treasure chest with both gold doubloons and
-        scurvy-ridden limes.\\n\\nThe **sky** be mostly clear, with only a few fluffy
-        white clouds driftin' by like lazy galleons on a calm sea. The **sun** be
-        shinin' bright, a fine sight to warm yer old bones after a night on the grog.\\n\\nBut
-        keep yer wits about ye! There be a **breeze** blowin' in from the west, a
-        gentle caress now, but it might pick up later. It smells of salt and distant
-        lands, so it does. The **sea** be relatively calm, with only a gentle\"\n
-        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
-        \"MAX_TOKENS\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n
-        \   \"promptTokenCount\": 19,\n    \"candidatesTokenCount\": 150,\n    \"totalTokenCount\":
-        169,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
-        \       \"tokenCount\": 19\n      }\n    ],\n    \"serviceTier\": \"standard\"\n
-        \ },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n  \"responseId\": \"Ev3xaozbBMnv5NoPjKfQ0Qw\"\n}\n"
+        [\n          {\n            \"text\": \"Ahoy there, matey! Ye be askin' about
+        the weather, eh? Well, pull up a plank and listen close, for I've seen me
+        share o' skies!\\n\\nThis mornin', the sun be peekin' through the clouds like
+        a shy mermaid, a bit o' mist still clingin' to the air like barnacles to a
+        hull. A fair breeze be blowin', just enough to fill the sails and set us on
+        our way. No squalls on the horizon, thankfully!\\n\\nBut mind ye, the sea
+        be a fickle mistress. One moment she be calm as a sleeping kraken, the next
+        she can unleash a tempest fit to swallow ships whole! So keep yer wits about
+        ye, and\"\n          }\n        ],\n        \"role\": \"model\"\n      },\n
+        \     \"finishReason\": \"MAX_TOKENS\",\n      \"index\": 0\n    }\n  ],\n
+        \ \"usageMetadata\": {\n    \"promptTokenCount\": 19,\n    \"candidatesTokenCount\":
+        150,\n    \"totalTokenCount\": 169,\n    \"promptTokensDetails\": [\n      {\n
+        \       \"modality\": \"TEXT\",\n        \"tokenCount\": 19\n      }\n    ],\n
+        \   \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n
+        \ \"responseId\": \"xUXzaqH8LYnmytMP0Pm0-Qg\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '1124'
+      - '1127'
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Mon, 09 Nov 2026 17:04:18 GMT
+      - Tue, 10 Nov 2026 16:26:46 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=1082
+      - gfet4t7; dur=1222
       transfer-encoding:
       - chunked
       vary:

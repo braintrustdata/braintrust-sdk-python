@@ -1,67 +1,65 @@
 interactions:
 - request:
-    body: '{"contents": [{"parts": [{"inlineData": {"data": "iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs-9AAAAFElEQVR42mP4z8DwnxjMMKqQvgoBksPHOXvuG4oAAAAASUVORK5CYII=",
+    body: '{"contents": [{"parts": [{"inlineData": {"data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==",
       "mimeType": "image/png"}}, {"text": "What color is this image?"}], "role": "user"}],
       "generationConfig": {"maxOutputTokens": 150}}'
     headers:
-      Accept:
+      accept:
       - '*/*'
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '287'
-      Content-Type:
+      content-type:
       - application/json
-      Host:
+      host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.75.0 gl-python/3.12.12
+      - google-genai-sdk/1.75.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/1.75.0 gl-python/3.12.12
+      - google-genai-sdk/1.75.0 gl-python/3.14.7
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"The image is red.\"\n          }\n
+        [\n          {\n            \"text\": \"The image is **red**.\"\n          }\n
         \       ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
-        \"STOP\",\n      \"avgLogprobs\": -0.25408761501312255\n    }\n  ],\n  \"usageMetadata\":
-        {\n    \"promptTokenCount\": 264,\n    \"candidatesTokenCount\": 5,\n    \"totalTokenCount\":
-        269,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"IMAGE\",\n
-        \       \"tokenCount\": 258\n      },\n      {\n        \"modality\": \"TEXT\",\n
-        \       \"tokenCount\": 6\n      }\n    ],\n    \"candidatesTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 5\n      }\n
-        \   ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.0-flash-001\",\n
-        \ \"responseId\": \"rOcBaqDCKYbe_uMP_petkQs\"\n}\n"
+        \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        265,\n    \"candidatesTokenCount\": 6,\n    \"totalTokenCount\": 271,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 7\n      },\n
+        \     {\n        \"modality\": \"IMAGE\",\n        \"tokenCount\": 258\n      }\n
+        \   ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n
+        \ \"responseId\": \"wULzaqyfNdeuxdIPna_JwQk\"\n}\n"
     headers:
-      Alt-Svc:
+      alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Content-Type:
+      content-length:
+      - '641'
+      content-type:
       - application/json; charset=UTF-8
-      Date:
-      - Mon, 11 May 2026 14:29:01 GMT
-      Server:
+      date:
+      - Tue, 10 Nov 2026 16:13:54 GMT
+      server:
       - scaffolding on HTTPServer2
-      Server-Timing:
-      - gfet4t7; dur=833
-      Transfer-Encoding:
+      server-timing:
+      - gfet4t7; dur=584
+      transfer-encoding:
       - chunked
-      Vary:
+      vary:
       - Origin
       - X-Origin
       - Referer
-      X-Content-Type-Options:
+      x-content-type-options:
       - nosniff
-      X-Frame-Options:
+      x-frame-options:
       - SAMEORIGIN
-      X-Gemini-Service-Tier:
+      x-gemini-service-tier:
       - standard
-      X-XSS-Protection:
+      x-xss-protection:
       - '0'
-      content-length:
-      - '769'
     status:
       code: 200
       message: OK

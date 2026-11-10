@@ -19,8 +19,8 @@ with autoinstrument_test_context("test_auto_pydantic_ai", integration="pydantic_
     from pydantic_ai.settings import ModelSettings
 
     agent = Agent(
-        OpenAIChatModel("gpt-4o-mini"),
-        model_settings=ModelSettings(max_tokens=100),
+        OpenAIChatModel("gpt-6-luna"),
+        model_settings=ModelSettings(max_tokens=100, openai_reasoning_effort="none"),
     )
 
     import asyncio

@@ -16,44 +16,47 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.41.0 gl-python/3.13.3
+      - google-genai-sdk/1.30.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/1.41.0 gl-python/3.13.3
+      - google-genai-sdk/1.30.0 gl-python/3.14.7
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAC/61RTU/DMAy991dEOa9T1jFWcYMNJhCICSqEBAiZ1uuitUlJsvEx7b+TtmuXwpUc
-        Isvv2c9+3nqE0BhEwhMwqOkJebIZQrbVX2JSGBTGAk3KJgtQ5sCt39aJLcXgZ1lEoyWSGApuICNy
-        QS4UiBgJ12QOiuv+s6BO3a6NX3oHNSUzLFvlMsGsoe8aAl1wwfXyDkFLUdLuo9s5bVHYpNcyLZR8
-        Kwf2WZ8Nw+NwfDRkwyAYjFkwCr1GuhKlaw0p3qAB6wi0e1PbIi9MJFcoJnJdOTKuVRz/OnC4h420
-        y3eQwaj3p6meWkmeubY6jtvdIePmq7L0/DGijj+mM1Pjj+fY+HvCf9IKu1re/ir1oR5QaV5fJMXc
-        3sgP+sxfZKCXPmODqilVqAspNF4mJe/1PeJwNZudQf6dm9WcbSbTj1NGvZ33A7z5p7+oAgAA
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"text\": \"The capital of France is **Paris**.\"\n
+        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        8,\n    \"candidatesTokenCount\": 8,\n    \"totalTokenCount\": 16,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 8\n      }\n
+        \   ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n
+        \ \"responseId\": \"HULzat-nHL_ExdIP-4eHwQo\"\n}\n"
     headers:
-      Alt-Svc:
+      alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Content-Encoding:
-      - gzip
-      Content-Type:
+      content-length:
+      - '580'
+      content-type:
       - application/json; charset=UTF-8
-      Date:
-      - Sun, 05 Oct 2025 17:03:58 GMT
-      Server:
+      date:
+      - Tue, 10 Nov 2026 16:11:09 GMT
+      server:
       - scaffolding on HTTPServer2
-      Server-Timing:
-      - gfet4t7; dur=390
-      Transfer-Encoding:
+      server-timing:
+      - gfet4t7; dur=544
+      transfer-encoding:
       - chunked
-      Vary:
+      vary:
       - Origin
       - X-Origin
       - Referer
-      X-Content-Type-Options:
+      x-content-type-options:
       - nosniff
-      X-Frame-Options:
+      x-frame-options:
       - SAMEORIGIN
-      X-XSS-Protection:
+      x-gemini-service-tier:
+      - standard
+      x-xss-protection:
       - '0'
     status:
       code: 200

@@ -40,7 +40,7 @@ import cohere  # noqa: E402
 
 
 PROJECT_NAME = "test-cohere-sdk"
-CHAT_MODEL = "command-a-03-2025"
+CHAT_MODEL = "command-r7b-12-2024"
 EMBED_MODEL = "embed-english-v3.0"
 RERANK_MODEL = "rerank-english-v3.0"
 TRANSCRIBE_MODEL = "cohere-transcribe-03-2026"
@@ -231,9 +231,6 @@ def test_wrap_cohere_chat_v2_sync(memory_logger):
 
 @pytest.mark.vcr
 def test_wrap_cohere_chat_v2_tool_call_spans(memory_logger):
-    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
-        pytest.skip("v2 tool-call cassette is recorded for the latest Cohere SDK")
-
     assert not memory_logger.pop()
     client = wrap_cohere(_v2_client(require_methods=("chat",)))
 
@@ -278,9 +275,6 @@ def test_wrap_cohere_chat_v2_tool_call_spans(memory_logger):
 
 @pytest.mark.vcr
 def test_wrap_cohere_chat_v1_tool_call_spans(memory_logger):
-    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
-        pytest.skip("v1 tool-call cassette is recorded for the latest Cohere SDK")
-
     assert not memory_logger.pop()
     client = wrap_cohere(_v1_client())
 
@@ -294,7 +288,7 @@ def test_wrap_cohere_chat_v1_tool_call_spans(memory_logger):
                 "parameter_definitions": {"city": {"description": "City name", "type": "str", "required": True}},
             }
         ],
-        force_single_step=True,
+        request_options={"additional_body_parameters": {"force_single_step": True}},
         max_tokens=64,
     )
 
@@ -596,9 +590,6 @@ def test_wrap_cohere_chat_stream_v2_sync_context_manager(memory_logger):
 
 @pytest.mark.vcr
 def test_wrap_cohere_chat_stream_v2_rag_citations(memory_logger):
-    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
-        pytest.skip("v2 RAG citation cassette is recorded for the latest Cohere SDK")
-
     assert not memory_logger.pop()
     client = wrap_cohere(_v2_client(require_methods=("chat_stream",)))
     documents = [

@@ -10,7 +10,7 @@ from openai import AsyncOpenAI
 
 
 PROJECT_NAME = "test-project-openai-py-tracing"
-TEST_MODEL = "gpt-4o-mini"
+TEST_MODEL = "gpt-6-luna"
 TEST_PROMPT = "What's 12 + 12?"
 
 

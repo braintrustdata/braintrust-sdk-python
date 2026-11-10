@@ -10,7 +10,7 @@ from braintrust.test_helpers import init_test_logger
 
 
 PROJECT_NAME = "test-project-openai-attachment-processing"
-TEST_MODEL = "gpt-4o-mini"
+TEST_MODEL = "gpt-6-luna"
 
 
 @pytest.fixture

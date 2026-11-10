@@ -7,6 +7,10 @@ from braintrust.integrations.test_utils import autoinstrument_test_context
 from pydantic import BaseModel
 
 
+TEST_MODEL = "gpt-6-luna"
+MODEL_OPTIONS = {"reasoning_effort": "none"}
+
+
 class Person(BaseModel):
     name: str
     age: int
@@ -31,7 +35,8 @@ with autoinstrument_test_context(
     client = openai.OpenAI(api_key="sk-test-dummy-api-key-for-vcr-tests")
     patched = instructor.from_openai(client, mode=instructor.Mode.TOOLS)
     result = patched.chat.completions.create(
-        model="gpt-4o-mini",
+        model=TEST_MODEL,
+        **MODEL_OPTIONS,
         response_model=Person,
         max_retries=3,
         messages=[{"role": "user", "content": "Extract Grace, age 45."}],

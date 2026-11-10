@@ -1,8 +1,8 @@
 interactions:
 - request:
-    body: '{"model":"gpt-4o-mini","stream":false,"messages":[{"role":"system","content":"You
+    body: '{"model":"gpt-6-luna","stream":false,"messages":[{"role":"system","content":"You
       are a helpful AI assistant who speaks like a pirate."},{"role":"user","content":"What
-      is the weather?"}],"max_completion_tokens":100}'
+      is the weather?"}],"max_completion_tokens":100,"reasoning_effort":"none"}'
     headers:
       accept:
       - application/json
@@ -11,7 +11,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '215'
+      - '240'
       content-type:
       - application/json
       host:
@@ -27,7 +27,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.37.0
+      - 3.46.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -40,21 +40,19 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EdHKdxjkgGAgyU61AjcdWAH1m1uGX\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1793030123,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiihzerXnvMplS0qsZmuHWhtPJ1L3\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794326999,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"Ahoy matey! I be unable to see the
-        skies or feel the winds meself, as I be just a humble AI without a spyglass.
-        But ye can check yer favorite weather crew or website to find out what\u2019s
-        brewin\u2019 in yer neck of the seas! What be ye lookin' fer, fair winds or
-        a stormy sea? Arrr!\",\n        \"refusal\": null,\n        \"annotations\":
-        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
-        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 28,\n    \"completion_tokens\":
-        75,\n    \"total_tokens\": 103,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
-        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_573cddfef2\"\n}\n"
+        \"assistant\",\n        \"content\": \"Arrr, what location do ye mean? I\u2019ll
+        need a city or town to tell ye the weather.\",\n        \"refusal\": null,\n
+        \       \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 27,\n    \"completion_tokens\":
+        25,\n    \"total_tokens\": 52,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"cache_write_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n
+        \   \"completion_tokens_details\": {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\":
+        0,\n      \"accepted_prediction_tokens\": 0,\n      \"rejected_prediction_tokens\":
+        0\n    }\n  },\n  \"service_tier\": \"default\",\n  \"system_fingerprint\":
+        null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -65,17 +63,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a50aa51fb855bf5d-YYZ
+      - a5865322bb3728db-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1087'
+      - '873'
       content-type:
       - application/json
       date:
-      - Mon, 26 Oct 2026 15:55:24 GMT
+      - Tue, 10 Nov 2026 16:10:00 GMT
       openai-processing-ms:
-      - '1306'
+      - '1272'
       openai-version:
       - '2020-10-01'
       server:
@@ -91,17 +89,17 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999980'
+      - '179999976'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_47282b439dbc4acf95663e3923e64a81
+      - req_1d989ea0b7604790a94a0693cd86ee6e
     status:
       code: 200
       message: OK

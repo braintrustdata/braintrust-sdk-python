@@ -4,6 +4,7 @@
 # pyright: reportUnknownParameterType=false
 # pyright: reportUnknownVariableType=false
 # pyright: reportUnknownArgumentType=false
+
 import pytest
 from braintrust import logger
 from braintrust.integrations.agno import setup_agno
@@ -20,6 +21,10 @@ from ._test_agno_helpers import (
     make_fake_workflow_agent_path,
     make_fake_workflow_with_async_agent,
 )
+
+
+TEST_MODEL = "gpt-6-luna"
+MODEL_OPTIONS = {"reasoning_effort": "none"}
 
 
 @pytest.fixture
@@ -48,7 +53,7 @@ def test_agno_workflow_with_agent(memory_logger):
 
     author_agent = Agent(
         name="Author Agent",
-        model=OpenAIChat(id="gpt-4o-mini"),
+        model=OpenAIChat(id=TEST_MODEL, **MODEL_OPTIONS),
         instructions="You are librarian. Answer the questions by only replying with the author that wrote the book.",
     )
 

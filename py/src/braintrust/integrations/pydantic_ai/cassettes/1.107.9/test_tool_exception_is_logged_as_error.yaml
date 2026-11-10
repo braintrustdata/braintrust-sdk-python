@@ -1,7 +1,7 @@
 interactions:
 - request:
-    body: '{"model":"gpt-4o-mini","stream":false,"messages":[{"role":"user","content":"Publish
-      the flow with id ''abc''."}],"max_completion_tokens":200,"tool_choice":"auto","tools":[{"type":"function","function":{"name":"publish_flow","description":"Publish
+    body: '{"model":"gpt-6-luna","stream":false,"messages":[{"role":"user","content":"Publish
+      the flow with id ''abc''."}],"max_completion_tokens":200,"reasoning_effort":"none","tool_choice":"auto","tools":[{"type":"function","function":{"name":"publish_flow","description":"Publish
       the flow with the given id.","parameters":{"additionalProperties":false,"properties":{"flow_id":{"type":"string"}},"required":["flow_id"],"type":"object"},"strict":true}}]}'
     headers:
       accept:
@@ -11,7 +11,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '417'
+      - '442'
       content-type:
       - application/json
       host:
@@ -27,7 +27,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.37.0
+      - 3.46.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -40,21 +40,21 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EdHKyyYzGeAubjSAkKFAJZbczUww6\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1793030144,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiiiWTPkj3PIjL06CC7Skgr9ZUgjn\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794327032,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
-        \           \"id\": \"call_9r8ToDAOO8sAFgIM6IaiAJbY\",\n            \"type\":
+        \           \"id\": \"call_JrUVWEov8X2ewpIBVCJt8NGa\",\n            \"type\":
         \"function\",\n            \"function\": {\n              \"name\": \"publish_flow\",\n
         \             \"arguments\": \"{\\\"flow_id\\\":\\\"abc\\\"}\"\n            }\n
         \         }\n        ],\n        \"refusal\": null,\n        \"annotations\":
-        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"tool_calls\"\n
-        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 54,\n    \"completion_tokens\":
-        15,\n    \"total_tokens\": 69,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        []\n      },\n      \"finish_reason\": \"tool_calls\"\n    }\n  ],\n  \"usage\":
+        {\n    \"prompt_tokens\": 135,\n    \"completion_tokens\": 18,\n    \"total_tokens\":
+        153,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\": 0,\n      \"cache_write_tokens\":
         0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_7ceadae707\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -65,17 +65,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a50aa5a2ce7f8af6-YYZ
+      - a58653ee0f183701-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1086'
+      - '1072'
       content-type:
       - application/json
       date:
-      - Mon, 26 Oct 2026 15:55:45 GMT
+      - Tue, 10 Nov 2026 16:10:33 GMT
       openai-processing-ms:
-      - '684'
+      - '997'
       openai-version:
       - '2020-10-01'
       server:
@@ -91,17 +91,17 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999990'
+      - '179999991'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_35aadd839bae42778da737116b006532
+      - req_4a20c8b1b78042129192b420aa85683b
     status:
       code: 200
       message: OK

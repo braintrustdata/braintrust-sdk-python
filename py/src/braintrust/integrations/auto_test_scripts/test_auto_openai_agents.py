@@ -8,7 +8,7 @@ from braintrust.integrations.openai_agents import BraintrustTracingProcessor
 from braintrust.integrations.test_utils import autoinstrument_test_context
 
 
-TEST_MODEL = "gpt-4o-mini"
+TEST_MODEL = "gpt-6-luna"
 TEST_PROMPT = "What is 2+2? Just the number."
 TEST_AGENT_INSTRUCTIONS = "You are a helpful assistant. Be very concise."
 

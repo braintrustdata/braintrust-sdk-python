@@ -9,6 +9,10 @@ from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import find_spans_by_type, init_test_logger
 
 
+TEST_MODEL = "gpt-6-luna"
+MODEL_OPTIONS = {"reasoning_effort": "none"}
+DECISION_MODEL = "gpt-6.1-terra"
+
 PROJECT_NAME = "test-project-strands-py-tracing"
 
 
@@ -30,7 +34,14 @@ async def test_strands_openai_agent_traces_native_otel_lifecycle(memory_logger):
     # A repeated setup() must not double-patch: the span counts below would duplicate.
     assert StrandsIntegration.setup()
 
-    model = OpenAIModel(model_id="gpt-4o-mini", params={"temperature": 0, "max_tokens": 16})
+    model = OpenAIModel(
+        model_id=TEST_MODEL,
+        params={
+            "temperature": 0,
+            **MODEL_OPTIONS,
+            "max_completion_tokens": 16,
+        },
+    )
     agent = Agent(model=model, name="bt-test-agent", system_prompt="Answer with one short sentence.")
 
     result = await agent.invoke_async("What is 2 + 2?")
@@ -53,8 +64,8 @@ async def test_strands_openai_agent_traces_native_otel_lifecycle(memory_logger):
     assert len(llm_spans) == 1
     llm_span = llm_spans[0]
     assert llm_span["input"]["messages"][0]["role"] == "user"
-    assert llm_span["span_attributes"]["name"] == "gpt-4o-mini.chat"
-    assert llm_span["metadata"]["model"] == "gpt-4o-mini"
+    assert llm_span["span_attributes"]["name"] == f"{TEST_MODEL}.chat"
+    assert llm_span["metadata"]["model"] == TEST_MODEL
     assert llm_span["metadata"]["stop_reason"] == "end_turn"
     assert llm_span["metadata"]["strands_usage"]["input_tokens"] > 0
     assert llm_span["metadata"]["strands_usage"]["output_tokens"] > 0
@@ -80,9 +91,7 @@ async def test_strands_decision_models_in_tool_trace_decision_spans(memory_logge
         "department": {"question": "Which team should handle this?", "choices": ["billing", "support"]},
         "urgent": {"question": "Is this urgent?", "choices": "boolean"},
     }
-    llm_decision_model = decisions.LLMDecisionModel(
-        model=OpenAIModel(model_id="gpt-4o-mini", params={"temperature": 0})
-    )
+    llm_decision_model = decisions.LLMDecisionModel(model=OpenAIModel(model_id=DECISION_MODEL, params=MODEL_OPTIONS))
     typesafe_decision_model = decisions.TypeSafeDecisionModel()
 
     @tool
@@ -97,7 +106,7 @@ async def test_strands_decision_models_in_tool_trace_decision_spans(memory_logge
         return f"llm={llm_result.answers} typesafe={typesafe_result.answers}"
 
     agent = Agent(
-        model=OpenAIModel(model_id="gpt-4o-mini", params={"temperature": 0}),
+        model=OpenAIModel(model_id=TEST_MODEL, params=MODEL_OPTIONS),
         tools=[route_ticket],
         system_prompt="Always call route_ticket exactly once with the user's message, then report its result.",
     )
@@ -145,7 +154,7 @@ async def test_strands_decision_models_in_tool_trace_decision_spans(memory_logge
     assert llm_answers["urgent"]["probability"] in (0.0, 1.0)
     assert llm_span["metadata"]["decision_model"] == "LLMDecisionModel"
     assert llm_span["metadata"]["provider"] == "openai"
-    assert llm_span["metadata"]["model"] == "gpt-4o-mini"
+    assert llm_span["metadata"]["model"] == DECISION_MODEL
     assert "tokens" not in llm_span.get("metrics", {})
 
     # TypeSafeDecisionModel: System One probabilities and confidence over raw HTTP.
@@ -176,7 +185,7 @@ async def test_strands_decision_image_state_is_logged_as_attachment(memory_logge
 
     image = (Path(__file__).parent.parent.parent / "fixtures" / "test-image.png").read_bytes()
     state = [{"text": "Describe the attached image."}, {"image": {"format": "png", "source": {"bytes": image}}}]
-    decision_model = decisions.LLMDecisionModel(model=OpenAIModel(model_id="gpt-4o-mini", params={"temperature": 0}))
+    decision_model = decisions.LLMDecisionModel(model=OpenAIModel(model_id=DECISION_MODEL, params=MODEL_OPTIONS))
 
     await decision_model.ask(state, {"has_image": {"question": "Is an image attached?", "choices": "boolean"}})
 

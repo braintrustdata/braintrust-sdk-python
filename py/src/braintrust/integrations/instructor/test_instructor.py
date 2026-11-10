@@ -30,6 +30,8 @@ __all__ = ["memory_logger"]
 
 
 PROJECT_NAME = "test-instructor-app"
+TEST_MODEL = "gpt-6-luna"
+MODEL_OPTIONS = {"reasoning_effort": "none"}
 
 
 class Person(BaseModel):
@@ -109,7 +111,8 @@ class TestInstructorOpenAISpans:
         patched = instructor.from_openai(client, mode=instructor.Mode.TOOLS)
 
         result = patched.chat.completions.create(
-            model="gpt-4o-mini",
+            model=TEST_MODEL,
+            **MODEL_OPTIONS,
             response_model=Person,
             max_retries=3,
             messages=[{"role": "user", "content": "Extract Grace, age 45."}],
@@ -128,7 +131,7 @@ class TestInstructorOpenAISpans:
         assert parent["context"]["span_origin"]["instrumentation"]["name"] == "instructor-auto"
         assert parent["span_attributes"]["name"] == "instructor.create"
         meta = parent.get("metadata", {})
-        assert meta.get("model") == "gpt-4o-mini"
+        assert meta.get("model") == TEST_MODEL
         assert meta.get("provider") == "openai"
         assert meta.get("response_model") == "Person"
         assert meta.get("mode") == "TOOLS"
@@ -165,7 +168,8 @@ class TestInstructorOpenAISpans:
         patched = instructor.from_openai(client, mode=instructor.Mode.TOOLS)
 
         result = patched.chat.completions.create(
-            model="gpt-4o-mini",
+            model=TEST_MODEL,
+            **MODEL_OPTIONS,
             response_model=ShoutedPerson,
             max_retries=3,
             messages=[{"role": "user", "content": "Extract Ada, age 30."}],
@@ -180,7 +184,7 @@ class TestInstructorOpenAISpans:
 
         parent = task_spans[0]
         meta = parent.get("metadata", {})
-        assert meta.get("model") == "gpt-4o-mini"
+        assert meta.get("model") == TEST_MODEL
         assert meta.get("provider") == "openai"
         assert meta.get("response_model") == "ShoutedPerson"
         assert meta.get("mode") == "TOOLS"
@@ -206,7 +210,8 @@ class TestInstructorOpenAISpans:
 
         result = list(
             patched.chat.completions.create_partial(
-                model="gpt-4o-mini",
+                model=TEST_MODEL,
+                **MODEL_OPTIONS,
                 response_model=Person,
                 max_retries=3,
                 messages=[{"role": "user", "content": "Extract Grace, age 45."}],

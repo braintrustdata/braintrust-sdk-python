@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"model":"mistral-small-latest","messages":[{"content":"What is 2+2? Reply
+    body: '{"model":"ministral-3b-2512","messages":[{"content":"What is 2+2? Reply
       with just the number.","role":"user"}],"max_tokens":10,"stream":false}'
     headers:
       accept:
@@ -10,18 +10,18 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '145'
+      - '142'
       content-type:
       - application/json
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.9.0
+      - mistral-client-python/2.10.1
     method: POST
     uri: https://api.mistral.ai/v1/chat/completions
   response:
     body:
-      string: '{"id":"ccc3b236ad174b03b0bd80f4d65c0808","created":1785860179,"model":"mistral-small-latest","usage":{"prompt_tokens":28,"total_tokens":30,"completion_tokens":2,"prompt_tokens_details":{"cached_tokens":0},"service_tier":"standard"},"object":"chat.completion","choices":[{"index":0,"finish_reason":"stop","message":{"role":"assistant","tool_calls":null,"content":"4"}}]}'
+      string: '{"id":"b98aab76c6cf43328943092326540cdb","created":1794327196,"model":"ministral-3b-2512","usage":{"prompt_tokens":16,"total_tokens":18,"completion_tokens":2,"prompt_tokens_details":{"cached_tokens":0},"completion_tokens_details":{"reasoning_tokens":0},"service_tier":"standard"},"object":"chat.completion","choices":[{"index":0,"finish_reason":"stop","message":{"role":"assistant","tool_calls":null,"content":"4"}}]}'
     headers:
       access-control-allow-origin:
       - '*'
@@ -30,17 +30,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a25eddaa8b5d36a4-YYZ
+      - a58657ee4a9e36b2-YYZ
       connection:
       - keep-alive
       content-length:
-      - '369'
+      - '417'
       content-type:
       - application/json
       date:
-      - Tue, 04 Aug 2026 16:16:20 GMT
+      - Tue, 10 Nov 2026 16:13:16 GMT
       mistral-correlation-id:
-      - 019fcd8f-c712-7567-92e6-5d23043fb53d
+      - 01a1c63c-3125-73bb-9335-32041dd3528d
       server:
       - cloudflare
       strict-transport-security:
@@ -50,25 +50,25 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '309'
+      - '165'
       x-kong-proxy-latency:
-      - '16'
+      - '18'
       x-kong-request-id:
-      - 019fcd8f-c712-7567-92e6-5d23043fb53d
+      - 01a1c63c-3125-73bb-9335-32041dd3528d
       x-kong-upstream-latency:
-      - '309'
+      - '167'
       x-max-retry-attempts-reached:
       - 'false'
       x-ratelimit-limit-req-minute:
-      - '50'
+      - '3000'
       x-ratelimit-limit-tokens-minute:
-      - '50000'
+      - '2000000'
       x-ratelimit-remaining-req-minute:
-      - '44'
+      - '2986'
       x-ratelimit-remaining-tokens-minute:
-      - '49467'
+      - '1998924'
       x-ratelimit-tokens-query-cost:
-      - '30'
+      - '18'
     status:
       code: 200
       message: OK

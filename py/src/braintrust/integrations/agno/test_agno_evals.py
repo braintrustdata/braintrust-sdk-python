@@ -22,13 +22,16 @@ from braintrust.test_helpers import find_span_by_name, find_spans_by_type, init_
 from ._test_agno_helpers import PROJECT_NAME
 
 
+TEST_MODEL = "gpt-6-luna"
+MODEL_OPTIONS = {"reasoning_effort": "none"}
+
 agno_agent = pytest.importorskip("agno.agent")
 agno_openai = pytest.importorskip("agno.models.openai")
 accuracy_module = pytest.importorskip("agno.eval.accuracy")
 reliability_module = pytest.importorskip("agno.eval.reliability")
 performance_module = pytest.importorskip("agno.eval.performance")
 
-MODEL = "gpt-4o-mini"
+MODEL = TEST_MODEL
 
 
 @pytest.fixture
@@ -70,7 +73,7 @@ def _spans_named(spans, prefix):
 def _make_agent(*, name="Math Agent", tools=None):
     return agno_agent.Agent(
         name=name,
-        model=agno_openai.OpenAIChat(id=MODEL),
+        model=agno_openai.OpenAIChat(id=MODEL, **MODEL_OPTIONS),
         instructions="Answer with the final number only.",
         tools=tools,
     )
@@ -85,7 +88,7 @@ def _make_agent(*, name="Math Agent", tools=None):
 def test_accuracy_eval_logs_score_and_nests_agent(memory_logger):
     evaluation = accuracy_module.AccuracyEval(
         name="Multiplication Eval",
-        model=agno_openai.OpenAIChat(id=MODEL),
+        model=agno_openai.OpenAIChat(id=MODEL, **MODEL_OPTIONS),
         agent=_make_agent(),
         input="What is 10*5?",
         expected_output="50",
@@ -132,7 +135,7 @@ def test_accuracy_eval_logs_score_and_nests_agent(memory_logger):
 def test_accuracy_eval_arun_logs_score(memory_logger):
     evaluation = accuracy_module.AccuracyEval(
         name="Async Multiplication Eval",
-        model=agno_openai.OpenAIChat(id=MODEL),
+        model=agno_openai.OpenAIChat(id=MODEL, **MODEL_OPTIONS),
         agent=_make_agent(),
         input="What is 10*5?",
         expected_output="50",
@@ -154,7 +157,7 @@ def test_accuracy_eval_arun_logs_score(memory_logger):
 def test_accuracy_eval_run_with_output_skips_agent(memory_logger):
     evaluation = accuracy_module.AccuracyEval(
         name="Given Output Eval",
-        model=agno_openai.OpenAIChat(id=MODEL),
+        model=agno_openai.OpenAIChat(id=MODEL, **MODEL_OPTIONS),
         agent=_make_agent(),
         input="What is 10*5?",
         expected_output="50",
@@ -182,7 +185,7 @@ def test_agent_as_judge_eval_numeric_score(memory_logger):
 
     judge = judge_module.AgentAsJudgeEval(
         name="Tone Judge",
-        model=agno_openai.OpenAIChat(id=MODEL),
+        model=agno_openai.OpenAIChat(id=MODEL, **MODEL_OPTIONS),
         criteria="The response is polite and mentions renewable energy.",
         scoring_strategy="numeric",
         threshold=7,
@@ -219,7 +222,7 @@ def test_agent_as_judge_eval_batch_scores_each_case(memory_logger):
 
     judge = judge_module.AgentAsJudgeEval(
         name="Politeness Judge",
-        model=agno_openai.OpenAIChat(id=MODEL),
+        model=agno_openai.OpenAIChat(id=MODEL, **MODEL_OPTIONS),
         criteria="The response is polite.",
         scoring_strategy="binary",
     )
@@ -254,13 +257,13 @@ def test_agent_as_judge_post_hook_scores_the_agent_row(memory_logger):
 
     judge = judge_module.AgentAsJudgeEval(
         name="Quality Check",
-        model=agno_openai.OpenAIChat(id=MODEL),
+        model=agno_openai.OpenAIChat(id=MODEL, **MODEL_OPTIONS),
         criteria="The response answers the question directly.",
         scoring_strategy="binary",
     )
     agent = agno_agent.Agent(
         name="Post Hook Agent",
-        model=agno_openai.OpenAIChat(id=MODEL),
+        model=agno_openai.OpenAIChat(id=MODEL, **MODEL_OPTIONS),
         instructions="Answer in one short sentence.",
         post_hooks=[judge],
     )
@@ -391,7 +394,7 @@ def test_eval_suite_logs_one_row_per_case(memory_logger):
     suite = pytest.importorskip("agno.eval.suite")
 
     cases = _suite_cases(suite)
-    result = suite.run_cases(cases, judge_model=agno_openai.OpenAIChat(id=MODEL))
+    result = suite.run_cases(cases, judge_model=agno_openai.OpenAIChat(id=MODEL, **MODEL_OPTIONS))
     assert result.total == 2
 
     spans = memory_logger.pop()
@@ -440,7 +443,7 @@ def test_eval_suite_routes_rows_to_an_experiment(memory_logger, monkeypatch):
     eval_experiments.configure(True)
 
     cases = _suite_cases(suite)[:1]
-    result = suite.run_cases(cases, tag="smoke", judge_model=agno_openai.OpenAIChat(id=MODEL))
+    result = suite.run_cases(cases, tag="smoke", judge_model=agno_openai.OpenAIChat(id=MODEL, **MODEL_OPTIONS))
     assert result.total == 1
 
     # The experiment inherits the project already in scope, and carries what ran.

@@ -5,6 +5,9 @@ from braintrust.integrations.test_utils import autoinstrument_test_context
 
 
 # 1. Instrument
+TEST_MODEL = "gpt-6-luna"
+MODEL_OPTIONS = {"reasoning_effort": "none"}
+
 results = auto_instrument()
 assert results.get("agno") == True, "auto_instrument should return True for agno"
 
@@ -120,7 +123,7 @@ with autoinstrument_test_context("test_auto_agno", integration="agno") as memory
 
     agent = Agent(
         name="Test Agent",
-        model=OpenAIChat(id="gpt-4o-mini"),
+        model=OpenAIChat(id=TEST_MODEL, **MODEL_OPTIONS),
         instructions="You are a helpful assistant. Be brief.",
     )
 

@@ -4,7 +4,7 @@ interactions:
       the task to the most suitable team member, then summarize their reply."}]},{"role":"user","name":"user","content":[{"type":"text","text":"Ask
       the researcher to explain why recorded tests are useful."}]},{"role":"user","content":[{"type":"text","text":"<system-reminder>Treat
       the following as the ground truth at this point of the conversation. Anything
-      stated earlier is outdated, and a later reminder, if any, supersedes this one:\n<current-time>2026-09-28T19:45:06</current-time>\n<timezone>UTC</timezone>\n</system-reminder>"}]}],"model":"gpt-4o-mini","stream":false,"temperature":0.0,"tools":[{"type":"function","function":{"name":"TeamAssign","description":"Assign
+      stated earlier is outdated, and a later reminder, if any, supersedes this one:\n<current-time>2026-11-10T15:50:39</current-time>\n<timezone>UTC</timezone>\n</system-reminder>"}]}],"model":"gpt-6-luna","reasoning_effort":"none","stream":false,"tools":[{"type":"function","function":{"name":"TeamAssign","description":"Assign
       a task to a team member and get its reply back as the result. The members are:\n-
       Researcher: Answers factual questions.","parameters":{"type":"object","properties":{"member":{"type":"string","enum":["Researcher"],"description":"The
       name of the member to assign to."},"prompt":{"type":"string","description":"The
@@ -18,7 +18,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '1200'
+      - '1207'
       content-type:
       - application/json
       host:
@@ -47,22 +47,22 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-ETBZbS4oyZ3ZJZnYeqsdCmSx0Zdbm\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1790624707,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiiPHN8CJo7z5cnG5lLVjjNp7kCEI\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794325839,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
-        \           \"id\": \"call_4xuSRzuMi2cQMnIxg8vkFlo4\",\n            \"type\":
+        \           \"id\": \"call_icYd4yndhb5xLhjuWByAyQ81\",\n            \"type\":
         \"function\",\n            \"function\": {\n              \"name\": \"TeamAssign\",\n
         \             \"arguments\": \"{\\\"member\\\":\\\"Researcher\\\",\\\"prompt\\\":\\\"Explain
-        why recorded tests are useful.\\\"}\"\n            }\n          }\n        ],\n
-        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
-        null,\n      \"finish_reason\": \"tool_calls\"\n    }\n  ],\n  \"usage\":
-        {\n    \"prompt_tokens\": 203,\n    \"completion_tokens\": 25,\n    \"total_tokens\":
-        228,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\": 0,\n      \"audio_tokens\":
-        0\n    },\n    \"completion_tokens_details\": {\n      \"reasoning_tokens\":
-        0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\": 0,\n
-        \     \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_d9f006541a\"\n}\n"
+        why recorded tests are useful. Keep the explanation clear and concise.\\\"}\"\n
+        \           }\n          }\n        ],\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"finish_reason\": \"tool_calls\"\n    }\n  ],\n  \"usage\":
+        {\n    \"prompt_tokens\": 287,\n    \"completion_tokens\": 35,\n    \"total_tokens\":
+        322,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\": 0,\n      \"cache_write_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -73,17 +73,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a4253f24d88660a9-YYZ
+      - a58636d01bbff4cc-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1146'
+      - '1170'
       content-type:
       - application/json
       date:
-      - Mon, 28 Sep 2026 19:45:08 GMT
+      - Tue, 10 Nov 2026 15:50:40 GMT
       openai-processing-ms:
-      - '732'
+      - '1479'
       openai-version:
       - '2020-10-01'
       server:
@@ -99,26 +99,26 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999892'
+      - '179999892'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_eb32bc8414f3416a994de81e6f4ba735
+      - req_db23fe48d82347fe90c67bab11ee1bc0
     status:
       code: 200
       message: OK
 - request:
     body: '{"messages":[{"role":"system","name":"system","content":[{"type":"text","text":"Answer
       factual questions concisely."}]},{"role":"user","name":"user","content":[{"type":"text","text":"Explain
-      why recorded tests are useful."}]},{"role":"user","content":[{"type":"text","text":"<system-reminder>Treat
+      why recorded tests are useful. Keep the explanation clear and concise."}]},{"role":"user","content":[{"type":"text","text":"<system-reminder>Treat
       the following as the ground truth at this point of the conversation. Anything
-      stated earlier is outdated, and a later reminder, if any, supersedes this one:\n<current-time>2026-09-28T19:45:08</current-time>\n<timezone>UTC</timezone>\n</system-reminder>"}]}],"model":"gpt-4o-mini","stream":false,"temperature":0.0}'
+      stated earlier is outdated, and a later reminder, if any, supersedes this one:\n<current-time>2026-11-10T15:50:41</current-time>\n<timezone>UTC</timezone>\n</system-reminder>"}]}],"model":"gpt-6-luna","reasoning_effort":"none","stream":false}'
     headers:
       accept:
       - application/json
@@ -127,7 +127,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '611'
+      - '658'
       content-type:
       - application/json
       host:
@@ -156,34 +156,20 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-ETBZe2wI192o7cAeqL5gA5CcrwGD8\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1790624710,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiiPJNgyQQSQUqS2l11E8jkVzoDfk\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794325841,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"Recorded tests are useful for several
-        reasons:\\n\\n1. **Consistency**: They provide a standardized way to assess
-        performance, ensuring that the same conditions are applied across different
-        test instances.\\n\\n2. **Reproducibility**: Recorded tests can be replayed
-        multiple times, allowing for consistent results and easier identification
-        of issues.\\n\\n3. **Analysis and Debugging**: They enable detailed analysis
-        of test outcomes, making it easier to identify failures and understand the
-        behavior of the system under test.\\n\\n4. **Documentation**: Recorded tests
-        serve as documentation of the testing process, providing a reference for future
-        tests and helping to maintain knowledge within a team.\\n\\n5. **Automation**:
-        They can be integrated into automated testing frameworks, allowing for efficient
-        and rapid testing cycles.\\n\\n6. **Training and Onboarding**: Recorded tests
-        can be used to train new team members, providing them with practical examples
-        of how the system behaves and how to test it effectively.\\n\\n7. **Performance
-        Monitoring**: They can help in monitoring performance over time, allowing
-        teams to track improvements or regressions in system behavior.\\n\\nOverall,
-        recorded tests enhance the reliability and efficiency of the testing process,
-        contributing to higher quality software.\",\n        \"refusal\": null,\n
-        \       \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\":
-        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 102,\n    \"completion_tokens\":
-        235,\n    \"total_tokens\": 337,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
-        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_1bcbffccf6\"\n}\n"
+        \"assistant\",\n        \"content\": \"Recorded tests provide a clear, repeatable
+        record of what was tested and what happened. They help teams verify results,
+        spot failures, compare changes over time, and share evidence with others.\",\n
+        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"finish_reason\":
+        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 108,\n    \"completion_tokens\":
+        40,\n    \"total_tokens\": 148,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"cache_write_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n
+        \   \"completion_tokens_details\": {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\":
+        0,\n      \"accepted_prediction_tokens\": 0,\n      \"rejected_prediction_tokens\":
+        0\n    }\n  },\n  \"service_tier\": \"default\",\n  \"system_fingerprint\":
+        null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -194,17 +180,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a4253f2babc9dda9-YYZ
+      - a58636db09a86d93-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2108'
+      - '986'
       content-type:
       - application/json
       date:
-      - Mon, 28 Sep 2026 19:45:11 GMT
+      - Tue, 10 Nov 2026 15:50:44 GMT
       openai-processing-ms:
-      - '3248'
+      - '2856'
       openai-version:
       - '2020-10-01'
       server:
@@ -220,17 +206,17 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999910'
+      - '179999901'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_379edea85a164833a7283488c359173b
+      - req_4809c48260084e23872c8c7c0e7a2438
     status:
       code: 200
       message: OK
@@ -239,25 +225,11 @@ interactions:
       the task to the most suitable team member, then summarize their reply."}]},{"role":"user","name":"user","content":[{"type":"text","text":"Ask
       the researcher to explain why recorded tests are useful."}]},{"role":"user","content":[{"type":"text","text":"<system-reminder>Treat
       the following as the ground truth at this point of the conversation. Anything
-      stated earlier is outdated, and a later reminder, if any, supersedes this one:\n<current-time>2026-09-28T19:45:06</current-time>\n<timezone>UTC</timezone>\n</system-reminder>"}]},{"role":"assistant","name":"Leader","content":null,"tool_calls":[{"id":"call_4xuSRzuMi2cQMnIxg8vkFlo4","type":"function","function":{"name":"TeamAssign","arguments":"{\"member\":\"Researcher\",\"prompt\":\"Explain
-      why recorded tests are useful.\"}"}}]},{"role":"tool","tool_call_id":"call_4xuSRzuMi2cQMnIxg8vkFlo4","content":"Recorded
-      tests are useful for several reasons:\n\n1. **Consistency**: They provide a
-      standardized way to assess performance, ensuring that the same conditions are
-      applied across different test instances.\n\n2. **Reproducibility**: Recorded
-      tests can be replayed multiple times, allowing for consistent results and easier
-      identification of issues.\n\n3. **Analysis and Debugging**: They enable detailed
-      analysis of test outcomes, making it easier to identify failures and understand
-      the behavior of the system under test.\n\n4. **Documentation**: Recorded tests
-      serve as documentation of the testing process, providing a reference for future
-      tests and helping to maintain knowledge within a team.\n\n5. **Automation**:
-      They can be integrated into automated testing frameworks, allowing for efficient
-      and rapid testing cycles.\n\n6. **Training and Onboarding**: Recorded tests
-      can be used to train new team members, providing them with practical examples
-      of how the system behaves and how to test it effectively.\n\n7. **Performance
-      Monitoring**: They can help in monitoring performance over time, allowing teams
-      to track improvements or regressions in system behavior.\n\nOverall, recorded
-      tests enhance the reliability and efficiency of the testing process, contributing
-      to higher quality software.","name":"TeamAssign"}],"model":"gpt-4o-mini","stream":false,"temperature":0.0,"tools":[{"type":"function","function":{"name":"TeamAssign","description":"Assign
+      stated earlier is outdated, and a later reminder, if any, supersedes this one:\n<current-time>2026-11-10T15:50:39</current-time>\n<timezone>UTC</timezone>\n</system-reminder>"}]},{"role":"assistant","name":"Leader","content":null,"tool_calls":[{"id":"call_icYd4yndhb5xLhjuWByAyQ81","type":"function","function":{"name":"TeamAssign","arguments":"{\"member\":\"Researcher\",\"prompt\":\"Explain
+      why recorded tests are useful. Keep the explanation clear and concise.\"}"}}]},{"role":"tool","tool_call_id":"call_icYd4yndhb5xLhjuWByAyQ81","content":"Recorded
+      tests provide a clear, repeatable record of what was tested and what happened.
+      They help teams verify results, spot failures, compare changes over time, and
+      share evidence with others.","name":"TeamAssign"}],"model":"gpt-6-luna","reasoning_effort":"none","stream":false,"tools":[{"type":"function","function":{"name":"TeamAssign","description":"Assign
       a task to a team member and get its reply back as the result. The members are:\n-
       Researcher: Answers factual questions.","parameters":{"type":"object","properties":{"member":{"type":"string","enum":["Researcher"],"description":"The
       name of the member to assign to."},"prompt":{"type":"string","description":"The
@@ -271,7 +243,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '2847'
+      - '1789'
       content-type:
       - application/json
       host:
@@ -300,30 +272,20 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-ETBZgWD7fJWSLHPQNYzYNZLQG163Z\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1790624712,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiiPMkDCaqLGW706IcCGGApBskK4A\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794325844,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"The researcher explained that recorded
-        tests are useful for several reasons:\\n\\n1. **Consistency**: They ensure
-        standardized assessment conditions across different test instances.\\n2. **Reproducibility**:
-        Recorded tests can be replayed, allowing for consistent results and easier
-        issue identification.\\n3. **Analysis and Debugging**: They facilitate detailed
-        analysis of outcomes, helping to pinpoint failures and understand system behavior.\\n4.
-        **Documentation**: They serve as a reference for future tests, maintaining
-        knowledge within a team.\\n5. **Automation**: Recorded tests can be integrated
-        into automated testing frameworks for efficient testing cycles.\\n6. **Training
-        and Onboarding**: They provide practical examples for training new team members
-        on system behavior and testing.\\n7. **Performance Monitoring**: They help
-        track performance over time, identifying improvements or regressions.\\n\\nOverall,
-        recorded tests enhance the reliability and efficiency of the testing process,
-        contributing to higher quality software.\",\n        \"refusal\": null,\n
-        \       \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\":
-        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 473,\n    \"completion_tokens\":
-        184,\n    \"total_tokens\": 657,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
-        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_d9f006541a\"\n}\n"
+        \"assistant\",\n        \"content\": \"Recorded tests create a repeatable
+        record of what was tested and what happened. They help teams verify results,
+        identify failures, compare changes over time, and share evidence with others.\",\n
+        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"finish_reason\":
+        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 372,\n    \"completion_tokens\":
+        38,\n    \"total_tokens\": 410,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"cache_write_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n
+        \   \"completion_tokens_details\": {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\":
+        0,\n      \"accepted_prediction_tokens\": 0,\n      \"rejected_prediction_tokens\":
+        0\n    }\n  },\n  \"service_tier\": \"default\",\n  \"system_fingerprint\":
+        null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -334,17 +296,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a4253f4189e560a9-YYZ
+      - a58636ee6e1ff4cc-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1842'
+      - '982'
       content-type:
       - application/json
       date:
-      - Mon, 28 Sep 2026 19:45:13 GMT
+      - Tue, 10 Nov 2026 15:50:45 GMT
       openai-processing-ms:
-      - '1801'
+      - '1248'
       openai-version:
       - '2020-10-01'
       server:
@@ -360,17 +322,17 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999567'
+      - '179999844'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_ca64aca887924369a561803f27bfb4b5
+      - req_ef0969778911483a82c6657e73f147ae
     status:
       code: 200
       message: OK

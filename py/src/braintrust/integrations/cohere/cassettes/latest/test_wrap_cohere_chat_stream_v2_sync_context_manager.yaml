@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"model":"command-a-03-2025","messages":[{"role":"user","content":"Say
+    body: '{"model":"command-r7b-12-2024","messages":[{"role":"user","content":"Say
       hi in one word."}],"max_tokens":8,"stream":true}'
     headers:
       accept:
@@ -10,7 +10,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '119'
+      - '121'
       content-type:
       - application/json
       host:
@@ -33,7 +33,7 @@ interactions:
     body:
       string: 'event: message-start
 
-        data: {"id":"85db2fa7-50f1-4090-8a32-2f99e77f0a38","type":"message-start","delta":{"message":{"role":"assistant","content":[],"tool_plan":"","tool_calls":[],"citations":[]}}}
+        data: {"id":"0b07e511-2441-4734-9e23-54fe9eef2950","type":"message-start","delta":{"message":{"role":"assistant","content":[],"tool_plan":"","tool_calls":[],"citations":[]}}}
 
 
         event: content-start
@@ -43,7 +43,7 @@ interactions:
 
         event: content-delta
 
-        data: {"type":"content-delta","index":0,"delta":{"message":{"content":{"text":"Hi"}}}}
+        data: {"type":"content-delta","index":0,"delta":{"message":{"content":{"text":"Hello"}}}}
 
 
         event: content-delta
@@ -58,7 +58,7 @@ interactions:
 
         event: message-end
 
-        data: {"type":"message-end","delta":{"finish_reason":"COMPLETE","usage":{"billed_units":{"input_tokens":6,"output_tokens":2},"tokens":{"input_tokens":501,"output_tokens":5},"cached_tokens":480}}}
+        data: {"type":"message-end","delta":{"finish_reason":"COMPLETE","usage":{"billed_units":{"input_tokens":6,"output_tokens":2},"tokens":{"input_tokens":501,"output_tokens":5},"cached_tokens":496}}}
 
 
         data: [DONE]
@@ -75,7 +75,7 @@ interactions:
       content-type:
       - text/event-stream
       date:
-      - Mon, 09 Nov 2026 16:43:31 GMT
+      - Tue, 10 Nov 2026 15:53:30 GMT
       expires:
       - Thu, 01 Jan 1970 00:00:00 GMT
       pragma:
@@ -91,11 +91,11 @@ interactions:
       x-accel-expires:
       - '0'
       x-debug-trace-id:
-      - b391c658a2fb943ddba1031acf4e262f
+      - cbbfb0679ab966be3351adba92b4cb72
       x-endpoint-monthly-call-limit:
       - '1000'
       x-envoy-upstream-service-time:
-      - '647'
+      - '85'
       x-trial-endpoint-call-limit:
       - '20'
       x-trial-endpoint-call-remaining:

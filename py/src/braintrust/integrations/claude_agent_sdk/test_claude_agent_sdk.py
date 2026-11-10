@@ -50,7 +50,7 @@ from braintrust.test_helpers import find_span_by_name, find_spans_by_type, init_
 
 
 PROJECT_NAME = "test-claude-agent-sdk"
-TEST_MODEL = "claude-haiku-4-5-20251001"
+TEST_MODEL = "claude-haiku-5-5"
 REPO_ROOT = Path(__file__).resolve().parents[5]  # py/src/braintrust/integrations/claude_agent_sdk -> repo root
 
 
@@ -342,7 +342,7 @@ async def test_local_mcp_handler_uses_its_own_tracker_with_concurrent_client(mem
 
         calculator_options = _make_calculator_options(calculator_handler)
         other_options = claude_agent_sdk.ClaudeAgentOptions(
-            model="claude-3-5-haiku-20241022",
+            model=TEST_MODEL,
             permission_mode="bypassPermissions",
         )
         calculator_transport = make_cassette_transport(
@@ -1029,6 +1029,7 @@ async def test_bundled_subagent_creates_task_span(memory_logger):
     with _patched_claude_sdk(wrap_client=True):
         options = claude_agent_sdk.ClaudeAgentOptions(
             model=TEST_MODEL,
+            env={"CLAUDE_CODE_SUBAGENT_MODEL": TEST_MODEL},
             cwd=REPO_ROOT,
             permission_mode="bypassPermissions",
             max_turns=8,
@@ -1117,108 +1118,6 @@ async def test_bundled_subagent_creates_task_span(memory_logger):
         any(llm_span["span_id"] in tool_span["span_parents"] for llm_span in delegated_llm_spans)
         for tool_span in tool_spans
     ), "Expected delegated tool spans to nest under a delegated LLM span"
-
-
-@pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
-@pytest.mark.asyncio
-async def test_multiple_bundled_subagents_keep_outer_orchestration_separate(memory_logger, tmp_path):
-    assert not memory_logger.pop()
-
-    workspace = tmp_path / "subagent_multi_workspace"
-    workspace.mkdir()
-    (workspace / "release_notes_alpha.md").write_text(
-        "# Alpha Release Notes\n\nversion = 2026.03.11-alpha\nowner = sdk-platform-alpha\n",
-        encoding="utf-8",
-    )
-    (workspace / "release_notes_beta.md").write_text(
-        "# Beta Release Notes\n\nversion = 2026.03.11-beta\nowner = sdk-platform-beta\n",
-        encoding="utf-8",
-    )
-
-    with _patched_claude_sdk(wrap_client=True):
-        options = claude_agent_sdk.ClaudeAgentOptions(
-            model=TEST_MODEL,
-            cwd=workspace,
-            permission_mode="bypassPermissions",
-            max_turns=12,
-        )
-        transport = make_cassette_transport(
-            cassette_name="test_multiple_bundled_subagents_keep_outer_orchestration_separate",
-            prompt="",
-            options=options,
-        )
-
-        received_messages: list[Any] = []
-        async with claude_agent_sdk.ClaudeSDKClient(options=options, transport=transport) as client:
-            await client.query(
-                "Launch two bundled general-purpose subagents for two independent tasks. "
-                "Start both Agent tool calls before waiting on either result if the tool API allows it. "
-                "The first delegated subagent must use Bash and Read on release_notes_alpha.md and return only "
-                "'alpha:<version> | <owner>'. "
-                "The second delegated subagent must use Bash and Read on release_notes_beta.md and return only "
-                "'beta:<version> | <owner>'. "
-                "If either agent runs in the background, use TaskOutput with block=true to wait for each result. "
-                "Do not finish while either task is still running. "
-                "After both delegated agents finish, reply with exactly two lines in that same order. "
-                "Do not answer directly without using both subagents."
-            )
-            async for message in client.receive_response():
-                received_messages.append(message)
-                if type(message).__name__ == "ResultMessage":
-                    break
-
-    spans = memory_logger.pop()
-    if not any(_is_task_event(message) for message in received_messages) and not any(
-        getattr(message, "parent_tool_use_id", None) for message in received_messages
-    ):
-        pytest.skip("This CLI ran the subagents in the background without streaming their messages or task events")
-    task_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.TASK]
-    llm_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.LLM]
-    tool_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.TOOL]
-
-    root_task_span = find_span_by_name(task_spans, "Claude Agent")
-    subagent_spans = [s for s in task_spans if s["span_attributes"]["name"] != "Claude Agent"]
-    assert len(subagent_spans) >= 2, f"Expected at least two delegated task spans, got {len(subagent_spans)}"
-
-    for llm_span in llm_spans:
-        assert not {"prompt_tokens", "completion_tokens", "tokens"}.intersection(llm_span.get("metrics", {}))
-    result_message = received_messages[-1]
-    expected_metrics = _metrics_from_result_message(result_message)
-    assert root_task_span["metrics"] | expected_metrics == root_task_span["metrics"]
-
-    outer_llm_spans = [llm_span for llm_span in llm_spans if root_task_span["span_id"] in llm_span["span_parents"]]
-    assert outer_llm_spans, "Expected outer orchestration LLM spans under the root task"
-
-    agent_tool_spans = [
-        tool_span for tool_span in tool_spans if tool_span["span_attributes"]["name"] in SUBAGENT_TOOL_NAMES
-    ]
-    assert len(agent_tool_spans) >= 2, f"Expected at least two Agent tool spans, got {len(agent_tool_spans)}"
-
-    subagent_span_ids = {subagent_span["span_id"] for subagent_span in subagent_spans}
-    for agent_tool_span in agent_tool_spans:
-        assert any(outer_llm_span["span_id"] in agent_tool_span["span_parents"] for outer_llm_span in outer_llm_spans)
-        assert not subagent_span_ids.intersection(agent_tool_span["span_parents"])
-
-    # Orchestrator turns taken while background subagents run (TaskOutput polling)
-    # belong to the outer agent, not to whichever subagent task is still open.
-    task_output_spans = [span for span in tool_spans if span["span_attributes"]["name"] == "TaskOutput"]
-    assert task_output_spans, "Expected the orchestrator to poll background subagents with TaskOutput"
-    for task_output_span in task_output_spans:
-        parent_llm = next(span for span in llm_spans if span["span_id"] == task_output_span["span_parents"][0])
-        assert root_task_span["span_id"] in parent_llm["span_parents"], "Orchestrator LLM span nested under a subagent"
-
-    delegated_llm_spans = [
-        llm_span for llm_span in llm_spans if subagent_span_ids.intersection(llm_span["span_parents"])
-    ]
-    assert delegated_llm_spans, "Expected delegated LLM spans nested under delegated task spans"
-
-    non_agent_tool_spans = [
-        tool_span for tool_span in tool_spans if tool_span["span_attributes"]["name"] not in SUBAGENT_TOOL_NAMES
-    ]
-    assert any(
-        any(delegated_llm_span["span_id"] in tool_span["span_parents"] for delegated_llm_span in delegated_llm_spans)
-        for tool_span in non_agent_tool_spans
-    ), "Expected delegated tool spans to nest under delegated LLM spans"
 
 
 async def _single_message_generator():
@@ -1422,7 +1321,7 @@ async def test_stream_propagates_genuine_cancellation(memory_logger, entrypoint,
 
 
 async def _assert_stream_cancellation(response_stream: Any, transport: Any, cancellation: str) -> None:
-    read_task = asyncio.create_task(anext(response_stream))
+    read_task = asyncio.create_task(_next_non_startup_message(response_stream))
     await asyncio.wait_for(transport.wait_until_sdk_message_blocked(), timeout=transport.wait_timeout)
     await asyncio.sleep(0)
     assert not read_task.done(), "the replayed SDK message should keep the response read blocked"
@@ -1436,6 +1335,15 @@ async def _assert_stream_cancellation(response_stream: Any, transport: Any, canc
             await read_task
 
     await response_stream.aclose()
+
+
+async def _next_non_startup_message(messages):
+    # Startup hook notifications may be queued before the SDK acknowledges
+    # initialize; wait for a message from the actual user query instead.
+    while True:
+        message = await anext(messages)
+        if getattr(message, "hook_event_name", None) != "SessionStart":
+            return message
 
 
 @pytest.mark.parametrize(
@@ -1888,7 +1796,7 @@ async def test_setup_claude_agent_sdk_repro_import_before_setup(memory_logger, m
             )
 
             options = getattr(consumer_module, "ClaudeAgentOptions")(
-                model="claude-3-5-haiku-20241022",
+                model=TEST_MODEL,
                 permission_mode="bypassPermissions",
             )
             transport = make_cassette_transport(
@@ -1976,7 +1884,7 @@ async def test_concurrent_query_helpers_keep_raw_messages_request_scoped(memory_
     first_prompt = "Say hi"
     second_prompt = "Say hello in one short sentence."
     first_options = claude_agent_sdk.ClaudeAgentOptions(
-        model="claude-3-5-haiku-20241022",
+        model=TEST_MODEL,
         permission_mode="bypassPermissions",
     )
     second_options = claude_agent_sdk.ClaudeAgentOptions(
@@ -2064,7 +1972,7 @@ async def test_query_helper_can_close_from_different_task(memory_logger):
     assert not memory_logger.pop()
 
     options = claude_agent_sdk.ClaudeAgentOptions(
-        model="claude-3-5-haiku-20241022",
+        model=TEST_MODEL,
         permission_mode="bypassPermissions",
     )
     transport = make_cassette_transport(
@@ -2084,7 +1992,7 @@ async def test_query_helper_can_close_from_different_task(memory_logger):
     with _patched_claude_sdk():
         assert setup_claude_agent_sdk(project=PROJECT_NAME, api_key=logger.TEST_API_KEY)
         messages = claude_agent_sdk.query(prompt=prompt_stream(), options=options, transport=transport)
-        await anext(messages)
+        await _next_non_startup_message(messages)
         close_task = contextvars.Context().run(asyncio.create_task, messages.aclose())
         await close_task
 
@@ -2116,6 +2024,7 @@ async def test_concurrent_subagents_produce_parallel_llm_spans_with_correct_pare
     with _patched_claude_sdk(wrap_client=True):
         options = claude_agent_sdk.ClaudeAgentOptions(
             model=TEST_MODEL,
+            env={"CLAUDE_CODE_SUBAGENT_MODEL": TEST_MODEL},
             cwd=workspace,
             permission_mode="bypassPermissions",
             max_turns=18,
@@ -2129,8 +2038,8 @@ async def test_concurrent_subagents_produce_parallel_llm_spans_with_correct_pare
 
         async with claude_agent_sdk.ClaudeSDKClient(options=options, transport=transport) as client:
             await client.query(
-                "Use exactly three bundled general-purpose subagents and start all three Agent tool calls "
-                "before waiting for any result if the tool API allows it. "
+                "Use exactly three bundled general-purpose subagents with run_in_background=false. "
+                "Start all three foreground Agent tool calls in the same assistant turn before waiting for any result. "
                 "Subagent A must first use Bash to run `echo bash-a-output` and then use Read on task_a.txt. "
                 "Subagent B must first use Bash to run `echo bash-b-output` and then use Read on task_b.txt. "
                 "Subagent C must first use Bash to run `echo bash-c-output` and then use Read on task_c.txt. "

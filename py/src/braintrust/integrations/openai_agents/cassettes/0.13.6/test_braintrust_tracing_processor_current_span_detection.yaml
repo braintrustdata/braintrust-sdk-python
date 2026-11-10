@@ -1,114 +1,184 @@
 interactions:
 - request:
-    body: '{"include":[],"input":[{"content":"What is 2+2? Just the number.","role":"user"}],"instructions":"You
-      are a helpful assistant. Be very concise.","model":"gpt-4o-mini","tools":[]}'
+    body: '{"data":[{"object":"trace","id":"trace_87f83bceebde4506b2863054ef00c06c","workflow_name":"Agent
+      workflow","group_id":null,"metadata":null},{"object":"trace.span","id":"span_2e996b75bc644f00ba680f05","trace_id":"trace_87f83bceebde4506b2863054ef00c06c","parent_id":"span_46e3110bbb874545970909c9","started_at":"2026-11-10T16:11:45.700505+00:00","ended_at":"2026-11-10T16:11:49.429126+00:00","span_data":{"type":"response","response_id":"resp_0f7f372fd1ee2796016af3424256d087d289f05c66ba29cee2"},"error":null},{"object":"trace.span","id":"span_46e3110bbb874545970909c9","trace_id":"trace_87f83bceebde4506b2863054ef00c06c","parent_id":null,"started_at":"2026-11-10T16:11:45.696470+00:00","ended_at":"2026-11-10T16:11:49.430614+00:00","span_data":{"type":"agent","name":"test-agent","handoffs":[],"tools":[],"output_type":"str"},"error":null},{"object":"trace","id":"trace_06a9bbcede8143d6a2ceccb397e4f01e","workflow_name":"Agent
+      workflow","group_id":null,"metadata":null}]}'
     headers:
-      Accept:
-      - application/json
-      Accept-Encoding:
+      accept:
+      - '*/*'
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
-      - '178'
-      Content-Type:
+      content-length:
+      - '969'
+      content-type:
       - application/json
-      Cookie:
-      - __cf_bm=xIplvgweFvPJQfkYDnZvAEpMvf0rmW7m_URysJ13oIk-1776294610.1883538-1.0.1.1-iA.h9OVjJe8x2JesL8_GIanXrmowSG1BwLly5cBVgbKEJ3KiKEO.vSUnx4k9We.ZbK8YhYjWcGIXeBiOoBQlZl4GLpOU2Lst46TjwaAXlpUOuOXzh7NBGziC18aZeXA2
-      Host:
+      host:
       - api.openai.com
-      User-Agent:
-      - Agents/Python 0.13.6
-      X-Stainless-Arch:
-      - arm64
-      X-Stainless-Async:
-      - async:asyncio
-      X-Stainless-Lang:
-      - python
-      X-Stainless-OS:
-      - MacOS
-      X-Stainless-Package-Version:
-      - 2.31.0
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.13.3
-      x-stainless-read-timeout:
-      - '600'
-      x-stainless-retry-count:
-      - '0'
+      openai-beta:
+      - traces=v1
+      user-agent:
+      - python-httpx/0.28.1
     method: POST
-    uri: https://api.openai.com/v1/responses
+    uri: https://api.openai.com/v1/traces/ingest
   response:
     body:
-      string: "{\n  \"id\": \"resp_0429c5de48e3501a0069e01ad39e2081a38d13bb1a93698c8b\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1776294611,\n  \"status\":
-        \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1776294612,\n  \"error\": null,\n
-        \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
-        \"You are a helpful assistant. Be very concise.\",\n  \"max_output_tokens\":
-        null,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
-        \ \"output\": [\n    {\n      \"id\": \"msg_0429c5de48e3501a0069e01ad4116c81a3946d94299bf2f4f2\",\n
-        \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
-        [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"4\"\n        }\n      ],\n
-        \     \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n
-        \ \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
-        null,\n  \"prompt_cache_retention\": null,\n  \"reasoning\": {\n    \"effort\":
-        null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
-        \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n
-        \   \"format\": {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n
-        \ },\n  \"tool_choice\": \"auto\",\n  \"tools\": [],\n  \"top_logprobs\":
-        0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\":
-        32,\n    \"input_tokens_details\": {\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 2,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 34\n  },\n  \"user\": null,\n  \"metadata\":
-        {}\n}"
+      string: "{\n  \"error\": {\n    \"message\": \"Traces ingestion is not permitted
+        for zero data retention organizations.\",\n    \"type\": \"invalid_request_error\",\n
+        \   \"param\": null,\n    \"code\": \"zdr_forbidden\"\n  }\n}"
     headers:
-      CF-RAY:
-      - 9ece9f4a5e559113-YYZ
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json
-      Date:
-      - Wed, 15 Apr 2026 23:10:12 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
       alt-svc:
       - h3=":443"; ma=86400
       cf-cache-status:
       - DYNAMIC
+      cf-ray:
+      - a58655dc5e5fade0-YYZ
+      connection:
+      - keep-alive
       content-length:
-      - '1571'
-      openai-organization:
-      - braintrust-data
+      - '195'
+      content-type:
+      - application/json
+      date:
+      - Tue, 10 Nov 2026 16:11:51 GMT
       openai-processing-ms:
-      - '594'
-      openai-project:
-      - proj_vsCSXafhhByzWOThMrJcZiw9
+      - '422'
       openai-version:
       - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-request-id:
+      - req_9ac6fef850c84ff8a9cd38c3d161c32b
+    status:
+      code: 403
+      message: Forbidden
+- request:
+    body: '{"include":[],"input":[{"content":"What is 2+2? Just the number.","role":"user"}],"instructions":"You
+      are a helpful assistant. Be very concise.","model":"gpt-6-luna","tools":[]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '177'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - Agents/Python 0.13.6
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.31.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '1'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.16
+    method: POST
+    uri: https://api.openai.com/v1/responses
+  response:
+    body:
+      string: "{\n  \"id\": \"resp_07c57e4804f719c1016af34246264887d288f208a74d6f58c7\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1794327110,\n  \"status\":
+        \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794327117,\n  \"error\":
+        null,\n  \"frequency_penalty\": 0.0,\n  \"image\": {\n    \"context_compression\":
+        \"disabled\"\n  },\n  \"incomplete_details\": null,\n  \"instructions\": \"You
+        are a helpful assistant. Be very concise.\",\n  \"max_output_tokens\": null,\n
+        \ \"max_tool_calls\": null,\n  \"model\": \"gpt-6-luna\",\n  \"moderation\":
+        null,\n  \"output\": [\n    {\n      \"id\": \"msg_07c57e4804f719c1016af3424d30f487d2b5cfd22805239006\",\n
+        \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
+        [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
+        [],\n          \"logprobs\": [],\n          \"text\": \"4\"\n        }\n      ],\n
+        \     \"phase\": \"final_answer\",\n      \"role\": \"assistant\"\n    }\n
+        \ ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\":
+        null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\": \"24h\",\n
+        \ \"reasoning\": {\n    \"context\": \"all_turns\",\n    \"effort\": \"medium\",\n
+        \   \"mode\": \"standard\",\n    \"summary\": null\n  },\n  \"safety_identifier\":
+        null,\n  \"service_tier\": \"default\",\n  \"store\": false,\n  \"temperature\":
+        1.0,\n  \"text\": {\n    \"format\": {\n      \"type\": \"text\"\n    },\n
+        \   \"verbosity\": \"medium\"\n  },\n  \"tool_choice\": \"auto\",\n  \"tool_usage\":
+        {\n    \"image_gen\": {\n      \"input_tokens\": 0,\n      \"input_tokens_details\":
+        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\":
+        0,\n      \"output_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
+        0\n      },\n      \"total_tokens\": 0\n    },\n    \"web_search\": {\n      \"num_requests\":
+        0\n    }\n  },\n  \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 0.98,\n
+        \ \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 31,\n
+        \   \"input_tokens_details\": {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\":
+        0\n    },\n    \"output_tokens\": 5,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        0\n    },\n    \"total_tokens\": 36\n  },\n  \"user\": null,\n  \"metadata\":
+        {}\n}"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID, Server-Timing-Total
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a58655d5fcfe1707-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '2146'
+      content-type:
+      - application/json
+      date:
+      - Tue, 10 Nov 2026 16:11:57 GMT
+      openai-processing-ms:
+      - '7193'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999950'
+      - '180000000'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_eec976a400ea4dcaa13f2fc042a5419f
+      - req_3d7aed13822f4d78bda5478e47e77bd4
     status:
       code: 200
       message: OK

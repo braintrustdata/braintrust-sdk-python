@@ -46,9 +46,10 @@ def test_global_handler(logger_memory_logger):
     assert next((h for h in manager.handlers if isinstance(h, BraintrustCallbackHandler)), None) == handler
 
     # Here's what a typical user would do
-    prompt = ChatPromptTemplate.from_template("What is 1 + {number}?")
+    prompt = ChatPromptTemplate.from_template("What is 1 + {number}? Reply exactly: 1 + {number} equals 3.")
     model = ChatOpenAI(
-        model="gpt-4o-mini",
+        model="gpt-6-luna",
+        reasoning_effort="none",
         temperature=1,
         top_p=1,
         frequency_penalty=0,
@@ -68,7 +69,13 @@ def test_global_handler(logger_memory_logger):
     trace_root_id = spans[0]["root_span_id"]
 
     # Spans would be empty if the handler was not registered, let's make sure it logged what we expect
-    assert_matches_object(spans, expected_prompt_chain_spans(root_span_id, trace_root_id))
+    assert_matches_object(
+        spans,
+        expected_prompt_chain_spans(
+            root_span_id,
+            trace_root_id,
+        ),
+    )
 
     assert message.content == "1 + 2 equals 3."
 
