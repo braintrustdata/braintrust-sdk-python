@@ -92,6 +92,11 @@ async def test_consumed_input_drives_real_cascade(rooms, memory_logger, monkeypa
         assert parent["metrics"]["start"] <= speech["metrics"]["start"]
     assert any(row["metadata"].get("turn.reply_to") == user["span_id"] for row in named(rows, "agent_turn"))
     root = named(rows, "session")[0]
+    assert root["metadata"]["audio.schema.version"] == "3.0.0"
+    assert isinstance(root["metadata"]["audio.timeline"]["origin_unix_ms"], int)
+    for row in rows:
+        if row["span_id"] != root["span_id"]:
+            assert "audio.schema.version" not in row.get("metadata", {}), row["span_attributes"]["name"]
     assert uploads
     assert all(
         len(segment["channels"]) == (2 if directions == "both" else 1)

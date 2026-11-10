@@ -46,7 +46,8 @@ def _new(parent, name, *, kind="task", start_time=None, metadata=None, privacy=N
         start_time=start_time,
         set_current=False,
         internal={"instrumentation": "livekit-agents-auto", "export_customizers": filters},
-        metadata={"audio.schema.version": "3.0.0", **(metadata or {})},
+        # AudioSessionRecorder emits the schema marker with the session timeline.
+        metadata=metadata or {},
     )
     return parent.start_span(**kwargs) if parent is not None else start_span(**kwargs)
 

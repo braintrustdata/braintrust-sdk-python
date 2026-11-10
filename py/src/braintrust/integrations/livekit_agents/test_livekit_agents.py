@@ -42,6 +42,12 @@ async def test_livekit_agents_function_tool_e2e(memory_logger, monkeypatch, lega
         result.expect.next_event().is_message(role="assistant")
     rows = memory_logger.pop()
     assert len(named(rows, "session")) == 1
+    root = named(rows, "session")[0]
+    assert root["metadata"]["audio.schema.version"] == "3.0.0"
+    assert isinstance(root["metadata"]["audio.timeline"]["origin_unix_ms"], int)
+    for row in rows:
+        if row["span_id"] != root["span_id"]:
+            assert "audio.schema.version" not in row.get("metadata", {}), row["span_attributes"]["name"]
     turns = named(rows, "agent_turn")
     models = named(rows, "llm_response")
     tools = named(rows, "lookup_weather")
