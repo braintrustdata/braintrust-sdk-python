@@ -1057,7 +1057,7 @@ def pylint(session):
     cross_integration_files = {
         "livekit_agents": {
             f"src/{INTEGRATION_DIR}/auto_test_scripts/test_auto_livekit_agents_before_import.py",
-            "../examples/livekit/cascade.py",
+            "../examples/livekit/voice_agent.py",
         },
         "pydantic_ai": {f"src/{INTEGRATION_DIR}/temporal/test_temporal_pydantic_ai.py"},
     }

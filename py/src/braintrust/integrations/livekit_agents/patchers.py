@@ -2,7 +2,7 @@ from typing import Any
 
 from braintrust.integrations.base import CompositeFunctionWrapperPatcher, FunctionWrapperPatcher
 
-from . import tracing
+from . import realtime, tracing
 
 
 def _patcher(name, module, path, wrapper):
@@ -80,6 +80,13 @@ class AgentSessionPatcher(CompositeFunctionWrapperPatcher):
         ),
         _patcher("cascade_llm", "voice.generation", "_llm_inference_task", tracing.llm_operation),
         _patcher("cascade_tts", "voice.generation", "_tts_inference_task", tracing.tts_operation),
+        _patcher("cascade_tts_created", "voice.agent_activity", "perform_tts_inference", tracing.tts_created),
+        _patcher(
+            "realtime_generation",
+            "voice.agent_activity",
+            "AgentActivity._realtime_generation_task_impl",
+            realtime.generate,
+        ),
         _patcher("cascade_stt_pump", "voice.audio_recognition", "_STTPipeline._stt_pump", tracing.stt_pump),
         _patcher("cascade_stt_rebind", "voice.audio_recognition", "_STTPipeline._rebind_node", tracing.rebind_stt),
         _patcher("cascade_audio_forward", "voice.generation", "_audio_forwarding_task", tracing.audio_forward),

@@ -66,7 +66,8 @@ class PlaybackTap(AudioOutput):
             self.current = Run(self.owner.agent_parent(), self.owner.audio.elapsed_ns())
             from .tracing import _SYNTHESIS
 
-            self.current.synthesis = _SYNTHESIS.get()
+            source = _SYNTHESIS.get()
+            self.current.synthesis = getattr(source, "_braintrust_span", source)
             self.runs.append(self.current)
         run = self.current
         run.sample_clock = math.lcm(run.sample_clock, frame.sample_rate)
