@@ -880,8 +880,7 @@ sys.exit(1 if any(is_importable(name) for name in {_VENDOR_IMPORT_NAMES!r}) else
 
 @nox.session()
 def test_audio_codecs(session):
-    if sys.version_info >= (3, 15):
-        session.skip("PyAV wheels are qualified on Python 3.10–3.14")
+    _skip_if_incompatible(session)
     _install_test_deps(session)
     _session_install(session, "-e", ".[audio]")
     session.run("pytest", "src/braintrust/_audio/test_codec.py", *session.posargs)

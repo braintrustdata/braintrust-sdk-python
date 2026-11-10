@@ -56,7 +56,7 @@ pip install "braintrust[all]"
 
 Available extras:
 
-- `audio`: installs PyAV for Opus/Ogg session recording on Python 3.10–3.14
+- `audio`: installs PyAV for Opus/Ogg session recording on Python 3.12+
 - `performance`: installs `orjson` for faster JSON serialization
 - `cli`: installs optional dependencies used by the Braintrust CLI
 - `openai-agents`: installs OpenAI Agents integration support
@@ -66,8 +66,9 @@ Available extras:
 
 ### Audio encoding
 
-`braintrust[audio]` uses PyAV's bundled FFmpeg codecs. Each Opus/Ogg segment is
-an independent file with exact playable duration. Installing the extra does not
+`braintrust[audio]` requires Python 3.12+ and uses PyAV's bundled FFmpeg codecs.
+On Python 3.10–3.11, the extra does not install PyAV; use PCM/WAV recording.
+Each Opus/Ogg segment is an independent file with exact playable duration. Installing the extra does not
 enable capture; framework adapters still require their audio opt-ins and privacy
 permission. Without PyAV, default recording warns once and uses raw PCM. Explicit
 Opus configuration requires the extra. PCM/WAV need no native codecs.

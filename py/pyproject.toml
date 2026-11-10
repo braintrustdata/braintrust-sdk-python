@@ -52,8 +52,8 @@ braintrust = "braintrust.wrappers.pytest_plugin.plugin"
 braintrust = "braintrust.integrations.harbor:HarborPlugin"
 
 [project.optional-dependencies]
-# PyAV wheels are qualified on Python 3.10–3.14.
-audio = ["av==16.1.0; python_version<'3.15'"]
+# Opus/Ogg encoding requires Python 3.12+ (PyAV).
+audio = ["av==19.0.2; python_version>='3.12'"]
 cli = ["boto3", "python-dotenv", "uv>=0.13.4", "starlette", "uvicorn"]
 # TODO: remove the doc extra in the next major version.
 doc = []
@@ -72,7 +72,7 @@ temporal = [
     "temporalio>=1.19.0; python_version>='3.10'",
 ]
 all = [
-    "av==16.1.0; python_version<'3.15'",
+    "av==19.0.2; python_version>='3.12'",
     "boto3",
     "openai-agents",
     "opentelemetry-api",
