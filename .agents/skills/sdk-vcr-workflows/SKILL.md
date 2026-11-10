@@ -274,6 +274,8 @@ Be careful about:
 
 When the provider returns binary HTTP responses or generated media, sanitize the recordings as needed so the repo does not keep unnecessary raw file bytes.
 
+For image tests that do not depend on the actual pixels or original byte size, replace large generated image payloads with a tiny valid image while preserving the provider response structure and usage metadata. Scope the recording hook to the relevant tests, retain sensitive-header scrubbing, and update content-length headers when changing bodies. See `sanitize_generated_images` in `py/src/braintrust/conftest.py` and the OpenAI and LiteLLM image tests for an example; Google GenAI has its own media sanitizer. Apply the same transformation to existing recordings where appropriate, and verify replay across the affected provider versions. Keep original media where its contents, format, dimensions, or size are part of the behavior under test.
+
 ## Claude Agent SDK Exception
 
 Claude Agent SDK coverage is cassette-backed, but not through HTTP VCR.
