@@ -188,7 +188,7 @@ def main() -> None:
         with open(report_path) as f:
             report = json.load(f)
         durations = {
-            session["name"]: round(session["duration"])
+            (session["signatures"][0] if session.get("signatures") else session["name"]): round(session["duration"])
             for session in report["sessions"]
             if session["result"] == "success"
         }
