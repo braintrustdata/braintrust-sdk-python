@@ -311,11 +311,7 @@ class BraintrustWorkflowInboundInterceptor(temporalio.worker.WorkflowInboundInte
                         id=ids["row_id"],
                         span_id=ids["span_id"],
                         root_span_id=ids["root_span_id"],
-                        metadata={
-                            "temporal.workflow_type": info.workflow_type,
-                            "temporal.workflow_id": info.workflow_id,
-                            "temporal.run_id": info.run_id,
-                        },
+                        metadata=_workflow_span_metadata(info),
                     )
                     span.set_current()
                     self._parent_span_context = _workflow_span_context(parent, ids)
@@ -325,11 +321,7 @@ class BraintrustWorkflowInboundInterceptor(temporalio.worker.WorkflowInboundInte
                         name=f"temporal.workflow.{info.workflow_type}",
                         type="task",
                         parent=parent_span_context or None,
-                        metadata={
-                            "temporal.workflow_type": info.workflow_type,
-                            "temporal.workflow_id": info.workflow_id,
-                            "temporal.run_id": info.run_id,
-                        },
+                        metadata=_workflow_span_metadata(info),
                     )
                     span.set_current()
                     self._parent_span_context = span.export()
@@ -453,6 +445,19 @@ class _WorkflowSpanHooks:
 def _workflow_span_id_base(info: temporalio.workflow.Info) -> str:
     namespace = getattr(info, "namespace", "")
     return f"{_SPAN_ID_NAMESPACE}:{namespace}:{info.workflow_type}:{info.workflow_id}:{info.run_id}"
+
+
+def _workflow_span_metadata(info: temporalio.workflow.Info) -> dict[str, Any]:
+    metadata: dict[str, Any] = {
+        "temporal.workflow_type": info.workflow_type,
+        "temporal.workflow_id": info.workflow_id,
+        "temporal.run_id": info.run_id,
+    }
+    # Added in temporalio 1.34.0. Unlike run_id, it stays the same when a workflow is reset.
+    original_execution_run_id = getattr(info, "original_execution_run_id", None)
+    if original_execution_run_id:
+        metadata["temporal.original_execution_run_id"] = original_execution_run_id
+    return metadata
 
 
 def _workflow_span_ids(info: temporalio.workflow.Info, parent: str) -> dict[str, str]:
