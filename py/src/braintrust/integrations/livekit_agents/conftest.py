@@ -48,25 +48,34 @@ def livekit_server():
         process.wait(timeout=10)
 
 
+LIVEKIT_URL = os.getenv("LIVEKIT_URL", "ws://localhost:7880")
+
+
+def room_name():
+    return f"braintrust-cascade-{uuid.uuid4()}"
+
+
+def room_token(name, identity):
+    from livekit import api
+
+    return (
+        api.AccessToken(os.getenv("LIVEKIT_API_KEY", "devkey"), os.getenv("LIVEKIT_API_SECRET", "secret"))
+        .with_identity(identity)
+        .with_grants(api.VideoGrants(room_join=True, room=name))
+        .to_jwt()
+    )
+
+
 @pytest_asyncio.fixture
 async def rooms(livekit_server):
-    from livekit import api, rtc
+    from livekit import rtc
 
-    name = f"braintrust-cascade-{uuid.uuid4()}"
+    name = room_name()
     agent, caller = rtc.Room(), rtc.Room()
 
-    def token(identity):
-        return (
-            api.AccessToken(os.getenv("LIVEKIT_API_KEY", "devkey"), os.getenv("LIVEKIT_API_SECRET", "secret"))
-            .with_identity(identity)
-            .with_grants(api.VideoGrants(room_join=True, room=name))
-            .to_jwt()
-        )
-
     try:
-        url = os.getenv("LIVEKIT_URL", "ws://localhost:7880")
-        await asyncio.wait_for(agent.connect(url, token("agent")), 15)
-        await asyncio.wait_for(caller.connect(url, token("caller")), 15)
+        await asyncio.wait_for(agent.connect(LIVEKIT_URL, room_token(name, "agent")), 15)
+        await asyncio.wait_for(caller.connect(LIVEKIT_URL, room_token(name, "caller")), 15)
         yield agent, caller
     finally:
         await asyncio.gather(agent.disconnect(), caller.disconnect())

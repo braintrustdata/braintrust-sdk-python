@@ -181,9 +181,15 @@ class Session:
             self.native.output.audio = self.tap
         room_io = self.native._room_io
         if room_io is not None and self.permits():
+            # session.start() joins the room concurrently with the first activity
+            # start, and LiveKit raises when local_participant is read before the
+            # room connects. Skip the agent label until then; session_start calls
+            # attach_media again once the room has connected.
+            room = room_io.room
+            local = room.local_participant if room.isconnected() else None
             for source, participant, kind in (
                 ("session-input", room_io.linked_participant, "user"),
-                ("agent-output", room_io.room.local_participant, "agent"),
+                ("agent-output", local, "agent"),
             ):
                 if participant is not None and participant.sid:
                     identifier = self.audio.participant(participant.sid, {"type": kind})
