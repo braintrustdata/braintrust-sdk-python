@@ -587,7 +587,7 @@ def _is_vector(value: Any) -> bool:
 
 
 def _summarize_embeddings(output: Any) -> Any:
-    """Replace embedding vectors in an InvokeModel body with their length/count."""
+    """Replace an InvokeModel embedding response with the canonical count output."""
     if not isinstance(output, dict):
         return output
     embedding = output.get("embedding")
@@ -609,14 +609,8 @@ def _summarize_embeddings(output: Any) -> Any:
         isinstance(embeddings, list) and embeddings and all(_is_vector(e) for e in embeddings)
     ):
         return output
-    # Titan v2 repeats the vector under embeddingsByType.
-    summary = {k: v for k, v in output.items() if k not in ("embedding", "embeddings", "embeddingsByType")}
-    if _is_vector(embedding):
-        summary["embedding_length"] = len(embedding)
-    else:
-        summary["embedding_count"] = len(embeddings)
-        summary["embedding_length"] = len(embeddings[0])
-    return summary
+    # Titan v2 repeats a single embedding under embeddingsByType.
+    return {"count": 1 if _is_vector(embedding) else len(embeddings)}
 
 
 def _anthropic_invoke_usage_metrics(model_id: Any, output: Any) -> dict[str, Any]:

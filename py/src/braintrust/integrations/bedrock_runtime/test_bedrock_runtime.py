@@ -268,7 +268,7 @@ def test_wrap_bedrock_invoke_model_titan_embedding_logs_token_metrics(memory_log
     assert span["metrics"]["prompt_tokens"] == 2
     assert span["metrics"]["tokens"] == 2
     # The embedding vector is summarized instead of logged in full.
-    assert span["output"] == {"embedding_length": 256, "inputTextTokenCount": 2}
+    assert span["output"] == {"count": 1}
 
 
 @pytest.mark.vcr
@@ -289,9 +289,7 @@ def test_wrap_bedrock_invoke_model_cohere_embedding_summarizes_vectors(memory_lo
     span = spans[0]
     # Cohere reports no token counts in the body; Bedrock sends them in response headers.
     assert span["metrics"]["prompt_tokens"] == 2
-    assert span["output"]["embedding_count"] == 2
-    assert span["output"]["embedding_length"] == 1024
-    assert "embeddings" not in span["output"]
+    assert span["output"] == {"count": 2}
 
 
 # A 1x1 transparent PNG for image tests.
@@ -543,13 +541,13 @@ def test_auto_instrument_bedrock_runtime_subprocess():
 @pytest.mark.parametrize(
     "output, expected",
     [
-        ({"embeddings": {"float": [[0.1, 0.2], [0.3, 0.4]]}}, {"embedding_count": 2, "embedding_length": 2}),
+        ({"embeddings": {"float": [[0.1, 0.2], [0.3, 0.4]]}}, {"count": 2}),
         (
             {"embeddingsByType": {"binary": [1, 0, 1]}, "inputTextTokenCount": 3},
-            {"embedding_length": 3, "inputTextTokenCount": 3},
+            {"count": 1},
         ),
-        ({"embedding": [0.1, 0.2]}, {"embedding_length": 2}),
-        ({"embeddings": [[0.1, 0.2]]}, {"embedding_count": 1, "embedding_length": 2}),
+        ({"embedding": [0.1, 0.2]}, {"count": 1}),
+        ({"embeddings": [[0.1, 0.2]]}, {"count": 1}),
         ({"embeddings": {}}, {"embeddings": {}}),
         ({"message": "text"}, {"message": "text"}),
     ],
