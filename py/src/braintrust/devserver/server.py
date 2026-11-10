@@ -37,7 +37,7 @@ from ..framework import (
     _scorer_name,
 )
 from ..generated_types import FunctionId
-from ..logger import BraintrustState, bt_iscoroutinefunction
+from ..logger import BraintrustState, bt_iscoroutinefunction, get_span_parent_object
 from ..parameters import (
     RemoteEvalParameters,
     ValidatedParameters,
@@ -375,7 +375,7 @@ def make_scorer(
         request = {
             **score,
             "input": dict(input=input, output=output, expected=expected, metadata=metadata),
-            "parent": state.current_span.get().export(),
+            "parent": get_span_parent_object(state=state).export(),
             "stream": False,
             "mode": "auto",
             "strict": True,
