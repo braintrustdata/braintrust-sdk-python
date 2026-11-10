@@ -1,0 +1,77 @@
+interactions:
+- request:
+    body: '{"model":"gemini-3.5-flash-lite","input":"Use code execution to plot y
+      = x**2 for x from 0 to 10 with matplotlib and show the figure.","tools":[{"type":"code_execution"}]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '171'
+      content-type:
+      - application/json
+      host:
+      - generativelanguage.googleapis.com
+      user-agent:
+      - google-genai-sdk/3.0.0 gl-python/3.14.7
+      x-goog-api-client:
+      - google-genai-sdk/3.0.0 gl-python/3.14.7
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/interactions
+  response:
+    body:
+      string: '{"id": "v1_ChdvVnJ6YXFQdkI1TzZ4ZElQck8za3dRaxIXb1ZyemFxUHZCNU82eGRJUHJPM2t3UWs",
+        "status": "completed", "usage": {"total_tokens": 1565, "total_input_tokens":
+        27, "input_tokens_by_modality": [{"modality": "text", "tokens": 27}], "total_cached_tokens":
+        0, "total_output_tokens": 203, "total_tool_use_tokens": 1335, "tool_use_tokens_by_modality":
+        [{"modality": "text", "tokens": 255}, {"modality": "image", "tokens": 1080}],
+        "total_thought_tokens": 0, "initial_input_tokens": 27}, "created": "2026-11-10T17:55:48Z",
+        "updated": "2026-11-10T17:55:48Z", "service_tier": "standard", "steps": [{"signature":
+        "EmAKXgFpFH0To+aME0cEzeE65q/Oaxbr/UazyPKm/XAs2XAuwOV3Um8MwYMbRjcgWjvxwTW0CazbSLZrVDQFEHo6MpV1hYnRjCk9DdZPiLmgevUEMKu0uk8b5yNoidisd6o=",
+        "type": "thought"}, {"id": "call_4553029871522793412", "type": "code_execution_call",
+        "arguments": {"language": "python", "code": "import numpy as np\nimport matplotlib.pyplot
+        as plt\n\n# Generate x values from 0 to 10\nx = np.linspace(0, 10, 100)\n#
+        Calculate corresponding y values\ny = x**2\n\n# Create the plot\nplt.figure(figsize=(8,
+        5))\nplt.plot(x, y, label=''y = x^2'', color=''b'', linewidth=2)\nplt.title(''Plot
+        of y = x^2'')\nplt.xlabel(''x'')\nplt.ylabel(''y'')\nplt.grid(True)\nplt.legend()\n\n#
+        Save the figure to be displayed\nplt.savefig(''plot.png'', bbox_inches=''tight'')\nprint(\"Plot
+        generated successfully.\")"}}, {"call_id": "call_4553029871522793412", "type":
+        "code_execution_result", "is_error": false, "result": "Plot generated successfully.\n"},
+        {"content": [{"data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==",
+        "mime_type": "image/png", "type": "image"}], "type": "model_output"}, {"signature":
+        "EmAKXgFpFH0TAhCQJcuX48uk+nwYcsy866d4Q/uqF0WXNKlj0evJaO/m/pXek3HdJo6GYtV0Tk7aYQIfD7aObvK//Jlc2kdeNbw51vCQ7DpIAYCdtT6WL8RZseVPl1v1bE4=",
+        "type": "thought"}, {"content": [{"text": "Here is the generated plot of $y
+        = x^2$ for $x$ ranging from 0 to 10:", "type": "text"}], "type": "model_output"}],
+        "object": "interaction", "model": "gemini-3.5-flash-lite"}'
+    headers:
+      alt-svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      content-length:
+      - '30158'
+      content-type:
+      - application/json
+      date:
+      - Tue, 10 Nov 2026 17:55:48 GMT
+      server:
+      - scaffolding on HTTPServer2
+      server-timing:
+      - gfet4t7; dur=4027
+      transfer-encoding:
+      - chunked
+      vary:
+      - Origin
+      - X-Origin
+      - Referer
+      x-content-type-options:
+      - nosniff
+      x-frame-options:
+      - SAMEORIGIN
+      x-xss-protection:
+      - '0'
+    status:
+      code: 200
+      message: OK
+version: 1

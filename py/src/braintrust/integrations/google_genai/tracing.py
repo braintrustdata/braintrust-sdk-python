@@ -932,9 +932,12 @@ def _tool_span_metadata(call_item: dict[str, Any] | None, result_item: dict[str,
     )
 
 
-def _log_posthoc_interaction_tool_span(call_item: dict[str, Any] | None, result_item: dict[str, Any] | None) -> None:
+def _log_posthoc_interaction_tool_span(
+    call_item: dict[str, Any] | None, result_item: dict[str, Any] | None, *, parent_export: str
+) -> None:
     with start_span(
         name=_tool_span_name(call_item, result_item),
+        parent=parent_export,
         type=SpanTypeAttribute.TOOL,
         input=_tool_span_input(call_item),
         metadata=_tool_span_metadata(call_item, result_item),
@@ -983,7 +986,7 @@ def _activate_interaction_tool_span(
     # function_result is submitted on a follow-up interactions.create call.
     call_id = call_item.get("id")
     if not isinstance(call_id, str):
-        _log_posthoc_interaction_tool_span(call_item, None)
+        _log_posthoc_interaction_tool_span(call_item, None, parent_export=parent_export)
         return
 
     active_tool_spans = _get_active_interaction_tool_spans()
@@ -1087,7 +1090,7 @@ def _finalize_interaction_tool_spans(
             unpaired_call_items.append(call_item)
 
     for call_item, result_item in pairs:
-        _log_posthoc_interaction_tool_span(call_item, result_item)
+        _log_posthoc_interaction_tool_span(call_item, result_item, parent_export=parent_export)
 
     activatable_call_items = [
         call_item
@@ -1101,7 +1104,7 @@ def _finalize_interaction_tool_spans(
     for call_item in unpaired_call_items:
         call_id = call_item.get("id")
         if not isinstance(call_id, str):
-            _log_posthoc_interaction_tool_span(call_item, None)
+            _log_posthoc_interaction_tool_span(call_item, None, parent_export=parent_export)
             continue
         if call_id in active_tool_spans:
             continue

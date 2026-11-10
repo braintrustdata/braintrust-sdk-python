@@ -79,6 +79,15 @@ def _sanitize_media_body(value):
                 inline_data["data"] = TINY_PNG_BASE64
             elif isinstance(mime_type, str) and mime_type.startswith("audio/"):
                 inline_data["data"] = TINY_WAV_BASE64
+        # Interactions API media content: {"type": "image", "mime_type": ..., "data": <base64>}
+        mime_type = sanitized.get("mime_type")
+        if (
+            sanitized.get("type") == "image"
+            and isinstance(sanitized.get("data"), str)
+            and isinstance(mime_type, str)
+            and mime_type.startswith("image/")
+        ):
+            sanitized["data"] = TINY_PNG_BASE64
         return sanitized
     if isinstance(value, list):
         return [_sanitize_media_body(item) for item in value]
@@ -1543,6 +1552,96 @@ def test_interactions_tool_call_and_follow_up(memory_logger):
     assert tool_span["metrics"]["start"] <= nested_span["metrics"]["start"]
     assert tool_span["metrics"]["end"] >= nested_span["metrics"]["end"]
     assert second_span.get("span_parents") in (None, [])
+
+
+_needs_interactions_v3 = pytest.mark.skipif(
+    interactions is None or not version_satisfies(_GENAI_VERSION, ">=3.0.0"),
+    reason="CodeExecutionResultStep.result became str | list[Content] in google-genai 3.0",
+)
+
+
+@_needs_interactions_v3
+@pytest.mark.vcr
+def test_interactions_code_execution_image_uses_attachments(memory_logger):
+    assert not memory_logger.pop()
+
+    client = _v1beta_client()
+    response = client.interactions.create(
+        model=INTERACTIONS_MODEL,
+        input="Use code execution to plot y = x**2 for x from 0 to 10 with matplotlib and show the figure.",
+        tools=[{"type": "code_execution"}],
+    )
+
+    outputs = _interaction_outputs(response)
+    code_call = next(output for output in outputs if output.type == "code_execution_call")
+    assert any(output.type == "code_execution_result" for output in outputs)
+    assert any(output.type == "image" for output in outputs)
+
+    spans = memory_logger.pop()
+    llm_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.LLM), "interactions.create")
+    tool_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.TOOL), "code_execution_call")
+
+    assert tool_span["span_parents"] == [llm_span["span_id"]]
+    assert tool_span["input"]["code"] == code_call.arguments.code
+    assert tool_span["metadata"]["call_id"] == code_call.id
+
+    # The plot comes back as image content; it must be logged as an attachment, not base64.
+    images = [item for item in llm_span["output"]["outputs"] if item.get("type") == "image"]
+    assert images
+    for image in images:
+        assert isinstance(image["data"], Attachment)
+        assert image["data"].reference["content_type"] == image["mime_type"]
+        assert image["image_url"]["url"] is image["data"]
+
+
+@_needs_interactions_v3
+def test_interactions_code_execution_multimodal_result_uses_attachments(memory_logger):
+    """A ``list[Content]`` code execution result logs images as attachments on the tool span.
+
+    The Developer API currently returns code execution images as separate
+    ``model_output`` steps (see the cassette test above), so this shape cannot be
+    recorded; build it from the SDK's own types instead.
+    """
+    from braintrust.integrations.google_genai.tracing import (
+        _finalize_interaction_tool_spans,
+        _serialize_interaction_items,
+    )
+
+    assert not memory_logger.pop()
+
+    outputs = _serialize_interaction_items(
+        [
+            interactions.CodeExecutionCallStep(
+                id="call_1",
+                type="code_execution_call",
+                arguments=interactions.CodeExecutionCallArguments(language="python", code="plt.show()"),
+            ),
+            interactions.CodeExecutionResultStep(
+                call_id="call_1",
+                type="code_execution_result",
+                result=[
+                    interactions.TextContent(type="text", text="done"),
+                    interactions.ImageContent(type="image", data=TINY_PNG_BASE64, mime_type="image/png"),
+                ],
+            ),
+        ]
+    )
+    # Mirror the traced call: tool spans are finalized after the LLM span has closed.
+    with logger.start_span(name="interactions.create", type=SpanTypeAttribute.LLM) as llm_span:
+        parent_export = llm_span.export()
+    _finalize_interaction_tool_spans({"outputs": outputs}, {}, None, parent_export)
+
+    spans = memory_logger.pop()
+    llm_span_row = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.LLM), "interactions.create")
+    tool_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.TOOL), "code_execution_call")
+    assert tool_span["span_parents"] == [llm_span_row["span_id"]]
+    text, image = tool_span["output"]
+    assert text == {"type": "text", "text": "done"}
+    assert image["type"] == "image"
+    assert isinstance(image["data"], Attachment)
+    assert image["data"].reference["content_type"] == "image/png"
+    assert image["image_url"]["url"] is image["data"]
+    assert TINY_PNG_BASE64 not in str(tool_span["output"])
 
 
 @_needs_interactions
