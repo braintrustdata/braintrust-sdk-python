@@ -10,9 +10,9 @@ import weakref
 from contextvars import ContextVar
 from fractions import Fraction
 
+from braintrust._audio.config import AudioRecordingOptions
 from braintrust._audio.session import AudioSessionRecorder
 from braintrust._instrumentation import provider_content_allowed, provider_spans_owned
-from braintrust.audio import AudioRecordingOptions
 from braintrust.logger import parent_context, start_span
 
 from .compat import STATE_ATTR, arguments, chat_messages, state_for

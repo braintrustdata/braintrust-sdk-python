@@ -1054,6 +1054,10 @@ def pylint(session):
     files = [f for f in files if not f.startswith("../examples/crewai/")]
     # Tests outside an integration's own directory that import it.
     cross_integration_files = {
+        "livekit_agents": {
+            f"src/{INTEGRATION_DIR}/auto_test_scripts/test_auto_livekit_agents_before_import.py",
+            "../examples/livekit/cascade.py",
+        },
         "pydantic_ai": {f"src/{INTEGRATION_DIR}/temporal/test_temporal_pydantic_ai.py"},
     }
     for integration in sorted(unlintable_integrations):

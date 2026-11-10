@@ -4,7 +4,7 @@ from array import array
 
 import pytest
 from braintrust import logger
-from braintrust.audio import AudioEncoding, AudioRecordingOptions
+from braintrust._audio.config import AudioEncoding, AudioRecordingOptions
 from braintrust.integrations.livekit_agents import setup_livekit_agents
 from braintrust.integrations.livekit_agents.compat import STATE_ATTR
 
@@ -139,12 +139,10 @@ async def test_actual_roomio_playback_records_only_confirmed_audio(rooms, memory
         if mode == "handoff":
             replacement = Agent(instructions="Replacement agent")
             session.update_agent(replacement)
-
-            async def replaced():
-                while session.current_agent is not replacement:
-                    await asyncio.sleep(0.01)
-
-            await asyncio.wait_for(replaced(), 5)
+            # current_agent changes before the outgoing activity finishes
+            # draining. Wait for the native handoff before scheduling speech.
+            await asyncio.wait_for(asyncio.shield(session._update_activity_atask), 5)
+            assert session.current_agent is replacement
             assert session.output.audio is owner.tap
             await asyncio.wait_for(session.say("second agent", audio=audio()).wait_for_playout(), 5)
     finally:

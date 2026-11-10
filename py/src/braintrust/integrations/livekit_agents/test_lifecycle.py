@@ -4,7 +4,7 @@ from array import array
 
 import pytest
 from braintrust import logger
-from braintrust.audio import AudioEncoding, AudioRecordingOptions
+from braintrust._audio.config import AudioEncoding, AudioRecordingOptions
 from braintrust.integrations.livekit_agents import setup_livekit_agents
 from braintrust.integrations.livekit_agents.compat import STATE_ATTR
 
