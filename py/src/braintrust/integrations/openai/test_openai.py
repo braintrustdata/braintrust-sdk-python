@@ -43,6 +43,9 @@ TEST_ORG_ID = "test-org-openai-py-tracing"
 PROJECT_NAME = "test-project-openai-py-tracing"
 TEST_MODEL = "gpt-4o-mini"  # cheapest model for tests
 RESPONSES_TOOL_MODEL = "gpt-4.1-mini"
+_requires_svg_output = pytest.mark.skipif(
+    not version_satisfies(openai.__version__, ">=3.46.0"), reason="SVG image output requires OpenAI 3.46.0+"
+)
 TEST_PROMPT = "What's 12 + 12?"
 
 
@@ -1942,6 +1945,85 @@ def test_openai_images_generate(memory_logger):
     assert span["input"] == prompt
     assert span["output"]["images_count"] == 1
     assert span["metrics"]["duration"] >= 0
+
+
+@pytest.mark.vcr
+@_requires_svg_output
+def test_openai_images_generate_svg(memory_logger):
+    assert not memory_logger.pop()
+
+    client = wrap_openai(openai.OpenAI())
+    response = client.images.generate(
+        model="gpt-image-2.6-flare",
+        prompt="A simple flat icon of a red circle",
+        output_format="svg",
+        complexity="low",
+        n=1,
+        size="1024x1024",
+        svg={"model": "gpt-5.6", "reasoning": {"effort": "low"}},
+    )
+
+    assert response.output_format == "svg"
+    assert response.data and response.data[0].b64_json
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["output_format"] == "svg"
+    assert span["metadata"]["complexity"] == "low"
+    assert span["metadata"]["svg"] == {"model": "gpt-5.6", "reasoning": {"effort": "low"}}
+
+    image = span["output"]["images"][0]
+    assert image["mime_type"] == "image/svg+xml"
+    attachment = image["image_url"]["url"]
+    assert isinstance(attachment, Attachment)
+    assert attachment.reference["content_type"] == "image/svg+xml"
+    assert attachment.reference["filename"].endswith(".svg")
+    assert b"<svg" in attachment.data
+
+    # SVG authoring usage is logged as metadata, not as (non-standard) metrics.
+    assert span["metadata"]["svg_usage"] == response.svg_usage.model_dump()
+    assert not any(key.startswith("svg") for key in span["metrics"])
+
+
+@pytest.mark.vcr
+@_requires_svg_output
+def test_openai_responses_image_generation_svg(memory_logger):
+    assert not memory_logger.pop()
+
+    client = wrap_openai(openai.OpenAI())
+    response = client.responses.create(
+        model="gpt-5.6",
+        input="Draw a simple flat icon of a red circle.",
+        tools=[
+            {
+                "type": "image_generation",
+                "model": "gpt-image-2.6-flare",
+                "output_format": "svg",
+                "size": "1024x1024",
+                "svg": {"model": "gpt-5.6", "reasoning": {"effort": "low"}},
+            }
+        ],
+        tool_choice={"type": "image_generation"},
+        image={"context_compression": "auto"},
+        prompt_cache_options={"ttl": "12h"},
+    )
+
+    image_call = next(output for output in response.output if output.type == "image_generation_call")
+    assert image_call.output_format == "svg"
+
+    spans = memory_logger.pop()
+    llm_spans = _find_spans_by_type(spans, SpanTypeAttribute.LLM)
+    tool_spans = _find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+    assert len(llm_spans) == 1
+    assert llm_spans[0]["metadata"]["image"] == {"context_compression": "auto"}
+    assert llm_spans[0]["metadata"]["prompt_cache_options"] == {"ttl": "12h"}
+
+    tool_span = _find_span_by_name(tool_spans, "image_generation_call")
+    assert tool_span["span_parents"] == [llm_spans[0]["span_id"]]
+    assert "svg_usage" not in tool_span["output"]
+    assert tool_span["metadata"]["svg_usage"] == image_call.svg_usage.model_dump()
+    assert not any(key.startswith("svg") for key in tool_span.get("metrics", {}))
 
 
 def test_materialize_logged_file_input_preserves_unrecognized_values():

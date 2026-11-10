@@ -1,0 +1,104 @@
+interactions:
+- request:
+    body: '{"model":"gpt-image-2.6-flare","prompt":"A simple flat icon of a red circle","complexity":"low","n":1,"output_format":"svg","size":"1024x1024","svg":{"model":"gpt-5.6","reasoning":{"effort":"low"}}}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '198'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - OpenAI/Python 3.46.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 3.46.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+    method: POST
+    uri: https://api.openai.com/v1/images/generations
+  response:
+    body:
+      string: "{\n  \"created\": 1794252924,\n  \"background\": \"transparent\",\n
+        \ \"data\": [\n    {\n      \"b64_json\": \"PHN2ZyB2aWV3Qm94PSIwIDAgMTAyNCAxMDI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDI0IiBoZWlnaHQ9IjEwMjQiPgogIDx0aXRsZT5SZWQgY2lyY2xlIGljb248L3RpdGxlPgogIDxjaXJjbGUgaWQ9InJlZC1jaXJjbGUiIGN4PSI1MTIiIGN5PSI1MTIiIHI9IjQ1OCIgZmlsbD0iI2YwMDAxOCIgLz4KPC9zdmc+\"\n
+        \   }\n  ],\n  \"output_format\": \"svg\",\n  \"quality\": \"high\",\n  \"safety_identifier\":
+        null,\n  \"size\": \"1024x1024\",\n  \"svg_usage\": {\n    \"input_tokens\":
+        1590,\n    \"model\": \"gpt-5.6-sol\",\n    \"output_tokens\": 71,\n    \"reasoning_tokens\":
+        0,\n    \"total_tokens\": 1661\n  },\n  \"usage\": {\n    \"input_tokens\":
+        81,\n    \"input_tokens_details\": {\n      \"image_tokens\": 0,\n      \"text_tokens\":
+        81\n    },\n    \"output_tokens\": 1758,\n    \"output_tokens_details\": {\n
+        \     \"image_tokens\": 1758,\n      \"text_tokens\": 0\n    },\n    \"total_tokens\":
+        1839\n  }\n}"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID, Server-Timing-Total
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a57f4284ac417aa8-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '897'
+      content-type:
+      - application/json
+      date:
+      - Mon, 09 Nov 2026 19:35:26 GMT
+      openai-processing-ms:
+      - '7854'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-ratelimit-limit-input-images:
+      - '250000'
+      x-ratelimit-limit-requests:
+      - '15000'
+      x-ratelimit-limit-tokens:
+      - '40000000'
+      x-ratelimit-remaining-input-images:
+      - '249999'
+      x-ratelimit-remaining-requests:
+      - '14999'
+      x-ratelimit-remaining-tokens:
+      - '39999867'
+      x-ratelimit-reset-input-images:
+      - 0s
+      x-ratelimit-reset-requests:
+      - 4ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_d9b157b3e93f4c8d8fa4626406bc7132
+    status:
+      code: 200
+      message: OK
+version: 1
