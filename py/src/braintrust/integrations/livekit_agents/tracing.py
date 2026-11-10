@@ -423,11 +423,20 @@ def process_stt(wrapped, instance, args, kwargs):
     ):
         parent = owner.ensure_user()
         received_at = time.time()
+        result = event.alternatives[0]
+        interval = getattr(result, "_braintrust_recognition_interval", None)
         if owner.stt is None:
-            owner.stt = _new(parent, "stt", start_time=received_at, metadata=owner.source_metadata("session-input"))
+            metadata = owner.source_metadata("session-input")
+            metadata.update(
+                {
+                    key: value
+                    for key, value in (("model", instance._stt_model), ("provider", instance._stt_provider))
+                    if value
+                }
+            )
+            owner.stt = _new(parent, "stt", start_time=interval[0] if interval else received_at, metadata=metadata)
         if kind == "final_transcript":
             span, owner.stt = owner.stt, None
-            result = event.alternatives[0]
             scope = getattr(event, "_braintrust_source_run", None)
             # Native timestamp alignment can replace the event and drop this
             # attribute. Without recognition ownership, omit attribution.
@@ -436,7 +445,7 @@ def process_stt(wrapped, instance, args, kwargs):
                 if speaker is not None:
                     span.log(metadata={"audio.speaker_ids": [speaker]})
             owner.log(span, output=[{"role": "user", "content": result.text}])
-            span.end(received_at)
+            span.end(interval[1] if interval else received_at)
     return wrapped(*args, **kwargs)
 
 
@@ -659,6 +668,21 @@ async def tts_operation(wrapped, instance, args, kwargs):
         if data.ttfb is not None:
             span.log(metrics={"time_to_first_audio": data.ttfb})
         span.end()
+
+
+async def stt_recognize(wrapped, instance, args, kwargs):
+    from livekit.agents.voice.audio_recognition import _STTPipelineContextVar
+
+    if _STTPipelineContextVar.get(None) is None:
+        return await wrapped(*args, **kwargs)
+    start = time.time()
+    event = await wrapped(*args, **kwargs)
+    end = time.time()
+    # StreamAdapter rebuilds SpeechEvent, and timestamp alignment may replace it.
+    # Both retain the transcript alternatives, so carry request timing there.
+    for alternative in event.alternatives:
+        alternative._braintrust_recognition_interval = (start, end)
+    return event
 
 
 async def stt_pump(wrapped, instance, args, kwargs):

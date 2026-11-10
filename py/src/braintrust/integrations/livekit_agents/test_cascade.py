@@ -38,6 +38,8 @@ async def test_consumed_input_drives_real_cascade(rooms, memory_logger, monkeypa
     )
     tts = openai.TTS(model="gpt-4o-mini-tts", voice="ash")
     stt = openai.STT(model="gpt-4o-mini-transcribe")
+    recognition_metrics = []
+    stt.on("metrics_collected", recognition_metrics.append)
     llm = openai.LLM(model="gpt-4.1-mini", max_completion_tokens=8)
     vad = silero.VAD.load()
     heard = asyncio.Event()
@@ -73,7 +75,18 @@ async def test_consumed_input_drives_real_cascade(rooms, memory_logger, monkeypa
             await input_source.aclose()
     rows = memory_logger.pop()
     assert named(rows, "user_speech")
-    assert named(rows, "stt")
+    recognitions = named(rows, "stt")
+    assert len(recognitions) == len(recognition_metrics) == 1
+    recognition, measured = recognitions[0], recognition_metrics[0]
+    assert not measured.streamed
+    # Bracket the real provider request, rather than timing transcript delivery.
+    start, end = recognition["metrics"]["start"], recognition["metrics"]["end"]
+    assert start < measured.timestamp <= end
+    assert start <= measured.timestamp - measured.duration + 0.001
+    assert end - start == pytest.approx(measured.duration, abs=0.01)
+    assert recognition["metadata"]["model"] == stt.model
+    assert recognition["metadata"]["provider"] == stt.provider
+    assert recognition["output"] == [{"role": "user", "content": "Hello there."}]
     assert named(rows, "llm_response")
     assert named(rows, "tts")
     assert named(rows, "agent_speech")

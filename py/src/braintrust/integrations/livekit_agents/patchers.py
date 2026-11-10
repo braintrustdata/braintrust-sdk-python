@@ -61,6 +61,7 @@ class AgentSessionPatcher(CompositeFunctionWrapperPatcher):
             tracing.user_speech_end,
         ),
         _patcher("cascade_stt", "voice.audio_recognition", "AudioRecognition._process_stt_event", tracing.process_stt),
+        _patcher("cascade_stt_recognize", "stt.stt", "STT.recognize", tracing.stt_recognize),
         _patcher("cascade_end_of_turn", "voice.agent_activity", "AgentActivity.on_end_of_turn", tracing.end_of_turn),
         _patcher(
             "cascade_preemptive", "voice.agent_activity", "AgentActivity.on_preemptive_generation", tracing.preemptive
