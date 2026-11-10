@@ -12,6 +12,23 @@ import pytest
 
 
 _SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "nox-matrix.py"
+_WEIGHTS_SCRIPT = _SCRIPT.with_name("check-session-weights.py")
+
+
+def test_weight_check_expects_only_compatible_default_sessions(monkeypatch):
+    spec = importlib.util.spec_from_file_location("check_session_weights", _WEIGHTS_SCRIPT)
+    checker = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(checker)
+    listing = "* test_core\n* test_transformers(4.42.0)\n* pylint\n- test_wheel\n"
+    monkeypatch.setattr(
+        checker.subprocess, "run", lambda *args, **kwargs: subprocess.CompletedProcess(args, 0, stdout=listing)
+    )
+    monkeypatch.setattr(checker.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(checker.sys, "version_info", (3, 14))
+
+    all_sessions, expected = checker.get_nox_sessions()
+    assert all_sessions == {"test_core", "test_transformers(4.42.0)", "pylint", "test_wheel"}
+    assert expected == {"test_core"}
 
 
 @pytest.mark.parametrize("returncode", [0, 1])
@@ -22,7 +39,8 @@ def test_measured_durations_use_nox_report(tmp_path, monkeypatch, returncode):
 
     sessions = [
         {"name": "test_core", "result": "success", "duration": 71.9},
-        {"name": "test_provider(latest)", "result": "success", "duration": 3601.2},
+        {"name": "test_provider", "signatures": ["test_provider(latest)"], "result": "success", "duration": 3601.2},
+        {"name": "test_provider", "signatures": ["test_provider(1.0)"], "result": "success", "duration": 15.0},
         {"name": "test_short", "result": "success", "duration": 0.3},
         {"name": "test_seconds", "result": "success", "duration": 12.4},
         {"name": "test_skipped", "result": "skipped", "duration": 0},
@@ -59,6 +77,7 @@ def test_measured_durations_use_nox_report(tmp_path, monkeypatch, returncode):
     assert json.loads(output.read_text()) == {
         "test_core": 72,
         "test_provider(latest)": 3601,
+        "test_provider(1.0)": 15,
         "test_short": 0,
         "test_seconds": 12,
     }

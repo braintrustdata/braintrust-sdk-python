@@ -18,10 +18,15 @@ To update weights after downloading the measured-durations artifacts from CI:
 
 import argparse
 import json
+import platform
 import re
 import subprocess
 import sys
 from pathlib import Path
+
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from nox_session_constraints import session_is_compatible  # noqa: E402
 
 
 # A session is flagged when its measured duration differs from the recorded
@@ -37,8 +42,8 @@ MIN_DURATION_FOR_DRIFT = 8
 EXCLUDED_SESSIONS = {"pylint", "test_types", "test_api_codegen"}
 
 
-def get_nox_sessions() -> set[str]:
-    """Return sessions in nox -l, using the SDK's locked project environment."""
+def get_nox_sessions() -> tuple[set[str], set[str]]:
+    """Return all sessions and those measured on the current CI target."""
     root = Path(__file__).resolve().parents[2]
     result = subprocess.run(
         ["uv", "run", "--project", str(root / "py"), "nox", "-l", "-f", str(root / "py/noxfile.py")],
@@ -46,7 +51,22 @@ def get_nox_sessions() -> set[str]:
         check=True,
         text=True,
     )
-    return {match.group(1) for line in result.stdout.splitlines() if (match := re.match(r"[*-] (\S+)", line))}
+    all_sessions = set()
+    expected = set()
+    python_version = f"{sys.version_info[0]}.{sys.version_info[1]}"
+    for line in result.stdout.splitlines():
+        match = re.match(r"([*-]) (\S+)", line)
+        if not match:
+            continue
+        marker, name = match.groups()
+        all_sessions.add(name)
+        if (
+            marker == "*"
+            and name not in EXCLUDED_SESSIONS
+            and session_is_compatible(name, python_version, platform.system(), check_ci_platforms=True)
+        ):
+            expected.add(name)
+    return all_sessions, expected
 
 
 def update_weights(
@@ -102,9 +122,8 @@ def main() -> None:
     with open(args.weights) as f:
         weights_data: dict[str, int] = json.load(f)
 
-    current_sessions = get_nox_sessions()
+    current_sessions, expected_sessions = get_nox_sessions()
     if args.update:
-        expected_sessions = current_sessions - EXCLUDED_SESSIONS
         missing_measurements = sorted(expected_sessions - set(measured))
         if missing_measurements:
             print("❌ No measured duration for current session(s):")
@@ -145,8 +164,7 @@ def main() -> None:
         print(f"{session:<50} {expected:>7}s {actual:>7}s {drift_pct:>+7.0%}{flag}")
 
     # Check for current sharded sessions missing from measurements.
-    known_sessions = current_sessions - EXCLUDED_SESSIONS
-    missing = sorted(known_sessions - set(measured))
+    missing = sorted(expected_sessions - set(measured))
     stale = sorted({k for k in weights_data if k not in meta_keys} - current_sessions)
 
     print()
