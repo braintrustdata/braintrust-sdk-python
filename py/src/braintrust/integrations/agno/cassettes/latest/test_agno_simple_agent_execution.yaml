@@ -1,8 +1,9 @@
 interactions:
 - request:
     body: '{"messages":[{"role":"developer","content":"You are librarian. Answer the
-      questions by only replying with the author that wrote the book."},{"role":"user","content":"Charlotte''s
-      Web"}],"model":"gpt-4o-mini"}'
+      questions by only replying with the author that wrote the book. Format initials
+      as E.B., with no space between the initials."},{"role":"user","content":"Charlotte''s
+      Web"}],"model":"gpt-6-luna","reasoning_effort":"none"}'
     headers:
       accept:
       - application/json
@@ -11,7 +12,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '207'
+      - '293'
       content-type:
       - application/json
       host:
@@ -40,17 +41,18 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EVeEOtD63o9P0Eoe00qnxECafFpa5\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1791211524,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiiQxM38JKsMw7qrAvw7QW8Lu61nz\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794325943,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"E.B. White\",\n        \"refusal\":
-        null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
-        \     \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        32,\n    \"completion_tokens\": 4,\n    \"total_tokens\": 36,\n    \"prompt_tokens_details\":
-        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_8f67d92190\"\n}\n"
+        null,\n        \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 44,\n    \"completion_tokens\":
+        7,\n    \"total_tokens\": 51,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"cache_write_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n
+        \   \"completion_tokens_details\": {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\":
+        0,\n      \"accepted_prediction_tokens\": 0,\n      \"rejected_prediction_tokens\":
+        0\n    }\n  },\n  \"service_tier\": \"default\",\n  \"system_fingerprint\":
+        null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -61,17 +63,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a45d35b90ccac8b1-YYZ
+      - a586395c4ee253fb-YYZ
       connection:
       - keep-alive
       content-length:
-      - '816'
+      - '800'
       content-type:
       - application/json
       date:
-      - Mon, 05 Oct 2026 14:45:24 GMT
+      - Tue, 10 Nov 2026 15:52:24 GMT
       openai-processing-ms:
-      - '522'
+      - '949'
       openai-version:
       - '2020-10-01'
       server:
@@ -87,17 +89,17 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
-      - '29998'
+      - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999930'
+      - '179999952'
       x-ratelimit-reset-requests:
-      - 4ms
+      - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_fa344bef23f54c178ba727fed1a80fb0
+      - req_f8a53a1ad2d3489bacb47c92a79ced02
     status:
       code: 200
       message: OK

@@ -1,6 +1,7 @@
 """Test auto_instrument for the OpenAI Agents SDK."""
 
 import asyncio
+import os
 
 import agents
 from braintrust.auto import auto_instrument
@@ -8,7 +9,9 @@ from braintrust.integrations.openai_agents import BraintrustTracingProcessor
 from braintrust.integrations.test_utils import autoinstrument_test_context
 
 
-TEST_MODEL = "gpt-4o-mini"
+LATEST_MODELS = os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
+
+TEST_MODEL = "gpt-6-luna" if LATEST_MODELS else "gpt-4o-mini"
 TEST_PROMPT = "What is 2+2? Just the number."
 TEST_AGENT_INSTRUCTIONS = "You are a helpful assistant. Be very concise."
 

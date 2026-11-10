@@ -1,5 +1,6 @@
 """Tests for OpenAI wrapper attachment processing."""
 
+import os
 import time
 
 import openai
@@ -10,7 +11,7 @@ from braintrust.test_helpers import init_test_logger
 
 
 PROJECT_NAME = "test-project-openai-attachment-processing"
-TEST_MODEL = "gpt-4o-mini"
+TEST_MODEL = "gpt-6-luna" if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest" else "gpt-4o-mini"
 
 
 @pytest.fixture

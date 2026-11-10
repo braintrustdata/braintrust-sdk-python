@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"message":"Say hi in one word.","model":"command-a-03-2025","max_tokens":8,"stream":true}'
+    body: '{"message":"Say hi in one word.","model":"command-r7b-12-2024","max_tokens":8,"stream":true}'
     headers:
       accept:
       - '*/*'
@@ -9,7 +9,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '90'
+      - '92'
       content-type:
       - application/json
       host:
@@ -30,27 +30,27 @@ interactions:
     uri: https://api.cohere.com/v1/chat
   response:
     body:
-      string: '{"is_finished":false,"event_type":"stream-start","generation_id":"5687fc9d-68b4-485d-ad85-216c7c85aac5"}
+      string: '{"is_finished":false,"event_type":"stream-start","generation_id":"32bd6352-dfd8-46a3-a964-e23c79c4672f"}
 
-        {"is_finished":false,"event_type":"text-generation","text":"Hi"}
+        {"is_finished":false,"event_type":"text-generation","text":"Hello"}
 
         {"is_finished":false,"event_type":"text-generation","text":"!"}
 
-        {"is_finished":true,"event_type":"stream-end","response":{"response_id":"3a3c53ac-7779-4884-929d-2f86820c8447","text":"Hi!","generation_id":"5687fc9d-68b4-485d-ad85-216c7c85aac5","chat_history":[{"role":"USER","message":"Say
-        hi in one word."},{"role":"CHATBOT","message":"Hi!"}],"finish_reason":"COMPLETE","meta":{"api_version":{"version":"1"},"billed_units":{"input_tokens":6,"output_tokens":2},"tokens":{"input_tokens":501,"output_tokens":5},"cached_tokens":464}},"finish_reason":"COMPLETE"}
+        {"is_finished":true,"event_type":"stream-end","response":{"response_id":"48156cd9-02ca-4a00-bd72-84a21908ec6e","text":"Hello!","generation_id":"32bd6352-dfd8-46a3-a964-e23c79c4672f","chat_history":[{"role":"USER","message":"Say
+        hi in one word."},{"role":"CHATBOT","message":"Hello!"}],"finish_reason":"COMPLETE","meta":{"api_version":{"version":"1"},"billed_units":{"input_tokens":6,"output_tokens":2},"tokens":{"input_tokens":501,"output_tokens":5},"cached_tokens":496}},"finish_reason":"COMPLETE"}
 
         '
     headers:
       access-control-expose-headers:
       - X-Debug-Trace-ID
       alt-svc:
-      - h3=":443"; ma=2592000
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       cache-control:
       - no-cache, no-store, no-transform, must-revalidate, private, max-age=0
       content-type:
       - application/stream+json
       date:
-      - Mon, 09 Nov 2026 16:43:27 GMT
+      - Tue, 10 Nov 2026 15:53:30 GMT
       expires:
       - Thu, 01 Jan 1970 00:00:00 GMT
       pragma:
@@ -66,11 +66,11 @@ interactions:
       x-accel-expires:
       - '0'
       x-debug-trace-id:
-      - ddd73b0a429eb84d1d5c5c89532b3b20
+      - 83eabea8853a484a6b0ed925c38e7a28
       x-endpoint-monthly-call-limit:
       - '1000'
       x-envoy-upstream-service-time:
-      - '8980'
+      - '89'
       x-trial-endpoint-call-limit:
       - '20'
       x-trial-endpoint-call-remaining:

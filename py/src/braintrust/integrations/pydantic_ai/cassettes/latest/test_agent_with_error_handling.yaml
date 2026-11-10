@@ -1,7 +1,7 @@
 interactions:
 - request:
-    body: '{"model":"gpt-4o-mini","stream":false,"input":[{"role":"user","content":[{"image_url":"data:image/png;base64,SU5WQUxJRF9QTkdfREFUQV9OT1RfQV9SRUFMX0lNQUdF","type":"input_image","detail":"auto"},{"text":"What''s
-      in this image?","type":"input_text"}]}],"max_output_tokens":100}'
+    body: '{"model":"gpt-6-luna","stream":false,"include":["reasoning.encrypted_content"],"input":[{"role":"user","content":[{"image_url":"data:image/png;base64,SU5WQUxJRF9QTkdfREFUQV9OT1RfQV9SRUFMX0lNQUdF","type":"input_image","detail":"auto"},{"text":"What''s
+      in this image?","type":"input_text"}]}],"max_output_tokens":100,"reasoning":{"effort":"none","context":"all_turns"}}'
     headers:
       accept:
       - application/json
@@ -10,7 +10,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '273'
+      - '366'
       content-type:
       - application/json
       host:
@@ -54,7 +54,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a57e486cc8aa3845-YYZ
+      - a58630d1fe85a450-YYZ
       connection:
       - keep-alive
       content-length:
@@ -62,9 +62,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 09 Nov 2026 16:44:34 GMT
+      - Tue, 10 Nov 2026 15:46:34 GMT
       openai-processing-ms:
-      - '71'
+      - '78'
       openai-version:
       - '2020-10-01'
       server:
@@ -74,7 +74,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-id:
-      - req_553000c804c04d54b82fc1ca552a378c
+      - req_8b6f238f5f974caa8fbb3e22b632503a
     status:
       code: 400
       message: Bad Request

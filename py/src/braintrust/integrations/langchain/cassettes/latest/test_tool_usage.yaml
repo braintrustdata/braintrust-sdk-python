@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"messages":[{"content":"What is 3 * 12","role":"user"}],"model":"gpt-4o-mini","frequency_penalty":0.0,"n":1,"presence_penalty":0.0,"stream":false,"temperature":1.0,"tools":[{"type":"function","function":{"name":"calculator","description":"Can
+    body: '{"messages":[{"content":"What is 3 * 12","role":"user"}],"model":"gpt-6-luna","frequency_penalty":0.0,"n":1,"presence_penalty":0.0,"reasoning_effort":"none","stream":false,"temperature":1.0,"tools":[{"type":"function","function":{"name":"calculator","description":"Can
       perform mathematical operations.","parameters":{"properties":{"input":{"properties":{"operation":{"description":"The
       type of operation to execute.","enum":["add","subtract","multiply","divide"],"type":"string"},"number1":{"description":"The
       first number to operate on.","type":"number"},"number2":{"description":"The
@@ -13,7 +13,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '725'
+      - '750'
       content-type:
       - application/json
       host:
@@ -37,26 +37,23 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.13.13
+      - 3.14.7
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EiMkl1HUd54dUmzB8rSeyOgEGTdhK\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1794242603,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiiLY4qqRtTtEnckFI1SzsA3majHM\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794325608,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
-        \           \"id\": \"call_8J1SJpZ9ovfFRPuPURviZcyA\",\n            \"type\":
-        \"function\",\n            \"function\": {\n              \"name\": \"calculator\",\n
-        \             \"arguments\": \"{\\\"input\\\":{\\\"operation\\\":\\\"multiply\\\",\\\"number1\\\":3,\\\"number2\\\":12}}\"\n
-        \           }\n          }\n        ],\n        \"refusal\": null,\n        \"annotations\":
-        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"tool_calls\"\n
-        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 97,\n    \"completion_tokens\":
-        26,\n    \"total_tokens\": 123,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
-        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_9123aa2e8c\"\n}\n"
+        \"assistant\",\n        \"content\": \"36\",\n        \"refusal\": null,\n
+        \       \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 178,\n    \"completion_tokens\":
+        4,\n    \"total_tokens\": 182,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"cache_write_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n
+        \   \"completion_tokens_details\": {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\":
+        0,\n      \"accepted_prediction_tokens\": 0,\n      \"rejected_prediction_tokens\":
+        0\n    }\n  },\n  \"service_tier\": \"default\",\n  \"system_fingerprint\":
+        null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -67,17 +64,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a57e46affed0ab7b-YYZ
+      - a586312aaa39ebba-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1133'
+      - '794'
       content-type:
       - application/json
       date:
-      - Mon, 09 Nov 2026 16:43:24 GMT
+      - Tue, 10 Nov 2026 15:46:49 GMT
       openai-processing-ms:
-      - '854'
+      - '973'
       openai-version:
       - '2020-10-01'
       server:
@@ -93,17 +90,17 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999992'
+      - '179999994'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_74f92e2959194bb4820d0b09a7cecbbe
+      - req_87ddf612db4c4d2fb66e569ca25a306a
     status:
       code: 200
       message: OK

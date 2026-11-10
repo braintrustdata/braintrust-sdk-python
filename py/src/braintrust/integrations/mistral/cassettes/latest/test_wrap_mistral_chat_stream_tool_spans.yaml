@@ -1,7 +1,7 @@
 interactions:
 - request:
-    body: '{"model":"mistral-small-latest","messages":[{"content":"Use get_weather
-      for Paris. Do not answer directly.","role":"user"}],"max_tokens":100,"stream":true,"tools":[{"function":{"name":"get_weather","parameters":{"type":"object","properties":{"city":{"type":"string"}},"required":["city"]},"description":"Get
+    body: '{"model":"ministral-3b-2512","messages":[{"content":"Use get_weather for
+      Paris. Do not answer directly.","role":"user"}],"max_tokens":100,"stream":true,"tools":[{"function":{"name":"get_weather","parameters":{"type":"object","properties":{"city":{"type":"string"}},"required":["city"]},"description":"Get
       the weather for a city."},"type":"function"}],"tool_choice":"any"}'
     headers:
       accept:
@@ -11,7 +11,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '374'
+      - '371'
       content-type:
       - application/json
       host:
@@ -22,11 +22,11 @@ interactions:
     uri: https://api.mistral.ai/v1/chat/completions#stream
   response:
     body:
-      string: 'data: {"id":"d22d237be6b548a9b467cdcf87f1ac81","object":"chat.completion.chunk","created":1793627386,"model":"mistral-small-latest","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
+      string: 'data: {"id":"00d3f094a45e4309b561efd5c87ef9b1","object":"chat.completion.chunk","created":1794326014,"model":"ministral-3b-2512","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
 
 
-        data: {"id":"d22d237be6b548a9b467cdcf87f1ac81","object":"chat.completion.chunk","created":1793627386,"model":"mistral-small-latest","choices":[{"index":0,"delta":{"tool_calls":[{"id":"UUledHtNz","type":"function","function":{"name":"get_weather","arguments":"{\"city\":
-        \"Paris\"}"},"index":0}]},"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":88,"total_tokens":100,"completion_tokens":12,"prompt_tokens_details":{"cached_tokens":64},"completion_tokens_details":{"reasoning_tokens":0},"service_tier":"standard"},"p":"abcdefghijklmnopqrstuvwxy"}
+        data: {"id":"00d3f094a45e4309b561efd5c87ef9b1","object":"chat.completion.chunk","created":1794326014,"model":"ministral-3b-2512","choices":[{"index":0,"delta":{"tool_calls":[{"id":"A3rivCxEN","type":"function","function":{"name":"get_weather","arguments":"{\"city\":
+        \"Paris\"}"},"index":0}]},"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":76,"total_tokens":88,"completion_tokens":12,"prompt_tokens_details":{"cached_tokens":0},"completion_tokens_details":{"reasoning_tokens":0},"service_tier":"standard"},"p":"abcdefghijklmnopqrstuvwxyz012345"}
 
 
         data: [DONE]
@@ -41,15 +41,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5439abf7863ac6c-YYZ
+      - a5863b14885aac00-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 02 Nov 2026 13:49:47 GMT
+      - Tue, 10 Nov 2026 15:53:34 GMT
       mistral-correlation-id:
-      - 01a19c85-f3eb-7044-a9ed-c03e3ee03a88
+      - 01a1c62a-2913-7192-8de5-d98b876a87f1
       server:
       - cloudflare
       strict-transport-security:
@@ -59,23 +59,23 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '435'
+      - '211'
       x-kong-proxy-latency:
-      - '43'
+      - '18'
       x-kong-request-id:
-      - 01a19c85-f3eb-7044-a9ed-c03e3ee03a88
+      - 01a1c62a-2913-7192-8de5-d98b876a87f1
       x-kong-upstream-latency:
-      - '443'
+      - '212'
       x-max-retry-attempts-reached:
       - 'false'
       x-ratelimit-limit-req-minute:
-      - '100'
+      - '3000'
       x-ratelimit-limit-tokens-minute:
-      - '100000'
+      - '2000000'
       x-ratelimit-remaining-req-minute:
-      - '98'
+      - '2998'
       x-ratelimit-remaining-tokens-minute:
-      - '99900'
+      - '1999912'
     status:
       code: 200
       message: OK

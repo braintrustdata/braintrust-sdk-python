@@ -4,6 +4,7 @@ import asyncio
 import contextvars
 import copy
 import dataclasses
+import os
 import sys
 import types
 from collections.abc import AsyncIterable
@@ -50,7 +51,16 @@ from braintrust.test_helpers import find_span_by_name, find_spans_by_type, init_
 
 
 PROJECT_NAME = "test-claude-agent-sdk"
-TEST_MODEL = "claude-haiku-4-5-20251001"
+SIMPLE_TEST_MODEL = (
+    "claude-haiku-5-5"
+    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
+    else "claude-3-5-haiku-20241022"
+)
+TEST_MODEL = (
+    "claude-haiku-5-5"
+    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
+    else "claude-haiku-4-5-20251001"
+)
 REPO_ROOT = Path(__file__).resolve().parents[5]  # py/src/braintrust/integrations/claude_agent_sdk -> repo root
 
 
@@ -342,7 +352,7 @@ async def test_local_mcp_handler_uses_its_own_tracker_with_concurrent_client(mem
 
         calculator_options = _make_calculator_options(calculator_handler)
         other_options = claude_agent_sdk.ClaudeAgentOptions(
-            model="claude-3-5-haiku-20241022",
+            model=SIMPLE_TEST_MODEL,
             permission_mode="bypassPermissions",
         )
         calculator_transport = make_cassette_transport(
@@ -1137,7 +1147,9 @@ async def test_multiple_bundled_subagents_keep_outer_orchestration_separate(memo
 
     with _patched_claude_sdk(wrap_client=True):
         options = claude_agent_sdk.ClaudeAgentOptions(
-            model=TEST_MODEL,
+            # Haiku 5.5 completes these tasks without the TaskOutput polling
+            # required to exercise this orchestration regression.
+            model="claude-haiku-4-5-20251001",
             cwd=workspace,
             permission_mode="bypassPermissions",
             max_turns=12,
@@ -1422,7 +1434,7 @@ async def test_stream_propagates_genuine_cancellation(memory_logger, entrypoint,
 
 
 async def _assert_stream_cancellation(response_stream: Any, transport: Any, cancellation: str) -> None:
-    read_task = asyncio.create_task(anext(response_stream))
+    read_task = asyncio.create_task(_next_non_startup_message(response_stream))
     await asyncio.wait_for(transport.wait_until_sdk_message_blocked(), timeout=transport.wait_timeout)
     await asyncio.sleep(0)
     assert not read_task.done(), "the replayed SDK message should keep the response read blocked"
@@ -1436,6 +1448,15 @@ async def _assert_stream_cancellation(response_stream: Any, transport: Any, canc
             await read_task
 
     await response_stream.aclose()
+
+
+async def _next_non_startup_message(messages):
+    # Startup hook notifications may be queued before the SDK acknowledges
+    # initialize; wait for a message from the actual user query instead.
+    while True:
+        message = await anext(messages)
+        if getattr(message, "hook_event_name", None) != "SessionStart":
+            return message
 
 
 @pytest.mark.parametrize(
@@ -1888,7 +1909,7 @@ async def test_setup_claude_agent_sdk_repro_import_before_setup(memory_logger, m
             )
 
             options = getattr(consumer_module, "ClaudeAgentOptions")(
-                model="claude-3-5-haiku-20241022",
+                model=SIMPLE_TEST_MODEL,
                 permission_mode="bypassPermissions",
             )
             transport = make_cassette_transport(
@@ -1976,7 +1997,7 @@ async def test_concurrent_query_helpers_keep_raw_messages_request_scoped(memory_
     first_prompt = "Say hi"
     second_prompt = "Say hello in one short sentence."
     first_options = claude_agent_sdk.ClaudeAgentOptions(
-        model="claude-3-5-haiku-20241022",
+        model=SIMPLE_TEST_MODEL,
         permission_mode="bypassPermissions",
     )
     second_options = claude_agent_sdk.ClaudeAgentOptions(
@@ -2064,7 +2085,7 @@ async def test_query_helper_can_close_from_different_task(memory_logger):
     assert not memory_logger.pop()
 
     options = claude_agent_sdk.ClaudeAgentOptions(
-        model="claude-3-5-haiku-20241022",
+        model=SIMPLE_TEST_MODEL,
         permission_mode="bypassPermissions",
     )
     transport = make_cassette_transport(
@@ -2084,7 +2105,7 @@ async def test_query_helper_can_close_from_different_task(memory_logger):
     with _patched_claude_sdk():
         assert setup_claude_agent_sdk(project=PROJECT_NAME, api_key=logger.TEST_API_KEY)
         messages = claude_agent_sdk.query(prompt=prompt_stream(), options=options, transport=transport)
-        await anext(messages)
+        await _next_non_startup_message(messages)
         close_task = contextvars.Context().run(asyncio.create_task, messages.aclose())
         await close_task
 

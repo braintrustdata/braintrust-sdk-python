@@ -1,11 +1,16 @@
 """Verify Vercel AI SDK instrumentation when ai is imported first."""
-# pylint: disable=import-error,no-member
 
+# pylint: disable=import-error,no-member
 import asyncio
+import os
 
 import ai
 from braintrust.auto import auto_instrument
 from braintrust.integrations.test_utils import autoinstrument_test_context
+
+
+LATEST_MODELS = os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
+TEST_MODEL = "gpt-6-luna" if LATEST_MODELS else "gpt-4o-mini"
 
 
 async def main():
@@ -15,7 +20,7 @@ async def main():
 
     with autoinstrument_test_context("test_auto_ai_sdk", integration="ai_sdk") as memory_logger:
         async with ai.stream(
-            ai.get_model("openai:gpt-4o-mini"),
+            ai.get_model(f"openai:{TEST_MODEL}"),
             [ai.user_message("Reply with the single word hello.")],
         ) as stream:
             async for _ in stream:

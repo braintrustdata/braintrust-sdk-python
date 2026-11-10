@@ -13,6 +13,10 @@ from braintrust.test_helpers import init_test_logger
 from packaging.version import Version
 
 
+LATEST_MODELS = os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
+TEST_MODEL = "gpt-6-luna" if LATEST_MODELS else "gpt-4o-mini"
+MODEL_OPTIONS = {"reasoning_effort": "none"} if LATEST_MODELS else {}
+
 PROJECT_NAME = "test_agentscope"
 
 setup_agentscope(project_name=PROJECT_NAME)
@@ -47,17 +51,19 @@ def _make_model(*, stream: bool = False, api_key: str | None = None):
 
         return OpenAIChatModel(
             credential=OpenAICredential(api_key=resolved_api_key),
-            model="gpt-4o-mini",
-            parameters=OpenAIChatModel.Parameters(temperature=0),
+            model=TEST_MODEL,
+            parameters=OpenAIChatModel.Parameters(
+                **({"thinking_enable": True, **MODEL_OPTIONS} if LATEST_MODELS else {"temperature": 0})
+            ),
             stream=stream,
             max_retries=0,
         )
 
     return OpenAIChatModel(
-        model_name="gpt-4o-mini",
+        model_name=TEST_MODEL,
         api_key=resolved_api_key,
         stream=stream,
-        generate_kwargs={"temperature": 0},
+        generate_kwargs={"temperature": 0, **MODEL_OPTIONS},
     )
 
 
@@ -130,7 +136,7 @@ async def test_agentscope_simple_agent_run(memory_logger):
     assert _span_type(agent_span) == "task"
     assert llm_spans
     llm_span = llm_spans[0]
-    assert llm_span["metadata"]["model"] == "gpt-4o-mini"
+    assert llm_span["metadata"]["model"] == TEST_MODEL
     assert llm_span["metadata"]["provider"] == "openai"
     assert "args" not in llm_span["input"]
     assert llm_span["input"]["messages"][0]["role"] == "system"
@@ -248,7 +254,7 @@ async def test_agentscope_streaming_model_call(memory_logger):
     llm_span = llm_spans[0]
 
     assert llm_span["metadata"]["provider"] == "openai"
-    assert llm_span["metadata"]["model"] == "gpt-4o-mini"
+    assert llm_span["metadata"]["model"] == TEST_MODEL
     assert llm_span["output"]["role"] == "assistant"
     assert llm_span["output"]["content"]
     assert llm_span["metrics"]["time_to_first_token"] > 0

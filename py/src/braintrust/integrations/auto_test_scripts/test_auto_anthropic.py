@@ -28,9 +28,7 @@ assert results2.get("anthropic") == True
 
 # 4. Make API call and verify span
 model = (
-    "claude-haiku-4-5-20251001"
-    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
-    else "claude-3-haiku-20240307"
+    "claude-haiku-5-5" if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest" else "claude-3-haiku-20240307"
 )
 with autoinstrument_test_context("test_auto_anthropic", integration="anthropic") as memory_logger:
     client = anthropic.Anthropic()
@@ -39,7 +37,7 @@ with autoinstrument_test_context("test_auto_anthropic", integration="anthropic")
         max_tokens=100,
         messages=[{"role": "user", "content": "Say hi"}],
     )
-    assert response.content[0].text
+    assert next(block.text for block in response.content if block.type == "text")
 
     spans = memory_logger.pop()
     assert len(spans) == 1, f"Expected 1 span, got {len(spans)}"

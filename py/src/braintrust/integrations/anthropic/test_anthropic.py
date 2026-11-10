@@ -24,15 +24,21 @@ from pydantic import BaseModel
 
 PROJECT_NAME = "test-anthropic-app"
 LEGACY_MODEL = "claude-3-haiku-20240307"
-LATEST_MODEL = "claude-haiku-4-5-20251001"
+LATEST_MODEL = (
+    "claude-haiku-5-5"
+    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
+    else "claude-haiku-4-5-20251001"
+)
 # Pre-1.0 matrix pins replay cassettes recorded against the retired LEGACY_MODEL and the
 # pre-1.0 API surface; ``latest`` and 1.x+ pins use current models and API features.
 MODERN_SDK = os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest" or Version(
     anthropic.__version__
 ) >= Version("1.0.0")
 MODEL = LATEST_MODEL if MODERN_SDK else LEGACY_MODEL
-MULTIMODAL_MODEL = "claude-haiku-4-5-20251001"
-STRUCTURED_OUTPUT_MODEL = "claude-haiku-4-5"
+MULTIMODAL_MODEL = LATEST_MODEL
+STRUCTURED_OUTPUT_MODEL = (
+    "claude-haiku-5-5" if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest" else "claude-haiku-4-5"
+)
 STRUCTURED_OUTPUT_SCHEMA = {
     "type": "object",
     "properties": {
@@ -183,7 +189,11 @@ def reasoning_request():
     return {
         "model": LATEST_MODEL,
         "max_tokens": 2048,
-        "thinking": {"type": "enabled", "budget_tokens": 1024},
+        "thinking": (
+            {"type": "adaptive", "display": "summarized"}
+            if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
+            else {"type": "enabled", "budget_tokens": 1024}
+        ),
         "messages": [{"role": "user", "content": "What is 17 * 23? Think it through, then give the number."}],
     }
 
@@ -895,7 +905,7 @@ def test_anthropic_messages_create_with_image_attachment_input(memory_logger):
         ],
     )
 
-    assert response.content[0].text
+    assert next(block.text for block in response.content if block.type == "text")
 
     spans = memory_logger.pop()
     assert len(spans) == 1
@@ -966,7 +976,7 @@ def test_anthropic_messages_create_with_document_attachment_input(memory_logger)
         ],
     )
 
-    assert response.content[0].text
+    assert next(block.text for block in response.content if block.type == "text")
 
     spans = memory_logger.pop()
     assert len(spans) == 1
@@ -1001,7 +1011,10 @@ def test_anthropic_messages_create_tracks_structured_outputs_metadata(memory_log
         **{structured_output_param_name: structured_output_param_value},
     )
 
-    assert json.loads(response.content[0].text) == {"answer": 2, "label": "ok"}
+    assert json.loads(next(block.text for block in response.content if block.type == "text")) == {
+        "answer": 2,
+        "label": "ok",
+    }
 
     spans = memory_logger.pop()
     assert len(spans) == 1
@@ -1126,7 +1139,7 @@ def test_anthropic_messages_model_params_inputs(memory_logger):
 
     for f in [_with_messages_create, _with_messages_stream]:
         msg = f()
-        assert msg.content[0].text.strip() == "2"
+        assert next(block.text for block in msg.content if block.type == "text").strip() == "2"
 
         logs = memory_logger.pop()
         assert len(logs) == 1
@@ -1137,7 +1150,7 @@ def test_anthropic_messages_model_params_inputs(memory_logger):
         assert inputs_by_role["system"] == kw["system"]
         assert inputs_by_role["user"] == kw["messages"][0]["content"]
         assert log["output"]["role"] == "assistant"
-        assert "2" in log["output"]["content"][0]["text"]
+        assert "2" in next(block["text"] for block in log["output"]["content"] if block["type"] == "text")
         assert log["metadata"]["model"] == MODEL
         assert log["metadata"]["max_tokens"] == 300
         assert msg.usage.service_tier == "standard"
@@ -1373,7 +1386,7 @@ async def test_anthropic_beta_messages(
     end = time.time()
     usage = msg.usage
 
-    assert expected in msg.content[0].text
+    assert expected in next(block.text for block in msg.content if block.type == "text")
     if mode == "stream":
         assert len(events) > 3
         assert events[0].type == "message_start"
@@ -1384,7 +1397,7 @@ async def test_anthropic_beta_messages(
     log = logs[0]
     assert log["input"] == params["messages"]
     assert log["output"]["role"] == "assistant"
-    assert expected in log["output"]["content"][0]["text"]
+    assert expected in next(block["text"] for block in log["output"]["content"] if block["type"] == "text")
     assert log["project_id"] == PROJECT_NAME
     assert log["span_id"]
     assert log["root_span_id"]
@@ -1739,7 +1752,15 @@ class TestBatchesResultsSpans:
     within a few minutes; polls only sleep while recording.
     """
 
-    @pytest.mark.vcr
+    # The setup requests and JSONL payload are identical for both result
+    # iterators; share the latest recording to avoid submitting two batches.
+    @pytest.mark.vcr(
+        **(
+            {"cassette_name": "TestBatchesResultsSpans.test_batches_results_produces_span[sync]"}
+            if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
+            else {}
+        )
+    )
     @pytest.mark.asyncio
     # The sync case passes the batch id positionally and the async case by keyword,
     # covering both argument-extraction paths.

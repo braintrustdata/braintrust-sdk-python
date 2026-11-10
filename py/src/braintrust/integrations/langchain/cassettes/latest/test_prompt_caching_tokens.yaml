@@ -1,7 +1,7 @@
 interactions:
 - request:
-    body: '{"max_tokens":64000,"messages":[{"role":"user","content":"What is the first
-      type of testing mentioned in section 1.2?"}],"model":"claude-sonnet-4-5-20250929","system":[{"type":"text","text":"\n#
+    body: '{"max_tokens":4096,"messages":[{"role":"user","content":"What is the first
+      type of testing mentioned in section 1.2?"}],"model":"claude-haiku-5-5","system":[{"type":"text","text":"\n#
       Comprehensive Guide to Software Testing Methods!\n\n## Chapter 1: Introduction
       to Testing\n\nSoftware testing is a critical component of the software development
       lifecycle. It ensures that applications\nfunction correctly, meet requirements,
@@ -62,8 +62,191 @@ interactions:
       is essential for delivering high-quality software. By following best practices
       and using\nappropriate tools, teams can catch bugs early, improve code quality,
       and deliver better products to users.\n\nRemember: Testing is not just about
+      finding bugs, it''s about building confidence in your code.\n\n# Comprehensive
+      Guide to Software Testing Methods!\n\n## Chapter 1: Introduction to Testing\n\nSoftware
+      testing is a critical component of the software development lifecycle. It ensures
+      that applications\nfunction correctly, meet requirements, and provide a positive
+      user experience. This guide covers various\ntesting methodologies, best practices,
+      and tools used in modern software development.\n\n### 1.1 The Importance of
+      Testing\n\nTesting helps identify defects early in the development process,
+      reducing the cost of fixing issues later.\nStudies have shown that the cost
+      of fixing a bug increases exponentially as it progresses through the\ndevelopment
+      lifecycle. A bug found during requirements gathering might cost $1 to fix, while
+      the same bug\nfound in production could cost $100 or more.\n\n### 1.2 Types
+      of Testing\n\nThere are many types of testing, including:\n- Unit Testing: Testing
+      individual components or functions in isolation\n- Integration Testing: Testing
+      how components work together\n- End-to-End Testing: Testing the entire application
+      flow\n- Performance Testing: Testing application speed and scalability\n- Security
+      Testing: Testing for vulnerabilities and security issues\n- Usability Testing:
+      Testing user experience and interface design\n\n## Chapter 2: Unit Testing Best
+      Practices\n\nUnit testing focuses on testing the smallest testable parts of
+      an application. Here are some best practices:\n\n### 2.1 Write Tests First (TDD)\n\nTest-Driven
+      Development (TDD) is a methodology where tests are written before the actual
+      code. The process\nfollows a simple cycle: Red (write a failing test), Green
+      (write code to pass the test), Refactor (improve\nthe code while keeping tests
+      passing).\n\n### 2.2 Keep Tests Independent\n\nEach test should be independent
+      of others. Tests should not rely on the state created by previous tests.\nThis
+      ensures that tests can be run in any order and that failures are isolated and
+      easy to debug.\n\n### 2.3 Use Meaningful Names\n\nTest names should clearly
+      describe what is being tested and what the expected outcome is. A good test
+      name\nmight be \"test_user_registration_with_valid_email_succeeds\" rather than
+      just \"test_registration\".\n\n### 2.4 Test Edge Cases\n\nDon''t just test the
+      happy path. Consider edge cases like:\n- Empty inputs\n- Null or undefined values\n-
+      Very large inputs\n- Invalid formats\n- Boundary conditions\n\n## Chapter 3:
+      Integration Testing\n\nIntegration testing verifies that different modules or
+      services work together correctly.\n\n### 3.1 Database Integration\n\nWhen testing
+      database interactions, consider using:\n- Test databases separate from production\n-
+      Database transactions that roll back after each test\n- Mock data that represents
+      realistic scenarios\n\n### 3.2 API Integration\n\nAPI integration tests should
+      verify:\n- Correct HTTP status codes\n- Response format and schema\n- Error
+      handling\n- Authentication and authorization\n\n## Chapter 4: Performance Testing\n\nPerformance
+      testing ensures your application can handle expected load and scale appropriately.\n\n###
+      4.1 Load Testing\n\nLoad testing simulates multiple users accessing the application
+      simultaneously. Key metrics include:\n- Response time under load\n- Throughput
+      (requests per second)\n- Error rates\n- Resource utilization (CPU, memory, network)\n\n###
+      4.2 Stress Testing\n\nStress testing pushes the application beyond normal operational
+      capacity to find breaking points and\nunderstand how the system fails gracefully.\n\n##
+      Chapter 5: Continuous Integration and Testing\n\nModern development practices
+      integrate testing into the CI/CD pipeline.\n\n### 5.1 Automated Test Runs\n\nTests
+      should run automatically on every code change. This includes:\n- Running unit
+      tests on every commit\n- Running integration tests on pull requests\n- Running
+      end-to-end tests before deployment\n\n### 5.2 Test Coverage\n\nTest coverage
+      metrics help identify untested code. While 100% coverage isn''t always practical
+      or necessary,\nmaintaining good coverage helps ensure code quality. Focus on
+      critical paths and business logic.\n\n## Chapter 6: Testing Tools and Frameworks\n\nMany
+      tools exist to support testing efforts:\n\n### 6.1 Python Testing\n- pytest:
+      Feature-rich testing framework\n- unittest: Built-in Python testing module\n-
+      mock: Library for mocking objects\n\n### 6.2 JavaScript Testing\n- Jest: Popular
+      testing framework\n- Mocha: Flexible testing framework\n- Cypress: End-to-end
+      testing tool\n\n### 6.3 Other Tools\n- Selenium: Browser automation\n- JMeter:
+      Performance testing\n- Postman: API testing\n\n## Conclusion\n\nEffective testing
+      is essential for delivering high-quality software. By following best practices
+      and using\nappropriate tools, teams can catch bugs early, improve code quality,
+      and deliver better products to users.\n\nRemember: Testing is not just about
+      finding bugs, it''s about building confidence in your code.\n\n# Comprehensive
+      Guide to Software Testing Methods!\n\n## Chapter 1: Introduction to Testing\n\nSoftware
+      testing is a critical component of the software development lifecycle. It ensures
+      that applications\nfunction correctly, meet requirements, and provide a positive
+      user experience. This guide covers various\ntesting methodologies, best practices,
+      and tools used in modern software development.\n\n### 1.1 The Importance of
+      Testing\n\nTesting helps identify defects early in the development process,
+      reducing the cost of fixing issues later.\nStudies have shown that the cost
+      of fixing a bug increases exponentially as it progresses through the\ndevelopment
+      lifecycle. A bug found during requirements gathering might cost $1 to fix, while
+      the same bug\nfound in production could cost $100 or more.\n\n### 1.2 Types
+      of Testing\n\nThere are many types of testing, including:\n- Unit Testing: Testing
+      individual components or functions in isolation\n- Integration Testing: Testing
+      how components work together\n- End-to-End Testing: Testing the entire application
+      flow\n- Performance Testing: Testing application speed and scalability\n- Security
+      Testing: Testing for vulnerabilities and security issues\n- Usability Testing:
+      Testing user experience and interface design\n\n## Chapter 2: Unit Testing Best
+      Practices\n\nUnit testing focuses on testing the smallest testable parts of
+      an application. Here are some best practices:\n\n### 2.1 Write Tests First (TDD)\n\nTest-Driven
+      Development (TDD) is a methodology where tests are written before the actual
+      code. The process\nfollows a simple cycle: Red (write a failing test), Green
+      (write code to pass the test), Refactor (improve\nthe code while keeping tests
+      passing).\n\n### 2.2 Keep Tests Independent\n\nEach test should be independent
+      of others. Tests should not rely on the state created by previous tests.\nThis
+      ensures that tests can be run in any order and that failures are isolated and
+      easy to debug.\n\n### 2.3 Use Meaningful Names\n\nTest names should clearly
+      describe what is being tested and what the expected outcome is. A good test
+      name\nmight be \"test_user_registration_with_valid_email_succeeds\" rather than
+      just \"test_registration\".\n\n### 2.4 Test Edge Cases\n\nDon''t just test the
+      happy path. Consider edge cases like:\n- Empty inputs\n- Null or undefined values\n-
+      Very large inputs\n- Invalid formats\n- Boundary conditions\n\n## Chapter 3:
+      Integration Testing\n\nIntegration testing verifies that different modules or
+      services work together correctly.\n\n### 3.1 Database Integration\n\nWhen testing
+      database interactions, consider using:\n- Test databases separate from production\n-
+      Database transactions that roll back after each test\n- Mock data that represents
+      realistic scenarios\n\n### 3.2 API Integration\n\nAPI integration tests should
+      verify:\n- Correct HTTP status codes\n- Response format and schema\n- Error
+      handling\n- Authentication and authorization\n\n## Chapter 4: Performance Testing\n\nPerformance
+      testing ensures your application can handle expected load and scale appropriately.\n\n###
+      4.1 Load Testing\n\nLoad testing simulates multiple users accessing the application
+      simultaneously. Key metrics include:\n- Response time under load\n- Throughput
+      (requests per second)\n- Error rates\n- Resource utilization (CPU, memory, network)\n\n###
+      4.2 Stress Testing\n\nStress testing pushes the application beyond normal operational
+      capacity to find breaking points and\nunderstand how the system fails gracefully.\n\n##
+      Chapter 5: Continuous Integration and Testing\n\nModern development practices
+      integrate testing into the CI/CD pipeline.\n\n### 5.1 Automated Test Runs\n\nTests
+      should run automatically on every code change. This includes:\n- Running unit
+      tests on every commit\n- Running integration tests on pull requests\n- Running
+      end-to-end tests before deployment\n\n### 5.2 Test Coverage\n\nTest coverage
+      metrics help identify untested code. While 100% coverage isn''t always practical
+      or necessary,\nmaintaining good coverage helps ensure code quality. Focus on
+      critical paths and business logic.\n\n## Chapter 6: Testing Tools and Frameworks\n\nMany
+      tools exist to support testing efforts:\n\n### 6.1 Python Testing\n- pytest:
+      Feature-rich testing framework\n- unittest: Built-in Python testing module\n-
+      mock: Library for mocking objects\n\n### 6.2 JavaScript Testing\n- Jest: Popular
+      testing framework\n- Mocha: Flexible testing framework\n- Cypress: End-to-end
+      testing tool\n\n### 6.3 Other Tools\n- Selenium: Browser automation\n- JMeter:
+      Performance testing\n- Postman: API testing\n\n## Conclusion\n\nEffective testing
+      is essential for delivering high-quality software. By following best practices
+      and using\nappropriate tools, teams can catch bugs early, improve code quality,
+      and deliver better products to users.\n\nRemember: Testing is not just about
+      finding bugs, it''s about building confidence in your code.\n\n# Comprehensive
+      Guide to Software Testing Methods!\n\n## Chapter 1: Introduction to Testing\n\nSoftware
+      testing is a critical component of the software development lifecycle. It ensures
+      that applications\nfunction correctly, meet requirements, and provide a positive
+      user experience. This guide covers various\ntesting methodologies, best practices,
+      and tools used in modern software development.\n\n### 1.1 The Importance of
+      Testing\n\nTesting helps identify defects early in the development process,
+      reducing the cost of fixing issues later.\nStudies have shown that the cost
+      of fixing a bug increases exponentially as it progresses through the\ndevelopment
+      lifecycle. A bug found during requirements gathering might cost $1 to fix, while
+      the same bug\nfound in production could cost $100 or more.\n\n### 1.2 Types
+      of Testing\n\nThere are many types of testing, including:\n- Unit Testing: Testing
+      individual components or functions in isolation\n- Integration Testing: Testing
+      how components work together\n- End-to-End Testing: Testing the entire application
+      flow\n- Performance Testing: Testing application speed and scalability\n- Security
+      Testing: Testing for vulnerabilities and security issues\n- Usability Testing:
+      Testing user experience and interface design\n\n## Chapter 2: Unit Testing Best
+      Practices\n\nUnit testing focuses on testing the smallest testable parts of
+      an application. Here are some best practices:\n\n### 2.1 Write Tests First (TDD)\n\nTest-Driven
+      Development (TDD) is a methodology where tests are written before the actual
+      code. The process\nfollows a simple cycle: Red (write a failing test), Green
+      (write code to pass the test), Refactor (improve\nthe code while keeping tests
+      passing).\n\n### 2.2 Keep Tests Independent\n\nEach test should be independent
+      of others. Tests should not rely on the state created by previous tests.\nThis
+      ensures that tests can be run in any order and that failures are isolated and
+      easy to debug.\n\n### 2.3 Use Meaningful Names\n\nTest names should clearly
+      describe what is being tested and what the expected outcome is. A good test
+      name\nmight be \"test_user_registration_with_valid_email_succeeds\" rather than
+      just \"test_registration\".\n\n### 2.4 Test Edge Cases\n\nDon''t just test the
+      happy path. Consider edge cases like:\n- Empty inputs\n- Null or undefined values\n-
+      Very large inputs\n- Invalid formats\n- Boundary conditions\n\n## Chapter 3:
+      Integration Testing\n\nIntegration testing verifies that different modules or
+      services work together correctly.\n\n### 3.1 Database Integration\n\nWhen testing
+      database interactions, consider using:\n- Test databases separate from production\n-
+      Database transactions that roll back after each test\n- Mock data that represents
+      realistic scenarios\n\n### 3.2 API Integration\n\nAPI integration tests should
+      verify:\n- Correct HTTP status codes\n- Response format and schema\n- Error
+      handling\n- Authentication and authorization\n\n## Chapter 4: Performance Testing\n\nPerformance
+      testing ensures your application can handle expected load and scale appropriately.\n\n###
+      4.1 Load Testing\n\nLoad testing simulates multiple users accessing the application
+      simultaneously. Key metrics include:\n- Response time under load\n- Throughput
+      (requests per second)\n- Error rates\n- Resource utilization (CPU, memory, network)\n\n###
+      4.2 Stress Testing\n\nStress testing pushes the application beyond normal operational
+      capacity to find breaking points and\nunderstand how the system fails gracefully.\n\n##
+      Chapter 5: Continuous Integration and Testing\n\nModern development practices
+      integrate testing into the CI/CD pipeline.\n\n### 5.1 Automated Test Runs\n\nTests
+      should run automatically on every code change. This includes:\n- Running unit
+      tests on every commit\n- Running integration tests on pull requests\n- Running
+      end-to-end tests before deployment\n\n### 5.2 Test Coverage\n\nTest coverage
+      metrics help identify untested code. While 100% coverage isn''t always practical
+      or necessary,\nmaintaining good coverage helps ensure code quality. Focus on
+      critical paths and business logic.\n\n## Chapter 6: Testing Tools and Frameworks\n\nMany
+      tools exist to support testing efforts:\n\n### 6.1 Python Testing\n- pytest:
+      Feature-rich testing framework\n- unittest: Built-in Python testing module\n-
+      mock: Library for mocking objects\n\n### 6.2 JavaScript Testing\n- Jest: Popular
+      testing framework\n- Mocha: Flexible testing framework\n- Cypress: End-to-end
+      testing tool\n\n### 6.3 Other Tools\n- Selenium: Browser automation\n- JMeter:
+      Performance testing\n- Postman: API testing\n\n## Conclusion\n\nEffective testing
+      is essential for delivering high-quality software. By following best practices
+      and using\nappropriate tools, teams can catch bugs early, improve code quality,
+      and deliver better products to users.\n\nRemember: Testing is not just about
       finding bugs, it''s about building confidence in your code.\n\n\nCache salt:
-      3a7978df69544074b89858b72945c272\n","cache_control":{"type":"ephemeral"}}]}'
+      e0d4fbd07c0c43c3a816c231fc9ae4de\n","cache_control":{"type":"ephemeral"}}]}'
     headers:
       accept:
       - application/json
@@ -74,7 +257,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '5211'
+      - '19987'
       content-type:
       - application/json
       host:
@@ -96,69 +279,69 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.13.13
+      - 3.14.7
       x-stainless-timeout:
       - NOT_GIVEN
     method: POST
     uri: https://api.anthropic.com/v1/messages
   response:
     body:
-      string: '{"model":"claude-sonnet-4-5-20250929","id":"msg_011Cgsgx2QhMXd311CZmZ2HY","type":"message","role":"assistant","content":[{"type":"text","text":"According
-        to section 1.2, the first type of testing mentioned is **Unit Testing**, which
-        is described as \"Testing individual components or functions in isolation.\""}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":20,"cache_creation_input_tokens":1070,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":1070,"ephemeral_1h_input_tokens":0},"output_tokens":35,"service_tier":"standard","inference_geo":"not_available","speed":"standard"},"diagnostics":null}'
+      string: '{"model":"claude-haiku-5-5","id":"msg_011CguWdgTyrPtM2TTiGgLi9","type":"message","role":"assistant","content":[{"type":"thinking","thinking":"","signature":"CAQSwgYKEAgTGAI4AUIIdGhpbmtpbmcSDFSqOC9NdBePWTvyJxoMm68mV7rKG3b+QMmTIjAvwd9nY7RDyxHT6wmOlT3y6xnBAtNAz3byqzuo/Ryom9h2cqX/TLscORHcZL1gH5Aq3wW9Iiwg6xraH/EMk2uK6doTk46dZWVXOl9RyXe9NWQGw2JDEAtF4BYyy5tW2qdCx+fvbhKKWPPkhoEXwHQ+icu95qFp3TU9vSb/0ltGhojd1w8/UK9RR5oXx9eQ6WhoIC/9B72HTSQldndN6vW6It0lM5Iyd+UXg82Z8MjyzBx5UyCL5fULneADw+vPAr2PlJYAxvyzsPv6Sq/MiN44ojq8zEG7Cowh8kGNzC77vbDWRttJg7qS0x6EfO8flbyJL1D4FE4yj2o0iWjF+ZOyBU2i52d6SrT0+wTcCofQ14/zCHhpUJkbXTyWhG3cbOLRiJTEAVi4dPq0grOhZ7kqsaEG2kAIt/oIri6EPZL53QGObT+o27C7pK9iPM/L308LALcpWWwMsRWd+SX58IYB27lOyCL0qy+3Fh62kwO9Ipri0YiahAyOi+Bty8uR3553HYFYYSYOa8TRU29QeQjosGm4mbrmp5AS9PRHn8sDjDZmJV+sf2Og8r1pGwMFkxClPz5W6JuDXa2ExX6rqzcGUASX8yeoun92NQO1HLGO7X9/8C/U3f9rky5lgeqMmiDnGLeFAtPp+2PsB5OGfBWr8vCLDCfHkUTw45y5Drj5Utvrz8zLKo0J32WwdZDIy1B5Os0dQxemKh6w6xNvT0O2MXMp0nkiz32E4vKzBqDnoO9+xKq6l/d/9wAhvzJ+ukP36qOnyiaf/Y+L6D/M1wruBT/ZrmhrGw2RUhgcp1zCESVMM5H4UhrIWIbBM9plTZo2c+hcBMwXDu8Z2f7yYxISNloYfANyqbbKbxcdnX8N8D5qIOiCYSTfFk1xUSqPxNB4ueC+CQZfSLL0WgzPvKdG867TFshjVT7zVS4J7+ERrpFvcZvX27PPTEwXwZEQEdZundKKA32qx/sWqitEgp/SbQ6WWkKeayXmJbNwqPlLUq2qY2gnQBoQqweh3QD4QP0SxCzEF3MoJ5xnSFMXej2scqUYAQ=="},{"type":"text","text":"The
+        first type of testing listed in section 1.2 is **Unit Testing**, described
+        as \"testing individual components or functions in isolation.\""}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":25,"cache_creation_input_tokens":6366,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":6366,"ephemeral_1h_input_tokens":0},"output_tokens":117,"output_tokens_details":{"thinking_tokens":74},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
     headers:
       anthropic-organization-id:
       - 27796668-7351-40ac-acc4-024aee8995a5
       anthropic-ratelimit-input-tokens-limit:
       - '10000000'
       anthropic-ratelimit-input-tokens-remaining:
-      - '10000000'
+      - '9997000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-11-09T16:43:28Z'
+      - '2026-11-10T15:49:22Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-11-09T16:43:29Z'
+      - '2026-11-10T15:49:23Z'
       anthropic-ratelimit-requests-limit:
-      - '20000'
+      - '45000'
       anthropic-ratelimit-requests-remaining:
-      - '19999'
+      - '44999'
       anthropic-ratelimit-requests-reset:
-      - '2026-11-09T16:43:27Z'
+      - '2026-11-10T15:49:22Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
-      - '12000000'
+      - '11997000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-11-09T16:43:28Z'
+      - '2026-11-10T15:49:22Z'
       anthropic-workspace-id:
       - wrkspc_018bFG1FgNVWqx5pthtdGTzS
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a57e46cb3d3c3a06-YYZ
+      - a58634ed3b7a5437-YYZ
       connection:
       - keep-alive
       content-length:
-      - '684'
+      - '1865'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - application/json
       date:
-      - Mon, 09 Nov 2026 16:43:29 GMT
+      - Tue, 10 Nov 2026 15:49:23 GMT
       request-id:
-      - req_011Cgsgx2B3cscmhScJMHPgh
+      - req_011CguWdgGpCuJzJDbWDhLc8
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=1334
+      - x-originResponse;dur=1062
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-1bac4be7150a3adbb941e99fe24e4b5a-6e20601a1f2903db-01
+      - 00-757fa2090500150150c88c9307b8f0f1-c4207688fa94f572-01
       transfer-encoding:
       - chunked
       vary:
@@ -169,11 +352,11 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"max_tokens":64000,"messages":[{"role":"user","content":"What is the first
-      type of testing mentioned in section 1.2?"},{"role":"assistant","content":"According
-      to section 1.2, the first type of testing mentioned is **Unit Testing**, which
-      is described as \"Testing individual components or functions in isolation.\""},{"role":"user","content":"What
-      testing framework is mentioned for Python?"}],"model":"claude-sonnet-4-5-20250929","system":[{"type":"text","text":"\n#
+    body: '{"max_tokens":4096,"messages":[{"role":"user","content":"What is the first
+      type of testing mentioned in section 1.2?"},{"role":"assistant","content":[{"signature":"CAQSwgYKEAgTGAI4AUIIdGhpbmtpbmcSDFSqOC9NdBePWTvyJxoMm68mV7rKG3b+QMmTIjAvwd9nY7RDyxHT6wmOlT3y6xnBAtNAz3byqzuo/Ryom9h2cqX/TLscORHcZL1gH5Aq3wW9Iiwg6xraH/EMk2uK6doTk46dZWVXOl9RyXe9NWQGw2JDEAtF4BYyy5tW2qdCx+fvbhKKWPPkhoEXwHQ+icu95qFp3TU9vSb/0ltGhojd1w8/UK9RR5oXx9eQ6WhoIC/9B72HTSQldndN6vW6It0lM5Iyd+UXg82Z8MjyzBx5UyCL5fULneADw+vPAr2PlJYAxvyzsPv6Sq/MiN44ojq8zEG7Cowh8kGNzC77vbDWRttJg7qS0x6EfO8flbyJL1D4FE4yj2o0iWjF+ZOyBU2i52d6SrT0+wTcCofQ14/zCHhpUJkbXTyWhG3cbOLRiJTEAVi4dPq0grOhZ7kqsaEG2kAIt/oIri6EPZL53QGObT+o27C7pK9iPM/L308LALcpWWwMsRWd+SX58IYB27lOyCL0qy+3Fh62kwO9Ipri0YiahAyOi+Bty8uR3553HYFYYSYOa8TRU29QeQjosGm4mbrmp5AS9PRHn8sDjDZmJV+sf2Og8r1pGwMFkxClPz5W6JuDXa2ExX6rqzcGUASX8yeoun92NQO1HLGO7X9/8C/U3f9rky5lgeqMmiDnGLeFAtPp+2PsB5OGfBWr8vCLDCfHkUTw45y5Drj5Utvrz8zLKo0J32WwdZDIy1B5Os0dQxemKh6w6xNvT0O2MXMp0nkiz32E4vKzBqDnoO9+xKq6l/d/9wAhvzJ+ukP36qOnyiaf/Y+L6D/M1wruBT/ZrmhrGw2RUhgcp1zCESVMM5H4UhrIWIbBM9plTZo2c+hcBMwXDu8Z2f7yYxISNloYfANyqbbKbxcdnX8N8D5qIOiCYSTfFk1xUSqPxNB4ueC+CQZfSLL0WgzPvKdG867TFshjVT7zVS4J7+ERrpFvcZvX27PPTEwXwZEQEdZundKKA32qx/sWqitEgp/SbQ6WWkKeayXmJbNwqPlLUq2qY2gnQBoQqweh3QD4QP0SxCzEF3MoJ5xnSFMXej2scqUYAQ==","thinking":"","type":"thinking"},{"text":"The
+      first type of testing listed in section 1.2 is **Unit Testing**, described as
+      \"testing individual components or functions in isolation.\"","type":"text"}]},{"role":"user","content":"What
+      testing framework is mentioned for Python?"}],"model":"claude-haiku-5-5","system":[{"type":"text","text":"\n#
       Comprehensive Guide to Software Testing Methods!\n\n## Chapter 1: Introduction
       to Testing\n\nSoftware testing is a critical component of the software development
       lifecycle. It ensures that applications\nfunction correctly, meet requirements,
@@ -234,8 +417,191 @@ interactions:
       is essential for delivering high-quality software. By following best practices
       and using\nappropriate tools, teams can catch bugs early, improve code quality,
       and deliver better products to users.\n\nRemember: Testing is not just about
+      finding bugs, it''s about building confidence in your code.\n\n# Comprehensive
+      Guide to Software Testing Methods!\n\n## Chapter 1: Introduction to Testing\n\nSoftware
+      testing is a critical component of the software development lifecycle. It ensures
+      that applications\nfunction correctly, meet requirements, and provide a positive
+      user experience. This guide covers various\ntesting methodologies, best practices,
+      and tools used in modern software development.\n\n### 1.1 The Importance of
+      Testing\n\nTesting helps identify defects early in the development process,
+      reducing the cost of fixing issues later.\nStudies have shown that the cost
+      of fixing a bug increases exponentially as it progresses through the\ndevelopment
+      lifecycle. A bug found during requirements gathering might cost $1 to fix, while
+      the same bug\nfound in production could cost $100 or more.\n\n### 1.2 Types
+      of Testing\n\nThere are many types of testing, including:\n- Unit Testing: Testing
+      individual components or functions in isolation\n- Integration Testing: Testing
+      how components work together\n- End-to-End Testing: Testing the entire application
+      flow\n- Performance Testing: Testing application speed and scalability\n- Security
+      Testing: Testing for vulnerabilities and security issues\n- Usability Testing:
+      Testing user experience and interface design\n\n## Chapter 2: Unit Testing Best
+      Practices\n\nUnit testing focuses on testing the smallest testable parts of
+      an application. Here are some best practices:\n\n### 2.1 Write Tests First (TDD)\n\nTest-Driven
+      Development (TDD) is a methodology where tests are written before the actual
+      code. The process\nfollows a simple cycle: Red (write a failing test), Green
+      (write code to pass the test), Refactor (improve\nthe code while keeping tests
+      passing).\n\n### 2.2 Keep Tests Independent\n\nEach test should be independent
+      of others. Tests should not rely on the state created by previous tests.\nThis
+      ensures that tests can be run in any order and that failures are isolated and
+      easy to debug.\n\n### 2.3 Use Meaningful Names\n\nTest names should clearly
+      describe what is being tested and what the expected outcome is. A good test
+      name\nmight be \"test_user_registration_with_valid_email_succeeds\" rather than
+      just \"test_registration\".\n\n### 2.4 Test Edge Cases\n\nDon''t just test the
+      happy path. Consider edge cases like:\n- Empty inputs\n- Null or undefined values\n-
+      Very large inputs\n- Invalid formats\n- Boundary conditions\n\n## Chapter 3:
+      Integration Testing\n\nIntegration testing verifies that different modules or
+      services work together correctly.\n\n### 3.1 Database Integration\n\nWhen testing
+      database interactions, consider using:\n- Test databases separate from production\n-
+      Database transactions that roll back after each test\n- Mock data that represents
+      realistic scenarios\n\n### 3.2 API Integration\n\nAPI integration tests should
+      verify:\n- Correct HTTP status codes\n- Response format and schema\n- Error
+      handling\n- Authentication and authorization\n\n## Chapter 4: Performance Testing\n\nPerformance
+      testing ensures your application can handle expected load and scale appropriately.\n\n###
+      4.1 Load Testing\n\nLoad testing simulates multiple users accessing the application
+      simultaneously. Key metrics include:\n- Response time under load\n- Throughput
+      (requests per second)\n- Error rates\n- Resource utilization (CPU, memory, network)\n\n###
+      4.2 Stress Testing\n\nStress testing pushes the application beyond normal operational
+      capacity to find breaking points and\nunderstand how the system fails gracefully.\n\n##
+      Chapter 5: Continuous Integration and Testing\n\nModern development practices
+      integrate testing into the CI/CD pipeline.\n\n### 5.1 Automated Test Runs\n\nTests
+      should run automatically on every code change. This includes:\n- Running unit
+      tests on every commit\n- Running integration tests on pull requests\n- Running
+      end-to-end tests before deployment\n\n### 5.2 Test Coverage\n\nTest coverage
+      metrics help identify untested code. While 100% coverage isn''t always practical
+      or necessary,\nmaintaining good coverage helps ensure code quality. Focus on
+      critical paths and business logic.\n\n## Chapter 6: Testing Tools and Frameworks\n\nMany
+      tools exist to support testing efforts:\n\n### 6.1 Python Testing\n- pytest:
+      Feature-rich testing framework\n- unittest: Built-in Python testing module\n-
+      mock: Library for mocking objects\n\n### 6.2 JavaScript Testing\n- Jest: Popular
+      testing framework\n- Mocha: Flexible testing framework\n- Cypress: End-to-end
+      testing tool\n\n### 6.3 Other Tools\n- Selenium: Browser automation\n- JMeter:
+      Performance testing\n- Postman: API testing\n\n## Conclusion\n\nEffective testing
+      is essential for delivering high-quality software. By following best practices
+      and using\nappropriate tools, teams can catch bugs early, improve code quality,
+      and deliver better products to users.\n\nRemember: Testing is not just about
+      finding bugs, it''s about building confidence in your code.\n\n# Comprehensive
+      Guide to Software Testing Methods!\n\n## Chapter 1: Introduction to Testing\n\nSoftware
+      testing is a critical component of the software development lifecycle. It ensures
+      that applications\nfunction correctly, meet requirements, and provide a positive
+      user experience. This guide covers various\ntesting methodologies, best practices,
+      and tools used in modern software development.\n\n### 1.1 The Importance of
+      Testing\n\nTesting helps identify defects early in the development process,
+      reducing the cost of fixing issues later.\nStudies have shown that the cost
+      of fixing a bug increases exponentially as it progresses through the\ndevelopment
+      lifecycle. A bug found during requirements gathering might cost $1 to fix, while
+      the same bug\nfound in production could cost $100 or more.\n\n### 1.2 Types
+      of Testing\n\nThere are many types of testing, including:\n- Unit Testing: Testing
+      individual components or functions in isolation\n- Integration Testing: Testing
+      how components work together\n- End-to-End Testing: Testing the entire application
+      flow\n- Performance Testing: Testing application speed and scalability\n- Security
+      Testing: Testing for vulnerabilities and security issues\n- Usability Testing:
+      Testing user experience and interface design\n\n## Chapter 2: Unit Testing Best
+      Practices\n\nUnit testing focuses on testing the smallest testable parts of
+      an application. Here are some best practices:\n\n### 2.1 Write Tests First (TDD)\n\nTest-Driven
+      Development (TDD) is a methodology where tests are written before the actual
+      code. The process\nfollows a simple cycle: Red (write a failing test), Green
+      (write code to pass the test), Refactor (improve\nthe code while keeping tests
+      passing).\n\n### 2.2 Keep Tests Independent\n\nEach test should be independent
+      of others. Tests should not rely on the state created by previous tests.\nThis
+      ensures that tests can be run in any order and that failures are isolated and
+      easy to debug.\n\n### 2.3 Use Meaningful Names\n\nTest names should clearly
+      describe what is being tested and what the expected outcome is. A good test
+      name\nmight be \"test_user_registration_with_valid_email_succeeds\" rather than
+      just \"test_registration\".\n\n### 2.4 Test Edge Cases\n\nDon''t just test the
+      happy path. Consider edge cases like:\n- Empty inputs\n- Null or undefined values\n-
+      Very large inputs\n- Invalid formats\n- Boundary conditions\n\n## Chapter 3:
+      Integration Testing\n\nIntegration testing verifies that different modules or
+      services work together correctly.\n\n### 3.1 Database Integration\n\nWhen testing
+      database interactions, consider using:\n- Test databases separate from production\n-
+      Database transactions that roll back after each test\n- Mock data that represents
+      realistic scenarios\n\n### 3.2 API Integration\n\nAPI integration tests should
+      verify:\n- Correct HTTP status codes\n- Response format and schema\n- Error
+      handling\n- Authentication and authorization\n\n## Chapter 4: Performance Testing\n\nPerformance
+      testing ensures your application can handle expected load and scale appropriately.\n\n###
+      4.1 Load Testing\n\nLoad testing simulates multiple users accessing the application
+      simultaneously. Key metrics include:\n- Response time under load\n- Throughput
+      (requests per second)\n- Error rates\n- Resource utilization (CPU, memory, network)\n\n###
+      4.2 Stress Testing\n\nStress testing pushes the application beyond normal operational
+      capacity to find breaking points and\nunderstand how the system fails gracefully.\n\n##
+      Chapter 5: Continuous Integration and Testing\n\nModern development practices
+      integrate testing into the CI/CD pipeline.\n\n### 5.1 Automated Test Runs\n\nTests
+      should run automatically on every code change. This includes:\n- Running unit
+      tests on every commit\n- Running integration tests on pull requests\n- Running
+      end-to-end tests before deployment\n\n### 5.2 Test Coverage\n\nTest coverage
+      metrics help identify untested code. While 100% coverage isn''t always practical
+      or necessary,\nmaintaining good coverage helps ensure code quality. Focus on
+      critical paths and business logic.\n\n## Chapter 6: Testing Tools and Frameworks\n\nMany
+      tools exist to support testing efforts:\n\n### 6.1 Python Testing\n- pytest:
+      Feature-rich testing framework\n- unittest: Built-in Python testing module\n-
+      mock: Library for mocking objects\n\n### 6.2 JavaScript Testing\n- Jest: Popular
+      testing framework\n- Mocha: Flexible testing framework\n- Cypress: End-to-end
+      testing tool\n\n### 6.3 Other Tools\n- Selenium: Browser automation\n- JMeter:
+      Performance testing\n- Postman: API testing\n\n## Conclusion\n\nEffective testing
+      is essential for delivering high-quality software. By following best practices
+      and using\nappropriate tools, teams can catch bugs early, improve code quality,
+      and deliver better products to users.\n\nRemember: Testing is not just about
+      finding bugs, it''s about building confidence in your code.\n\n# Comprehensive
+      Guide to Software Testing Methods!\n\n## Chapter 1: Introduction to Testing\n\nSoftware
+      testing is a critical component of the software development lifecycle. It ensures
+      that applications\nfunction correctly, meet requirements, and provide a positive
+      user experience. This guide covers various\ntesting methodologies, best practices,
+      and tools used in modern software development.\n\n### 1.1 The Importance of
+      Testing\n\nTesting helps identify defects early in the development process,
+      reducing the cost of fixing issues later.\nStudies have shown that the cost
+      of fixing a bug increases exponentially as it progresses through the\ndevelopment
+      lifecycle. A bug found during requirements gathering might cost $1 to fix, while
+      the same bug\nfound in production could cost $100 or more.\n\n### 1.2 Types
+      of Testing\n\nThere are many types of testing, including:\n- Unit Testing: Testing
+      individual components or functions in isolation\n- Integration Testing: Testing
+      how components work together\n- End-to-End Testing: Testing the entire application
+      flow\n- Performance Testing: Testing application speed and scalability\n- Security
+      Testing: Testing for vulnerabilities and security issues\n- Usability Testing:
+      Testing user experience and interface design\n\n## Chapter 2: Unit Testing Best
+      Practices\n\nUnit testing focuses on testing the smallest testable parts of
+      an application. Here are some best practices:\n\n### 2.1 Write Tests First (TDD)\n\nTest-Driven
+      Development (TDD) is a methodology where tests are written before the actual
+      code. The process\nfollows a simple cycle: Red (write a failing test), Green
+      (write code to pass the test), Refactor (improve\nthe code while keeping tests
+      passing).\n\n### 2.2 Keep Tests Independent\n\nEach test should be independent
+      of others. Tests should not rely on the state created by previous tests.\nThis
+      ensures that tests can be run in any order and that failures are isolated and
+      easy to debug.\n\n### 2.3 Use Meaningful Names\n\nTest names should clearly
+      describe what is being tested and what the expected outcome is. A good test
+      name\nmight be \"test_user_registration_with_valid_email_succeeds\" rather than
+      just \"test_registration\".\n\n### 2.4 Test Edge Cases\n\nDon''t just test the
+      happy path. Consider edge cases like:\n- Empty inputs\n- Null or undefined values\n-
+      Very large inputs\n- Invalid formats\n- Boundary conditions\n\n## Chapter 3:
+      Integration Testing\n\nIntegration testing verifies that different modules or
+      services work together correctly.\n\n### 3.1 Database Integration\n\nWhen testing
+      database interactions, consider using:\n- Test databases separate from production\n-
+      Database transactions that roll back after each test\n- Mock data that represents
+      realistic scenarios\n\n### 3.2 API Integration\n\nAPI integration tests should
+      verify:\n- Correct HTTP status codes\n- Response format and schema\n- Error
+      handling\n- Authentication and authorization\n\n## Chapter 4: Performance Testing\n\nPerformance
+      testing ensures your application can handle expected load and scale appropriately.\n\n###
+      4.1 Load Testing\n\nLoad testing simulates multiple users accessing the application
+      simultaneously. Key metrics include:\n- Response time under load\n- Throughput
+      (requests per second)\n- Error rates\n- Resource utilization (CPU, memory, network)\n\n###
+      4.2 Stress Testing\n\nStress testing pushes the application beyond normal operational
+      capacity to find breaking points and\nunderstand how the system fails gracefully.\n\n##
+      Chapter 5: Continuous Integration and Testing\n\nModern development practices
+      integrate testing into the CI/CD pipeline.\n\n### 5.1 Automated Test Runs\n\nTests
+      should run automatically on every code change. This includes:\n- Running unit
+      tests on every commit\n- Running integration tests on pull requests\n- Running
+      end-to-end tests before deployment\n\n### 5.2 Test Coverage\n\nTest coverage
+      metrics help identify untested code. While 100% coverage isn''t always practical
+      or necessary,\nmaintaining good coverage helps ensure code quality. Focus on
+      critical paths and business logic.\n\n## Chapter 6: Testing Tools and Frameworks\n\nMany
+      tools exist to support testing efforts:\n\n### 6.1 Python Testing\n- pytest:
+      Feature-rich testing framework\n- unittest: Built-in Python testing module\n-
+      mock: Library for mocking objects\n\n### 6.2 JavaScript Testing\n- Jest: Popular
+      testing framework\n- Mocha: Flexible testing framework\n- Cypress: End-to-end
+      testing tool\n\n### 6.3 Other Tools\n- Selenium: Browser automation\n- JMeter:
+      Performance testing\n- Postman: API testing\n\n## Conclusion\n\nEffective testing
+      is essential for delivering high-quality software. By following best practices
+      and using\nappropriate tools, teams can catch bugs early, improve code quality,
+      and deliver better products to users.\n\nRemember: Testing is not just about
       finding bugs, it''s about building confidence in your code.\n\n\nCache salt:
-      3a7978df69544074b89858b72945c272\n","cache_control":{"type":"ephemeral"}}]}'
+      e0d4fbd07c0c43c3a816c231fc9ae4de\n","cache_control":{"type":"ephemeral"}}]}'
     headers:
       accept:
       - application/json
@@ -246,7 +612,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '5486'
+      - '21437'
       content-type:
       - application/json
       host:
@@ -268,17 +634,18 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.13.13
+      - 3.14.7
       x-stainless-timeout:
       - NOT_GIVEN
     method: POST
     uri: https://api.anthropic.com/v1/messages
   response:
     body:
-      string: '{"model":"claude-sonnet-4-5-20250929","id":"msg_011Cgsgx8N7aKwbKnktixABm","type":"message","role":"assistant","content":[{"type":"text","text":"According
-        to section 6.1, three testing frameworks are mentioned for Python:\n\n1. **pytest**
-        - Feature-rich testing framework\n2. **unittest** - Built-in Python testing
-        module\n3. **mock** - Library for mocking objects"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":66,"cache_creation_input_tokens":0,"cache_read_input_tokens":1070,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":56,"service_tier":"standard","inference_geo":"not_available","speed":"standard"},"diagnostics":null}'
+      string: '{"model":"claude-haiku-5-5","id":"msg_011CguWdmKRiQdRp6aHDye99","type":"message","role":"assistant","content":[{"type":"text","text":"The
+        document mentions three Python testing tools in section 6.1:\n\n- **pytest**:
+        a feature-rich testing framework\n- **unittest**: Python''s built-in testing
+        module\n- **mock**: a library for mocking objects\n\nIf you''re asking about
+        the single framework, the first one listed is **pytest**."}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":160,"cache_creation_input_tokens":0,"cache_read_input_tokens":6366,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":95,"output_tokens_details":{"thinking_tokens":0},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
     headers:
       anthropic-organization-id:
       - 27796668-7351-40ac-acc4-024aee8995a5
@@ -287,51 +654,51 @@ interactions:
       anthropic-ratelimit-input-tokens-remaining:
       - '10000000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-11-09T16:43:30Z'
+      - '2026-11-10T15:49:23Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-11-09T16:43:30Z'
+      - '2026-11-10T15:49:24Z'
       anthropic-ratelimit-requests-limit:
-      - '20000'
+      - '45000'
       anthropic-ratelimit-requests-remaining:
-      - '19999'
+      - '44999'
       anthropic-ratelimit-requests-reset:
-      - '2026-11-09T16:43:29Z'
+      - '2026-11-10T15:49:23Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
       - '12000000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-11-09T16:43:30Z'
+      - '2026-11-10T15:49:23Z'
       anthropic-workspace-id:
       - wrkspc_018bFG1FgNVWqx5pthtdGTzS
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a57e46d3f95a3a06-YYZ
+      - a58634f44a345437-YYZ
       connection:
       - keep-alive
       content-length:
-      - '735'
+      - '837'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - application/json
       date:
-      - Mon, 09 Nov 2026 16:43:30 GMT
+      - Tue, 10 Nov 2026 15:49:24 GMT
       request-id:
-      - req_011Cgsgx8BD1nrritVzVFZqt
+      - req_011CguWdm7HaDc21aY3CCew7
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=1421
+      - x-originResponse;dur=844
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-58d544b6b3abb4243e31729d7c1d259f-77cc1c7d875371a5-01
+      - 00-a2bfd75eac94c6cc0751443092a013a6-d4bdac47193d3724-01
       transfer-encoding:
       - chunked
       vary:

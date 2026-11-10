@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"model":"command-a-03-2025","messages":[{"role":"user","content":"Say
+    body: '{"model":"command-r7b-12-2024","messages":[{"role":"user","content":"Say
       hi in one word."}],"max_tokens":8,"stream":true}'
     headers:
       accept:
@@ -10,7 +10,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '119'
+      - '121'
       content-type:
       - application/json
       host:
@@ -33,7 +33,7 @@ interactions:
     body:
       string: 'event: message-start
 
-        data: {"id":"6f1cbffb-a68d-4115-9e02-798366278e2a","type":"message-start","delta":{"message":{"role":"assistant","content":[],"tool_plan":"","tool_calls":[],"citations":[]}}}
+        data: {"id":"cb2f415d-70b9-44a1-b35d-53bca4626657","type":"message-start","delta":{"message":{"role":"assistant","content":[],"tool_plan":"","tool_calls":[],"citations":[]}}}
 
 
         event: content-start
@@ -43,7 +43,7 @@ interactions:
 
         event: content-delta
 
-        data: {"type":"content-delta","index":0,"delta":{"message":{"content":{"text":"Hi"}}}}
+        data: {"type":"content-delta","index":0,"delta":{"message":{"content":{"text":"Hello"}}}}
 
 
         event: content-delta
@@ -58,7 +58,7 @@ interactions:
 
         event: message-end
 
-        data: {"type":"message-end","delta":{"finish_reason":"COMPLETE","usage":{"billed_units":{"input_tokens":6,"output_tokens":2},"tokens":{"input_tokens":501,"output_tokens":5},"cached_tokens":464}}}
+        data: {"type":"message-end","delta":{"finish_reason":"COMPLETE","usage":{"billed_units":{"input_tokens":6,"output_tokens":2},"tokens":{"input_tokens":501,"output_tokens":5},"cached_tokens":496}}}
 
 
         data: [DONE]
@@ -69,13 +69,13 @@ interactions:
       access-control-expose-headers:
       - X-Debug-Trace-ID
       alt-svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      - h3=":443"; ma=2592000
       cache-control:
       - no-cache, no-store, no-transform, must-revalidate, private, max-age=0
       content-type:
       - text/event-stream
       date:
-      - Mon, 09 Nov 2026 16:43:30 GMT
+      - Tue, 10 Nov 2026 15:53:30 GMT
       expires:
       - Thu, 01 Jan 1970 00:00:00 GMT
       pragma:
@@ -91,11 +91,11 @@ interactions:
       x-accel-expires:
       - '0'
       x-debug-trace-id:
-      - 7626d77ebaf52a5f515c79ca075b237d
+      - 282d9d5bce97d2b4a7bba1a3292334a6
       x-endpoint-monthly-call-limit:
       - '1000'
       x-envoy-upstream-service-time:
-      - '166'
+      - '88'
       x-trial-endpoint-call-limit:
       - '20'
       x-trial-endpoint-call-remaining:

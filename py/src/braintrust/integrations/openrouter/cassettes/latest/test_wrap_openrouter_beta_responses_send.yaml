@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"input":"Say one short sentence about observability.","max_output_tokens":64,"model":"openai/gpt-4o-mini","service_tier":"auto","store":false,"stream":false,"temperature":0.0}'
+    body: '{"input":"Say one short sentence about observability.","max_output_tokens":64,"model":"openai/gpt-6-luna","reasoning":{"effort":"none"},"service_tier":"auto","store":false,"stream":false,"temperature":0.0}'
     headers:
       accept:
       - application/json
@@ -9,7 +9,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '176'
+      - '205'
       content-type:
       - application/json
       host:
@@ -20,26 +20,25 @@ interactions:
     uri: https://openrouter.ai/api/v1/responses
   response:
     body:
-      string: "\n         \n{\"id\":\"gen-1794242677-J5vUTfk4MRirPmMBwr4V\",\"object\":\"response\",\"created_at\":1794242677,\"model\":\"openai/gpt-4o-mini\",\"status\":\"completed\",\"completed_at\":1794242678,\"output\":[{\"id\":\"msg_tmp_ku5vpqlu8r\",\"type\":\"message\",\"role\":\"assistant\",\"status\":\"completed\",\"content\":[{\"type\":\"output_text\",\"text\":\"Observability
-        enables organizations to understand and monitor the internal state of complex
-        systems through external outputs.\",\"annotations\":[],\"logprobs\":[]}]}],\"error\":null,\"incomplete_details\":null,\"access_programs\":null,\"tools\":[],\"tool_choice\":\"auto\",\"parallel_tool_calls\":true,\"max_output_tokens\":64,\"temperature\":0,\"top_p\":1,\"presence_penalty\":0,\"frequency_penalty\":0,\"top_logprobs\":0,\"max_tool_calls\":null,\"metadata\":{},\"background\":false,\"previous_response_id\":null,\"service_tier\":\"default\",\"truncation\":\"disabled\",\"store\":false,\"instructions\":null,\"text\":{\"format\":{\"type\":\"text\"}},\"reasoning\":null,\"safety_identifier\":null,\"prompt_cache_key\":null,\"prompt_cache_options\":null,\"usage\":{\"input_tokens\":15,\"input_tokens_details\":{\"cached_tokens\":0},\"output_tokens\":18,\"output_tokens_details\":{\"reasoning_tokens\":0},\"total_tokens\":33,\"cost\":0.00001305,\"is_byok\":false,\"cost_details\":{\"upstream_inference_cost\":0.00001305,\"upstream_inference_input_cost\":0.00000225,\"upstream_inference_output_cost\":0.0000108}}}"
+      string: "\n         \n\n         \n\n         \n{\"id\":\"gen-1794325544-Yz2ymBKQONlKlNsjYfRc\",\"object\":\"response\",\"created_at\":1794325544,\"model\":\"openai/gpt-6-luna\",\"status\":\"completed\",\"completed_at\":1794325545,\"output\":[{\"id\":\"msg_tmp_c6e1m94ek5a\",\"type\":\"message\",\"role\":\"assistant\",\"status\":\"completed\",\"content\":[{\"type\":\"output_text\",\"text\":\"Observability
+        helps you understand a system\u2019s internal state from its outputs.\",\"annotations\":[],\"logprobs\":[]}],\"phase\":\"final_answer\"}],\"error\":null,\"incomplete_details\":null,\"access_programs\":{\"cyber\":\"standard\"},\"tools\":[],\"tool_choice\":\"auto\",\"parallel_tool_calls\":true,\"max_output_tokens\":64,\"temperature\":0,\"top_p\":1,\"presence_penalty\":0,\"frequency_penalty\":0,\"top_logprobs\":0,\"max_tool_calls\":null,\"metadata\":{},\"background\":false,\"previous_response_id\":null,\"service_tier\":\"default\",\"truncation\":\"disabled\",\"store\":false,\"instructions\":null,\"text\":{\"format\":{\"type\":\"text\"}},\"reasoning\":{\"effort\":\"none\",\"context\":\"all_turns\",\"mode\":\"standard\",\"summary\":null},\"safety_identifier\":null,\"prompt_cache_key\":null,\"prompt_cache_options\":null,\"usage\":{\"input_tokens\":14,\"input_tokens_details\":{\"cached_tokens\":0},\"output_tokens\":18,\"output_tokens_details\":{\"reasoning_tokens\":0},\"total_tokens\":32,\"cost\":0.0000104,\"is_byok\":false,\"cost_details\":{\"upstream_inference_cost\":0.0000104,\"upstream_inference_input_cost\":0.0000014,\"upstream_inference_output_cost\":0.000009}}}"
     headers:
       access-control-allow-origin:
       - '*'
       access-control-expose-headers:
-      - X-Generation-Id,x-openrouter-error-origin,x-openrouter-error-tool,X-Provider-Name,request-id,cf-ray
+      - WWW-Authenticate,PAYMENT-REQUIRED,Payment-Receipt,PAYMENT-RESPONSE,Location,X-Generation-Id,x-openrouter-error-origin,x-openrouter-error-tool,X-Provider-Name,request-id,cf-ray
       alt-svc:
       - h3=":443"; ma=86400
       cf-ray:
-      - a57e487dfd87ab3d-YYZ
+      - a5862f9a0acfa2d9-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1325'
+      - '1405'
       content-type:
       - application/json
       date:
-      - Mon, 09 Nov 2026 16:44:37 GMT
+      - Tue, 10 Nov 2026 15:45:44 GMT
       permissions-policy:
       - payment=(self "https://checkout.stripe.com" "https://connect-js.stripe.com"
         "https://js.stripe.com" "https://*.js.stripe.com" "https://hooks.stripe.com")
@@ -52,9 +51,9 @@ interactions:
       x-content-type-options:
       - nosniff
       x-generation-id:
-      - gen-1794242677-J5vUTfk4MRirPmMBwr4V
+      - gen-1794325544-Yz2ymBKQONlKlNsjYfRc
       x-openrouter-release:
-      - api;683aab1d-471b-452a-a1a0-6d3ef7affc7e
+      - api;42ddd65c-b5ba-49a4-b9a4-8405b32343e2
     status:
       code: 200
       message: OK

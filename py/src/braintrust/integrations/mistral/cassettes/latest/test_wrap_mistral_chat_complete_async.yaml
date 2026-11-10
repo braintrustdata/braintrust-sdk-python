@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"model":"mistral-small-latest","messages":[{"content":"What is 3+3? Reply
+    body: '{"model":"ministral-3b-2512","messages":[{"content":"What is 3+3? Reply
       with just the number.","role":"user"}],"max_tokens":10,"stream":false}'
     headers:
       accept:
@@ -10,7 +10,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '145'
+      - '142'
       content-type:
       - application/json
       host:
@@ -21,7 +21,7 @@ interactions:
     uri: https://api.mistral.ai/v1/chat/completions
   response:
     body:
-      string: '{"id":"e9d6ca545d014452b0f930a6b3008ad8","created":1793627388,"model":"mistral-small-latest","usage":{"prompt_tokens":28,"total_tokens":30,"completion_tokens":2,"prompt_tokens_details":{"cached_tokens":0},"completion_tokens_details":{"reasoning_tokens":0},"service_tier":"standard"},"object":"chat.completion","choices":[{"index":0,"finish_reason":"stop","message":{"role":"assistant","tool_calls":null,"content":"6"}}]}'
+      string: '{"id":"2ded047221a3463594c154a1a733d56c","created":1794326014,"model":"ministral-3b-2512","usage":{"prompt_tokens":16,"total_tokens":18,"completion_tokens":2,"prompt_tokens_details":{"cached_tokens":0},"completion_tokens_details":{"reasoning_tokens":0},"service_tier":"standard"},"object":"chat.completion","choices":[{"index":0,"finish_reason":"stop","message":{"role":"assistant","tool_calls":null,"content":"6"}}]}'
     headers:
       access-control-allow-origin:
       - '*'
@@ -30,17 +30,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5439acb39fdd5f4-YYZ
+      - a5863b17e9f87091-YYZ
       connection:
       - keep-alive
       content-length:
-      - '420'
+      - '417'
       content-type:
       - application/json
       date:
-      - Mon, 02 Nov 2026 13:49:49 GMT
+      - Tue, 10 Nov 2026 15:53:35 GMT
       mistral-correlation-id:
-      - 01a19c85-fb3b-7d41-a194-302929dff522
+      - 01a1c62a-2b46-71e9-9d54-048dbf95ed33
       server:
       - cloudflare
       strict-transport-security:
@@ -50,25 +50,25 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '634'
+      - '153'
       x-kong-proxy-latency:
-      - '41'
+      - '18'
       x-kong-request-id:
-      - 01a19c85-fb3b-7d41-a194-302929dff522
+      - 01a1c62a-2b46-71e9-9d54-048dbf95ed33
       x-kong-upstream-latency:
-      - '635'
+      - '155'
       x-max-retry-attempts-reached:
       - 'false'
       x-ratelimit-limit-req-minute:
-      - '100'
+      - '3000'
       x-ratelimit-limit-tokens-minute:
-      - '100000'
+      - '2000000'
       x-ratelimit-remaining-req-minute:
-      - '97'
+      - '2997'
       x-ratelimit-remaining-tokens-minute:
-      - '99834'
+      - '1999806'
       x-ratelimit-tokens-query-cost:
-      - '30'
+      - '18'
     status:
       code: 200
       message: OK

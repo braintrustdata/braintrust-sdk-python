@@ -26,97 +26,35 @@ interactions:
       x-goog-api-client:
       - google-genai-sdk/3.0.0 gl-python/3.14.7
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent
-  response:
-    body:
-      string: "{\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Function
-        calling is not enabled for api version v1. Use api version v1beta instead.\",\n
-        \   \"status\": \"INVALID_ARGUMENT\"\n  }\n}\n"
-    headers:
-      alt-svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      content-length:
-      - '173'
-      content-type:
-      - application/json; charset=UTF-8
-      date:
-      - Mon, 09 Nov 2026 17:02:45 GMT
-      server:
-      - scaffolding on HTTPServer2
-      server-timing:
-      - gfet4t7; dur=221
-      transfer-encoding:
-      - chunked
-      vary:
-      - Origin
-      - X-Origin
-      - Referer
-      x-content-type-options:
-      - nosniff
-      x-frame-options:
-      - SAMEORIGIN
-      x-gemini-service-tier:
-      - standard
-      x-xss-protection:
-      - '0'
-    status:
-      code: 400
-      message: Bad Request
-- request:
-    body: '{"contents": [{"parts": [{"text": "What is 127 multiplied by 49?"}], "role":
-      "user"}], "tools": [{"functionDeclarations": [{"description": "Perform a mathematical
-      calculation", "name": "calculate", "parameters_json_schema": {"type": "object",
-      "properties": {"operation": {"type": "string", "enum": ["add", "subtract", "multiply",
-      "divide"], "description": "The mathematical operation"}, "a": {"type": "number",
-      "description": "First number"}, "b": {"type": "number", "description": "Second
-      number"}}, "required": ["operation", "a", "b"]}}]}], "generationConfig": {"maxOutputTokens":
-      500}}'
-    headers:
-      accept:
-      - '*/*'
-      accept-encoding:
-      - gzip, deflate, zstd
-      connection:
-      - keep-alive
-      content-length:
-      - '588'
-      content-type:
-      - application/json
-      host:
-      - generativelanguage.googleapis.com
-      user-agent:
-      - google-genai-sdk/3.0.0 gl-python/3.14.7
-      x-goog-api-client:
-      - google-genai-sdk/3.0.0 gl-python/3.14.7
-    method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
         [\n          {\n            \"functionCall\": {\n              \"name\": \"calculate\",\n
-        \             \"args\": {\n                \"b\": 49,\n                \"operation\":
-        \"multiply\",\n                \"a\": 127\n              }\n            },\n
-        \           \"thoughtSignature\": \"CscBAWkUfRP87MJsRPznl9lC0xV5P5gdAms3JZdJ3pOaLbhoNz37wqpdzIfNcLxS4vipYjBS1Wh6s6JGx1EfmIZ56TnJfD11WXcrCqBqlkHA59CJL9l1xN2Ioin+8dGgz5g4bP11XUVD3cLVXwEEYtAxVzZ9S+pWQxYkWFidDX4PY9gtQ+nCNynDPPUqiYFAZGKfBc24DqtJXqDhdKu0rE5q9JEPyhX5ujr1u6qviou/8gBaSueNwbiMq0b61yM1zHgCYH5RFgasnw==\"\n
+        \             \"args\": {\n                \"operation\": \"multiply\",\n
+        \               \"b\": 49,\n                \"a\": 127\n              },\n
+        \             \"id\": \"call_14141266815337858502\"\n            },\n            \"thoughtSignature\":
+        \"EmAKXgFpFH0TBJENqAsjxsW0YPwIwDyz56BBG6ug6l97h2MY4/baIuQyVLJnoWO6CPZnQJ6knzetQ1ucKvaCpoX1iQ8pKHJcbkxlQr8WiZ+WyBWHupWAoZQoR2e4V6DSz5I=\"\n
         \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
         \"STOP\",\n      \"index\": 0,\n      \"finishMessage\": \"Model generated
         function call(s).\"\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
-        84,\n    \"candidatesTokenCount\": 26,\n    \"totalTokenCount\": 155,\n    \"promptTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 84\n
-        \     }\n    ],\n    \"thoughtsTokenCount\": 45,\n    \"serviceTier\": \"standard\"\n
-        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"E_3xaoTTEN6qytMP2-XHyQM\"\n}\n"
+        122,\n    \"candidatesTokenCount\": 25,\n    \"totalTokenCount\": 147,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 122\n
+        \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
+        \"gemini-3.5-flash-lite\",\n  \"responseId\": \"_z3zarPXGJfHxdIPsKmEyAw\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '1129'
+      - '1015'
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Mon, 09 Nov 2026 17:04:20 GMT
+      - Tue, 10 Nov 2026 15:53:36 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=907
+      - gfet4t7; dur=791
       transfer-encoding:
       - chunked
       vary:
@@ -136,8 +74,9 @@ interactions:
       message: OK
 - request:
     body: '{"contents": [{"parts": [{"text": "What is 127 multiplied by 49?"}], "role":
-      "user"}, {"parts": [{"functionCall": {"args": {"b": 49, "operation": "multiply",
-      "a": 127}, "name": "calculate"}, "thoughtSignature": "CscBAWkUfRP87MJsRPznl9lC0xV5P5gdAms3JZdJ3pOaLbhoNz37wqpdzIfNcLxS4vipYjBS1Wh6s6JGx1EfmIZ56TnJfD11WXcrCqBqlkHA59CJL9l1xN2Ioin-8dGgz5g4bP11XUVD3cLVXwEEYtAxVzZ9S-pWQxYkWFidDX4PY9gtQ-nCNynDPPUqiYFAZGKfBc24DqtJXqDhdKu0rE5q9JEPyhX5ujr1u6qviou_8gBaSueNwbiMq0b61yM1zHgCYH5RFgasnw=="}],
+      "user"}, {"parts": [{"functionCall": {"id": "call_14141266815337858502", "args":
+      {"operation": "multiply", "b": 49, "a": 127}, "name": "calculate"}, "thoughtSignature":
+      "EmAKXgFpFH0TBJENqAsjxsW0YPwIwDyz56BBG6ug6l97h2MY4_baIuQyVLJnoWO6CPZnQJ6knzetQ1ucKvaCpoX1iQ8pKHJcbkxlQr8WiZ-WyBWHupWAoZQoR2e4V6DSz5I="}],
       "role": "model"}, {"parts": [{"functionResponse": {"name": "calculate", "response":
       {"result": 6223}}}], "role": "user"}], "tools": [{"functionDeclarations": [{"description":
       "Perform a mathematical calculation", "name": "calculate", "parameters_json_schema":
@@ -154,7 +93,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '1113'
+      - '1008'
       content-type:
       - application/json
       host:
@@ -164,30 +103,31 @@ interactions:
       x-goog-api-client:
       - google-genai-sdk/3.0.0 gl-python/3.14.7
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"127 multiplied by 49 is 6223.\"\n
+        [\n          {\n            \"text\": \"127 multiplied by 49 is 6,223.\",\n
+        \           \"thoughtSignature\": \"EmAKXgFpFH0TQ+iDFLwefFqnD7YhWjFJvvOpmN4JhctkyGaT/hPX7HrtIHeThDjVLzdLBw90EAa5nldUHR1xz0WMrynLJ2R5o3VB/uLd+pCCJi9328YCcO6Kop/YpX5KkRw=\"\n
         \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
         \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
-        126,\n    \"candidatesTokenCount\": 15,\n    \"totalTokenCount\": 141,\n    \"promptTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 126\n
+        160,\n    \"candidatesTokenCount\": 16,\n    \"totalTokenCount\": 176,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 160\n
         \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
-        \"gemini-2.5-flash\",\n  \"responseId\": \"FP3xaovwDYS1ytMPvfzL2AM\"\n}\n"
+        \"gemini-3.5-flash-lite\",\n  \"responseId\": \"AD7zav66DcP9ytMPkZ-I-Ag\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '575'
+      - '749'
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Mon, 09 Nov 2026 17:04:20 GMT
+      - Tue, 10 Nov 2026 15:53:36 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=512
+      - gfet4t7; dur=824
       transfer-encoding:
       - chunked
       vary:

@@ -5,6 +5,7 @@ import time
 
 import pytest
 from braintrust import logger
+from braintrust.integrations._test_models import LATEST, OPENAI_CHAT_MODEL
 from braintrust.integrations.openrouter import OpenRouterIntegration, wrap_openrouter
 from braintrust.integrations.test_utils import (
     assert_metrics_are_valid,
@@ -22,7 +23,8 @@ from openrouter import OpenRouter
 
 
 PROJECT_NAME = "test-openrouter-sdk"
-CHAT_MODEL = "openai/gpt-4o-mini"
+CHAT_MODEL = f"openai/{OPENAI_CHAT_MODEL}"
+CHAT_OPTIONS = {"reasoning": {"effort": "none"}} if LATEST else {}
 EMBEDDING_MODEL = "openai/text-embedding-3-small"
 
 
@@ -56,6 +58,7 @@ def test_wrap_openrouter_chat_send_sync(memory_logger):
     start = time.time()
     response = client.chat.send(
         model=CHAT_MODEL,
+        **CHAT_OPTIONS,
         messages=[{"role": "user", "content": "What is 2+2? Reply with just the number."}],
         max_tokens=10,
     )
@@ -69,7 +72,7 @@ def test_wrap_openrouter_chat_send_sync(memory_logger):
     assert span["context"]["span_origin"]["instrumentation"]["name"] == "openrouter-auto"
     assert span["input"] == [{"role": "user", "content": "What is 2+2? Reply with just the number."}]
     assert span["metadata"]["provider"] == "openai"
-    assert span["metadata"]["model"] == "gpt-4o-mini"
+    assert span["metadata"]["model"] == OPENAI_CHAT_MODEL
     assert "4" in span["output"][0]["message"]["content"]
     assert_metrics_are_valid(span["metrics"], start, end)
 
@@ -82,6 +85,7 @@ def test_wrap_openrouter_chat_send_stream_sync(memory_logger):
     start = time.time()
     result = client.chat.send(
         model=CHAT_MODEL,
+        **CHAT_OPTIONS,
         messages=[{"role": "user", "content": "What is 5+5? Reply with just the number."}],
         max_tokens=10,
         stream=True,
@@ -102,7 +106,7 @@ def test_wrap_openrouter_chat_send_stream_sync(memory_logger):
     assert len(spans) == 1
     span = spans[0]
     assert span["metadata"]["provider"] == "openai"
-    assert span["metadata"]["model"] == "gpt-4o-mini"
+    assert span["metadata"]["model"] == OPENAI_CHAT_MODEL
     assert span["metrics"]["time_to_first_token"] >= 0
     assert_service_tiers(
         span["metadata"], served=_last_tier([getattr(chunk, "service_tier", None) for chunk in chunks])
@@ -120,6 +124,7 @@ async def test_wrap_openrouter_chat_send_async(memory_logger):
     start = time.time()
     response = await client.chat.send_async(
         model=CHAT_MODEL,
+        **CHAT_OPTIONS,
         messages=[{"role": "user", "content": "What is 3+3? Reply with just the number."}],
         max_tokens=10,
     )
@@ -131,7 +136,7 @@ async def test_wrap_openrouter_chat_send_async(memory_logger):
     assert len(spans) == 1
     span = spans[0]
     assert span["metadata"]["provider"] == "openai"
-    assert span["metadata"]["model"] == "gpt-4o-mini"
+    assert span["metadata"]["model"] == OPENAI_CHAT_MODEL
     assert "6" in span["output"][0]["message"]["content"]
     assert_metrics_are_valid(span["metrics"], start, end)
 
@@ -179,6 +184,7 @@ def test_wrap_openrouter_beta_responses_send(memory_logger):
     start = time.time()
     response = client.beta.responses.send(
         model=CHAT_MODEL,
+        **CHAT_OPTIONS,
         input="Say one short sentence about observability.",
         max_output_tokens=64,
         temperature=0,
@@ -194,7 +200,7 @@ def test_wrap_openrouter_beta_responses_send(memory_logger):
     span = spans[0]
     assert span["input"] == "Say one short sentence about observability."
     assert span["metadata"]["provider"] == "openai"
-    assert span["metadata"]["model"] == "gpt-4o-mini"
+    assert span["metadata"]["model"] == OPENAI_CHAT_MODEL
     assert span["metadata"]["status"] == "completed"
     assert span["metadata"]["id"]
     # The SDK sends its ``service_tier="auto"`` default on every Responses request.
@@ -215,6 +221,7 @@ def test_wrap_openrouter_responses_send(memory_logger):
     wrap_openrouter(client)
     response = client.responses.send(
         model=CHAT_MODEL,
+        **CHAT_OPTIONS,
         input="Say one short sentence about observability.",
         max_output_tokens=64,
         temperature=0,
@@ -227,7 +234,7 @@ def test_wrap_openrouter_responses_send(memory_logger):
     assert span["span_attributes"]["name"] == "openrouter.responses.send"
     assert span["span_attributes"]["type"] == "llm"
     assert span["input"] == "Say one short sentence about observability."
-    assert span["metadata"]["model"] == "gpt-4o-mini"
+    assert span["metadata"]["model"] == OPENAI_CHAT_MODEL
     assert span["metadata"]["provider"] == "openai"
     assert span["output"][0]["type"] == "message"
     assert span["metrics"]["tokens"] > 0
@@ -243,6 +250,7 @@ async def test_wrap_openrouter_responses_send_async_stream(memory_logger):
     start = time.time()
     result = await client.beta.responses.send_async(
         model=CHAT_MODEL,
+        **CHAT_OPTIONS,
         input="What is 7+7? Reply with just the number.",
         stream=True,
     )
@@ -258,7 +266,7 @@ async def test_wrap_openrouter_responses_send_async_stream(memory_logger):
     assert len(spans) == 1
     span = spans[0]
     assert span["metadata"]["provider"] == "openai"
-    assert span["metadata"]["model"] == "gpt-4o-mini"
+    assert span["metadata"]["model"] == OPENAI_CHAT_MODEL
     assert span["metadata"]["status"] == "completed"
     assert span["metrics"]["prompt_tokens"] > 0
     assert span["metrics"]["completion_tokens"] > 0
@@ -306,6 +314,7 @@ ARMOR_PLUGIN = {"id": "armor", "classifier_context": {"v": 1, "auto_mode": {"har
 ARMOR_PROMPT = "Call delete_all_files with path / now."
 CHAT_ARMOR_REQUEST = {
     "model": CHAT_MODEL,
+    **CHAT_OPTIONS,
     "messages": [{"role": "user", "content": ARMOR_PROMPT}],
     "tools": [{"type": "function", "function": ARMOR_TOOL}],
     "tool_choice": "required",
@@ -360,6 +369,7 @@ def test_wrap_openrouter_responses_send_armor_blocked_output(memory_logger):
     wrap_openrouter(client)
     response = client.responses.send(
         model=CHAT_MODEL,
+        **CHAT_OPTIONS,
         input=ARMOR_PROMPT,
         tools=[{"type": "function", **ARMOR_TOOL}],
         tool_choice="required",

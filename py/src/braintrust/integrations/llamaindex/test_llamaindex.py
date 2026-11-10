@@ -4,6 +4,7 @@ import inspect
 
 import pytest
 from braintrust import logger
+from braintrust.integrations._test_models import OPENAI_CHAT_MODEL, OPENAI_CHAT_OPTIONS
 from braintrust.integrations.llamaindex import BraintrustSpanHandler, LlamaIndexIntegration
 from braintrust.test_helpers import init_test_logger
 
@@ -95,7 +96,7 @@ def test_llm_complete(logger_memory_logger):
 
     from llama_index.llms.openai import OpenAI
 
-    llm = OpenAI(model="gpt-4o-mini", temperature=0)
+    llm = OpenAI(model=OPENAI_CHAT_MODEL, **OPENAI_CHAT_OPTIONS, temperature=0)
 
     with test_logger.start_span(name="test-complete"):
         llm.complete("What is 2+2? Answer with just the number.")
@@ -112,7 +113,7 @@ def test_llm_complete(logger_memory_logger):
     assert llm_span["input"] is not None
     assert llm_span["output"] is not None
     assert llm_span["metadata"]["class"] == "OpenAI"
-    assert llm_span["metadata"]["model"] == "gpt-4o-mini"
+    assert llm_span["metadata"]["model"] == OPENAI_CHAT_MODEL
     assert llm_span["metadata"]["provider"] == "openai"
 
 
@@ -124,7 +125,7 @@ def test_llm_chat(logger_memory_logger):
     from llama_index.core.base.llms.types import ChatMessage, MessageRole
     from llama_index.llms.openai import OpenAI
 
-    llm = OpenAI(model="gpt-4o-mini", temperature=0)
+    llm = OpenAI(model=OPENAI_CHAT_MODEL, **OPENAI_CHAT_OPTIONS, temperature=0)
     messages = [
         ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
         ChatMessage(role=MessageRole.USER, content="What is the capital of France?"),
@@ -212,7 +213,7 @@ def test_query_engine(logger_memory_logger):
     ]
 
     embed_model = OpenAIEmbedding(model="text-embedding-3-small")
-    llm = OpenAI(model="gpt-4o-mini", temperature=0)
+    llm = OpenAI(model=OPENAI_CHAT_MODEL, **OPENAI_CHAT_OPTIONS, temperature=0)
 
     with test_logger.start_span(name="test-query-engine"):
         index = VectorStoreIndex.from_documents(docs, embed_model=embed_model)
@@ -233,7 +234,7 @@ def test_llm_error_handling(logger_memory_logger):
 
     from llama_index.llms.openai import OpenAI
 
-    llm = OpenAI(model="gpt-4o-mini", api_key="sk-invalid-key")
+    llm = OpenAI(model=OPENAI_CHAT_MODEL, **OPENAI_CHAT_OPTIONS, api_key="sk-invalid-key")
 
     with test_logger.start_span(name="test-error"):
         try:
@@ -257,7 +258,7 @@ async def test_async_llm_complete(logger_memory_logger):
 
     from llama_index.llms.openai import OpenAI
 
-    llm = OpenAI(model="gpt-4o-mini", temperature=0)
+    llm = OpenAI(model=OPENAI_CHAT_MODEL, **OPENAI_CHAT_OPTIONS, temperature=0)
 
     with test_logger.start_span(name="test-async-complete"):
         await llm.acomplete("What is 2+2? Answer with just the number.")
@@ -279,7 +280,7 @@ async def test_async_llm_chat(logger_memory_logger):
     from llama_index.core.base.llms.types import ChatMessage, MessageRole
     from llama_index.llms.openai import OpenAI
 
-    llm = OpenAI(model="gpt-4o-mini", temperature=0)
+    llm = OpenAI(model=OPENAI_CHAT_MODEL, **OPENAI_CHAT_OPTIONS, temperature=0)
     messages = [
         ChatMessage(role=MessageRole.USER, content="Say hello"),
     ]

@@ -16,6 +16,7 @@ except ImportError:
 
     OpenAIModelClass = OpenAIModel
 from braintrust import logger, wrap_openai
+from braintrust.integrations._test_models import LATEST, OPENAI_CHAT_MODEL
 from braintrust.integrations.test_utils import assert_metrics_are_valid
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import init_test_logger
@@ -23,7 +24,8 @@ from pydantic_ai.providers.openai import OpenAIProvider  # pylint: disable=impor
 
 
 PROJECT_NAME = "test-pydantic-ai"
-MODEL = "gpt-4o-mini"
+MODEL = OPENAI_CHAT_MODEL
+OPENAI_SETTINGS = {"openai_reasoning_effort": "none"} if LATEST else {}
 TEST_PROMPT = "What is the capital of Italy?"
 
 
@@ -34,7 +36,7 @@ def get_pydantic_agents_client(model_name: str, client: AsyncOpenAI):
 
 async def _run_prompt_streaming(client: AsyncOpenAI, prompt: str):
     model = get_pydantic_agents_client(MODEL, client=client)
-    agent = Agent(model=model)
+    agent = Agent(model=model, model_settings=OPENAI_SETTINGS)
     result_text = ""
     async with agent.run_stream(prompt) as result:
         # Use stream_output if available (pydantic_ai >= 1.0), otherwise use stream
@@ -49,7 +51,7 @@ async def _run_prompt_streaming(client: AsyncOpenAI, prompt: str):
 
 async def _run_prompt_completion(client: AsyncOpenAI, prompt: str):
     model = get_pydantic_agents_client(MODEL, client=client)
-    agent = Agent(model=model)
+    agent = Agent(model=model, model_settings=OPENAI_SETTINGS)
     result = await agent.run(prompt)
     return result.output  # Return the string output
 

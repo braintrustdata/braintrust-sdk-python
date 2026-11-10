@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"model":"command-a-03-2025","messages":[{"role":"user","content":"Use
+    body: '{"model":"command-r7b-12-2024","messages":[{"role":"user","content":"Use
       the get_weather tool for Paris."}],"tools":[{"type":"function","function":{"name":"get_weather","description":"Get
       the weather for a city.","parameters":{"type":"object","properties":{"city":{"type":"string"}},"required":["city"]}}}],"max_tokens":64,"tool_choice":"REQUIRED","stream":false}'
     headers:
@@ -11,7 +11,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '361'
+      - '363'
       content-type:
       - application/json
       host:
@@ -32,21 +32,21 @@ interactions:
     uri: https://api.cohere.com/v2/chat
   response:
     body:
-      string: '{"id":"ab35d730-624b-43e6-91af-d23245f5288b","message":{"role":"assistant","tool_plan":"I
-        will use one or more of the available tools to find the answer","tool_calls":[{"id":"get_weather_sv186mhqyc42","type":"function","function":{"name":"get_weather","arguments":"{\"city\":\"Paris\"}"}}]},"finish_reason":"TOOL_CALL","usage":{"billed_units":{"input_tokens":37,"output_tokens":22},"tokens":{"input_tokens":1455,"output_tokens":34},"cached_tokens":128}}'
+      string: '{"id":"00d54cd7-1d6b-431e-9c9b-fba5b0e28fb1","message":{"role":"assistant","tool_plan":"I
+        will use one or more of the available tools to find the answer","tool_calls":[{"id":"get_weather_35awv6jk7kn9","type":"function","function":{"name":"get_weather","arguments":"{\"city\":\"Paris\"}"}}]},"finish_reason":"TOOL_CALL","usage":{"billed_units":{"input_tokens":37,"output_tokens":22},"tokens":{"input_tokens":1455,"output_tokens":34},"cached_tokens":1440}}'
     headers:
       access-control-expose-headers:
       - X-Debug-Trace-ID
       alt-svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      - h3=":443"; ma=2592000
       cache-control:
       - no-cache, no-store, no-transform, must-revalidate, private, max-age=0
       content-length:
-      - '453'
+      - '454'
       content-type:
       - application/json
       date:
-      - Mon, 09 Nov 2026 16:43:15 GMT
+      - Tue, 10 Nov 2026 15:53:28 GMT
       expires:
       - Thu, 01 Jan 1970 00:00:00 GMT
       num_chars:
@@ -66,11 +66,11 @@ interactions:
       x-accel-expires:
       - '0'
       x-debug-trace-id:
-      - 026430507c3825b70c71910654bab9d7
+      - e7454e87b00a75763c353155d4cea48c
       x-endpoint-monthly-call-limit:
       - '1000'
       x-envoy-upstream-service-time:
-      - '544'
+      - '511'
       x-trial-endpoint-call-limit:
       - '20'
       x-trial-endpoint-call-remaining:

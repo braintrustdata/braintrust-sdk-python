@@ -2,8 +2,8 @@ interactions:
 - request:
     body: '{"contents": [{"parts": [{"text": "Look at this sequence: 2, 6, 12, 20,
       30. What is the pattern and what would be the formula for the nth term?"}],
-      "role": "user"}], "generationConfig": {"maxOutputTokens": 512, "thinkingConfig":
-      {"include_thoughts": true, "thinking_budget": 128}}}'
+      "role": "user"}], "generationConfig": {"maxOutputTokens": 2048, "thinkingConfig":
+      {"include_thoughts": true, "thinking_level": "HIGH"}}}'
     headers:
       accept:
       - '*/*'
@@ -12,7 +12,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '281'
+      - '284'
       content-type:
       - application/json
       host:
@@ -22,112 +22,69 @@ interactions:
       x-goog-api-client:
       - google-genai-sdk/3.0.0 gl-python/3.14.7
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent
-  response:
-    body:
-      string: "{\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Thinking
-        is not enabled for api version v1. Use api version v1beta instead.\",\n    \"status\":
-        \"INVALID_ARGUMENT\"\n  }\n}\n"
-    headers:
-      alt-svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      content-length:
-      - '165'
-      content-type:
-      - application/json; charset=UTF-8
-      date:
-      - Mon, 09 Nov 2026 17:02:46 GMT
-      server:
-      - scaffolding on HTTPServer2
-      server-timing:
-      - gfet4t7; dur=214
-      transfer-encoding:
-      - chunked
-      vary:
-      - Origin
-      - X-Origin
-      - Referer
-      x-content-type-options:
-      - nosniff
-      x-frame-options:
-      - SAMEORIGIN
-      x-gemini-service-tier:
-      - standard
-      x-xss-protection:
-      - '0'
-    status:
-      code: 400
-      message: Bad Request
-- request:
-    body: '{"contents": [{"parts": [{"text": "Look at this sequence: 2, 6, 12, 20,
-      30. What is the pattern and what would be the formula for the nth term?"}],
-      "role": "user"}], "generationConfig": {"maxOutputTokens": 512, "thinkingConfig":
-      {"include_thoughts": true, "thinking_budget": 128}}}'
-    headers:
-      accept:
-      - '*/*'
-      accept-encoding:
-      - gzip, deflate, zstd
-      connection:
-      - keep-alive
-      content-length:
-      - '281'
-      content-type:
-      - application/json
-      host:
-      - generativelanguage.googleapis.com
-      user-agent:
-      - google-genai-sdk/3.0.0 gl-python/3.14.7
-      x-goog-api-client:
-      - google-genai-sdk/3.0.0 gl-python/3.14.7
-    method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"Okay, here's my breakdown of this
-        sequence problem, walking through my thought process:\\n\\n**Deconstructing
-        the Sequence**\\n\\nAlright, I'm presented with the sequence 2, 6, 12, 20,
-        30. My first instinct, as always, is to *really* look at it. The request is
-        straightforward: understand the pattern and derive a formula for the *n*th
-        term, $a_n$. I know it, that's what I am all about, and that is what I will
-        deliver.\\n\",\n            \"thought\": true\n          },\n          {\n
-        \           \"text\": \"Let's break down the sequence: 2, 6, 12, 20, 30.\\n\\n**1.
-        Finding the Pattern:**\\n\\n*   **Step 1: Look at the differences between
-        consecutive terms.**\\n    *   6 - 2 = 4\\n    *   12 - 6 = 6\\n    *   20
-        - 12 = 8\\n    *   30 - 20 = 10\\n    The first differences are: 4, 6, 8,
-        10.\\n\\n*   **Step 2: Look at the differences between these differences (second
-        differences).**\\n    *   6 - 4 = 2\\n    *   8 - 6 = 2\\n    *   10 - 8 =
-        2\\n    The second differences are constant: 2.\\n\\n**This indicates that
-        the formula for the nth term will be a quadratic expression (of the form $an^2
-        + bn + c$).**\\n\\n**2. Describing the Pattern:**\\n\\nThe pattern is that
-        the difference between consecutive terms increases by 2 each time.\\n*   The
-        first term is 2.\\n*   To get the second term, add 4 (2 + 4 = 6).\\n*   To
-        get the third term, add 6 (6 + 6 = 12).\\n*   To get the fourth term, add
-        8 (12 + 8 = 20).\\n*   To get the fifth term, add 10 (20 + 10 = 30).\\n*   The
-        next term would be found by adding 12 (30 + 12 = 42).\\n\\nAlternatively,
-        you might notice that each term is the product of two consecutive integers:\\n*
-        \  $1 \\\\times 2 = 2$\\n*   $2 \\\\times 3 = 6$\\n*   $3 \\\\times 4 = 12$\\n*\"\n
+        [\n          {\n            \"text\": \"**Analyzing the Sequence and Deriving
+        the Formula**\\n\\nOkay, let's break this down. First, I need to look at the
+        given sequence: 2, 6, 12, 20, 30. My task is to figure out the underlying
+        pattern and formulate the general expression for the *n*th term.\\n\\nMy immediate
+        instinct is to look for differences. Let's see... the differences between
+        consecutive terms are 4, 6, 8, and 10. These differences aren't constant,
+        so it's not a simple arithmetic progression. However, the *differences between
+        the differences* are constant at 2. That hints at a quadratic relationship.\\n\\nAlternatively,
+        I could try to express each term as a product. Let's see... 2 is 1*2, 6 is
+        2*3, 12 is 3*4, 20 is 4*5, and 30 is 5*6. Bingo! Each term is the product
+        of *n* and *n* + 1. The product method is more elegant and intuitive in this
+        case.\\n\\nNow, let's derive the formula. If the *n*th term is the product
+        of *n* and (*n* + 1), the formula is straightforward: *n*(*n* + 1). We can
+        expand this, resulting in *n*\\u003csup\\u003e2\\u003c/sup\\u003e + *n*. Checking
+        this with the earlier method, this could be represented as *an*\\u003csup\\u003e2\\u003c/sup\\u003e
+        + *bn* + *c*. The \\\"second difference\\\" equals 2 *a*, so *a* equals 1.
+        In this case, 3*a* + *b* equals 4, so *b* equals 1. Also, *a* + *b* + *c*
+        equals 2, meaning *c* equals 0. Thus, the formula is the same, in either form.\\n\\nTherefore,
+        the pattern is clear: each term is the product of the term number *n* and
+        the next consecutive integer (*n* + 1). The formula representing the *n*th
+        term is *n*(*n* + 1), which can also be written as *n*\\u003csup\\u003e2\\u003c/sup\\u003e
+        + *n*. Let's verify that this formula holds for the sequence.\\n\\n\\n\",\n
+        \           \"thought\": true\n          },\n          {\n            \"text\":
+        \"### The Pattern\\n\\nThere are two easy ways to look at the pattern for
+        this sequence (2, 6, 12, 20, 30):\\n\\n1. **Adding increasing even numbers:**
+        \\n   * Start with 2.\\n   * Add 4 to get **6**.\\n   * Add 6 to get **12**.\\n
+        \  * Add 8 to get **20**.\\n   * Add 10 to get **30**. \\n   *(The amount
+        you add increases by 2 each time).*\\n\\n2. **Multiplying consecutive integers
+        (The most intuitive way):**\\n   If you look closely at the numbers, they
+        are the product of two consecutive numbers where the first number is the position
+        in the sequence ($n$):\\n   * 1st term ($n=1$): $1 \\\\times 2 = 2$\\n   *
+        2nd term ($n=2$): $2 \\\\times 3 = 6$\\n   * 3rd term ($n=3$): $3 \\\\times
+        4 = 12$\\n   * 4th term ($n=4$): $4 \\\\times 5 = 20$\\n   * 5th term ($n=5$):
+        $5 \\\\times 6 = 30$\\n\\n---\\n\\n### Formula for the $n$-th Term\\n\\nBased
+        on the second pattern, the formula for the $n$-th term is:\\n\\n**$n(n + 1)$**
+        \\n\\n*(This can also be expanded as **$n^2 + n$**)*\\n\\n**Let's test it:**\\n*
+        For the 3rd term ($n = 3$): $3(3 + 1) = 3 \\\\times 4 = 12$ (Matches!)\\n*
+        For the 5th term ($n = 5$): $5(5 + 1) = 5 \\\\times 6 = 30$ (Matches!)\",\n
+        \           \"thoughtSignature\": \"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\"\n
         \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
-        \"MAX_TOKENS\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n
-        \   \"promptTokenCount\": 39,\n    \"candidatesTokenCount\": 427,\n    \"totalTokenCount\":
-        547,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
-        \       \"tokenCount\": 39\n      }\n    ],\n    \"thoughtsTokenCount\": 81,\n
-        \   \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash\",\n
-        \ \"responseId\": \"FP3xaumsM5GyytMP7MKtoA4\"\n}\n"
+        \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        39,\n    \"candidatesTokenCount\": 425,\n    \"totalTokenCount\": 1573,\n
+        \   \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
+        \       \"tokenCount\": 39\n      }\n    ],\n    \"thoughtsTokenCount\": 1109,\n
+        \   \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-3.5-flash-lite\",\n
+        \ \"responseId\": \"AT7zarPQCMyE1sgPqOf26Ag\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '2241'
+      - '7719'
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Mon, 09 Nov 2026 17:04:24 GMT
+      - Tue, 10 Nov 2026 15:53:43 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=3535
+      - gfet4t7; dur=6292
       transfer-encoding:
       - chunked
       vary:
@@ -148,31 +105,46 @@ interactions:
 - request:
     body: '{"contents": [{"parts": [{"text": "Look at this sequence: 2, 6, 12, 20,
       30. What is the pattern and what would be the formula for the nth term?"}],
-      "role": "user"}, {"parts": [{"text": "Okay, here''s my breakdown of this sequence
-      problem, walking through my thought process:\n\n**Deconstructing the Sequence**\n\nAlright,
-      I''m presented with the sequence 2, 6, 12, 20, 30. My first instinct, as always,
-      is to *really* look at it. The request is straightforward: understand the pattern
-      and derive a formula for the *n*th term, $a_n$. I know it, that''s what I am
-      all about, and that is what I will deliver.\n", "thought": true}, {"text": "Let''s
-      break down the sequence: 2, 6, 12, 20, 30.\n\n**1. Finding the Pattern:**\n\n*   **Step
-      1: Look at the differences between consecutive terms.**\n    *   6 - 2 = 4\n    *   12
-      - 6 = 6\n    *   20 - 12 = 8\n    *   30 - 20 = 10\n    The first differences
-      are: 4, 6, 8, 10.\n\n*   **Step 2: Look at the differences between these differences
-      (second differences).**\n    *   6 - 4 = 2\n    *   8 - 6 = 2\n    *   10 -
-      8 = 2\n    The second differences are constant: 2.\n\n**This indicates that
-      the formula for the nth term will be a quadratic expression (of the form $an^2
-      + bn + c$).**\n\n**2. Describing the Pattern:**\n\nThe pattern is that the difference
-      between consecutive terms increases by 2 each time.\n*   The first term is 2.\n*   To
-      get the second term, add 4 (2 + 4 = 6).\n*   To get the third term, add 6 (6
-      + 6 = 12).\n*   To get the fourth term, add 8 (12 + 8 = 20).\n*   To get the
-      fifth term, add 10 (20 + 10 = 30).\n*   The next term would be found by adding
-      12 (30 + 12 = 42).\n\nAlternatively, you might notice that each term is the
-      product of two consecutive integers:\n*   $1 \\times 2 = 2$\n*   $2 \\times
-      3 = 6$\n*   $3 \\times 4 = 12$\n*"}], "role": "model"}, {"parts": [{"text":
-      "Using the pattern you discovered, what would be the 10th term? And can you
-      find the sum of the first 10 terms?"}], "role": "user"}], "generationConfig":
-      {"maxOutputTokens": 512, "thinkingConfig": {"include_thoughts": true, "thinking_budget":
-      128}}}'
+      "role": "user"}, {"parts": [{"text": "**Analyzing the Sequence and Deriving
+      the Formula**\n\nOkay, let''s break this down. First, I need to look at the
+      given sequence: 2, 6, 12, 20, 30. My task is to figure out the underlying pattern
+      and formulate the general expression for the *n*th term.\n\nMy immediate instinct
+      is to look for differences. Let''s see... the differences between consecutive
+      terms are 4, 6, 8, and 10. These differences aren''t constant, so it''s not
+      a simple arithmetic progression. However, the *differences between the differences*
+      are constant at 2. That hints at a quadratic relationship.\n\nAlternatively,
+      I could try to express each term as a product. Let''s see... 2 is 1*2, 6 is
+      2*3, 12 is 3*4, 20 is 4*5, and 30 is 5*6. Bingo! Each term is the product of
+      *n* and *n* + 1. The product method is more elegant and intuitive in this case.\n\nNow,
+      let''s derive the formula. If the *n*th term is the product of *n* and (*n*
+      + 1), the formula is straightforward: *n*(*n* + 1). We can expand this, resulting
+      in *n*<sup>2</sup> + *n*. Checking this with the earlier method, this could
+      be represented as *an*<sup>2</sup> + *bn* + *c*. The \"second difference\" equals
+      2 *a*, so *a* equals 1. In this case, 3*a* + *b* equals 4, so *b* equals 1.
+      Also, *a* + *b* + *c* equals 2, meaning *c* equals 0. Thus, the formula is the
+      same, in either form.\n\nTherefore, the pattern is clear: each term is the product
+      of the term number *n* and the next consecutive integer (*n* + 1). The formula
+      representing the *n*th term is *n*(*n* + 1), which can also be written as *n*<sup>2</sup>
+      + *n*. Let''s verify that this formula holds for the sequence.\n\n\n", "thought":
+      true}, {"text": "### The Pattern\n\nThere are two easy ways to look at the pattern
+      for this sequence (2, 6, 12, 20, 30):\n\n1. **Adding increasing even numbers:**
+      \n   * Start with 2.\n   * Add 4 to get **6**.\n   * Add 6 to get **12**.\n   *
+      Add 8 to get **20**.\n   * Add 10 to get **30**. \n   *(The amount you add increases
+      by 2 each time).*\n\n2. **Multiplying consecutive integers (The most intuitive
+      way):**\n   If you look closely at the numbers, they are the product of two
+      consecutive numbers where the first number is the position in the sequence ($n$):\n   *
+      1st term ($n=1$): $1 \\times 2 = 2$\n   * 2nd term ($n=2$): $2 \\times 3 = 6$\n   *
+      3rd term ($n=3$): $3 \\times 4 = 12$\n   * 4th term ($n=4$): $4 \\times 5 =
+      20$\n   * 5th term ($n=5$): $5 \\times 6 = 30$\n\n---\n\n### Formula for the
+      $n$-th Term\n\nBased on the second pattern, the formula for the $n$-th term
+      is:\n\n**$n(n + 1)$** \n\n*(This can also be expanded as **$n^2 + n$**)*\n\n**Let''s
+      test it:**\n* For the 3rd term ($n = 3$): $3(3 + 1) = 3 \\times 4 = 12$ (Matches!)\n*
+      For the 5th term ($n = 5$): $5(5 + 1) = 5 \\times 6 = 30$ (Matches!)", "thoughtSignature":
+      "EugYCuUYAWkUfROGeDcos7GCshgD9j7DO0tBWFpXok2kmG4p2DLwiLpoduufJLR5ACIHHnz2Hn7X27ArZFyUYmgGH3bR_g44XVpbO4xqBHaHH1S8YLt1sPCjcLPzkhW82DgCScsUNrGY6xANUfaFl9Oleszs0MnSiDUaA-faMWgopeOpIRkhHFJWZavkThC5C_g2vVwMZIKVkHKLqLK7TdACBr9Q-PNI1q3MftlOC_KNmpqWFTuPgY7Rlz6UB9lapGO3-EhgboJ35MwEjKNJqhQus7ScgXHwFaSl5b_1mhwmWOBj2D0MGcID6ny0ngCKn3pbKXATbBxmJHcNSggXY495HH3UxeXWQ5yeFiEpYK_reDQSqTgxW5adVyrWSxdyO2zbssk450LC6GDZLD_yCB7DqhtiYF3N1tujngyAqxajHWAhINDyL2Esp6u_V5BeGhq6wuu4-KsHsaT6KYJl03a7jbja5ji8X8K3U-U0Ne26bEqoWsZN0AVPxf9UAiUDrMG63gQvNpCU1oA3NTT6ffYWAvhIUxsQOKkfEZxhjDvL8mxV395kcc9e-PhvBEqGUWdU7_XkjflR7gFmqA9QGjTFlafkra6ScnoYmTcf1cTXMj3B983l8-ruVhp0qaMonxpKkFJPHoHyyBE4tQCn0I9we7MQ3snrsY0hpSVF5SzFeOWL5pR7fudAFH8bvw8NmyzYnxAlZ0qQwm-jl_AmMqGf5SZ96B9TcGPbTf4VrsPDQrlwBVNr03Jmu2zfb4poN_2M47LDbifUzXSLzgtiyDnpP6u9lTuLS4Zn15xc4nYc_UC9mA2P3UttAvi1tzQm-PWEJgUFz4snGozmsFoOzSPXP1fuQPt85bdeJacWo7_JHrkMtKbbEAG2QcNxnSVMK90ePAJgexDZH9pC66D2smGRIqlbTLsyBeZzJlofj5NSSP6CEwJfi-XWLy0PzC6vb04RXjBVUpKGrUcvMch76nVh-poE3TeAo1mLVosE65LmaTEvnqfqt79UWA_sOiWgD4YehgeLy5ONT7m8r9C7S6VC1dxNcGW7_zDb5rxBo9b19amlSrB4XzcZplZ-Sm4bJ5ni85GoQac4q6UQZh8xwXgN-cxBPCq8TGsDTBYfDldlr7VHM8ywOeCvdSMNiZ7rvF9GAfVr_5JQh3_g4F5j-8L9Zo4d9mW9OjwOmgtmS5wOtW3rhRXRzB06gqyH_vb5XJXM9vH78XoW4l-rZS3WLx3OrQsSuPjYzr-J1S7a02zC45KIU04AHY9RufnKTIR93h_p9g6QRNfEDcXQeWkIDs1Qvx1O7Rt8qHGZXAPl4WkrWpMIIFs_ezdVzVx5JTg4iXKUw0bzOr7l3diPxSd_rNb9rArknccoQHgw9FkSF02T6NYA4MTjqGSnaaaz-L4FCGXj1T1rp3O4dvxTMYy-UKO2cW5NXgsSjs4kP4JFs5vsEtGP-2qqrCkX5G6Ri7lvjuIq_S9NrxrEBEGp7hPlFTQg9WJecUOUU0OSxw8PZIutnG23BdyBIkyujH23AmHMgC60jm3ncXJW_6rBL8AxlKQojHKdzWKNqn60BjA0pUiENl78QaGIMG_zCBi99IXqqE1BVKxS_4bstnV6UTdPhP6hetqB78qSM8ooKqPNJWbqRe8rfu1LNqWN0VgKLs00ljO0BKPDHwzUMzqGz3eoudsWny6grWnUvYleAjjhoKe9va1E5bksqa02GkBbLCJAYUDyFc6odc6jgtk5qHraQsENLxT8wKqYYn-JyNH5yQ6cvrkOToXXmm9GVLjr5_jDnt9yDkfxrhepgX7oYSZ-9T0xo-U5TxsJPLr3N_V0AIiSclB_acaSd5NQ_p-fqXusGP_h7l6QkB2Q9VvUelcPZchbv7cX12gpD8A9VoGperNE6WOx4rJY3B0Q6_21sTOlIYf978aOLazdxiBAh2J740IulWb5kgSQZBp-BRJuMdaXzkf6aC8NSjivsFLQfRHvEtbesTRVg_wCsLqWqaJtBCu7j6pGfltHzCVpMgQm8e_QBc9FUpe9P2epTkGgZHdpdusPxFycyE2poYLjlHg8lgN2KJTkXkpNjIngGjBuTo3taCvWP3_ztDfc6vviPctQyK9tnJj6Law5sSUxo9Mv2IJTTIDUa1fGia4AxKBEzdj2cYl-sgiKWWgZ3gy2Gs_gddLDrweGHy1FPxhdm8GITR11i04S2-_9MsDtWLOnDjuKhii709Q0cFokh78S8urCo4sS2egKNC9fRmS_AioQaYrWRZ_4fgG-C5HTcrVwAkWX9kL-MEy8xEi9hvA_zJ6-BntidRAZPMj1TfgFx1ZtgcxhpmKba3gE6k9zZftwFlisTPd1RWpZD6oYc8bYvMLEHDKtjxSR7oZpbqscawZdaCwhpzRa1Gr80aFuL9Mwou22uHPJUq8hqFzJxkrhhRvHIbcjbcTHNX0C3Xr9JOxxbgAoyc26Z5N36901Zh3UoT4WOtZ0va0Q_RmxlsTaN_vMKqBjOXJjVQTNvoJPOhhwHj2s-JHY9JP_njCS9HluX-toPK5zWlx0yCBufkFmNDcIFgnYHFkK9NWUZ2qsroJTxSRLKvREKFs3Vbt8KsrtUnV0rX7-1ZZx2ZOGNb8ymkrjsgP_S_IvEcQCTqc8uF9Jp9Prr21bdYuhDujnwYkxUv2Q2BAJmCLFBZ147qCqXiBYxTIt5QDIb-VRoWRa7_SbyJO1VulRTAC5NrhnHwRljALx5y58YAFPWOhBu8Y02S20w0TL8javuxuTlIpuWcxVEos_XilQDubK3v7Iijgl-5RU_ZTci3LQmdX1frBCCRGUQiAxjBBmMn4qcqUztPc5LuNflNcoSSpnk0JYEayOAiFV1IwVFxMWaQe6987I9N3EXHaDO-1uMgCJIFV3M4GQqirmQxXtAEF8Fo7yj2RFQdfh_KiCJOzu4YcHSvKfAmWI6HycFxyhwFXbNQVxdVifYcCwWp27JhhQM-NWKzKPf-pAReogmuNk-Ull3-jjZS-VHC2JdAgmD43vssoOSTBtAF6McTDU2gFRqwbQ6F5ieGUV88RZwOnurrA-7fiDCfAI6uD85aY6MdW6Pp_NUCSHi7lHonyargUCWNbEhkmbJjeteR9K3mjUYnQZV7WPrqPZePZBj3OcnwX2J22-hbNYb71WKuPBaLQzG13fJvL05qtWKuHpaVKxOy0W11EIg3TW_p9_SgZmuIqNlzn5vnkp5ZYiBi0B_ae-mt-pEkh3kbZljvsUOsZ4oQiRpZDhhoWOTTslCqn44iBo4bVGb8hZyRQkGgK47HEKBV42zdOM7r2hTQRZWeUhRDlQYjE8KViiTDL2stvCYPWxakaVhxJ-7PpdPUzBEOwDtOp4SRRnkgs6l5E0391oKAd-BHpRwXZUYljC8UodS0sYHLR9NkYOHKm2PboYY1TCUTxm8DAnv4uFDb4KBD8dLMa5WvuE6KMfPqS07Hacd1qcPLFrta5P_ntLeHB8v1g1XCdDu2cK184_0rrMsoS96oMCCXd4y7BdtPSY12yssa0UuEZWiIArUhCG9u_29JM_y7zPgqtFY2vyADWbkessey4NwS6lrY9n33I-7iDvnX-cd6rY6B_Fj-e7efjt2yTstKPTTNgKq3Zv67SvgiNc4fISP2JGj1BAybggv7wNTkLeCroPWNldWTc1YNzVS2SXy-_-FrIWPgwRjho1CINCNHcYA7idiLJyJLou_mRHa9Kgi_lmxKvbH1p8a2vMBBzAqkL0nweAt2wPhWeaAJNITgcjcg14pGDNnTKb_voVn2OpjJZZudDU0K9bIEZxmJEGaUyFHy8eAH93H2Sy4b1ddQqKGhDy-Lr5QS746bBJES-vehAaFvA7yt1OhjqGKuvzyUAI0qzkLZqESpLAE-9rcFWSfu-JvTkmgBwb5EnKpsjxztFUrbm5sPPYjNarauzbU2b-QDapo-IDyfuMlWEVJBaTBPyxSu8AmJTWMWNoJg-b29Mj-3_GKx8ilsHjtDy1GqmW6OmBCzh_1hyLt7kGKO-DdWoGPAudgBx9XV4bPLx-meM9MECb82XzhXvLrn8GklsnPKSa7HLH_zJem5xxCxTCP4LoajoF-AEuSSVlqNNYUE6DFw8kdyFJspKm6ow9c9RqbArKlCuD57c6x2DjhAronXVB1EZ_RF-L2DfELMF5FQd2SvxBPYdCM397ohd3kr57ivLEp4j6UktAAL-Yv2nLS5waUyXFx5bwagdyD0Sp3Pc="}],
+      "role": "model"}, {"parts": [{"text": "Using the pattern you discovered, what
+      would be the 10th term? And can you find the sum of the first 10 terms?"}],
+      "role": "user"}], "generationConfig": {"maxOutputTokens": 2048, "thinkingConfig":
+      {"include_thoughts": true, "thinking_level": "HIGH"}}}'
     headers:
       accept:
       - '*/*'
@@ -181,7 +153,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '2092'
+      - '7499'
       content-type:
       - application/json
       host:
@@ -191,52 +163,73 @@ interactions:
       x-goog-api-client:
       - google-genai-sdk/3.0.0 gl-python/3.14.7
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"Here's my attempt at summarizing the
-        thought process:\\n\\n**Diving into the Problem**\\n\\nOkay, so the user wants
-        the 10th term and the sum of the first 10 terms. Right. I've got this. First,
-        I need to make sure I remember how I defined that nth term in the last interaction.
-        Ah, yes! I've got a couple of ways to express it: I came up with both a quadratic,
-        \ $an^2 + bn + c$, and a more elegant representation as the product of consecutive
-        integers: $n(n+1)$. I'll have to consider which is easier to work with, but
-        at least I've got the foundational expressions in hand. I'll probably go with
-        the product of consecutive integers. It looks a bit simpler.\\n\",\n            \"thought\":
-        true\n          },\n          {\n            \"text\": \"Okay, let's use the
-        pattern we discovered to find the 10th term and the sum of the first 10 terms.\\n\\n**1.
-        Formula for the nth term ($a_n$)**\\n\\nWe found that the pattern can be described
-        by the product of consecutive integers:\\n$a_n = n \\\\times (n+1)$\\n\\nLet's
-        test it:\\n*   $a_1 = 1 \\\\times (1+1) = 1 \\\\times 2 = 2$ (Correct)\\n*
-        \  $a_2 = 2 \\\\times (2+1) = 2 \\\\times 3 = 6$ (Correct)\\n*   $a_3 = 3
-        \\\\times (3+1) = 3 \\\\times 4 = 12$ (Correct)\\n*   $a_4 = 4 \\\\times (4+1)
-        = 4 \\\\times 5 = 20$ (Correct)\\n*   $a_5 = 5 \\\\times (5+1) = 5 \\\\times
-        6 = 30$ (Correct)\\n\\n**2. The 10th Term**\\n\\nTo find the 10th term, we
-        substitute $n=10$ into our formula:\\n$a_{10} = 10 \\\\times (10+1)$\\n$a_{10}
-        = 10 \\\\times 11$\\n$a_{10} = 110$\\n\\n**So, the 10th term is 110.**\\n\\n**3.
-        Sum of the First 10 Terms ($S_{10}$)**\\n\\nTo find the sum of the first 10
-        terms, we need to sum $n(n+1)$ for $n=1$ to $10$.\\n$S_{10} =\"\n          }\n
-        \       ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        [\n          {\n            \"text\": \"**My Thoughts on Solving This Sequence
+        Problem**\\n\\nOkay, here's the deal. I need to find the 10th term and the
+        sum of the first 10 terms of this sequence. It looks like the pattern is $n(n+1)$,
+        which, as an expert in sequences, I immediately recognized.\\n\\nFirst, let's
+        nail down the 10th term. Substituting $n = 10$ into $n(n+1)$, I get $10 \\\\times
+        (10 + 1) = 10 \\\\times 11 = 110$.  Easy enough, the 10th term is 110.\\n\\nNow,
+        the sum of the first 10 terms. I could just brute force this, summing each
+        term individually, I'll do this as a check. It's a quick way to verify, even
+        if I use the summation formulas. I've got a sequence: 2, 6, 12, 20, 30, 42,
+        56, 72, 90, 110.  So, I add 2 + 6 + 12 + 20 + 30 + 42 + 56 + 72 + 90 + 110.
+        Let's see...  that adds up to 440.\\n\\nBut, I'm thinking, \\\"Is there a
+        more elegant way?\\\" Of course there is!  I can use the standard summation
+        formulas. I know $n(n+1)$ is the same as $n^2 + n$. So, to get the sum, I
+        need to compute the sum of the first 10 values for $n^2$ and $n$ separately.
+        From my experience with sequences, I remember these formulas: $\\\\sum_{n=1}^{N}
+        n = \\\\frac{N(N+1)}{2}$ and $\\\\sum_{n=1}^{N} n^2 = \\\\frac{N(N+1)(2N+1)}{6}$.
+        Let's plug in $N=10$.\\n\\nFor $\\\\sum n$, it's $\\\\frac{10(11)}{2} = \\\\frac{110}{2}
+        = 55$.\\nFor $\\\\sum n^2$, it's $\\\\frac{10(11)(21)}{6} = \\\\frac{2310}{6}
+        = 385$.\\n\\nTherefore, the total sum is 385 + 55 = 440. Nice! This confirms
+        my brute force method.\\n\\nBut wait, there's more! Thinking about the expansion,
+        I can recognize this as the identity $\\\\sum_{i=1}^{n} i(i+1) = \\\\frac{n(n+1)(n+2)}{3}$,
+        which gives a nice simplification. And this means for $N=10$, I can use $\\\\frac{10
+        \\\\times 11 \\\\times 12}{3} = 440$. This is beautiful \u2013 a true shortcut.
+        I'll make sure to note this shortcut in my answer for this user, as I find
+        that elegant approaches are particularly useful for those who understand mathematical
+        patterns.\\n\\nOkay, I've got this. I'll make the solution super clear, step-by-step.\\n\\n\\n\",\n
+        \           \"thought\": true\n          },\n          {\n            \"text\":
+        \"### 1. The 10th Term\\n\\nUsing our formula $n(n + 1)$, we just plug in
+        $n = 10$:\\n\\n* $10 \\\\times (10 + 1)$\\n* $= 10 \\\\times 11$\\n* **$=
+        110$**\\n\\nSo, the 10th term in the sequence is **110**.\\n\\n---\\n\\n###
+        2. The Sum of the First 10 Terms\\n\\nTo find the sum of the first 10 terms
+        ($2 + 6 + 12 + 20 + 30 + 42 + 56 + 72 + 90 + 110$), we can use standard summation
+        formulas. \\n\\nSince our formula for the $n$-th term is $n^2 + n$, the sum
+        of the first 10 terms is:\\n$$\\\\sum_{n=1}^{10} (n^2 + n) = \\\\sum_{n=1}^{10}
+        n^2 + \\\\sum_{n=1}^{10} n$$\\n\\nWe can use the standard math formulas for
+        the sum of the first $N$ squares and the first $N$ numbers:\\n1. **Sum of
+        numbers ($\\\\sum n$):** $\\\\frac{N(N + 1)}{2}$\\n2. **Sum of squares ($\\\\sum
+        n^2$):** $\\\\frac{N(N + 1)(2N + 1)}{6}$\\n\\nLet's plug in $N = 10$:\\n\\n*
+        **Sum of the numbers:** \\n  $$\\\\frac{10(10 + 1)}{2} = \\\\frac{10 \\\\times
+        11}{2} = \\\\frac{110}{2} = 55$$\\n\\n* **Sum of the squares:** \\n  $$\\\\frac{10(10
+        + 1)(2(10) + 1)}{6} = \\\\frac{10 \\\\times 11 \\\\times 21}{6} = \\\\frac{2310}{6}
+        = 385$$\\n\\nNow, add them together:\\n$$385 + 55 = \",\n            \"thoughtSignature\":
+        \"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\"\n
+        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
         \"MAX_TOKENS\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n
-        \   \"promptTokenCount\": 614,\n    \"candidatesTokenCount\": 399,\n    \"totalTokenCount\":
-        1122,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
-        \       \"tokenCount\": 614\n      }\n    ],\n    \"thoughtsTokenCount\":
-        109,\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash\",\n
-        \ \"responseId\": \"GP3xarbuF4-RytMPqqrPkQM\"\n}\n"
+        \   \"promptTokenCount\": 2097,\n    \"candidatesTokenCount\": 476,\n    \"totalTokenCount\":
+        4141,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
+        \       \"tokenCount\": 2097\n      }\n    ],\n    \"thoughtsTokenCount\":
+        1568,\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-3.5-flash-lite\",\n
+        \ \"responseId\": \"Bz7zau2DG82-xdIPiNGhyAk\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '2212'
+      - '8794'
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Mon, 09 Nov 2026 17:04:28 GMT
+      - Tue, 10 Nov 2026 15:53:51 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=4006
+      - gfet4t7; dur=7914
       transfer-encoding:
       - chunked
       vary:

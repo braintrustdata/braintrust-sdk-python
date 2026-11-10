@@ -1,8 +1,7 @@
 interactions:
 - request:
     body: '{"max_tokens":128,"messages":[{"role":"user","content":"Remember the number
-      579. Reply OK."}],"model":"claude-haiku-4-5-20251001","stream":true,"system":"Reply
-      briefly.","thread":{"type":"create"}}'
+      579. Reply OK."}],"model":"claude-haiku-5-5","stream":true,"system":"Reply briefly.","thread":{"type":"create"}}'
     headers:
       accept:
       - application/json
@@ -15,7 +14,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '197'
+      - '188'
       content-type:
       - application/json
       host:
@@ -54,13 +53,12 @@ interactions:
     body:
       string: 'event: message_start
 
-        data: {"type":"message_start","message":{"model":"claude-haiku-4-5-20251001","id":"msg_011CgshMNEBrpWSVTgKChQn5","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":19,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":1,"service_tier":"standard","inference_geo":"not_available","speed":"standard"},"diagnostics":null}         }
+        data: {"type":"message_start","message":{"model":"claude-haiku-5-5","id":"msg_011CguWeVF4xpmNqTUeUuKDS","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":30,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":4,"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}               }
 
 
         event: content_block_start
 
-        data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}
-        }
+        data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}               }
 
 
         event: ping
@@ -70,7 +68,7 @@ interactions:
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"OK"}     }
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"OK"}           }
 
 
         event: content_block_stop
@@ -80,12 +78,12 @@ interactions:
 
         event: message_delta
 
-        data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":19,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":4}        }
+        data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":30,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":4,"output_tokens_details":{"thinking_tokens":0}}   }
 
 
         event: message_stop
 
-        data: {"type":"message_stop"     }
+        data: {"type":"message_stop"            }
 
 
         '
@@ -97,25 +95,25 @@ interactions:
       anthropic-ratelimit-input-tokens-remaining:
       - '10000000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-11-09T16:48:44Z'
+      - '2026-11-10T15:49:33Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-11-09T16:48:44Z'
+      - '2026-11-10T15:49:33Z'
       anthropic-ratelimit-requests-limit:
-      - '20000'
+      - '45000'
       anthropic-ratelimit-requests-remaining:
-      - '19999'
+      - '44999'
       anthropic-ratelimit-requests-reset:
-      - '2026-11-09T16:48:44Z'
+      - '2026-11-10T15:49:33Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
       - '12000000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-11-09T16:48:44Z'
+      - '2026-11-10T15:49:33Z'
       anthropic-workspace-id:
       - wrkspc_018bFG1FgNVWqx5pthtdGTzS
       cache-control:
@@ -123,27 +121,27 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a57e4e8658241486-YYZ
+      - a58635319a10ab36-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1223'
+      - '1281'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 09 Nov 2026 16:48:44 GMT
+      - Tue, 10 Nov 2026 15:49:33 GMT
       request-id:
-      - req_011CgshMN3H3yridD5uhiBNS
+      - req_011CguWeV1vnNy2cfiWw5kpT
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=98
+      - x-originResponse;dur=104
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-36161ed11feef9063589acff7cc4dc6b-b02583dfd615b8f4-01
+      - 00-7a3488a3f36628e3a7cfe056089e3e8f-c639b643f8999f07-01
       transfer-encoding:
       - chunked
       vary:
@@ -155,7 +153,7 @@ interactions:
       message: OK
 - request:
     body: '{"max_tokens":128,"messages":[{"role":"user","content":"What number did
-      I ask you to remember?"}],"model":"claude-haiku-4-5-20251001","stream":true,"thread":{"type":"continue","previous_message_id":"msg_011CgshMNEBrpWSVTgKChQn5"}}'
+      I ask you to remember?"}],"model":"claude-haiku-5-5","stream":true,"thread":{"type":"continue","previous_message_id":"msg_011CguWeVF4xpmNqTUeUuKDS"}}'
     headers:
       accept:
       - application/json
@@ -168,7 +166,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '230'
+      - '221'
       content-type:
       - application/json
       host:
@@ -207,12 +205,13 @@ interactions:
     body:
       string: 'event: message_start
 
-        data: {"type":"message_start","message":{"model":"claude-haiku-4-5-20251001","id":"msg_011CgshMQEVt2ZTt3wjK6d1M","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":35,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":1,"service_tier":"standard","inference_geo":"not_available","speed":"standard"},"diagnostics":null}            }
+        data: {"type":"message_start","message":{"model":"claude-haiku-5-5","id":"msg_011CguWeXv477gpeMC3A2Qtz","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":47,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":1,"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}    }
 
 
         event: content_block_start
 
-        data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}           }
+        data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}
+        }
 
 
         event: ping
@@ -222,40 +221,22 @@ interactions:
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"The"}     }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"
-        number you asked me"}             }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"
-        to remember is"}          }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"
-        579."}             }
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"579"}         }
 
 
         event: content_block_stop
 
-        data: {"type":"content_block_stop","index":0             }
+        data: {"type":"content_block_stop","index":0       }
 
 
         event: message_delta
 
-        data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":35,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":14}      }
+        data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":47,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":3,"output_tokens_details":{"thinking_tokens":0}}  }
 
 
         event: message_stop
 
-        data: {"type":"message_stop" }
+        data: {"type":"message_stop"      }
 
 
         '
@@ -267,25 +248,25 @@ interactions:
       anthropic-ratelimit-input-tokens-remaining:
       - '10000000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-11-09T16:48:45Z'
+      - '2026-11-10T15:49:33Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-11-09T16:48:45Z'
+      - '2026-11-10T15:49:33Z'
       anthropic-ratelimit-requests-limit:
-      - '20000'
+      - '45000'
       anthropic-ratelimit-requests-remaining:
-      - '19999'
+      - '44999'
       anthropic-ratelimit-requests-reset:
-      - '2026-11-09T16:48:45Z'
+      - '2026-11-10T15:49:33Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
       - '12000000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-11-09T16:48:45Z'
+      - '2026-11-10T15:49:33Z'
       anthropic-workspace-id:
       - wrkspc_018bFG1FgNVWqx5pthtdGTzS
       cache-control:
@@ -293,27 +274,27 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a57e4e894f241486-YYZ
+      - a58635358f26ab36-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1661'
+      - '1250'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 09 Nov 2026 16:48:45 GMT
+      - Tue, 10 Nov 2026 15:49:34 GMT
       request-id:
-      - req_011CgshMQ2qHahshmi9E7xT8
+      - req_011CguWeXieWV6AsZsAz9Kot
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=95
+      - x-originResponse;dur=96
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-e32a840da293f018ac930ad89fb03a90-0155bb9eb2acdc5c-01
+      - 00-6b8c17bb2572662711f5c1573ef3a5e9-c0487ecfc8bbec88-01
       transfer-encoding:
       - chunked
       vary:

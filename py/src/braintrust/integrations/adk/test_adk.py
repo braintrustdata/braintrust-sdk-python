@@ -440,7 +440,11 @@ async def test_adk_subagent_transfer_does_not_log_generator_exit(memory_logger):
     """Successful LlmAgent delegation must not mark spans as failed during generator cleanup."""
     assert not memory_logger.pop()
 
-    delegation_model = "gemini-2.5-flash"
+    delegation_model = (
+        "gemini-3.5-flash-lite"
+        if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
+        else "gemini-2.5-flash"
+    )
     specialist = Agent(
         name="capital_specialist",
         model=delegation_model,

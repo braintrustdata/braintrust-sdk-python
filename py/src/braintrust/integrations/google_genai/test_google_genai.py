@@ -33,11 +33,13 @@ MODEL = (
 )
 EMBEDDING_MODEL = "gemini-embedding-001"
 IMAGE_MODEL = "imagen-4.0-fast-generate-001"
-REASONING_MODEL = "gemini-2.5-flash"
-TOOL_MODEL = "gemini-2.5-flash" if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest" else MODEL
-INTERACTIONS_MODEL = "gemini-2.5-flash"
-GENERATED_AUDIO_MODEL = "gemini-2.5-flash-preview-tts"
-GENERATED_IMAGE_MODEL = "gemini-2.5-flash-image"
+REASONING_MODEL = (
+    "gemini-3.5-flash-lite" if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest" else "gemini-2.5-flash"
+)
+TOOL_MODEL = "gemini-3.5-flash-lite" if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest" else MODEL
+INTERACTIONS_MODEL = REASONING_MODEL
+GENERATED_AUDIO_MODEL = "gemini-3.8-flash-lite-tts"
+GENERATED_IMAGE_MODEL = "gemini-3.1-flash-lite-image"
 FIXTURES_DIR = Path(__file__).parent.parent.parent / "fixtures"
 TINY_PNG_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="
 TINY_WAV_BASE64 = "UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA="
@@ -925,8 +927,12 @@ def test_reasoning(memory_logger):
     )
     follow_up_prompt = "Using the pattern you discovered, what would be the 10th term? And can you find the sum of the first 10 terms?"
     reasoning_config = types.GenerateContentConfig(
-        max_output_tokens=512,
-        thinking_config=types.ThinkingConfig(include_thoughts=True, thinking_budget=128),
+        max_output_tokens=2048 if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest" else 512,
+        thinking_config=(
+            types.ThinkingConfig(include_thoughts=True, thinking_level="high")
+            if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
+            else types.ThinkingConfig(include_thoughts=True, thinking_budget=128)
+        ),
     )
 
     first_response = client.models.generate_content(
@@ -1206,7 +1212,9 @@ def test_generate_content_stream_code_execution_part_order(memory_logger):
 
 
 GROUNDING_MODEL = (
-    "gemini-2.5-flash" if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest" else "gemini-2.0-flash-001"
+    "gemini-3.5-flash-lite"
+    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
+    else "gemini-2.0-flash-001"
 )
 
 

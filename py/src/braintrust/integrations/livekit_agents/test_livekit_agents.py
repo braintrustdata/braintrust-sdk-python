@@ -1,6 +1,7 @@
 import asyncio
 import importlib.metadata
 import inspect
+import os
 import shutil
 import socket
 import subprocess
@@ -22,6 +23,11 @@ from braintrust.integrations.livekit_agents.tracing import (
 from braintrust.integrations.test_utils import verify_autoinstrument_script
 from braintrust.test_helpers import init_test_logger
 from packaging.version import Version
+
+
+LATEST_MODELS = os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
+TEST_MODEL = "gpt-6-luna" if LATEST_MODELS else "gpt-4.1-mini"
+MODEL_OPTIONS = {"reasoning_effort": "none"} if LATEST_MODELS else {}
 
 
 @pytest.fixture
@@ -272,7 +278,7 @@ async def test_livekit_agents_agent_speaking_e2e(memory_logger, livekit_server, 
         def __init__(self, llm):
             super().__init__(instructions="Reply with exactly: hi there", llm=llm)
 
-    llm = openai.LLM(model="gpt-4.1-mini", max_completion_tokens=8)
+    llm = openai.LLM(model=TEST_MODEL, max_completion_tokens=8, **MODEL_OPTIONS)
     tts = openai.TTS(model="gpt-4o-mini-tts", voice="ash")
     audio_output = CapturingAudioOutput()
 
@@ -323,7 +329,7 @@ async def test_livekit_agents_function_tool_e2e(memory_logger, livekit_server):
                 tools=[lookup_weather],
             )
 
-    llm = openai.LLM(model="gpt-4.1-mini", max_completion_tokens=32)
+    llm = openai.LLM(model=TEST_MODEL, max_completion_tokens=32, **MODEL_OPTIONS)
 
     async with llm, AgentSession() as session:
         await session.start(Assistant(llm))
@@ -386,7 +392,7 @@ async def _run_livekit_agents_openai_e2e_voice_turn(memory_logger, outer_parent_
 def _create_openai_voice_turn_components(openai, silero):
     tts = openai.TTS(model="gpt-4o-mini-tts", voice="ash")
     stt = openai.STT(model="gpt-4o-mini-transcribe")
-    llm = openai.LLM(model="gpt-4.1-mini", max_completion_tokens=8)
+    llm = openai.LLM(model=TEST_MODEL, max_completion_tokens=8, **MODEL_OPTIONS)
     vad = silero.VAD.load()
     return tts, stt, llm, vad
 

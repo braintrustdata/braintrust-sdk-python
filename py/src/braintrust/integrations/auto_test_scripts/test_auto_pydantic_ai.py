@@ -1,6 +1,7 @@
 """Test auto_instrument for Pydantic AI (no uninstrument available)."""
 
 from braintrust.auto import auto_instrument
+from braintrust.integrations._test_models import LATEST, OPENAI_CHAT_MODEL
 from braintrust.integrations.test_utils import autoinstrument_test_context
 
 
@@ -19,8 +20,8 @@ with autoinstrument_test_context("test_auto_pydantic_ai", integration="pydantic_
     from pydantic_ai.settings import ModelSettings
 
     agent = Agent(
-        OpenAIChatModel("gpt-4o-mini"),
-        model_settings=ModelSettings(max_tokens=100),
+        OpenAIChatModel(OPENAI_CHAT_MODEL),
+        model_settings=ModelSettings(max_tokens=100, **({"openai_reasoning_effort": "none"} if LATEST else {})),
     )
 
     import asyncio

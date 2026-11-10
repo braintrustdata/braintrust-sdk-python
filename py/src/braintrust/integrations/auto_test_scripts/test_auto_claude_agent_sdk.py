@@ -1,5 +1,7 @@
 """Test auto_instrument for Claude Agent SDK (no uninstrument available)."""
 
+import os
+
 from braintrust.auto import auto_instrument
 from braintrust.integrations.claude_agent_sdk._test_transport import make_cassette_transport
 from braintrust.integrations.test_utils import autoinstrument_test_context
@@ -18,7 +20,11 @@ with autoinstrument_test_context("test_auto_claude_agent_sdk", use_vcr=False) as
     import claude_agent_sdk  # pylint: disable=import-error
 
     options = claude_agent_sdk.ClaudeAgentOptions(
-        model="claude-3-5-haiku-20241022",
+        model=(
+            "claude-haiku-5-5"
+            if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
+            else "claude-3-5-haiku-20241022"
+        ),
         permission_mode="bypassPermissions",
     )
     transport = make_cassette_transport(

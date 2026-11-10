@@ -8,6 +8,7 @@ from typing import cast
 
 import pytest
 from braintrust import logger
+from braintrust.integrations._test_models import ANTHROPIC_CHAT_MODEL, LATEST, OPENAI_CHAT_MODEL, OPENAI_CHAT_OPTIONS
 from braintrust.integrations.langchain import BraintrustCallbackHandler
 from braintrust.integrations.test_utils import assert_service_tiers
 from braintrust.logger import NOOP_SPAN, current_span, flush
@@ -50,7 +51,8 @@ def test_llm_calls(logger_memory_logger):
     handler = BraintrustCallbackHandler(logger=test_logger)
     prompt = ChatPromptTemplate.from_template("What is 1 + {number}?")
     model = ChatOpenAI(
-        model="gpt-4o-mini",
+        model=OPENAI_CHAT_MODEL,
+        **OPENAI_CHAT_OPTIONS,
         temperature=1,
         top_p=1,
         frequency_penalty=0,
@@ -70,7 +72,15 @@ def test_llm_calls(logger_memory_logger):
     root_span_id = spans[0]["span_id"]
     trace_root_id = spans[0]["root_span_id"]
 
-    assert_matches_object(spans, expected_prompt_chain_spans(root_span_id, trace_root_id, tags=["test"]))
+    assert_matches_object(
+        spans,
+        expected_prompt_chain_spans(
+            root_span_id,
+            trace_root_id,
+            tags=["test"],
+            model_name=OPENAI_CHAT_MODEL if LATEST else "gpt-4o-mini-2024-07-18",
+        ),
+    )
 
     # No tier requested; OpenAI reports the tier that served the call.
     llm_span = next(span for span in spans if span["span_attributes"]["type"] == "llm")
@@ -85,7 +95,7 @@ async def test_consecutive_async_invocations_are_separate_traces(logger_memory_l
 
     handler = BraintrustCallbackHandler(logger=test_logger)
     prompt = ChatPromptTemplate.from_template("What is 1 + {number}?")
-    model = ChatOpenAI(model="gpt-4o-mini")
+    model = ChatOpenAI(model=OPENAI_CHAT_MODEL, **OPENAI_CHAT_OPTIONS)
     chain: RunnableSerializable[dict[str, str], BaseMessage] = prompt.pipe(model)
 
     for i in range(2):
@@ -150,7 +160,8 @@ def test_tool_usage(logger_memory_logger):
             raise ValueError("Invalid operation.")
 
     model = ChatOpenAI(
-        model="gpt-4o-mini",
+        model=OPENAI_CHAT_MODEL,
+        **OPENAI_CHAT_OPTIONS,
         temperature=1,
         top_p=1,
         frequency_penalty=0,
@@ -186,7 +197,7 @@ def test_tool_usage(logger_memory_logger):
                 ],
                 "metadata": {
                     "tags": [],
-                    "model": "gpt-4o-mini-2024-07-18",
+                    "model": (OPENAI_CHAT_MODEL if LATEST else "gpt-4o-mini-2024-07-18"),
                     "provider": "openai",
                     "tools": [
                         {
@@ -215,7 +226,7 @@ def test_tool_usage(logger_memory_logger):
                         ]
                     ],
                     "llm_output": {
-                        "model_name": "gpt-4o-mini-2024-07-18",
+                        "model_name": (OPENAI_CHAT_MODEL if LATEST else "gpt-4o-mini-2024-07-18"),
                     },
                     "type": "LLMResult",
                 },
@@ -243,7 +254,8 @@ def test_langgraph_state_management(logger_memory_logger):
 
     handler = BraintrustCallbackHandler(logger=test_logger)
     model = ChatOpenAI(
-        model="gpt-4o-mini",
+        model=OPENAI_CHAT_MODEL,
+        **OPENAI_CHAT_OPTIONS,
         temperature=1,
         top_p=1,
         frequency_penalty=0,
@@ -335,7 +347,7 @@ def test_langgraph_state_management(logger_memory_logger):
                 ]
             ],
             "metadata": {
-                "model": "gpt-4o-mini-2024-07-18",
+                "model": (OPENAI_CHAT_MODEL if LATEST else "gpt-4o-mini-2024-07-18"),
                 "provider": "openai",
                 "tags": [],
             },
@@ -356,7 +368,7 @@ def test_langgraph_state_management(logger_memory_logger):
                     ]
                 ],
                 "llm_output": {
-                    "model_name": "gpt-4o-mini-2024-07-18",
+                    "model_name": (OPENAI_CHAT_MODEL if LATEST else "gpt-4o-mini-2024-07-18"),
                 },
                 "type": "LLMResult",
             },
@@ -614,7 +626,8 @@ async def test_streaming_ttft(logger_memory_logger, is_async, count_to, max_comp
     handler = BraintrustCallbackHandler(logger=test_logger)
     prompt = ChatPromptTemplate.from_template(f"Count from 1 to {count_to}.")
     model = ChatOpenAI(
-        model="gpt-4o-mini",
+        model=OPENAI_CHAT_MODEL,
+        **OPENAI_CHAT_OPTIONS,
         max_completion_tokens=max_completion_tokens,
         streaming=True,
     )
@@ -732,7 +745,7 @@ def test_prompt_caching_tokens(logger_memory_logger):
 
     handler = BraintrustCallbackHandler(logger=test_logger)
 
-    model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
+    model = ChatAnthropic(model=ANTHROPIC_CHAT_MODEL if LATEST else "claude-sonnet-4-5-20250929")
 
     # Anthropic prompt caching requires a minimum of 1024 tokens for Claude Sonnet models.
     # This static text (~1500 tokens) ensures we meet that threshold consistently.
@@ -872,6 +885,8 @@ Remember: Testing is not just about finding bugs, it's about building confidence
 """
     # Use a unique suffix so the first request always creates a fresh prompt cache entry,
     # rather than reading a stale global cache entry from a previous test run.
+    if LATEST:
+        long_text_for_caching *= 4
     long_text_for_caching += f"\n\nCache salt: {uuid.uuid4().hex}\n"
 
     messages: list[BaseMessage] = [
@@ -982,7 +997,7 @@ def test_image_input(logger_memory_logger):
         )
     ]
 
-    model = ChatOpenAI(model="gpt-4o-mini")
+    model = ChatOpenAI(model=OPENAI_CHAT_MODEL, **OPENAI_CHAT_OPTIONS)
     model.invoke(messages, config={"callbacks": [cast(BaseCallbackHandler, handler)]})
 
     spans = memory_logger.pop()
@@ -1042,7 +1057,7 @@ def test_tool_use_with_result(logger_memory_logger):
             return a / b if b != 0 else 0
         return 0
 
-    model = ChatOpenAI(model="gpt-4o-mini")
+    model = ChatOpenAI(model=OPENAI_CHAT_MODEL, **OPENAI_CHAT_OPTIONS)
     model_with_tools = model.bind_tools([calculate])
 
     # First call (untraced): get a real tool call to send back. Tracing of a

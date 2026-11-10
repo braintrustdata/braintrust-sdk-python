@@ -21,124 +21,123 @@ interactions:
       x-goog-api-client:
       - google-genai-sdk/3.0.0 gl-python/3.14.7
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:streamGenerateContent?alt=sse
-  response:
-    body:
-      string: "{\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Url Context
-        as tool is not enabled for api version v1. Use api version v1beta instead.\",\n
-        \   \"status\": \"INVALID_ARGUMENT\"\n  }\n}\n"
-    headers:
-      alt-svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      content-length:
-      - '176'
-      content-type:
-      - text/event-stream
-      date:
-      - Mon, 09 Nov 2026 17:02:56 GMT
-      server:
-      - scaffolding on HTTPServer2
-      server-timing:
-      - gfet4t7; dur=224
-      vary:
-      - Origin
-      - X-Origin
-      - Referer
-      x-content-type-options:
-      - nosniff
-      x-frame-options:
-      - SAMEORIGIN
-      x-xss-protection:
-      - '0'
-    status:
-      code: 400
-      message: Bad Request
-- request:
-    body: '{"contents": [{"parts": [{"text": "Summarize the article at https://ai.google.dev/gemini-api/docs/url-context"}],
-      "role": "user"}], "tools": [{"urlContext": {}}], "generationConfig": {"maxOutputTokens":
-      300}}'
-    headers:
-      accept:
-      - '*/*'
-      accept-encoding:
-      - gzip, deflate, zstd
-      connection:
-      - keep-alive
-      content-length:
-      - '208'
-      content-type:
-      - application/json
-      host:
-      - generativelanguage.googleapis.com
-      user-agent:
-      - google-genai-sdk/3.0.0 gl-python/3.14.7
-      x-goog-api-client:
-      - google-genai-sdk/3.0.0 gl-python/3.14.7
-    method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:streamGenerateContent?alt=sse
   response:
     body:
       string: "data: {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"The
-        URL context tool in Google AI Studio allows models to access and utilize content
-        from provided URLs\"}],\"role\": \"model\"},\"index\": 0,\"groundingMetadata\":
-        {},\"urlContextMetadata\": {\"urlMetadata\": [{\"retrievedUrl\": \"https://ai.google.dev/gemini-api/docs/url-context\",\"urlRetrievalStatus\":
-        \"URL_RETRIEVAL_STATUS_SUCCESS\"}]}}],\"usageMetadata\": {\"promptTokenCount\":
-        24,\"candidatesTokenCount\": 43,\"totalTokenCount\": 6080,\"promptTokensDetails\":
-        [{\"modality\": \"TEXT\",\"tokenCount\": 24}],\"toolUsePromptTokenCount\":
-        5956,\"toolUsePromptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
-        5956}],\"thoughtsTokenCount\": 57,\"serviceTier\": \"standard\"},\"modelVersion\":
-        \"gemini-2.5-flash\",\"responseId\": \"I_3xaqPqNdzZ0_gP15C5qQ0\"}\r\n\r\ndata:
-        {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \" to enhance responses.
-        This tool is beneficial for tasks such as extracting data, comparing documents,
-        synthesizing content, and analyzing code. It employs a two-step retrieval
-        process, first checking\"}],\"role\": \"model\"},\"index\": 0,\"groundingMetadata\":
-        {}}],\"usageMetadata\": {\"promptTokenCount\": 24,\"candidatesTokenCount\":
-        79,\"totalTokenCount\": 6116,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
-        24}],\"toolUsePromptTokenCount\": 5956,\"toolUsePromptTokensDetails\": [{\"modality\":
-        \"TEXT\",\"tokenCount\": 5956}],\"thoughtsTokenCount\": 57,\"serviceTier\":
-        \"standard\"},\"modelVersion\": \"gemini-2.5-flash\",\"responseId\": \"I_3xaqPqNdzZ0_gP15C5qQ0\"}\r\n\r\ndata:
-        {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \" an internal index
-        cache and then performing a live fetch if the content isn't cached. The URL
-        context tool can be combined with other tools, like Google Search, for more
-        powerful workflows. When used, the model's response includes inline citations
-        linking segments of text to their source URLs. The content retrieved from
-        URLs contributes to the input token count, and safety checks are performed
-        on all URLs. The tool supports up to 20 publicly accessible URLs per request,
-        with a maximum content size of 34MB per URL, and can process various text,
-        image, and PDF content types.\"}],\"role\": \"model\"},\"index\": 0,\"groundingMetadata\":
-        {}}],\"usageMetadata\": {\"promptTokenCount\": 24,\"candidatesTokenCount\":
-        198,\"totalTokenCount\": 6235,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
-        24}],\"toolUsePromptTokenCount\": 5956,\"toolUsePromptTokensDetails\": [{\"modality\":
-        \"TEXT\",\"tokenCount\": 5956}],\"thoughtsTokenCount\": 57,\"serviceTier\":
-        \"standard\"},\"modelVersion\": \"gemini-2.5-flash\",\"responseId\": \"I_3xaqPqNdzZ0_gP15C5qQ0\"}\r\n\r\ndata:
-        {\"candidates\": [{\"content\": {\"role\": \"model\"},\"finishReason\": \"STOP\",\"index\":
-        0,\"groundingMetadata\": {\"groundingChunks\": [{\"web\": {\"uri\": \"https://ai.google.dev/gemini-api/docs/url-context\",\"title\":
+        **\"}],\"role\": \"model\"},\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\":
+        24,\"candidatesTokenCount\": 2,\"totalTokenCount\": 26,\"promptTokensDetails\":
+        [{\"modality\": \"TEXT\",\"tokenCount\": 24}],\"serviceTier\": \"standard\"},\"modelVersion\":
+        \"gemini-3.5-flash-lite\",\"responseId\": \"Gj7zatylA5CE1sgPucnr-Qg\"}\r\n\r\ndata:
+        {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"URL Context tool**
+        in the Gemini API allows developers to supply URLs directly within their requests
+        so\"}],\"role\": \"model\"},\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\":
+        24,\"candidatesTokenCount\": 20,\"totalTokenCount\": 44,\"promptTokensDetails\":
+        [{\"modality\": \"TEXT\",\"tokenCount\": 24}],\"serviceTier\": \"standard\"},\"modelVersion\":
+        \"gemini-3.5-flash-lite\",\"responseId\": \"Gj7zatylA5CE1sgPucnr-Qg\"}\r\n\r\ndata:
+        {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \" the Gemini model
+        can access, analyze, and synthesize content from those web pages. \\n\\n###
+        Key Use\"}],\"role\": \"model\"},\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\":
+        24,\"candidatesTokenCount\": 20,\"totalTokenCount\": 44,\"promptTokensDetails\":
+        [{\"modality\": \"TEXT\",\"tokenCount\": 24}],\"serviceTier\": \"standard\"},\"modelVersion\":
+        \"gemini-3.5-flash-lite\",\"responseId\": \"Gj7zatylA5CE1sgPucnr-Qg\"}\r\n\r\ndata:
+        {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \" Cases\\n* **Data
+        Extraction:** Pulling structured data (like prices or key facts) from multiple
+        URLs.\"}],\"role\": \"model\"},\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\":
+        24,\"candidatesTokenCount\": 20,\"totalTokenCount\": 44,\"promptTokensDetails\":
+        [{\"modality\": \"TEXT\",\"tokenCount\": 24}],\"serviceTier\": \"standard\"},\"modelVersion\":
+        \"gemini-3.5-flash-lite\",\"responseId\": \"Gj7zatylA5CE1sgPucnr-Qg\"}\r\n\r\ndata:
+        {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"\\n* **Document
+        Comparison:** Analyzing reports, articles, or PDFs from different links to
+        track differences and trends.\\n*\"}],\"role\": \"model\"},\"index\": 0}],\"usageMetadata\":
+        {\"promptTokenCount\": 24,\"candidatesTokenCount\": 20,\"totalTokenCount\":
+        44,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\": 24}],\"serviceTier\":
+        \"standard\"},\"modelVersion\": \"gemini-3.5-flash-lite\",\"responseId\":
+        \"Gj7zatylA5CE1sgPucnr-Qg\"}\r\n\r\ndata: {\"candidates\": [{\"content\":
+        {\"parts\": [{\"text\": \" **Content Synthesis:** Combining insights from
+        multiple sources to generate summaries or blog posts.\\n* **Code\"}],\"role\":
+        \"model\"},\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\": 24,\"candidatesTokenCount\":
+        20,\"totalTokenCount\": 44,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
+        24}],\"serviceTier\": \"standard\"},\"modelVersion\": \"gemini-3.5-flash-lite\",\"responseId\":
+        \"Gj7zatylA5CE1sgPucnr-Qg\"}\r\n\r\ndata: {\"candidates\": [{\"content\":
+        {\"parts\": [{\"text\": \" and Technical Documentation Analysis:** Pointing
+        to repositories or technical manuals to answer questions or explain code.\\n\\n###
+        How It Works\"}],\"role\": \"model\"},\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\":
+        24,\"candidatesTokenCount\": 20,\"totalTokenCount\": 44,\"promptTokensDetails\":
+        [{\"modality\": \"TEXT\",\"tokenCount\": 24}],\"serviceTier\": \"standard\"},\"modelVersion\":
+        \"gemini-3.5-flash-lite\",\"responseId\": \"Gj7zatylA5CE1sgPucnr-Qg\"}\r\n\r\ndata:
+        {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"\\n* **Two-Step
+        Retrieval:** The tool first checks an internal index cache for fast retrieval.
+        If a page isn't cached\"}],\"role\": \"model\"},\"index\": 0}],\"usageMetadata\":
+        {\"promptTokenCount\": 24,\"candidatesTokenCount\": 47,\"totalTokenCount\":
+        71,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\": 24}],\"serviceTier\":
+        \"standard\"},\"modelVersion\": \"gemini-3.5-flash-lite\",\"responseId\":
+        \"Gj7zatylA5CE1sgPucnr-Qg\"}\r\n\r\ndata: {\"candidates\": [{\"content\":
+        {\"parts\": [{\"text\": \" (e.g., brand-new content), it performs a real-time
+        live fetch.\\n* **\"}],\"role\": \"model\"},\"index\": 0}],\"usageMetadata\":
+        {\"promptTokenCount\": 24,\"candidatesTokenCount\": 47,\"totalTokenCount\":
+        71,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\": 24}],\"serviceTier\":
+        \"standard\"},\"modelVersion\": \"gemini-3.5-flash-lite\",\"responseId\":
+        \"Gj7zatylA5CE1sgPucnr-Qg\"}\r\n\r\ndata: {\"candidates\": [{\"content\":
+        {\"parts\": [{\"text\": \"Tool Combinations:** It can be paired with other
+        built-in features, such as **Grounding with Google Search**, allowing the
+        model to search\"}],\"role\": \"model\"},\"index\": 0}],\"usageMetadata\":
+        {\"promptTokenCount\": 24,\"candidatesTokenCount\": 76,\"totalTokenCount\":
+        100,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\": 24}],\"serviceTier\":
+        \"standard\"},\"modelVersion\": \"gemini-3.5-flash-lite\",\"responseId\":
+        \"Gj7zatylA5CE1sgPucnr-Qg\"}\r\n\r\ndata: {\"candidates\": [{\"content\":
+        {\"parts\": [{\"text\": \" the web broadly and then use URL context for deep-dive
+        analysis on specific pages.\\n* **Responses & Cit\"}],\"role\": \"model\"},\"index\":
+        0}],\"usageMetadata\": {\"promptTokenCount\": 24,\"candidatesTokenCount\":
+        76,\"totalTokenCount\": 100,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
+        24}],\"serviceTier\": \"standard\"},\"modelVersion\": \"gemini-3.5-flash-lite\",\"responseId\":
+        \"Gj7zatylA5CE1sgPucnr-Qg\"}\r\n\r\ndata: {\"candidates\": [{\"content\":
+        {\"parts\": [{\"text\": \"ations:** Model outputs include inline `url_citation`
+        annotations that tie text segments back to their source URLs via start/end
+        indices\"}],\"role\": \"model\"},\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\":
+        24,\"candidatesTokenCount\": 104,\"totalTokenCount\": 128,\"promptTokensDetails\":
+        [{\"modality\": \"TEXT\",\"tokenCount\": 24}],\"serviceTier\": \"standard\"},\"modelVersion\":
+        \"gemini-3.5-flash-lite\",\"responseId\": \"Gj7zatylA5CE1sgPucnr-Qg\"}\r\n\r\ndata:
+        {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \".\\n\\n### Best
+        Practices\\n\"}],\"role\": \"model\"},\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\":
+        24,\"candidatesTokenCount\": 104,\"totalTokenCount\": 128,\"promptTokensDetails\":
+        [{\"modality\": \"TEXT\",\"tokenCount\": 24}],\"serviceTier\": \"standard\"},\"modelVersion\":
+        \"gemini-3.5-flash-lite\",\"responseId\": \"Gj7zatylA5CE1sgPucnr-Qg\"}\r\n\r\ndata:
+        {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"\",\"thoughtSignature\":
+        \"EmAKXgFpFH0TU6ELhsGVg0J7zsulDn/jj1Dk+uJTIWrX/poRXoLcCJsLkcjv+Xxv/iKNnbjily0smqEkr4Yj8pUshPOlKOQJW2tG8eFXsj4xh/Z/AhoZ5/E2DsihvcozVW0=\"}],\"role\":
+        \"model\"},\"finishReason\": \"MAX_TOKENS\",\"index\": 0,\"groundingMetadata\":
+        {\"groundingChunks\": [{\"web\": {\"uri\": \"https://aistudio.google.com/docs/url-context\",\"title\":
         \"URL context - Gemini API | Google AI Studio\"}}],\"groundingSupports\":
-        [{\"segment\": {\"endIndex\": 125,\"text\": \"The URL context tool in Google
-        AI Studio allows models to access and utilize content from provided URLs to
-        enhance responses.\"},\"groundingChunkIndices\": [0]},{\"segment\": {\"startIndex\":
-        126,\"endIndex\": 247,\"text\": \"This tool is beneficial for tasks such as
-        extracting data, comparing documents, synthesizing content, and analyzing
-        code.\"},\"groundingChunkIndices\": [0]},{\"segment\": {\"startIndex\": 248,\"endIndex\":
-        389,\"text\": \"It employs a two-step retrieval process, first checking an
-        internal index cache and then performing a live fetch if the content isn't
-        cached.\"},\"groundingChunkIndices\": [0]},{\"segment\": {\"startIndex\":
-        390,\"endIndex\": 493,\"text\": \"The URL context tool can be combined with
-        other tools, like Google Search, for more powerful workflows.\"},\"groundingChunkIndices\":
-        [0]},{\"segment\": {\"startIndex\": 494,\"endIndex\": 598,\"text\": \"When
-        used, the model's response includes inline citations linking segments of text
-        to their source URLs.\"},\"groundingChunkIndices\": [0]},{\"segment\": {\"startIndex\":
-        599,\"endIndex\": 713,\"text\": \"The content retrieved from URLs contributes
-        to the input token count, and safety checks are performed on all URLs.\"},\"groundingChunkIndices\":
-        [0]},{\"segment\": {\"startIndex\": 714,\"endIndex\": 883,\"text\": \"The
-        tool supports up to 20 publicly accessible URLs per request, with a maximum
-        content size of 34MB per URL, and can process various text, image, and PDF
-        content types.\"},\"groundingChunkIndices\": [0]}]}}],\"usageMetadata\": {\"promptTokenCount\":
-        24,\"candidatesTokenCount\": 198,\"totalTokenCount\": 6235,\"promptTokensDetails\":
-        [{\"modality\": \"TEXT\",\"tokenCount\": 24}],\"toolUsePromptTokenCount\":
-        5956,\"toolUsePromptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
-        5956}],\"thoughtsTokenCount\": 57,\"serviceTier\": \"standard\"},\"modelVersion\":
-        \"gemini-2.5-flash\",\"responseId\": \"I_3xaqPqNdzZ0_gP15C5qQ0\"}\r\n\r\n"
+        [{\"segment\": {\"endIndex\": 191,\"text\": \"The **URL Context tool** in
+        the Gemini API allows developers to supply URLs directly within their requests
+        so the Gemini model can access, analyze, and synthesize content from those
+        web pages\"},\"groundingChunkIndices\": [0]},{\"segment\": {\"startIndex\":
+        215,\"endIndex\": 305,\"text\": \"**Data Extraction:** Pulling structured
+        data (like prices or key facts) from multiple URLs\"},\"groundingChunkIndices\":
+        [0]},{\"segment\": {\"startIndex\": 309,\"endIndex\": 423,\"text\": \"**Document
+        Comparison:** Analyzing reports, articles, or PDFs from different links to
+        track differences and trends\"},\"groundingChunkIndices\": [0]},{\"segment\":
+        {\"startIndex\": 427,\"endIndex\": 526,\"text\": \"**Content Synthesis:**
+        Combining insights from multiple sources to generate summaries or blog posts\"},\"groundingChunkIndices\":
+        [0]},{\"segment\": {\"startIndex\": 530,\"endIndex\": 658,\"text\": \"**Code
+        and Technical Documentation Analysis:** Pointing to repositories or technical
+        manuals to answer questions or explain code\"},\"groundingChunkIndices\":
+        [0]},{\"segment\": {\"startIndex\": 770,\"endIndex\": 854,\"text\": \"If a
+        page isn't cached (e.g., brand-new content), it performs a real-time live
+        fetch\"},\"groundingChunkIndices\": [0]},{\"segment\": {\"startIndex\": 858,\"endIndex\":
+        1080,\"text\": \"**Tool Combinations:** It can be paired with other built-in
+        features, such as **Grounding with Google Search**, allowing the model to
+        search the web broadly and then use URL context for deep-dive analysis on
+        specific pages\"},\"groundingChunkIndices\": [0]},{\"segment\": {\"startIndex\":
+        1084,\"endIndex\": 1237,\"text\": \"**Responses & Citations:** Model outputs
+        include inline `url_citation` annotations that tie text segments back to their
+        source URLs via start/end indices\"},\"groundingChunkIndices\": [0]}]},\"urlContextMetadata\":
+        {\"urlMetadata\": [{\"retrievedUrl\": \"https://aistudio.google.com/docs/url-context\",\"urlRetrievalStatus\":
+        \"URL_RETRIEVAL_STATUS_SUCCESS\"}]}}],\"usageMetadata\": {\"promptTokenCount\":
+        24,\"candidatesTokenCount\": 296,\"totalTokenCount\": 320,\"cachedContentTokenCount\":
+        14,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\": 24}],\"cacheTokensDetails\":
+        [{\"modality\": \"TEXT\",\"tokenCount\": 14}],\"serviceTier\": \"standard\"},\"modelVersion\":
+        \"gemini-3.5-flash-lite\",\"responseId\": \"Gj7zatylA5CE1sgPucnr-Qg\"}\r\n\r\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
@@ -147,11 +146,11 @@ interactions:
       content-type:
       - text/event-stream
       date:
-      - Mon, 09 Nov 2026 17:04:37 GMT
+      - Tue, 10 Nov 2026 15:54:03 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=1741
+      - gfet4t7; dur=1257
       transfer-encoding:
       - chunked
       vary:

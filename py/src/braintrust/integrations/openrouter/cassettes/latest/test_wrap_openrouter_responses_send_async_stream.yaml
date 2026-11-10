@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"input":"What is 7+7? Reply with just the number.","model":"openai/gpt-4o-mini","service_tier":"auto","store":false,"stream":true}'
+    body: '{"input":"What is 7+7? Reply with just the number.","model":"openai/gpt-6-luna","reasoning":{"effort":"none"},"service_tier":"auto","store":false,"stream":true}'
     headers:
       accept:
       - text/event-stream
@@ -9,7 +9,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '131'
+      - '160'
       content-type:
       - application/json
       host:
@@ -20,54 +20,33 @@ interactions:
     uri: https://openrouter.ai/api/v1/responses
   response:
     body:
-      string: 'data: {"type":"response.created","response":{"id":"gen-1794242678-xbQ6kTnnBQyST50EadYi","object":"response","created_at":1794242678,"model":"openai/gpt-4o-mini","status":"in_progress","completed_at":null,"output":[],"error":null,"incomplete_details":null,"access_programs":null,"tools":[],"tool_choice":"auto","parallel_tool_calls":true,"max_output_tokens":null,"temperature":1,"top_p":1,"presence_penalty":0,"frequency_penalty":0,"top_logprobs":0,"max_tool_calls":null,"metadata":{},"background":false,"previous_response_id":null,"service_tier":"auto","truncation":"disabled","store":false,"instructions":null,"text":{"format":{"type":"text"}},"reasoning":null,"safety_identifier":null,"prompt_cache_key":null,"prompt_cache_options":null,"usage":null},"sequence_number":0}
-
-
-        data: {"type":"response.in_progress","response":{"id":"gen-1794242678-xbQ6kTnnBQyST50EadYi","object":"response","created_at":1794242678,"model":"openai/gpt-4o-mini","status":"in_progress","completed_at":null,"output":[],"error":null,"incomplete_details":null,"access_programs":null,"tools":[],"tool_choice":"auto","parallel_tool_calls":true,"max_output_tokens":null,"temperature":1,"top_p":1,"presence_penalty":0,"frequency_penalty":0,"top_logprobs":0,"max_tool_calls":null,"metadata":{},"background":false,"previous_response_id":null,"service_tier":"auto","truncation":"disabled","store":false,"instructions":null,"text":{"format":{"type":"text"}},"reasoning":null,"safety_identifier":null,"prompt_cache_key":null,"prompt_cache_options":null,"usage":null},"sequence_number":1}
-
-
-        data: {"type":"response.output_item.added","output_index":0,"item":{"id":"msg_tmp_tt74zh6iyxm","type":"message","status":"in_progress","role":"assistant","content":[]},"sequence_number":2}
-
-
-        data: {"type":"response.content_part.added","output_index":0,"item_id":"msg_tmp_tt74zh6iyxm","content_index":0,"part":{"type":"output_text","text":"","annotations":[],"logprobs":[]},"sequence_number":3}
-
-
-        data: {"type":"response.output_text.delta","output_index":0,"item_id":"msg_tmp_tt74zh6iyxm","content_index":0,"delta":"14","logprobs":[],"sequence_number":4}
-
-
-        data: {"type":"response.output_text.done","output_index":0,"item_id":"msg_tmp_tt74zh6iyxm","content_index":0,"text":"14","logprobs":[],"sequence_number":5}
-
-
-        data: {"type":"response.content_part.done","output_index":0,"item_id":"msg_tmp_tt74zh6iyxm","content_index":0,"part":{"type":"output_text","text":"14","annotations":[],"logprobs":[]},"sequence_number":6}
-
-
-        data: {"type":"response.output_item.done","output_index":0,"item":{"id":"msg_tmp_tt74zh6iyxm","type":"message","status":"completed","role":"assistant","content":[{"type":"output_text","text":"14","annotations":[],"logprobs":[]}]},"sequence_number":7}
-
-
-        data: {"type":"response.completed","response":{"id":"gen-1794242678-xbQ6kTnnBQyST50EadYi","object":"response","created_at":1794242678,"model":"openai/gpt-4o-mini","status":"completed","completed_at":1794242679,"output":[{"id":"msg_tmp_tt74zh6iyxm","type":"message","role":"assistant","status":"completed","content":[{"type":"output_text","text":"14","annotations":[],"logprobs":[]}]}],"error":null,"incomplete_details":null,"access_programs":null,"tools":[],"tool_choice":"auto","parallel_tool_calls":true,"max_output_tokens":null,"temperature":1,"top_p":1,"presence_penalty":0,"frequency_penalty":0,"top_logprobs":0,"max_tool_calls":null,"metadata":{},"background":false,"previous_response_id":null,"service_tier":"default","truncation":"disabled","store":false,"instructions":null,"text":{"format":{"type":"text"}},"reasoning":null,"safety_identifier":null,"prompt_cache_key":null,"prompt_cache_options":null,"usage":{"input_tokens":20,"input_tokens_details":{"cached_tokens":0},"output_tokens":1,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":21,"cost":0.0000036,"is_byok":false,"cost_details":{"upstream_inference_cost":0.0000036,"upstream_inference_input_cost":0.000003,"upstream_inference_output_cost":6e-7}}},"sequence_number":8}
-
-
-        data: [DONE]
-
-
-        '
+      string: ": \n\ndata: {\"type\":\"response.created\",\"response\":{\"id\":\"gen-1794325547-EA5W3wSozEYQ5AAsCcsa\",\"object\":\"response\",\"created_at\":1794325547,\"model\":\"openai/gpt-6-luna\",\"status\":\"in_progress\",\"completed_at\":null,\"output\":[],\"error\":null,\"incomplete_details\":null,\"access_programs\":null,\"tools\":[],\"tool_choice\":\"auto\",\"parallel_tool_calls\":true,\"max_output_tokens\":null,\"temperature\":1,\"top_p\":1,\"presence_penalty\":0,\"frequency_penalty\":0,\"top_logprobs\":0,\"max_tool_calls\":null,\"metadata\":{},\"background\":false,\"previous_response_id\":null,\"service_tier\":\"auto\",\"truncation\":\"disabled\",\"store\":false,\"instructions\":null,\"text\":{\"format\":{\"type\":\"text\"}},\"reasoning\":{\"effort\":\"none\"},\"safety_identifier\":null,\"prompt_cache_key\":null,\"prompt_cache_options\":null,\"usage\":null},\"sequence_number\":0}\n\ndata:
+        {\"type\":\"response.in_progress\",\"response\":{\"id\":\"gen-1794325547-EA5W3wSozEYQ5AAsCcsa\",\"object\":\"response\",\"created_at\":1794325547,\"model\":\"openai/gpt-6-luna\",\"status\":\"in_progress\",\"completed_at\":null,\"output\":[],\"error\":null,\"incomplete_details\":null,\"access_programs\":null,\"tools\":[],\"tool_choice\":\"auto\",\"parallel_tool_calls\":true,\"max_output_tokens\":null,\"temperature\":1,\"top_p\":1,\"presence_penalty\":0,\"frequency_penalty\":0,\"top_logprobs\":0,\"max_tool_calls\":null,\"metadata\":{},\"background\":false,\"previous_response_id\":null,\"service_tier\":\"auto\",\"truncation\":\"disabled\",\"store\":false,\"instructions\":null,\"text\":{\"format\":{\"type\":\"text\"}},\"reasoning\":{\"effort\":\"none\"},\"safety_identifier\":null,\"prompt_cache_key\":null,\"prompt_cache_options\":null,\"usage\":null},\"sequence_number\":1}\n\ndata:
+        {\"type\":\"response.output_item.added\",\"output_index\":0,\"item\":{\"id\":\"msg_tmp_f11o8lskzq6\",\"type\":\"message\",\"status\":\"in_progress\",\"role\":\"assistant\",\"content\":[],\"phase\":\"final_answer\"},\"sequence_number\":2}\n\ndata:
+        {\"type\":\"response.content_part.added\",\"output_index\":0,\"item_id\":\"msg_tmp_f11o8lskzq6\",\"content_index\":0,\"part\":{\"type\":\"output_text\",\"text\":\"\",\"annotations\":[],\"logprobs\":[]},\"sequence_number\":3}\n\ndata:
+        {\"type\":\"response.output_text.delta\",\"output_index\":0,\"item_id\":\"msg_tmp_f11o8lskzq6\",\"content_index\":0,\"delta\":\"14\",\"logprobs\":[],\"sequence_number\":4}\n\ndata:
+        {\"type\":\"response.output_text.done\",\"output_index\":0,\"item_id\":\"msg_tmp_f11o8lskzq6\",\"content_index\":0,\"text\":\"14\",\"logprobs\":[],\"sequence_number\":5}\n\ndata:
+        {\"type\":\"response.content_part.done\",\"output_index\":0,\"item_id\":\"msg_tmp_f11o8lskzq6\",\"content_index\":0,\"part\":{\"type\":\"output_text\",\"text\":\"14\",\"annotations\":[],\"logprobs\":[]},\"sequence_number\":6}\n\ndata:
+        {\"type\":\"response.output_item.done\",\"output_index\":0,\"item\":{\"id\":\"msg_tmp_f11o8lskzq6\",\"type\":\"message\",\"status\":\"completed\",\"role\":\"assistant\",\"content\":[{\"type\":\"output_text\",\"text\":\"14\",\"annotations\":[],\"logprobs\":[]}],\"phase\":\"final_answer\"},\"sequence_number\":7}\n\ndata:
+        {\"type\":\"response.completed\",\"response\":{\"id\":\"gen-1794325547-EA5W3wSozEYQ5AAsCcsa\",\"object\":\"response\",\"created_at\":1794325547,\"model\":\"openai/gpt-6-luna\",\"status\":\"completed\",\"completed_at\":1794325548,\"output\":[{\"id\":\"msg_tmp_f11o8lskzq6\",\"type\":\"message\",\"role\":\"assistant\",\"status\":\"completed\",\"content\":[{\"type\":\"output_text\",\"text\":\"14\",\"annotations\":[],\"logprobs\":[]}],\"phase\":\"final_answer\"}],\"error\":null,\"incomplete_details\":null,\"access_programs\":{\"cyber\":\"standard\"},\"tools\":[],\"tool_choice\":\"auto\",\"parallel_tool_calls\":true,\"max_output_tokens\":null,\"temperature\":1,\"top_p\":1,\"presence_penalty\":0,\"frequency_penalty\":0,\"top_logprobs\":0,\"max_tool_calls\":null,\"metadata\":{},\"background\":false,\"previous_response_id\":null,\"service_tier\":\"default\",\"truncation\":\"disabled\",\"store\":false,\"instructions\":null,\"text\":{\"format\":{\"type\":\"text\"}},\"reasoning\":{\"effort\":\"none\",\"context\":\"all_turns\",\"mode\":\"standard\",\"summary\":null},\"safety_identifier\":null,\"prompt_cache_key\":null,\"prompt_cache_options\":null,\"usage\":{\"input_tokens\":19,\"input_tokens_details\":{\"cached_tokens\":0},\"output_tokens\":5,\"output_tokens_details\":{\"reasoning_tokens\":0},\"total_tokens\":24,\"cost\":0.0000044,\"is_byok\":false,\"cost_details\":{\"upstream_inference_cost\":0.0000044,\"upstream_inference_input_cost\":0.0000019,\"upstream_inference_output_cost\":0.0000025}}},\"sequence_number\":8}\n\ndata:
+        [DONE]\n\n"
     headers:
       access-control-allow-origin:
       - '*'
       access-control-expose-headers:
-      - X-Generation-Id,x-openrouter-error-origin,x-openrouter-error-tool,X-Provider-Name,request-id,cf-ray
+      - WWW-Authenticate,PAYMENT-REQUIRED,Payment-Receipt,PAYMENT-RESPONSE,Location,X-Generation-Id,x-openrouter-error-origin,x-openrouter-error-tool,X-Provider-Name,request-id,cf-ray
       alt-svc:
       - h3=":443"; ma=86400
       cache-control:
       - no-cache
       cf-ray:
-      - a57e4887aade0643-YYZ
+      - a5862fad39a79108-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream
       date:
-      - Mon, 09 Nov 2026 16:44:39 GMT
+      - Tue, 10 Nov 2026 15:45:47 GMT
       permissions-policy:
       - payment=(self "https://checkout.stripe.com" "https://connect-js.stripe.com"
         "https://js.stripe.com" "https://*.js.stripe.com" "https://hooks.stripe.com")
@@ -80,9 +59,9 @@ interactions:
       x-content-type-options:
       - nosniff
       x-generation-id:
-      - gen-1794242678-xbQ6kTnnBQyST50EadYi
+      - gen-1794325547-EA5W3wSozEYQ5AAsCcsa
       x-openrouter-release:
-      - api;683aab1d-471b-452a-a1a0-6d3ef7affc7e
+      - api;42ddd65c-b5ba-49a4-b9a4-8405b32343e2
     status:
       code: 200
       message: OK

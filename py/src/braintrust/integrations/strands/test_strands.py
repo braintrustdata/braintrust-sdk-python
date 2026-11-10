@@ -1,5 +1,6 @@
 # pylint: disable=import-error
 
+import os
 from pathlib import Path
 
 import pytest
@@ -8,6 +9,10 @@ from braintrust.integrations.strands import StrandsIntegration
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import find_spans_by_type, init_test_logger
 
+
+LATEST_MODELS = os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
+TEST_MODEL = "gpt-6-luna" if LATEST_MODELS else "gpt-4o-mini"
+MODEL_OPTIONS = {"reasoning_effort": "none"} if LATEST_MODELS else {}
 
 PROJECT_NAME = "test-project-strands-py-tracing"
 
@@ -30,7 +35,14 @@ async def test_strands_openai_agent_traces_native_otel_lifecycle(memory_logger):
     # A repeated setup() must not double-patch: the span counts below would duplicate.
     assert StrandsIntegration.setup()
 
-    model = OpenAIModel(model_id="gpt-4o-mini", params={"temperature": 0, "max_tokens": 16})
+    model = OpenAIModel(
+        model_id=TEST_MODEL,
+        params={
+            "temperature": 0,
+            **MODEL_OPTIONS,
+            **({"max_completion_tokens": 16} if LATEST_MODELS else {"max_tokens": 16}),
+        },
+    )
     agent = Agent(model=model, name="bt-test-agent", system_prompt="Answer with one short sentence.")
 
     result = await agent.invoke_async("What is 2 + 2?")
@@ -53,8 +65,8 @@ async def test_strands_openai_agent_traces_native_otel_lifecycle(memory_logger):
     assert len(llm_spans) == 1
     llm_span = llm_spans[0]
     assert llm_span["input"]["messages"][0]["role"] == "user"
-    assert llm_span["span_attributes"]["name"] == "gpt-4o-mini.chat"
-    assert llm_span["metadata"]["model"] == "gpt-4o-mini"
+    assert llm_span["span_attributes"]["name"] == f"{TEST_MODEL}.chat"
+    assert llm_span["metadata"]["model"] == TEST_MODEL
     assert llm_span["metadata"]["stop_reason"] == "end_turn"
     assert llm_span["metadata"]["strands_usage"]["input_tokens"] > 0
     assert llm_span["metadata"]["strands_usage"]["output_tokens"] > 0
@@ -68,6 +80,7 @@ async def test_strands_openai_agent_traces_native_otel_lifecycle(memory_logger):
 @pytest.mark.asyncio
 @pytest.mark.vcr
 async def test_strands_decision_models_in_tool_trace_decision_spans(memory_logger):
+    # Luna does not yet preserve the decision model structured-output/tool-loop contract.
     decisions = pytest.importorskip("strands.decisions", reason="DecisionModel requires strands-agents >= 1.63.0")
     if not hasattr(decisions, "TypeSafeDecisionModel"):
         pytest.skip("TypeSafeDecisionModel requires strands-agents >= 1.64.0")

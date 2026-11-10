@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"messages":[{"content":"What is 5+5? Reply with just the number.","role":"user"}],"max_tokens":10,"model":"openai/gpt-4o-mini","stream":true}'
+    body: '{"messages":[{"content":"What is 5+5? Reply with just the number.","role":"user"}],"max_tokens":10,"model":"openai/gpt-6-luna","reasoning":{"effort":"none"},"stream":true}'
     headers:
       accept:
       - text/event-stream
@@ -9,7 +9,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '142'
+      - '171'
       content-type:
       - application/json
       host:
@@ -20,13 +20,22 @@ interactions:
     uri: https://openrouter.ai/api/v1/chat/completions
   response:
     body:
-      string: 'data: {"id":"gen-1794242675-NwWwNzhQ29BEAYyFyZkK","object":"chat.completion.chunk","created":1794242675,"model":"openai/gpt-4o-mini","provider":"OpenAI","system_fingerprint":"fp_39a18a5898","choices":[{"index":0,"delta":{"content":"10","role":"assistant"},"finish_reason":null,"native_finish_reason":null}]}
+      string: ': OPENROUTER PROCESSING
 
 
-        data: {"id":"gen-1794242675-NwWwNzhQ29BEAYyFyZkK","object":"chat.completion.chunk","created":1794242675,"model":"openai/gpt-4o-mini","provider":"OpenAI","system_fingerprint":"fp_39a18a5898","choices":[{"index":0,"delta":{"content":"","role":"assistant"},"finish_reason":"stop","native_finish_reason":"stop"}]}
+        : OPENROUTER PROCESSING
 
 
-        data: {"id":"gen-1794242675-NwWwNzhQ29BEAYyFyZkK","object":"chat.completion.chunk","created":1794242675,"model":"openai/gpt-4o-mini","provider":"OpenAI","system_fingerprint":"fp_39a18a5898","service_tier":"default","choices":[{"index":0,"delta":{"content":"","role":"assistant"},"finish_reason":"stop","native_finish_reason":"stop"}],"usage":{"prompt_tokens":20,"completion_tokens":1,"total_tokens":21,"cost":0.0000036,"is_byok":false,"prompt_tokens_details":{"cached_tokens":0,"cache_write_tokens":0,"audio_tokens":0,"video_tokens":0},"cost_details":{"upstream_inference_cost":0.0000036,"upstream_inference_prompt_cost":0.000003,"upstream_inference_completions_cost":6e-7},"completion_tokens_details":{"reasoning_tokens":0,"image_tokens":0,"audio_tokens":0}}}
+        : OPENROUTER PROCESSING
+
+
+        data: {"id":"gen-1794325540-q3GMpSgjUPvqdgPhWZBF","object":"chat.completion.chunk","created":1794325540,"model":"openai/gpt-6-luna","provider":"OpenAI","choices":[{"index":0,"delta":{"content":"10","role":"assistant"},"finish_reason":null,"native_finish_reason":null}]}
+
+
+        data: {"id":"gen-1794325540-q3GMpSgjUPvqdgPhWZBF","object":"chat.completion.chunk","created":1794325540,"model":"openai/gpt-6-luna","provider":"OpenAI","choices":[{"index":0,"delta":{"content":"","role":"assistant"},"finish_reason":"stop","native_finish_reason":"completed"}]}
+
+
+        data: {"id":"gen-1794325540-q3GMpSgjUPvqdgPhWZBF","object":"chat.completion.chunk","created":1794325540,"model":"openai/gpt-6-luna","provider":"OpenAI","service_tier":"default","choices":[{"index":0,"delta":{"content":"","role":"assistant"},"finish_reason":"stop","native_finish_reason":"completed"}],"usage":{"prompt_tokens":19,"completion_tokens":5,"total_tokens":24,"cost":0.0000044,"is_byok":false,"prompt_tokens_details":{"cached_tokens":0,"cache_write_tokens":0,"audio_tokens":0,"video_tokens":0},"cost_details":{"upstream_inference_cost":0.0000044,"upstream_inference_prompt_cost":0.0000019,"upstream_inference_completions_cost":0.0000025},"completion_tokens_details":{"reasoning_tokens":0,"image_tokens":0,"audio_tokens":0}}}
 
 
         data: [DONE]
@@ -37,19 +46,19 @@ interactions:
       access-control-allow-origin:
       - '*'
       access-control-expose-headers:
-      - X-Generation-Id,x-openrouter-error-origin,x-openrouter-error-tool,X-Provider-Name,request-id,cf-ray
+      - WWW-Authenticate,PAYMENT-REQUIRED,Payment-Receipt,PAYMENT-RESPONSE,Location,X-Generation-Id,x-openrouter-error-origin,x-openrouter-error-tool,X-Provider-Name,request-id,cf-ray
       alt-svc:
       - h3=":443"; ma=86400
       cache-control:
       - no-cache
       cf-ray:
-      - a57e486f2e58ebbc-YYZ
+      - a5862f813b4264a6-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream
       date:
-      - Mon, 09 Nov 2026 16:44:35 GMT
+      - Tue, 10 Nov 2026 15:45:40 GMT
       permissions-policy:
       - payment=(self "https://checkout.stripe.com" "https://connect-js.stripe.com"
         "https://js.stripe.com" "https://*.js.stripe.com" "https://hooks.stripe.com")
@@ -62,9 +71,9 @@ interactions:
       x-content-type-options:
       - nosniff
       x-generation-id:
-      - gen-1794242675-NwWwNzhQ29BEAYyFyZkK
+      - gen-1794325540-q3GMpSgjUPvqdgPhWZBF
       x-openrouter-release:
-      - api;683aab1d-471b-452a-a1a0-6d3ef7affc7e
+      - api;42ddd65c-b5ba-49a4-b9a4-8405b32343e2
     status:
       code: 200
       message: OK

@@ -1,7 +1,7 @@
 interactions:
 - request:
     body: '{"max_tokens":128,"messages":[{"role":"user","content":"Return a JSON object
-      with answer=2 and label=\"ok\"."}],"model":"claude-haiku-4-5","output_config":{"format":{"type":"json_schema","schema":{"type":"object","properties":{"answer":{"type":"integer"},"label":{"type":"string"}},"required":["answer","label"],"additionalProperties":false}}}}'
+      with answer=2 and label=\"ok\"."}],"model":"claude-haiku-5-5","output_config":{"format":{"type":"json_schema","schema":{"type":"object","properties":{"answer":{"type":"integer"},"label":{"type":"string"}},"required":["answer","label"],"additionalProperties":false}}}}'
     headers:
       accept:
       - application/json
@@ -43,8 +43,8 @@ interactions:
     uri: https://api.anthropic.com/v1/messages
   response:
     body:
-      string: '{"model":"claude-haiku-4-5-20251001","id":"msg_011Cgsh2Wy2j1HudQkwEeE2w","type":"message","role":"assistant","content":[{"type":"text","text":"{\"answer\":
-        2, \"label\": \"ok\"}"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":183,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":15,"service_tier":"standard","inference_geo":"not_available","speed":"standard"},"diagnostics":null}'
+      string: '{"model":"claude-haiku-5-5","id":"msg_011CguWV8jnEkMuSci4uz1zv","type":"message","role":"assistant","content":[{"type":"text","text":"{\"answer\":
+        2, \"label\": \"ok\"}"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":236,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":18,"output_tokens_details":{"thinking_tokens":0},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
     headers:
       anthropic-organization-id:
       - 27796668-7351-40ac-acc4-024aee8995a5
@@ -53,51 +53,51 @@ interactions:
       anthropic-ratelimit-input-tokens-remaining:
       - '10000000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-11-09T16:44:30Z'
+      - '2026-11-10T15:47:27Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-11-09T16:44:30Z'
+      - '2026-11-10T15:47:27Z'
       anthropic-ratelimit-requests-limit:
-      - '20000'
+      - '45000'
       anthropic-ratelimit-requests-remaining:
-      - '19999'
+      - '44999'
       anthropic-ratelimit-requests-reset:
-      - '2026-11-09T16:44:28Z'
+      - '2026-11-10T15:47:26Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
       - '12000000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-11-09T16:44:30Z'
+      - '2026-11-10T15:47:27Z'
       anthropic-workspace-id:
       - wrkspc_018bFG1FgNVWqx5pthtdGTzS
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a57e48481fa060a9-YYZ
+      - a5863218896d1185-YYZ
       connection:
       - keep-alive
       content-length:
-      - '547'
+      - '577'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - application/json
       date:
-      - Mon, 09 Nov 2026 16:44:30 GMT
+      - Tue, 10 Nov 2026 15:47:27 GMT
       request-id:
-      - req_011Cgsh2Wje3ek3Fu5sa2r8L
+      - req_011CguWV8YsDH8Gv3hrduJqk
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=1918
+      - x-originResponse;dur=1692
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-a82f8dde80409142e68d8eb8d2595d25-46739b48bdeb137f-01
+      - 00-77ecdbde686fdda5e2c91b9360a5bdbc-540eb30089aad78a-01
       transfer-encoding:
       - chunked
       vary:

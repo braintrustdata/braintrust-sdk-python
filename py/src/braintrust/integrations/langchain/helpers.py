@@ -88,7 +88,9 @@ def find_spans_by_attributes(spans: list[Any], **attributes: Any) -> list[Any]:
     return matching_spans
 
 
-def expected_prompt_chain_spans(root_span_id: str, trace_root_id: str, *, tags: Sequence[str] = ()) -> list[Any]:
+def expected_prompt_chain_spans(
+    root_span_id: str, trace_root_id: str, *, tags: Sequence[str] = (), model_name: str = "gpt-4o-mini-2024-07-18"
+) -> list[Any]:
     """Expected spans for ``ChatPromptTemplate("What is 1 + {number}?") | ChatOpenAI(gpt-4o-mini)`` invoked with ``{"number": "2"}``."""
     tags = list(tags)
     return [
@@ -154,7 +156,7 @@ def expected_prompt_chain_spans(root_span_id: str, trace_root_id: str, *, tags: 
                     ]
                 ],
                 "llm_output": {
-                    "model_name": "gpt-4o-mini-2024-07-18",
+                    "model_name": model_name,
                 },
                 "type": "LLMResult",
             },
@@ -167,7 +169,7 @@ def expected_prompt_chain_spans(root_span_id: str, trace_root_id: str, *, tags: 
             },
             "metadata": {
                 "tags": ["seq:step:2", *tags],
-                "model": "gpt-4o-mini-2024-07-18",
+                "model": model_name,
                 "provider": "openai",
             },
             "root_span_id": trace_root_id,

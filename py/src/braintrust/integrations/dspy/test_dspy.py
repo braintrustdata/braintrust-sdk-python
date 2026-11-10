@@ -11,6 +11,7 @@ import dspy
 import pytest
 from braintrust import Attachment, logger
 from braintrust.bt_json import bt_dumps
+from braintrust.integrations._test_models import OPENAI_CHAT_MODEL, OPENAI_CHAT_OPTIONS
 from braintrust.integrations.dspy import BraintrustDSpyCallback
 from braintrust.integrations.dspy.tracing import _process_images
 from braintrust.integrations.litellm import patch_litellm
@@ -20,11 +21,12 @@ from pydantic import BaseModel, Field, RootModel, field_serializer, model_serial
 
 
 PROJECT_NAME = "test-dspy-app"
-MODEL = "openai/gpt-4o-mini"
+MODEL = f"openai/{OPENAI_CHAT_MODEL}"
 # DSPy >= 3.4 defaults to engine="auto", which routes OpenAI calls through the
 # vendored lm15 raw-socket transport that VCR cannot intercept. Pin LiteLLM so
 # the request is recorded.
 LM_KWARGS = {"engine": "litellm"} if "engine" in inspect.signature(dspy.LM.__init__).parameters else {}
+LM_KWARGS.update(OPENAI_CHAT_OPTIONS)
 
 
 def test_dspy_image_conversion_preserves_other_model_serializers():

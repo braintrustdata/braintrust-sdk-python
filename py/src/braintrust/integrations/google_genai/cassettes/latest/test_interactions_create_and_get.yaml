@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"model":"gemini-2.5-flash","input":"What is the capital of France?"}'
+    body: '{"model":"gemini-3.5-flash-lite","input":"What is the capital of France?"}'
     headers:
       accept:
       - application/json
@@ -9,118 +9,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '69'
-      content-type:
-      - application/json
-      host:
-      - generativelanguage.googleapis.com
-      user-agent:
-      - google-genai-sdk/3.0.0 gl-python/3.14.7
-      x-goog-api-client:
-      - google-genai-sdk/3.0.0 gl-python/3.14.7
-    method: POST
-    uri: https://generativelanguage.googleapis.com/v1/interactions
-  response:
-    body:
-      string: '{"id":"v1_Chd3X3p4YXJlRk10UE0wX2dQcm82c3lBdxIXd196eGFyZUZNdFBNMF9nUHJvNnN5QXc","status":"completed","usage":{"total_tokens":38,"total_input_tokens":8,"input_tokens_by_modality":[{"modality":"text","tokens":8}],"total_cached_tokens":0,"total_output_tokens":7,"total_tool_use_tokens":0,"total_thought_tokens":23,"initial_input_tokens":8},"created":"2026-11-09T17:02:59Z","updated":"2026-11-09T17:02:59Z","service_tier":"standard","steps":[{"signature":"CokBAWkUfRPoXR80YMx52Ap1YDUAr/G9JN3lJYXL6vYCz7cv46/IU3xUBVaMGXnkjWoGSoClYmZisblc2AlbPGUoXju+TDzYsFPYX7mnYjOfaUYjxF2rwUils5m21dmVwf8riHpMEeBlKXN9kViUglAhcDTnOjPgqARnSat3sj5nskoiY6sr0QO7cq8=","type":"thought"},{"content":[{"text":"The
-        capital of France is Paris.","type":"text"}],"type":"model_output"}],"object":"interaction","model":"gemini-2.5-flash"}'
-    headers:
-      alt-svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      content-length:
-      - '803'
-      content-type:
-      - application/json
-      date:
-      - Mon, 09 Nov 2026 17:03:00 GMT
-      server:
-      - scaffolding on HTTPServer2
-      server-timing:
-      - gfet4t7; dur=2088
-      transfer-encoding:
-      - chunked
-      vary:
-      - Origin
-      - X-Origin
-      - Referer
-      x-content-type-options:
-      - nosniff
-      x-frame-options:
-      - SAMEORIGIN
-      x-xss-protection:
-      - '0'
-    status:
-      code: 200
-      message: OK
-- request:
-    body: ''
-    headers:
-      accept:
-      - application/json
-      accept-encoding:
-      - gzip, deflate, zstd
-      connection:
-      - keep-alive
-      content-type:
-      - application/json
-      host:
-      - generativelanguage.googleapis.com
-      user-agent:
-      - google-genai-sdk/3.0.0 gl-python/3.14.7
-      x-goog-api-client:
-      - google-genai-sdk/3.0.0 gl-python/3.14.7
-    method: GET
-    uri: https://generativelanguage.googleapis.com/v1/interactions/v1_Chd3X3p4YXJlRk10UE0wX2dQcm82c3lBdxIXd196eGFyZUZNdFBNMF9nUHJvNnN5QXc?include_input=true&stream=false
-  response:
-    body:
-      string: "[{\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Invalid
-        JSON payload received. Unknown name \\\"include_input\\\": Cannot bind query
-        parameter. Field 'include_input' could not be found in request message.\",\n
-        \   \"status\": \"INVALID_ARGUMENT\",\n    \"details\": [\n      {\n        \"@type\":
-        \"type.googleapis.com/google.rpc.BadRequest\",\n        \"fieldViolations\":
-        [\n          {\n            \"description\": \"Invalid JSON payload received.
-        Unknown name \\\"include_input\\\": Cannot bind query parameter. Field 'include_input'
-        could not be found in request message.\"\n          }\n        ]\n      }\n
-        \   ]\n  }\n}\n]"
-    headers:
-      alt-svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      content-length:
-      - '591'
-      content-type:
-      - application/json; charset=UTF-8
-      date:
-      - Mon, 09 Nov 2026 17:03:00 GMT
-      server:
-      - scaffolding on HTTPServer2
-      server-timing:
-      - gfet4t7; dur=24
-      transfer-encoding:
-      - chunked
-      vary:
-      - Origin
-      - X-Origin
-      - Referer
-      x-content-type-options:
-      - nosniff
-      x-frame-options:
-      - SAMEORIGIN
-      x-xss-protection:
-      - '0'
-    status:
-      code: 400
-      message: Bad Request
-- request:
-    body: '{"model":"gemini-2.5-flash","input":"What is the capital of France?"}'
-    headers:
-      accept:
-      - application/json
-      accept-encoding:
-      - gzip, deflate, zstd
-      connection:
-      - keep-alive
-      content-length:
-      - '69'
+      - '74'
       content-type:
       - application/json
       host:
@@ -133,21 +22,21 @@ interactions:
     uri: https://generativelanguage.googleapis.com/v1beta/interactions
   response:
     body:
-      string: '{"id":"v1_ChdPUDN4YW83cUxPeUN5dE1Qei11dGdBWRIXT1AzeGFvN3FMT3lDeXRNUHotdXRnQVk","status":"completed","usage":{"total_tokens":37,"total_input_tokens":8,"input_tokens_by_modality":[{"modality":"text","tokens":8}],"total_cached_tokens":0,"total_output_tokens":7,"total_tool_use_tokens":0,"total_thought_tokens":22,"initial_input_tokens":8},"created":"2026-11-09T17:04:56Z","updated":"2026-11-09T17:04:56Z","service_tier":"standard","steps":[{"signature":"CoABAWkUfRPBx0ZrF4XxgNqvCpb5tsMSnRbKPtCTIU8C0WACzuhbBgf8dlI2w9dmTl/gXTsWsOJQh1nv90zt51paKVFbUnjkbtXcy9F+GbwjMX2OamoDjJsA/NxJd/Gyr7hT/Isv2e6lgezINP763PMj/ucNSWl3aMSvpLhe3syRl8Y=","type":"thought"},{"content":[{"text":"The
-        capital of France is Paris.","type":"text"}],"type":"model_output"}],"object":"interaction","model":"gemini-2.5-flash"}'
+      string: '{"id":"v1_ChdKejd6YXVUNElQLXV4ZElQLTRqR2lRZxIXSno3emF1VDRJUC11eGRJUC00akdpUWc","status":"completed","usage":{"total_tokens":15,"total_input_tokens":8,"input_tokens_by_modality":[{"modality":"text","tokens":8}],"total_cached_tokens":0,"total_output_tokens":7,"total_tool_use_tokens":0,"total_thought_tokens":0,"initial_input_tokens":8},"created":"2026-11-10T15:54:15Z","updated":"2026-11-10T15:54:15Z","service_tier":"standard","steps":[{"signature":"EmAKXgFpFH0TVg2cYvAVDTzcfpvuqPaTh5Y2PLa1hqv+LuV+YO3sZUzIvk3qFc3sQTTVlz89snjhWIwm/BIOg24GoBZNVQivTZtyiBXSSH+wbiDJSfi1Kb+lzzEVKdLyZUo=","type":"thought"},{"content":[{"text":"The
+        capital of France is Paris.","type":"text"}],"type":"model_output"}],"object":"interaction","model":"gemini-3.5-flash-lite"}'
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '791'
+      - '751'
       content-type:
       - application/json
       date:
-      - Mon, 09 Nov 2026 17:04:57 GMT
+      - Tue, 10 Nov 2026 15:54:16 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=2199
+      - gfet4t7; dur=1666
       transfer-encoding:
       - chunked
       vary:
@@ -181,26 +70,26 @@ interactions:
       x-goog-api-client:
       - google-genai-sdk/3.0.0 gl-python/3.14.7
     method: GET
-    uri: https://generativelanguage.googleapis.com/v1beta/interactions/v1_ChdPUDN4YW83cUxPeUN5dE1Qei11dGdBWRIXT1AzeGFvN3FMT3lDeXRNUHotdXRnQVk?include_input=true&stream=false
+    uri: https://generativelanguage.googleapis.com/v1beta/interactions/v1_ChdKejd6YXVUNElQLXV4ZElQLTRqR2lRZxIXSno3emF1VDRJUC11eGRJUC00akdpUWc?include_input=true&stream=false
   response:
     body:
-      string: '{"id":"v1_ChdPUDN4YW83cUxPeUN5dE1Qei11dGdBWRIXT1AzeGFvN3FMT3lDeXRNUHotdXRnQVk","status":"completed","usage":{"total_tokens":37,"total_input_tokens":8,"input_tokens_by_modality":[{"modality":"text","tokens":8}],"total_cached_tokens":0,"total_output_tokens":7,"total_tool_use_tokens":0,"total_thought_tokens":22,"initial_input_tokens":8},"created":"2026-11-09T17:04:56Z","updated":"2026-11-09T17:04:56Z","service_tier":"standard","steps":[{"type":"user_input","content":[{"text":"What
-        is the capital of France?","type":"text"}]},{"signature":"CoABAWkUfRPBx0ZrF4XxgNqvCpb5tsMSnRbKPtCTIU8C0WACzuhbBgf8dlI2w9dmTl/gXTsWsOJQh1nv90zt51paKVFbUnjkbtXcy9F+GbwjMX2OamoDjJsA/NxJd/Gyr7hT/Isv2e6lgezINP763PMj/ucNSWl3aMSvpLhe3syRl8Y=","type":"thought"},{"content":[{"text":"The
+      string: '{"id":"v1_ChdKejd6YXVUNElQLXV4ZElQLTRqR2lRZxIXSno3emF1VDRJUC11eGRJUC00akdpUWc","status":"completed","usage":{"total_tokens":15,"total_input_tokens":8,"input_tokens_by_modality":[{"modality":"text","tokens":8}],"total_cached_tokens":0,"total_output_tokens":7,"total_tool_use_tokens":0,"total_thought_tokens":0,"initial_input_tokens":8},"created":"2026-11-10T15:54:15Z","updated":"2026-11-10T15:54:15Z","steps":[{"type":"user_input","content":[{"text":"What
+        is the capital of France?","type":"text"}]},{"signature":"EmAKXgFpFH0TVg2cYvAVDTzcfpvuqPaTh5Y2PLa1hqv+LuV+YO3sZUzIvk3qFc3sQTTVlz89snjhWIwm/BIOg24GoBZNVQivTZtyiBXSSH+wbiDJSfi1Kb+lzzEVKdLyZUo=","type":"thought"},{"content":[{"text":"The
         capital of France is Paris.","type":"text"}],"type":"model_output"}],"object":"interaction","input":[{"type":"user_input","content":[{"text":"What
-        is the capital of France?","type":"text"}]}],"model":"gemini-2.5-flash"}'
+        is the capital of France?","type":"text"}]}],"model":"gemini-3.5-flash-lite"}'
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '981'
+      - '915'
       content-type:
       - application/json
       date:
-      - Mon, 09 Nov 2026 17:04:58 GMT
+      - Tue, 10 Nov 2026 15:54:17 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=335
+      - gfet4t7; dur=631
       transfer-encoding:
       - chunked
       vary:

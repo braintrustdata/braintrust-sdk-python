@@ -1,6 +1,7 @@
 """Test auto_instrument for LangChain."""
 
 from braintrust.auto import auto_instrument
+from braintrust.integrations._test_models import LATEST, OPENAI_CHAT_MODEL, OPENAI_CHAT_OPTIONS
 from braintrust.integrations.langchain import BraintrustCallbackHandler
 from braintrust.integrations.langchain.context import clear_global_handler, get_global_handler
 from braintrust.integrations.test_utils import autoinstrument_test_context
@@ -31,9 +32,12 @@ assert get_global_handler() is handler
 
 # 4. Make an API call and verify spans.
 with autoinstrument_test_context("test_global_handler", integration="langchain") as memory_logger:
-    prompt = ChatPromptTemplate.from_template("What is 1 + {number}?")
+    prompt = ChatPromptTemplate.from_template(
+        "What is 1 + {number}? Reply exactly: 1 + {number} equals 3." if LATEST else "What is 1 + {number}?"
+    )
     model = ChatOpenAI(
-        model="gpt-4o-mini",
+        model=OPENAI_CHAT_MODEL,
+        **OPENAI_CHAT_OPTIONS,
         temperature=1,
         top_p=1,
         frequency_penalty=0,

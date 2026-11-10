@@ -3,6 +3,7 @@
 # pyright: reportUnknownMemberType=false
 # pyright: reportUnknownVariableType=false
 import base64
+import os
 
 import ai
 import pytest
@@ -15,8 +16,21 @@ from braintrust.test_helpers import init_test_logger
 from pydantic import BaseModel
 
 
+LATEST_MODELS = os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
+TEST_MODEL = "gpt-6-luna" if LATEST_MODELS else "gpt-4o-mini"
+
 PROJECT_NAME = "test-ai-sdk"
-MODEL = "openai:gpt-4o-mini"
+MODEL = f"openai:{TEST_MODEL}"
+
+
+def _model_params():
+    if not LATEST_MODELS:
+        return None
+    from ai.providers.openai import OpenAIParams
+
+    return ai.InferenceRequestParams().with_reasoning_effort(None).with_provider_params(OpenAIParams(store=False))
+
+
 _RED_PIXEL_PNG = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC"
 )
@@ -70,7 +84,7 @@ async def test_stream_structured_multimodal_response(memory_logger):
     ]
 
     chunks = []
-    async with ai.stream(model, messages, output_type=ImageAnswer) as stream:
+    async with ai.stream(model, messages, output_type=ImageAnswer, params=_model_params()) as stream:
         async for event in stream:
             if isinstance(event, ai.events.TextDelta):
                 chunks.append(event.chunk)
@@ -86,7 +100,7 @@ async def test_stream_structured_multimodal_response(memory_logger):
     assert span["output"][0]["message"]["role"] == "assistant"
     assert "red" in span["output"][0]["message"]["content"].lower()
     assert span["metadata"]["provider"] == "openai"
-    assert "gpt-4o-mini" in span["metadata"]["model"]
+    assert TEST_MODEL in span["metadata"]["model"]
     assert span["metadata"]["response_id"]
     assert span["metadata"]["output_type"] == "ImageAnswer"
     for token_metric in ("tokens", "prompt_tokens", "completion_tokens"):
@@ -111,7 +125,7 @@ async def test_agent_tool_loop_emits_run_model_and_tool_hierarchy(memory_logger)
     ]
 
     text_chunks = []
-    async with agent.run(model, messages) as stream:
+    async with agent.run(model, messages, params=_model_params()) as stream:
         async for event in stream:
             if isinstance(event, ai.events.TextDelta):
                 text_chunks.append(event.chunk)

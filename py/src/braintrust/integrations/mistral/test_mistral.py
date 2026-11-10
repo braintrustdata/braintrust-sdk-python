@@ -41,8 +41,12 @@ except ImportError:
 
 
 PROJECT_NAME = "test-mistral-sdk"
-CHAT_MODEL = "mistral-small-latest"
+CHAT_MODEL = (
+    "ministral-3b-2512" if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest" else "mistral-small-latest"
+)
 AGENT_MODEL = CHAT_MODEL
+# Ministral does not support the built-in code interpreter connector.
+CONNECTOR_MODEL = "mistral-small-latest"
 # This model supports logprobs and the additional sampling parameters.
 LOGPROBS_MODEL = "zai-glm-5-3"
 EMBEDDING_MODEL = "mistral-embed"
@@ -421,7 +425,7 @@ def test_wrap_mistral_beta_conversations_start_tool_spans(memory_logger):
 
     client = wrap_mistral(_get_client())
     response = client.beta.conversations.start(
-        model=CHAT_MODEL,
+        model=CONNECTOR_MODEL,
         inputs="Use the code interpreter to calculate 21 * 2. Return only the result.",
         tools=[{"type": "code_interpreter"}],
     )
@@ -443,7 +447,7 @@ def test_wrap_mistral_beta_conversations_start_stream_tool_spans(memory_logger):
 
     client = wrap_mistral(_get_client())
     with client.beta.conversations.start_stream(
-        model=CHAT_MODEL,
+        model=CONNECTOR_MODEL,
         inputs="Use the code interpreter to calculate 21 * 2. Return only the result.",
         tools=[{"type": "code_interpreter"}],
     ) as stream:

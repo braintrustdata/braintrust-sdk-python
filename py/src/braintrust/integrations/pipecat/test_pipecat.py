@@ -21,6 +21,10 @@ from braintrust.logger import Attachment
 from braintrust.test_helpers import init_test_logger
 
 
+LATEST_MODELS = os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
+TEST_MODEL = "gpt-6-luna" if LATEST_MODELS else "gpt-4o-mini"
+
+
 @pytest.fixture
 def memory_logger():
     init_test_logger("test-project-pipecat-py-tracing")
@@ -277,8 +281,9 @@ async def test_setup_pipecat_traces_real_pipeline_frames(memory_logger):
     llm = OpenAILLMService(
         api_key=os.environ["OPENAI_API_KEY"],
         settings=OpenAILLMService.Settings(
-            model="gpt-4o-mini",
-            temperature=0.0,
+            model=TEST_MODEL,
+            temperature=1.0 if LATEST_MODELS else 0.0,
+            extra={"reasoning_effort": "none"} if LATEST_MODELS else {},
             max_completion_tokens=20,
         ),
     )
@@ -322,7 +327,7 @@ async def test_setup_pipecat_traces_real_pipeline_frames(memory_logger):
     assert llm_span["output"][0]["finish_reason"] == "stop"
     assert "braintrust pipecat integration" in llm_span["output"][0]["message"]["content"].lower()
     assert llm_span["metadata"]["provider"] == "openai"
-    assert llm_span["metadata"]["model"] == "gpt-4o-mini"
+    assert llm_span["metadata"]["model"] == TEST_MODEL
     assert set(llm_span.get("metrics", {})) <= {
         "time_to_first_token",
         "prompt_tokens",

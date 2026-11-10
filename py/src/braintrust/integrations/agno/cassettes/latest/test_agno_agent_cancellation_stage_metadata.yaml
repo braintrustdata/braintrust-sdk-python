@@ -1,7 +1,7 @@
 interactions:
 - request:
     body: '{"messages":[{"role":"developer","content":"Use the get_weather tool to
-      answer questions."},{"role":"user","content":"What''s the weather in Paris?"}],"model":"gpt-4o-mini","tools":[{"type":"function","function":{"name":"get_weather","description":"Return
+      answer questions."},{"role":"user","content":"What''s the weather in Paris?"}],"model":"gpt-6-luna","reasoning_effort":"none","tools":[{"type":"function","function":{"name":"get_weather","description":"Return
       the current weather for *city*.","parameters":{"type":"object","properties":{"city":{"type":"string"}},"required":["city"]}}}]}'
     headers:
       accept:
@@ -11,7 +11,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '382'
+      - '407'
       content-type:
       - application/json
       host:
@@ -40,21 +40,21 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EVeELTkvzsK6XsBELznMSWdi4C49Q\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1791211521,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiiNmkccqEAGU1yNL2wC2jGbsXprK\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794325746,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
-        \           \"id\": \"call_GuxPl6zIk01zbBtrD7bSZqkU\",\n            \"type\":
+        \           \"id\": \"call_yz2YX3ESRcWRWwgXuR5bBAHt\",\n            \"type\":
         \"function\",\n            \"function\": {\n              \"name\": \"get_weather\",\n
         \             \"arguments\": \"{\\\"city\\\":\\\"Paris\\\"}\"\n            }\n
         \         }\n        ],\n        \"refusal\": null,\n        \"annotations\":
-        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"tool_calls\"\n
-        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 61,\n    \"completion_tokens\":
-        14,\n    \"total_tokens\": 75,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        []\n      },\n      \"finish_reason\": \"tool_calls\"\n    }\n  ],\n  \"usage\":
+        {\n    \"prompt_tokens\": 145,\n    \"completion_tokens\": 17,\n    \"total_tokens\":
+        162,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\": 0,\n      \"cache_write_tokens\":
         0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_87c0b0fe37\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -65,17 +65,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a45d35a6a9bef4cc-YYZ
+      - a5863489fd9dab7e-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1084'
+      - '1070'
       content-type:
       - application/json
       date:
-      - Mon, 05 Oct 2026 14:45:22 GMT
+      - Tue, 10 Nov 2026 15:49:07 GMT
       openai-processing-ms:
-      - '934'
+      - '794'
       openai-version:
       - '2020-10-01'
       server:
@@ -91,24 +91,24 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
-      - '29998'
+      - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999972'
+      - '179999976'
       x-ratelimit-reset-requests:
-      - 4ms
+      - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_e5d1d874da444048a4b04190a4480ee2
+      - req_38de194452634d3db389cdf64bfd5fb3
     status:
       code: 200
       message: OK
 - request:
     body: '{"messages":[{"role":"developer","content":"Use the get_weather tool to
-      answer questions."},{"role":"user","content":"What''s the weather in Paris?"},{"role":"assistant","tool_calls":[{"id":"call_GuxPl6zIk01zbBtrD7bSZqkU","function":{"arguments":"{\"city\":\"Paris\"}","name":"get_weather"},"type":"function"}],"content":""},{"role":"tool","content":"The
-      weather in Paris is 72F and sunny.","tool_call_id":"call_GuxPl6zIk01zbBtrD7bSZqkU"}],"model":"gpt-4o-mini","tools":[{"type":"function","function":{"name":"get_weather","description":"Return
+      answer questions."},{"role":"user","content":"What''s the weather in Paris?"},{"role":"assistant","tool_calls":[{"id":"call_yz2YX3ESRcWRWwgXuR5bBAHt","function":{"arguments":"{\"city\":\"Paris\"}","name":"get_weather"},"type":"function"}],"content":""},{"role":"tool","content":"The
+      weather in Paris is 72F and sunny.","tool_call_id":"call_yz2YX3ESRcWRWwgXuR5bBAHt"}],"model":"gpt-6-luna","reasoning_effort":"none","tools":[{"type":"function","function":{"name":"get_weather","description":"Return
       the current weather for *city*.","parameters":{"type":"object","properties":{"city":{"type":"string"}},"required":["city"]}}}]}'
     headers:
       accept:
@@ -118,7 +118,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '671'
+      - '696'
       content-type:
       - application/json
       host:
@@ -147,18 +147,18 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EVeEMaRn29VR3ZEJaJgPJcqeYZu2I\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1791211522,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiiNnxLmSRgh0z1arImXQb0pJQyvT\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794325747,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"The weather in Paris is currently 72\xB0F
-        and sunny.\",\n        \"refusal\": null,\n        \"annotations\": []\n      },\n
-        \     \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n
-        \ \"usage\": {\n    \"prompt_tokens\": 94,\n    \"completion_tokens\": 13,\n
-        \   \"total_tokens\": 107,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
-        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_87c0b0fe37\"\n}\n"
+        \"assistant\",\n        \"content\": \"It\u2019s 72\xB0F and sunny in Paris.\",\n
+        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"finish_reason\":
+        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 184,\n    \"completion_tokens\":
+        13,\n    \"total_tokens\": 197,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"cache_write_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n
+        \   \"completion_tokens_details\": {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\":
+        0,\n      \"accepted_prediction_tokens\": 0,\n      \"rejected_prediction_tokens\":
+        0\n    }\n  },\n  \"service_tier\": \"default\",\n  \"system_fingerprint\":
+        null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -169,17 +169,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a45d35ada918f4cc-YYZ
+      - a58634907de3ab7e-YYZ
       connection:
       - keep-alive
       content-length:
-      - '858'
+      - '825'
       content-type:
       - application/json
       date:
-      - Mon, 05 Oct 2026 14:45:22 GMT
+      - Tue, 10 Nov 2026 15:49:08 GMT
       openai-processing-ms:
-      - '699'
+      - '1473'
       openai-version:
       - '2020-10-01'
       server:
@@ -195,17 +195,17 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
-      - '29994'
+      - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999475'
+      - '179999967'
       x-ratelimit-reset-requests:
-      - 12ms
+      - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_630d0deb69fc426f8a29ce5f0ace4343
+      - req_db8b17807fcf454da12cf004dbfc537d
     status:
       code: 200
       message: OK

@@ -1,10 +1,17 @@
 """Test auto_instrument for Instructor."""
 
+import os
+
 import instructor
 import openai
 from braintrust.auto import auto_instrument
 from braintrust.integrations.test_utils import autoinstrument_test_context
 from pydantic import BaseModel
+
+
+LATEST_MODELS = os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
+TEST_MODEL = "gpt-6-luna" if LATEST_MODELS else "gpt-4o-mini"
+MODEL_OPTIONS = {"reasoning_effort": "none"} if LATEST_MODELS else {}
 
 
 class Person(BaseModel):
@@ -31,7 +38,8 @@ with autoinstrument_test_context(
     client = openai.OpenAI(api_key="sk-test-dummy-api-key-for-vcr-tests")
     patched = instructor.from_openai(client, mode=instructor.Mode.TOOLS)
     result = patched.chat.completions.create(
-        model="gpt-4o-mini",
+        model=TEST_MODEL,
+        **MODEL_OPTIONS,
         response_model=Person,
         max_retries=3,
         messages=[{"role": "user", "content": "Extract Grace, age 45."}],

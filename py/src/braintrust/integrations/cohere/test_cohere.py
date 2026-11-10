@@ -40,7 +40,9 @@ import cohere  # noqa: E402
 
 
 PROJECT_NAME = "test-cohere-sdk"
-CHAT_MODEL = "command-a-03-2025"
+CHAT_MODEL = (
+    "command-r7b-12-2024" if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest" else "command-a-03-2025"
+)
 EMBED_MODEL = "embed-english-v3.0"
 RERANK_MODEL = "rerank-english-v3.0"
 TRANSCRIBE_MODEL = "cohere-transcribe-03-2026"

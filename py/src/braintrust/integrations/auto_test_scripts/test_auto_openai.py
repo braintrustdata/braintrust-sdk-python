@@ -2,6 +2,7 @@
 
 import asyncio
 import inspect
+import os
 
 import openai
 from braintrust import wrap_openai
@@ -20,6 +21,9 @@ from wrapt import FunctionWrapper
 def _is_braintrust_wrapped(resource) -> bool:
     attr = inspect.getattr_static(resource, "create", None)
     return isinstance(attr, FunctionWrapper)
+
+
+TEST_MODEL = "gpt-6-luna" if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest" else "gpt-4o-mini"
 
 
 resources = [openai.resources.chat.completions.Completions]
@@ -51,7 +55,7 @@ assert results2.get("openai") == True
 with autoinstrument_test_context("test_auto_openai", integration="openai") as memory_logger:
     client = openai.OpenAI()
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model=TEST_MODEL,
         messages=[{"role": "user", "content": "Say hi"}],
     )
     assert response.choices[0].message.content
@@ -60,14 +64,15 @@ with autoinstrument_test_context("test_auto_openai", integration="openai") as me
     assert len(spans) == 1, f"Expected 1 span, got {len(spans)}"
     span = spans[0]
     assert span["metadata"]["provider"] == "openai"
-    assert "gpt-4o-mini" in span["metadata"]["model"]
+    assert TEST_MODEL in span["metadata"]["model"]
 
 # 5. Manual wrapping after auto-instrumentation must not duplicate the span or tokens.
 with autoinstrument_test_context("test_openai_responses_metrics[sync]", integration="openai") as memory_logger:
     client = wrap_openai(openai.OpenAI())
     response = client.responses.create(
-        model="gpt-4o-mini",
+        model=TEST_MODEL,
         input="What's 12 + 12?",
+        **({"reasoning": {"effort": "none"}} if TEST_MODEL == "gpt-6-luna" else {}),
         instructions="Just the number please",
     )
     assert response.output

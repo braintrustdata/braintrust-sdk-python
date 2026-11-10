@@ -1,7 +1,7 @@
 interactions:
 - request:
-    body: '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"Say hello
-      in one word."}],"moderation":{"model":"omni-moderation-latest"}}'
+    body: '{"model":"gpt-6-luna","messages":[{"role":"user","content":"Say hello in
+      one word."}],"moderation":{"model":"omni-moderation-latest"},"reasoning_effort":"none"}'
     headers:
       accept:
       - application/json
@@ -10,7 +10,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '135'
+      - '160'
       content-type:
       - application/json
       host:
@@ -39,24 +39,24 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EiMksZGd4wjmH7nuPCbmts753cGI7\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1794242610,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiiKWAbG4LZv5ZXPCQzsQ4MRrePiT\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794325544,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"Hello!\",\n        \"refusal\": null,\n
-        \       \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\":
-        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 13,\n    \"completion_tokens\":
-        2,\n    \"total_tokens\": 15,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
-        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"moderation\": {\n    \"input\": {\n      \"type\": \"moderation_results\",\n
-        \     \"model\": \"omni-moderation-latest\",\n      \"results\": [\n        {\n
-        \         \"type\": \"moderation_result\",\n          \"model\": \"omni-moderation-latest\",\n
-        \         \"flagged\": false,\n          \"categories\": {\n            \"harassment\":
-        false,\n            \"harassment/threatening\": false,\n            \"sexual\":
-        false,\n            \"hate\": false,\n            \"hate/threatening\": false,\n
-        \           \"illicit\": false,\n            \"illicit/violent\": false,\n
-        \           \"self-harm/intent\": false,\n            \"self-harm/instructions\":
+        \"assistant\",\n        \"content\": \"Hello\",\n        \"refusal\": null,\n
+        \       \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 12,\n    \"completion_tokens\":
+        4,\n    \"total_tokens\": 16,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"cache_write_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n
+        \   \"completion_tokens_details\": {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\":
+        0,\n      \"accepted_prediction_tokens\": 0,\n      \"rejected_prediction_tokens\":
+        0\n    }\n  },\n  \"service_tier\": \"default\",\n  \"moderation\": {\n    \"input\":
+        {\n      \"type\": \"moderation_results\",\n      \"model\": \"omni-moderation-latest\",\n
+        \     \"results\": [\n        {\n          \"type\": \"moderation_result\",\n
+        \         \"model\": \"omni-moderation-latest\",\n          \"flagged\": false,\n
+        \         \"categories\": {\n            \"harassment\": false,\n            \"harassment/threatening\":
+        false,\n            \"sexual\": false,\n            \"hate\": false,\n            \"hate/threatening\":
+        false,\n            \"illicit\": false,\n            \"illicit/violent\":
+        false,\n            \"self-harm/intent\": false,\n            \"self-harm/instructions\":
         false,\n            \"self-harm\": false,\n            \"sexual/minors\":
         false,\n            \"violence\": false,\n            \"violence/graphic\":
         false\n          },\n          \"category_scores\": {\n            \"harassment\":
@@ -91,14 +91,14 @@ interactions:
         false,\n            \"self-harm\": false,\n            \"sexual/minors\":
         false,\n            \"violence\": false,\n            \"violence/graphic\":
         false\n          },\n          \"category_scores\": {\n            \"harassment\":
-        0.00001535623976496012,\n            \"harassment/threatening\": 2.212566909570261e-6,\n
-        \           \"sexual\": 0.0000527478412523148,\n            \"hate\": 4.264746818557914e-6,\n
-        \           \"hate/threatening\": 2.0580491096133835e-7,\n            \"illicit\":
-        0.000013765463368900109,\n            \"illicit/violent\": 7.722191834067996e-6,\n
-        \           \"self-harm/intent\": 1.8631746484712008e-6,\n            \"self-harm/instructions\":
-        7.889262586245034e-7,\n            \"self-harm\": 3.8831109868779005e-6,\n
-        \           \"sexual/minors\": 4.1335397768930325e-6,\n            \"violence\":
-        0.0004942623523511968,\n            \"violence/graphic\": 2.355261854303796e-6\n
+        0.000020027376671813928,\n            \"harassment/threatening\": 2.355261854303796e-6,\n
+        \           \"sexual\": 0.0000646203290719727,\n            \"hate\": 4.198630823683514e-6,\n
+        \           \"hate/threatening\": 1.5534977545950122e-7,\n            \"illicit\":
+        0.000013765463368900109,\n            \"illicit/violent\": 8.888084683809127e-6,\n
+        \           \"self-harm/intent\": 1.9223170236538178e-6,\n            \"self-harm/instructions\":
+        9.080474758713811e-7,\n            \"self-harm\": 3.822911232549001e-6,\n
+        \           \"sexual/minors\": 3.4808121961114687e-6,\n            \"violence\":
+        0.0005056385041563992,\n            \"violence/graphic\": 2.4300240743279605e-6\n
         \         },\n          \"category_applied_input_types\": {\n            \"harassment\":
         [\n              \"text\"\n            ],\n            \"harassment/threatening\":
         [\n              \"text\"\n            ],\n            \"sexual\": [\n              \"text\"\n
@@ -112,7 +112,7 @@ interactions:
         \             \"text\"\n            ],\n            \"violence\": [\n              \"text\"\n
         \           ],\n            \"violence/graphic\": [\n              \"text\"\n
         \           ]\n          }\n        }\n      ]\n    }\n  },\n  \"system_fingerprint\":
-        \"fp_eb86cfd659\"\n}\n"
+        null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -123,17 +123,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a57e46db8e8b11fc-YYZ
+      - a5862f98ece7a450-YYZ
       connection:
       - keep-alive
       content-length:
-      - '5620'
+      - '5604'
       content-type:
       - application/json
       date:
-      - Mon, 09 Nov 2026 16:43:31 GMT
+      - Tue, 10 Nov 2026 15:45:44 GMT
       openai-processing-ms:
-      - '652'
+      - '628'
       openai-version:
       - '2020-10-01'
       server:
@@ -149,17 +149,17 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999992'
+      - '179999991'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_441d783e7deb4a19bce084c51b54146c
+      - req_72639e529597440b913614066843a517
     status:
       code: 200
       message: OK

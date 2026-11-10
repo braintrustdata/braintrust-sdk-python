@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"message":"Say hi in one word.","model":"command-a-03-2025","max_tokens":10,"stream":false}'
+    body: '{"message":"Say hi in one word.","model":"command-r7b-12-2024","max_tokens":10,"stream":false}'
     headers:
       accept:
       - '*/*'
@@ -9,7 +9,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '92'
+      - '94'
       content-type:
       - application/json
       host:
@@ -30,8 +30,8 @@ interactions:
     uri: https://api.cohere.com/v1/chat
   response:
     body:
-      string: '{"response_id":"fbe40c9c-dfe7-4ef3-880a-505d221b820f","text":"Hi!","generation_id":"eb2f9956-874e-40c5-bb4a-f73a6b478fc6","chat_history":[{"role":"USER","message":"Say
-        hi in one word."},{"role":"CHATBOT","message":"Hi!"}],"finish_reason":"COMPLETE","meta":{"api_version":{"version":"1"},"billed_units":{"input_tokens":6,"output_tokens":2},"tokens":{"input_tokens":501,"output_tokens":5},"cached_tokens":480}}'
+      string: '{"response_id":"6aebdeb4-30b6-445c-a61e-96da06405ae6","text":"Hello!","generation_id":"393e41c2-0515-4e3a-87db-bae7c97ef3b5","chat_history":[{"role":"USER","message":"Say
+        hi in one word."},{"role":"CHATBOT","message":"Hello!"}],"finish_reason":"COMPLETE","meta":{"api_version":{"version":"1"},"billed_units":{"input_tokens":6,"output_tokens":2},"tokens":{"input_tokens":501,"output_tokens":5},"cached_tokens":496}}'
     headers:
       access-control-expose-headers:
       - X-Debug-Trace-ID
@@ -40,11 +40,11 @@ interactions:
       cache-control:
       - no-cache, no-store, no-transform, must-revalidate, private, max-age=0
       content-length:
-      - '408'
+      - '414'
       content-type:
       - application/json
       date:
-      - Mon, 09 Nov 2026 16:43:47 GMT
+      - Tue, 10 Nov 2026 15:53:31 GMT
       expires:
       - Thu, 01 Jan 1970 00:00:00 GMT
       num_chars:
@@ -64,11 +64,11 @@ interactions:
       x-accel-expires:
       - '0'
       x-debug-trace-id:
-      - 5972f87e18094ceeee56524e6462c829
+      - 4487c3654994052daddec1f065352ceb
       x-endpoint-monthly-call-limit:
       - '1000'
       x-envoy-upstream-service-time:
-      - '4588'
+      - '132'
       x-trial-endpoint-call-limit:
       - '20'
       x-trial-endpoint-call-remaining:

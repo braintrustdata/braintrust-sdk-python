@@ -1,4 +1,5 @@
 import asyncio
+import os
 
 import braintrust
 import pytest
@@ -8,8 +9,10 @@ from braintrust.integrations.test_utils import verify_autoinstrument_script
 from braintrust.test_helpers import init_test_logger
 
 
+LATEST_MODELS = os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
+
 PROJECT_NAME = "test-project-openai-agents-tracing"
-TEST_MODEL = "gpt-4o-mini"
+TEST_MODEL = "gpt-6-luna" if LATEST_MODELS else "gpt-4o-mini"
 TEST_PROMPT = "What is 2+2? Just the number."
 TEST_AGENT_INSTRUCTIONS = "You are a helpful assistant. Be very concise."
 

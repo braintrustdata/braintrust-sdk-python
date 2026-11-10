@@ -3,6 +3,7 @@ from unittest.mock import ANY
 
 import pytest
 from braintrust import flush, logger
+from braintrust.integrations._test_models import ANTHROPIC_CHAT_MODEL, LATEST
 from braintrust.integrations.langchain import BraintrustCallbackHandler, set_global_handler
 from braintrust.integrations.test_utils import assert_service_tiers
 from braintrust.span_types import SpanTypeAttribute
@@ -14,7 +15,7 @@ from .helpers import assert_matches_object
 
 
 PROJECT_NAME = "langchain-anthropic"
-MODEL = "claude-haiku-4-5-20251001"
+MODEL = ANTHROPIC_CHAT_MODEL
 
 
 @pytest.fixture
@@ -52,8 +53,9 @@ def test_langchain_anthropic_integration(
 
     flush()
 
-    assert isinstance(result.content, str)
-    assert "3" in result.content.lower()
+    text = result.text if LATEST else result.content
+    assert isinstance(text, str)
+    assert "3" in text.lower()
 
     spans = memory_logger.pop()
     assert len(spans) > 0
@@ -82,11 +84,11 @@ def test_langchain_anthropic_integration(
         assert False, "No LLM span contained the expected answer '3'"
 
     expected_metrics: dict[str, Any] = {
-        "completion_tokens": 13,
+        "completion_tokens": result.usage_metadata["output_tokens"],
         "end": ANY,
-        "prompt_tokens": 16,
+        "prompt_tokens": result.usage_metadata["input_tokens"],
         "start": ANY,
-        "total_tokens": 29,
+        "total_tokens": result.usage_metadata["total_tokens"],
     }
     assert_matches_object(
         llm_span["metrics"],

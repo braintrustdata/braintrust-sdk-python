@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"messages":[{"role":"user","content":"Extract Ada, age 30."}],"model":"gpt-4o-mini","tool_choice":{"type":"function","function":{"name":"ShoutedPerson"}},"tools":[{"type":"function","function":{"name":"ShoutedPerson","description":"A
+    body: '{"messages":[{"role":"user","content":"Extract Ada, age 30."}],"model":"gpt-6-luna","reasoning_effort":"none","tool_choice":{"type":"function","function":{"name":"ShoutedPerson"}},"tools":[{"type":"function","function":{"name":"ShoutedPerson","description":"A
       ``Person`` whose name must be upper-case.\n\nThe field description deliberately
       does not mention the rule, so a live\nmodel answers \"Ada\" first, fails validation,
       and fixes it on the retry\nonce Instructor feeds the validation error back.","parameters":{"properties":{"name":{"description":"The
@@ -14,7 +14,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '698'
+      - '723'
       content-type:
       - application/json
       host:
@@ -43,21 +43,21 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-Efmxgm97AU68y7xAe9iWP7zjoiMqR\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1793628364,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiiJyuP1pdUijcmWzLIu6ALDmxEO4\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794325510,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
-        \           \"id\": \"call_zFJUKmU6Cf7S5eNu5S74oFl7\",\n            \"type\":
+        \           \"id\": \"call_DUgK2ngjGJF2HCrcoPuiPMq3\",\n            \"type\":
         \"function\",\n            \"function\": {\n              \"name\": \"ShoutedPerson\",\n
         \             \"arguments\": \"{\\\"name\\\":\\\"Ada\\\",\\\"age\\\":30}\"\n
         \           }\n          }\n        ],\n        \"refusal\": null,\n        \"annotations\":
-        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
-        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 126,\n    \"completion_tokens\":
-        9,\n    \"total_tokens\": 135,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        []\n      },\n      \"finish_reason\": \"tool_calls\"\n    }\n  ],\n  \"usage\":
+        {\n    \"prompt_tokens\": 197,\n    \"completion_tokens\": 22,\n    \"total_tokens\":
+        219,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\": 0,\n      \"cache_write_tokens\":
         0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_9b01c99668\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -68,17 +68,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a543b29b6acc92b6-YYZ
+      - a5862ec7082fabb8-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1090'
+      - '1081'
       content-type:
       - application/json
       date:
-      - Mon, 02 Nov 2026 14:06:04 GMT
+      - Tue, 10 Nov 2026 15:45:11 GMT
       openai-processing-ms:
-      - '665'
+      - '1096'
       openai-version:
       - '2020-10-01'
       server:
@@ -94,26 +94,26 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999992'
+      - '179999991'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_8bb1a12b142547588b5bfe52d11443d2
+      - req_de163fadc03c49d7818d31e3de2b7cb1
     status:
       code: 200
       message: OK
 - request:
-    body: '{"messages":[{"role":"user","content":"Extract Ada, age 30."},{"role":"assistant","content":"","tool_calls":[{"id":"call_zFJUKmU6Cf7S5eNu5S74oFl7","function":{"arguments":"{\"name\":\"Ada\",\"age\":30}","name":"ShoutedPerson"},"type":"function"}]},{"role":"tool","tool_call_id":"call_zFJUKmU6Cf7S5eNu5S74oFl7","name":"ShoutedPerson","content":"Validation
+    body: '{"messages":[{"role":"user","content":"Extract Ada, age 30."},{"role":"assistant","content":"","tool_calls":[{"id":"call_DUgK2ngjGJF2HCrcoPuiPMq3","function":{"arguments":"{\"name\":\"Ada\",\"age\":30}","name":"ShoutedPerson"},"type":"function"}]},{"role":"tool","tool_call_id":"call_DUgK2ngjGJF2HCrcoPuiPMq3","name":"ShoutedPerson","content":"Validation
       Error found:\n1 validation error for ShoutedPerson\nname\n  Value error, name
       must be written in ALL UPPER-CASE letters [type=value_error, input_value=''Ada'',
       input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/value_error\nRecall
-      the function correctly, fix the errors"}],"model":"gpt-4o-mini","tool_choice":{"type":"function","function":{"name":"ShoutedPerson"}},"tools":[{"type":"function","function":{"name":"ShoutedPerson","description":"A
+      the function correctly, fix the errors"}],"model":"gpt-6-luna","reasoning_effort":"none","tool_choice":{"type":"function","function":{"name":"ShoutedPerson"}},"tools":[{"type":"function","function":{"name":"ShoutedPerson","description":"A
       ``Person`` whose name must be upper-case.\n\nThe field description deliberately
       does not mention the rule, so a live\nmodel answers \"Ada\" first, fails validation,
       and fixes it on the retry\nonce Instructor feeds the validation error back.","parameters":{"properties":{"name":{"description":"The
@@ -127,7 +127,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '1296'
+      - '1321'
       content-type:
       - application/json
       host:
@@ -156,21 +156,21 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EfmxhWmK0vsQXt6FA4tbMUhSHoTgH\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1793628365,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiiJzQaZyjojWZSO4ROyPZxEzDipd\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794325511,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
-        \           \"id\": \"call_8aqKAI4UasQdj44jwjpPelrP\",\n            \"type\":
+        \           \"id\": \"call_g4u2JCNK7ySXuplnhNCPFSLa\",\n            \"type\":
         \"function\",\n            \"function\": {\n              \"name\": \"ShoutedPerson\",\n
         \             \"arguments\": \"{\\\"name\\\":\\\"ADA\\\",\\\"age\\\":30}\"\n
         \           }\n          }\n        ],\n        \"refusal\": null,\n        \"annotations\":
-        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
-        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 225,\n    \"completion_tokens\":
-        9,\n    \"total_tokens\": 234,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        []\n      },\n      \"finish_reason\": \"tool_calls\"\n    }\n  ],\n  \"usage\":
+        {\n    \"prompt_tokens\": 302,\n    \"completion_tokens\": 22,\n    \"total_tokens\":
+        324,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\": 0,\n      \"cache_write_tokens\":
         0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_9b01c99668\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -181,17 +181,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a543b2a15bb992b6-YYZ
+      - a5862ececabbabb8-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1090'
+      - '1081'
       content-type:
       - application/json
       date:
-      - Mon, 02 Nov 2026 14:06:05 GMT
+      - Tue, 10 Nov 2026 15:45:13 GMT
       openai-processing-ms:
-      - '740'
+      - '1506'
       openai-version:
       - '2020-10-01'
       server:
@@ -207,17 +207,17 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999915'
+      - '179999913'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_7fae8e947d9d432aa1ef817590b74428
+      - req_d6660353eb7544818619d6bd77a874ad
     status:
       code: 200
       message: OK
