@@ -2,6 +2,7 @@ import asyncio
 import logging
 import time
 from collections.abc import Callable
+from fractions import Fraction
 
 from braintrust._audio.config import AudioRecordingOptions
 from braintrust.env import BraintrustEnv
@@ -9,6 +10,7 @@ from braintrust.logger import Attachment
 
 from .middleware import encoding_stack
 from .recorder import AudioRecorder
+from .schema import SCHEMA_VERSION
 from .types import AudioResult, RecordingResult, SegmentMeta
 from .worker import run_native
 
@@ -38,6 +40,7 @@ class AudioSessionRecorder:
         self._inflight: dict[int, SegmentMeta] = {}
         self._closed = False
         self._sources = {source: {} for source in sources}
+        self._stream_ends: dict[str, Fraction] = {}
         self.recorder = (
             AudioRecorder(
                 sources=sources,
@@ -53,7 +56,7 @@ class AudioSessionRecorder:
 
     def session_metadata(self):
         return {
-            "audio.schema.version": "3.0.0",
+            "audio.schema.version": SCHEMA_VERSION,
             "audio.timeline": {"origin_unix_ms": self.wall_ns // 1_000_000},
             "audio.sources": dict(self._sources),
         }
@@ -67,8 +70,12 @@ class AudioSessionRecorder:
     def elapsed_ns(self):
         return time.monotonic_ns() - self.monotonic_ns
 
-    def from_wall(self, seconds: float):
+    def from_wall(self, seconds: float) -> int:
         return max(0, round(seconds * 1_000_000_000) - self.wall_ns)
+
+    def to_wall(self, offset_ns: int) -> float:
+        """Convert a session-relative nanosecond offset to Unix seconds."""
+        return (self.wall_ns + offset_ns) / 1_000_000_000
 
     def participant(self, native_key, member):
         return self._identity(self._participants, native_key, member, "audio.participants", "participant")
@@ -91,6 +98,22 @@ class AudioSessionRecorder:
                 self.recorder.discard("privacy_restricted")
             return False
         return self.recorder.record(source_id, pcm, **format_and_time)
+
+    def record_stream(self, source_id, pcm, *, sample_rate_hz: int, channels: int, now_ns: int) -> bool:
+        """Record a live 16-bit PCM frame that arrived at ``now_ns``.
+
+        Jitter delivers frames in bursts, before earlier ones have finished
+        playing out. A frame starts at the later of its arrival and the end of
+        the previous frame from the same source, so a stream never overlaps
+        itself. Time then advances through the arrival. Returns whether the
+        frame was admitted; invalid PCM raises ``ValueError`` as ``record`` does.
+        """
+        start = max(Fraction(now_ns), self._stream_ends.get(source_id, Fraction(0)))
+        if not self.record(source_id, pcm, sample_rate_hz=sample_rate_hz, channels=channels, offset_ns=start):
+            return False
+        self._stream_ends[source_id] = start + Fraction(len(pcm) * 1_000_000_000, 2 * channels * sample_rate_hz)
+        self.advance(now_ns)
+        return True
 
     def advance(self, through_ns):
         if self.recorder is not None:

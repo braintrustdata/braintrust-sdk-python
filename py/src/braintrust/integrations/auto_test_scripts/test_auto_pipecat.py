@@ -98,8 +98,8 @@ async def main():
 
         logs = memory_logger.pop()
         names = {log.get("span_attributes", {}).get("name") for log in logs}
-        assert "pipecat_pipeline" in names
-        assert "pipecat_llm_response" in names
+        assert "session" in names
+        assert "llm_response" in names
 
 
 if __name__ == "__main__":

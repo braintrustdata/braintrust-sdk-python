@@ -1,7 +1,19 @@
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, field
 from types import MappingProxyType
-from typing import Any
+from typing import Any, TypedDict
+
+
+class Selection(TypedDict):
+    """An interval on the session audio timeline, in milliseconds."""
+
+    start_offset_ms: int
+    end_offset_ms: int
+
+
+def selection(start_ms: float, end_ms: float) -> Selection:
+    """An interval from session offsets; an end before the start is empty."""
+    return {"start_offset_ms": round(start_ms), "end_offset_ms": round(max(start_ms, end_ms))}
 
 
 @dataclass(frozen=True, eq=False)
