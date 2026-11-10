@@ -1,0 +1,26 @@
+name: audio-py
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.12", "3.13", "3.14", "3.15"]
+        os: [ubuntu-24.04, windows-2025, macos-15]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-python-env
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Qualify audio codecs
+        shell: bash
+        run: |
+          mise exec python@${{ matrix.python }} -- uv run --project py nox -f py/noxfile.py --force-python ${{ matrix.python }} -s test_audio_codecs

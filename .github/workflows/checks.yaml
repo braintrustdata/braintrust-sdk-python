@@ -155,13 +155,17 @@ jobs:
           mise exec python@${{ matrix.python-version }} -- python ./py/scripts/nox-matrix.py ${{ matrix.shard }} 6 \
             --python-version '${{ matrix.python-version }}' --os '${{ matrix.os }}' \
             --exclude-static-checks \
-            --exclude-session test_api_codegen
+            --exclude-session test_api_codegen \
+            --exclude-session test_audio_codecs
 
   adk-py:
     uses: ./.github/workflows/adk-py-test.yaml
 
   langchain-py:
     uses: ./.github/workflows/langchain-py-test.yaml
+
+  audio-py:
+    uses: ./.github/workflows/audio-py-test.yaml
 
   upload-wheel:
     needs:
@@ -197,6 +201,7 @@ jobs:
       - nox
       - adk-py
       - langchain-py
+      - audio-py
       - upload-wheel
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -224,6 +229,7 @@ jobs:
           check_result "nox" "${{ needs.nox.result }}"
           check_result "adk-py" "${{ needs['adk-py'].result }}"
           check_result "langchain-py" "${{ needs['langchain-py'].result }}"
+          check_result "audio-py" "${{ needs['audio-py'].result }}"
           check_result "upload-wheel" "${{ needs['upload-wheel'].result }}"
 
           if [ "$FAILED" -ne 0 ]; then

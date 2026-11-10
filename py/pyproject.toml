@@ -52,6 +52,8 @@ braintrust = "braintrust.wrappers.pytest_plugin.plugin"
 braintrust = "braintrust.integrations.harbor:HarborPlugin"
 
 [project.optional-dependencies]
+# Opus/Ogg encoding requires Python 3.12+ (PyAV).
+audio = ["av==19.0.2; python_version>='3.12'"]
 cli = ["boto3", "python-dotenv", "uv>=0.13.4", "starlette", "uvicorn"]
 # TODO: remove the doc extra in the next major version.
 doc = []
@@ -70,6 +72,7 @@ temporal = [
     "temporalio>=1.19.0; python_version>='3.10'",
 ]
 all = [
+    "av==19.0.2; python_version>='3.12'",
     "boto3",
     "openai-agents",
     "opentelemetry-api",
@@ -315,6 +318,7 @@ lint = [
     # Packages below are needed so pylint can resolve every SDK import.
     # Versions are unpinned (unless already constrained) so the resolver
     # can find mutually compatible transitive deps.
+    "av; python_version>='3.12'",
     "agentscope<2",
     "agno",
     "ai>=0.4.0; python_version>='3.12'",
