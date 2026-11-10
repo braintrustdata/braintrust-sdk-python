@@ -1,0 +1,55 @@
+interactions:
+- request:
+    body: '{"state":"The package arrived intact and on time.","model":"jev-latest","questions":{"positive":{"instructions":"Is
+      this feedback positive?","type":"noul"}}}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '157'
+      content-type:
+      - application/json
+      host:
+      - api.typesafe.ai
+      user-agent:
+      - typesafe-sdk/0.7.5
+      x-typesafe-runtime:
+      - python/3.14.7 (darwin; arm64)
+      x-typesafe-sdk:
+      - typesafe-sdk/0.7.5
+    method: POST
+    uri: https://api.typesafe.ai/v1/systemone
+  response:
+    body:
+      string: '{"model":"jev-1.14.0","answers":{"positive":{"type":"noul","noul":0.97}},"usage":{"input_tokens":279,"output_tokens":20}}'
+    headers:
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a586f40ede29abc7-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '121'
+      content-type:
+      - application/json
+      date:
+      - Tue, 10 Nov 2026 17:59:50 GMT
+      server:
+      - cloudflare
+      transfer-encoding:
+      - chunked
+      x-envoy-upstream-service-time:
+      - '65'
+      x-typesafe-request-id:
+      - req_01a1c69dc55f71f880ba40cd66bbe664
+    status:
+      code: 200
+      message: OK
+version: 1

@@ -307,7 +307,8 @@ _register_matrix_sessions(
         {
             "name": "test_ai_sdk",
             "versions": AI_SDK_VERSIONS,
-            "dependencies": [("openai", LATEST), ("ai-sdk", "$version")],
+            "doc": "Vercel AI SDK telemetry, plus its native TypeSafe provider (ai >= 0.9) with the TypeSafe integration.",
+            "dependencies": [("openai", LATEST), ("typesafe-sdk", LATEST), ("ai-sdk", "$version")],
             "tests": f"{INTEGRATION_DIR}/ai_sdk/test_ai_sdk.py",
         },
         {

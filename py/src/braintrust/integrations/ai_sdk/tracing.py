@@ -362,6 +362,31 @@ def _generate_end(_upstream_span: Any, data: Any) -> dict[str, Any]:
     }
 
 
+def _evaluate_start(_upstream_span: Any, data: Any) -> dict[str, Any]:
+    # Like ``ai.stream``: the provider client (e.g. the TypeSafe SDK) owns the
+    # model span and its token metrics, so this framework span stays a task.
+    return {
+        "name": "ai.evaluate",
+        "type": SpanTypeAttribute.TASK,
+        "metadata": {
+            "model": _value(data, "model") or "unknown",
+            "provider": _value(data, "provider") or "unknown",
+            "question_count": _value(data, "question_count"),
+        },
+    }
+
+
+def _evaluate_end(_upstream_span: Any, data: Any) -> dict[str, Any]:
+    return {
+        "metadata": clean_nones(
+            {
+                "answer_count": _value(data, "answer_count"),
+                "warnings": _value(data, "warnings") or None,
+            }
+        ),
+    }
+
+
 def _tool_start(_upstream_span: Any, data: Any) -> dict[str, Any]:
     return {
         "name": _value(data, "tool_name") or "tool",
@@ -430,6 +455,7 @@ _SPAN_STATES = {
     "loop_turn": _SpanState(_loop_turn_start),
     "ai_stream": _SpanState(_stream_start, _stream_end),
     "ai_generate": _SpanState(_generate_start, _generate_end),
+    "evaluate": _SpanState(_evaluate_start, _evaluate_end),
     "tool_execution": _SpanState(_tool_start, _tool_end),
     "hook": _SpanState(_hook_start, _hook_end),
     "custom": _SpanState(_custom_start, _custom_end),
