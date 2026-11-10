@@ -362,29 +362,33 @@ def _generate_end(_upstream_span: Any, data: Any) -> dict[str, Any]:
     }
 
 
-def _evaluate_start(_upstream_span: Any, data: Any) -> dict[str, Any]:
-    # Like ``ai.stream``: the provider client (e.g. the TypeSafe SDK) owns the
-    # model span and its token metrics, so this framework span stays a task.
-    return {
-        "name": "ai.evaluate",
-        "type": SpanTypeAttribute.TASK,
-        "metadata": {
-            "model": _value(data, "model") or "unknown",
-            "provider": _value(data, "provider") or "unknown",
-            "question_count": _value(data, "question_count"),
-        },
-    }
+def _model_operation_state(
+    kind: str, *, request_fields: tuple[str, ...] = (), response_fields: tuple[str, ...] = ()
+) -> _SpanState:
+    """State for a non-chat model operation such as ``evaluate``.
 
+    These spans carry only counts, never content. Like ``ai.stream``, the
+    provider client (e.g. the TypeSafe SDK) owns the model span and its token
+    metrics, so this framework span stays a task and logs no usage. Fields are
+    listed per kind so new upstream fields are not logged by accident.
+    """
 
-def _evaluate_end(_upstream_span: Any, data: Any) -> dict[str, Any]:
-    return {
-        "metadata": clean_nones(
-            {
-                "answer_count": _value(data, "answer_count"),
-                "warnings": _value(data, "warnings") or None,
-            }
-        ),
-    }
+    def start(_upstream_span: Any, data: Any) -> dict[str, Any]:
+        return {
+            "name": f"ai.{kind}",
+            "type": SpanTypeAttribute.TASK,
+            "metadata": {
+                "model": _value(data, "model") or "unknown",
+                "provider": _value(data, "provider") or "unknown",
+                **clean_nones({field: _value(data, field) for field in request_fields}),
+            },
+        }
+
+    def end(_upstream_span: Any, data: Any) -> dict[str, Any]:
+        fields = {field: _value(data, field) for field in response_fields}
+        return {"metadata": clean_nones({**fields, "warnings": _value(data, "warnings") or None})}
+
+    return _SpanState(start, end)
 
 
 def _tool_start(_upstream_span: Any, data: Any) -> dict[str, Any]:
@@ -455,7 +459,9 @@ _SPAN_STATES = {
     "loop_turn": _SpanState(_loop_turn_start),
     "ai_stream": _SpanState(_stream_start, _stream_end),
     "ai_generate": _SpanState(_generate_start, _generate_end),
-    "evaluate": _SpanState(_evaluate_start, _evaluate_end),
+    "evaluate": _model_operation_state(
+        "evaluate", request_fields=("question_count",), response_fields=("answer_count",)
+    ),
     "tool_execution": _SpanState(_tool_start, _tool_end),
     "hook": _SpanState(_hook_start, _hook_end),
     "custom": _SpanState(_custom_start, _custom_end),

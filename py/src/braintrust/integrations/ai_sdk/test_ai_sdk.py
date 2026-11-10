@@ -6,22 +6,19 @@ import asyncio
 import base64
 import contextlib
 import contextvars
-import json
 import random
-from importlib.metadata import version as pkg_version
 
 import ai
 import pytest
 from braintrust import Attachment, logger, setup_ai_sdk
 from braintrust.integrations.ai_sdk import patch_ai_sdk, unpatch_ai_sdk
 from braintrust.integrations.ai_sdk.tracing import _shape_input_messages
-from braintrust.integrations.test_utils import verify_autoinstrument_script
+from braintrust.integrations.test_utils import assert_metrics_are_valid, verify_autoinstrument_script
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import init_test_logger
 from pydantic import BaseModel
 
 
-AI_VERSION = tuple(int(part) for part in pkg_version("ai").split(".")[:3])
 TEST_MODEL = "gpt-6-luna"
 
 PROJECT_NAME = "test-ai-sdk"
@@ -49,6 +46,19 @@ def _model_params():
 _RED_PIXEL_PNG = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC"
 )
+
+
+@ai.tool
+async def get_temperature(city: str) -> dict[str, object]:
+    """Get the current temperature for a city."""
+    return {"city": city, "temperature": 21, "unit": "celsius"}
+
+
+def _temperature_messages():
+    return [
+        ai.system_message("Always use get_temperature once before answering. Be concise."),
+        ai.user_message("What is the temperature in Paris?"),
+    ]
 
 
 class ImageAnswer(BaseModel):
@@ -84,6 +94,19 @@ def _contains_attachment(value):
 
 def _assert_ai_sdk_origin(span):
     assert span["context"]["span_origin"]["instrumentation"]["name"] == "ai-sdk-auto"
+
+
+def _assert_tool_round_trip(stream_spans):
+    """The tool call from one ``ai.stream`` turn feeds the next turn's input."""
+    tool_call_stream = next(span for span in stream_spans if span["output"][0]["finish_reason"] == "tool_calls")
+    tool_call = tool_call_stream["output"][0]["message"]["tool_calls"][0]
+    assert tool_call["function"]["name"] == "get_temperature"
+    assert isinstance(tool_call["function"]["arguments"], str)
+    followup_stream = next(span for span in stream_spans if span is not tool_call_stream)
+    tool_result_message = next(message for message in followup_stream["input"] if message["role"] == "tool")
+    assert tool_result_message["tool_call_id"] == tool_call["id"]
+    assert isinstance(tool_result_message["content"], str)
+    return tool_call
 
 
 @pytest.mark.vcr
@@ -127,17 +150,9 @@ async def test_stream_structured_multimodal_response(memory_logger):
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_agent_tool_loop_emits_run_model_and_tool_hierarchy(memory_logger):
-    @ai.tool
-    async def get_temperature(city: str) -> dict[str, object]:
-        """Get the current temperature for a city."""
-        return {"city": city, "temperature": 21, "unit": "celsius"}
-
     model = _model()
     agent = ai.Agent(tools=[get_temperature])
-    messages = [
-        ai.system_message("Always use get_temperature once before answering. Be concise."),
-        ai.user_message("What is the temperature in Paris?"),
-    ]
+    messages = _temperature_messages()
 
     text_chunks = []
     async with agent.run(model, messages, params=_model_params()) as stream:
@@ -177,14 +192,7 @@ async def test_agent_tool_loop_emits_run_model_and_tool_hierarchy(memory_logger)
             assert token_metric not in stream_span["metrics"]
         _assert_ai_sdk_origin(stream_span)
 
-    tool_call_stream = next(span for span in stream_spans if span["output"][0]["finish_reason"] == "tool_calls")
-    tool_call = tool_call_stream["output"][0]["message"]["tool_calls"][0]
-    assert tool_call["function"]["name"] == "get_temperature"
-    assert isinstance(tool_call["function"]["arguments"], str)
-    followup_stream = next(span for span in stream_spans if span is not tool_call_stream)
-    tool_result_message = next(message for message in followup_stream["input"] if message["role"] == "tool")
-    assert tool_result_message["tool_call_id"] == tool_call["id"]
-    assert isinstance(tool_result_message["content"], str)
+    _assert_tool_round_trip(stream_spans)
 
     for token_metric in ("tokens", "prompt_tokens", "completion_tokens"):
         assert token_metric not in run_span.get("metrics", {})
@@ -221,7 +229,6 @@ class _DurableEngine:
 
     def __init__(self):
         self.history = []
-        self.live_steps = 0
         self._cursor = 0
         self._crash_before_step = None
 
@@ -236,9 +243,7 @@ class _DurableEngine:
             if self._cursor == self._crash_before_step:
                 raise _WorkerCrash()
             result = await asyncio.create_task(fn(*args), context=contextvars.Context())
-            result = json.loads(json.dumps(result))
             self.history.append(result)
-            self.live_steps += 1
         self._cursor += 1
         return result
 
@@ -256,19 +261,13 @@ async def _durable_llm_step(model_data, messages_data, tools_data, parent_data):
                 pass
     return {
         "message": stream.message.model_dump(mode="json"),
-        # ai 0.9 cannot JSON-dump request params that hold provider defaults.
-        "spans": [span.model_dump(mode="json", exclude={"data": {"params"}}) for span in sink.finished_spans],
+        # Works around an ai 0.9 bug: its ``ModelProviderDefault`` params sentinel
+        # is not JSON-serializable, so dump it as null.
+        "spans": [span.model_dump(mode="json", fallback=lambda _: None) for span in sink.finished_spans],
     }
 
 
-async def _durable_flush_step(spans):
-    """Telemetry activity: the one place spans reach Braintrust."""
-    await ai.experimental_telemetry.push_all(spans)
-
-
-async def _run_durable_workflow(engine, model, tools, messages, *, crash_before_step=None):
-    from ai import durable
-
+async def _run_durable_workflow(engine, *, crash_before_step=None):
     telemetry = ai.experimental_telemetry
     engine.start_execution(crash_before_step=crash_before_step)
     sink = telemetry.DictSink()
@@ -289,49 +288,43 @@ async def _run_durable_workflow(engine, model, tools, messages, *, crash_before_
     # Deterministic ids let a replayed execution mint the same span ids, so
     # spans recorded by an earlier execution still find their parents.
     async with ai.messages.use_random(random.Random(1086)), telemetry.use_sink(sink):
-        agent = durable.DurableAgent(tools=tools, streamer=streamer)
-        async with agent.run(model, messages) as run:
+        agent = ai.durable.DurableAgent(tools=[get_temperature], streamer=streamer)
+        async with agent.run(_model(), _temperature_messages()) as run:
             async for _ in run:
                 pass
-    await engine.step(_durable_flush_step, [span.model_dump(mode="json") for span in sink.finished_spans])
+    # Telemetry activity: the one place spans reach Braintrust.
+    await engine.step(telemetry.push_all, [span.model_dump(mode="json") for span in sink.finished_spans])
     return run.messages
 
 
-@pytest.mark.skipif(AI_VERSION < (0, 9, 0), reason="ai.durable.DurableAgent requires ai 0.9+")
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_durable_agent_replay_preserves_parent_hierarchy(memory_logger):
-    @ai.tool
-    async def get_temperature(city: str) -> dict[str, object]:
-        """Get the current temperature for a city."""
-        return {"city": city, "temperature": 21, "unit": "celsius"}
-
-    model = _model()
-    messages = [
-        ai.system_message("Always use get_temperature once before answering. Be concise."),
-        ai.user_message("What is the temperature in Paris?"),
-    ]
+    pytest.importorskip("ai.durable", reason="ai.durable.DurableAgent requires ai 0.9+")
     engine = _DurableEngine()
 
     # The worker crashes after the first model turn: nothing reaches Braintrust.
     # The crash surfaces through the agent loop's task group.
     with pytest.RaisesGroup(_WorkerCrash, flatten_subgroups=True):
-        await _run_durable_workflow(engine, model, [get_temperature], messages, crash_before_step=1)
-    assert engine.live_steps == 1
+        await _run_durable_workflow(engine, crash_before_step=1)
+    assert len(engine.history) == 1
     assert memory_logger.pop() == []
 
     # The resumed execution replays turn one and runs turn two live.
-    resumed_messages = await _run_durable_workflow(engine, model, [get_temperature], messages)
-    assert engine.live_steps == 3
+    resumed_messages = await _run_durable_workflow(engine)
+    assert len(engine.history) == 3
     assert "21" in resumed_messages[-1].text
 
     spans = memory_logger.pop()
+    assert sorted(span["span_attributes"]["name"] for span in spans) == [
+        "Agent.run",
+        "ai.stream",
+        "ai.stream",
+        "get_temperature",
+    ]
     run_span = _span_named(spans, "Agent.run")
     stream_spans = [span for span in spans if span["span_attributes"]["name"] == "ai.stream"]
     tool_span = _span_named(spans, "get_temperature")
-    assert len(spans) == 4
-    assert len(stream_spans) == 2
-    assert not [span for span in spans if span["span_attributes"].get("type") == SpanTypeAttribute.LLM]
     assert run_span["span_parents"] is None
     assert run_span["metadata"]["agent"] == "DurableAgent"
     for child_span in [*stream_spans, tool_span]:
@@ -340,33 +333,32 @@ async def test_durable_agent_replay_preserves_parent_hierarchy(memory_logger):
     for span in spans:
         _assert_ai_sdk_origin(span)
 
-    tool_call_stream = next(span for span in stream_spans if span["output"][0]["finish_reason"] == "tool_calls")
-    tool_call = tool_call_stream["output"][0]["message"]["tool_calls"][0]
-    followup_stream = next(span for span in stream_spans if span is not tool_call_stream)
-    tool_result_message = next(message for message in followup_stream["input"] if message["role"] == "tool")
-    assert tool_result_message["tool_call_id"] == tool_call["id"]
+    # Turn one's stream span was recorded by the crashed execution; the tool
+    # span comes from the resumed one.
+    tool_call = _assert_tool_round_trip(stream_spans)
     assert tool_span["metadata"]["tool_call_id"] == tool_call["id"]
     assert tool_span["output"] == {"city": "Paris", "temperature": 21, "unit": "celsius"}
     assert "21" in str(run_span["output"])
 
     # A full replay makes no model calls and emits no duplicate spans.
-    replayed_messages = await _run_durable_workflow(engine, model, [get_temperature], messages)
-    assert engine.live_steps == 3
+    replayed_messages = await _run_durable_workflow(engine)
+    assert len(engine.history) == 3
     assert [message.model_dump() for message in replayed_messages] == [
         message.model_dump() for message in resumed_messages
     ]
     assert memory_logger.pop() == []
 
 
-@pytest.mark.skipif(AI_VERSION < (0, 9, 0), reason="The native TypeSafe provider requires ai 0.9+")
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_typesafe_provider_evaluate_nests_typesafe_span(memory_logger):
-    from ai.providers.typesafe import TypeSafeProvider
+    typesafe_provider = pytest.importorskip(
+        "ai.providers.typesafe", reason="The native TypeSafe provider requires ai 0.9+"
+    )
     from braintrust.integrations.typesafe import setup_typesafe
 
     assert setup_typesafe()
-    provider = TypeSafeProvider()
+    provider = typesafe_provider.TypeSafeProvider()
     try:
         result = await ai.ops.experimental.evaluate(
             ai.Model(id="jev-latest", provider=provider),
@@ -400,6 +392,7 @@ async def test_typesafe_provider_evaluate_nests_typesafe_span(memory_logger):
     assert typesafe_span["input"]["questions"][0]["id"] == "positive"
     assert typesafe_span["output"]["answers"][0]["id"] == "positive"
     assert [span for span in spans if "tokens" in span.get("metrics", {})] == [typesafe_span]
+    assert_metrics_are_valid(typesafe_span["metrics"])
 
 
 @pytest.mark.asyncio
