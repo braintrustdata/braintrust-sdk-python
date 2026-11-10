@@ -441,6 +441,7 @@ def _workflow_span_id_base(info: temporalio.workflow.Info) -> str:
     namespace = getattr(info, "namespace", "")
     return f"{_SPAN_ID_NAMESPACE}:{namespace}:{info.workflow_type}:{info.workflow_id}:{info.run_id}"
 
+
 def _workflow_span_metadata(info: temporalio.workflow.Info) -> dict[str, Any]:
     metadata: dict[str, Any] = {
         "temporal.workflow_type": info.workflow_type,
