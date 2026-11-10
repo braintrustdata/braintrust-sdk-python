@@ -242,7 +242,9 @@ class _DurableEngine:
         else:
             if self._cursor == self._crash_before_step:
                 raise _WorkerCrash()
-            result = await asyncio.create_task(fn(*args), context=contextvars.Context())
+            # The task copies the empty context it is created in. (``create_task(context=)``
+            # is 3.11+, and pylint also lints this file on 3.10.)
+            result = await contextvars.Context().run(asyncio.create_task, fn(*args))
             self.history.append(result)
         self._cursor += 1
         return result
