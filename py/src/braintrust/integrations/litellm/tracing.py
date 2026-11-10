@@ -8,20 +8,27 @@ from functools import lru_cache
 from types import TracebackType
 from typing import Any
 
-from braintrust.integrations.openai.tracing import _decisions_input, _decisions_output, _process_attachments_in_input
+from braintrust.integrations.openai.tracing import (
+    _decisions_input,
+    _decisions_output,
+    _process_attachments_in_input,
+    _responses_event_served_tier,
+)
 from braintrust.integrations.utils import (
     _extract_audio_output,
     _image_attachment_from_base64,
     _materialize_attachment,
     _parse_openai_usage_metrics,
     _prettify_response_params,
+    _ServedServiceTierTracker,
+    _service_tier_metadata,
     _timing_metrics,
     _try_to_dict,
 )
 from braintrust.logger import Span
 from braintrust.logger import start_span as _bt_start_span
 from braintrust.span_types import SpanTypeAttribute
-from braintrust.util import clean_nones, is_numeric, merge_dicts
+from braintrust.util import clean_nones, get_signature, is_numeric, merge_dicts
 
 
 _INSTRUMENTATION = "litellm-auto"
@@ -154,10 +161,12 @@ def _handle_completion_streaming(
             try:
                 first = True
                 all_results: list[_CompletionStreamChunk] = []
+                served_tier = _ServedServiceTierTracker(span)
                 async for item in raw_response:
                     if first:
                         span.log(metrics={"time_to_first_token": time.time() - start_time})
                         first = False
+                    served_tier.observe(_get_field(item, "service_tier"))
                     all_results.append(_snapshot_completion_stream_chunk(item))
                     yield item
 
@@ -172,10 +181,12 @@ def _handle_completion_streaming(
             try:
                 first = True
                 all_results: list[_CompletionStreamChunk] = []
+                served_tier = _ServedServiceTierTracker(span)
                 for item in raw_response:
                     if first:
                         span.log(metrics={"time_to_first_token": time.time() - start_time})
                         first = False
+                    served_tier.observe(_get_field(item, "service_tier"))
                     all_results.append(_snapshot_completion_stream_chunk(item))
                     yield item
 
@@ -196,10 +207,12 @@ def _handle_responses_streaming(
             try:
                 first = True
                 all_results: list[Any] = []
+                served_tier = _ServedServiceTierTracker(span)
                 async for item in raw_response:
                     if first:
                         span.log(metrics={"time_to_first_token": time.time() - start_time})
                         first = False
+                    served_tier.observe(_responses_event_served_tier(item))
                     all_results.append(item)
                     yield item
 
@@ -214,10 +227,12 @@ def _handle_responses_streaming(
             try:
                 first = True
                 all_results: list[Any] = []
+                served_tier = _ServedServiceTierTracker(span)
                 for item in raw_response:
                     if first:
                         span.log(metrics={"time_to_first_token": time.time() - start_time})
                         first = False
+                    served_tier.observe(_responses_event_served_tier(item))
                     all_results.append(item)
                     yield item
 
@@ -234,7 +249,7 @@ def _handle_responses_streaming(
 
 
 def _completion_wrapper_impl(wrapped, args, kwargs, *, input_key: str):
-    updated_span_payload = _update_span_payload_from_params(kwargs, input_key=input_key)
+    updated_span_payload = _update_llm_span_payload_from_params(kwargs, input_key=input_key)
     is_streaming = kwargs.get("stream", False)
 
     span = start_span(
@@ -252,7 +267,11 @@ def _completion_wrapper_impl(wrapped, args, kwargs, *, input_key: str):
 
         metrics = _parse_metrics_from_usage(_get_field(completion_response, "usage"))
         metrics["time_to_first_token"] = time.time() - start
-        span.log(metrics=metrics, output=_get_field(completion_response, "choices"))
+        span.log(
+            metrics=metrics,
+            output=_get_field(completion_response, "choices"),
+            metadata=_service_tier_metadata(served=_get_field(completion_response, "service_tier")),
+        )
         return completion_response
     finally:
         if should_end:
@@ -260,7 +279,7 @@ def _completion_wrapper_impl(wrapped, args, kwargs, *, input_key: str):
 
 
 async def _acompletion_wrapper_impl(wrapped, args, kwargs, *, input_key: str):
-    updated_span_payload = _update_span_payload_from_params(kwargs, input_key=input_key)
+    updated_span_payload = _update_llm_span_payload_from_params(kwargs, input_key=input_key)
     is_streaming = kwargs.get("stream", False)
 
     span = start_span(
@@ -278,7 +297,11 @@ async def _acompletion_wrapper_impl(wrapped, args, kwargs, *, input_key: str):
 
         metrics = _parse_metrics_from_usage(_get_field(completion_response, "usage"))
         metrics["time_to_first_token"] = time.time() - start
-        span.log(metrics=metrics, output=_get_field(completion_response, "choices"))
+        span.log(
+            metrics=metrics,
+            output=_get_field(completion_response, "choices"),
+            metadata=_service_tier_metadata(served=_get_field(completion_response, "service_tier")),
+        )
         return completion_response
     finally:
         if should_end:
@@ -302,7 +325,9 @@ async def _atext_completion_wrapper_async(wrapped, instance, args, kwargs):
 
 
 def _responses_wrapper(wrapped, instance, args, kwargs):
-    updated_span_payload = _update_span_payload_from_params(kwargs, input_key="input")
+    updated_span_payload = _update_llm_span_payload_from_params(
+        kwargs, input_key="input", forwards_service_tier=_accepts_service_tier(wrapped)
+    )
     is_streaming = kwargs.get("stream", False)
 
     span = start_span(
@@ -320,7 +345,11 @@ def _responses_wrapper(wrapped, instance, args, kwargs):
 
         metrics = _parse_metrics_from_usage(_get_field(response, "usage"))
         metrics["time_to_first_token"] = time.time() - start
-        span.log(metrics=metrics, output=_get_field(response, "output"))
+        span.log(
+            metrics=metrics,
+            output=_get_field(response, "output"),
+            metadata=_service_tier_metadata(served=_get_field(response, "service_tier")),
+        )
         return response
     finally:
         if should_end:
@@ -328,7 +357,9 @@ def _responses_wrapper(wrapped, instance, args, kwargs):
 
 
 async def _aresponses_wrapper_async(wrapped, instance, args, kwargs):
-    updated_span_payload = _update_span_payload_from_params(kwargs, input_key="input")
+    updated_span_payload = _update_llm_span_payload_from_params(
+        kwargs, input_key="input", forwards_service_tier=_accepts_service_tier(wrapped)
+    )
     is_streaming = kwargs.get("stream", False)
 
     span = start_span(
@@ -346,7 +377,11 @@ async def _aresponses_wrapper_async(wrapped, instance, args, kwargs):
 
         metrics = _parse_metrics_from_usage(_get_field(response, "usage"))
         metrics["time_to_first_token"] = time.time() - start
-        span.log(metrics=metrics, output=_get_field(response, "output"))
+        span.log(
+            metrics=metrics,
+            output=_get_field(response, "output"),
+            metadata=_service_tier_metadata(served=_get_field(response, "service_tier")),
+        )
         return response
     finally:
         if should_end:
@@ -945,6 +980,32 @@ def _update_span_payload_from_params(params: dict[str, Any], input_key: str = "i
         span_info_d,
         {"input": _process_attachments_in_input(input_data), "metadata": metadata},
     )
+
+
+@lru_cache(maxsize=8)
+def _accepts_service_tier(fn: Any) -> bool:
+    """Whether a LiteLLM entry point forwards ``service_tier`` to the provider.
+
+    Older LiteLLM ``responses()``/``aresponses()`` (e.g. 1.74.0) have no
+    ``service_tier`` parameter and silently drop it from ``**kwargs``.
+    """
+    try:
+        return "service_tier" in get_signature(fn).parameters
+    except (NameError, TypeError, ValueError):
+        return True
+
+
+def _update_llm_span_payload_from_params(
+    params: dict[str, Any], input_key: str, *, forwards_service_tier: bool = True
+) -> dict[str, Any]:
+    """Span payload for model calls: request params plus the canonical requested service tier."""
+    payload = _update_span_payload_from_params(params, input_key=input_key)
+    if not forwards_service_tier:
+        return payload
+    requested_tier = _service_tier_metadata(requested=params.get("service_tier"))
+    if requested_tier:
+        payload["metadata"] = {**(payload.get("metadata") or {}), **requested_tier}
+    return payload
 
 
 def _update_rerank_span_payload_from_params(params: dict[str, Any]) -> dict[str, Any]:

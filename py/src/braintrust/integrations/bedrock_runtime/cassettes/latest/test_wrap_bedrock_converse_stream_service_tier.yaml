@@ -1,0 +1,57 @@
+interactions:
+- request:
+    body: '{"system": [{"text": "You answer with concise lowercase text."}], "messages":
+      [{"role": "user", "content": [{"text": "Say hello in one word."}]}], "inferenceConfig":
+      {"maxTokens": 20, "temperature": 0, "topP": 0.9, "stopSequences": ["STOP"]},
+      "serviceTier": {"type": "flex"}}'
+    headers:
+      Content-Length:
+      - '275'
+      Content-Type:
+      - !!binary |
+        YXBwbGljYXRpb24vanNvbg==
+      User-Agent:
+      - !!binary |
+        Qm90bzMvMS40My4xMjYgbWQvQm90b2NvcmUjMS40My4xMjYgdWEvMi4xIG9zL21hY29zIzI1LjYu
+        MCBtZC9hcmNoI2FybTY0IGxhbmcvcHl0aG9uIzMuMTQuNyBtZC9weWltcGwjQ1B5dGhvbiBtLzMs
+        WixELGIgY2ZnL3JldHJ5LW1vZGUjbGVnYWN5IEJvdG9jb3JlLzEuNDMuMTI2
+    method: POST
+    uri: https://bedrock-runtime.us-east-1.amazonaws.com/model/us.amazon.nova-2-lite-v1%3A0/converse-stream
+  response:
+    body:
+      string: !!binary |
+        AAAApgAAAFIfIIWHCzpldmVudC10eXBlBwAMbWVzc2FnZVN0YXJ0DTpjb250ZW50LXR5cGUHABBh
+        cHBsaWNhdGlvbi9qc29uDTptZXNzYWdlLXR5cGUHAAVldmVudHsicCI6ImFiY2RlZmdoaWprbG1u
+        b3BxcnN0dXZ3eHl6QUJDREVGR0hJSktMTU5PIiwicm9sZSI6ImFzc2lzdGFudCJ9AcVkFwAAALsA
+        AABX9zoiOws6ZXZlbnQtdHlwZQcAEWNvbnRlbnRCbG9ja0RlbHRhDTpjb250ZW50LXR5cGUHABBh
+        cHBsaWNhdGlvbi9qc29uDTptZXNzYWdlLXR5cGUHAAVldmVudHsiY29udGVudEJsb2NrSW5kZXgi
+        OjAsImRlbHRhIjp7InRleHQiOiJoaSJ9LCJwIjoiYWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXpB
+        QkNERUYifTbqsMAAAACqAAAAV6q6nAkLOmV2ZW50LXR5cGUHABFjb250ZW50QmxvY2tEZWx0YQ06
+        Y29udGVudC10eXBlBwAQYXBwbGljYXRpb24vanNvbg06bWVzc2FnZS10eXBlBwAFZXZlbnR7ImNv
+        bnRlbnRCbG9ja0luZGV4IjowLCJkZWx0YSI6eyJ0ZXh0IjoiLiJ9LCJwIjoiYWJjZGVmZ2hpamts
+        bW5vcCJ92q3P0wAAAKQAAABWYo0S/gs6ZXZlbnQtdHlwZQcAEGNvbnRlbnRCbG9ja1N0b3ANOmNv
+        bnRlbnQtdHlwZQcAEGFwcGxpY2F0aW9uL2pzb24NOm1lc3NhZ2UtdHlwZQcABWV2ZW50eyJjb250
+        ZW50QmxvY2tJbmRleCI6MCwicCI6ImFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6QUJDREVGIn07
+        lyU5AAAAmAAAAFGYONLaCzpldmVudC10eXBlBwALbWVzc2FnZVN0b3ANOmNvbnRlbnQtdHlwZQcA
+        EGFwcGxpY2F0aW9uL2pzb24NOm1lc3NhZ2UtdHlwZQcABWV2ZW50eyJwIjoiYWJjZGVmZ2hpamts
+        bW5vcHFyc3R1dnciLCJzdG9wUmVhc29uIjoiZW5kX3R1cm4ifc04oSUAAAEQAAAATl/699kLOmV2
+        ZW50LXR5cGUHAAhtZXRhZGF0YQ06Y29udGVudC10eXBlBwAQYXBwbGljYXRpb24vanNvbg06bWVz
+        c2FnZS10eXBlBwAFZXZlbnR7Im1ldHJpY3MiOnsibGF0ZW5jeU1zIjo1OTN9LCJwIjoiYWJjZGVm
+        Z2hpamtsbW5vcHFyc3R1dnd4eXpBQkNEIiwic2VydmljZVRpZXIiOnsidHlwZSI6ImZsZXgifSwi
+        dXNhZ2UiOnsiaW5wdXRUb2tlbnMiOjU5LCJvdXRwdXRUb2tlbnMiOjMsInNlcnZlclRvb2xVc2Fn
+        ZSI6e30sInRvdGFsVG9rZW5zIjo2Mn19bK47kQ==
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/vnd.amazon.eventstream
+      Date:
+      - Tue, 10 Nov 2026 15:19:51 GMT
+      Transfer-Encoding:
+      - chunked
+      x-amzn-RequestId:
+      - b4c9963f-7619-423e-ade6-a6256dd66d44
+    status:
+      code: 200
+      message: OK
+version: 1

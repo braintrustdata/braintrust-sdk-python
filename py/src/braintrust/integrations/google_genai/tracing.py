@@ -12,6 +12,9 @@ from braintrust.integrations.utils import (
     _extract_google_usage_metadata_metrics,
     _extract_google_usage_metadata_provider_metadata,
     _materialize_attachment,
+    _normalize_service_tier,
+    _ServedServiceTierTracker,
+    _service_tier_metadata,
 )
 from braintrust.logger import (
     NOOP_SPAN,
@@ -36,7 +39,7 @@ def start_span(*args, **kwargs):
 
 
 from braintrust.span_types import SpanTypeAttribute
-from braintrust.util import clean_nones
+from braintrust.util import clean_nones, coalesce
 
 
 if TYPE_CHECKING:
@@ -246,12 +249,118 @@ def _get_args_kwargs(
     return {k: args[i] if args else kwargs.get(k) for i, k in enumerate(keys)}, _omit(kwargs, omit_keys or keys)
 
 
+def _config_service_tier(config: Any) -> Any:
+    """Return the requested ``service_tier`` from a dict or ``GenerateContentConfig``.
+
+    Older google-genai versions have no such field, so this simply yields ``None``.
+    """
+    if isinstance(config, dict):
+        return coalesce(config.get("service_tier"), config.get("serviceTier"))
+    return getattr(config, "service_tier", None)
+
+
+class _WireServiceTier:
+    """Served tier read from raw GenerateContent wire payloads for one traced call.
+
+    google-genai's ``GenerateContentResponseUsageMetadata`` does not declare
+    ``serviceTier`` (through at least 3.0.0), so the SDK strips
+    ``usageMetadata.serviceTier`` while parsing a response. The response
+    converter wrapper below records it here before that happens.
+    """
+
+    __slots__ = ("tier",)
+
+    def __init__(self) -> None:
+        self.tier: str | None = None
+
+    def served(self, response: Any) -> Any:
+        """Return the raw served tier for *response* (a full response or stream chunk)."""
+        # Prefer the parsed field if a future google-genai exposes it.
+        return coalesce(getattr(getattr(response, "usage_metadata", None), "service_tier", None), self.tier)
+
+
+_wire_service_tier: contextvars.ContextVar[_WireServiceTier | None] = contextvars.ContextVar(
+    "braintrust_google_genai_wire_service_tier", default=None
+)
+
+
+def _call_capturing_wire_service_tier(capture: _WireServiceTier, call: Callable[[], Any]) -> Any:
+    token = _wire_service_tier.set(capture)
+    try:
+        return call()
+    finally:
+        _wire_service_tier.reset(token)
+
+
+async def _await_capturing_wire_service_tier(capture: _WireServiceTier, call: Callable[[], Awaitable[Any]]) -> Any:
+    token = _wire_service_tier.set(capture)
+    try:
+        return await call()
+    finally:
+        _wire_service_tier.reset(token)
+
+
+def _iter_capturing_wire_service_tier(capture: _WireServiceTier, call: Callable[[], Any]) -> Any:
+    # Capture only while the SDK produces each chunk, so the context variable
+    # never leaks into caller code that runs between chunks.
+    iterator = iter(_call_capturing_wire_service_tier(capture, call))
+    while True:
+        token = _wire_service_tier.set(capture)
+        try:
+            chunk = next(iterator)
+        except StopIteration:
+            return
+        finally:
+            _wire_service_tier.reset(token)
+        yield chunk
+
+
+async def _aiter_capturing_wire_service_tier(capture: _WireServiceTier, call: Callable[[], Awaitable[Any]]) -> Any:
+    iterator = await _await_capturing_wire_service_tier(capture, call)
+
+    async def capturing_iterator():
+        while True:
+            token = _wire_service_tier.set(capture)
+            try:
+                chunk = await iterator.__anext__()
+            except StopAsyncIteration:
+                return
+            finally:
+                _wire_service_tier.reset(token)
+            yield chunk
+
+    return capturing_iterator()
+
+
+def _generate_content_response_from_wire_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
+    """Wrap ``_GenerateContentResponse_from_{mldev,vertex}`` to read ``usageMetadata.serviceTier``."""
+    del instance
+    capture = _wire_service_tier.get()
+    if capture is not None:
+        from_object = args[0] if args else kwargs.get("from_object")
+        usage = from_object.get("usageMetadata") if isinstance(from_object, dict) else None
+        if isinstance(usage, dict):
+            # A later reported tier replaces an earlier one; a missing tier never erases it.
+            tier = _normalize_service_tier(usage.get("serviceTier"))
+            if tier is not None:
+                capture.tier = tier
+    return wrapped(*args, **kwargs)
+
+
+def _interaction_event_service_tier(event: Any) -> Any:
+    return getattr(getattr(event, "interaction", None), "service_tier", None)
+
+
 def _prepare_traced_call(
     api_client: Any, args: list[Any], kwargs: dict[str, Any]
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     input, clean_kwargs = _get_args_kwargs(args, kwargs, ["model", "contents", "config"], ["contents", "config"])
 
-    metadata: dict[str, Any] = {"provider": _PROVIDER, **clean_kwargs}
+    metadata: dict[str, Any] = {
+        "provider": _PROVIDER,
+        **clean_kwargs,
+        **_service_tier_metadata(requested=_config_service_tier(input.get("config"))),
+    }
     tools = _serialize_tools(api_client, input)
     if tools is not None:
         metadata["tools"] = tools
@@ -316,6 +425,7 @@ def _prepare_interaction_create_traced_call(
             "tools": kwargs.get("tools"),
         }
     )
+    metadata.update(_service_tier_metadata(requested=kwargs.get("service_tier")))
     return input_data, metadata
 
 
@@ -584,14 +694,14 @@ def _extract_interaction_metrics(response: "Interaction", start: float) -> dict[
 
 
 def _gc_process_result(
-    result: "GenerateContentResponse", start: float
+    result: "GenerateContentResponse", start: float, capture: _WireServiceTier
 ) -> tuple[Any, dict[str, Any], dict[str, Any] | None]:
     usage_metadata = getattr(result, "usage_metadata", None)
-    return (
-        result,
-        _extract_generate_content_metrics(result, start),
-        _extract_usage_metadata_provider_metadata(usage_metadata) if usage_metadata is not None else None,
-    )
+    metadata = {
+        **((_extract_usage_metadata_provider_metadata(usage_metadata) or {}) if usage_metadata is not None else {}),
+        **_service_tier_metadata(served=capture.served(result)),
+    }
+    return result, _extract_generate_content_metrics(result, start), metadata or None
 
 
 def _embed_process_result(result: "EmbedContentResponse", start: float) -> tuple[Any, dict[str, Any]]:
@@ -640,6 +750,13 @@ def _interaction_process_result(
         _extract_interaction_metrics(result, start),
         _extract_interaction_metadata(result),
     )
+
+
+def _interaction_create_process_result(
+    result: "Interaction", start: float
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    output, metrics, metadata = _interaction_process_result(result, start)
+    return output, metrics, {**metadata, **_service_tier_metadata(served=getattr(result, "service_tier", None))}
 
 
 def _generic_process_result(result: Any, start: float) -> tuple[Any, dict[str, Any]]:
@@ -1192,6 +1309,7 @@ def _run_stream_traced_call(
     ] = _prepare_traced_call,
     before_invoke: Callable[[dict[str, Any]], None] | None = None,
     finalize_logged_output: Callable[[Any, dict[str, Any], dict[str, Any] | None, str], None] | None = None,
+    chunk_service_tier: Callable[[Any], Any] | None = None,
 ) -> Any:
     input, clean_kwargs = prepare_call(api_client, args, kwargs)
     captured_parent = _current_parent_export()
@@ -1214,12 +1332,15 @@ def _run_stream_traced_call(
             metadata=clean_kwargs or None,
         ) as span:
             chunks = []
+            served_tier = _ServedServiceTierTracker(span)
             for chunk in invoke():
                 if first_token_time is None and (
                     first_token_predicate(chunk) if first_token_predicate is not None else True
                 ):
                     first_token_time = time.time()
                 chunks.append(chunk)
+                if chunk_service_tier is not None:
+                    served_tier.observe(chunk_service_tier(chunk))
                 yield chunk
 
             output, metrics, metadata = _normalize_logged_result(aggregate(chunks, start, first_token_time))
@@ -1249,6 +1370,7 @@ def _run_async_stream_traced_call(
     ] = _prepare_traced_call,
     before_invoke: Callable[[dict[str, Any]], None] | None = None,
     finalize_logged_output: Callable[[Any, dict[str, Any], dict[str, Any] | None, str], None] | None = None,
+    chunk_service_tier: Callable[[Any], Any] | None = None,
 ) -> Any:
     input, clean_kwargs = prepare_call(api_client, args, kwargs)
     captured_parent = _current_parent_export()
@@ -1271,12 +1393,15 @@ def _run_async_stream_traced_call(
             metadata=clean_kwargs or None,
         ) as span:
             chunks = []
+            served_tier = _ServedServiceTierTracker(span)
             async for chunk in await invoke():
                 if first_token_time is None and (
                     first_token_predicate(chunk) if first_token_predicate is not None else True
                 ):
                     first_token_time = time.time()
                 chunks.append(chunk)
+                if chunk_service_tier is not None:
+                    served_tier.observe(chunk_service_tier(chunk))
                 yield chunk
 
             output, metrics, metadata = _normalize_logged_result(aggregate(chunks, start, first_token_time))
@@ -1295,24 +1420,27 @@ def _run_async_stream_traced_call(
 
 
 def _generate_content_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
+    capture = _WireServiceTier()
     return _run_traced_call(
         instance._api_client,
         args,
         kwargs,
         name="generate_content",
-        invoke=lambda: wrapped(*args, **kwargs),
-        process_result=_gc_process_result,
+        invoke=lambda: _call_capturing_wire_service_tier(capture, lambda: wrapped(*args, **kwargs)),
+        process_result=lambda result, start: _gc_process_result(result, start, capture),
     )
 
 
 def _generate_content_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
+    capture = _WireServiceTier()
     return _run_stream_traced_call(
         instance._api_client,
         args,
         kwargs,
         name="generate_content_stream",
-        invoke=lambda: wrapped(*args, **kwargs),
+        invoke=lambda: _iter_capturing_wire_service_tier(capture, lambda: wrapped(*args, **kwargs)),
         aggregate=_aggregate_generate_content_chunks,
+        chunk_service_tier=capture.served,
     )
 
 
@@ -1341,24 +1469,27 @@ def _generate_images_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any
 
 
 async def _async_generate_content_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
+    capture = _WireServiceTier()
     return await _run_async_traced_call(
         instance._api_client,
         args,
         kwargs,
         name="generate_content",
-        invoke=lambda: wrapped(*args, **kwargs),
-        process_result=_gc_process_result,
+        invoke=lambda: _await_capturing_wire_service_tier(capture, lambda: wrapped(*args, **kwargs)),
+        process_result=lambda result, start: _gc_process_result(result, start, capture),
     )
 
 
 async def _async_generate_content_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
+    capture = _WireServiceTier()
     return _run_async_stream_traced_call(
         instance._api_client,
         args,
         kwargs,
         name="generate_content_stream",
-        invoke=lambda: wrapped(*args, **kwargs),
+        invoke=lambda: _aiter_capturing_wire_service_tier(capture, lambda: wrapped(*args, **kwargs)),
         aggregate=_aggregate_generate_content_chunks,
+        chunk_service_tier=capture.served,
     )
 
 
@@ -1402,6 +1533,7 @@ def _interactions_create_wrapper(wrapped: Any, instance: Any, args: Any, kwargs:
             span_type=SpanTypeAttribute.LLM,
             before_invoke=before_invoke,
             finalize_logged_output=_finalize_interaction_tool_spans,
+            chunk_service_tier=_interaction_event_service_tier,
         )
 
     return _run_traced_call(
@@ -1410,7 +1542,7 @@ def _interactions_create_wrapper(wrapped: Any, instance: Any, args: Any, kwargs:
         kwargs,
         name="interactions.create",
         invoke=lambda: wrapped(*args, **kwargs),
-        process_result=_interaction_process_result,
+        process_result=_interaction_create_process_result,
         prepare_call=_prepare_interaction_create_traced_call,
         span_type=SpanTypeAttribute.LLM,
         before_invoke=before_invoke,
@@ -1434,6 +1566,7 @@ async def _async_interactions_create_wrapper(wrapped: Any, instance: Any, args: 
             span_type=SpanTypeAttribute.LLM,
             before_invoke=before_invoke,
             finalize_logged_output=_finalize_interaction_tool_spans,
+            chunk_service_tier=_interaction_event_service_tier,
         )
 
     return await _run_async_traced_call(
@@ -1442,7 +1575,7 @@ async def _async_interactions_create_wrapper(wrapped: Any, instance: Any, args: 
         kwargs,
         name="interactions.create",
         invoke=lambda: wrapped(*args, **kwargs),
-        process_result=_interaction_process_result,
+        process_result=_interaction_create_process_result,
         prepare_call=_prepare_interaction_create_traced_call,
         span_type=SpanTypeAttribute.LLM,
         before_invoke=before_invoke,

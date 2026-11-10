@@ -4,6 +4,7 @@ import datetime
 from typing import Any
 
 from agents import tracing
+from braintrust.integrations.utils import _service_tier_metadata
 from braintrust.logger import NOOP_SPAN, Experiment, Logger, Span, current_span, flush
 from braintrust.logger import start_span as _bt_start_span
 
@@ -88,6 +89,19 @@ _TOKEN_PREFIX_MAP = {
     "input": "prompt",
     "output": "completion",
 }
+
+
+def _requested_service_tier(model_config: Any) -> Any:
+    """Return ``service_tier`` forwarded to the provider through ``ModelSettings.extra_args``.
+
+    The OpenAI models spread ``extra_args`` into the create() call, so this is the
+    effective request value. openai-agents >= 0.14 omits ``extra_args`` from the
+    traced ``model_config``, so the requested tier is unavailable there.
+    """
+    if not isinstance(model_config, dict):
+        return None
+    extra_args = model_config.get("extra_args")
+    return extra_args.get("service_tier") if isinstance(extra_args, dict) else None
 
 
 def _usage_to_metrics(usage: dict[str, Any]) -> dict[str, Any]:
@@ -196,6 +210,10 @@ class BraintrustTracingProcessor(tracing.TracingProcessor):
             data["metadata"].update(
                 span.span_data.response.model_dump(exclude={"input", "output", "metadata", "usage"}, exclude_none=True)
             )
+            # The Responses API reports the tier that actually served the call.
+            data["metadata"].update(
+                _service_tier_metadata(served=getattr(span.span_data.response, "service_tier", None))
+            )
 
         data["metrics"] = {}
         ttft = _maybe_timestamp_elapsed(span.ended_at, span.started_at)
@@ -240,6 +258,7 @@ class BraintrustTracingProcessor(tracing.TracingProcessor):
             "metadata": {
                 "model": span.span_data.model,
                 "model_config": span.span_data.model_config,
+                **_service_tier_metadata(requested=_requested_service_tier(span.span_data.model_config)),
             },
             "metrics": metrics,
         }

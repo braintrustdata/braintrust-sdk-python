@@ -8,7 +8,7 @@ from copy import copy
 from typing import Any
 
 from braintrust.integrations.anthropic._utils import Wrapper, _try_to_dict, extract_anthropic_usage
-from braintrust.integrations.utils import _materialize_attachment
+from braintrust.integrations.utils import _materialize_attachment, _normalize_service_tier, _service_tier_metadata
 from braintrust.logger import log_exc_info_to_span
 from braintrust.logger import start_span as _bt_start_span
 
@@ -1030,6 +1030,7 @@ class TracedMessageStream(Wrapper):
         self.__snapshot = None
         self.__request_start_time = request_start_time
         self.__time_to_first_token: float | None = None
+        self.__served_service_tier: str | None = None
         self.__finished = False
 
     def __del__(self):
@@ -1046,6 +1047,7 @@ class TracedMessageStream(Wrapper):
                 self.__span,
                 time_to_first_token=self.__time_to_first_token,
                 metrics_override=self.__metrics,
+                served_service_tier=self.__served_service_tier,
             )
 
     def __await__(self):
@@ -1227,6 +1229,18 @@ class TracedMessageStream(Wrapper):
             request = getattr(self.__msg_stream, "request", None)
             accumulate_kwargs["request_headers"] = getattr(request, "headers", None)
         self.__snapshot = self.__accumulate_event(event=m, current_snapshot=self.__snapshot, **accumulate_kwargs)
+
+        # message_start reports the tier, and later usage updates may revise it.
+        # The SDK accumulator ignores message_delta tiers, so track them here.
+        if m.type == "message_start":
+            usage = getattr(getattr(m, "message", None), "usage", None)
+        elif m.type == "message_delta":
+            usage = getattr(m, "usage", None)
+        else:
+            usage = None
+        served_service_tier = _usage_served_service_tier(usage)
+        if served_service_tier is not None:
+            self.__served_service_tier = served_service_tier
 
         if m.type == "message_delta":
             # Anthropic <0.122.0 drops output_tokens_details when accumulating
@@ -1787,7 +1801,15 @@ def _get_metadata_from_kwargs(kwargs):
 def _start_span(name, kwargs):
     _input = _get_input_from_kwargs(kwargs)
     metadata = _get_metadata_from_kwargs(kwargs)
+    # Record the requested tier before the call so it survives provider errors.
+    metadata.update(_service_tier_metadata(requested=kwargs.get("service_tier")))
     return start_span(name=name, type="llm", metadata=metadata, input=_input)
+
+
+def _usage_served_service_tier(usage: Any) -> str | None:
+    """Return the normalized tier reported in an Anthropic ``usage`` object, if any."""
+    tier = usage.get("service_tier") if isinstance(usage, dict) else getattr(usage, "service_tier", None)
+    return _normalize_service_tier(tier)
 
 
 _SERVER_TOOL_USE_TYPES = ("server_tool_use", "mcp_tool_use")
@@ -1987,12 +2009,22 @@ def _message_output(message, *, include_parsed_output: bool = False):
 
 
 def _log_message_to_span(
-    message, span, time_to_first_token: float | None = None, *, include_parsed_output=False, metrics_override=None
+    message,
+    span,
+    time_to_first_token: float | None = None,
+    *,
+    include_parsed_output=False,
+    metrics_override=None,
+    served_service_tier: str | None = None,
 ):
     usage = getattr(message, "usage", {})
     metrics, metadata = extract_anthropic_usage(usage)
     if metrics_override:
         metrics.update(metrics_override)
+    if served_service_tier is None:
+        served_service_tier = _usage_served_service_tier(usage)
+    if served_service_tier is not None:
+        metadata["served_service_tier"] = served_service_tier
 
     if time_to_first_token is not None:
         metrics["time_to_first_token"] = time_to_first_token

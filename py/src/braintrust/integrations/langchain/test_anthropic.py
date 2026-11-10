@@ -4,6 +4,7 @@ from unittest.mock import ANY
 import pytest
 from braintrust import flush, logger
 from braintrust.integrations.langchain import BraintrustCallbackHandler, set_global_handler
+from braintrust.integrations.test_utils import assert_service_tiers
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import find_spans_by_type, init_test_logger
 from langchain_anthropic import ChatAnthropic
@@ -63,6 +64,8 @@ def test_langchain_anthropic_integration(
     llm_span = llm_spans[0]
     assert llm_span["metadata"]["model"] == MODEL
     assert llm_span["metadata"]["provider"] == "anthropic"
+    # langchain-anthropic keeps the Messages ``usage.service_tier`` in llm_output.
+    assert_service_tiers(llm_span["metadata"], served="standard")
 
     prompt_spans = [span for span in spans if "ChatPromptTemplate" in span["span_attributes"].get("name", "")]
     if prompt_spans:

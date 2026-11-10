@@ -136,6 +136,10 @@ async def test_openai_agents_integration_setup_creates_spans(memory_logger, monk
     response_spans = [span for span in llm_spans if span.get("span_attributes", {}).get("name") == "Response"]
     assert response_spans
     assert any(span.get("metadata", {}).get("user") == "preserve-me" for span in response_spans)
+    # No tier was requested; the Responses API reports the tier that served the call.
+    for span in response_spans:
+        assert span["metadata"]["served_service_tier"] == "default"
+        assert "requested_service_tier" not in span["metadata"]
     assert all(value is not None for span in response_spans for value in span.get("metadata", {}).values())
 
     # v0.14.0+ produces TaskSpanData and TurnSpanData wrapping agent runs. The
@@ -303,6 +307,45 @@ async def test_braintrust_tracing_processor_concurrency_bug(memory_logger):
     assert agent_a_trace.get("input") != agent_b_trace.get("input")
     if agent_a_trace.get("output") and agent_b_trace.get("output"):
         assert agent_a_trace.get("output") != agent_b_trace.get("output")
+
+
+@pytest.mark.asyncio
+@pytest.mark.vcr
+async def test_openai_agents_chat_completions_requested_service_tier(memory_logger):
+    import agents
+    from agents import Agent, ModelSettings, OpenAIChatCompletionsModel
+    from agents.run import AgentRunner
+    from openai import AsyncOpenAI
+
+    assert not memory_logger.pop()
+
+    processor = BraintrustTracingProcessor()
+    agents.set_tracing_disabled(False)
+    agents.add_trace_processor(processor)
+
+    try:
+        agent = Agent(
+            name="test-agent",
+            model=OpenAIChatCompletionsModel(model=TEST_MODEL, openai_client=AsyncOpenAI()),
+            instructions=TEST_AGENT_INSTRUCTIONS,
+            model_settings=ModelSettings(extra_args={"service_tier": "auto"}),
+        )
+        result = await AgentRunner().run(agent, TEST_PROMPT)
+        assert result.final_output
+    finally:
+        processor.shutdown()
+
+    spans = memory_logger.pop()
+    generation_spans = [s for s in spans if s.get("span_attributes", {}).get("name") == "Generation"]
+    assert len(generation_spans) == 1
+    metadata = generation_spans[0]["metadata"]
+    # Generation spans carry no response tier, so only the requested tier can be recorded.
+    assert "served_service_tier" not in metadata
+    # openai-agents >= 0.14 no longer traces ``extra_args``, so the requested tier is unavailable.
+    if "extra_args" in (metadata.get("model_config") or {}):
+        assert metadata["requested_service_tier"] == "auto"
+    else:
+        assert "requested_service_tier" not in metadata
 
 
 class TestAutoInstrumentOpenAIAgents:

@@ -1,0 +1,37 @@
+interactions:
+- request:
+    body: '{"system": [{"text": "You answer with concise lowercase text."}], "messages":
+      [{"role": "user", "content": [{"text": "Say hello in one word."}]}], "inferenceConfig":
+      {"maxTokens": 20, "temperature": 0, "topP": 0.9, "stopSequences": ["STOP"]},
+      "serviceTier": {"type": "flex"}}'
+    headers:
+      Content-Length:
+      - '275'
+      Content-Type:
+      - !!binary |
+        YXBwbGljYXRpb24vanNvbg==
+      User-Agent:
+      - !!binary |
+        Qm90bzMvMS40My4xMjYgbWQvQm90b2NvcmUjMS40My4xMjYgdWEvMi4xIG9zL21hY29zIzI1LjYu
+        MCBtZC9hcmNoI2FybTY0IGxhbmcvcHl0aG9uIzMuMTQuNyBtZC9weWltcGwjQ1B5dGhvbiBtLzMs
+        WixELGIgY2ZnL3JldHJ5LW1vZGUjbGVnYWN5IEJvdG9jb3JlLzEuNDMuMTI2
+    method: POST
+    uri: https://bedrock-runtime.us-east-1.amazonaws.com/model/us.amazon.nova-2-lite-v1%3A0/converse
+  response:
+    body:
+      string: '{"metrics":{"latencyMs":590},"output":{"message":{"content":[{"text":"hi."}],"role":"assistant"}},"serviceTier":{"type":"flex"},"stopReason":"end_turn","usage":{"inputTokens":59,"outputTokens":3,"serverToolUsage":{},"totalTokens":62}}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '234'
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 10 Nov 2026 15:19:50 GMT
+      x-amzn-RequestId:
+      - 8558837c-3cb4-4574-92e5-7a7546d6a998
+    status:
+      code: 200
+      message: OK
+version: 1
