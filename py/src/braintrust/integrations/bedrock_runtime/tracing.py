@@ -116,10 +116,16 @@ def _invoke_model_wrapper(wrapped, instance, args, kwargs):  # noqa: ARG001
     output_usage = output.get("usage") if isinstance(output, dict) else None
     metrics = {
         **_timing_metrics(start_time, time.time()),
+        **_invoke_header_usage_metrics(result),
         **_converse_usage_metrics(output_usage),
         **_anthropic_invoke_usage_metrics(model_id, output),
     }
-    _log_and_end_span(span, output=output, metrics=metrics, metadata=_invoke_model_response_metadata(result))
+    _log_and_end_span(
+        span,
+        output=_summarize_embeddings(output),
+        metrics=metrics,
+        metadata=_invoke_model_response_metadata(result),
+    )
     return result
 
 
@@ -552,6 +558,59 @@ def _replacement_streaming_body(data: bytes) -> Any:
     from botocore.response import StreamingBody
 
     return StreamingBody(io.BytesIO(data), len(data))
+
+
+def _invoke_header_usage_metrics(result: Any) -> dict[str, Any]:
+    """Token counts Bedrock reports in the response headers for every InvokeModel call."""
+    metadata = result.get("ResponseMetadata") if isinstance(result, dict) else None
+    headers = metadata.get("HTTPHeaders") if isinstance(metadata, dict) else None
+    if not isinstance(headers, dict):
+        return {}
+    metrics: dict[str, Any] = {}
+    for header, key in (
+        ("x-amzn-bedrock-input-token-count", "prompt_tokens"),
+        ("x-amzn-bedrock-output-token-count", "completion_tokens"),
+    ):
+        try:
+            metrics[key] = int(headers[header])
+        except (KeyError, TypeError, ValueError):
+            pass
+    if "prompt_tokens" in metrics and "completion_tokens" in metrics:
+        metrics["tokens"] = metrics["prompt_tokens"] + metrics["completion_tokens"]
+    elif "prompt_tokens" in metrics:
+        metrics["tokens"] = metrics["prompt_tokens"]
+    return metrics
+
+
+def _is_vector(value: Any) -> bool:
+    return isinstance(value, list) and bool(value) and all(is_numeric(v) for v in value)
+
+
+def _summarize_embeddings(output: Any) -> Any:
+    """Replace an InvokeModel embedding response with the canonical count output."""
+    if not isinstance(output, dict):
+        return output
+    embedding = output.get("embedding")
+    if not _is_vector(embedding):
+        typed_embeddings = output.get("embeddingsByType")
+        if isinstance(typed_embeddings, dict):
+            embedding = next((value for value in typed_embeddings.values() if _is_vector(value)), None)
+    embeddings = output.get("embeddings")
+    if isinstance(embeddings, dict):
+        embeddings = next(
+            (
+                value
+                for value in embeddings.values()
+                if isinstance(value, list) and value and all(_is_vector(e) for e in value)
+            ),
+            None,
+        )
+    if not _is_vector(embedding) and not (
+        isinstance(embeddings, list) and embeddings and all(_is_vector(e) for e in embeddings)
+    ):
+        return output
+    # Titan v2 repeats a single embedding under embeddingsByType.
+    return {"count": 1 if _is_vector(embedding) else len(embeddings)}
 
 
 def _anthropic_invoke_usage_metrics(model_id: Any, output: Any) -> dict[str, Any]:
