@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"model":"gpt-6-luna","input":"What''s 12 + 12?","reasoning":{"effort":"none"},"text":{"format":{"type":"json_schema","strict":true,"name":"NumberAnswer","schema":{"properties":{"value":{"title":"Value","type":"integer"},"reasoning":{"title":"Reasoning","type":"string"}},"required":["value","reasoning"],"title":"NumberAnswer","type":"object","additionalProperties":false}}}}'
+    body: '{"model":"gpt-6-luna","input":"What''s 12 + 12?","reasoning":{"effort":"low"},"text":{"format":{"type":"json_schema","strict":true,"name":"NumberAnswer","schema":{"properties":{"value":{"title":"Value","type":"integer"},"reasoning":{"title":"Reasoning","type":"string"}},"required":["value","reasoning"],"title":"NumberAnswer","type":"object","additionalProperties":false}}}}'
     headers:
       accept:
       - application/json
@@ -9,7 +9,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '375'
+      - '374'
       content-type:
       - application/json
       host:
@@ -40,15 +40,15 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_06ba272d6bd61e2c016af33c57d48487d2aca8f9e3898912dc\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1794325591,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0e15348e4c229e07016af343d8d45087d2bbf4cb577f2db49c\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1794327512,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794325594,\n  \"error\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794327513,\n  \"error\":
         null,\n  \"frequency_penalty\": 0.0,\n  \"image\": {\n    \"context_compression\":
         \"disabled\"\n  },\n  \"incomplete_details\": null,\n  \"instructions\": null,\n
         \ \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-6-luna\",\n  \"moderation\": null,\n  \"output\": [\n    {\n      \"id\":
-        \"msg_06ba272d6bd61e2c016af33c5a481487d29aa8bddd6bc82e26\",\n      \"type\":
+        \"msg_0e15348e4c229e07016af343d96e1487d2832b4ccfe7ff825f\",\n      \"type\":
         \"message\",\n      \"status\": \"completed\",\n      \"content\": [\n        {\n
         \         \"type\": \"output_text\",\n          \"annotations\": [],\n          \"logprobs\":
         [],\n          \"text\": \"{\\\"value\\\":24,\\\"reasoning\\\":\\\"12 + 12
@@ -56,7 +56,7 @@ interactions:
         \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\":
         0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
         \"24h\",\n  \"reasoning\": {\n    \"context\": \"all_turns\",\n    \"effort\":
-        \"none\",\n    \"mode\": \"standard\",\n    \"summary\": null\n  },\n  \"safety_identifier\":
+        \"low\",\n    \"mode\": \"standard\",\n    \"summary\": null\n  },\n  \"safety_identifier\":
         null,\n  \"service_tier\": \"default\",\n  \"store\": false,\n  \"temperature\":
         1.0,\n  \"text\": {\n    \"format\": {\n      \"type\": \"json_schema\",\n
         \     \"description\": null,\n      \"name\": \"NumberAnswer\",\n      \"schema\":
@@ -87,17 +87,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a58630c47cd7de04-YYZ
+      - a5865faab976aa55-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2660'
+      - '2659'
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 15:46:34 GMT
+      - Tue, 10 Nov 2026 16:18:33 GMT
       openai-processing-ms:
-      - '2899'
+      - '884'
       openai-version:
       - '2020-10-01'
       server:
@@ -121,7 +121,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_f1e7b281409b4ebb832fb62858770210
+      - req_6f8c88025d4f433c9f36907b335a80e9
     status:
       code: 200
       message: OK

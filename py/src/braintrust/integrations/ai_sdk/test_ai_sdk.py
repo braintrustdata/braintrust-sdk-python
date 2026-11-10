@@ -3,7 +3,6 @@
 # pyright: reportUnknownMemberType=false
 # pyright: reportUnknownVariableType=false
 import base64
-import os
 
 import ai
 import pytest
@@ -16,19 +15,28 @@ from braintrust.test_helpers import init_test_logger
 from pydantic import BaseModel
 
 
-LATEST_MODELS = os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
-TEST_MODEL = "gpt-6-luna" if LATEST_MODELS else "gpt-4o-mini"
+TEST_MODEL = "gpt-6-luna"
 
 PROJECT_NAME = "test-ai-sdk"
 MODEL = f"openai:{TEST_MODEL}"
 
 
-def _model_params():
-    if not LATEST_MODELS:
-        return None
-    from ai.providers.openai import OpenAIParams
+def _model():
+    from ai.providers import openai as provider
 
-    return ai.InferenceRequestParams().with_reasoning_effort(None).with_provider_params(OpenAIParams(store=False))
+    # Older AI SDKs cannot disable Responses item references for ZDR accounts.
+    if not hasattr(provider, "OpenAIParams"):
+        return ai.get_model(MODEL, protocol=provider.OpenAIChatCompletionsProtocol())
+    return ai.get_model(MODEL)
+
+
+def _model_params():
+    from ai.providers import openai as provider
+
+    params = ai.InferenceRequestParams().with_reasoning_effort(None)
+    if hasattr(provider, "OpenAIParams"):
+        params = params.with_provider_params(provider.OpenAIParams(store=False))
+    return params
 
 
 _RED_PIXEL_PNG = base64.b64decode(
@@ -74,7 +82,7 @@ def _assert_ai_sdk_origin(span):
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_stream_structured_multimodal_response(memory_logger):
-    model = ai.get_model(MODEL)
+    model = _model()
     messages = [
         ai.system_message("Return the requested value exactly."),
         ai.user_message(
@@ -117,7 +125,7 @@ async def test_agent_tool_loop_emits_run_model_and_tool_hierarchy(memory_logger)
         """Get the current temperature for a city."""
         return {"city": city, "temperature": 21, "unit": "celsius"}
 
-    model = ai.get_model(MODEL)
+    model = _model()
     agent = ai.Agent(tools=[get_temperature])
     messages = [
         ai.system_message("Always use get_temperature once before answering. Be concise."),

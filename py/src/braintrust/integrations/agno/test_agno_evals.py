@@ -13,7 +13,6 @@ imported per test so the older sessions skip just those.
 """
 
 import asyncio
-import os
 
 import pytest
 from braintrust import logger
@@ -23,9 +22,8 @@ from braintrust.test_helpers import find_span_by_name, find_spans_by_type, init_
 from ._test_agno_helpers import PROJECT_NAME
 
 
-LATEST_MODELS = os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
-TEST_MODEL = "gpt-6-luna" if LATEST_MODELS else "gpt-4o-mini"
-MODEL_OPTIONS = {"reasoning_effort": "none"} if LATEST_MODELS else {}
+TEST_MODEL = "gpt-6-luna"
+MODEL_OPTIONS = {"reasoning_effort": "none"}
 
 agno_agent = pytest.importorskip("agno.agent")
 agno_openai = pytest.importorskip("agno.models.openai")

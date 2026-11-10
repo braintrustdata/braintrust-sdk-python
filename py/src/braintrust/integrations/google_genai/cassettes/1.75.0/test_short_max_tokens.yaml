@@ -3,63 +3,61 @@ interactions:
     body: '{"contents": [{"parts": [{"text": "What is AI?"}], "role": "user"}], "generationConfig":
       {"maxOutputTokens": 5}}'
     headers:
-      Accept:
+      accept:
       - '*/*'
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '112'
-      Content-Type:
+      content-type:
       - application/json
-      Host:
+      host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.75.0 gl-python/3.12.12
+      - google-genai-sdk/1.75.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/1.75.0 gl-python/3.12.12
+      - google-genai-sdk/1.75.0 gl-python/3.14.7
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"AI, or Artificial Intelligence\"\n
-        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
-        \"MAX_TOKENS\",\n      \"avgLogprobs\": -0.030159208178520202\n    }\n  ],\n
-        \ \"usageMetadata\": {\n    \"promptTokenCount\": 4,\n    \"candidatesTokenCount\":
-        5,\n    \"totalTokenCount\": 9,\n    \"promptTokensDetails\": [\n      {\n
-        \       \"modality\": \"TEXT\",\n        \"tokenCount\": 4\n      }\n    ],\n
-        \   \"candidatesTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
+        [\n          {\n            \"text\": \"AI stands for **Artificial\"\n          }\n
+        \       ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        \"MAX_TOKENS\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n
+        \   \"promptTokenCount\": 5,\n    \"candidatesTokenCount\": 5,\n    \"totalTokenCount\":
+        10,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
         \       \"tokenCount\": 5\n      }\n    ],\n    \"serviceTier\": \"standard\"\n
-        \ },\n  \"modelVersion\": \"gemini-2.0-flash-001\",\n  \"responseId\": \"uucBaqLLM6C6_uMPteO3mQw\"\n}\n"
+        \ },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n  \"responseId\": \"zkLzasfABYehuMYP05jNYA\"\n}\n"
     headers:
-      Alt-Svc:
+      alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Content-Type:
+      content-length:
+      - '576'
+      content-type:
       - application/json; charset=UTF-8
-      Date:
-      - Mon, 11 May 2026 14:29:15 GMT
-      Server:
+      date:
+      - Tue, 10 Nov 2026 16:14:06 GMT
+      server:
       - scaffolding on HTTPServer2
-      Server-Timing:
-      - gfet4t7; dur=483
-      Transfer-Encoding:
+      server-timing:
+      - gfet4t7; dur=463
+      transfer-encoding:
       - chunked
-      Vary:
+      vary:
       - Origin
       - X-Origin
       - Referer
-      X-Content-Type-Options:
+      x-content-type-options:
       - nosniff
-      X-Frame-Options:
+      x-frame-options:
       - SAMEORIGIN
-      X-Gemini-Service-Tier:
+      x-gemini-service-tier:
       - standard
-      X-XSS-Protection:
+      x-xss-protection:
       - '0'
-      content-length:
-      - '713'
     status:
       code: 200
       message: OK

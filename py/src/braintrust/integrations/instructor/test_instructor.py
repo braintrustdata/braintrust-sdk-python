@@ -16,7 +16,6 @@ not emit ``llm``-typed spans — the existing provider integrations
 """
 
 import json
-import os
 
 import instructor
 import openai
@@ -31,9 +30,8 @@ __all__ = ["memory_logger"]
 
 
 PROJECT_NAME = "test-instructor-app"
-LATEST_MODELS = os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
-TEST_MODEL = "gpt-6-luna" if LATEST_MODELS else "gpt-4o-mini"
-MODEL_OPTIONS = {"reasoning_effort": "none"} if LATEST_MODELS else {}
+TEST_MODEL = "gpt-6-luna"
+MODEL_OPTIONS = {"reasoning_effort": "none"}
 
 
 class Person(BaseModel):

@@ -2,7 +2,6 @@
 
 import pytest
 from braintrust import logger
-from braintrust.integrations._test_models import LATEST, OPENAI_CHAT_MODEL, OPENAI_CHAT_OPTIONS
 from braintrust.integrations.langchain import BraintrustCallbackHandler, set_global_handler
 from braintrust.integrations.test_utils import verify_autoinstrument_script
 from braintrust.test_helpers import init_test_logger
@@ -47,12 +46,10 @@ def test_global_handler(logger_memory_logger):
     assert next((h for h in manager.handlers if isinstance(h, BraintrustCallbackHandler)), None) == handler
 
     # Here's what a typical user would do
-    prompt = ChatPromptTemplate.from_template(
-        "What is 1 + {number}? Reply exactly: 1 + {number} equals 3." if LATEST else "What is 1 + {number}?"
-    )
+    prompt = ChatPromptTemplate.from_template("What is 1 + {number}? Reply exactly: 1 + {number} equals 3.")
     model = ChatOpenAI(
-        model=OPENAI_CHAT_MODEL,
-        **OPENAI_CHAT_OPTIONS,
+        model="gpt-6-luna",
+        reasoning_effort="none",
         temperature=1,
         top_p=1,
         frequency_penalty=0,
@@ -77,7 +74,6 @@ def test_global_handler(logger_memory_logger):
         expected_prompt_chain_spans(
             root_span_id,
             trace_root_id,
-            model_name=OPENAI_CHAT_MODEL if LATEST else "gpt-4o-mini-2024-07-18",
         ),
     )
 

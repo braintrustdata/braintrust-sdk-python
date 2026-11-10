@@ -17,9 +17,8 @@ from openai import OpenAI
 
 
 PROJECT_NAME = "test-openrouter"
-LATEST_RECORDINGS = os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
-TEST_MODEL = "openai/gpt-6-luna" if LATEST_RECORDINGS else "openai/gpt-4o-mini"
-CHAT_OPTIONS = {"reasoning_effort": "none"} if LATEST_RECORDINGS else {}
+TEST_MODEL = "openai/gpt-6-luna"
+CHAT_OPTIONS = {"reasoning_effort": "none"}
 
 
 @pytest.fixture

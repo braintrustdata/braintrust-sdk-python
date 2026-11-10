@@ -13,9 +13,8 @@ from braintrust.test_helpers import init_test_logger
 from packaging.version import Version
 
 
-LATEST_MODELS = os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
-TEST_MODEL = "gpt-6-luna" if LATEST_MODELS else "gpt-4o-mini"
-MODEL_OPTIONS = {"reasoning_effort": "none"} if LATEST_MODELS else {}
+TEST_MODEL = "gpt-6-luna"
+MODEL_OPTIONS = {"reasoning_effort": "none"}
 
 PROJECT_NAME = "test_agentscope"
 
@@ -42,7 +41,7 @@ def _span_type(span):
     return span_type.value if hasattr(span_type, "value") else span_type
 
 
-def _make_model(*, stream: bool = False, api_key: str | None = None):
+def _make_model(*, stream: bool = False, api_key: str | None = None, tool_choice: str | None = None):
     from agentscope.model import OpenAIChatModel
 
     resolved_api_key = api_key if api_key is not None else os.environ["OPENAI_API_KEY"]
@@ -52,9 +51,7 @@ def _make_model(*, stream: bool = False, api_key: str | None = None):
         return OpenAIChatModel(
             credential=OpenAICredential(api_key=resolved_api_key),
             model=TEST_MODEL,
-            parameters=OpenAIChatModel.Parameters(
-                **({"thinking_enable": True, **MODEL_OPTIONS} if LATEST_MODELS else {"temperature": 0})
-            ),
+            parameters=OpenAIChatModel.Parameters(thinking_enable=True, **MODEL_OPTIONS),
             stream=stream,
             max_retries=0,
         )
@@ -63,7 +60,7 @@ def _make_model(*, stream: bool = False, api_key: str | None = None):
         model_name=TEST_MODEL,
         api_key=resolved_api_key,
         stream=stream,
-        generate_kwargs={"temperature": 0, **MODEL_OPTIONS},
+        generate_kwargs={**MODEL_OPTIONS, **({"tool_choice": tool_choice} if tool_choice else {})},
     )
 
 
@@ -122,6 +119,7 @@ async def test_agentscope_simple_agent_run(memory_logger):
     agent = _make_agent(
         "Friday",
         "You are a concise assistant. Answer in one sentence.",
+        model=_make_model(tool_choice="none"),
     )
 
     response = await _run_agent(agent, "Say hello in exactly two words.")

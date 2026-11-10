@@ -2,7 +2,6 @@
 
 import asyncio
 import inspect
-import os
 
 import openai
 from braintrust import wrap_openai
@@ -23,7 +22,7 @@ def _is_braintrust_wrapped(resource) -> bool:
     return isinstance(attr, FunctionWrapper)
 
 
-TEST_MODEL = "gpt-6-luna" if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest" else "gpt-4o-mini"
+TEST_MODEL = "gpt-6-luna"
 
 
 resources = [openai.resources.chat.completions.Completions]
@@ -72,7 +71,7 @@ with autoinstrument_test_context("test_openai_responses_metrics[sync]", integrat
     response = client.responses.create(
         model=TEST_MODEL,
         input="What's 12 + 12?",
-        **({"reasoning": {"effort": "none"}} if TEST_MODEL == "gpt-6-luna" else {}),
+        reasoning={"effort": "low"},
         instructions="Just the number please",
     )
     assert response.output

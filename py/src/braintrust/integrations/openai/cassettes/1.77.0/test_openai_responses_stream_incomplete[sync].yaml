@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"input":"Write a long essay about the history of mathematics.","model":"gpt-4o-mini","max_output_tokens":16,"stream":true}'
+    body: '{"input":"Write a long essay about the history of mathematics.","model":"gpt-6-luna","max_output_tokens":16,"reasoning":{"effort":"low"},"stream":true}'
     headers:
       accept:
       - application/json
@@ -9,7 +9,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '123'
+      - '151'
       content-type:
       - application/json
       host:
@@ -40,132 +40,33 @@ interactions:
     body:
       string: 'event: response.created
 
-        data: {"type":"response.created","response":{"id":"resp_03d42a4e3e7659ac006ad68dd6e68887d0871e7cb728d6459b","object":"response","created_at":1792445910,"status":"in_progress","access_programs":null,"background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":null,"max_output_tokens":16,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"in_memory","reasoning":{"context":null,"effort":null,"summary":null},"safety_identifier":null,"service_tier":"auto","store":true,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[],"top_logprobs":0,"top_p":1.0,"truncation":"disabled","usage":null,"user":null,"metadata":{}},"sequence_number":0}
+        data: {"type":"response.created","response":{"id":"resp_095b244f953603ec016af3440b315487d28030aff866faf053","object":"response","created_at":1794327563,"status":"in_progress","access_programs":null,"background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"image":{"context_compression":"disabled"},"incomplete_details":null,"instructions":null,"max_output_tokens":16,"max_tool_calls":null,"model":"gpt-6-luna","moderation":null,"output":[],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"24h","reasoning":{"context":"all_turns","effort":"low","mode":"standard","summary":null},"safety_identifier":null,"service_tier":"auto","store":false,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[],"top_logprobs":0,"top_p":0.98,"truncation":"disabled","usage":null,"user":null,"metadata":{}},"sequence_number":0}
 
 
         event: response.in_progress
 
-        data: {"type":"response.in_progress","response":{"id":"resp_03d42a4e3e7659ac006ad68dd6e68887d0871e7cb728d6459b","object":"response","created_at":1792445910,"status":"in_progress","access_programs":null,"background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":null,"max_output_tokens":16,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"in_memory","reasoning":{"context":null,"effort":null,"summary":null},"safety_identifier":null,"service_tier":"auto","store":true,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[],"top_logprobs":0,"top_p":1.0,"truncation":"disabled","usage":null,"user":null,"metadata":{}},"sequence_number":1}
+        data: {"type":"response.in_progress","response":{"id":"resp_095b244f953603ec016af3440b315487d28030aff866faf053","object":"response","created_at":1794327563,"status":"in_progress","access_programs":null,"background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"image":{"context_compression":"disabled"},"incomplete_details":null,"instructions":null,"max_output_tokens":16,"max_tool_calls":null,"model":"gpt-6-luna","moderation":null,"output":[],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"24h","reasoning":{"context":"all_turns","effort":"low","mode":"standard","summary":null},"safety_identifier":null,"service_tier":"auto","store":false,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[],"top_logprobs":0,"top_p":0.98,"truncation":"disabled","usage":null,"user":null,"metadata":{}},"sequence_number":1}
 
 
         event: response.output_item.added
 
-        data: {"type":"response.output_item.added","item":{"id":"msg_03d42a4e3e7659ac006ad68dd7567887d0a58e290a186cbf92","type":"message","status":"in_progress","content":[],"role":"assistant"},"output_index":0,"sequence_number":2}
-
-
-        event: response.content_part.added
-
-        data: {"type":"response.content_part.added","content_index":0,"item_id":"msg_03d42a4e3e7659ac006ad68dd7567887d0a58e290a186cbf92","output_index":0,"part":{"type":"output_text","annotations":[],"logprobs":[],"text":""},"sequence_number":3}
-
-
-        event: response.output_text.delta
-
-        data: {"type":"response.output_text.delta","content_index":0,"delta":"###","item_id":"msg_03d42a4e3e7659ac006ad68dd7567887d0a58e290a186cbf92","logprobs":[],"obfuscation":"NRzXcFMr7uABg","output_index":0,"sequence_number":4}
-
-
-        event: response.output_text.delta
-
-        data: {"type":"response.output_text.delta","content_index":0,"delta":" The","item_id":"msg_03d42a4e3e7659ac006ad68dd7567887d0a58e290a186cbf92","logprobs":[],"obfuscation":"NgohEfbYkJIq","output_index":0,"sequence_number":5}
-
-
-        event: response.output_text.delta
-
-        data: {"type":"response.output_text.delta","content_index":0,"delta":" History","item_id":"msg_03d42a4e3e7659ac006ad68dd7567887d0a58e290a186cbf92","logprobs":[],"obfuscation":"HENnhw7a","output_index":0,"sequence_number":6}
-
-
-        event: response.output_text.delta
-
-        data: {"type":"response.output_text.delta","content_index":0,"delta":" of","item_id":"msg_03d42a4e3e7659ac006ad68dd7567887d0a58e290a186cbf92","logprobs":[],"obfuscation":"nxL330tcgSjMD","output_index":0,"sequence_number":7}
-
-
-        event: response.output_text.delta
-
-        data: {"type":"response.output_text.delta","content_index":0,"delta":" Mathematics","item_id":"msg_03d42a4e3e7659ac006ad68dd7567887d0a58e290a186cbf92","logprobs":[],"obfuscation":"Xs8P","output_index":0,"sequence_number":8}
-
-
-        event: response.output_text.delta
-
-        data: {"type":"response.output_text.delta","content_index":0,"delta":":","item_id":"msg_03d42a4e3e7659ac006ad68dd7567887d0a58e290a186cbf92","logprobs":[],"obfuscation":"jV6KGaQQ6G2yv2X","output_index":0,"sequence_number":9}
-
-
-        event: response.output_text.delta
-
-        data: {"type":"response.output_text.delta","content_index":0,"delta":" A","item_id":"msg_03d42a4e3e7659ac006ad68dd7567887d0a58e290a186cbf92","logprobs":[],"obfuscation":"ERSqhMj8kz8ET0","output_index":0,"sequence_number":10}
-
-
-        event: response.output_text.delta
-
-        data: {"type":"response.output_text.delta","content_index":0,"delta":" Journey","item_id":"msg_03d42a4e3e7659ac006ad68dd7567887d0a58e290a186cbf92","logprobs":[],"obfuscation":"3gSnSmAH","output_index":0,"sequence_number":11}
-
-
-        event: response.output_text.delta
-
-        data: {"type":"response.output_text.delta","content_index":0,"delta":" Through","item_id":"msg_03d42a4e3e7659ac006ad68dd7567887d0a58e290a186cbf92","logprobs":[],"obfuscation":"kq0hiec8","output_index":0,"sequence_number":12}
-
-
-        event: response.output_text.delta
-
-        data: {"type":"response.output_text.delta","content_index":0,"delta":" Time","item_id":"msg_03d42a4e3e7659ac006ad68dd7567887d0a58e290a186cbf92","logprobs":[],"obfuscation":"7whO2qXP1kq","output_index":0,"sequence_number":13}
-
-
-        event: response.output_text.delta
-
-        data: {"type":"response.output_text.delta","content_index":0,"delta":"\n\n","item_id":"msg_03d42a4e3e7659ac006ad68dd7567887d0a58e290a186cbf92","logprobs":[],"obfuscation":"z5HqTM1cyD6xlJ","output_index":0,"sequence_number":14}
-
-
-        event: response.output_text.delta
-
-        data: {"type":"response.output_text.delta","content_index":0,"delta":"Mat","item_id":"msg_03d42a4e3e7659ac006ad68dd7567887d0a58e290a186cbf92","logprobs":[],"obfuscation":"o1hx2yI0XoXHt","output_index":0,"sequence_number":15}
-
-
-        event: response.output_text.delta
-
-        data: {"type":"response.output_text.delta","content_index":0,"delta":"hemat","item_id":"msg_03d42a4e3e7659ac006ad68dd7567887d0a58e290a186cbf92","logprobs":[],"obfuscation":"kXFNzfbR6LH","output_index":0,"sequence_number":16}
-
-
-        event: response.output_text.delta
-
-        data: {"type":"response.output_text.delta","content_index":0,"delta":"ics","item_id":"msg_03d42a4e3e7659ac006ad68dd7567887d0a58e290a186cbf92","logprobs":[],"obfuscation":"le8yjILKQDbeK","output_index":0,"sequence_number":17}
-
-
-        event: response.output_text.delta
-
-        data: {"type":"response.output_text.delta","content_index":0,"delta":",","item_id":"msg_03d42a4e3e7659ac006ad68dd7567887d0a58e290a186cbf92","logprobs":[],"obfuscation":"DLOPuosKQgaEOAU","output_index":0,"sequence_number":18}
-
-
-        event: response.output_text.delta
-
-        data: {"type":"response.output_text.delta","content_index":0,"delta":" often","item_id":"msg_03d42a4e3e7659ac006ad68dd7567887d0a58e290a186cbf92","logprobs":[],"obfuscation":"OSEGgqFxdw","output_index":0,"sequence_number":19}
-
-
-        event: response.output_text.done
-
-        data: {"type":"response.output_text.done","content_index":0,"item_id":"msg_03d42a4e3e7659ac006ad68dd7567887d0a58e290a186cbf92","logprobs":[],"output_index":0,"sequence_number":20,"text":"###
-        The History of Mathematics: A Journey Through Time\n\nMathematics, often"}
-
-
-        event: response.content_part.done
-
-        data: {"type":"response.content_part.done","content_index":0,"item_id":"msg_03d42a4e3e7659ac006ad68dd7567887d0a58e290a186cbf92","output_index":0,"part":{"type":"output_text","annotations":[],"logprobs":[],"text":"###
-        The History of Mathematics: A Journey Through Time\n\nMathematics, often"},"sequence_number":21}
+        data: {"type":"response.output_item.added","item":{"id":"rs_095b244f953603ec016af3440cf07087d2b83a22cac15f1ae8","type":"reasoning","content":[],"encrypted_content":"gAAAAABq80QMzqaFMn_v6OMffg0IuwZr0_myC--V3_6YSxTCnWbF2-iPjEZrfomsTeGLt_rHWP20g-x96z_2YUpReotUFSCQwU-f3aqGVPRPmcSpPkSMURfXexT5Ub_88A-ib0Qjs9svIPxtMdKdE9PTPBkDH8JMfG3YdBl9V0L2QFLeY_hohfgvjtAMSHn_Z8aBE65eteonGkFEY1x7h1__zvN3cF3lXWZl_JLfNzpV63nXMu0lV_t-oSCqoY-0H5fYvD8oytP_4Y3dND_xajOR6XyR6zrW7KfxNd8ojkEgPpKs_leXmcZuWgU61P9opGxED5RNCWattmxqMEa2q2e6XSusUGWfaab1RVkVMrfGPNRNbteBVMIY0VLSUKAvacUxSfRqMZPBE1BNR4ehy8lTU9i8Y-_EZRBKsoTDklacv9uUVOl4NTZiYsQPcXg34oWHjsbacHZMb5DrXPx-O7FzoDD4EkCHrStlp4DhdahuaP24adBJwCNQfrzHSFQ2AkIe7tdWKVhnNcsqsv-rtCMLWJNiEi1VRKw-S7vbZ5AY8txYwRH44B_wGW53G6d4PdqfUWx7IJN2w4mB1fKCEA8foVLwk9_dCoZFRAJSaZcMsvqMCTNQ9XTTBgQwajEcYZLemNrcWIDgG5j4rUWG5KCNpc2hVBxNSRHAN6fhI0FVqVM8gfwsJynMcMWboP_uTYxjdvlNPav7Oa282NuJ8rjH--QAo4yWeWEgJLJGTJsB-Y_vTMfE61qbRGi5_BOIYzMC6SzcJ1uz-R13RqYWOJuCQ54JMHJMudnjqFWX3kNxKp-1EynqP-2Xekq4IBVcbvyzWVrOOfSTeEnN5Ib1RSxRghPFzdmuLFwYW8O2WslO6HO0_dcH1DmM3b1VZ_8hVfXX88MlHN9JxX6-v9L4t65BgxHfh74nd-T1FB7MmnRvU5DCpLwHCBWS7wZ01SE6U4mLy17STDokNjInoOl2YjbTfFccKv28O9Dy7iplJ8NRvHY4HimIBD5ZvKeF7IIGAVZlNhPTZOsXx3fi3jG9vob5eg0RzRW8gyV0XfVlIxGbxV_fBHgnFc3jGLsdn-Upr3E3syJVAGtZwiBBZTWlnXIDu0IkUH_HLOPUJUrtF1lmXBBXUTUDpzC1Jut8g5Vqw9WWanNtXbefWWPFblhck66oPFpt5pz1iuiGvzghxVwqo3BHVxiYVqWjhL8Cjw_BYgqJqQ_It1EV7fH-slP-aUmCWPmHs56Mv_z9v9QlLxL64kLsAEmwh_S4JKaE2yRFiJkbhjp4zEtCM5-XCwjyU4vXnfGtZze7Ez-aWMMS8H1Ut1gxLTiDhFgjTaj-6NQVXa5O1YYK89ro_4qT_ktfq7-bNyCPGSGMmWUv_xSZlVfGP0noQS_yaaQ=","summary":[]},"output_index":0,"sequence_number":2}
 
 
         event: response.output_item.done
 
-        data: {"type":"response.output_item.done","item":{"id":"msg_03d42a4e3e7659ac006ad68dd7567887d0a58e290a186cbf92","type":"message","status":"incomplete","content":[{"type":"output_text","annotations":[],"logprobs":[],"text":"###
-        The History of Mathematics: A Journey Through Time\n\nMathematics, often"}],"role":"assistant"},"output_index":0,"sequence_number":22}
+        data: {"type":"response.output_item.done","item":{"id":"rs_095b244f953603ec016af3440cf07087d2b83a22cac15f1ae8","type":"reasoning","content":[],"encrypted_content":"gAAAAABq80QNei1qUZIk-4QR45FxZsSefaQhhHgQTchzFLFFuFmIkOZrfCo2Zh_y6VmW5ByP1mDTCSLzBVvJMyX4vDbQA58HOy0Hc_bFZ_WTCFGYs_WZic8hNBBzuLromJIuNHs8Sc-B9xluCmN5BgKpdmtIUksqbujFMrv_vcsJM7-9NufuKpxvZC1X2G6wod9roWXaFrSOcz6NpM6v23LYJc_xJvbgebbU6SxXwu3C0vfDpLXbN3DrAYjKsOSzUx31f6Fxyj0HB7UZwUgE9S2NERjObja5rbCI1kExoLTpsfow5WpZqi6MftTzMDMGr18bBRs_BHcoj5slGjNFV4ORP73_Csm2SUMPNQp39XUE65buaiHAOi2x-GjTuNnxaO4UYd31JZK5CxEliL2Ar83LfvXYzXkQKRU7_AV0Gh15iZH3MHWYXWfrRNBxNYYGSKIHdCvgfhwa5Mtm2S1a4JUpwHGsOSH4X_D_KAYGXoVadlz-pjLCIkGsvG2qqatykkshTZ9waisyUHo-tFUR6PeG6cDSK_rGps_r6o3fSpnzhpe-gMynMv1fBzDlpt0ouPwIgI1UBr3FWVsXbmFB2lJvPQusjb82n2tmQlaW47-dAWgTONIOXDSJa0qjf70wg9kLX4Pb0AcbtzvqE2W3pZxV7IHcMA1yAUYPfj_HPEn9DDjVomyIa3F829C_e_-T8D69bwPZIwFiAdQAeyUqzK6XvNboN7OdMtg4CBAivRKjSONHw4QKV337uAVGywdyBceDEai29QBX60XccovFLTrg8CU3nu2bH7Enj9w7fpWeFTGTjKAJ5ct8Xj03KlurxNjZFA0agLp2Ns4mkzWLBT6p1KE51n_mEP_Uo_qXrexztTRkxVbTV-eb8hkoAC7GbLLNEH9U1amZRoD6wN1Q6gRi9P7IpNQRiFS280tuXD13wleBz40sSKvd53CTQZoG4ZkGknglohF-OVwSwObRFVmpGTsCX0MjmCLNzuPG3qIhvglXX6dhbb6QHfJ8Lb2qUVPKSo4PFE32xpGebQaLXAwiE-0C29yfNPNCqSUYuKQ2cEIR-mjHmWb9PQ6yyGz45Sy9K_Ly2YlEI09Gw0pc3qXwdO57vSGL1eeVD4j3Duj12P_KqSp5AgB30byCnQv6ZJXkdeE-wbG1NhYa4LLi2WEKcoerYdIlP_JmjGyVSWyHIGy1O9CgKL5M5Uu2hTbOOGHxctVxtwZ6b04Vo_FE7MyrCGRT6KnADz08K8QAPfWDBV9sdHExiTSFuiKXNSPQrnSQ2l65VoYVJmIcM9ibj4m3-VJHMVB_YO3aQGVjrwVISSIcPxTVprKC_BTKn_w6GQ0OaJ6Rc2Vk00pM3diO5IABHgot3seyiO6Av47oP86OiF1WXneHmWfyO81AOF9zS5b2gfs4Cfn4gRqEoty23jVPFNBjEICHKIFNikTICRfPds6_nDHRRw0LQdK-Bz2NMYB-5BnrAa9RcaQOMlN9BVVYnB1PTVfkpBRNhAKBDDBNjou-Qp0GS-8=","summary":[]},"output_index":0,"sequence_number":3}
 
 
         event: response.incomplete
 
-        data: {"type":"response.incomplete","response":{"id":"resp_03d42a4e3e7659ac006ad68dd6e68887d0871e7cb728d6459b","object":"response","created_at":1792445910,"status":"incomplete","access_programs":null,"background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"incomplete_details":{"reason":"max_output_tokens"},"instructions":null,"max_output_tokens":16,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[{"id":"msg_03d42a4e3e7659ac006ad68dd7567887d0a58e290a186cbf92","type":"message","status":"incomplete","content":[{"type":"output_text","annotations":[],"logprobs":[],"text":"###
-        The History of Mathematics: A Journey Through Time\n\nMathematics, often"}],"role":"assistant"}],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"in_memory","reasoning":{"context":null,"effort":null,"summary":null},"safety_identifier":null,"service_tier":"default","store":true,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[],"top_logprobs":0,"top_p":1.0,"truncation":"disabled","usage":{"input_tokens":17,"input_tokens_details":{"cache_write_tokens":0,"cached_tokens":0},"output_tokens":16,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":33},"user":null,"metadata":{}},"sequence_number":23}
+        data: {"type":"response.incomplete","response":{"id":"resp_095b244f953603ec016af3440b315487d28030aff866faf053","object":"response","created_at":1794327563,"status":"incomplete","access_programs":null,"background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"image":{"context_compression":"disabled"},"incomplete_details":{"reason":"max_output_tokens"},"instructions":null,"max_output_tokens":16,"max_tool_calls":null,"model":"gpt-6-luna","moderation":null,"output":[{"id":"rs_095b244f953603ec016af3440cf07087d2b83a22cac15f1ae8","type":"reasoning","content":[],"encrypted_content":"gAAAAABq80QNIMWS9cviUfqPxAd9w1cjIbQweNoQkuHxv0ffxZUngMp1D3gOcg0nD2GTfAbr-iWv96ITckN7IfPx_QTNcFDgOBuOjKezlONBPJZ940p7hs8865eCdEOqMuE4On3x59v13nXqM7nwP7BZMJCIN2_nqMkYodJfUM-IDBlXDxWw3nniK3REc1lFZR1EUrqXrnAy4r3YV1raNcmQ4FHO9mgEbpxw6iu0kNzuHZVdzekqP0ewcUsbWXJ1C0m6jJ4aw3Chq-jinyZAaZKMEUjz_C4Mb7wslNyxK-sson3p7fMxFVR2witax8G3O36oDEbuy6L1pRB9jQLuylfwP6YcGg4JfLfC-4wpUt84M1SxtHbJzsweS3R17bZ_fnH2ogktFN-g3RSPqxbv4Us1-XgPlehlT2_C5VNXkkMnsU8UnZKuaK2Y5OFiZwkAO9H2R-H8n3WmGhbs1vVzbfmTjkqtJ4JFkfIPE7E4hxnMJUIZIfRJeokQ1RLFXrpN6-h1hJS9BvG_gKQqTp7jcCqRw-B6PIZVdwDaIm_OR5bIHrlk9ROYBqemyl1vdiUz5t3W6kvETshU2YuZIQXNnwRUXo2dGZqRT9IEHvuIwoanD_vWItXJxwqRr7Fdhy0w01pmEgwgO3DVjpS5shtXns-3IRrp1nyY2rvnmYgtP0Qps7diaiCt6zqt5hOT3aMYo2lzE2Gdg9g8RGHeDWUzMwWBxmaeXV3wSE73pFedzd5NGqlbm-LVek7IHEYxfaH6I8RxVD0iWHGAA3CrGU64DVHk_lumdNvzYuj7qzPb763UFYPv-SLE7xMrVx273VTd7TKHzJvD7JFrQqT4fQVcfwNFFnJUZwuV_1aWFM67nKr_znKcfPD8Jxfq5oBWu1FGFOC0WM8PdjPNk7nSZx-pxLA9VDN7URWRSp-yRvBRkqbH2RdkzUXB4-KkOngUzWhF5qKgtvlxx7ohvI9yEE7T7oxERqpOypZ-btwnPhOX_dL_TCA_PBRMP9t_UdeJCT9xhnBfBPg0nZNZtpaShmlWLHQPzpG8S6B9idJUPMg73bVlacTBUUP9YSCp7rpX4GUAHoocLZcu875V3sz9wQ2-Ep_4pWKQpYpSyYUlwVZZ2FUNRL3stPt-5jrdy7vtCi_mhuYKqCSOX3hHB-SlePDstdW88FNbn6UYYrI20l7ZqmDzsU_TI3cVYXPFjo-a05fIlW2lfW39dAtegFc324zVOIilBaPgah4ma2gZ_pzHozY-PAO2Cw4FqWjw2YkP3MNtMXBqAB54iPfJQQre1_Fp5lUN0J4RYqVRToHaAHYoGTrJHaTeBFU_mLb0tMsnN7GInwJ1V5MJAfloPPMMLk5lHW4eGRWTWqysvyHemqkHvIMYxvSiV2vobyDPYgNN6rbHIBK_CL-ilc0gXR6DI72zJPr8fu90XbLf7uO8_yTg2Cgb0Y9KiXNECQDhNgwJ4nhc-cdhs_-1CL-3DHB6suvybd-akR1dtE3sE3aKgqY7EH2LqSRZK3xbuhM=","summary":[]}],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"24h","reasoning":{"context":"all_turns","effort":"low","mode":"standard","summary":null},"safety_identifier":null,"service_tier":"default","store":false,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[],"top_logprobs":0,"top_p":0.98,"truncation":"disabled","usage":{"input_tokens":16,"input_tokens_details":{"cache_write_tokens":0,"cached_tokens":0},"output_tokens":16,"output_tokens_details":{"reasoning_tokens":16},"total_tokens":32},"user":null,"metadata":{}},"sequence_number":4}
 
 
         '
     headers:
       access-control-expose-headers:
-      - X-Request-ID
+      - X-Request-ID, Server-Timing-Total
       - CF-Ray
       - CF-Ray
       alt-svc:
@@ -173,15 +74,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a4d2ee1ebeeb501e-SJC
+      - a58660e58ef11117-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 19 Oct 2026 21:38:31 GMT
+      - Tue, 10 Nov 2026 16:19:23 GMT
       openai-processing-ms:
-      - '468'
+      - '265'
       openai-version:
       - '2020-10-01'
       server:
@@ -195,17 +96,17 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999965'
+      - '179999751'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_17548391b7bb4deeaf3de9e34602221d
+      - req_df01d0babcae48e581d932f05aaa8e7b
     status:
       code: 200
       message: OK

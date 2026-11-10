@@ -18,9 +18,7 @@ results2 = auto_instrument()
 assert results2.get("cohere") is True
 
 
-TEST_MODEL = (
-    "command-r7b-12-2024" if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest" else "command-a-03-2025"
-)
+TEST_MODEL = "command-r7b-12-2024"
 
 
 with autoinstrument_test_context("test_auto_cohere", integration="cohere") as memory_logger:

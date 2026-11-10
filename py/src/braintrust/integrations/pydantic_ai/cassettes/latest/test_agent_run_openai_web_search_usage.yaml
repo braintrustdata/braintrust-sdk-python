@@ -1,7 +1,7 @@
 interactions:
 - request:
-    body: '{"model":"gpt-4.1-mini","stream":false,"input":[{"role":"user","content":"Search
-      the web for the current weather in Paris and answer in one sentence."}],"tool_choice":"auto","tools":[{"type":"web_search","search_context_size":"medium"}]}'
+    body: '{"model":"gpt-6-luna","stream":false,"include":["reasoning.encrypted_content"],"input":[{"role":"user","content":"Search
+      the web for the current weather in Paris and answer in one sentence."}],"reasoning":{"effort":"low","context":"all_turns"},"tool_choice":"auto","tools":[{"type":"web_search","search_context_size":"medium"}]}'
     headers:
       accept:
       - application/json
@@ -10,7 +10,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '237'
+      - '328'
       content-type:
       - application/json
       host:
@@ -39,38 +39,33 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_017d55673c98acab016af33c4126d887d29424c9e25884d6c4\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1794325569,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0dfd0dde1a1a25f4016af3445dfa7087d2ac720d9d28adccaa\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1794327646,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794325571,\n  \"error\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794327647,\n  \"error\":
         null,\n  \"frequency_penalty\": 0.0,\n  \"image\": {\n    \"context_compression\":
         \"disabled\"\n  },\n  \"incomplete_details\": null,\n  \"instructions\": null,\n
         \ \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
-        \"gpt-4.1-mini-2025-04-14\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"ws_017d55673c98acab016af33c41a71c87d28899ad69eb0fbb33\",\n
-        \     \"type\": \"web_search_call\",\n      \"status\": \"completed\",\n      \"action\":
-        {\n        \"type\": \"search\",\n        \"queries\": [\n          \"current
-        weather in Paris\"\n        ],\n        \"query\": \"current weather in Paris\"\n
-        \     }\n    },\n    {\n      \"id\": \"msg_017d55673c98acab016af33c428a2c87d2b8908bfd0b1d035b\",\n
+        \"gpt-6-luna\",\n  \"moderation\": null,\n  \"output\": [\n    {\n      \"id\":
+        \"ws_0dfd0dde1a1a25f4016af3445e73b087d29dfa195a472990a2\",\n      \"type\":
+        \"web_search_call\",\n      \"status\": \"completed\",\n      \"action\":
+        {\n        \"type\": \"search\",\n        \"queries\": [\n          \"weather:
+        Paris, France\"\n        ],\n        \"query\": \"weather: Paris, France\"\n
+        \     }\n    },\n    {\n      \"id\": \"msg_0dfd0dde1a1a25f4016af3445f0edc87d2996712ff7c1c1ff9\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [\n            {\n              \"type\": \"url_citation\",\n              \"end_index\":
-        253,\n              \"start_index\": 166,\n              \"title\": \"Weather
-        for Paris, Paris, France\",\n              \"url\": \"https://www.timeanddate.com/weather/france/paris?utm_source=openai\"\n
-        \           }\n          ],\n          \"logprobs\": [],\n          \"text\":
-        \"As of 4:46\\u202fPM on Tuesday, November 10, 2026, in Paris, France, the
-        weather is overcast with light rain, a temperature of 54\\u00b0F (12\\u00b0C),
-        and a RealFeel\\u00ae of 53\\u00b0F (12\\u00b0C). ([timeanddate.com](https://www.timeanddate.com/weather/france/paris?utm_source=openai))
-        \"\n        }\n      ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
+        [],\n          \"logprobs\": [],\n          \"text\": \"Paris is currently
+        drizzling at 54\\u00b0F (12\\u00b0C). \"\n        }\n      ],\n      \"phase\":
+        \"final_answer\",\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
         true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
-        null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
-        \   \"context\": null,\n    \"effort\": null,\n    \"summary\": null\n  },\n
-        \ \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n  \"store\":
-        false,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
-        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
-        \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\":
-        0,\n      \"input_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
-        0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
+        null,\n  \"prompt_cache_retention\": \"24h\",\n  \"reasoning\": {\n    \"context\":
+        \"all_turns\",\n    \"effort\": \"low\",\n    \"mode\": \"standard\",\n    \"summary\":
+        null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n
+        \ \"store\": false,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\":
+        {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n
+        \ \"tool_choice\": \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n
+        \     \"input_tokens\": 0,\n      \"input_tokens_details\": {\n        \"image_tokens\":
+        0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
         {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
         0\n    },\n    \"web_search\": {\n      \"num_requests\": 1\n    }\n  },\n
         \ \"tools\": [\n    {\n      \"type\": \"web_search\",\n      \"return_token_budget\":
@@ -78,11 +73,11 @@ interactions:
         \     \"search_context_size\": \"medium\",\n      \"user_location\": {\n        \"type\":
         \"approximate\",\n        \"city\": null,\n        \"country\": \"US\",\n
         \       \"region\": null,\n        \"timezone\": null\n      }\n    }\n  ],\n
-        \ \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n
-        \ \"usage\": {\n    \"input_tokens\": 8174,\n    \"input_tokens_details\":
-        {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 96,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 8270\n  },\n  \"user\": null,\n  \"metadata\":
+        \ \"top_logprobs\": 0,\n  \"top_p\": 0.98,\n  \"truncation\": \"disabled\",\n
+        \ \"usage\": {\n    \"input_tokens\": 4762,\n    \"input_tokens_details\":
+        {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 4454\n    },\n
+        \   \"output_tokens\": 57,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        25\n    },\n    \"total_tokens\": 4819\n  },\n  \"user\": null,\n  \"metadata\":
         {}\n}"
     headers:
       access-control-expose-headers:
@@ -94,17 +89,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5863036cb805383-YYZ
+      - a58662ea1de62116-YYZ
       connection:
       - keep-alive
       content-length:
-      - '3282'
+      - '2806'
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 15:46:11 GMT
+      - Tue, 10 Nov 2026 16:20:47 GMT
       openai-processing-ms:
-      - '2026'
+      - '1363'
       openai-version:
       - '2020-10-01'
       server:
@@ -118,17 +113,17 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999665'
+      - '180000000'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_160c2fd557d349b2821753087b4795c6
+      - req_9d32d4d4a17747ddb4edfbc5a3a20799
     status:
       code: 200
       message: OK

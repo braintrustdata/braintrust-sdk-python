@@ -4,7 +4,6 @@ import asyncio
 
 import litellm
 from braintrust.auto import auto_instrument
-from braintrust.integrations._test_models import OPENAI_CHAT_MODEL, OPENAI_CHAT_OPTIONS
 from braintrust.integrations.litellm import LiteLLMIntegration
 from braintrust.integrations.test_decisions import (
     DECISIONS_INPUT,
@@ -34,8 +33,9 @@ assert results2.get("litellm") == True
 # 4. Make API call and verify span
 with autoinstrument_test_context("test_auto_litellm", integration="litellm") as memory_logger:
     response = litellm.completion(
-        model=OPENAI_CHAT_MODEL,
-        **OPENAI_CHAT_OPTIONS,
+        model="gpt-6-luna",
+        reasoning_effort="none",
+        allowed_openai_params=["reasoning_effort"],
         messages=[{"role": "user", "content": "Say hi"}],
     )
     assert response.choices[0].message.content

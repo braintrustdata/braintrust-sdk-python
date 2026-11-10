@@ -1,7 +1,7 @@
 interactions:
 - request:
     body: '{"model":"gpt-6-luna","input":"Use the get_weather tool with location Paris.
-      Do not answer directly.","reasoning":{"effort":"none"},"tool_choice":{"type":"function","name":"get_weather"},"tools":[{"type":"function","name":"get_weather","description":"Get
+      Do not answer directly.","reasoning":{"effort":"low"},"tool_choice":{"type":"function","name":"get_weather"},"tools":[{"type":"function","name":"get_weather","description":"Get
       the weather for a location.","parameters":{"type":"object","properties":{"location":{"type":"string"}},"required":["location"]}}]}'
     headers:
       accept:
@@ -11,7 +11,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '385'
+      - '384'
       content-type:
       - application/json
       host:
@@ -40,21 +40,21 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0937966ed5a8f874016af33c29b31487d28202da856b334801\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1794325545,\n  \"status\":
+      string: "{\n  \"id\": \"resp_03e4d28c5ef0adb9016af343c02c5087d2ae22edc2f70bfad2\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1794327488,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794325546,\n  \"error\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794327489,\n  \"error\":
         null,\n  \"frequency_penalty\": 0.0,\n  \"image\": {\n    \"context_compression\":
         \"disabled\"\n  },\n  \"incomplete_details\": null,\n  \"instructions\": null,\n
         \ \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-6-luna\",\n  \"moderation\": null,\n  \"output\": [\n    {\n      \"id\":
-        \"fc_0937966ed5a8f874016af33c2a540c87d2b69ac73e2a3fc796\",\n      \"type\":
+        \"fc_03e4d28c5ef0adb9016af343c109fc87d2a2e0e7965883336b\",\n      \"type\":
         \"function_call\",\n      \"status\": \"completed\",\n      \"arguments\":
-        \"{\\\"location\\\":\\\"Paris\\\"}\",\n      \"call_id\": \"call_ktWM2A2tafs55ATJcRSSXaAn\",\n
+        \"{\\\"location\\\":\\\"Paris\\\"}\",\n      \"call_id\": \"call_kd3qnojKLgz8vJVcPRSNvUDR\",\n
         \     \"name\": \"get_weather\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n
         \ \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
         null,\n  \"prompt_cache_retention\": \"24h\",\n  \"reasoning\": {\n    \"context\":
-        \"all_turns\",\n    \"effort\": \"none\",\n    \"mode\": \"standard\",\n    \"summary\":
+        \"all_turns\",\n    \"effort\": \"low\",\n    \"mode\": \"standard\",\n    \"summary\":
         null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n
         \ \"store\": false,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\":
         {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n
@@ -86,17 +86,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5862fa439328e83-YYZ
+      - a5865f1098a8a06e-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2491'
+      - '2490'
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 15:45:46 GMT
+      - Tue, 10 Nov 2026 16:18:09 GMT
       openai-processing-ms:
-      - '802'
+      - '1033'
       openai-version:
       - '2020-10-01'
       server:
@@ -120,7 +120,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_4a6596959a8946869ff0d9b6f73018f0
+      - req_9884e762a83b432a93f01f8f2651407f
     status:
       code: 200
       message: OK

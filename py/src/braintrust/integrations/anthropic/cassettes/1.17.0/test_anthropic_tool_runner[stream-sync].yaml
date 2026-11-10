@@ -1,7 +1,7 @@
 interactions:
 - request:
     body: '{"max_tokens":256,"messages":[{"role":"user","content":"Use the add tool
-      to calculate 123 + 456. Reply with just the result."}],"model":"claude-haiku-4-5-20251001","tools":[{"name":"add","description":"Add
+      to calculate 123 + 456. Reply with just the result."}],"model":"claude-haiku-5-5","tools":[{"name":"add","description":"Add
       two integers.","input_schema":{"additionalProperties":false,"properties":{"a":{"description":"First
       integer.","title":"A","type":"integer"},"b":{"description":"Second integer.","title":"B","type":"integer"}},"required":["a","b"],"type":"object"}}],"stream":true}'
     headers:
@@ -14,7 +14,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '468'
+      - '459'
       content-type:
       - application/json
       host:
@@ -53,12 +53,12 @@ interactions:
     body:
       string: 'event: message_start
 
-        data: {"type":"message_start","message":{"model":"claude-haiku-4-5-20251001","id":"msg_011CgQuKsMPzEe9DibnFQxWm","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":617,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":25,"service_tier":"standard","inference_geo":"not_available","speed":"standard"},"diagnostics":null}           }
+        data: {"type":"message_start","message":{"model":"claude-haiku-5-5","id":"msg_011CguZVfovXKEHpLfoauwEC","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":442,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":16,"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}  }
 
 
         event: content_block_start
 
-        data: {"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"toolu_013ByMAd36gMJDAP4X9JcsgU","name":"add","input":{},"caller":{"type":"direct"}}       }
+        data: {"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"toolu_01K33TCXtc3RroqTATRCiP23","name":"add","input":{},"caller":{"type":"direct"}}        }
 
 
         event: ping
@@ -68,44 +68,44 @@ interactions:
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":""}               }
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":""}      }
 
 
         event: content_block_delta
 
         data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\"a\":
-        1"}        }
+        1"}          }
 
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"23"}           }
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"23"}   }
 
 
         event: content_block_delta
 
         data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":",
-        \"b\": "}        }
+        \"b\": "}  }
 
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"456}"}        }
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"456}"}          }
 
 
         event: content_block_stop
 
-        data: {"type":"content_block_stop","index":0        }
+        data: {"type":"content_block_stop","index":0       }
 
 
         event: message_delta
 
-        data: {"type":"message_delta","delta":{"stop_reason":"tool_use","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":617,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":69}}
+        data: {"type":"message_delta","delta":{"stop_reason":"tool_use","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":442,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":66,"output_tokens_details":{"thinking_tokens":0}}          }
 
 
         event: message_stop
 
-        data: {"type":"message_stop"   }
+        data: {"type":"message_stop"          }
 
 
         '
@@ -117,25 +117,25 @@ interactions:
       anthropic-ratelimit-input-tokens-remaining:
       - '10000000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-10-26T13:09:43Z'
+      - '2026-11-10T16:26:54Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-10-26T13:09:43Z'
+      - '2026-11-10T16:26:54Z'
       anthropic-ratelimit-requests-limit:
-      - '20000'
+      - '45000'
       anthropic-ratelimit-requests-remaining:
-      - '19999'
+      - '44999'
       anthropic-ratelimit-requests-reset:
-      - '2026-10-26T13:09:43Z'
+      - '2026-11-10T16:26:54Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
       - '12000000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-10-26T13:09:43Z'
+      - '2026-11-10T16:26:54Z'
       anthropic-workspace-id:
       - wrkspc_018bFG1FgNVWqx5pthtdGTzS
       cache-control:
@@ -143,27 +143,27 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a509b272fda9d5f4-YYZ
+      - a5866be6de2e8ea1-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1908'
+      - '1927'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 26 Oct 2026 13:09:44 GMT
+      - Tue, 10 Nov 2026 16:26:54 GMT
       request-id:
-      - req_011CgQuKs5WqMgUVQ9z4RER1
+      - req_011CguZVfckcM5haj9Zor6Ge
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=124
+      - x-originResponse;dur=92
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-1b5ba621f14e487aa2c39cfcd730269d-fdf2c85351185a2f-01
+      - 00-580df71304abbb728d3350cf01de9e38-57065a69601dd98f-01
       transfer-encoding:
       - chunked
       vary:
@@ -175,7 +175,7 @@ interactions:
       message: OK
 - request:
     body: '{"max_tokens":256,"messages":[{"role":"user","content":"Use the add tool
-      to calculate 123 + 456. Reply with just the result."},{"role":"assistant","content":[{"id":"toolu_013ByMAd36gMJDAP4X9JcsgU","input":{"a":123,"b":456},"name":"add","type":"tool_use","caller":{"type":"direct"}}]},{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_013ByMAd36gMJDAP4X9JcsgU","content":"579"}]}],"model":"claude-haiku-4-5-20251001","tools":[{"name":"add","description":"Add
+      to calculate 123 + 456. Reply with just the result."},{"role":"assistant","content":[{"id":"toolu_01K33TCXtc3RroqTATRCiP23","input":{"a":123,"b":456},"name":"add","type":"tool_use","caller":{"type":"direct"}}]},{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_01K33TCXtc3RroqTATRCiP23","content":"579"}]}],"model":"claude-haiku-5-5","tools":[{"name":"add","description":"Add
       two integers.","input_schema":{"additionalProperties":false,"properties":{"a":{"description":"First
       integer.","title":"A","type":"integer"},"b":{"description":"Second integer.","title":"B","type":"integer"}},"required":["a","b"],"type":"object"}}],"stream":true}'
     headers:
@@ -188,7 +188,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '739'
+      - '730'
       content-type:
       - application/json
       host:
@@ -227,12 +227,12 @@ interactions:
     body:
       string: 'event: message_start
 
-        data: {"type":"message_start","message":{"model":"claude-haiku-4-5-20251001","id":"msg_011CgQuKvdqgQipAArXUcEVS","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":699,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":1,"service_tier":"standard","inference_geo":"not_available","speed":"standard"},"diagnostics":null}            }
+        data: {"type":"message_start","message":{"model":"claude-haiku-5-5","id":"msg_011CguZVkDaknu2tUkUkaKn4","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":514,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":1,"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}           }
 
 
         event: content_block_start
 
-        data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}     }
+        data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}              }
 
 
         event: ping
@@ -242,22 +242,23 @@ interactions:
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"579"}             }
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"579"}
+        }
 
 
         event: content_block_stop
 
-        data: {"type":"content_block_stop","index":0            }
+        data: {"type":"content_block_stop","index":0       }
 
 
         event: message_delta
 
-        data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":699,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":4}           }
+        data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":514,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":3,"output_tokens_details":{"thinking_tokens":0}}               }
 
 
         event: message_stop
 
-        data: {"type":"message_stop" }
+        data: {"type":"message_stop"       }
 
 
         '
@@ -269,25 +270,25 @@ interactions:
       anthropic-ratelimit-input-tokens-remaining:
       - '10000000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-10-26T13:09:44Z'
+      - '2026-11-10T16:26:55Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-10-26T13:09:44Z'
+      - '2026-11-10T16:26:55Z'
       anthropic-ratelimit-requests-limit:
-      - '20000'
+      - '45000'
       anthropic-ratelimit-requests-remaining:
-      - '19999'
+      - '44999'
       anthropic-ratelimit-requests-reset:
-      - '2026-10-26T13:09:44Z'
+      - '2026-11-10T16:26:55Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
       - '12000000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-10-26T13:09:44Z'
+      - '2026-11-10T16:26:55Z'
       anthropic-workspace-id:
       - wrkspc_018bFG1FgNVWqx5pthtdGTzS
       cache-control:
@@ -295,27 +296,27 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a509b277df7dd5f4-YYZ
+      - a5866bed4f388ea1-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1247'
+      - '1278'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 26 Oct 2026 13:09:44 GMT
+      - Tue, 10 Nov 2026 16:26:55 GMT
       request-id:
-      - req_011CgQuKvRBinUYNrqk6ufHZ
+      - req_011CguZVk2QsrgsVhr4pbRdb
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=117
+      - x-originResponse;dur=89
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-68242a23e1c8ddc178d7a5d353df6224-3c2c9eb2af1533da-01
+      - 00-b1b8ba76378987831d409c3f28735258-e8415858368b0cfa-01
       transfer-encoding:
       - chunked
       vary:

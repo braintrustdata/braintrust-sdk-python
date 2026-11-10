@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"model":"gpt-4o-mini","messages":[{"role":"system","content":"Your input
+    body: '{"model":"gpt-6-luna","messages":[{"role":"system","content":"Your input
       fields are:\n1. `image` (Image)\n2. `page` (Image)\n\nYour output fields are:\n1.
       `answer` (str)\n\nAll interactions will be structured in the following way,
       with the appropriate values filled in.\n\n[[ ## image ## ]]\n{image}\n\n[[ ##
@@ -10,7 +10,7 @@ interactions:
       ## image ## ]]\n\n"},{"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="}},{"type":"text","text":"\n\n[[
       ## page ## ]]\n\n"},{"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="}},{"type":"text","text":"\n\nRespond
       with the corresponding output fields, starting with the field `[[ ## answer
-      ## ]]`, and then ending with the marker for `[[ ## completed ## ]]`."}]}],"max_tokens":1000,"temperature":0.0}'
+      ## ]]`, and then ending with the marker for `[[ ## completed ## ]]`."}]}],"max_completion_tokens":1000,"temperature":0.0,"reasoning_effort":"none"}'
     headers:
       accept:
       - application/json
@@ -19,13 +19,13 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '1165'
+      - '1201'
       content-type:
       - application/json
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 3.29.0
+      - OpenAI/Python 3.46.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -35,7 +35,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.29.0
+      - 3.46.0
       x-stainless-raw-response:
       - 'true'
       x-stainless-read-timeout:
@@ -50,18 +50,18 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EYuEzFQDguHfWMglcxsl7uwpF32kg\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1791988049,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiinCu6xJnPmyW3OvqB0D4thpYZ8f\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794327322,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"[[ ## answer ## ]]\\nThe colors in
-        both images are a solid, vibrant red. \\n\\n[[ ## completed ## ]]\",\n        \"refusal\":
-        null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
-        \     \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        17159,\n    \"completion_tokens\": 23,\n    \"total_tokens\": 17182,\n    \"prompt_tokens_details\":
-        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        \"assistant\",\n        \"content\": \"[[ ## answer ## ]]\\nBoth images show
+        a small red-orange shape on a dark background.\\n[[ ## completed ## ]]\",\n
+        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"finish_reason\":
+        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 160,\n    \"completion_tokens\":
+        26,\n    \"total_tokens\": 186,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_bf0094d986\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -72,17 +72,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a4a743dc5e60aaba-YYZ
+      - a5865b011d5739f2-YYZ
       connection:
       - keep-alive
       content-length:
-      - '910'
+      - '868'
       content-type:
       - application/json
       date:
-      - Wed, 14 Oct 2026 14:27:30 GMT
+      - Tue, 10 Nov 2026 16:15:23 GMT
       openai-processing-ms:
-      - '748'
+      - '1499'
       openai-version:
       - '2020-10-01'
       server:
@@ -100,13 +100,13 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-input-images:
       - '49998'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149998317'
+      - '179998314'
       x-ratelimit-reset-input-images:
       - 2ms
       x-ratelimit-reset-requests:
@@ -114,7 +114,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_97b1286a8ab44a50a486d7f5805b7982
+      - req_2ce8e30f025e4153951295997c924322
     status:
       code: 200
       message: OK

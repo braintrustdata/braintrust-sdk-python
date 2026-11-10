@@ -4,7 +4,6 @@ import inspect
 
 import pytest
 from braintrust import logger
-from braintrust.integrations._test_models import OPENAI_CHAT_MODEL, OPENAI_CHAT_OPTIONS
 from braintrust.integrations.llamaindex import BraintrustSpanHandler, LlamaIndexIntegration
 from braintrust.test_helpers import init_test_logger
 
@@ -31,7 +30,11 @@ def logger_memory_logger():
 @pytest.fixture(autouse=True)
 def setup_and_cleanup():
     from llama_index.core.instrumentation import get_dispatcher
+    from llama_index.llms.openai.utils import ALL_AVAILABLE_MODELS, CHAT_MODELS
 
+    # Register the current model for SDK releases whose bundled catalog predates it.
+    ALL_AVAILABLE_MODELS.setdefault("gpt-6-luna", 1_050_000)
+    CHAT_MODELS.setdefault("gpt-6-luna", 1_050_000)
     LlamaIndexIntegration.setup()
     yield
 
@@ -41,7 +44,11 @@ def setup_and_cleanup():
 
 def test_integration_idempotent():
     from llama_index.core.instrumentation import get_dispatcher
+    from llama_index.llms.openai.utils import ALL_AVAILABLE_MODELS, CHAT_MODELS
 
+    # Register the current model for SDK releases whose bundled catalog predates it.
+    ALL_AVAILABLE_MODELS.setdefault("gpt-6-luna", 1_050_000)
+    CHAT_MODELS.setdefault("gpt-6-luna", 1_050_000)
     LlamaIndexIntegration.setup()
     LlamaIndexIntegration.setup()
 
@@ -96,7 +103,7 @@ def test_llm_complete(logger_memory_logger):
 
     from llama_index.llms.openai import OpenAI
 
-    llm = OpenAI(model=OPENAI_CHAT_MODEL, **OPENAI_CHAT_OPTIONS, temperature=0)
+    llm = OpenAI(model="gpt-6-luna", additional_kwargs={"reasoning_effort": "none"}, temperature=0)
 
     with test_logger.start_span(name="test-complete"):
         llm.complete("What is 2+2? Answer with just the number.")
@@ -113,7 +120,7 @@ def test_llm_complete(logger_memory_logger):
     assert llm_span["input"] is not None
     assert llm_span["output"] is not None
     assert llm_span["metadata"]["class"] == "OpenAI"
-    assert llm_span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert llm_span["metadata"]["model"] == "gpt-6-luna"
     assert llm_span["metadata"]["provider"] == "openai"
 
 
@@ -125,7 +132,7 @@ def test_llm_chat(logger_memory_logger):
     from llama_index.core.base.llms.types import ChatMessage, MessageRole
     from llama_index.llms.openai import OpenAI
 
-    llm = OpenAI(model=OPENAI_CHAT_MODEL, **OPENAI_CHAT_OPTIONS, temperature=0)
+    llm = OpenAI(model="gpt-6-luna", additional_kwargs={"reasoning_effort": "none"}, temperature=0)
     messages = [
         ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
         ChatMessage(role=MessageRole.USER, content="What is the capital of France?"),
@@ -213,7 +220,7 @@ def test_query_engine(logger_memory_logger):
     ]
 
     embed_model = OpenAIEmbedding(model="text-embedding-3-small")
-    llm = OpenAI(model=OPENAI_CHAT_MODEL, **OPENAI_CHAT_OPTIONS, temperature=0)
+    llm = OpenAI(model="gpt-6-luna", additional_kwargs={"reasoning_effort": "none"}, temperature=0)
 
     with test_logger.start_span(name="test-query-engine"):
         index = VectorStoreIndex.from_documents(docs, embed_model=embed_model)
@@ -234,7 +241,7 @@ def test_llm_error_handling(logger_memory_logger):
 
     from llama_index.llms.openai import OpenAI
 
-    llm = OpenAI(model=OPENAI_CHAT_MODEL, **OPENAI_CHAT_OPTIONS, api_key="sk-invalid-key")
+    llm = OpenAI(model="gpt-6-luna", additional_kwargs={"reasoning_effort": "none"}, api_key="sk-invalid-key")
 
     with test_logger.start_span(name="test-error"):
         try:
@@ -258,7 +265,7 @@ async def test_async_llm_complete(logger_memory_logger):
 
     from llama_index.llms.openai import OpenAI
 
-    llm = OpenAI(model=OPENAI_CHAT_MODEL, **OPENAI_CHAT_OPTIONS, temperature=0)
+    llm = OpenAI(model="gpt-6-luna", additional_kwargs={"reasoning_effort": "none"}, temperature=0)
 
     with test_logger.start_span(name="test-async-complete"):
         await llm.acomplete("What is 2+2? Answer with just the number.")
@@ -280,7 +287,7 @@ async def test_async_llm_chat(logger_memory_logger):
     from llama_index.core.base.llms.types import ChatMessage, MessageRole
     from llama_index.llms.openai import OpenAI
 
-    llm = OpenAI(model=OPENAI_CHAT_MODEL, **OPENAI_CHAT_OPTIONS, temperature=0)
+    llm = OpenAI(model="gpt-6-luna", additional_kwargs={"reasoning_effort": "none"}, temperature=0)
     messages = [
         ChatMessage(role=MessageRole.USER, content="Say hello"),
     ]

@@ -1,7 +1,5 @@
 """Test auto_instrument for Anthropic."""
 
-import os
-
 import anthropic
 from braintrust.auto import auto_instrument
 from braintrust.integrations.test_utils import autoinstrument_test_context
@@ -27,9 +25,7 @@ results2 = auto_instrument()
 assert results2.get("anthropic") == True
 
 # 4. Make API call and verify span
-model = (
-    "claude-haiku-5-5" if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest" else "claude-3-haiku-20240307"
-)
+model = "claude-haiku-5-5"
 with autoinstrument_test_context("test_auto_anthropic", integration="anthropic") as memory_logger:
     client = anthropic.Anthropic()
     response = client.messages.create(

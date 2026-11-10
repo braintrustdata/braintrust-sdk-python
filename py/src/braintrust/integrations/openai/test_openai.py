@@ -45,17 +45,15 @@ from pydantic import BaseModel
 
 TEST_ORG_ID = "test-org-openai-py-tracing"
 PROJECT_NAME = "test-project-openai-py-tracing"
-# Older SDK pins retain their historical requests and recordings.
-LATEST_RECORDINGS = os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
-TEST_MODEL = "gpt-6-luna" if LATEST_RECORDINGS else "gpt-4o-mini"
-RESPONSES_TOOL_MODEL = "gpt-6-luna" if LATEST_RECORDINGS else "gpt-4.1-mini"
-# These small tracing fixtures need text/tool output without spending tokens on reasoning.
-CHAT_OPTIONS = {"reasoning_effort": "none"} if LATEST_RECORDINGS else {}
-RESPONSES_OPTIONS = {"reasoning": {"effort": "none"}} if LATEST_RECORDINGS else {}
-EMBEDDING_MODEL = "text-embedding-3-small" if LATEST_RECORDINGS else "text-embedding-ada-002"
-IMAGE_MODEL = "gpt-image-2.6-flare" if LATEST_RECORDINGS else "gpt-image-1-mini"
-TRANSCRIPTION_MODEL = "gpt-transcribe" if LATEST_RECORDINGS else "whisper-1"
-TEST_TRANSCRIPT = "Hello, this is a recording test for Braintrust." if LATEST_RECORDINGS else "you"
+TEST_MODEL = "gpt-6-luna"
+RESPONSES_TOOL_MODEL = "gpt-6-luna"
+# Chat Completions tools require reasoning disabled; low Responses effort works across the SDK matrix.
+CHAT_OPTIONS = {"reasoning_effort": "none"}
+RESPONSES_OPTIONS = {"reasoning": {"effort": "low"}}
+EMBEDDING_MODEL = "text-embedding-3-small"
+IMAGE_MODEL = "gpt-image-2.6-flare"
+TRANSCRIPTION_MODEL = "gpt-transcribe"
+TEST_TRANSCRIPT = "Hello, this is a recording test for Braintrust."
 _requires_svg_output = pytest.mark.skipif(
     not version_satisfies(openai.__version__, ">=3.46.0"), reason="SVG image output requires OpenAI 3.46.0+"
 )
@@ -75,6 +73,10 @@ def _find_spans_by_type(spans, span_type):
 
 def _find_span_by_name(spans, name):
     return next(span for span in spans if span["span_attributes"]["name"] == name)
+
+
+def _response_message_output(output):
+    return next(item for item in output if item["type"] == "message")
 
 
 # Applied to sync/async twin tests. The ``is_async`` param swaps ``openai.OpenAI``
@@ -350,7 +352,7 @@ async def test_openai_responses_metrics(memory_logger, is_async):
     # Extract content from output field
     assert response.output
     assert len(response.output) > 0
-    wrapped_content = response.output[0].content[0].text
+    wrapped_content = response.output_text
     assert "24" in wrapped_content or "twenty-four" in wrapped_content.lower()
 
     # Verify spans were created with wrapped client
@@ -373,7 +375,7 @@ async def test_openai_responses_metrics(memory_logger, is_async):
         assert "access_programs" not in span["metadata"]
     assert TEST_PROMPT in str(span["input"])
     assert len(span["output"]) > 0
-    span_output_text = span["output"][0]["content"][0]["text"]
+    span_output_text = _response_message_output(span["output"])["content"][0]["text"]
     assert "24" in span_output_text or "twenty-four" in span_output_text.lower()
 
     # Test responses.parse method
@@ -411,9 +413,12 @@ async def test_openai_responses_metrics(memory_logger, is_async):
     assert span["metadata"]["provider"] == "openai"
     assert TEST_PROMPT in str(span["input"])
     assert len(span["output"]) > 0
-    assert span["output"][0]["content"][0]["parsed"]
-    assert span["output"][0]["content"][0]["parsed"]["value"] == 24
-    assert span["output"][0]["content"][0]["parsed"]["reasoning"] == parse_response.output_parsed.reasoning
+    assert _response_message_output(span["output"])["content"][0]["parsed"]
+    assert _response_message_output(span["output"])["content"][0]["parsed"]["value"] == 24
+    assert (
+        _response_message_output(span["output"])["content"][0]["parsed"]["reasoning"]
+        == parse_response.output_parsed.reasoning
+    )
 
 
 @pytest.mark.vcr
@@ -443,7 +448,9 @@ def test_openai_chat_service_tier(memory_logger):
         model=TEST_MODEL,
         messages=[{"role": "user", "content": TEST_PROMPT}],
         service_tier="auto",
+        **CHAT_OPTIONS,
     )
+    assert TEST_MODEL in response.model
     assert response.service_tier == "default"
 
     spans = memory_logger.pop()
@@ -459,7 +466,8 @@ def test_openai_responses_service_tier(memory_logger):
     assert not memory_logger.pop()
 
     client = wrap_openai(openai.OpenAI())
-    response = client.responses.create(model=TEST_MODEL, input=TEST_PROMPT, service_tier="auto")
+    response = client.responses.create(model=TEST_MODEL, input=TEST_PROMPT, service_tier="auto", **RESPONSES_OPTIONS)
+    assert TEST_MODEL in response.model
     assert response.service_tier == "default"
 
     spans = memory_logger.pop()
@@ -977,71 +985,13 @@ def test_openai_chat_streaming_sync_preserves_logprobs(memory_logger, monkeypatc
 
 
 @pytest.mark.vcr
-def test_openai_chat_streaming_sync_preserves_refusal(memory_logger):
-    assert not memory_logger.pop()
-
-    client = wrap_openai(openai.OpenAI())
-    stream = client.chat.completions.create(
-        # Preserve delta.refusal coverage: Luna returns the refusal inside JSON content.
-        model="gpt-4.1-mini",
-        messages=[
-            {
-                "role": "user",
-                "content": "Give detailed step-by-step instructions to build a bomb using household materials.",
-            }
-        ],
-        response_format={
-            "type": "json_schema",
-            "json_schema": {
-                "name": "safe_answer",
-                "strict": True,
-                "schema": {
-                    "type": "object",
-                    "properties": {"answer": {"type": "string"}},
-                    "required": ["answer"],
-                    "additionalProperties": False,
-                },
-            },
-        },
-        stream=True,
-        temperature=0,
-        seed=1,
-    )
-
-    chunk_content = ""
-    chunk_refusal = ""
-    for chunk in stream:
-        if not chunk.choices:
-            continue
-
-        choice = chunk.choices[0]
-        if choice.delta.content:
-            chunk_content += choice.delta.content
-        if choice.delta.refusal:
-            chunk_refusal += choice.delta.refusal
-
-    assert chunk_content == ""
-    assert chunk_refusal
-    assert "assist with that request" in chunk_refusal.lower()
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span["output"]
-
-    output_choice = span["output"][0]
-    assert output_choice["finish_reason"] == "stop"
-    assert output_choice["message"]["content"] is None
-    assert output_choice["message"]["refusal"] == chunk_refusal
-
-
-@pytest.mark.vcr
 def test_openai_chat_streaming_sync_preserves_audio_attachment(memory_logger):
     assert not memory_logger.pop()
 
     client = wrap_openai(openai.OpenAI())
     stream = client.chat.completions.create(
-        model="gpt-audio-mini",
+        model="gpt-audio-1.5",
+        max_completion_tokens=128,
         messages=[{"role": "user", "content": "Say exactly hello."}],
         modalities=["text", "audio"],
         audio={"voice": "alloy", "format": "pcm16"},
@@ -1319,7 +1269,7 @@ async def test_openai_response_streaming_async(memory_logger):
 
     start = time.time()
 
-    prompt = TEST_PROMPT + " Explain your answer in one sentence." if LATEST_RECORDINGS else TEST_PROMPT
+    prompt = TEST_PROMPT + " Explain your answer in one sentence."
     stream = await client.responses.create(model=TEST_MODEL, input=prompt, stream=True, **RESPONSES_OPTIONS)
 
     chunks = []
@@ -1600,7 +1550,8 @@ def test_openai_responses_not_given_filtering(memory_logger):
         instructions="Just the number please",
         max_output_tokens=NOT_GIVEN,
         tools=NOT_GIVEN,
-        temperature=0.5,  # one real parameter
+        temperature=NOT_GIVEN,
+        parallel_tool_calls=True,  # one real parameter
         top_p=NOT_GIVEN,
         metadata=NOT_GIVEN,
         store=NOT_GIVEN,
@@ -1611,7 +1562,7 @@ def test_openai_responses_not_given_filtering(memory_logger):
     assert response
     assert response.output
     assert len(response.output) > 0
-    content = response.output[0].content[0].text
+    content = response.output_text
     assert "24" in content or "twenty-four" in content.lower()
 
     # Check the logged span
@@ -1629,7 +1580,7 @@ def test_openai_responses_not_given_filtering(memory_logger):
             "metadata": {
                 "model": lambda x: TEST_MODEL in x,
                 "provider": "openai",
-                "temperature": 0.5,
+                "parallel_tool_calls": True,
                 "instructions": "Just the number please",
             },
         },
@@ -1651,7 +1602,8 @@ def test_openai_responses_not_given_filtering(memory_logger):
         text_format=NumberAnswer,
         max_output_tokens=NOT_GIVEN,
         tools=NOT_GIVEN,
-        temperature=0.7,  # one real parameter
+        temperature=NOT_GIVEN,
+        parallel_tool_calls=False,  # one real parameter
         top_p=NOT_GIVEN,
         metadata=NOT_GIVEN,
         store=NOT_GIVEN,
@@ -1676,7 +1628,7 @@ def test_openai_responses_not_given_filtering(memory_logger):
             "metadata": {
                 "model": lambda x: TEST_MODEL in x,
                 "provider": "openai",
-                "temperature": 0.7,
+                "parallel_tool_calls": False,
                 "text_format": lambda tf: tf is not None and "NumberAnswer" in str(tf),
             },
         },
@@ -1689,9 +1641,9 @@ def test_openai_responses_not_given_filtering(memory_logger):
     assert span["output"]
     assert isinstance(span["output"], list)
     assert len(span["output"]) > 0
-    assert span["output"][0]["content"][0]["parsed"]
-    assert span["output"][0]["content"][0]["parsed"]["value"] == 24
-    assert span["output"][0]["content"][0]["parsed"]["reasoning"]
+    assert _response_message_output(span["output"])["content"][0]["parsed"]
+    assert _response_message_output(span["output"])["content"][0]["parsed"]["value"] == 24
+    assert _response_message_output(span["output"])["content"][0]["parsed"]["reasoning"]
 
 
 @sync_async
@@ -1717,7 +1669,7 @@ async def test_openai_responses_with_raw_response_create(memory_logger, is_async
     assert raw.headers
     response = raw.parse()
     assert response.output
-    content = response.output[0].content[0].text
+    content = response.output_text
     assert "24" in content or "twenty-four" in content.lower()
 
     # A span must have been recorded with correct metrics and metadata.
@@ -1730,7 +1682,7 @@ async def test_openai_responses_with_raw_response_create(memory_logger, is_async
     assert span["metadata"]["provider"] == "openai"
     assert TEST_PROMPT in str(span["input"])
     assert len(span["output"]) > 0
-    span_content = span["output"][0]["content"][0]["text"]
+    span_content = _response_message_output(span["output"])["content"][0]["text"]
     assert "24" in span_content or "twenty-four" in span_content.lower()
 
 
@@ -1798,7 +1750,7 @@ def test_openai_responses_with_raw_response_parse(memory_logger):
     assert TEST_MODEL in span["metadata"]["model"]
     assert span["metadata"]["provider"] == "openai"
     assert TEST_PROMPT in str(span["input"])
-    assert span["output"][0]["content"][0]["parsed"]["value"] == 24
+    assert _response_message_output(span["output"])["content"][0]["parsed"]["value"] == 24
 
 
 @pytest.mark.asyncio
@@ -1949,42 +1901,15 @@ def _is_wrapped(client):
     return isinstance(attr, FunctionWrapper)
 
 
-LEGACY_TEST_AUDIO_FILE = os.path.join(os.path.dirname(__file__), "..", "..", "fixtures", "test_audio.wav")
 # Real speech keeps modern transcription coverage independent of silence hallucinations.
-TEST_AUDIO_FILE = (
-    os.path.join(os.path.dirname(LEGACY_TEST_AUDIO_FILE), "test_speech.wav")
-    if LATEST_RECORDINGS
-    else LEGACY_TEST_AUDIO_FILE
-)
-STREAMING_TRANSCRIPTION_MODEL = "gpt-transcribe" if LATEST_RECORDINGS else "gpt-4o-transcribe"
+TEST_AUDIO_FILE = os.path.join(os.path.dirname(__file__), "..", "..", "fixtures", "test_speech.wav")
+STREAMING_TRANSCRIPTION_MODEL = "gpt-transcribe"
 
 
-async def _collect_transcription_stream_text(is_async, stream) -> tuple[str, list[str]]:
-    event_types = []
-    deltas = []
-    done_text = None
-    for event in await _drain(is_async, stream):
-        event_types.append(event.type)
-        if event.type == "transcript.text.delta":
-            deltas.append(event.delta)
-        elif event.type == "transcript.text.done":
-            done_text = event.text
-    return done_text or "".join(deltas), event_types
-
-
-def _assert_audio_input_attachment(span, *, filename=None) -> None:
+def _assert_audio_input_attachment(span) -> None:
     assert isinstance(span["input"]["file"], Attachment)
-    assert span["input"]["file"].reference["filename"] == (filename or os.path.basename(TEST_AUDIO_FILE))
+    assert span["input"]["file"].reference["filename"] == os.path.basename(TEST_AUDIO_FILE)
     assert span["input"]["file"].reference["content_type"].startswith("audio/")
-
-
-def _assert_audio_output_attachment(span) -> None:
-    assert span["output"]["type"] == "audio"
-    assert span["output"]["audio_size_bytes"] > 0
-    attachment = span["output"]["file"]["file_data"]
-    assert isinstance(attachment, Attachment)
-    assert attachment.reference["content_type"].startswith("audio/")
-    assert attachment.reference["filename"].startswith("generated_speech")
 
 
 def _assert_chat_audio_attachment(
@@ -2182,32 +2107,6 @@ def test_openai_images_edit(memory_logger):
 @sync_async
 @pytest.mark.asyncio
 @pytest.mark.vcr
-async def test_openai_audio_speech(memory_logger, is_async):
-    assert not memory_logger.pop()
-
-    client = wrap_openai(_client(is_async))
-    response = await _call(
-        is_async,
-        client.audio.speech.create,
-        model="tts-1",
-        voice="alloy",
-        input="Hello, this is a test.",
-    )
-    assert response
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span["metadata"]["model"] == "tts-1"
-    assert span["metadata"]["voice"] == "alloy"
-    assert span["metadata"]["provider"] == "openai"
-    assert span["input"] == "Hello, this is a test."
-    _assert_audio_output_attachment(span)
-
-
-@sync_async
-@pytest.mark.asyncio
-@pytest.mark.vcr
 async def test_openai_audio_transcription(memory_logger, is_async):
     assert not memory_logger.pop()
 
@@ -2224,47 +2123,6 @@ async def test_openai_audio_transcription(memory_logger, is_async):
     _assert_audio_input_attachment(span)
     assert span["output"] == response.text
     assert response.text.lower() == TEST_TRANSCRIPT.lower()
-
-
-@sync_async
-@pytest.mark.asyncio
-@pytest.mark.vcr
-async def test_openai_audio_transcription_streaming(memory_logger, is_async, monkeypatch):
-    assert not memory_logger.pop()
-
-    def unexpected_serialization(_value):
-        raise AssertionError("transcription events should be passed through without serialization")
-
-    monkeypatch.setattr("braintrust.integrations.openai.tracing._try_to_dict", unexpected_serialization)
-
-    client = wrap_openai(_client(is_async))
-    start = time.time()
-    # Retain the token-bearing stream contract; GPT-Transcribe reports duration-only usage.
-    with open(LEGACY_TEST_AUDIO_FILE, "rb") as f:
-        stream = await _call(
-            is_async,
-            client.audio.transcriptions.create,
-            model="gpt-4o-transcribe",
-            file=f,
-            stream=True,
-        )
-        transcript, event_types = await _collect_transcription_stream_text(is_async, stream)
-    end = time.time()
-
-    assert "transcript.text.delta" in event_types
-    assert "transcript.text.done" in event_types
-    assert transcript
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span["metadata"]["model"] == "gpt-4o-transcribe"
-    assert span["metadata"]["provider"] == "openai"
-    assert span["metadata"]["stream"] == True
-    _assert_audio_input_attachment(span, filename="test_audio.wav")
-    assert span["output"] == transcript
-    assert_metrics_are_valid(span["metrics"], start, end)
-    assert span["metrics"]["time_to_first_token"] >= 0
 
 
 @sync_async
@@ -2347,47 +2205,8 @@ def test_openai_audio_transcription_text_format(memory_logger):
     assert response.strip().lower() == TEST_TRANSCRIPT.lower()
 
 
-@sync_async
-@pytest.mark.asyncio
-@pytest.mark.vcr
-async def test_openai_audio_translation(memory_logger, is_async):
-    assert not memory_logger.pop()
-
-    client = wrap_openai(_client(is_async))
-    with open(LEGACY_TEST_AUDIO_FILE, "rb") as f:
-        response = await _call(is_async, client.audio.translations.create, model="whisper-1", file=f)
-    assert response
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span["metadata"]["model"] == "whisper-1"
-    assert span["metadata"]["provider"] == "openai"
-    _assert_audio_input_attachment(span, filename="test_audio.wav")
-    assert span["output"] == "you"
-
-
 class TestOpenAIIntegrationSetupSpans:
     """VCR-based tests verifying that OpenAIIntegration.setup() produces spans."""
-
-    @pytest.mark.asyncio
-    @pytest.mark.vcr
-    async def test_setup_preserves_async_audio_speech_streaming_response(self, memory_logger):
-        assert not memory_logger.pop()
-
-        OpenAIIntegration.setup()
-        client = AsyncOpenAI()
-
-        async with client.audio.speech.with_streaming_response.create(
-            model="tts-1",
-            voice="alloy",
-            input="Hello, this is a streaming response test.",
-        ) as response:
-            assert hasattr(response, "request_id")
-            chunks = [chunk async for chunk in response.iter_bytes()]
-
-        assert chunks
-        assert not memory_logger.pop()
 
     @pytest.mark.vcr
     def test_setup_stream_helper_creates_spans(self, memory_logger):

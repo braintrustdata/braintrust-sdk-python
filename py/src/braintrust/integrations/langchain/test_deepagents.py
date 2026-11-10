@@ -2,7 +2,6 @@ import importlib
 
 import pytest
 from braintrust import logger
-from braintrust.integrations._test_models import OPENAI_CHAT_MODEL, OPENAI_CHAT_OPTIONS
 from braintrust.integrations.langchain import BraintrustCallbackHandler, set_global_handler, setup_langchain
 from braintrust.integrations.langchain.helpers import find_spans_by_attributes
 from braintrust.test_helpers import init_test_logger
@@ -29,8 +28,8 @@ def clear_langchain_handler():
 def _chat_model():
     langchain_openai = importlib.import_module("langchain_openai")
     return langchain_openai.ChatOpenAI(
-        model=OPENAI_CHAT_MODEL,
-        **OPENAI_CHAT_OPTIONS,
+        model="gpt-6-luna",
+        reasoning_effort="none",
         temperature=0,
         max_completion_tokens=20,
     )

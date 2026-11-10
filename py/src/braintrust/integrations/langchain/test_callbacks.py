@@ -8,7 +8,6 @@ from typing import cast
 
 import pytest
 from braintrust import logger
-from braintrust.integrations._test_models import ANTHROPIC_CHAT_MODEL, LATEST, OPENAI_CHAT_MODEL, OPENAI_CHAT_OPTIONS
 from braintrust.integrations.langchain import BraintrustCallbackHandler
 from braintrust.integrations.test_utils import assert_service_tiers
 from braintrust.logger import NOOP_SPAN, current_span, flush
@@ -51,8 +50,8 @@ def test_llm_calls(logger_memory_logger):
     handler = BraintrustCallbackHandler(logger=test_logger)
     prompt = ChatPromptTemplate.from_template("What is 1 + {number}?")
     model = ChatOpenAI(
-        model=OPENAI_CHAT_MODEL,
-        **OPENAI_CHAT_OPTIONS,
+        model="gpt-6-luna",
+        reasoning_effort="none",
         temperature=1,
         top_p=1,
         frequency_penalty=0,
@@ -78,7 +77,6 @@ def test_llm_calls(logger_memory_logger):
             root_span_id,
             trace_root_id,
             tags=["test"],
-            model_name=OPENAI_CHAT_MODEL if LATEST else "gpt-4o-mini-2024-07-18",
         ),
     )
 
@@ -95,7 +93,7 @@ async def test_consecutive_async_invocations_are_separate_traces(logger_memory_l
 
     handler = BraintrustCallbackHandler(logger=test_logger)
     prompt = ChatPromptTemplate.from_template("What is 1 + {number}?")
-    model = ChatOpenAI(model=OPENAI_CHAT_MODEL, **OPENAI_CHAT_OPTIONS)
+    model = ChatOpenAI(model="gpt-6-luna", reasoning_effort="none")
     chain: RunnableSerializable[dict[str, str], BaseMessage] = prompt.pipe(model)
 
     for i in range(2):
@@ -160,8 +158,8 @@ def test_tool_usage(logger_memory_logger):
             raise ValueError("Invalid operation.")
 
     model = ChatOpenAI(
-        model=OPENAI_CHAT_MODEL,
-        **OPENAI_CHAT_OPTIONS,
+        model="gpt-6-luna",
+        reasoning_effort="none",
         temperature=1,
         top_p=1,
         frequency_penalty=0,
@@ -197,7 +195,7 @@ def test_tool_usage(logger_memory_logger):
                 ],
                 "metadata": {
                     "tags": [],
-                    "model": (OPENAI_CHAT_MODEL if LATEST else "gpt-4o-mini-2024-07-18"),
+                    "model": ("gpt-6-luna"),
                     "provider": "openai",
                     "tools": [
                         {
@@ -226,7 +224,7 @@ def test_tool_usage(logger_memory_logger):
                         ]
                     ],
                     "llm_output": {
-                        "model_name": (OPENAI_CHAT_MODEL if LATEST else "gpt-4o-mini-2024-07-18"),
+                        "model_name": ("gpt-6-luna"),
                     },
                     "type": "LLMResult",
                 },
@@ -254,8 +252,8 @@ def test_langgraph_state_management(logger_memory_logger):
 
     handler = BraintrustCallbackHandler(logger=test_logger)
     model = ChatOpenAI(
-        model=OPENAI_CHAT_MODEL,
-        **OPENAI_CHAT_OPTIONS,
+        model="gpt-6-luna",
+        reasoning_effort="none",
         temperature=1,
         top_p=1,
         frequency_penalty=0,
@@ -347,7 +345,7 @@ def test_langgraph_state_management(logger_memory_logger):
                 ]
             ],
             "metadata": {
-                "model": (OPENAI_CHAT_MODEL if LATEST else "gpt-4o-mini-2024-07-18"),
+                "model": ("gpt-6-luna"),
                 "provider": "openai",
                 "tags": [],
             },
@@ -368,7 +366,7 @@ def test_langgraph_state_management(logger_memory_logger):
                     ]
                 ],
                 "llm_output": {
-                    "model_name": (OPENAI_CHAT_MODEL if LATEST else "gpt-4o-mini-2024-07-18"),
+                    "model_name": ("gpt-6-luna"),
                 },
                 "type": "LLMResult",
             },
@@ -624,10 +622,12 @@ async def test_streaming_ttft(logger_memory_logger, is_async, count_to, max_comp
     assert not memory_logger.pop()
 
     handler = BraintrustCallbackHandler(logger=test_logger)
-    prompt = ChatPromptTemplate.from_template(f"Count from 1 to {count_to}.")
+    prompt = ChatPromptTemplate.from_template(
+        f"Count from 1 to {count_to}. Separate the numbers with comma-space and end with a period."
+    )
     model = ChatOpenAI(
-        model=OPENAI_CHAT_MODEL,
-        **OPENAI_CHAT_OPTIONS,
+        model="gpt-6-luna",
+        reasoning_effort="none",
         max_completion_tokens=max_completion_tokens,
         streaming=True,
     )
@@ -667,7 +667,7 @@ async def test_streaming_ttft(logger_memory_logger, is_async, count_to, max_comp
                     [
                         {
                             "additional_kwargs": {},
-                            "content": f"Count from 1 to {count_to}.",
+                            "content": f"Count from 1 to {count_to}. Separate the numbers with comma-space and end with a period.",
                             "response_metadata": {},
                             "type": "human",
                         }
@@ -715,7 +715,7 @@ async def test_streaming_ttft(logger_memory_logger, is_async, count_to, max_comp
     assert_service_tiers(llm_span["metadata"], served="default")
 
 
-SERVICE_TIER_MODEL = "gpt-5-nano"
+SERVICE_TIER_MODEL = "gpt-6-luna"
 
 
 @pytest.mark.vcr
@@ -724,7 +724,7 @@ def test_service_tier_requested_and_served(logger_memory_logger):
     assert not memory_logger.pop()
 
     handler = BraintrustCallbackHandler(logger=test_logger)
-    model = ChatOpenAI(model=SERVICE_TIER_MODEL, service_tier="flex", reasoning_effort="minimal")
+    model = ChatOpenAI(model=SERVICE_TIER_MODEL, service_tier="flex", reasoning_effort="none")
     config: RunnableConfig = {"callbacks": [cast(BaseCallbackHandler, handler)]}
 
     # The model default applies to the first call; the second overrides it per call.
@@ -745,7 +745,7 @@ def test_prompt_caching_tokens(logger_memory_logger):
 
     handler = BraintrustCallbackHandler(logger=test_logger)
 
-    model = ChatAnthropic(model=ANTHROPIC_CHAT_MODEL if LATEST else "claude-sonnet-4-5-20250929")
+    model = ChatAnthropic(model="claude-haiku-5-5")
 
     # Anthropic prompt caching requires a minimum of 1024 tokens for Claude Sonnet models.
     # This static text (~1500 tokens) ensures we meet that threshold consistently.
@@ -885,8 +885,7 @@ Remember: Testing is not just about finding bugs, it's about building confidence
 """
     # Use a unique suffix so the first request always creates a fresh prompt cache entry,
     # rather than reading a stale global cache entry from a previous test run.
-    if LATEST:
-        long_text_for_caching *= 4
+    long_text_for_caching *= 4
     long_text_for_caching += f"\n\nCache salt: {uuid.uuid4().hex}\n"
 
     messages: list[BaseMessage] = [
@@ -997,7 +996,7 @@ def test_image_input(logger_memory_logger):
         )
     ]
 
-    model = ChatOpenAI(model=OPENAI_CHAT_MODEL, **OPENAI_CHAT_OPTIONS)
+    model = ChatOpenAI(model="gpt-6-luna", reasoning_effort="none")
     model.invoke(messages, config={"callbacks": [cast(BaseCallbackHandler, handler)]})
 
     spans = memory_logger.pop()
@@ -1057,7 +1056,7 @@ def test_tool_use_with_result(logger_memory_logger):
             return a / b if b != 0 else 0
         return 0
 
-    model = ChatOpenAI(model=OPENAI_CHAT_MODEL, **OPENAI_CHAT_OPTIONS)
+    model = ChatOpenAI(model="gpt-6-luna", reasoning_effort="none")
     model_with_tools = model.bind_tools([calculate])
 
     # First call (untraced): get a real tool call to send back. Tracing of a

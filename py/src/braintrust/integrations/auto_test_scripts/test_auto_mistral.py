@@ -19,9 +19,7 @@ results2 = auto_instrument()
 assert results2.get("mistral") == True
 
 
-TEST_MODEL = (
-    "ministral-3b-2512" if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest" else "mistral-small-latest"
-)
+TEST_MODEL = "ministral-3b-2512"
 
 
 with autoinstrument_test_context("test_auto_mistral", integration="mistral") as memory_logger:

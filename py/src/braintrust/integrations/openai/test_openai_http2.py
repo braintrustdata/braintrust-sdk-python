@@ -1,4 +1,3 @@
-import os
 import time
 
 import httpx
@@ -11,7 +10,7 @@ from openai import AsyncOpenAI
 
 
 PROJECT_NAME = "test-project-openai-py-tracing"
-TEST_MODEL = "gpt-6-luna" if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest" else "gpt-4o-mini"
+TEST_MODEL = "gpt-6-luna"
 TEST_PROMPT = "What's 12 + 12?"
 
 

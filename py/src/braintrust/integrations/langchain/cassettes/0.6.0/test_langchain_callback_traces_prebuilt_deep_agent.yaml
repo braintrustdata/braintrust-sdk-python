@@ -98,7 +98,7 @@ interactions:
       are not confident that you will find the right match in the first few tries
       use this agent to perform the search for you. This agent has access to all tools
       as the main agent.\"}],\"role\":\"system\"},{\"content\":\"Reply with exactly
-      the word green.\",\"role\":\"user\"}],\"model\":\"gpt-4o-mini\",\"max_completion_tokens\":20,\"stream\":false,\"temperature\":0.0,\"tools\":[{\"type\":\"function\",\"function\":{\"name\":\"write_todos\",\"description\":\"Use
+      the word green.\",\"role\":\"user\"}],\"model\":\"gpt-6-luna\",\"max_completion_tokens\":20,\"reasoning_effort\":\"none\",\"stream\":false,\"temperature\":0.0,\"tools\":[{\"type\":\"function\",\"function\":{\"name\":\"write_todos\",\"description\":\"Use
       this tool to create and manage a structured task list for your current work
       session. This helps you track progress and organize complex tasks.\\n\\nOnly
       use this tool if you think it will be helpful in staying organized. If the user's
@@ -316,11 +316,9 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '26259'
+      - '26284'
       content-type:
       - application/json
-      cookie:
-      - __cf_bm=qsvx3s8rZaQcwFrIWbgindn0ofooL.JCMns.G_CqId8-1783442503.8035908-1.0.1.1-1qlKC4Lap7UqjUHUjBiU6NUyKlafzA8ikoHigsytDQtPQuYLH58CbfQUEODh3GdR.7Ub8kUNKTq.Y9EP8Xp0PC6Qa7qAh_WS86DjOGliULFooo5KfB5ya7_z8xybzAOf
       host:
       - api.openai.com
       user-agent:
@@ -342,22 +340,23 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.12.12
+      - 3.14.7
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-Dz39dThL0eLvLyHSUbbXmJrExJIod\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1783442505,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiiiCzusCnESKUmf9WijOssAn7IjC\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794327012,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"green\",\n        \"refusal\": null,\n
-        \       \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\":
-        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 5298,\n    \"completion_tokens\":
-        2,\n    \"total_tokens\": 5300,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
-        4864,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_dd933fdd28\"\n}\n"
+        \       \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 5382,\n    \"completion_tokens\":
+        4,\n    \"total_tokens\": 5386,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        5368,\n      \"cache_write_tokens\": 11,\n      \"audio_tokens\": 0\n    },\n
+        \   \"completion_tokens_details\": {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\":
+        0,\n      \"accepted_prediction_tokens\": 0,\n      \"rejected_prediction_tokens\":
+        0\n    }\n  },\n  \"service_tier\": \"default\",\n  \"system_fingerprint\":
+        null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -368,21 +367,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a1784c688ad5c65d-YYZ
+      - a5865373edb1cceb-YYZ
       connection:
       - keep-alive
       content-length:
-      - '818'
+      - '803'
       content-type:
       - application/json
       date:
-      - Tue, 07 Jul 2026 16:41:45 GMT
-      openai-organization:
-      - braintrust-data
+      - Tue, 10 Nov 2026 16:10:16 GMT
       openai-processing-ms:
-      - '365'
-      openai-project:
-      - proj_vsCSXafhhByzWOThMrJcZiw9
+      - '3704'
       openai-version:
       - '2020-10-01'
       server:
@@ -398,17 +393,17 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149998145'
+      - '179998149'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_0f514053bb1b48a3b01d30a6a6bb6267
+      - req_3e291395628d4badacf299944d0dc82a
     status:
       code: 200
       message: OK

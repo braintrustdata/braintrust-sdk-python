@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"input":"Write a long essay about the history of mathematics.","max_output_tokens":16,"model":"gpt-4o-mini","stream":true}'
+    body: '{"input":"Write a long essay about the history of mathematics.","max_output_tokens":16,"model":"gpt-6-luna","reasoning":{"effort":"low"},"stream":true}'
     headers:
       accept:
       - application/json
@@ -9,7 +9,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '123'
+      - '151'
       content-type:
       - application/json
       host:
@@ -33,143 +33,40 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.7
+      - 3.13.13
     method: POST
     uri: https://api.openai.com/v1/responses
   response:
     body:
       string: 'event: response.created
 
-        data: {"type":"response.created","response":{"id":"resp_048cf30f8c34c386006ad68dd1b20887d098911b9557f656c6","object":"response","created_at":1792445905,"status":"in_progress","access_programs":null,"background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":null,"max_output_tokens":16,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"in_memory","reasoning":{"context":null,"effort":null,"summary":null},"safety_identifier":null,"service_tier":"auto","store":true,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[],"top_logprobs":0,"top_p":1.0,"truncation":"disabled","usage":null,"user":null,"metadata":{}},"sequence_number":0}
+        data: {"type":"response.created","response":{"id":"resp_05f82b3893ce2f03016af3435410c087d2a19efd459d6ed931","object":"response","created_at":1794327380,"status":"in_progress","access_programs":null,"background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"image":{"context_compression":"disabled"},"incomplete_details":null,"instructions":null,"max_output_tokens":16,"max_tool_calls":null,"model":"gpt-6-luna","moderation":null,"output":[],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"24h","reasoning":{"context":"all_turns","effort":"low","mode":"standard","summary":null},"safety_identifier":null,"service_tier":"auto","store":false,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[],"top_logprobs":0,"top_p":0.98,"truncation":"disabled","usage":null,"user":null,"metadata":{}},"sequence_number":0}
 
 
         event: response.in_progress
 
-        data: {"type":"response.in_progress","response":{"id":"resp_048cf30f8c34c386006ad68dd1b20887d098911b9557f656c6","object":"response","created_at":1792445905,"status":"in_progress","access_programs":null,"background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":null,"max_output_tokens":16,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"in_memory","reasoning":{"context":null,"effort":null,"summary":null},"safety_identifier":null,"service_tier":"auto","store":true,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[],"top_logprobs":0,"top_p":1.0,"truncation":"disabled","usage":null,"user":null,"metadata":{}},"sequence_number":1}
+        data: {"type":"response.in_progress","response":{"id":"resp_05f82b3893ce2f03016af3435410c087d2a19efd459d6ed931","object":"response","created_at":1794327380,"status":"in_progress","access_programs":null,"background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"image":{"context_compression":"disabled"},"incomplete_details":null,"instructions":null,"max_output_tokens":16,"max_tool_calls":null,"model":"gpt-6-luna","moderation":null,"output":[],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"24h","reasoning":{"context":"all_turns","effort":"low","mode":"standard","summary":null},"safety_identifier":null,"service_tier":"auto","store":false,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[],"top_logprobs":0,"top_p":0.98,"truncation":"disabled","usage":null,"user":null,"metadata":{}},"sequence_number":1}
 
 
         event: response.output_item.added
 
-        data: {"type":"response.output_item.added","item":{"id":"msg_048cf30f8c34c386006ad68dd222bc87d0a0ce1606c965b0ce","type":"message","status":"in_progress","content":[],"role":"assistant"},"output_index":0,"sequence_number":2}
-
-
-        event: response.content_part.added
-
-        data: {"type":"response.content_part.added","content_index":0,"item_id":"msg_048cf30f8c34c386006ad68dd222bc87d0a0ce1606c965b0ce","output_index":0,"part":{"type":"output_text","annotations":[],"logprobs":[],"text":""},"sequence_number":3}
-
-
-        event: response.output_text.delta
-
-        data: {"type":"response.output_text.delta","content_index":0,"delta":"###","item_id":"msg_048cf30f8c34c386006ad68dd222bc87d0a0ce1606c965b0ce","logprobs":[],"obfuscation":"2Km5wcLKcBPbY","output_index":0,"sequence_number":4}
-
-
-        event: response.output_text.delta
-
-        data: {"type":"response.output_text.delta","content_index":0,"delta":" The","item_id":"msg_048cf30f8c34c386006ad68dd222bc87d0a0ce1606c965b0ce","logprobs":[],"obfuscation":"y7WieMoeRNuS","output_index":0,"sequence_number":5}
-
-
-        event: response.output_text.delta
-
-        data: {"type":"response.output_text.delta","content_index":0,"delta":" History","item_id":"msg_048cf30f8c34c386006ad68dd222bc87d0a0ce1606c965b0ce","logprobs":[],"obfuscation":"qNxiTWr0","output_index":0,"sequence_number":6}
-
-
-        event: response.output_text.delta
-
-        data: {"type":"response.output_text.delta","content_index":0,"delta":" of","item_id":"msg_048cf30f8c34c386006ad68dd222bc87d0a0ce1606c965b0ce","logprobs":[],"obfuscation":"QRnnlBQy5ETg4","output_index":0,"sequence_number":7}
-
-
-        event: response.output_text.delta
-
-        data: {"type":"response.output_text.delta","content_index":0,"delta":" Mathematics","item_id":"msg_048cf30f8c34c386006ad68dd222bc87d0a0ce1606c965b0ce","logprobs":[],"obfuscation":"V1uc","output_index":0,"sequence_number":8}
-
-
-        event: response.output_text.delta
-
-        data: {"type":"response.output_text.delta","content_index":0,"delta":"\n\n","item_id":"msg_048cf30f8c34c386006ad68dd222bc87d0a0ce1606c965b0ce","logprobs":[],"obfuscation":"eYnMLOZrmXbaNo","output_index":0,"sequence_number":9}
-
-
-        event: response.output_text.delta
-
-        data: {"type":"response.output_text.delta","content_index":0,"delta":"Mat","item_id":"msg_048cf30f8c34c386006ad68dd222bc87d0a0ce1606c965b0ce","logprobs":[],"obfuscation":"4gLdINOs4OB3b","output_index":0,"sequence_number":10}
-
-
-        event: response.output_text.delta
-
-        data: {"type":"response.output_text.delta","content_index":0,"delta":"hemat","item_id":"msg_048cf30f8c34c386006ad68dd222bc87d0a0ce1606c965b0ce","logprobs":[],"obfuscation":"C9AXnAgd31c","output_index":0,"sequence_number":11}
-
-
-        event: response.output_text.delta
-
-        data: {"type":"response.output_text.delta","content_index":0,"delta":"ics","item_id":"msg_048cf30f8c34c386006ad68dd222bc87d0a0ce1606c965b0ce","logprobs":[],"obfuscation":"Cucb2YuV4YGuc","output_index":0,"sequence_number":12}
-
-
-        event: response.output_text.delta
-
-        data: {"type":"response.output_text.delta","content_index":0,"delta":",","item_id":"msg_048cf30f8c34c386006ad68dd222bc87d0a0ce1606c965b0ce","logprobs":[],"obfuscation":"hbPfvyzNaTvQXRl","output_index":0,"sequence_number":13}
-
-
-        event: response.output_text.delta
-
-        data: {"type":"response.output_text.delta","content_index":0,"delta":" often","item_id":"msg_048cf30f8c34c386006ad68dd222bc87d0a0ce1606c965b0ce","logprobs":[],"obfuscation":"hcr2MZC9rM","output_index":0,"sequence_number":14}
-
-
-        event: response.output_text.delta
-
-        data: {"type":"response.output_text.delta","content_index":0,"delta":" regarded","item_id":"msg_048cf30f8c34c386006ad68dd222bc87d0a0ce1606c965b0ce","logprobs":[],"obfuscation":"Lb0W9CK","output_index":0,"sequence_number":15}
-
-
-        event: response.output_text.delta
-
-        data: {"type":"response.output_text.delta","content_index":0,"delta":" as","item_id":"msg_048cf30f8c34c386006ad68dd222bc87d0a0ce1606c965b0ce","logprobs":[],"obfuscation":"ELcyloVGAK2xc","output_index":0,"sequence_number":16}
-
-
-        event: response.output_text.delta
-
-        data: {"type":"response.output_text.delta","content_index":0,"delta":" the","item_id":"msg_048cf30f8c34c386006ad68dd222bc87d0a0ce1606c965b0ce","logprobs":[],"obfuscation":"ensypjdCBPOe","output_index":0,"sequence_number":17}
-
-
-        event: response.output_text.delta
-
-        data: {"type":"response.output_text.delta","content_index":0,"delta":" language","item_id":"msg_048cf30f8c34c386006ad68dd222bc87d0a0ce1606c965b0ce","logprobs":[],"obfuscation":"s001fth","output_index":0,"sequence_number":18}
-
-
-        event: response.output_text.delta
-
-        data: {"type":"response.output_text.delta","content_index":0,"delta":" of","item_id":"msg_048cf30f8c34c386006ad68dd222bc87d0a0ce1606c965b0ce","logprobs":[],"obfuscation":"N0xEnwUTovGzX","output_index":0,"sequence_number":19}
-
-
-        event: response.output_text.done
-
-        data: {"type":"response.output_text.done","content_index":0,"item_id":"msg_048cf30f8c34c386006ad68dd222bc87d0a0ce1606c965b0ce","logprobs":[],"output_index":0,"sequence_number":20,"text":"###
-        The History of Mathematics\n\nMathematics, often regarded as the language
-        of"}
-
-
-        event: response.content_part.done
-
-        data: {"type":"response.content_part.done","content_index":0,"item_id":"msg_048cf30f8c34c386006ad68dd222bc87d0a0ce1606c965b0ce","output_index":0,"part":{"type":"output_text","annotations":[],"logprobs":[],"text":"###
-        The History of Mathematics\n\nMathematics, often regarded as the language
-        of"},"sequence_number":21}
+        data: {"type":"response.output_item.added","item":{"id":"rs_05f82b3893ce2f03016af34354ac5887d2ad19d5e940ed8f77","type":"reasoning","content":[],"encrypted_content":"gAAAAABq80NUJfiAUgzZg7VU1x1sgtTYXv8EHOpcwwGux8-Tma-nNCg3Tv6pMKQumw5WXHyUOy1irEYyYLrNhiiTFEEd64I6X7_mNdiN-se75ykoM2ju59GtfjvaUXG7RksmNojlgb5ooTb6GXsbzlSAXrIBzifHYCrjeM5uV4V04aJJ_R3vuZJL1q2nub207h6TIYlBQsLGJJ68ZFGe6J4mCcIvYBg7taWs6mrTv-j4HZ4MU8EOfUKz_KWFyaM--V7FGC7ICVPqC9AGr7eZgn3N4wHp3Ca_-DpUQJ0ypAEb0Hkp4ORoDGNpWwZXEX9ZbrfSONfYWZgJ74jHdzujNunMldKC2twFSRrSwhdBdczr-Rj4xvINtFlh51CvT1Ahm1dplJmK_quKAZTK3gvetBZOdPmaqXy3-Ty9maFTR-WWi17UWESLqELHfCECAi2x1i8NsY7pZsnf_d0mTS9kOo9G6re5El8tN-u0jFYwj_bwussPk9t_ZmOK1Yrj95A1GXwvoYrcyFS5dai6rcqlI96NL-_EEBNz5L28hIRK7tx0rgSQ7eywKOr1VbGSR-xKxjj_ArjkXJJ_ligFzPw7AG15sBkQfsqHJnMmx9FckqNVIlVqKvUZ7DI6QMT86myY6LRVtGN2BJQN5fgdlneYfed-JQcVt7Tp0e3X61YEIC8FarexyqWITmacFQ-71p2VP7-ACDx7BHZvm3_815wOjqvkKYTCLzJxed7Q5Kc-eagxa9Rr2jRR0Y8CS2BzPgx6v2XWjlaTlmxGFCrGap9chATEvHLtm-cpqvIey2z-abmz_yGPniU8AP3VQYRI__GcfmZYwH9TTzlkTl3j1ow1dIgGpO76CHTK_4na9nOTEwOfTcZJHj5Rcf7eiPkD5qgBVK38LWrzCIeTxR52VPCq74CGfUQQ5FhGlTu41SyxTOgDiwAsNy49iSmoCXKBrA8aUFZBuItLC0egqYAwm2V3LMlHAWnlr7iXJodAAqi3MXAXQW8VHQkNs1CpwgmFURqjliwSqQddKBvRD7NOGh4F_WeF-Y-thBfAzN84SMkVHKzwuuK9bhv-emf228IQQdUpXDxfosPDpi5s35zGqPKDbudNjHtdVk2K3D_MH7KZqCEpPdJD1Y2HCoHFz8kObr-_vL0iYNOuHPgkhWWwfA4OiYGI9Z0mTeCS3Rw05da8T51C1CawyTF-Vj_uqZfjBsp5KNe5WvXNwjsToVcyGzchXMf4KV_m4i3XDEJJryXi7MFJpjw_X4QJdTPLmrSdUtuvA3NfACJlH18O6fQx9MTEYtw0C60Fb2BEdEhNQzwAkELgfq4gD_a_BuhSoE9bJVi78igpYgmzWgOXvvZJFlr8rPoiv5d8swRxdcJNNrsc_AtYZ-RVTmnFniw=","summary":[]},"output_index":0,"sequence_number":2}
 
 
         event: response.output_item.done
 
-        data: {"type":"response.output_item.done","item":{"id":"msg_048cf30f8c34c386006ad68dd222bc87d0a0ce1606c965b0ce","type":"message","status":"incomplete","content":[{"type":"output_text","annotations":[],"logprobs":[],"text":"###
-        The History of Mathematics\n\nMathematics, often regarded as the language
-        of"}],"role":"assistant"},"output_index":0,"sequence_number":22}
+        data: {"type":"response.output_item.done","item":{"id":"rs_05f82b3893ce2f03016af34354ac5887d2ad19d5e940ed8f77","type":"reasoning","content":[],"encrypted_content":"gAAAAABq80NUjraJwZ1dZCIyiKTP1Ijv8Obrwk-X26lBHuttj1PcSsEJFD4UbeL-47GT8PWUAUJ48eseICuIJeSwrBd8zvXW3jzOigd-NKKn9cb821x0PPT9hEwwqLzlU12jkqOrh-kZqptXlYYaBCDWLW4Vxfdhth_GfGVBC0lNe_qDQVWc6b1igWnADLTIX_0ZRVdRBC9pcW44EtzRLDtf2UEO9DCpahUaDyY3Biqju9v56RSUyTeVSGAc_vcoc_qlkDS9r1Y-EYJTUv11CjX3lSTn_Ooaxr2DBkz2YPnITlTPozDGbQCyEsSiZBcBff9-JQVdgiPAHkLKEhMKZNUxP7pDmFo5fp6qcHPRU-Wwk04RCcvpoc1DKBP-kGe8-e8HhJeo1brNkkBU-pPJ7GZvbnnKBOsv7MQyIU4MsUi66KkxpggKTBmJpkyLTi_1YAhVmrV2AHwiUyaYQ1111wQ9mnoExfma94DT9g8MNHy5Gp7psviJ2PvfWcTzz1aq2S1uCsbcrqE7GpagPz3NBfcSjO-T5cBaSCnCsPGWXDcb0jhyGKo2GBWc9RVbQHdMQ-mImtzbTfuFTLqJIr5hfmOezmq2lDh6fcqafh-WyrJnS69SNOmsJ_xauem-JJHGdA1MB3n4eo_16TB6aBQQoA45-IaEaLTZph9DwRnd8W7U2-xwJJpV8gNyW6M2s91Uh2LkRQn1OU25oODRGS1--ktW6tv6RCV5hRVj7Hc0F28XwQi8fHeWwNY-X1lbqXlMu3Jj--rtU4JywzdvOgZcqBKT2YcADXGI_nAR4NIYxUq6Fwj06vLHd8jqvDviMDqk_9eTHZKkP2Fso2oIBMQVuOycHw5Fv8KfPuplBuXf5dcCf92cZEmTYXu8OnstmKtuiDE6jNbaMAzmx9QZ1qVBvwJOIrDfztdLK5sRCrEXKAmHVBI0AuHaKZ1GLtb8IasVgDn4DRDyQw33Bjd99t4kkko3HUOvo-xL2YHck-2n7D7h8QIg3RHi9xCJRLFTcrR83YzApMJLk_qC__2Ob-AY58j7GKbtwail5-XE7Ym-U_ds9ABA-p82vnDrmFn44GtBUM8cl6MnRJio4UrLaJiJzOuxVnsIP7nZocvW-pLUsh5PAAc5CyVLBF9chVvDT2X7VeNN2LilA__7AclVSyshHAfA24kr-2otco1qTYcwqSLfes6-0PwmFQCtJpHBNCj1wF8MURvGn4Vf_FbTxkt_GMfDhCk5Zys6th5gqSbZKZVijUa5MJqgPTKk4cOONnfq2ameFkp4RGRzD9DaRFezHzbOcbMkVkDhcrcLskcZZW61zNmrbTiI7f5XEpS2k1amF1zfHmonwDcE9UFm7RGywH7CB4WYzej_k9_rkQ1ldqRBnJXvlbvLVJOdJUxZC-XJfHIb5Ad9uheGGztkYLCeDdUelO6h8cE39KqaenFzhNeFMFXHSN3lXYUhqOQM-DVFODlxGEaqQDKJy00MTlgdrQX81JKyhf8sa_FaPKbMrzkEc7L6HhewaZg=","summary":[]},"output_index":0,"sequence_number":3}
 
 
         event: response.incomplete
 
-        data: {"type":"response.incomplete","response":{"id":"resp_048cf30f8c34c386006ad68dd1b20887d098911b9557f656c6","object":"response","created_at":1792445905,"status":"incomplete","access_programs":null,"background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"incomplete_details":{"reason":"max_output_tokens"},"instructions":null,"max_output_tokens":16,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[{"id":"msg_048cf30f8c34c386006ad68dd222bc87d0a0ce1606c965b0ce","type":"message","status":"incomplete","content":[{"type":"output_text","annotations":[],"logprobs":[],"text":"###
-        The History of Mathematics\n\nMathematics, often regarded as the language
-        of"}],"role":"assistant"}],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"in_memory","reasoning":{"context":null,"effort":null,"summary":null},"safety_identifier":null,"service_tier":"default","store":true,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[],"top_logprobs":0,"top_p":1.0,"truncation":"disabled","usage":{"input_tokens":17,"input_tokens_details":{"cache_write_tokens":0,"cached_tokens":0},"output_tokens":16,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":33},"user":null,"metadata":{}},"sequence_number":23}
+        data: {"type":"response.incomplete","response":{"id":"resp_05f82b3893ce2f03016af3435410c087d2a19efd459d6ed931","object":"response","created_at":1794327380,"status":"incomplete","access_programs":null,"background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"image":{"context_compression":"disabled"},"incomplete_details":{"reason":"max_output_tokens"},"instructions":null,"max_output_tokens":16,"max_tool_calls":null,"model":"gpt-6-luna","moderation":null,"output":[{"id":"rs_05f82b3893ce2f03016af34354ac5887d2ad19d5e940ed8f77","type":"reasoning","content":[],"encrypted_content":"gAAAAABq80NU8k7R2ac0njaUURZeNSuE6TW3OhkhDU1od_LGk6w3vU0gOcvJnXhRZ4JJiiaorcNwPFPn4JGqA3R6p9EU4rYAjzJL-OYocD9d-1kZM2A3LgkXc-WHc21jikwWuaGRUli2qDEOGn1LEPUTHd1Dn7GqWidZ_iwEarSU3tHSGvJZCZJsHX6Img2ek90HueHrouSGvIGiJy6U12coRHk8oaels-1MudaUCCRuXL95jWvB6oc_cNqW1tbHO28PbQm_LOP2RhHvoabnAZl-eFLo4LCop97cT95F2TxqHJ4JOe51I9eunoBCnajJ--Vv81Ak86l1lt6Pcr4tsLfbiOTbTHrlSLVqZnd5tSdzFC8PaBo7oFCHvTUv0UjkiJ7f-6npUnMca3J_IZ5S1iUtFp9BzMt8UBo39vQRqFXktqboQ5Uxwaa2-zsP81NpXZVunLiV5YRUcrUw7mD1uYbl51qdiCoZQCGUQWG3KqYZb0ZlQTOxoC39zkAnV-VyS-hvvPnfPMkjfQLia9jrsOrN4K_WG-LM38BtBjqt7w7xQgj4BuSgHNeDfbETHOpU8b07gX-j0R5fUWWSIYE3WEdlA3CMZY8OhU95R336pWtM0ouvVVFYZ_P8mFeC1-4Eau-_TLmR1Q-AjBRkkDs05PWjj3IuZek6e-lkEZmhFcm3E2q0ftzmhihfn_lEGsSeZ9FEW9RxkmNwPVU4KXTHozjaSJsg_0YANQst4VRVzZRT0gRxQoW-ePbdSzFkDG8Q6Ei65mkTQWZg5_abOTdf2jycbfFeLm2BTNb-v58lqgItVZB3Wzq9v6gviXlD_j5ligHwBB87hJHgoNwCwnUv8iRMhA_ZeFDE7k2sRJXfMdRxLI9a_l1EP2mJHAT6RCe4BKVBk5lDEQKpFJuovWruUUdKEbqMPjWdndE_LSFVDbjJuzSaKcIQG9SH-uH_-oTaUVJXe9ICcoNwibL6PXG3BTyzgSOCsbshp3527Sm9c0N0qH-qWABYqTxIgrQk_Q6xEYgw5msebVhJulgHHTCXHYi20Ij9LF8knJLqY-VKoCAPvdBjPbB-Kc-aSNB7Ay0SrGh_2q0X8MY60hR3gWvfCNcrhcu8e5BqnisAcutq-VMBHJnzMyGAgqvVfxMoOIIdgIKwEwU7issIBJxgldM53_ZcUaAnZw2G8SNVa2lZs8su_rag8P4gTf-a4vNdr8Xjd-a8vvpOjqmF-4h15jNYuLQCc3FMNW2o8UWlUTrDssATe_12l2Cv7p53dR2NSi6bInmd1r3OuiKKbpl1wk1CHTUEBo0kjwXXZ4gX20MwslD0cTTXX1z73Rt5HMzoXrO8mQOpCPFq_qtVFJkMlBu6VVT7E7Fnh_Jj-moVSbYOrwo8pkGZ1xtFPjsNu2NG798Ub-E0eu52azyQmMWTzgODiv6FfriLVOhDDvG5h8BWOb8tEjvPt-LsSWfx-qXwzYkZIT8O2xgLqUz60IB8SI9gJtjpup3nTiubs_7cXVMZP2L6FH5beK_GoMI=","summary":[]}],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"24h","reasoning":{"context":"all_turns","effort":"low","mode":"standard","summary":null},"safety_identifier":null,"service_tier":"default","store":false,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[],"top_logprobs":0,"top_p":0.98,"truncation":"disabled","usage":{"input_tokens":16,"input_tokens_details":{"cache_write_tokens":0,"cached_tokens":0},"output_tokens":16,"output_tokens_details":{"reasoning_tokens":16},"total_tokens":32},"user":null,"metadata":{}},"sequence_number":4}
 
 
         '
     headers:
       access-control-expose-headers:
-      - X-Request-ID
+      - X-Request-ID, Server-Timing-Total
       - CF-Ray
       - CF-Ray
       alt-svc:
@@ -177,15 +74,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a4d2edfe1da2235c-SJC
+      - a5865c6c8d1fa20e-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 19 Oct 2026 21:38:26 GMT
+      - Tue, 10 Nov 2026 16:16:20 GMT
       openai-processing-ms:
-      - '477'
+      - '443'
       openai-version:
       - '2020-10-01'
       server:
@@ -199,17 +96,17 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
-      - '29998'
+      - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999915'
+      - '179999751'
       x-ratelimit-reset-requests:
-      - 4ms
+      - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_d25ebe36b5154f02a096a9409edab07a
+      - req_c1bdffbf257548b2a7eb9bc274388924
     status:
       code: 200
       message: OK

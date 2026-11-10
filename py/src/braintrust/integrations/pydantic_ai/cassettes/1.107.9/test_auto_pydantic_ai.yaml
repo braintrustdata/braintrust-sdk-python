@@ -1,7 +1,7 @@
 interactions:
 - request:
-    body: '{"model":"gpt-4o-mini","stream":false,"messages":[{"role":"user","content":"Say
-      hi"}],"max_completion_tokens":100}'
+    body: '{"model":"gpt-6-luna","stream":false,"messages":[{"role":"user","content":"Say
+      hi"}],"max_completion_tokens":100,"reasoning_effort":"none"}'
     headers:
       accept:
       - application/json
@@ -10,7 +10,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '114'
+      - '139'
       content-type:
       - application/json
       host:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.37.0
+      - 3.46.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,17 +39,18 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EdHL63bvx27oXr6yU6IhIqRMRpFWE\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1793030152,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiiicRcsqM8w9aX8nX40WfAUVod6m\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794327038,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"Hi there! How can I assist you today?\",\n
-        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
-        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        9,\n    \"completion_tokens\": 10,\n    \"total_tokens\": 19,\n    \"prompt_tokens_details\":
-        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_b46ea19598\"\n}\n"
+        \"assistant\",\n        \"content\": \"Hi!\",\n        \"refusal\": null,\n
+        \       \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 8,\n    \"completion_tokens\":
+        5,\n    \"total_tokens\": 13,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"cache_write_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n
+        \   \"completion_tokens_details\": {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\":
+        0,\n      \"accepted_prediction_tokens\": 0,\n      \"rejected_prediction_tokens\":
+        0\n    }\n  },\n  \"service_tier\": \"default\",\n  \"system_fingerprint\":
+        null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -60,17 +61,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a50aa5d3ed91f80e-YYZ
+      - a5865414de00abc1-YYZ
       connection:
       - keep-alive
       content-length:
-      - '843'
+      - '792'
       content-type:
       - application/json
       date:
-      - Mon, 26 Oct 2026 15:55:52 GMT
+      - Tue, 10 Nov 2026 16:10:38 GMT
       openai-processing-ms:
-      - '413'
+      - '635'
       openai-version:
       - '2020-10-01'
       server:
@@ -86,17 +87,17 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999995'
+      - '179999997'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_19a5d8a73f2c4098aaff1522c67a1aba
+      - req_f84b39047c814131a9d2b9d49fb601f1
     status:
       code: 200
       message: OK

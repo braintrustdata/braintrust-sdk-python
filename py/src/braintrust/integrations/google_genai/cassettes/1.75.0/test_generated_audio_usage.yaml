@@ -1,0 +1,65 @@
+interactions:
+- request:
+    body: '{"contents": [{"parts": [{"text": "Read this sentence aloud in a warm voice:
+      Hello and welcome to Braintrust."}], "role": "user"}], "generationConfig": {"responseModalities":
+      ["AUDIO"], "speechConfig": {"voice_config": {"prebuilt_voice_config": {"voice_name":
+      "Kore"}}}}}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '271'
+      content-type:
+      - application/json
+      host:
+      - generativelanguage.googleapis.com
+      user-agent:
+      - google-genai-sdk/1.75.0 gl-python/3.14.7
+      x-goog-api-client:
+      - google-genai-sdk/1.75.0 gl-python/3.14.7
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash-lite-tts:generateContent
+  response:
+    body:
+      string: '{"candidates": [{"content": {"parts": [{"inlineData": {"mimeType":
+        "audio/wav", "data": "UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA="}}],
+        "role": "model"}, "finishReason": "STOP", "index": 0}], "usageMetadata": {"promptTokenCount":
+        18, "candidatesTokenCount": 163, "totalTokenCount": 181, "promptTokensDetails":
+        [{"modality": "TEXT", "tokenCount": 18}], "candidatesTokensDetails": [{"modality":
+        "AUDIO", "tokenCount": 163}], "serviceTier": "standard"}, "modelVersion":
+        "gemini-3.8-flash-lite-tts", "responseId": "3kLzavPrCoGLytMP0cOayQw"}'
+    headers:
+      alt-svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      content-length:
+      - '426188'
+      content-type:
+      - application/json; charset=UTF-8
+      date:
+      - Tue, 10 Nov 2026 16:14:24 GMT
+      server:
+      - scaffolding on HTTPServer2
+      server-timing:
+      - gfet4t7; dur=2294
+      transfer-encoding:
+      - chunked
+      vary:
+      - Origin
+      - X-Origin
+      - Referer
+      x-content-type-options:
+      - nosniff
+      x-frame-options:
+      - SAMEORIGIN
+      x-gemini-service-tier:
+      - standard
+      x-xss-protection:
+      - '0'
+    status:
+      code: 200
+      message: OK
+version: 1

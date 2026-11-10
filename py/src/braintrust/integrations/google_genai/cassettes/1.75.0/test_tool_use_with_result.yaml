@@ -9,137 +9,139 @@ interactions:
       number"}}, "required": ["operation", "a", "b"]}}]}], "generationConfig": {"maxOutputTokens":
       500}}'
     headers:
-      Accept:
+      accept:
       - '*/*'
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '588'
-      Content-Type:
+      content-type:
       - application/json
-      Host:
+      host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.75.0 gl-python/3.12.12
+      - google-genai-sdk/1.75.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/1.75.0 gl-python/3.12.12
+      - google-genai-sdk/1.75.0 gl-python/3.14.7
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
         [\n          {\n            \"functionCall\": {\n              \"name\": \"calculate\",\n
         \             \"args\": {\n                \"operation\": \"multiply\",\n
-        \               \"b\": 49,\n                \"a\": 127\n              }\n
-        \           }\n          }\n        ],\n        \"role\": \"model\"\n      },\n
-        \     \"finishReason\": \"STOP\",\n      \"avgLogprobs\": -0.25179011481148855\n
-        \   }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\": 17,\n    \"candidatesTokenCount\":
-        7,\n    \"totalTokenCount\": 24,\n    \"promptTokensDetails\": [\n      {\n
-        \       \"modality\": \"TEXT\",\n        \"tokenCount\": 17\n      }\n    ],\n
-        \   \"candidatesTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
-        \       \"tokenCount\": 7\n      }\n    ],\n    \"serviceTier\": \"standard\"\n
-        \ },\n  \"modelVersion\": \"gemini-2.0-flash-001\",\n  \"responseId\": \"u-cBao_zI-eN_PUPrYigiQY\"\n}\n"
+        \               \"a\": 127,\n                \"b\": 49\n              },\n
+        \             \"id\": \"call_462682002018837094\"\n            },\n            \"thoughtSignature\":
+        \"EmAKXgFpFH0Ti/63vPIRA20KHgMD5gI9e3yyuOdK8oIBMcMwJjWyyQJ4bUUE9vHEhBFzKyYgQxWHoKuSsDqyTA0+hu0etuqY+OX4aAG3i+8VfZ++QYz7blQ4jGH2xbl1ffM=\"\n
+        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        \"STOP\",\n      \"index\": 0,\n      \"finishMessage\": \"Model generated
+        function call(s).\"\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        122,\n    \"candidatesTokenCount\": 25,\n    \"totalTokenCount\": 147,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 122\n
+        \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
+        \"gemini-3.5-flash-lite\",\n  \"responseId\": \"zkLzaqL4I86yytMPxdbD6Qs\"\n}\n"
     headers:
-      Alt-Svc:
+      alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Content-Type:
+      content-length:
+      - '1013'
+      content-type:
       - application/json; charset=UTF-8
-      Date:
-      - Mon, 11 May 2026 14:29:16 GMT
-      Server:
+      date:
+      - Tue, 10 Nov 2026 16:14:06 GMT
+      server:
       - scaffolding on HTTPServer2
-      Server-Timing:
-      - gfet4t7; dur=842
-      Transfer-Encoding:
+      server-timing:
+      - gfet4t7; dur=536
+      transfer-encoding:
       - chunked
-      Vary:
+      vary:
       - Origin
       - X-Origin
       - Referer
-      X-Content-Type-Options:
+      x-content-type-options:
       - nosniff
-      X-Frame-Options:
+      x-frame-options:
       - SAMEORIGIN
-      X-Gemini-Service-Tier:
+      x-gemini-service-tier:
       - standard
-      X-XSS-Protection:
+      x-xss-protection:
       - '0'
-      content-length:
-      - '866'
     status:
       code: 200
       message: OK
 - request:
     body: '{"contents": [{"parts": [{"text": "What is 127 multiplied by 49?"}], "role":
-      "user"}, {"parts": [{"functionCall": {"args": {"operation": "multiply", "b":
-      49, "a": 127}, "name": "calculate"}}], "role": "model"}, {"parts": [{"functionResponse":
-      {"name": "calculate", "response": {"result": 6223}}}], "role": "user"}], "tools":
-      [{"functionDeclarations": [{"description": "Perform a mathematical calculation",
-      "name": "calculate", "parameters_json_schema": {"type": "object", "properties":
-      {"operation": {"type": "string", "enum": ["add", "subtract", "multiply", "divide"],
-      "description": "The mathematical operation"}, "a": {"type": "number", "description":
-      "First number"}, "b": {"type": "number", "description": "Second number"}}, "required":
-      ["operation", "a", "b"]}}]}], "generationConfig": {"maxOutputTokens": 500}}'
+      "user"}, {"parts": [{"functionCall": {"id": "call_462682002018837094", "args":
+      {"operation": "multiply", "a": 127, "b": 49}, "name": "calculate"}, "thoughtSignature":
+      "EmAKXgFpFH0Ti_63vPIRA20KHgMD5gI9e3yyuOdK8oIBMcMwJjWyyQJ4bUUE9vHEhBFzKyYgQxWHoKuSsDqyTA0-hu0etuqY-OX4aAG3i-8VfZ--QYz7blQ4jGH2xbl1ffM="}],
+      "role": "model"}, {"parts": [{"functionResponse": {"name": "calculate", "response":
+      {"result": 6223}}}], "role": "user"}], "tools": [{"functionDeclarations": [{"description":
+      "Perform a mathematical calculation", "name": "calculate", "parameters_json_schema":
+      {"type": "object", "properties": {"operation": {"type": "string", "enum": ["add",
+      "subtract", "multiply", "divide"], "description": "The mathematical operation"},
+      "a": {"type": "number", "description": "First number"}, "b": {"type": "number",
+      "description": "Second number"}}, "required": ["operation", "a", "b"]}}]}],
+      "generationConfig": {"maxOutputTokens": 500}}'
     headers:
-      Accept:
+      accept:
       - '*/*'
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
-      - '817'
-      Content-Type:
+      content-length:
+      - '1006'
+      content-type:
       - application/json
-      Host:
+      host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.75.0 gl-python/3.12.12
+      - google-genai-sdk/1.75.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/1.75.0 gl-python/3.12.12
+      - google-genai-sdk/1.75.0 gl-python/3.14.7
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"127 multiplied by 49 is 6223.\"\n
+        [\n          {\n            \"text\": \"127 multiplied by 49 is 6,223.\",\n
+        \           \"thoughtSignature\": \"EmAKXgFpFH0Tmaf49GxvJ2iNTzo0pcIEBG5OzfFX1O4Aht27Xcu8ma0i7zElOydzxNQxx+DIXimb68yUXY3WT9+Yoz/BU7gU9hJxG0YHW1bXnCyr0x/Yx1PuOZU8rAQcrEc=\"\n
         \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
-        \"STOP\",\n      \"avgLogprobs\": -4.5294407755136488e-06\n    }\n  ],\n  \"usageMetadata\":
-        {\n    \"promptTokenCount\": 27,\n    \"candidatesTokenCount\": 15,\n    \"totalTokenCount\":
-        42,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
-        \       \"tokenCount\": 27\n      }\n    ],\n    \"candidatesTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 15\n
+        \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        160,\n    \"candidatesTokenCount\": 16,\n    \"totalTokenCount\": 176,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 160\n
         \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
-        \"gemini-2.0-flash-001\",\n  \"responseId\": \"vOcBaoKTJoS-_uMP3prgwAg\"\n}\n"
+        \"gemini-3.5-flash-lite\",\n  \"responseId\": \"z0LzauuYCc2OytMPwd3nmQ0\"\n}\n"
     headers:
-      Alt-Svc:
+      alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Content-Type:
+      content-length:
+      - '749'
+      content-type:
       - application/json; charset=UTF-8
-      Date:
-      - Mon, 11 May 2026 14:29:17 GMT
-      Server:
+      date:
+      - Tue, 10 Nov 2026 16:14:07 GMT
+      server:
       - scaffolding on HTTPServer2
-      Server-Timing:
-      - gfet4t7; dur=549
-      Transfer-Encoding:
+      server-timing:
+      - gfet4t7; dur=816
+      transfer-encoding:
       - chunked
-      Vary:
+      vary:
       - Origin
       - X-Origin
       - Referer
-      X-Content-Type-Options:
+      x-content-type-options:
       - nosniff
-      X-Frame-Options:
+      x-frame-options:
       - SAMEORIGIN
-      X-Gemini-Service-Tier:
+      x-gemini-service-tier:
       - standard
-      X-XSS-Protection:
+      x-xss-protection:
       - '0'
-      content-length:
-      - '713'
     status:
       code: 200
       message: OK

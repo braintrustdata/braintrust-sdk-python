@@ -1,9 +1,9 @@
 interactions:
 - request:
-    body: '{"model":"gpt-4o-mini","stream":false,"messages":[{"role":"system","content":"The
+    body: '{"model":"gpt-6-luna","stream":false,"messages":[{"role":"system","content":"The
       user is currently taking a math quiz."},{"role":"system","content":"Answer with
       only the number requested by the user."},{"role":"user","content":"What is 2+2?
-      Answer with just the number."}],"max_completion_tokens":100}'
+      Answer with just the number."}],"max_completion_tokens":100,"reasoning_effort":"none"}'
     headers:
       accept:
       - application/json
@@ -12,7 +12,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '302'
+      - '327'
       content-type:
       - application/json
       host:
@@ -28,7 +28,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.37.0
+      - 3.46.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -41,17 +41,18 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EdHKfdkwAhK9go70rDppF3HFOXl97\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1793030125,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-Eiii18lr8G2kDlIiufLtfoGnyoTlv\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794327001,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"4\",\n        \"refusal\": null,\n
-        \       \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\":
-        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 47,\n    \"completion_tokens\":
-        1,\n    \"total_tokens\": 48,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
-        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_5c838cbcac\"\n}\n"
+        \       \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 46,\n    \"completion_tokens\":
+        4,\n    \"total_tokens\": 50,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"cache_write_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n
+        \   \"completion_tokens_details\": {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\":
+        0,\n      \"accepted_prediction_tokens\": 0,\n      \"rejected_prediction_tokens\":
+        0\n    }\n  },\n  \"service_tier\": \"default\",\n  \"system_fingerprint\":
+        null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -62,17 +63,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a50aa5298ae6ae18-YYZ
+      - a586532bd9beb404-YYZ
       connection:
       - keep-alive
       content-length:
-      - '807'
+      - '791'
       content-type:
       - application/json
       date:
-      - Mon, 26 Oct 2026 15:55:25 GMT
+      - Tue, 10 Nov 2026 16:10:02 GMT
       openai-processing-ms:
-      - '624'
+      - '1828'
       openai-version:
       - '2020-10-01'
       server:
@@ -88,17 +89,17 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999962'
+      - '179999961'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_5293b3461e99467db6d15d8bf5bc00b5
+      - req_4a08b50955e548b998d1aac07e272dfa
     status:
       code: 200
       message: OK

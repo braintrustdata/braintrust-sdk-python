@@ -21,8 +21,7 @@ from braintrust.logger import Attachment
 from braintrust.test_helpers import init_test_logger
 
 
-LATEST_MODELS = os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
-TEST_MODEL = "gpt-6-luna" if LATEST_MODELS else "gpt-4o-mini"
+TEST_MODEL = "gpt-6-luna"
 
 
 @pytest.fixture
@@ -282,8 +281,8 @@ async def test_setup_pipecat_traces_real_pipeline_frames(memory_logger):
         api_key=os.environ["OPENAI_API_KEY"],
         settings=OpenAILLMService.Settings(
             model=TEST_MODEL,
-            temperature=1.0 if LATEST_MODELS else 0.0,
-            extra={"reasoning_effort": "none"} if LATEST_MODELS else {},
+            temperature=1.0,
+            extra={"reasoning_effort": "none"},
             max_completion_tokens=20,
         ),
     )

@@ -4,7 +4,6 @@
 # pyright: reportUnknownParameterType=false
 # pyright: reportUnknownVariableType=false
 # pyright: reportUnknownArgumentType=false
-import os
 
 import pytest
 from braintrust import logger
@@ -24,9 +23,8 @@ from ._test_agno_helpers import (
 )
 
 
-LATEST_MODELS = os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
-TEST_MODEL = "gpt-6-luna" if LATEST_MODELS else "gpt-4o-mini"
-MODEL_OPTIONS = {"reasoning_effort": "none"} if LATEST_MODELS else {}
+TEST_MODEL = "gpt-6-luna"
+MODEL_OPTIONS = {"reasoning_effort": "none"}
 
 
 @pytest.fixture

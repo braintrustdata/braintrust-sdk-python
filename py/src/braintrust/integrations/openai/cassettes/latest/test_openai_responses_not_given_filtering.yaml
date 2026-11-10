@@ -1,7 +1,7 @@
 interactions:
 - request:
     body: '{"model":"gpt-6-luna","input":"What''s 12 + 12?","instructions":"Just the
-      number please","reasoning":{"effort":"none"},"temperature":0.5}'
+      number please","parallel_tool_calls":true,"reasoning":{"effort":"low"}}'
     headers:
       accept:
       - application/json
@@ -10,7 +10,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '136'
+      - '144'
       content-type:
       - application/json
       host:
@@ -39,15 +39,15 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_080f5174594e4071016af33c50d4c487d284a13835317b53d8\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1794325584,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0794adf8e2254711016af343d3608487d297f49867b4d1377c\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1794327507,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794325585,\n  \"error\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794327508,\n  \"error\":
         null,\n  \"frequency_penalty\": 0.0,\n  \"image\": {\n    \"context_compression\":
         \"disabled\"\n  },\n  \"incomplete_details\": null,\n  \"instructions\": \"Just
         the number please\",\n  \"max_output_tokens\": null,\n  \"max_tool_calls\":
         null,\n  \"model\": \"gpt-6-luna\",\n  \"moderation\": null,\n  \"output\":
-        [\n    {\n      \"id\": \"msg_080f5174594e4071016af33c51703887d2ade60fb353d077f1\",\n
+        [\n    {\n      \"id\": \"msg_0794adf8e2254711016af343d3f5d887d2b13863cdd6045fac\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"24\"\n        }\n
@@ -55,9 +55,9 @@ interactions:
         \   }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n
         \ \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
         \"24h\",\n  \"reasoning\": {\n    \"context\": \"all_turns\",\n    \"effort\":
-        \"none\",\n    \"mode\": \"standard\",\n    \"summary\": null\n  },\n  \"safety_identifier\":
+        \"low\",\n    \"mode\": \"standard\",\n    \"summary\": null\n  },\n  \"safety_identifier\":
         null,\n  \"service_tier\": \"default\",\n  \"store\": false,\n  \"temperature\":
-        0.5,\n  \"text\": {\n    \"format\": {\n      \"type\": \"text\"\n    },\n
+        1.0,\n  \"text\": {\n    \"format\": {\n      \"type\": \"text\"\n    },\n
         \   \"verbosity\": \"medium\"\n  },\n  \"tool_choice\": \"auto\",\n  \"tool_usage\":
         {\n    \"image_gen\": {\n      \"input_tokens\": 0,\n      \"input_tokens_details\":
         {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\":
@@ -79,17 +79,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5863098bffdf80e-YYZ
+      - a5865f88bb7390a8-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2122'
+      - '2121'
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 15:46:25 GMT
+      - Tue, 10 Nov 2026 16:18:28 GMT
       openai-processing-ms:
-      - '743'
+      - '707'
       openai-version:
       - '2020-10-01'
       server:
@@ -113,12 +113,12 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_6e317dbef8dd4e5db981d6867e1d6ade
+      - req_1ac980a7be334ed4b47ace39d2d52340
     status:
       code: 200
       message: OK
 - request:
-    body: '{"model":"gpt-6-luna","input":"What''s 12 + 12?","reasoning":{"effort":"none"},"temperature":0.7,"text":{"format":{"type":"json_schema","strict":true,"name":"NumberAnswer","schema":{"properties":{"value":{"title":"Value","type":"integer"},"reasoning":{"title":"Reasoning","type":"string"}},"required":["value","reasoning"],"title":"NumberAnswer","type":"object","additionalProperties":false}}}}'
+    body: '{"model":"gpt-6-luna","input":"What''s 12 + 12?","parallel_tool_calls":false,"reasoning":{"effort":"low"},"text":{"format":{"type":"json_schema","strict":true,"name":"NumberAnswer","schema":{"properties":{"value":{"title":"Value","type":"integer"},"reasoning":{"title":"Reasoning","type":"string"}},"required":["value","reasoning"],"title":"NumberAnswer","type":"object","additionalProperties":false}}}}'
     headers:
       accept:
       - application/json
@@ -127,7 +127,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '393'
+      - '402'
       content-type:
       - application/json
       host:
@@ -156,25 +156,25 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0d4c78f6096f23be016af33c51acb487d2a1c1209d1cb5c174\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1794325585,\n  \"status\":
+      string: "{\n  \"id\": \"resp_05fa012fab666ad9016af343d4374c87d2b610043b27048754\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1794327508,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794325588,\n  \"error\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794327509,\n  \"error\":
         null,\n  \"frequency_penalty\": 0.0,\n  \"image\": {\n    \"context_compression\":
         \"disabled\"\n  },\n  \"incomplete_details\": null,\n  \"instructions\": null,\n
         \ \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-6-luna\",\n  \"moderation\": null,\n  \"output\": [\n    {\n      \"id\":
-        \"msg_0d4c78f6096f23be016af33c53f67887d298f8027c34fbfffe\",\n      \"type\":
+        \"msg_05fa012fab666ad9016af343d5831887d2b8f98a91d03dcf05\",\n      \"type\":
         \"message\",\n      \"status\": \"completed\",\n      \"content\": [\n        {\n
         \         \"type\": \"output_text\",\n          \"annotations\": [],\n          \"logprobs\":
         [],\n          \"text\": \"{\\\"value\\\":24,\\\"reasoning\\\":\\\"12 + 12
         = 24.\\\"}\"\n        }\n      ],\n      \"phase\": \"final_answer\",\n      \"role\":
-        \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\":
+        \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": false,\n  \"presence_penalty\":
         0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
         \"24h\",\n  \"reasoning\": {\n    \"context\": \"all_turns\",\n    \"effort\":
-        \"none\",\n    \"mode\": \"standard\",\n    \"summary\": null\n  },\n  \"safety_identifier\":
+        \"low\",\n    \"mode\": \"standard\",\n    \"summary\": null\n  },\n  \"safety_identifier\":
         null,\n  \"service_tier\": \"default\",\n  \"store\": false,\n  \"temperature\":
-        0.7,\n  \"text\": {\n    \"format\": {\n      \"type\": \"json_schema\",\n
+        1.0,\n  \"text\": {\n    \"format\": {\n      \"type\": \"json_schema\",\n
         \     \"description\": null,\n      \"name\": \"NumberAnswer\",\n      \"schema\":
         {\n        \"properties\": {\n          \"value\": {\n            \"title\":
         \"Value\",\n            \"type\": \"integer\"\n          },\n          \"reasoning\":
@@ -203,7 +203,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a586309dff23f80e-YYZ
+      - a5865f8dded890a8-YYZ
       connection:
       - keep-alive
       content-length:
@@ -211,9 +211,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 15:46:28 GMT
+      - Tue, 10 Nov 2026 16:18:29 GMT
       openai-processing-ms:
-      - '2500'
+      - '1545'
       openai-version:
       - '2020-10-01'
       server:
@@ -237,7 +237,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_7b0daba5692b446c9a2f2057c15c49d9
+      - req_934d833b029546b1b9f9a68454166943
     status:
       code: 200
       message: OK

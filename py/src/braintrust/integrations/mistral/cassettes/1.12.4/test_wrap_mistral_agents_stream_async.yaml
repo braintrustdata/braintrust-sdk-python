@@ -1,99 +1,96 @@
 interactions:
 - request:
-    body: '{"model":"mistral-small-latest","name":"braintrust-test-agent-1775144109478","instructions":"You
+    body: '{"model":"ministral-3b-2512","name":"braintrust-test-agent-1794327180650","instructions":"You
       are concise. Keep responses under five words."}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
-      - gzip, deflate, zstd
-      Connection:
+      accept-encoding:
+      - gzip, deflate
+      connection:
       - keep-alive
-      Content-Length:
-      - '144'
-      Host:
-      - api.mistral.ai
+      content-length:
+      - '141'
       content-type:
       - application/json
+      host:
+      - api.mistral.ai
       user-agent:
       - mistral-client-python/1.12.4
     method: POST
     uri: https://api.mistral.ai/v1/agents
   response:
     body:
-      string: '{"instructions":"You are concise. Keep responses under five words.","tools":[],"completion_args":{"stop":null,"presence_penalty":null,"frequency_penalty":null,"temperature":null,"top_p":null,"max_tokens":null,"random_seed":null,"prediction":null,"response_format":null,"tool_choice":"auto","reasoning_effort":null},"guardrails":[],"model":"mistral-small-latest","name":"braintrust-test-agent-1775144109478","description":null,"handoffs":null,"metadata":null,"object":"agent","id":"ag_019d4ed5865d73448ec080e89343eae0","version":0,"versions":[],"created_at":"2026-04-02T15:35:09.690238Z","updated_at":"2026-04-02T15:35:09.690241Z","deployment_chat":false,"source":"api","version_message":null}'
+      string: '{"instructions":"You are concise. Keep responses under five words.","tools":[],"completion_args":{"stop":null,"presence_penalty":null,"frequency_penalty":null,"temperature":null,"top_p":null,"max_tokens":null,"random_seed":null,"prediction":null,"response_format":null,"tool_choice":"auto","reasoning_effort":null,"watermarking":null},"guardrails":[],"model":"ministral-3b-2512","name":"braintrust-test-agent-1794327180650","description":null,"handoffs":null,"metadata":null,"object":"agent","id":"ag_01a1c63bf66971d78497419285643ff5","version":0,"versions":[],"owner_id":"4cf0889c-e6bd-4aba-a664-2e25c0dcd24e","created_at":"2026-11-10T16:13:00.937978Z","updated_at":"2026-11-10T16:13:00.937980Z","deployment_chat":false,"source":"api","version_message":null}'
     headers:
-      CF-RAY:
-      - 9e60e6dcef53860b-YYZ
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json
-      Date:
-      - Thu, 02 Apr 2026 15:35:09 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=15552000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
       access-control-allow-origin:
       - '*'
       alt-svc:
       - h3=":443"; ma=86400
       cf-cache-status:
       - DYNAMIC
+      cf-ray:
+      - a586578fce7939f2-YYZ
+      connection:
+      - keep-alive
       content-length:
-      - '692'
+      - '759'
+      content-type:
+      - application/json
+      date:
+      - Tue, 10 Nov 2026 16:13:01 GMT
       mistral-correlation-id:
-      - 019d4ed5-864e-73dd-a0d4-fc98d55eab6e
-      set-cookie:
-      - __cf_bm=DU9InpdCjBJhbsTq15i51tza30QtpO4NxVCiR5ZDONI-1775144109.5821874-1.0.1.1-mpvwOLB9yzKYi1idfPXP8tkT_FGDD7SNlLGhb2QqTqlz1GKWjo7vB5vc4U6rThVfzqvBToJxXUJ7T8PumXDAqDCKO7hWIDnp.laNB_nQn0BIJbuPSNW.aCwPKxlYXcoL;
-        HttpOnly; Secure; Path=/; Domain=mistral.ai; Expires=Thu, 02 Apr 2026 16:05:09
-        GMT
-      - _cfuvid=0cCCUKDDZMr6fet1gK1gI1PsZhaP1flvZEyt_17GoNU-1775144109.5821874-1.0.1.1-KFxUaWRdiHtZH0rNyUsHSPbiOvG3MvvoU1nqIxVHW2g;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai
+      - 01a1c63b-f622-7363-8693-4d5e3e99d4da
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=15552000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
       x-envoy-upstream-service-time:
-      - '52'
+      - '119'
       x-kong-proxy-latency:
-      - '11'
+      - '13'
       x-kong-request-id:
-      - 019d4ed5-864e-73dd-a0d4-fc98d55eab6e
+      - 01a1c63b-f622-7363-8693-4d5e3e99d4da
       x-kong-upstream-latency:
-      - '53'
+      - '173'
     status:
       code: 200
       message: OK
 - request:
-    body: '{"messages":[{"content":"What is 4+8? Reply with just the number.","role":"user"}],"agent_id":"ag_019d4ed5865d73448ec080e89343eae0","max_tokens":10,"stream":true}'
+    body: '{"messages":[{"content":"What is 4+8? Reply with just the number.","role":"user"}],"agent_id":"ag_01a1c63bf66971d78497419285643ff5","max_tokens":10,"stream":true}'
     headers:
-      Accept:
+      accept:
       - text/event-stream
-      Accept-Encoding:
-      - gzip, deflate, zstd
-      Connection:
+      accept-encoding:
+      - gzip, deflate
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '162'
-      Host:
-      - api.mistral.ai
       content-type:
       - application/json
+      host:
+      - api.mistral.ai
       user-agent:
       - mistral-client-python/1.12.4
     method: POST
-    uri: https://api.mistral.ai/v1/agents/completions
+    uri: https://api.mistral.ai/v1/agents/completions#stream
   response:
     body:
-      string: 'data: {"id":"ed08e6612e4e4f89bf7b5de434fb96d8","object":"chat.completion.chunk","created":1775144110,"model":"mistral-small-latest","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
+      string: 'data: {"id":"990f33432f704bcb867b029f19095f68","object":"chat.completion.chunk","created":1794327181,"model":"ministral-3b-2512","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
 
 
-        data: {"id":"ed08e6612e4e4f89bf7b5de434fb96d8","object":"chat.completion.chunk","created":1775144110,"model":"mistral-small-latest","choices":[{"index":0,"delta":{"content":"1"},"finish_reason":null}],"p":"abcdefghijklmnopqrst"}
+        data: {"id":"990f33432f704bcb867b029f19095f68","object":"chat.completion.chunk","created":1794327181,"model":"ministral-3b-2512","choices":[{"index":0,"delta":{"content":"1"},"finish_reason":null}],"p":"abcdefghijklmnopqr"}
 
 
-        data: {"id":"ed08e6612e4e4f89bf7b5de434fb96d8","object":"chat.completion.chunk","created":1775144110,"model":"mistral-small-latest","choices":[{"index":0,"delta":{"content":"2"},"finish_reason":"stop"}],"usage":{"prompt_tokens":40,"total_tokens":43,"completion_tokens":3,"prompt_tokens_details":{"cached_tokens":0}},"p":"abcdefghijklmnopqrstuvwxyz012345"}
+        data: {"id":"990f33432f704bcb867b029f19095f68","object":"chat.completion.chunk","created":1794327181,"model":"ministral-3b-2512","choices":[{"index":0,"delta":{"content":"2"},"finish_reason":null}],"p":"abcdefghijklmnopqrstuvwxyz0123456"}
+
+
+        data: {"id":"990f33432f704bcb867b029f19095f68","object":"chat.completion.chunk","created":1794327181,"model":"ministral-3b-2512","choices":[{"index":0,"delta":{"content":""},"finish_reason":"stop"}],"usage":{"prompt_tokens":28,"total_tokens":31,"completion_tokens":3,"prompt_tokens_details":{"cached_tokens":0},"completion_tokens_details":{"reasoning_tokens":0},"service_tier":"standard"},"p":"abcdefghijklmnop"}
 
 
         data: [DONE]
@@ -101,97 +98,98 @@ interactions:
 
         '
     headers:
-      CF-RAY:
-      - 9e60e6debf14ac30-YYZ
-      Connection:
-      - keep-alive
-      Content-Type:
-      - text/event-stream; charset=utf-8
-      Date:
-      - Thu, 02 Apr 2026 15:35:10 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=15552000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
       access-control-allow-origin:
       - '*'
       alt-svc:
       - h3=":443"; ma=86400
       cf-cache-status:
       - DYNAMIC
+      cf-ray:
+      - a58657929b3b103a-YYZ
+      connection:
+      - keep-alive
+      content-type:
+      - text/event-stream; charset=utf-8
+      date:
+      - Tue, 10 Nov 2026 16:13:01 GMT
       mistral-correlation-id:
-      - 019d4ed5-8778-78df-a966-c3ce0120a7fd
-      set-cookie:
-      - __cf_bm=KDop7nyegtYSeOFbXzikJCgQrpdO6yTls8JnuHGD40w-1775144109.877293-1.0.1.1-3MSiabvKpFB4CfN0VhI91bwUbiXowXaDoB9fejWzrhhV1D0qn6PpW1ZMxDYkNdNZxZMzBmUmr2p96iEqUrJrxMzpFcCvmZkedF2nZvO.F0Pq72su71.Ust4.V4t082M2;
-        HttpOnly; Secure; Path=/; Domain=mistral.ai; Expires=Thu, 02 Apr 2026 16:05:10
-        GMT
-      - _cfuvid=BvFOySNAsd0v.J9WiNUil46WddRbkW6f0DF6zvHPkPY-1775144109.877293-1.0.1.1-d2Lv4KgDzt9v.3vlT3NR0HqwkYjWxVTbu17.ZFTukSQ;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai
+      - 01a1c63b-f7db-71f6-a115-d02c4189ac25
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=15552000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
       x-envoy-upstream-service-time:
-      - '292'
+      - '187'
       x-kong-proxy-latency:
-      - '15'
+      - '36'
       x-kong-request-id:
-      - 019d4ed5-8778-78df-a966-c3ce0120a7fd
+      - 01a1c63b-f7db-71f6-a115-d02c4189ac25
       x-kong-upstream-latency:
-      - '293'
+      - '190'
+      x-max-retry-attempts-reached:
+      - 'false'
+      x-ratelimit-limit-req-minute:
+      - '3000'
+      x-ratelimit-limit-tokens-minute:
+      - '2000000'
+      x-ratelimit-remaining-req-minute:
+      - '2998'
+      x-ratelimit-remaining-tokens-minute:
+      - '1999463'
     status:
       code: 200
       message: OK
 - request:
     body: ''
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
-      - gzip, deflate, zstd
-      Connection:
+      accept-encoding:
+      - gzip, deflate
+      connection:
       - keep-alive
-      Cookie:
-      - __cf_bm=DU9InpdCjBJhbsTq15i51tza30QtpO4NxVCiR5ZDONI-1775144109.5821874-1.0.1.1-mpvwOLB9yzKYi1idfPXP8tkT_FGDD7SNlLGhb2QqTqlz1GKWjo7vB5vc4U6rThVfzqvBToJxXUJ7T8PumXDAqDCKO7hWIDnp.laNB_nQn0BIJbuPSNW.aCwPKxlYXcoL;
-        _cfuvid=0cCCUKDDZMr6fet1gK1gI1PsZhaP1flvZEyt_17GoNU-1775144109.5821874-1.0.1.1-KFxUaWRdiHtZH0rNyUsHSPbiOvG3MvvoU1nqIxVHW2g
-      Host:
+      host:
       - api.mistral.ai
       user-agent:
       - mistral-client-python/1.12.4
     method: DELETE
-    uri: https://api.mistral.ai/v1/agents/ag_019d4ed5865d73448ec080e89343eae0
+    uri: https://api.mistral.ai/v1/agents/ag_01a1c63bf66971d78497419285643ff5
   response:
     body:
       string: ''
     headers:
-      CF-RAY:
-      - 9e60e6e22f1036c3-YYZ
-      Connection:
-      - keep-alive
-      Date:
-      - Thu, 02 Apr 2026 15:35:10 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=15552000; includeSubDomains; preload
-      X-Content-Type-Options:
-      - nosniff
       access-control-allow-origin:
       - '*'
       alt-svc:
       - h3=":443"; ma=86400
       cf-cache-status:
       - DYNAMIC
+      cf-ray:
+      - a58657958b0439f2-YYZ
+      connection:
+      - keep-alive
+      date:
+      - Tue, 10 Nov 2026 16:13:01 GMT
       mistral-correlation-id:
-      - 019d4ed5-899d-7165-b987-128682174c48
+      - 01a1c63b-f9b4-7dc7-a33c-8d26d7febf8d
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=15552000; includeSubDomains; preload
+      x-content-type-options:
+      - nosniff
       x-envoy-upstream-service-time:
-      - '52'
+      - '90'
       x-kong-proxy-latency:
-      - '9'
+      - '22'
       x-kong-request-id:
-      - 019d4ed5-899d-7165-b987-128682174c48
+      - 01a1c63b-f9b4-7dc7-a33c-8d26d7febf8d
       x-kong-upstream-latency:
-      - '52'
+      - '93'
     status:
       code: 204
       message: No Content

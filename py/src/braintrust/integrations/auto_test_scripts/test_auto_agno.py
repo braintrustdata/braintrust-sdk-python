@@ -1,15 +1,12 @@
 """Test auto_instrument for Agno (no uninstrument available)."""
 
-import os
-
 from braintrust.auto import auto_instrument
 from braintrust.integrations.test_utils import autoinstrument_test_context
 
 
 # 1. Instrument
-LATEST_MODELS = os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
-TEST_MODEL = "gpt-6-luna" if LATEST_MODELS else "gpt-4o-mini"
-MODEL_OPTIONS = {"reasoning_effort": "none"} if LATEST_MODELS else {}
+TEST_MODEL = "gpt-6-luna"
+MODEL_OPTIONS = {"reasoning_effort": "none"}
 
 results = auto_instrument()
 assert results.get("agno") == True, "auto_instrument should return True for agno"

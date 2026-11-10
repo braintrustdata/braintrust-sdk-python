@@ -24,11 +24,7 @@ from pydantic import BaseModel, Field
 
 
 PROJECT_NAME = "test_adk"
-ADK_MODEL = (
-    "gemini-2.5-flash-lite"
-    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") in {"latest", "2.6.3"}
-    else "gemini-2.0-flash"
-)
+ADK_MODEL = "gemini-2.5-flash-lite"
 FIXTURES_DIR = Path(__file__).parent.parent.parent / "fixtures"
 
 setup_adk(project_name=PROJECT_NAME)
@@ -440,11 +436,7 @@ async def test_adk_subagent_transfer_does_not_log_generator_exit(memory_logger):
     """Successful LlmAgent delegation must not mark spans as failed during generator cleanup."""
     assert not memory_logger.pop()
 
-    delegation_model = (
-        "gemini-3.5-flash-lite"
-        if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
-        else "gemini-2.5-flash"
-    )
+    delegation_model = "gemini-3.5-flash-lite"
     specialist = Agent(
         name="capital_specialist",
         model=delegation_model,

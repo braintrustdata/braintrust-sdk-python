@@ -2,15 +2,13 @@
 
 # pylint: disable=import-error,no-member
 import asyncio
-import os
 
 import ai
 from braintrust.auto import auto_instrument
 from braintrust.integrations.test_utils import autoinstrument_test_context
 
 
-LATEST_MODELS = os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
-TEST_MODEL = "gpt-6-luna" if LATEST_MODELS else "gpt-4o-mini"
+TEST_MODEL = "gpt-6-luna"
 
 
 async def main():

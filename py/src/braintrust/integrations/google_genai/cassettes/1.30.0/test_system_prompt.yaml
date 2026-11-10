@@ -18,46 +18,53 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.41.0 gl-python/3.13.3
+      - google-genai-sdk/1.30.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/1.41.0 gl-python/3.13.3
+      - google-genai-sdk/1.30.0 gl-python/3.14.7
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAC/61SwW7bMAy9+ys4XXJxAttdHKy3oduwDNnarUZRYN2BrplYiCwJktzMDfLvk5w6
-        dbbrfDAk8j0+kk/7CIA9oqx4hY4su4SfPgKw7/8hp6Qj6XxiCPmgRuNescdvPzp7iKPfgcTe16oD
-        V5OhGBov0b2B25o/kYGGwPGmJGNjWEJJIJTacjkBdIEAdsvJwloZ6GgGD/JBFiREoO1COR8NJElU
-        BVJg7AiDEhjSyrgY/FiwnHiO1VwGPEKHRgKWqnW+ihdSYgJf8HELn4yy/mp8IR+2KFwH30i7VvYy
-        paHdREKrQydsNOrhdP4Vvy7IKEFh+kZVJAb4YQCwNZfc1j8IrZIBdltc37BTFp82K7XRRpVhx9Nk
-        ll9kWZrM0zzNk/nF22weDcq9JmstbugrOfQe4skp5is02hVqS/JKtb2H6eKoMrL8LJ9nL3mnHIqz
-        1OJd/E9Z+8GLcjF+CqNX4odHwV0XJiw+3hdstCB33tWwoWi0yL97/E9ieXYuFr0Yc/Tqzj9HfjRl
-        Q423aZrNkulaoK2nSZL2VZkhq5W0tKwC7iq/53j9GVfzQj8vljd8teC774pFh+gPyUgRkV4DAAA=
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"text\": \"Ahoy there, matey!  The weather be
+        a fickle beast, aye.  Right now, the sky be lookin' a bit like a kraken's
+        inkpot \u2013 dark and mysterious.  There be a whisper o' wind in the sails,
+        enough to fill 'em, but no gales to rip 'em to shreds, thank the sea gods!
+        \ The waves be rollin' gentle, like a lullaby, but ye never know when a squall
+        might blow in from the horizon, eh? Keep a weather eye on the sky, me hearty,
+        and be ready for whatever the sea decides to throw at us!\"\n          }\n
+        \       ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        19,\n    \"candidatesTokenCount\": 131,\n    \"totalTokenCount\": 150,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 19\n
+        \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
+        \"gemini-2.5-flash-lite\",\n  \"responseId\": \"kELzasu1BeyC1sgPufKa8Ag\"\n}\n"
     headers:
-      Alt-Svc:
+      alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Content-Encoding:
-      - gzip
-      Content-Type:
+      content-length:
+      - '1021'
+      content-type:
       - application/json; charset=UTF-8
-      Date:
-      - Sun, 05 Oct 2025 17:04:12 GMT
-      Server:
+      date:
+      - Tue, 10 Nov 2026 16:13:04 GMT
+      server:
       - scaffolding on HTTPServer2
-      Server-Timing:
-      - gfet4t7; dur=892
-      Transfer-Encoding:
+      server-timing:
+      - gfet4t7; dur=1081
+      transfer-encoding:
       - chunked
-      Vary:
+      vary:
       - Origin
       - X-Origin
       - Referer
-      X-Content-Type-Options:
+      x-content-type-options:
       - nosniff
-      X-Frame-Options:
+      x-frame-options:
       - SAMEORIGIN
-      X-XSS-Protection:
+      x-gemini-service-tier:
+      - standard
+      x-xss-protection:
       - '0'
     status:
       code: 200

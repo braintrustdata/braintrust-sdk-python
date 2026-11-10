@@ -3,58 +3,60 @@ interactions:
     body: '{"contents": [{"parts": [{"text": "Say hi"}], "role": "user"}], "generationConfig":
       {"maxOutputTokens": 100}}'
     headers:
-      Accept:
+      accept:
       - '*/*'
-      Accept-Encoding:
-      - gzip, deflate, zstd
-      Connection:
+      accept-encoding:
+      - gzip, deflate
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '109'
-      Content-Type:
+      content-type:
       - application/json
-      Host:
+      host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.60.0 gl-python/3.13.3
+      - google-genai-sdk/1.30.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/1.60.0 gl-python/3.13.3
+      - google-genai-sdk/1.30.0 gl-python/3.14.7
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAC/61Ry07DMBC85yuMz03lpA8eF4QKUgtUVBDxRpUh28TCtSPboURV/x0naVoHrvhg
-        rXZmd3Zn1x5C+IOKmMXUgMYn6MVmEFpXf4lJYUAYCzQpm8yoMntu/dZObCkGvssiPGbIpKDgAI3l
-        ClklNEEp8AwVMkdGxrQ4fRXYqd3s4rfOXlFJDmW7pYyBN/RNQ8ALJphOb4FqKUraXXQzwzuUfiXX
-        MsmUfC+H9kmXBIMjQsKgPwyHg8Ow1z/2GulKFOeaJjAFQ60rdLc7ti2WmYnkJ4iRzCtXwlrF8bAF
-        B8EWN9JQ3oZ6nT9d9bnVZNz11rHdLk85M0W5YXTxGGHHINMaqjHIc3z8PeI/aQVBW8zb3qU+1T0o
-        zeqbJLC0V/LDLvEXnOrUJySoumIFOpNCwyQuebNBVtDnq4fLp3k6z6czrUaKnCXY23g/hhi4Mq4C
-        AAA=
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"text\": \"Hi! How can I help you today?\"\n
+        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        3,\n    \"candidatesTokenCount\": 9,\n    \"totalTokenCount\": 12,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 3\n      }\n
+        \   ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n
+        \ \"responseId\": \"u0LzauG0MeyC1sgPufKa8Ag\"\n}\n"
     headers:
-      Alt-Svc:
+      alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Content-Encoding:
-      - gzip
-      Content-Type:
+      content-length:
+      - '574'
+      content-type:
       - application/json; charset=UTF-8
-      Date:
-      - Thu, 22 Jan 2026 21:44:31 GMT
-      Server:
+      date:
+      - Tue, 10 Nov 2026 16:13:48 GMT
+      server:
       - scaffolding on HTTPServer2
-      Server-Timing:
-      - gfet4t7; dur=430
-      Transfer-Encoding:
+      server-timing:
+      - gfet4t7; dur=425
+      transfer-encoding:
       - chunked
-      Vary:
+      vary:
       - Origin
       - X-Origin
       - Referer
-      X-Content-Type-Options:
+      x-content-type-options:
       - nosniff
-      X-Frame-Options:
+      x-frame-options:
       - SAMEORIGIN
-      X-XSS-Protection:
+      x-gemini-service-tier:
+      - standard
+      x-xss-protection:
       - '0'
     status:
       code: 200

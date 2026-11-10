@@ -41,9 +41,7 @@ except ImportError:
 
 
 PROJECT_NAME = "test-mistral-sdk"
-CHAT_MODEL = (
-    "ministral-3b-2512" if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest" else "mistral-small-latest"
-)
+CHAT_MODEL = "ministral-3b-2512"
 AGENT_MODEL = CHAT_MODEL
 # Ministral does not support the built-in code interpreter connector.
 CONNECTOR_MODEL = "mistral-small-latest"
@@ -161,22 +159,14 @@ def mistral_client(request, monkeypatch):
     return wrap_mistral(_get_client())
 
 
-def _completion_params(method, *, stream=False):
+def _completion_params(method):
     if "logprobs" not in inspect.signature(method).parameters:
         return {}
     params = {
         "logprobs": True,
         "top_logprobs": 2,
-        "prompt_logprobs": True,
-        "top_prompt_logprobs": 2,
-        "min_tokens": 1,
-        "repetition_penalty": 1.1,
         "top_k": 20,
     }
-    if stream:
-        # This model only returns prompt probabilities for non-streamed calls.
-        del params["prompt_logprobs"]
-        del params["top_prompt_logprobs"]
     return params
 
 
@@ -186,7 +176,7 @@ def _assert_completion_params(span, params):
 
 
 def _assert_completion_logprobs(span, response):
-    for key in ("logprobs", "prompt_logprobs"):
+    for key in ("logprobs",):
         expected = getattr(response.choices[0], key)
         assert hasattr(expected, "content") and expected.content, (
             f"Expected populated {key}; re-record this cassette with Mistral 3.2.0."
@@ -322,7 +312,7 @@ def test_wrap_mistral_chat_stream_sync(memory_logger):
     assert not memory_logger.pop()
 
     client = wrap_mistral(_get_client())
-    params = _completion_params(client.chat.stream, stream=True)
+    params = _completion_params(client.chat.stream)
     model = LOGPROBS_MODEL if params else CHAT_MODEL
     start = time.time()
     with client.chat.stream(

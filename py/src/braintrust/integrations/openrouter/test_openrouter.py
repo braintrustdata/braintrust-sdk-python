@@ -5,7 +5,6 @@ import time
 
 import pytest
 from braintrust import logger
-from braintrust.integrations._test_models import LATEST, OPENAI_CHAT_MODEL
 from braintrust.integrations.openrouter import OpenRouterIntegration, wrap_openrouter
 from braintrust.integrations.test_utils import (
     assert_metrics_are_valid,
@@ -23,8 +22,8 @@ from openrouter import OpenRouter
 
 
 PROJECT_NAME = "test-openrouter-sdk"
-CHAT_MODEL = f"openai/{OPENAI_CHAT_MODEL}"
-CHAT_OPTIONS = {"reasoning": {"effort": "none"}} if LATEST else {}
+CHAT_MODEL = "openai/gpt-6-luna"
+CHAT_OPTIONS = {"reasoning": {"effort": "none"}}
 EMBEDDING_MODEL = "openai/text-embedding-3-small"
 
 
@@ -72,7 +71,7 @@ def test_wrap_openrouter_chat_send_sync(memory_logger):
     assert span["context"]["span_origin"]["instrumentation"]["name"] == "openrouter-auto"
     assert span["input"] == [{"role": "user", "content": "What is 2+2? Reply with just the number."}]
     assert span["metadata"]["provider"] == "openai"
-    assert span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert span["metadata"]["model"] == "gpt-6-luna"
     assert "4" in span["output"][0]["message"]["content"]
     assert_metrics_are_valid(span["metrics"], start, end)
 
@@ -106,7 +105,7 @@ def test_wrap_openrouter_chat_send_stream_sync(memory_logger):
     assert len(spans) == 1
     span = spans[0]
     assert span["metadata"]["provider"] == "openai"
-    assert span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert span["metadata"]["model"] == "gpt-6-luna"
     assert span["metrics"]["time_to_first_token"] >= 0
     assert_service_tiers(
         span["metadata"], served=_last_tier([getattr(chunk, "service_tier", None) for chunk in chunks])
@@ -136,7 +135,7 @@ async def test_wrap_openrouter_chat_send_async(memory_logger):
     assert len(spans) == 1
     span = spans[0]
     assert span["metadata"]["provider"] == "openai"
-    assert span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert span["metadata"]["model"] == "gpt-6-luna"
     assert "6" in span["output"][0]["message"]["content"]
     assert_metrics_are_valid(span["metrics"], start, end)
 
@@ -200,7 +199,7 @@ def test_wrap_openrouter_beta_responses_send(memory_logger):
     span = spans[0]
     assert span["input"] == "Say one short sentence about observability."
     assert span["metadata"]["provider"] == "openai"
-    assert span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert span["metadata"]["model"] == "gpt-6-luna"
     assert span["metadata"]["status"] == "completed"
     assert span["metadata"]["id"]
     # The SDK sends its ``service_tier="auto"`` default on every Responses request.
@@ -234,7 +233,7 @@ def test_wrap_openrouter_responses_send(memory_logger):
     assert span["span_attributes"]["name"] == "openrouter.responses.send"
     assert span["span_attributes"]["type"] == "llm"
     assert span["input"] == "Say one short sentence about observability."
-    assert span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert span["metadata"]["model"] == "gpt-6-luna"
     assert span["metadata"]["provider"] == "openai"
     assert span["output"][0]["type"] == "message"
     assert span["metrics"]["tokens"] > 0
@@ -266,7 +265,7 @@ async def test_wrap_openrouter_responses_send_async_stream(memory_logger):
     assert len(spans) == 1
     span = spans[0]
     assert span["metadata"]["provider"] == "openai"
-    assert span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert span["metadata"]["model"] == "gpt-6-luna"
     assert span["metadata"]["status"] == "completed"
     assert span["metrics"]["prompt_tokens"] > 0
     assert span["metrics"]["completion_tokens"] > 0
@@ -291,14 +290,16 @@ def test_wrap_openrouter_chat_send_service_tier(memory_logger):
         model=CHAT_MODEL,
         messages=[{"role": "user", "content": "What is 2+2? Reply with just the number."}],
         max_tokens=10,
-        service_tier="flex",
+        service_tier="auto",
+        **CHAT_OPTIONS,
     )
 
     spans = memory_logger.pop()
     assert len(spans) == 1
-    # Requested flex, but the provider reports the tier that actually served the call.
+    # The requested policy and the tier that served the call are recorded independently.
+    assert "gpt-6-luna" in result.model
     assert result.service_tier == "default"
-    assert_service_tiers(spans[0]["metadata"], requested="flex", served="default")
+    assert_service_tiers(spans[0]["metadata"], requested="auto", served="default")
 
 
 ARMOR_TOOL = {

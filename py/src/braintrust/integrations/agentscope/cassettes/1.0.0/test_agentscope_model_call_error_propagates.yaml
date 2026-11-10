@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"messages":[{"role":"user","content":"hello"}],"model":"gpt-4o-mini","stream":false,"temperature":0}'
+    body: '{"messages":[{"role":"user","content":"hello"}],"model":"gpt-6-luna","reasoning_effort":"none","stream":false}'
     headers:
       accept:
       - application/json
@@ -9,7 +9,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '101'
+      - '110'
       content-type:
       - application/json
       host:
@@ -33,7 +33,7 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.6
+      - 3.13.16
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
@@ -51,7 +51,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a1c2d7d2bd7844b0-YYZ
+      - a58658886ed4aae5-YYZ
       connection:
       - keep-alive
       content-length:
@@ -59,13 +59,9 @@ interactions:
       content-type:
       - text/plain
       date:
-      - Thu, 16 Jul 2026 17:49:21 GMT
+      - Tue, 10 Nov 2026 16:13:40 GMT
       server:
       - cloudflare
-      set-cookie:
-      - __cf_bm=fw5AawKAtiBfybjDIj_R3LMPsv81WLDB5CQTZ3365nQ-1784224161.7172794-1.0.1.1-BWmnjx9aYPksUgoqoRSsMvFdzl21RDhJltuCefOlXneJbta1bJxVpJAmbEAxxINRKJjM1UDFJDJJTBzpctyjPZMtdaQRMxfOKPX5fh4JSHUB3b0a8IpgO3wzcH8KWztJ;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Thu,
-        16 Jul 2026 18:19:21 GMT
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       x-content-type-options:
@@ -79,7 +75,7 @@ interactions:
       x-openai-internal-caller:
       - unknown_through_ide
       x-request-id:
-      - req_ba6a808283f3468a9f18c1f0ce99cd0f
+      - req_04ed94aabd454e29949c53d751c43082
     status:
       code: 401
       message: Unauthorized

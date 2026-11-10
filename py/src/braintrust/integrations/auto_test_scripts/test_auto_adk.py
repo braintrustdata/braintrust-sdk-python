@@ -63,11 +63,7 @@ async def run_agent():
 
     agent = Agent(
         name="metrics_agent",
-        model=(
-            "gemini-2.5-flash-lite"
-            if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") in {"latest", "2.6.3"}
-            else "gemini-2.0-flash"
-        ),
+        model=("gemini-2.5-flash-lite"),
         instruction="You are a helpful assistant.",
     )
     session_service = InMemorySessionService()

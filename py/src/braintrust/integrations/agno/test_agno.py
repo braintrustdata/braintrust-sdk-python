@@ -6,7 +6,6 @@
 # pyright: reportUnknownArgumentType=false
 import asyncio
 import gc
-import os
 import time
 
 import pytest
@@ -30,9 +29,8 @@ from ._test_agno_helpers import (
 )
 
 
-LATEST_MODELS = os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
-TEST_MODEL = "gpt-6-luna" if LATEST_MODELS else "gpt-4o-mini"
-MODEL_OPTIONS = {"reasoning_effort": "none"} if LATEST_MODELS else {}
+TEST_MODEL = "gpt-6-luna"
+MODEL_OPTIONS = {"reasoning_effort": "none"}
 
 
 @pytest.fixture
@@ -165,7 +163,7 @@ def test_agno_simple_agent_execution(memory_logger):
         model=OpenAIChat(id=TEST_MODEL, **MODEL_OPTIONS),
         instructions=(
             "You are librarian. Answer the questions by only replying with the author that wrote the book."
-            + (" Format initials as E.B., with no space between the initials." if LATEST_MODELS else "")
+            " Format initials as E.B., with no space between the initials."
         ),
     )
 

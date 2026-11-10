@@ -16,7 +16,6 @@ except ImportError:
 
     OpenAIModelClass = OpenAIModel
 from braintrust import logger, wrap_openai
-from braintrust.integrations._test_models import LATEST, OPENAI_CHAT_MODEL
 from braintrust.integrations.test_utils import assert_metrics_are_valid
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import init_test_logger
@@ -24,8 +23,8 @@ from pydantic_ai.providers.openai import OpenAIProvider  # pylint: disable=impor
 
 
 PROJECT_NAME = "test-pydantic-ai"
-MODEL = OPENAI_CHAT_MODEL
-OPENAI_SETTINGS = {"openai_reasoning_effort": "none"} if LATEST else {}
+MODEL = "gpt-6-luna"
+OPENAI_SETTINGS = {"openai_reasoning_effort": "none"}
 TEST_PROMPT = "What is the capital of Italy?"
 
 

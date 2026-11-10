@@ -9,9 +9,8 @@ from braintrust.auto import auto_instrument
 from braintrust.integrations.test_utils import autoinstrument_test_context
 
 
-LATEST_MODELS = os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
-TEST_MODEL = "gpt-6-luna" if LATEST_MODELS else "gpt-4o-mini"
-MODEL_OPTIONS = {"reasoning_effort": "none"} if LATEST_MODELS else {}
+TEST_MODEL = "gpt-6-luna"
+MODEL_OPTIONS = {"reasoning_effort": "none"}
 
 results = auto_instrument(openai=False)
 assert results.get("agentscope") == True, "auto_instrument should return True for agentscope"
@@ -36,9 +35,7 @@ if HAS_AGENT_REPLY_API:
     model = OpenAIChatModel(
         credential=OpenAICredential(api_key=os.environ["OPENAI_API_KEY"]),
         model=TEST_MODEL,
-        parameters=OpenAIChatModel.Parameters(
-            **({"thinking_enable": True, **MODEL_OPTIONS} if LATEST_MODELS else {"temperature": 0})
-        ),
+        parameters=OpenAIChatModel.Parameters(thinking_enable=True, **MODEL_OPTIONS),
         stream=False,
         max_retries=0,
     )
@@ -75,7 +72,7 @@ else:
         sys_prompt="You are a helpful assistant. Be brief.",
         model=OpenAIChatModel(
             model_name=TEST_MODEL,
-            generate_kwargs={"temperature": 0, **MODEL_OPTIONS},
+            generate_kwargs=MODEL_OPTIONS,
         ),
         formatter=OpenAIChatFormatter(),
         toolkit=Toolkit(),

@@ -1,7 +1,7 @@
 interactions:
 - request:
     body: '{"model":"gpt-6-luna","stream":true,"input":"Search the web for the latest
-      weather in Paris and answer briefly.","reasoning":{"effort":"none"},"tool_choice":{"type":"web_search_preview"},"tools":[{"type":"web_search_preview","search_context_size":"low"}]}'
+      weather in Paris and answer briefly.","reasoning":{"effort":"low"},"tool_choice":{"type":"web_search_preview"},"tools":[{"type":"web_search_preview","search_context_size":"low"}]}'
     headers:
       accept:
       - application/json
@@ -10,7 +10,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '255'
+      - '254'
       content-type:
       - application/json
       host:
@@ -39,37 +39,44 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "event: response.created\ndata: {\"type\":\"response.created\",\"response\":{\"id\":\"resp_09180c8ae5e9f4c5016af33c30d4c487d2a9e7e260e6680a12\",\"object\":\"response\",\"created_at\":1794325552,\"status\":\"in_progress\",\"access_programs\":null,\"background\":false,\"completed_at\":null,\"error\":null,\"frequency_penalty\":0.0,\"image\":{\"context_compression\":\"disabled\"},\"incomplete_details\":null,\"instructions\":null,\"max_output_tokens\":null,\"max_tool_calls\":null,\"model\":\"gpt-6-luna\",\"moderation\":null,\"output\":[],\"parallel_tool_calls\":true,\"presence_penalty\":0.0,\"previous_response_id\":null,\"prompt_cache_key\":null,\"prompt_cache_retention\":\"24h\",\"reasoning\":{\"context\":\"all_turns\",\"effort\":\"none\",\"mode\":\"standard\",\"summary\":null},\"safety_identifier\":null,\"service_tier\":\"auto\",\"store\":false,\"temperature\":1.0,\"text\":{\"format\":{\"type\":\"text\"},\"verbosity\":\"medium\"},\"tool_choice\":{\"type\":\"web_search_preview\"},\"tool_usage\":{\"image_gen\":{\"input_tokens\":0,\"input_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"output_tokens\":0,\"output_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"total_tokens\":0},\"web_search\":{\"num_requests\":0}},\"tools\":[{\"type\":\"web_search_preview\",\"search_content_types\":[\"text\"],\"search_context_size\":\"low\",\"user_location\":{\"type\":\"approximate\",\"city\":null,\"country\":\"US\",\"region\":null,\"timezone\":null}}],\"top_logprobs\":0,\"top_p\":0.98,\"truncation\":\"disabled\",\"usage\":null,\"user\":null,\"metadata\":{}},\"sequence_number\":0}\n\nevent:
-        response.in_progress\ndata: {\"type\":\"response.in_progress\",\"response\":{\"id\":\"resp_09180c8ae5e9f4c5016af33c30d4c487d2a9e7e260e6680a12\",\"object\":\"response\",\"created_at\":1794325552,\"status\":\"in_progress\",\"access_programs\":null,\"background\":false,\"completed_at\":null,\"error\":null,\"frequency_penalty\":0.0,\"image\":{\"context_compression\":\"disabled\"},\"incomplete_details\":null,\"instructions\":null,\"max_output_tokens\":null,\"max_tool_calls\":null,\"model\":\"gpt-6-luna\",\"moderation\":null,\"output\":[],\"parallel_tool_calls\":true,\"presence_penalty\":0.0,\"previous_response_id\":null,\"prompt_cache_key\":null,\"prompt_cache_retention\":\"24h\",\"reasoning\":{\"context\":\"all_turns\",\"effort\":\"none\",\"mode\":\"standard\",\"summary\":null},\"safety_identifier\":null,\"service_tier\":\"auto\",\"store\":false,\"temperature\":1.0,\"text\":{\"format\":{\"type\":\"text\"},\"verbosity\":\"medium\"},\"tool_choice\":{\"type\":\"web_search_preview\"},\"tool_usage\":{\"image_gen\":{\"input_tokens\":0,\"input_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"output_tokens\":0,\"output_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"total_tokens\":0},\"web_search\":{\"num_requests\":0}},\"tools\":[{\"type\":\"web_search_preview\",\"search_content_types\":[\"text\"],\"search_context_size\":\"low\",\"user_location\":{\"type\":\"approximate\",\"city\":null,\"country\":\"US\",\"region\":null,\"timezone\":null}}],\"top_logprobs\":0,\"top_p\":0.98,\"truncation\":\"disabled\",\"usage\":null,\"user\":null,\"metadata\":{}},\"sequence_number\":1}\n\nevent:
-        response.output_item.added\ndata: {\"type\":\"response.output_item.added\",\"item\":{\"id\":\"ws_09180c8ae5e9f4c5016af33c33b87887d288a4b4fd028cf6a6\",\"type\":\"web_search_call\",\"status\":\"in_progress\"},\"output_index\":0,\"sequence_number\":2}\n\nevent:
-        response.web_search_call.in_progress\ndata: {\"type\":\"response.web_search_call.in_progress\",\"item_id\":\"ws_09180c8ae5e9f4c5016af33c33b87887d288a4b4fd028cf6a6\",\"output_index\":0,\"sequence_number\":3}\n\nevent:
-        response.web_search_call.searching\ndata: {\"type\":\"response.web_search_call.searching\",\"item_id\":\"ws_09180c8ae5e9f4c5016af33c33b87887d288a4b4fd028cf6a6\",\"output_index\":0,\"sequence_number\":4}\n\nevent:
-        response.web_search_call.completed\ndata: {\"type\":\"response.web_search_call.completed\",\"item_id\":\"ws_09180c8ae5e9f4c5016af33c33b87887d288a4b4fd028cf6a6\",\"output_index\":0,\"sequence_number\":5}\n\nevent:
-        response.output_item.done\ndata: {\"type\":\"response.output_item.done\",\"item\":{\"id\":\"ws_09180c8ae5e9f4c5016af33c33b87887d288a4b4fd028cf6a6\",\"type\":\"web_search_call\",\"status\":\"completed\",\"action\":{\"type\":\"search\",\"queries\":[\"weather:
+      string: "event: response.created\ndata: {\"type\":\"response.created\",\"response\":{\"id\":\"resp_0a4d3a70602d1a2a016af343c3b5cc87d29732430a7725c292\",\"object\":\"response\",\"created_at\":1794327491,\"status\":\"in_progress\",\"access_programs\":null,\"background\":false,\"completed_at\":null,\"error\":null,\"frequency_penalty\":0.0,\"image\":{\"context_compression\":\"disabled\"},\"incomplete_details\":null,\"instructions\":null,\"max_output_tokens\":null,\"max_tool_calls\":null,\"model\":\"gpt-6-luna\",\"moderation\":null,\"output\":[],\"parallel_tool_calls\":true,\"presence_penalty\":0.0,\"previous_response_id\":null,\"prompt_cache_key\":null,\"prompt_cache_retention\":\"24h\",\"reasoning\":{\"context\":\"all_turns\",\"effort\":\"low\",\"mode\":\"standard\",\"summary\":null},\"safety_identifier\":null,\"service_tier\":\"auto\",\"store\":false,\"temperature\":1.0,\"text\":{\"format\":{\"type\":\"text\"},\"verbosity\":\"medium\"},\"tool_choice\":{\"type\":\"web_search_preview\"},\"tool_usage\":{\"image_gen\":{\"input_tokens\":0,\"input_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"output_tokens\":0,\"output_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"total_tokens\":0},\"web_search\":{\"num_requests\":0}},\"tools\":[{\"type\":\"web_search_preview\",\"search_content_types\":[\"text\"],\"search_context_size\":\"low\",\"user_location\":{\"type\":\"approximate\",\"city\":null,\"country\":\"US\",\"region\":null,\"timezone\":null}}],\"top_logprobs\":0,\"top_p\":0.98,\"truncation\":\"disabled\",\"usage\":null,\"user\":null,\"metadata\":{}},\"sequence_number\":0}\n\nevent:
+        response.in_progress\ndata: {\"type\":\"response.in_progress\",\"response\":{\"id\":\"resp_0a4d3a70602d1a2a016af343c3b5cc87d29732430a7725c292\",\"object\":\"response\",\"created_at\":1794327491,\"status\":\"in_progress\",\"access_programs\":null,\"background\":false,\"completed_at\":null,\"error\":null,\"frequency_penalty\":0.0,\"image\":{\"context_compression\":\"disabled\"},\"incomplete_details\":null,\"instructions\":null,\"max_output_tokens\":null,\"max_tool_calls\":null,\"model\":\"gpt-6-luna\",\"moderation\":null,\"output\":[],\"parallel_tool_calls\":true,\"presence_penalty\":0.0,\"previous_response_id\":null,\"prompt_cache_key\":null,\"prompt_cache_retention\":\"24h\",\"reasoning\":{\"context\":\"all_turns\",\"effort\":\"low\",\"mode\":\"standard\",\"summary\":null},\"safety_identifier\":null,\"service_tier\":\"auto\",\"store\":false,\"temperature\":1.0,\"text\":{\"format\":{\"type\":\"text\"},\"verbosity\":\"medium\"},\"tool_choice\":{\"type\":\"web_search_preview\"},\"tool_usage\":{\"image_gen\":{\"input_tokens\":0,\"input_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"output_tokens\":0,\"output_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"total_tokens\":0},\"web_search\":{\"num_requests\":0}},\"tools\":[{\"type\":\"web_search_preview\",\"search_content_types\":[\"text\"],\"search_context_size\":\"low\",\"user_location\":{\"type\":\"approximate\",\"city\":null,\"country\":\"US\",\"region\":null,\"timezone\":null}}],\"top_logprobs\":0,\"top_p\":0.98,\"truncation\":\"disabled\",\"usage\":null,\"user\":null,\"metadata\":{}},\"sequence_number\":1}\n\nevent:
+        response.output_item.added\ndata: {\"type\":\"response.output_item.added\",\"item\":{\"id\":\"ws_0a4d3a70602d1a2a016af343c4837c87d29cf97e3036cc2a04\",\"type\":\"web_search_call\",\"status\":\"in_progress\"},\"output_index\":0,\"sequence_number\":2}\n\nevent:
+        response.web_search_call.in_progress\ndata: {\"type\":\"response.web_search_call.in_progress\",\"item_id\":\"ws_0a4d3a70602d1a2a016af343c4837c87d29cf97e3036cc2a04\",\"output_index\":0,\"sequence_number\":3}\n\nevent:
+        response.web_search_call.searching\ndata: {\"type\":\"response.web_search_call.searching\",\"item_id\":\"ws_0a4d3a70602d1a2a016af343c4837c87d29cf97e3036cc2a04\",\"output_index\":0,\"sequence_number\":4}\n\nevent:
+        response.web_search_call.completed\ndata: {\"type\":\"response.web_search_call.completed\",\"item_id\":\"ws_0a4d3a70602d1a2a016af343c4837c87d29cf97e3036cc2a04\",\"output_index\":0,\"sequence_number\":5}\n\nevent:
+        response.output_item.done\ndata: {\"type\":\"response.output_item.done\",\"item\":{\"id\":\"ws_0a4d3a70602d1a2a016af343c4837c87d29cf97e3036cc2a04\",\"type\":\"web_search_call\",\"status\":\"completed\",\"action\":{\"type\":\"search\",\"queries\":[\"weather:
         Paris, France\"],\"query\":\"weather: Paris, France\"}},\"output_index\":0,\"sequence_number\":6}\n\nevent:
-        response.output_item.added\ndata: {\"type\":\"response.output_item.added\",\"item\":{\"id\":\"msg_09180c8ae5e9f4c5016af33c367d3487d2af857719c5edc566\",\"type\":\"message\",\"status\":\"in_progress\",\"content\":[],\"phase\":\"final_answer\",\"role\":\"assistant\"},\"output_index\":1,\"sequence_number\":7}\n\nevent:
-        response.content_part.added\ndata: {\"type\":\"response.content_part.added\",\"content_index\":0,\"item_id\":\"msg_09180c8ae5e9f4c5016af33c367d3487d2af857719c5edc566\",\"output_index\":1,\"part\":{\"type\":\"output_text\",\"annotations\":[],\"logprobs\":[],\"text\":\"\"},\"sequence_number\":8}\n\nevent:
+        response.output_item.added\ndata: {\"type\":\"response.output_item.added\",\"item\":{\"id\":\"msg_0a4d3a70602d1a2a016af343c59f2887d28fb965ecc71224f1\",\"type\":\"message\",\"status\":\"in_progress\",\"content\":[],\"phase\":\"final_answer\",\"role\":\"assistant\"},\"output_index\":1,\"sequence_number\":7}\n\nevent:
+        response.content_part.added\ndata: {\"type\":\"response.content_part.added\",\"content_index\":0,\"item_id\":\"msg_0a4d3a70602d1a2a016af343c59f2887d28fb965ecc71224f1\",\"output_index\":1,\"part\":{\"type\":\"output_text\",\"annotations\":[],\"logprobs\":[],\"text\":\"\"},\"sequence_number\":8}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"Paris
-        is currently **drizzly and 54\xB0F\",\"item_id\":\"msg_09180c8ae5e9f4c5016af33c367d3487d2af857719c5edc566\",\"logprobs\":[],\"obfuscation\":\"aMjMsOOhWR1\",\"output_index\":1,\"sequence_number\":9}\n\nevent:
+        is currently **54\xB0F (12\xB0C\",\"item_id\":\"msg_0a4d3a70602d1a2a016af343c59f2887d28fb965ecc71224f1\",\"logprobs\":[],\"obfuscation\":\"g\",\"output_index\":1,\"sequence_number\":9}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\")
+        with drizzle**. Today\",\"item_id\":\"msg_0a4d3a70602d1a2a016af343c59f2887d28fb965ecc71224f1\",\"logprobs\":[],\"obfuscation\":\"2QM25bkRl\",\"output_index\":1,\"sequence_number\":10}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\",
+        **Tuesday, November 10**,\",\"item_id\":\"msg_0a4d3a70602d1a2a016af343c59f2887d28fb965ecc71224f1\",\"logprobs\":[],\"obfuscation\":\"4v3Yh\",\"output_index\":1,\"sequence_number\":11}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        (12\xB0C)**. Expect mostly cloudy\",\"item_id\":\"msg_09180c8ae5e9f4c5016af33c367d3487d2af857719c5edc566\",\"logprobs\":[],\"obfuscation\":\"T\",\"output_index\":1,\"sequence_number\":10}\n\nevent:
+        expect mostly cloudy skies with a few showers\",\"item_id\":\"msg_0a4d3a70602d1a2a016af343c59f2887d28fb965ecc71224f1\",\"logprobs\":[],\"obfuscation\":\"I2\",\"output_index\":1,\"sequence_number\":12}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        skies with a few showers today,\",\"item_id\":\"msg_09180c8ae5e9f4c5016af33c367d3487d2af857719c5edc566\",\"logprobs\":[],\"obfuscation\":\"\",\"output_index\":1,\"sequence_number\":11}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        November 10. \",\"item_id\":\"msg_09180c8ae5e9f4c5016af33c367d3487d2af857719c5edc566\",\"logprobs\":[],\"obfuscation\":\"iU\",\"output_index\":1,\"sequence_number\":12}\n\nevent:
-        response.output_text.done\ndata: {\"type\":\"response.output_text.done\",\"content_index\":0,\"item_id\":\"msg_09180c8ae5e9f4c5016af33c367d3487d2af857719c5edc566\",\"logprobs\":[],\"output_index\":1,\"sequence_number\":13,\"text\":\"Paris
-        is currently **drizzly and 54\xB0F (12\xB0C)**. Expect mostly cloudy skies
-        with a few showers today, November 10. \"}\n\nevent: response.content_part.done\ndata:
-        {\"type\":\"response.content_part.done\",\"content_index\":0,\"item_id\":\"msg_09180c8ae5e9f4c5016af33c367d3487d2af857719c5edc566\",\"output_index\":1,\"part\":{\"type\":\"output_text\",\"annotations\":[],\"logprobs\":[],\"text\":\"Paris
-        is currently **drizzly and 54\xB0F (12\xB0C)**. Expect mostly cloudy skies
-        with a few showers today, November 10. \"},\"sequence_number\":14}\n\nevent:
-        response.output_item.done\ndata: {\"type\":\"response.output_item.done\",\"item\":{\"id\":\"msg_09180c8ae5e9f4c5016af33c367d3487d2af857719c5edc566\",\"type\":\"message\",\"status\":\"completed\",\"content\":[{\"type\":\"output_text\",\"annotations\":[],\"logprobs\":[],\"text\":\"Paris
-        is currently **drizzly and 54\xB0F (12\xB0C)**. Expect mostly cloudy skies
-        with a few showers today, November 10. \"}],\"phase\":\"final_answer\",\"role\":\"assistant\"},\"output_index\":1,\"sequence_number\":15}\n\nevent:
-        response.completed\ndata: {\"type\":\"response.completed\",\"response\":{\"id\":\"resp_09180c8ae5e9f4c5016af33c30d4c487d2a9e7e260e6680a12\",\"object\":\"response\",\"created_at\":1794325552,\"status\":\"completed\",\"access_programs\":null,\"background\":false,\"completed_at\":1794325558,\"error\":null,\"frequency_penalty\":0.0,\"image\":{\"context_compression\":\"disabled\"},\"incomplete_details\":null,\"instructions\":null,\"max_output_tokens\":null,\"max_tool_calls\":null,\"model\":\"gpt-6-luna\",\"moderation\":null,\"output\":[{\"id\":\"ws_09180c8ae5e9f4c5016af33c33b87887d288a4b4fd028cf6a6\",\"type\":\"web_search_call\",\"status\":\"completed\",\"action\":{\"type\":\"search\",\"queries\":[\"weather:
-        Paris, France\"],\"query\":\"weather: Paris, France\"}},{\"id\":\"msg_09180c8ae5e9f4c5016af33c367d3487d2af857719c5edc566\",\"type\":\"message\",\"status\":\"completed\",\"content\":[{\"type\":\"output_text\",\"annotations\":[],\"logprobs\":[],\"text\":\"Paris
-        is currently **drizzly and 54\xB0F (12\xB0C)**. Expect mostly cloudy skies
-        with a few showers today, November 10. \"}],\"phase\":\"final_answer\",\"role\":\"assistant\"}],\"parallel_tool_calls\":true,\"presence_penalty\":0.0,\"previous_response_id\":null,\"prompt_cache_key\":null,\"prompt_cache_retention\":\"24h\",\"reasoning\":{\"context\":\"all_turns\",\"effort\":\"none\",\"mode\":\"standard\",\"summary\":null},\"safety_identifier\":null,\"service_tier\":\"default\",\"store\":false,\"temperature\":1.0,\"text\":{\"format\":{\"type\":\"text\"},\"verbosity\":\"medium\"},\"tool_choice\":{\"type\":\"web_search_preview\"},\"tool_usage\":{\"image_gen\":{\"input_tokens\":0,\"input_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"output_tokens\":0,\"output_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"total_tokens\":0},\"web_search\":{\"num_requests\":1}},\"tools\":[{\"type\":\"web_search_preview\",\"search_content_types\":[\"text\"],\"search_context_size\":\"low\",\"user_location\":{\"type\":\"approximate\",\"city\":null,\"country\":\"US\",\"region\":null,\"timezone\":null}}],\"top_logprobs\":0,\"top_p\":0.98,\"truncation\":\"disabled\",\"usage\":{\"input_tokens\":4760,\"input_tokens_details\":{\"cache_write_tokens\":17,\"cached_tokens\":4309},\"output_tokens\":73,\"output_tokens_details\":{\"reasoning_tokens\":25},\"total_tokens\":4833},\"user\":null,\"metadata\":{}},\"sequence_number\":16}\n\n"
+        and a high near **57\xB0F (14\xB0C)**\",\"item_id\":\"msg_0a4d3a70602d1a2a016af343c59f2887d28fb965ecc71224f1\",\"logprobs\":[],\"obfuscation\":\"\",\"output_index\":1,\"sequence_number\":13}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\".
+        \",\"item_id\":\"msg_0a4d3a70602d1a2a016af343c59f2887d28fb965ecc71224f1\",\"logprobs\":[],\"obfuscation\":\"cPEr7jZH7t6mac\",\"output_index\":1,\"sequence_number\":14}\n\nevent:
+        response.output_text.done\ndata: {\"type\":\"response.output_text.done\",\"content_index\":0,\"item_id\":\"msg_0a4d3a70602d1a2a016af343c59f2887d28fb965ecc71224f1\",\"logprobs\":[],\"output_index\":1,\"sequence_number\":15,\"text\":\"Paris
+        is currently **54\xB0F (12\xB0C) with drizzle**. Today, **Tuesday, November
+        10**, expect mostly cloudy skies with a few showers and a high near **57\xB0F
+        (14\xB0C)**. \"}\n\nevent: response.content_part.done\ndata: {\"type\":\"response.content_part.done\",\"content_index\":0,\"item_id\":\"msg_0a4d3a70602d1a2a016af343c59f2887d28fb965ecc71224f1\",\"output_index\":1,\"part\":{\"type\":\"output_text\",\"annotations\":[],\"logprobs\":[],\"text\":\"Paris
+        is currently **54\xB0F (12\xB0C) with drizzle**. Today, **Tuesday, November
+        10**, expect mostly cloudy skies with a few showers and a high near **57\xB0F
+        (14\xB0C)**. \"},\"sequence_number\":16}\n\nevent: response.output_item.done\ndata:
+        {\"type\":\"response.output_item.done\",\"item\":{\"id\":\"msg_0a4d3a70602d1a2a016af343c59f2887d28fb965ecc71224f1\",\"type\":\"message\",\"status\":\"completed\",\"content\":[{\"type\":\"output_text\",\"annotations\":[],\"logprobs\":[],\"text\":\"Paris
+        is currently **54\xB0F (12\xB0C) with drizzle**. Today, **Tuesday, November
+        10**, expect mostly cloudy skies with a few showers and a high near **57\xB0F
+        (14\xB0C)**. \"}],\"phase\":\"final_answer\",\"role\":\"assistant\"},\"output_index\":1,\"sequence_number\":17}\n\nevent:
+        response.completed\ndata: {\"type\":\"response.completed\",\"response\":{\"id\":\"resp_0a4d3a70602d1a2a016af343c3b5cc87d29732430a7725c292\",\"object\":\"response\",\"created_at\":1794327491,\"status\":\"completed\",\"access_programs\":null,\"background\":false,\"completed_at\":1794327494,\"error\":null,\"frequency_penalty\":0.0,\"image\":{\"context_compression\":\"disabled\"},\"incomplete_details\":null,\"instructions\":null,\"max_output_tokens\":null,\"max_tool_calls\":null,\"model\":\"gpt-6-luna\",\"moderation\":null,\"output\":[{\"id\":\"ws_0a4d3a70602d1a2a016af343c4837c87d29cf97e3036cc2a04\",\"type\":\"web_search_call\",\"status\":\"completed\",\"action\":{\"type\":\"search\",\"queries\":[\"weather:
+        Paris, France\"],\"query\":\"weather: Paris, France\"}},{\"id\":\"msg_0a4d3a70602d1a2a016af343c59f2887d28fb965ecc71224f1\",\"type\":\"message\",\"status\":\"completed\",\"content\":[{\"type\":\"output_text\",\"annotations\":[],\"logprobs\":[],\"text\":\"Paris
+        is currently **54\xB0F (12\xB0C) with drizzle**. Today, **Tuesday, November
+        10**, expect mostly cloudy skies with a few showers and a high near **57\xB0F
+        (14\xB0C)**. \"}],\"phase\":\"final_answer\",\"role\":\"assistant\"}],\"parallel_tool_calls\":true,\"presence_penalty\":0.0,\"previous_response_id\":null,\"prompt_cache_key\":null,\"prompt_cache_retention\":\"24h\",\"reasoning\":{\"context\":\"all_turns\",\"effort\":\"low\",\"mode\":\"standard\",\"summary\":null},\"safety_identifier\":null,\"service_tier\":\"default\",\"store\":false,\"temperature\":1.0,\"text\":{\"format\":{\"type\":\"text\"},\"verbosity\":\"medium\"},\"tool_choice\":{\"type\":\"web_search_preview\"},\"tool_usage\":{\"image_gen\":{\"input_tokens\":0,\"input_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"output_tokens\":0,\"output_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"total_tokens\":0},\"web_search\":{\"num_requests\":1}},\"tools\":[{\"type\":\"web_search_preview\",\"search_content_types\":[\"text\"],\"search_context_size\":\"low\",\"user_location\":{\"type\":\"approximate\",\"city\":null,\"country\":\"US\",\"region\":null,\"timezone\":null}}],\"top_logprobs\":0,\"top_p\":0.98,\"truncation\":\"disabled\",\"usage\":{\"input_tokens\":4763,\"input_tokens_details\":{\"cache_write_tokens\":17,\"cached_tokens\":4309},\"output_tokens\":87,\"output_tokens_details\":{\"reasoning_tokens\":25},\"total_tokens\":4850},\"user\":null,\"metadata\":{}},\"sequence_number\":18}\n\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID, Server-Timing-Total
@@ -80,15 +87,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5862fd0cefbde44-YYZ
+      - a5865f26dc19ac60-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Tue, 10 Nov 2026 15:45:53 GMT
+      - Tue, 10 Nov 2026 16:18:12 GMT
       openai-processing-ms:
-      - '261'
+      - '314'
       openai-version:
       - '2020-10-01'
       server:
@@ -112,7 +119,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 1ms
       x-request-id:
-      - req_3b50ccd5f779452db1ae33e276534b3f
+      - req_b12b71745f7a4240b58993198ce2db4a
     status:
       code: 200
       message: OK

@@ -1,7 +1,7 @@
 interactions:
 - request:
     body: '{"max_tokens":256,"messages":[{"role":"user","content":"Reply with one
-      short sentence confirming this trace test ran."}],"model":"claude-opus-5","context_management":{"edits":[{"type":"clear_thinking_20251015","keep":"all"}]},"output_config":{"effort":"low"},"speed":"standard","thinking":{"type":"adaptive"}}'
+      short sentence confirming this trace test ran."}],"model":"claude-opus-5-5","context_management":{"edits":[{"type":"clear_thinking_20251015","keep":"all"}]},"output_config":{"effort":"low"},"speed":"standard","thinking":{"type":"adaptive"}}'
     headers:
       accept:
       - application/json
@@ -14,7 +14,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '309'
+      - '311'
       content-type:
       - application/json
       host:
@@ -45,8 +45,8 @@ interactions:
     uri: https://api.anthropic.com/v1/messages?beta=true
   response:
     body:
-      string: "{\"model\":\"claude-opus-5\",\"id\":\"msg_011CgQs1xRWP7WkYw4X8zKTj\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"Trace
-        test ran successfully \u2014 confirmed.\"}],\"container\":null,\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":25,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"output_tokens\":17,\"output_tokens_details\":{\"thinking_tokens\":0},\"service_tier\":\"standard\",\"inference_geo\":\"global\",\"speed\":\"standard\"},\"diagnostics\":null,\"context_management\":{\"applied_edits\":[]}}"
+      string: '{"model":"claude-opus-5-5","id":"msg_011CguZZzwU1oHV51SXJH9tR","type":"message","role":"assistant","content":[{"type":"text","text":"Confirmed:
+        this trace test ran."}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":27,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":15,"output_tokens_details":{"thinking_tokens":0},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null,"context_management":{"applied_edits":[]}}'
     headers:
       anthropic-organization-id:
       - 27796668-7351-40ac-acc4-024aee8995a5
@@ -55,51 +55,51 @@ interactions:
       anthropic-ratelimit-input-tokens-remaining:
       - '10000000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-10-26T12:39:27Z'
+      - '2026-11-10T16:27:53Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-10-26T12:39:27Z'
+      - '2026-11-10T16:27:53Z'
       anthropic-ratelimit-requests-limit:
-      - '20000'
+      - '45000'
       anthropic-ratelimit-requests-remaining:
-      - '19999'
+      - '44999'
       anthropic-ratelimit-requests-reset:
-      - '2026-10-26T12:39:27Z'
+      - '2026-11-10T16:27:52Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
       - '12000000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-10-26T12:39:27Z'
+      - '2026-11-10T16:27:53Z'
       anthropic-workspace-id:
       - wrkspc_018bFG1FgNVWqx5pthtdGTzS
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5098618eff2b8f3-YYZ
+      - a5866d560feb61e9-YYZ
       connection:
       - keep-alive
       content-length:
-      - '623'
+      - '614'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - application/json
       date:
-      - Mon, 26 Oct 2026 12:39:27 GMT
+      - Tue, 10 Nov 2026 16:27:53 GMT
       request-id:
-      - req_011CgQs1x8tFQgdUzkcbRnL4
+      - req_011CguZZzk45DBtSvZyoEzyD
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=876
+      - x-originResponse;dur=1067
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-b2b048f2a9ddabbb4da45f52f43145db-2240cd3954f7f9e2-01
+      - 00-e6109381383e0a7f4d614579d984c416-f4a53821847e522e-01
       transfer-encoding:
       - chunked
       vary:

@@ -62,7 +62,15 @@ def _load_specs() -> list[LlmSpanSpec]:
             "try running via pytest rather than importing directly."
         )
     providers = _resolve_providers()
-    return load_specs(spec_root=spec_root, providers=providers)
+    # The pinned upstream specs still require deprecated GPT-4o-mini metadata in
+    # these two cases. Current-model Responses coverage lives in the direct
+    # OpenAI integration tests; retain the other cross-language spec contracts.
+    obsolete_openai_specs = {"responses_array_input", "responses_string_input"}
+    return [
+        spec
+        for spec in load_specs(spec_root=spec_root, providers=providers)
+        if not (spec.provider == "openai" and spec.name in obsolete_openai_specs)
+    ]
 
 
 _all_specs: list[LlmSpanSpec] = _load_specs()

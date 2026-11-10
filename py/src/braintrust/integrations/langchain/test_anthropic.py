@@ -3,7 +3,6 @@ from unittest.mock import ANY
 
 import pytest
 from braintrust import flush, logger
-from braintrust.integrations._test_models import ANTHROPIC_CHAT_MODEL, LATEST
 from braintrust.integrations.langchain import BraintrustCallbackHandler, set_global_handler
 from braintrust.integrations.test_utils import assert_service_tiers
 from braintrust.span_types import SpanTypeAttribute
@@ -15,7 +14,7 @@ from .helpers import assert_matches_object
 
 
 PROJECT_NAME = "langchain-anthropic"
-MODEL = ANTHROPIC_CHAT_MODEL
+MODEL = "claude-haiku-5-5"
 
 
 @pytest.fixture
@@ -53,7 +52,11 @@ def test_langchain_anthropic_integration(
 
     flush()
 
-    text = result.text if LATEST else result.content
+    text = (
+        result.content
+        if isinstance(result.content, str)
+        else "".join(block["text"] for block in result.content if block["type"] == "text")
+    )
     assert isinstance(text, str)
     assert "3" in text.lower()
 

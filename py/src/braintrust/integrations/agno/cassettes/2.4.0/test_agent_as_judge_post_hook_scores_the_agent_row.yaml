@@ -1,7 +1,7 @@
 interactions:
 - request:
     body: '{"messages":[{"role":"developer","content":"Answer in one short sentence."},{"role":"user","content":"What
-      is the capital of France?"}],"model":"gpt-4o-mini"}'
+      is the capital of France?"}],"model":"gpt-6-luna","reasoning_effort":"none"}'
     headers:
       accept:
       - application/json
@@ -10,7 +10,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '158'
+      - '183'
       content-type:
       - application/json
       host:
@@ -34,22 +34,23 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.6
+      - 3.13.16
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EIywSoqk3lUVJDbImSBxfaG8HO5kQ\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1788192872,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiikkFrXPqp0tmmKQkWarMXQ2ttPR\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794327170,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"The capital of France is Paris.\",\n
-        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
-        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        24,\n    \"completion_tokens\": 7,\n    \"total_tokens\": 31,\n    \"prompt_tokens_details\":
-        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_c23e83d968\"\n}\n"
+        \"assistant\",\n        \"content\": \"Paris is the capital of France.\",\n
+        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"finish_reason\":
+        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 23,\n    \"completion_tokens\":
+        10,\n    \"total_tokens\": 33,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"cache_write_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n
+        \   \"completion_tokens_details\": {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\":
+        0,\n      \"accepted_prediction_tokens\": 0,\n      \"rejected_prediction_tokens\":
+        0\n    }\n  },\n  \"service_tier\": \"default\",\n  \"system_fingerprint\":
+        null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -60,17 +61,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a33d542b8fc264a6-YYZ
+      - a586574c2ad4dde5-YYZ
       connection:
       - keep-alive
       content-length:
-      - '837'
+      - '822'
       content-type:
       - application/json
       date:
-      - Mon, 31 Aug 2026 16:14:33 GMT
+      - Tue, 10 Nov 2026 16:12:51 GMT
       openai-processing-ms:
-      - '869'
+      - '1047'
       openai-version:
       - '2020-10-01'
       server:
@@ -86,17 +87,17 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999982'
+      - '179999982'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_cecb8b9cae214d84807fb664e5c70209
+      - req_7cff7b11c68c493b8eb0fe2e5a4d70c2
     status:
       code: 200
       message: OK
@@ -108,7 +109,7 @@ interactions:
       the output against the criteria above\n2. Decide if it passes (true) or fails
       (false)\n3. Provide detailed reasoning that references specific parts of the
       output\n\nBe objective and thorough in your evaluation."},{"role":"user","content":"<input>\nWhat
-      is the capital of France?\n</input>\n\n<output>\nThe capital of France is Paris.\n</output>\n"}],"model":"gpt-4o-mini","response_format":{"type":"json_schema","json_schema":{"name":"BinaryJudgeResponse","schema":{"description":"Response
+      is the capital of France?\n</input>\n\n<output>\nParis is the capital of France.\n</output>\n"}],"model":"gpt-6-luna","reasoning_effort":"none","response_format":{"type":"json_schema","json_schema":{"name":"BinaryJudgeResponse","schema":{"description":"Response
       schema for binary scoring mode.","properties":{"passed":{"description":"Pass/fail
       result.","title":"Passed","type":"boolean"},"reason":{"description":"Detailed
       reasoning for the evaluation.","title":"Reason","type":"string"}},"required":["passed","reason"],"title":"BinaryJudgeResponse","type":"object","additionalProperties":false},"strict":true}}}'
@@ -120,7 +121,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '1148'
+      - '1173'
       content-type:
       - application/json
       host:
@@ -144,25 +145,24 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.6
+      - 3.13.16
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EIywTt8gtuE2E5lRJB8yWZUncVEIe\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1788192873,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-Eiiklk4EYFmkeKuJcsjT4juwoMNR8\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794327171,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"{\\\"passed\\\":true,\\\"reason\\\":\\\"The
-        output directly answers the question by stating, 'The capital of France is
-        Paris.' This is a clear and straightforward response that provides the requested
-        information without any ambiguity.\\\"}\",\n        \"refusal\": null,\n        \"annotations\":
-        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
-        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 199,\n    \"completion_tokens\":
-        41,\n    \"total_tokens\": 240,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        output directly and correctly answers the question by stating that Paris is
+        the capital of France.\\\"}\",\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\":
+        {\n    \"prompt_tokens\": 196,\n    \"completion_tokens\": 34,\n    \"total_tokens\":
+        230,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\": 0,\n      \"cache_write_tokens\":
         0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_0f73d3cd5e\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -173,17 +173,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a33d5431beea64a6-YYZ
+      - a58657540c26dde5-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1036'
+      - '928'
       content-type:
       - application/json
       date:
-      - Mon, 31 Aug 2026 16:14:33 GMT
+      - Tue, 10 Nov 2026 16:12:52 GMT
       openai-processing-ms:
-      - '609'
+      - '1523'
       openai-version:
       - '2020-10-01'
       server:
@@ -199,22 +199,22 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999857'
+      - '179999856'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_e62f1591f1a24e88967b85f87a63f208
+      - req_802433f794b447e1ac6c3a3143c57843
     status:
       code: 200
       message: OK
 - request:
-    body: '{"session_id":"5721c5b1-4388-46fa-9f77-3eb2488235d5","run_id":"40d9c2f8-9427-46cd-bf5b-4513a5fa7b1c","data":{"agent_id":"9c706ce6-3abe-4c12-a8ee-6f259690e466","db_type":null,"model_provider":"OpenAI","model_name":"OpenAIChat","model_id":"gpt-4o-mini","parser_model":null,"output_model":null,"has_tools":true,"has_memory":false,"has_learnings":false,"has_culture":false,"has_reasoning":false,"has_knowledge":false,"has_input_schema":false,"has_output_schema":true,"has_team":false},"sdk_version":"2.4.0","type":"agent"}'
+    body: '{"session_id":"dcd525a0-e12b-4426-82ce-41de1c4773d7","run_id":"28d100e8-b229-4c4f-a3c8-eb2a151fa834","data":{"agent_id":"484801c4-13a8-44a6-98fa-e6869262ed69","db_type":null,"model_provider":"OpenAI","model_name":"OpenAIChat","model_id":"gpt-6-luna","parser_model":null,"output_model":null,"has_tools":true,"has_memory":false,"has_learnings":false,"has_culture":false,"has_reasoning":false,"has_knowledge":false,"has_input_schema":false,"has_output_schema":true,"has_team":false},"sdk_version":"2.4.0","type":"agent"}'
     headers:
       accept:
       - '*/*'
@@ -223,7 +223,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '518'
+      - '517'
       content-type:
       - application/json
       host:
@@ -234,7 +234,7 @@ interactions:
     uri: https://os-api.agno.com/telemetry/runs
   response:
     body:
-      string: '{"message":"Run creation acknowledged: 40d9c2f8-9427-46cd-bf5b-4513a5fa7b1c","status":"success"}'
+      string: '{"message":"Run creation acknowledged: 28d100e8-b229-4c4f-a3c8-eb2a151fa834","status":"success"}'
     headers:
       content-length:
       - '96'
@@ -245,7 +245,7 @@ interactions:
       cross-origin-resource-policy:
       - same-origin
       date:
-      - Mon, 31 Aug 2026 16:14:34 GMT
+      - Tue, 10 Nov 2026 16:12:52 GMT
       permissions-policy:
       - camera=(), microphone=(), geolocation=()
       referrer-policy:
@@ -262,7 +262,7 @@ interactions:
       code: 201
       message: Created
 - request:
-    body: '{"run_id":"6d170ec6-c6dd-463b-a2bd-d4879c2b9218","eval_type":"agent_as_judge","data":{"criteria_length":43,"scoring_strategy":"binary","threshold":null,"num_results":1},"sdk_version":"2.4.0"}'
+    body: '{"run_id":"6da84df5-40cb-4c9c-a156-34792ad04462","eval_type":"agent_as_judge","data":{"criteria_length":43,"scoring_strategy":"binary","threshold":null,"num_results":1},"sdk_version":"2.4.0"}'
     headers:
       accept:
       - '*/*'
@@ -295,7 +295,7 @@ interactions:
       cross-origin-resource-policy:
       - same-origin
       date:
-      - Mon, 31 Aug 2026 16:14:34 GMT
+      - Tue, 10 Nov 2026 16:12:53 GMT
       permissions-policy:
       - camera=(), microphone=(), geolocation=()
       referrer-policy:
@@ -312,7 +312,7 @@ interactions:
       code: 422
       message: Unprocessable Entity
 - request:
-    body: '{"session_id":"1040fc9b-1035-442a-b77c-896d01609835","run_id":"998bb1f8-1100-49f6-88e7-fa6ca90a827c","data":{"agent_id":"post-hook-agent","db_type":null,"model_provider":"OpenAI","model_name":"OpenAIChat","model_id":"gpt-4o-mini","parser_model":null,"output_model":null,"has_tools":true,"has_memory":false,"has_learnings":false,"has_culture":false,"has_reasoning":false,"has_knowledge":false,"has_input_schema":false,"has_output_schema":false,"has_team":false},"sdk_version":"2.4.0","type":"agent"}'
+    body: '{"session_id":"e43278d0-fd13-495e-bf85-cb87c9b83dfc","run_id":"e3430024-0d90-482e-b814-b5dfe2572ef2","data":{"agent_id":"post-hook-agent","db_type":null,"model_provider":"OpenAI","model_name":"OpenAIChat","model_id":"gpt-6-luna","parser_model":null,"output_model":null,"has_tools":true,"has_memory":false,"has_learnings":false,"has_culture":false,"has_reasoning":false,"has_knowledge":false,"has_input_schema":false,"has_output_schema":false,"has_team":false},"sdk_version":"2.4.0","type":"agent"}'
     headers:
       accept:
       - '*/*'
@@ -321,7 +321,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '498'
+      - '497'
       content-type:
       - application/json
       host:
@@ -332,7 +332,7 @@ interactions:
     uri: https://os-api.agno.com/telemetry/runs
   response:
     body:
-      string: '{"message":"Run creation acknowledged: 998bb1f8-1100-49f6-88e7-fa6ca90a827c","status":"success"}'
+      string: '{"message":"Run creation acknowledged: e3430024-0d90-482e-b814-b5dfe2572ef2","status":"success"}'
     headers:
       content-length:
       - '96'
@@ -343,7 +343,7 @@ interactions:
       cross-origin-resource-policy:
       - same-origin
       date:
-      - Mon, 31 Aug 2026 16:14:34 GMT
+      - Tue, 10 Nov 2026 16:12:53 GMT
       permissions-policy:
       - camera=(), microphone=(), geolocation=()
       referrer-policy:

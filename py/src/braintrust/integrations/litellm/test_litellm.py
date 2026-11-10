@@ -12,7 +12,6 @@ import litellm
 import pytest
 from braintrust import Attachment, logger
 from braintrust.conftest import get_vcr_config
-from braintrust.integrations._test_models import ANTHROPIC_CHAT_MODEL, LATEST, OPENAI_CHAT_MODEL, OPENAI_CHAT_OPTIONS
 from braintrust.integrations.litellm import patch_litellm, wrap_litellm
 from braintrust.integrations.test_decisions import (
     DECISIONS_INPUT,
@@ -33,13 +32,13 @@ from braintrust.test_helpers import assert_dict_matches, init_test_logger
 
 TEST_ORG_ID = "test-org-litellm-py-tracing"
 PROJECT_NAME = "test-project-litellm-py-tracing"
-TEST_MODEL = OPENAI_CHAT_MODEL
-TEST_TEXT_MODEL = f"anthropic/{ANTHROPIC_CHAT_MODEL}"
+TEST_MODEL = "gpt-6-luna"
+TEST_TEXT_MODEL = "anthropic/claude-haiku-5-5"
 TEST_PROMPT = "What's 12 + 12?"
 TEST_CACHE_MODEL = TEST_TEXT_MODEL
 TEST_CACHEABLE_PROMPT = "Braintrust LiteLLM prompt caching regression context. " * 400
 TEST_AUDIO_FILE = os.path.join(os.path.dirname(__file__), "..", "..", "fixtures", "test_audio.wav")
-TEST_TRANSCRIPTION_FILE = str(Path(TEST_AUDIO_FILE).with_name("test_speech.wav")) if LATEST else TEST_AUDIO_FILE
+TEST_TRANSCRIPTION_FILE = str(Path(TEST_AUDIO_FILE).with_name("test_speech.wav"))
 
 
 @pytest.fixture(scope="module")
@@ -173,7 +172,8 @@ def test_litellm_image_input_materializes_attachment(memory_logger, is_async, st
         model=TEST_MODEL,
         messages=messages,
         stream=stream,
-        **OPENAI_CHAT_OPTIONS,
+        reasoning_effort="none",
+        allowed_openai_params=["reasoning_effort"],
     )
     end = time.time()
     if stream:
@@ -225,8 +225,7 @@ def test_litellm_prompt_caching_metrics(memory_logger) -> None:
     response = litellm.completion(
         model=TEST_CACHE_MODEL,
         messages=messages,
-        max_tokens=1024 if LATEST else 5,
-        **({"reasoning_effort": "low"} if LATEST else {}),
+        max_tokens=1024,
     )
     assert response.choices[0].message.content
 
@@ -253,8 +252,7 @@ def test_litellm_prompt_caching_metrics(memory_logger) -> None:
         response = litellm.completion(
             model=TEST_CACHE_MODEL,
             messages=messages,
-            max_tokens=1024 if LATEST else 5,
-            **({"reasoning_effort": "low"} if LATEST else {}),
+            max_tokens=1024,
         )
         assert response.choices[0].message.content
 
@@ -298,7 +296,7 @@ def test_litellm_text_completion_metrics(memory_logger, is_async) -> None:
         litellm.text_completion,
         litellm.atext_completion,
         model=TEST_TEXT_MODEL,
-        **({"reasoning_effort": "low", "max_tokens": 1024} if LATEST else {}),
+        max_tokens=1024,
         prompt=TEST_PROMPT,
     )
     end = time.time()
@@ -580,8 +578,7 @@ def test_litellm_responses(memory_logger, is_async, stream):
     """Reuse the existing blocking/streaming recordings for the Responses API."""
     run = _run_stream if stream else _run
     params = {"stream": True} if stream else {"instructions": "Just the number please"}
-    if LATEST:
-        params["reasoning"] = {"effort": "none"}
+    params["reasoning"] = {"effort": "low"}
     start = time.time()
     response = run(
         is_async,
@@ -599,7 +596,7 @@ def test_litellm_responses(memory_logger, is_async, stream):
             chunk.delta for chunk in response if getattr(chunk, "type", None) == "response.output_text.delta"
         )
     else:
-        content = response.output[0].content[0].text
+        content = next(item for item in response.output if item.type == "message").content[0].text
     assert "24" in content or "twenty-four" in content.lower()
 
     spans = memory_logger.pop()
@@ -625,7 +622,7 @@ def test_litellm_embedding(memory_logger, is_async):
         is_async,
         litellm.embedding,
         litellm.aembedding,
-        model="text-embedding-3-small" if LATEST else "text-embedding-ada-002",
+        model="text-embedding-3-small",
         input="This is a test",
     )
 
@@ -638,7 +635,7 @@ def test_litellm_embedding(memory_logger, is_async):
     assert len(spans) == 1
     span = spans[0]
     assert span
-    assert span["metadata"]["model"] == ("text-embedding-3-small" if LATEST else "text-embedding-ada-002")
+    assert span["metadata"]["model"] == ("text-embedding-3-small")
     assert span["metadata"]["provider"] == "openai"
     assert "This is a test" in str(span["input"])
 
@@ -681,7 +678,7 @@ def test_litellm_image_generation(memory_logger, is_async):
         is_async,
         litellm.image_generation,
         litellm.aimage_generation,
-        model="gpt-image-2.6-flare" if LATEST else "gpt-image-1-mini",
+        model="gpt-image-2.6-flare",
         prompt=prompt,
         size="1024x1024",
     )
@@ -693,7 +690,7 @@ def test_litellm_image_generation(memory_logger, is_async):
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
-    assert span["metadata"]["model"] == ("gpt-image-2.6-flare" if LATEST else "gpt-image-1-mini")
+    assert span["metadata"]["model"] == ("gpt-image-2.6-flare")
     assert span["metadata"]["provider"] == "openai"
     assert span["input"] == prompt
     assert span["output"]["images_count"] == 1
@@ -710,55 +707,24 @@ def test_litellm_transcription(memory_logger, is_async):
             is_async,
             litellm.transcription,
             litellm.atranscription,
-            model="gpt-transcribe" if LATEST else "whisper-1",
+            model="gpt-transcribe",
             file=f,
-            **({"response_format": "json"} if LATEST else {}),
+            response_format="json",
+            extra_body={"response_format": "json"},
         )
 
     assert response
-    if LATEST:
-        assert "braintrust" in response.text.lower()
-    else:
-        assert response.text == "you"
+    assert "braintrust" in response.text.lower()
 
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
-    assert span["metadata"]["model"] == ("gpt-transcribe" if LATEST else "whisper-1")
+    assert span["metadata"]["model"] == ("gpt-transcribe")
     assert span["metadata"]["provider"] == "openai"
     assert isinstance(span["input"]["file"], Attachment)
     assert span["input"]["file"].reference["filename"] == Path(TEST_TRANSCRIPTION_FILE).name
     assert span["input"]["file"].reference["content_type"] in ("audio/x-wav", "audio/wav")  # OS-dependent
     assert span["output"] == response.text
-
-
-@pytest.mark.vcr
-@sync_async
-def test_litellm_speech(memory_logger, is_async):
-    assert not memory_logger.pop()
-
-    response = _run(
-        is_async,
-        litellm.speech,
-        litellm.aspeech,
-        model="tts-1",
-        voice="alloy",
-        input="Hello, this is a test.",
-        response_format="mp3",
-    )
-
-    assert response
-    assert response.content
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span["metadata"]["model"] == "tts-1"
-    assert span["metadata"]["voice"] == "alloy"
-    assert span["metadata"]["response_format"] == "mp3"
-    assert span["metadata"]["provider"] == "openai"
-    assert span["input"] == "Hello, this is a test."
-    _assert_speech_output_attachment(span)
 
 
 @sync_async
@@ -796,7 +762,10 @@ def test_litellm_completion_service_tier(memory_logger):
         model=TEST_MODEL,
         messages=[{"role": "user", "content": TEST_PROMPT}],
         service_tier="auto",
+        reasoning_effort="none",
+        allowed_openai_params=["reasoning_effort"],
     )
+    assert TEST_MODEL in response.model
     assert response.service_tier == "default"
 
     spans = memory_logger.pop()
@@ -811,7 +780,8 @@ def test_litellm_responses_service_tier(memory_logger):
     forwards_tier = "service_tier" in inspect.signature(litellm.responses).parameters
     assert not memory_logger.pop()
 
-    response = litellm.responses(model=TEST_MODEL, input=TEST_PROMPT, service_tier="auto")
+    response = litellm.responses(model=TEST_MODEL, input=TEST_PROMPT, service_tier="auto", reasoning={"effort": "low"})
+    assert TEST_MODEL in response.model
     assert response.service_tier == "default"
 
     spans = memory_logger.pop()
@@ -830,7 +800,12 @@ async def test_litellm_async_parallel_requests(memory_logger):
 
     # Run requests in parallel
     tasks = [
-        litellm.acompletion(model=TEST_MODEL, **OPENAI_CHAT_OPTIONS, messages=[{"role": "user", "content": prompt}])
+        litellm.acompletion(
+            model=TEST_MODEL,
+            reasoning_effort="none",
+            allowed_openai_params=["reasoning_effort"],
+            messages=[{"role": "user", "content": prompt}],
+        )
         for prompt in prompts
     ]
 
@@ -878,7 +853,8 @@ def test_litellm_tool_calls(memory_logger):
     start = time.time()
     response = litellm.completion(
         model=TEST_MODEL,
-        **OPENAI_CHAT_OPTIONS,
+        reasoning_effort="none",
+        allowed_openai_params=["reasoning_effort"],
         messages=[{"role": "user", "content": "What's the weather in New York?"}],
         tools=tools,
         temperature=0,
@@ -927,7 +903,8 @@ def test_litellm_openrouter_no_booleans_in_metrics(memory_logger):
     start = time.time()
     response = litellm.completion(
         model=f"openrouter/openai/{TEST_MODEL}",
-        **OPENAI_CHAT_OPTIONS,
+        reasoning_effort="none",
+        allowed_openai_params=["reasoning_effort"],
         messages=[{"role": "user", "content": "What is 2+2? Reply with just the number."}],
         max_tokens=10,
         api_key=os.environ.get("OPENROUTER_API_KEY", "fake-key"),

@@ -1,7 +1,7 @@
 interactions:
 - request:
-    body: '{"model":"gpt-4o-mini","stream":false,"messages":[{"role":"user","content":"Tell
-      me a story"}],"max_completion_tokens":200,"temperature":0.9}'
+    body: '{"model":"gpt-6-luna","stream":false,"messages":[{"role":"user","content":"Tell
+      me a story"}],"max_completion_tokens":200,"reasoning_effort":"none","temperature":0.9}'
     headers:
       accept:
       - application/json
@@ -10,7 +10,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '141'
+      - '166'
       content-type:
       - application/json
       host:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.37.0
+      - 3.46.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,29 +39,29 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EdHKbhutw7AeJo6nXypGv9EXnTgmS\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1793030121,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiihwPB5Y8qcJ9FpYEoAlN0NieIsn\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794326996,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"Once upon a time, in a small village
-        nestled between rolling hills and a shimmering lake, there lived a young girl
-        named Elara. Elara was known throughout the village for her adventurous spirit
-        and her insatiable curiosity. While the other children played games in the
-        fields, she could often be found exploring the woods, climbing trees, or daydreaming
-        by the water\u2019s edge.\\n\\nOne sunny afternoon, while wandering deeper
-        into the forest than she had ever ventured before, Elara stumbled upon a hidden
-        glade. The air shimmered with magic, and in the center of the glade sat an
-        ancient, gnarled tree unlike any she had seen before. Its bark was silver,
-        and its leaves sparkled as if dusted with starlight.\\n\\nMesmerized, Elara
-        approached the tree. As she reached out to touch its bark, a soft voice echoed
-        through the glade. \u201CWelcome, dear child. I am Sylas, the Guardian of
-        Dreams. You have found the\",\n        \"refusal\": null,\n        \"annotations\":
-        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"length\"\n
-        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 11,\n    \"completion_tokens\":
-        200,\n    \"total_tokens\": 211,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        \"assistant\",\n        \"content\": \"Every evening, Mira left a little bowl
+        of water on the windowsill.\\n\\nShe lived at the edge of a quiet village,
+        where the rooftops gave way to fields and the fields to woods. The bowl was
+        for birds, she told anyone who asked. But really, she hoped the fox might
+        come back.\\n\\nYears ago, when Mira was small, a red fox had appeared in
+        the garden one winter night. It was thin and shivering, with a burr caught
+        in its tail. Mira\u2019s grandmother had helped free it, and together they
+        watched it disappear between the trees.\\n\\n\u201CWild things remember kindness,\u201D
+        her grandmother had said.\\n\\nNow Mira was grown, and her grandmother was
+        gone. Still, every evening, she filled the bowl.\\n\\nOn the first night of
+        spring, she heard a soft tap at the glass.\\n\\nA fox sat on the windowsill\u2014silver
+        around the muzzle, with a pale scar across one ear. It looked at Mira, then
+        at the bowl.\\n\\nShe opened the\",\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"finish_reason\": \"length\"\n    }\n  ],\n  \"usage\":
+        {\n    \"prompt_tokens\": 10,\n    \"completion_tokens\": 200,\n    \"total_tokens\":
+        210,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\": 0,\n      \"cache_write_tokens\":
         0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_402fb8a3d9\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -72,17 +72,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a50aa50f6bada1e6-YYZ
+      - a586530e8b2d36ac-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1715'
+      - '1692'
       content-type:
       - application/json
       date:
-      - Mon, 26 Oct 2026 15:55:23 GMT
+      - Tue, 10 Nov 2026 16:09:59 GMT
       openai-processing-ms:
-      - '2329'
+      - '3021'
       openai-version:
       - '2020-10-01'
       server:
@@ -98,17 +98,17 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999995'
+      - '179999994'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_6dddd57870ab411d9ccb4205630068fd
+      - req_26fe3115ba324712bf858b2be6a8da1e
     status:
       code: 200
       message: OK

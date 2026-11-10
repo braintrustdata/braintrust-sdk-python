@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"model":"zai-glm-5-3","name":"braintrust-test-agent-1793627401416","instructions":"You
+    body: '{"model":"zai-glm-5-3","name":"braintrust-test-agent-1794328406659","instructions":"You
       are concise. Keep responses under five words."}'
     headers:
       accept:
@@ -21,7 +21,7 @@ interactions:
     uri: https://api.mistral.ai/v1/agents
   response:
     body:
-      string: '{"instructions":"You are concise. Keep responses under five words.","tools":[],"completion_args":{"stop":null,"presence_penalty":null,"frequency_penalty":null,"temperature":null,"top_p":null,"max_tokens":null,"random_seed":null,"prediction":null,"response_format":null,"tool_choice":"auto","reasoning_effort":null},"guardrails":[],"model":"zai-glm-5-3","name":"braintrust-test-agent-1793627401416","description":null,"handoffs":null,"metadata":null,"object":"agent","id":"ag_01a19c862e0770e18b355e4d7a859fc4","version":0,"versions":[],"owner_id":"4cf0889c-e6bd-4aba-a664-2e25c0dcd24e","created_at":"2026-11-02T13:50:01.775107Z","updated_at":"2026-11-02T13:50:01.775109Z","deployment_chat":false,"source":"api","version_message":null}'
+      string: '{"instructions":"You are concise. Keep responses under five words.","tools":[],"completion_args":{"stop":null,"presence_penalty":null,"frequency_penalty":null,"temperature":null,"top_p":null,"max_tokens":null,"random_seed":null,"prediction":null,"response_format":null,"tool_choice":"auto","reasoning_effort":null,"watermarking":null},"guardrails":[],"model":"zai-glm-5-3","name":"braintrust-test-agent-1794328406659","description":null,"handoffs":null,"metadata":null,"object":"agent","id":"ag_01a1c64eab9472e39cf7efddd07f2579","version":0,"versions":[],"owner_id":"4cf0889c-e6bd-4aba-a664-2e25c0dcd24e","created_at":"2026-11-10T16:33:26.957527Z","updated_at":"2026-11-10T16:33:26.957529Z","deployment_chat":false,"source":"api","version_message":null}'
     headers:
       access-control-allow-origin:
       - '*'
@@ -30,17 +30,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5439b1bec172659-YYZ
+      - a586757e5fdeab94-YYZ
       connection:
       - keep-alive
       content-length:
-      - '733'
+      - '753'
       content-type:
       - application/json
       date:
-      - Mon, 02 Nov 2026 13:50:01 GMT
+      - Tue, 10 Nov 2026 16:33:27 GMT
       mistral-correlation-id:
-      - 01a19c86-2dc2-7372-bf2e-328224339c67
+      - 01a1c64e-ab4a-7fd4-aeca-c86fe444a9d4
       server:
       - cloudflare
       strict-transport-security:
@@ -50,18 +50,18 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '125'
+      - '100'
       x-kong-proxy-latency:
-      - '18'
+      - '25'
       x-kong-request-id:
-      - 01a19c86-2dc2-7372-bf2e-328224339c67
+      - 01a1c64e-ab4a-7fd4-aeca-c86fe444a9d4
       x-kong-upstream-latency:
-      - '128'
+      - '106'
     status:
       code: 200
       message: OK
 - request:
-    body: '{"messages":[{"content":"What is 8+1? Reply with just the number.","role":"user"}],"agent_id":"ag_01a19c862e0770e18b355e4d7a859fc4","max_tokens":256,"stream":false,"min_tokens":1,"repetition_penalty":1.1,"top_k":20,"logprobs":true,"top_logprobs":2,"prompt_logprobs":true,"top_prompt_logprobs":2}'
+    body: '{"messages":[{"content":"What is 8+1? Reply with just the number.","role":"user"}],"agent_id":"ag_01a1c64eab9472e39cf7efddd07f2579","max_tokens":256,"stream":false,"top_k":20,"logprobs":true,"top_logprobs":2}'
     headers:
       accept:
       - application/json
@@ -70,7 +70,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '295'
+      - '208'
       content-type:
       - application/json
       host:
@@ -81,47 +81,7 @@ interactions:
     uri: https://api.mistral.ai/v1/agents/completions
   response:
     body:
-      string: '{"id":"6ba9e476aa914f90a135a0386b9e12e6","created":1793627402,"model":"zai-glm-5-3","usage":{"prompt_tokens":36,"total_tokens":39,"completion_tokens":3,"prompt_tokens_details":{"cached_tokens":0},"completion_tokens_details":{"reasoning_tokens":0}},"object":"chat.completion","choices":[{"index":0,"finish_reason":"stop","message":{"role":"assistant","index":0,"content":"9"},"logprobs":{"content":[{"token":"</think>","logprob":-0.8982168436050415,"bytes":[60,47,116,104,105,110,107,62],"token_id":-1,"top_logprobs":[{"token":"</think>","logprob":-0.8982168436050415,"bytes":[60,47,116,104,105,110,107,62],"token_id":-1},{"token":"8","logprob":-1.2732168436050415,"bytes":[56],"token_id":-1}]},{"token":"9","logprob":-0.0011378012131899595,"bytes":[57],"token_id":-1,"top_logprobs":[{"token":"9","logprob":-0.0011378012131899595,"bytes":[57],"token_id":-1},{"token":"<|user|>","logprob":-7.376137733459473,"bytes":[60,124,117,115,101,114,124,62],"token_id":-1}]},{"token":"<|user|>","logprob":-5.6622808187967166e-05,"bytes":[60,124,117,115,101,114,124,62],"token_id":-1,"top_logprobs":[{"token":"<|user|>","logprob":-5.6622808187967166e-05,"bytes":[60,124,117,115,101,114,124,62],"token_id":-1},{"token":"</think>","logprob":-10.750056266784668,"bytes":[60,47,116,104,105,110,107,62],"token_id":-1}]}]},"prompt_logprobs":{"content":[{"token":"<sop>","logprob":-25.2187557220459,"bytes":[],"token_id":154824,"top_logprobs":[{"token":"[gMASK]","logprob":-5.602820692729438e-06,"bytes":[],"token_id":154822},{"token":"
-        comments","logprob":-18.8125057220459,"bytes":[],"token_id":6042}]},{"token":"<|system|>","logprob":-19.159622192382812,"bytes":[],"token_id":154826,"top_logprobs":[{"token":"<|endoftext|>","logprob":-0.09712313860654831,"bytes":[],"token_id":154820},{"token":"##","logprob":-4.690873146057129,"bytes":[],"token_id":565}]},{"token":"Reason","logprob":-14.470659255981445,"bytes":[],"token_id":25062,"top_logprobs":[{"token":"\n","logprob":-1.994828701019287,"bytes":[],"token_id":198},{"token":"\n\n","logprob":-3.182328701019287,"bytes":[],"token_id":271}]},{"token":"ing","logprob":-0.42192137241363525,"bytes":[],"token_id":287,"top_logprobs":[{"token":"ably","logprob":-2.1094212532043457,"bytes":[],"token_id":2845}]},{"token":"
-        Eff","logprob":-10.657793998718262,"bytes":[],"token_id":29905,"top_logprobs":[{"token":"
-        .","logprob":-3.735919237136841,"bytes":[],"token_id":659},{"token":".","logprob":-4.048418998718262,"bytes":[],"token_id":13}]},{"token":"ort","logprob":-3.6991755962371826,"bytes":[],"token_id":371,"top_logprobs":[{"token":"
-        equal","logprob":-2.9491755962371826,"bytes":[],"token_id":6144},{"token":"
-        Equal","logprob":-3.1991755962371826,"bytes":[],"token_id":38267}]},{"token":":","logprob":-3.712998390197754,"bytes":[],"token_id":25,"top_logprobs":[{"token":"
-        Answer","logprob":-1.6504982709884644,"bytes":[],"token_id":21754},{"token":"
-        final","logprob":-2.275498390197754,"bytes":[],"token_id":1590}]},{"token":"
-        Max","logprob":-10.706668853759766,"bytes":[],"token_id":7487,"top_logprobs":[{"token":"<|user|>","logprob":-4.691044330596924,"bytes":[],"token_id":154827},{"token":"
-        ","logprob":-4.691044330596924,"bytes":[],"token_id":220}]},{"token":"<|system|>","logprob":-13.772980690002441,"bytes":[],"token_id":154826,"top_logprobs":[{"token":"\n","logprob":-1.72219979763031,"bytes":[],"token_id":198},{"token":"ing","logprob":-2.2221999168395996,"bytes":[],"token_id":287}]},{"token":"You","logprob":-8.425106048583984,"bytes":[],"token_id":2610,"top_logprobs":[{"token":"</think>","logprob":-1.4251062870025635,"bytes":[],"token_id":154842},{"token":"The","logprob":-3.2376062870025635,"bytes":[],"token_id":785}]},{"token":"
-        are","logprob":-2.6615660190582275,"bytes":[],"token_id":525,"top_logprobs":[{"token":"''re","logprob":-0.6615660190582275,"bytes":[],"token_id":2299},{"token":"
-        need","logprob":-1.6615660190582275,"bytes":[],"token_id":1184}]},{"token":"
-        concise","logprob":-14.704889297485352,"bytes":[],"token_id":63141,"top_logprobs":[{"token":"
-        asked","logprob":-0.798639714717865,"bytes":[],"token_id":4588},{"token":"
-        a","logprob":-1.2986397743225098,"bytes":[],"token_id":264}]},{"token":".","logprob":-3.0481228828430176,"bytes":[],"token_id":13,"top_logprobs":[{"token":"
-        and","logprob":-1.173122763633728,"bytes":[],"token_id":323},{"token":" in","logprob":-1.173122763633728,"bytes":[],"token_id":304}]},{"token":"
-        Keep","logprob":-5.012765884399414,"bytes":[],"token_id":13646,"top_logprobs":[{"token":"
-        You","logprob":-1.012765884399414,"bytes":[],"token_id":1446},{"token":" When","logprob":-3.262765884399414,"bytes":[],"token_id":3197}]},{"token":"
-        responses","logprob":-0.9093769788742065,"bytes":[],"token_id":14497,"top_logprobs":[{"token":"
-        the","logprob":-1.4093769788742065,"bytes":[],"token_id":279}]},{"token":"
-        under","logprob":-8.36777400970459,"bytes":[],"token_id":1212,"top_logprobs":[{"token":"
-        short","logprob":-0.24277354776859283,"bytes":[],"token_id":2805},{"token":"
-        brief","logprob":-2.2427735328674316,"bytes":[],"token_id":9809}]},{"token":"
-        five","logprob":-10.027739524841309,"bytes":[],"token_id":4236,"top_logprobs":[{"token":"
-        ","logprob":-0.02773958444595337,"bytes":[],"token_id":220},{"token":" ~","logprob":-4.152739524841309,"bytes":[],"token_id":3968}]},{"token":"
-        words","logprob":-3.078944444656372,"bytes":[],"token_id":4244,"top_logprobs":[{"token":"
-        sentences","logprob":-0.45394447445869446,"bytes":[],"token_id":22809},{"token":"
-        lines","logprob":-1.328944444656372,"bytes":[],"token_id":5128}]},{"token":".","logprob":-0.9331371784210205,"bytes":[],"token_id":13,"top_logprobs":[{"token":"
-        when","logprob":-0.9331371784210205,"bytes":[],"token_id":979}]},{"token":"<|user|>","logprob":-7.679736614227295,"bytes":[],"token_id":154827,"top_logprobs":[{"token":"</think>","logprob":-0.7422366142272949,"bytes":[],"token_id":154842},{"token":"
-        Under","logprob":-2.367236614227295,"bytes":[],"token_id":9445}]},{"token":"What","logprob":-6.711603164672852,"bytes":[],"token_id":3838,"top_logprobs":[{"token":"</think>","logprob":-1.399103045463562,"bytes":[],"token_id":154842},{"token":"Let","logprob":-2.0241031646728516,"bytes":[],"token_id":10056}]},{"token":"
-        is","logprob":-0.5232356786727905,"bytes":[],"token_id":374,"top_logprobs":[{"token":"''s","logprob":-2.02323579788208,"bytes":[],"token_id":594}]},{"token":"
-        ","logprob":-2.5851199626922607,"bytes":[],"token_id":220,"top_logprobs":[{"token":"
-        the","logprob":-0.33511999249458313,"bytes":[],"token_id":279}]},{"token":"8","logprob":-3.89111590385437,"bytes":[],"token_id":23,"top_logprobs":[{"token":"2","logprob":-0.8911159038543701,"bytes":[],"token_id":17},{"token":"1","logprob":-2.26611590385437,"bytes":[],"token_id":16}]},{"token":"+","logprob":-1.67559814453125,"bytes":[],"token_id":10,"top_logprobs":[{"token":"
-        +","logprob":-1.55059814453125,"bytes":[],"token_id":488}]},{"token":"1","logprob":-4.802761554718018,"bytes":[],"token_id":16,"top_logprobs":[{"token":"8","logprob":-0.8027616739273071,"bytes":[],"token_id":23},{"token":"3","logprob":-1.3027616739273071,"bytes":[],"token_id":18}]},{"token":"?","logprob":-0.9986947178840637,"bytes":[],"token_id":30,"top_logprobs":[{"token":"?\n\n","logprob":-1.623694658279419,"bytes":[],"token_id":1939}]},{"token":"
-        Reply","logprob":-13.201154708862305,"bytes":[],"token_id":17815,"top_logprobs":[{"token":"</think>","logprob":-0.013654285110533237,"bytes":[],"token_id":154842},{"token":"9","logprob":-5.6386542320251465,"bytes":[],"token_id":24}]},{"token":"
-        with","logprob":-1.4432424306869507,"bytes":[],"token_id":448,"top_logprobs":[{"token":"
-        in","logprob":-1.4432424306869507,"bytes":[],"token_id":304}]},{"token":"
-        just","logprob":-1.492940902709961,"bytes":[],"token_id":1101,"top_logprobs":[{"token":"
-        a","logprob":-1.492940902709961,"bytes":[],"token_id":264}]},{"token":" the","logprob":-0.1989169418811798,"bytes":[],"token_id":279,"top_logprobs":[{"token":"
-        a","logprob":-2.4489169120788574,"bytes":[],"token_id":264}]},{"token":" number","logprob":-0.7341461777687073,"bytes":[],"token_id":1372,"top_logprobs":[{"token":"
-        answer","logprob":-0.7341461777687073,"bytes":[],"token_id":4226}]},{"token":".","logprob":-0.16203683614730835,"bytes":[],"token_id":13,"top_logprobs":[{"token":".\n\n","logprob":-2.787036895751953,"bytes":[],"token_id":382}]},{"token":"<|assistant|>","logprob":-12.693397521972656,"bytes":[],"token_id":154828,"top_logprobs":[{"token":"</think>","logprob":-0.005897501949220896,"bytes":[],"token_id":154842},{"token":"9","logprob":-6.630897521972656,"bytes":[],"token_id":24}]},{"token":"<think>","logprob":-17.927980422973633,"bytes":[],"token_id":154841,"top_logprobs":[{"token":"</think>","logprob":-0.05297976732254028,"bytes":[],"token_id":154842},{"token":"9","logprob":-3.4279797077178955,"bytes":[],"token_id":24}]}]},"response_error":{"format_error":null,"content_validation":["text_but_should_think"],"tool_calls_validation":[],"extra_tags":[]}}]}'
+      string: '{"id":"dc6033453f28485f87e8cf8438f744e5","created":1794328407,"model":"zai-glm-5-3","usage":{"prompt_tokens":36,"total_tokens":39,"completion_tokens":3,"prompt_tokens_details":{"cached_tokens":0},"completion_tokens_details":{"reasoning_tokens":0}},"object":"chat.completion","choices":[{"index":0,"finish_reason":"stop","message":{"role":"assistant","tool_calls":null,"content":"9"},"logprobs":{"content":[{"token":"</think>","logprob":-0.8982168436050415,"bytes":[60,47,116,104,105,110,107,62],"token_id":-1,"top_logprobs":[{"token":"</think>","logprob":-0.8982168436050415,"bytes":[60,47,116,104,105,110,107,62],"token_id":-1},{"token":"8","logprob":-1.2732168436050415,"bytes":[56],"token_id":-1}]},{"token":"9","logprob":-0.0011378012131899595,"bytes":[57],"token_id":-1,"top_logprobs":[{"token":"9","logprob":-0.0011378012131899595,"bytes":[57],"token_id":-1},{"token":"<|user|>","logprob":-7.376137733459473,"bytes":[60,124,117,115,101,114,124,62],"token_id":-1}]},{"token":"<|user|>","logprob":-5.6622808187967166e-05,"bytes":[60,124,117,115,101,114,124,62],"token_id":-1,"top_logprobs":[{"token":"<|user|>","logprob":-5.6622808187967166e-05,"bytes":[60,124,117,115,101,114,124,62],"token_id":-1},{"token":"</think>","logprob":-10.750056266784668,"bytes":[60,47,116,104,105,110,107,62],"token_id":-1}]}]},"prompt_logprobs":null,"response_error":{"format_error":null,"content_validation":["text_but_should_think"],"tool_calls_validation":[],"extra_tags":[]}}]}'
     headers:
       access-control-allow-origin:
       - '*'
@@ -130,17 +90,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5439b1dc8372659-YYZ
+      - a58675803a58ab94-YYZ
       connection:
       - keep-alive
       content-length:
-      - '8937'
+      - '1466'
       content-type:
       - application/json
       date:
-      - Mon, 02 Nov 2026 13:50:02 GMT
+      - Tue, 10 Nov 2026 16:33:31 GMT
       mistral-correlation-id:
-      - 01a19c86-2ee2-7056-a2dc-5f4cc75f5bf0
+      - 01a1c64e-ac67-731b-b031-b9e345e17529
       server:
       - cloudflare
       strict-transport-security:
@@ -150,21 +110,23 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '383'
+      - '4238'
       x-kong-proxy-latency:
       - '14'
       x-kong-request-id:
-      - 01a19c86-2ee2-7056-a2dc-5f4cc75f5bf0
+      - 01a1c64e-ac67-731b-b031-b9e345e17529
       x-kong-upstream-latency:
-      - '383'
+      - '4240'
+      x-max-retry-attempts-reached:
+      - 'false'
       x-ratelimit-limit-req-minute:
       - '1000'
       x-ratelimit-limit-tokens-minute:
       - '32000000'
       x-ratelimit-remaining-req-minute:
-      - '999'
+      - '997'
       x-ratelimit-remaining-tokens-minute:
-      - '31999876'
+      - '31999740'
       x-ratelimit-tokens-query-cost:
       - '39'
     status:
@@ -184,7 +146,7 @@ interactions:
       user-agent:
       - mistral-client-python/3.7.0
     method: DELETE
-    uri: https://api.mistral.ai/v1/agents/ag_01a19c862e0770e18b355e4d7a859fc4
+    uri: https://api.mistral.ai/v1/agents/ag_01a1c64eab9472e39cf7efddd07f2579
   response:
     body:
       string: ''
@@ -196,13 +158,13 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5439b214ed72659-YYZ
+      - a586759bcb49ab94-YYZ
       connection:
       - keep-alive
       date:
-      - Mon, 02 Nov 2026 13:50:02 GMT
+      - Tue, 10 Nov 2026 16:33:31 GMT
       mistral-correlation-id:
-      - 01a19c86-3112-7985-a1e7-e9be5fd7968a
+      - 01a1c64e-bda3-7e92-ac16-dd0a2510720d
       server:
       - cloudflare
       strict-transport-security:
@@ -210,13 +172,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '220'
+      - '70'
       x-kong-proxy-latency:
-      - '15'
+      - '24'
       x-kong-request-id:
-      - 01a19c86-3112-7985-a1e7-e9be5fd7968a
+      - 01a1c64e-bda3-7e92-ac16-dd0a2510720d
       x-kong-upstream-latency:
-      - '222'
+      - '71'
     status:
       code: 204
       message: No Content

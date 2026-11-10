@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"messages":[{"content":"Reply with the word ok.","role":"user"}],"model":"gpt-5-nano","reasoning_effort":"minimal","service_tier":"flex","stream":false}'
+    body: '{"messages":[{"content":"Reply with the word ok.","role":"user"}],"model":"gpt-6-luna","reasoning_effort":"none","service_tier":"flex","stream":false}'
     headers:
       accept:
       - application/json
@@ -9,7 +9,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '153'
+      - '150'
       content-type:
       - application/json
       host:
@@ -38,17 +38,17 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-Eii2ykRYGtTq0BUR9GKbp7xvuxDMQ\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1794324456,\n  \"model\": \"gpt-5-nano-2025-08-07\",\n
+      string: "{\n  \"id\": \"chatcmpl-EijC36XrhLkeQ2KZPzSpnNr30p0vD\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794328863,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"ok\",\n        \"refusal\": null,\n
         \       \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
         \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 12,\n    \"completion_tokens\":
-        10,\n    \"total_tokens\": 22,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
-        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"flex\",\n  \"system_fingerprint\": null\n}\n"
+        4,\n    \"total_tokens\": 16,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"cache_write_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n
+        \   \"completion_tokens_details\": {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\":
+        0,\n      \"accepted_prediction_tokens\": 0,\n      \"rejected_prediction_tokens\":
+        0\n    }\n  },\n  \"service_tier\": \"flex\",\n  \"system_fingerprint\": null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -59,17 +59,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a586150d0c7aac58-YYZ
+      - a586809cc8d5aac2-YYZ
       connection:
       - keep-alive
       content-length:
-      - '770'
+      - '789'
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 15:27:37 GMT
+      - Tue, 10 Nov 2026 16:41:04 GMT
       openai-processing-ms:
-      - '450'
+      - '1076'
       openai-version:
       - '2020-10-01'
       server:
@@ -95,12 +95,12 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_bf3da21836f143a195a09b14f39e98a2
+      - req_2d206fd7f9114e598e8dbdbbcfd21363
     status:
       code: 200
       message: OK
 - request:
-    body: '{"messages":[{"content":"Reply with the word ok.","role":"user"}],"model":"gpt-5-nano","reasoning_effort":"minimal","service_tier":"auto","stream":false}'
+    body: '{"messages":[{"content":"Reply with the word ok.","role":"user"}],"model":"gpt-6-luna","reasoning_effort":"none","service_tier":"auto","stream":false}'
     headers:
       accept:
       - application/json
@@ -109,7 +109,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '153'
+      - '150'
       content-type:
       - application/json
       host:
@@ -138,17 +138,18 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-Eii2zNwhfNH4tRuP76FbEivOau9Gf\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1794324457,\n  \"model\": \"gpt-5-nano-2025-08-07\",\n
+      string: "{\n  \"id\": \"chatcmpl-EijC41rvNMDdxrOQQ3MWMTmk5gNkK\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794328864,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"ok\",\n        \"refusal\": null,\n
         \       \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
         \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 12,\n    \"completion_tokens\":
-        10,\n    \"total_tokens\": 22,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
-        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": null\n}\n"
+        4,\n    \"total_tokens\": 16,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"cache_write_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n
+        \   \"completion_tokens_details\": {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\":
+        0,\n      \"accepted_prediction_tokens\": 0,\n      \"rejected_prediction_tokens\":
+        0\n    }\n  },\n  \"service_tier\": \"default\",\n  \"system_fingerprint\":
+        null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -159,17 +160,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5861510cac0ac58-YYZ
+      - a58680a8d9c5aac2-YYZ
       connection:
       - keep-alive
       content-length:
-      - '773'
+      - '792'
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 15:27:37 GMT
+      - Tue, 10 Nov 2026 16:41:05 GMT
       openai-processing-ms:
-      - '576'
+      - '1054'
       openai-version:
       - '2020-10-01'
       server:
@@ -189,13 +190,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '179999991'
+      - '179999994'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_6428b10be26e4340a0b2c292f9ce6ed5
+      - req_51787bbccf45436babcb9cf3e9300e1b
     status:
       code: 200
       message: OK

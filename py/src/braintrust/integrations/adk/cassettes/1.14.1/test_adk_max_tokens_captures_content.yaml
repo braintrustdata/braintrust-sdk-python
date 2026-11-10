@@ -6,48 +6,38 @@ interactions:
       "role": "user"}, "generationConfig": {"temperature": 0.7, "maxOutputTokens":
       50}}'
     headers:
-      accept:
-      - '*/*'
-      accept-encoding:
-      - gzip, deflate
-      connection:
-      - keep-alive
-      content-length:
-      - '320'
-      content-type:
+      Content-Type:
       - application/json
-      host:
-      - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.31.0 gl-python/3.9.21 google-adk/1.14.1 gl-python/3.9.21
+      - google-genai-sdk/1.75.0 gl-python/3.14.7 google-adk/1.14.1 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/1.31.0 gl-python/3.9.21 google-adk/1.14.1 gl-python/3.9.21
+      - google-genai-sdk/1.75.0 gl-python/3.14.7 google-adk/1.14.1 gl-python/3.14.7
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAC/61STU/bQBC9+1eM9sIliUJCPuiN8qGiQkHgtkgFoUl2bC9sdt3dSVMT5b93bePg
-        5FzLsnZmnufNvLfrCEDM0UglkcmLT/ArZADW1besWcNkOBSaVEjm6PgDWz/r1jlAmP6WP4mbVyw6
-        4IlZEyjTgRnNcekJOFMewssZgWfrCrBJFfxU0q4OPFypNOMOhNlAcYjxHcYZluGMyMAqNMnJkQRr
-        6k6ouYCVMtJDYh2kZMghK2t879E8mnifAFbozQHDy9Jz4CpAl9nMhhF7cEtunpEUrdU22/NT50MQ
-        ZzWV2y6sJN3ANw1AJMoon90RemtK2PXJw3N88/X8273YYvBPemXT3NlZqWy33xtOR4PR8eRoMBmO
-        p4fjo6ihr4jF0mNK18QYjMOtPSI0WOQc21cyp3ZZGTfs1yQtn3fqo6bOllHvlKZNqdXWnwVSpdv+
-        t65GUAC14qJcMz5/iEVLJd6dqpEpaqm5P+N/IhvtkUXv7tSG/SDnVe1MSovgVXfQ63cTjT6rOgpH
-        Pg83iC5liXk5m15gMj78Ip+/v00ub9mefv590hfRJvoHTxCJAU8DAAA=
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"text\": \"The salt spray was a constant companion
+        to Elara, a kiss on her cheeks that never truly faded. For thirty years, the
+        lighthouse on Serpent\u2019s Tooth, a jagged shard of rock jutting defiantly
+        from the unforgiving sea, had been\"\n          }\n        ],\n        \"role\":
+        \"model\"\n      },\n      \"finishReason\": \"MAX_TOKENS\",\n      \"index\":
+        0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\": 32,\n    \"candidatesTokenCount\":
+        50,\n    \"totalTokenCount\": 82,\n    \"promptTokensDetails\": [\n      {\n
+        \       \"modality\": \"TEXT\",\n        \"tokenCount\": 32\n      }\n    ],\n
+        \   \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n
+        \ \"responseId\": \"p0Lzao2fL9SxytMPp4fl0Ag\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Content-Encoding:
-      - gzip
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Fri, 31 Oct 2025 23:00:29 GMT
+      - Tue, 10 Nov 2026 16:13:28 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=868
+      - gfet4t7; dur=584
       Transfer-Encoding:
       - chunked
       Vary:
@@ -58,8 +48,12 @@ interactions:
       - nosniff
       X-Frame-Options:
       - SAMEORIGIN
+      X-Gemini-Service-Tier:
+      - standard
       X-XSS-Protection:
       - '0'
+      content-length:
+      - '779'
     status:
       code: 200
       message: OK

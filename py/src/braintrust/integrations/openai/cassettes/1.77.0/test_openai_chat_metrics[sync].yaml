@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"messages":[{"role":"user","content":"What''s 12 + 12?"}],"model":"gpt-4o-mini"}'
+    body: '{"messages":[{"role":"user","content":"What''s 12 + 12?"}],"model":"gpt-6-luna","reasoning_effort":"none"}'
     headers:
       accept:
       - application/json
@@ -9,7 +9,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '80'
+      - '105'
       content-type:
       - application/json
       host:
@@ -26,8 +26,6 @@ interactions:
       - MacOS
       x-stainless-package-version:
       - 1.77.0
-      x-stainless-raw-response:
-      - 'true'
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -35,22 +33,23 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.7
+      - 3.13.13
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EWn6y5d2WSFTe4uyGwESFoE8c2prR\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1791483988,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EiimMgct0Pgpi0tM7oVCeSFWMEHqb\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794327270,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"12 + 12 equals 24.\",\n        \"refusal\":
-        null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
-        \     \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        14,\n    \"completion_tokens\": 8,\n    \"total_tokens\": 22,\n    \"prompt_tokens_details\":
-        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_1058318988\"\n}\n"
+        \"assistant\",\n        \"content\": \"24\",\n        \"refusal\": null,\n
+        \       \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 13,\n    \"completion_tokens\":
+        4,\n    \"total_tokens\": 17,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"cache_write_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n
+        \   \"completion_tokens_details\": {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\":
+        0,\n      \"accepted_prediction_tokens\": 0,\n      \"rejected_prediction_tokens\":
+        0\n    }\n  },\n  \"service_tier\": \"default\",\n  \"system_fingerprint\":
+        null\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -61,17 +60,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a47731ab5b69a3f1-YYZ
+      - a58659bebfe3ab0a-YYZ
       connection:
       - keep-alive
       content-length:
-      - '824'
+      - '792'
       content-type:
       - application/json
       date:
-      - Thu, 08 Oct 2026 18:26:28 GMT
+      - Tue, 10 Nov 2026 16:14:31 GMT
       openai-processing-ms:
-      - '477'
+      - '1088'
       openai-version:
       - '2020-10-01'
       server:
@@ -87,17 +86,17 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999995'
+      - '179999994'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_22f53b9ba67140a6b80346a78d1b3d0d
+      - req_74635facce5643fc9cb23ec9a01a9828
     status:
       code: 200
       message: OK

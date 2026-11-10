@@ -1,0 +1,163 @@
+interactions:
+- request:
+    body: '{"contents": [{"parts": [{"text": "Summarize the article at https://ai.google.dev/gemini-api/docs/url-context"}],
+      "role": "user"}], "tools": [{"urlContext": {}}], "generationConfig": {"maxOutputTokens":
+      300}}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '208'
+      content-type:
+      - application/json
+      host:
+      - generativelanguage.googleapis.com
+      user-agent:
+      - google-genai-sdk/1.30.0 gl-python/3.14.7
+      x-goog-api-client:
+      - google-genai-sdk/1.30.0 gl-python/3.14.7
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:streamGenerateContent?alt=sse
+  response:
+    body:
+      string: "data: {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"The
+        **\"}],\"role\": \"model\"},\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\":
+        24,\"candidatesTokenCount\": 2,\"totalTokenCount\": 26,\"promptTokensDetails\":
+        [{\"modality\": \"TEXT\",\"tokenCount\": 24}],\"serviceTier\": \"standard\"},\"modelVersion\":
+        \"gemini-3.5-flash-lite\",\"responseId\": \"rELzapW5NbHCytMP98-DgAk\"}\r\n\r\ndata:
+        {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"URL Context** tool
+        in the Gemini API allows developers to provide web URLs directly within their
+        requests so\"}],\"role\": \"model\"},\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\":
+        24,\"candidatesTokenCount\": 21,\"totalTokenCount\": 45,\"promptTokensDetails\":
+        [{\"modality\": \"TEXT\",\"tokenCount\": 24}],\"serviceTier\": \"standard\"},\"modelVersion\":
+        \"gemini-3.5-flash-lite\",\"responseId\": \"rELzapW5NbHCytMP98-DgAk\"}\r\n\r\ndata:
+        {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \" the Gemini model
+        can read, extract, and analyze live web page content to enrich its output.\\n\\n###
+        Key Use\"}],\"role\": \"model\"},\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\":
+        24,\"candidatesTokenCount\": 21,\"totalTokenCount\": 45,\"promptTokensDetails\":
+        [{\"modality\": \"TEXT\",\"tokenCount\": 24}],\"serviceTier\": \"standard\"},\"modelVersion\":
+        \"gemini-3.5-flash-lite\",\"responseId\": \"rELzapW5NbHCytMP98-DgAk\"}\r\n\r\ndata:
+        {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \" Cases\\n* **Data
+        Extraction:** Pulling specific info (such as prices, names, or key points)
+        from multiple\"}],\"role\": \"model\"},\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\":
+        24,\"candidatesTokenCount\": 45,\"totalTokenCount\": 69,\"promptTokensDetails\":
+        [{\"modality\": \"TEXT\",\"tokenCount\": 24}],\"serviceTier\": \"standard\"},\"modelVersion\":
+        \"gemini-3.5-flash-lite\",\"responseId\": \"rELzapW5NbHCytMP98-DgAk\"}\r\n\r\ndata:
+        {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \" URLs.\\n* **Document
+        Comparison:** Analyzing multiple reports, articles, or PDFs to identify differences
+        and\"}],\"role\": \"model\"},\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\":
+        24,\"candidatesTokenCount\": 45,\"totalTokenCount\": 69,\"promptTokensDetails\":
+        [{\"modality\": \"TEXT\",\"tokenCount\": 24}],\"serviceTier\": \"standard\"},\"modelVersion\":
+        \"gemini-3.5-flash-lite\",\"responseId\": \"rELzapW5NbHCytMP98-DgAk\"}\r\n\r\ndata:
+        {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \" track trends.\\n*
+        **Content Synthesis:** Combining insights from various source URLs to draft
+        summaries, reports, or blog\"}],\"role\": \"model\"},\"index\": 0}],\"usageMetadata\":
+        {\"promptTokenCount\": 24,\"candidatesTokenCount\": 45,\"totalTokenCount\":
+        69,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\": 24}],\"serviceTier\":
+        \"standard\"},\"modelVersion\": \"gemini-3.5-flash-lite\",\"responseId\":
+        \"rELzapW5NbHCytMP98-DgAk\"}\r\n\r\ndata: {\"candidates\": [{\"content\":
+        {\"parts\": [{\"text\": \" posts.\\n* **Code & Documentation Analysis:** Directing
+        the model to technical documentation or repositories to answer\"}],\"role\":
+        \"model\"},\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\": 24,\"candidatesTokenCount\":
+        45,\"totalTokenCount\": 69,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
+        24}],\"serviceTier\": \"standard\"},\"modelVersion\": \"gemini-3.5-flash-lite\",\"responseId\":
+        \"rELzapW5NbHCytMP98-DgAk\"}\r\n\r\ndata: {\"candidates\": [{\"content\":
+        {\"parts\": [{\"text\": \" coding questions or build setup instructions.\\n\\n###
+        How It Works\\n* **Two-Step Retrieval Process\"}],\"role\": \"model\"},\"index\":
+        0}],\"usageMetadata\": {\"promptTokenCount\": 24,\"candidatesTokenCount\":
+        45,\"totalTokenCount\": 69,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
+        24}],\"serviceTier\": \"standard\"},\"modelVersion\": \"gemini-3.5-flash-lite\",\"responseId\":
+        \"rELzapW5NbHCytMP98-DgAk\"}\r\n\r\ndata: {\"candidates\": [{\"content\":
+        {\"parts\": [{\"text\": \":** The tool first attempts to fetch content from
+        an internal index cache for optimized speed and cost. If a URL is missing\"}],\"role\":
+        \"model\"},\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\": 24,\"candidatesTokenCount\":
+        69,\"totalTokenCount\": 93,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
+        24}],\"serviceTier\": \"standard\"},\"modelVersion\": \"gemini-3.5-flash-lite\",\"responseId\":
+        \"rELzapW5NbHCytMP98-DgAk\"}\r\n\r\ndata: {\"candidates\": [{\"content\":
+        {\"parts\": [{\"text\": \" from the cache (e.g., a brand-new page), it automatically
+        falls back to a real-time live fetch\"}],\"role\": \"model\"},\"index\": 0}],\"usageMetadata\":
+        {\"promptTokenCount\": 24,\"candidatesTokenCount\": 96,\"totalTokenCount\":
+        120,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\": 24}],\"serviceTier\":
+        \"standard\"},\"modelVersion\": \"gemini-3.5-flash-lite\",\"responseId\":
+        \"rELzapW5NbHCytMP98-DgAk\"}\r\n\r\ndata: {\"candidates\": [{\"content\":
+        {\"parts\": [{\"text\": \".\\n* **Tool Combinations:** It can be paired with
+        other built-in features, such as **Grounding with Google Search\"}],\"role\":
+        \"model\"},\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\": 24,\"candidatesTokenCount\":
+        96,\"totalTokenCount\": 120,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
+        24}],\"serviceTier\": \"standard\"},\"modelVersion\": \"gemini-3.5-flash-lite\",\"responseId\":
+        \"rELzapW5NbHCytMP98-DgAk\"}\r\n\r\ndata: {\"candidates\": [{\"content\":
+        {\"parts\": [{\"text\": \"**, allowing the model to perform broad searches
+        online and then deeply analyze specific resulting pages.\\n* **C\"}],\"role\":
+        \"model\"},\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\": 24,\"candidatesTokenCount\":
+        96,\"totalTokenCount\": 120,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
+        24}],\"serviceTier\": \"standard\"},\"modelVersion\": \"gemini-3.5-flash-lite\",\"responseId\":
+        \"rELzapW5NbHCytMP98-DgAk\"}\r\n\r\ndata: {\"candidates\": [{\"content\":
+        {\"parts\": [{\"text\": \"itations & Responses:** Model outputs include inline
+        `url_citation` annotations that link text segments to\"}],\"role\": \"model\"},\"index\":
+        0}],\"usageMetadata\": {\"promptTokenCount\": 24,\"candidatesTokenCount\":
+        115,\"totalTokenCount\": 139,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
+        24}],\"serviceTier\": \"standard\"},\"modelVersion\": \"gemini-3.5-flash-lite\",\"responseId\":
+        \"rELzapW5NbHCytMP98-DgAk\"}\r\n\r\ndata: {\"candidates\": [{\"content\":
+        {\"parts\": [{\"text\": \"\",\"thoughtSignature\": \"EmAKXgFpFH0TezGrqR65HiODPDBJb5LYmLZXrfYKB1807ZVedjMP1pv9RvH5oFVIUd4iS8mrZ2CqBJFIdb1a6fepCU+UZy8BkAcTFFQtWODaoZ+RbHjFaK5BY9CoHribJwo=\"}],\"role\":
+        \"model\"},\"finishReason\": \"MAX_TOKENS\",\"index\": 0,\"groundingMetadata\":
+        {\"groundingChunks\": [{\"web\": {\"uri\": \"https://aistudio.google.com/docs/url-context\",\"title\":
+        \"URL context - Gemini API | Google AI Studio\"}}],\"groundingSupports\":
+        [{\"segment\": {\"endIndex\": 205,\"text\": \"The **URL Context** tool in
+        the Gemini API allows developers to provide web URLs directly within their
+        requests so the Gemini model can read, extract, and analyze live web page
+        content to enrich its output\"},\"groundingChunkIndices\": [0]},{\"segment\":
+        {\"startIndex\": 228,\"endIndex\": 328,\"text\": \"**Data Extraction:** Pulling
+        specific info (such as prices, names, or key points) from multiple URLs\"},\"groundingChunkIndices\":
+        [0]},{\"segment\": {\"startIndex\": 332,\"endIndex\": 443,\"text\": \"**Document
+        Comparison:** Analyzing multiple reports, articles, or PDFs to identify differences
+        and track trends\"},\"groundingChunkIndices\": [0]},{\"segment\": {\"startIndex\":
+        447,\"endIndex\": 556,\"text\": \"**Content Synthesis:** Combining insights
+        from various source URLs to draft summaries, reports, or blog posts\"},\"groundingChunkIndices\":
+        [0]},{\"segment\": {\"startIndex\": 560,\"endIndex\": 712,\"text\": \"**Code
+        & Documentation Analysis:** Directing the model to technical documentation
+        or repositories to answer coding questions or build setup instructions\"},\"groundingChunkIndices\":
+        [0]},{\"segment\": {\"startIndex\": 866,\"endIndex\": 980,\"text\": \"If a
+        URL is missing from the cache (e.g., a brand-new page), it automatically falls
+        back to a real-time live fetch\"},\"groundingChunkIndices\": [0]},{\"segment\":
+        {\"startIndex\": 984,\"endIndex\": 1196,\"text\": \"**Tool Combinations:**
+        It can be paired with other built-in features, such as **Grounding with Google
+        Search**, allowing the model to perform broad searches online and then deeply
+        analyze specific resulting pages\"},\"groundingChunkIndices\": [0]}]},\"urlContextMetadata\":
+        {\"urlMetadata\": [{\"retrievedUrl\": \"https://aistudio.google.com/docs/url-context\",\"urlRetrievalStatus\":
+        \"URL_RETRIEVAL_STATUS_SUCCESS\"}]}}],\"usageMetadata\": {\"promptTokenCount\":
+        24,\"candidatesTokenCount\": 296,\"totalTokenCount\": 320,\"promptTokensDetails\":
+        [{\"modality\": \"TEXT\",\"tokenCount\": 24}],\"serviceTier\": \"standard\"},\"modelVersion\":
+        \"gemini-3.5-flash-lite\",\"responseId\": \"rELzapW5NbHCytMP98-DgAk\"}\r\n\r\n"
+    headers:
+      alt-svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      content-disposition:
+      - attachment
+      content-type:
+      - text/event-stream
+      date:
+      - Tue, 10 Nov 2026 16:13:34 GMT
+      server:
+      - scaffolding on HTTPServer2
+      server-timing:
+      - gfet4t7; dur=1571
+      transfer-encoding:
+      - chunked
+      vary:
+      - Origin
+      - X-Origin
+      - Referer
+      x-content-type-options:
+      - nosniff
+      x-frame-options:
+      - SAMEORIGIN
+      x-xss-protection:
+      - '0'
+    status:
+      code: 200
+      message: OK
+version: 1

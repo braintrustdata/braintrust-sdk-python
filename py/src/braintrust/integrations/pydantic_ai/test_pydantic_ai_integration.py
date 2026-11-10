@@ -10,7 +10,6 @@ from dataclasses import replace
 import pydantic_ai
 import pytest
 from braintrust import logger, setup_pydantic_ai, traced
-from braintrust.integrations._test_models import ANTHROPIC_CHAT_MODEL, LATEST, OPENAI_CHAT_MODEL
 from braintrust.integrations.test_utils import verify_autoinstrument_script
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import init_test_logger
@@ -22,8 +21,8 @@ from pydantic_ai.usage import UsageLimits
 
 
 PROJECT_NAME = "test-pydantic-ai-integration"
-MODEL = f"openai:{OPENAI_CHAT_MODEL}"
-OPENAI_SETTINGS = {"openai_reasoning_effort": "none"} if LATEST else {}
+MODEL = "openai:gpt-6-luna"
+OPENAI_SETTINGS = {"openai_reasoning_effort": "none"}
 TEST_PROMPT = "What is 2+2? Answer with just the number."
 MAX_REASONABLE_TTFT_SECONDS = 30.0
 CONVERSATION_SUPPORTED = Version(pydantic_ai.__version__) >= Version("2.55.0")
@@ -261,9 +260,9 @@ async def test_agent_run_async(memory_logger, agent_kind):
     assert agent_span["input"]["user_prompt"] == TEST_PROMPT
     assert "4" in str(agent_span["output"])
     assert chat_span["span_parents"] == [agent_span["span_id"]]
-    assert chat_span["span_attributes"]["name"].startswith(f"chat {OPENAI_CHAT_MODEL}")
+    assert chat_span["span_attributes"]["name"].startswith("chat gpt-6-luna")
     for span in (agent_span, chat_span):
-        assert span["metadata"]["model"] == OPENAI_CHAT_MODEL
+        assert span["metadata"]["model"] == "gpt-6-luna"
         assert span["metadata"]["provider"] == "openai"
         assert span["context"]["span_origin"]["instrumentation"]["name"] == "pydantic-ai-auto"
         _assert_metrics_are_valid(span["metrics"], start, end)
@@ -303,7 +302,7 @@ def test_agent_run_sync(memory_logger):
 
     # Check agent span
     assert agent_sync_span["span_attributes"]["type"] == SpanTypeAttribute.TASK
-    assert agent_sync_span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert agent_sync_span["metadata"]["model"] == "gpt-6-luna"
     assert agent_sync_span["metadata"]["provider"] == "openai"
     assert TEST_PROMPT in str(agent_sync_span["input"])
     assert "4" in str(agent_sync_span["output"])
@@ -316,7 +315,7 @@ def test_agent_run_sync(memory_logger):
     assert _is_descendant(span_by_id, chat_span, agent_sync_span["span_id"]), (
         "chat span should be nested under agent_run_sync"
     )
-    assert chat_span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert chat_span["metadata"]["model"] == "gpt-6-luna"
     assert chat_span["metadata"]["provider"] == "openai"
     _assert_metrics_are_valid(chat_span["metrics"], start, end)
 
@@ -382,7 +381,7 @@ def test_agent_to_cli_sync(memory_logger, monkeypatch):
     cli_span = spans[0]
     assert cli_span["span_attributes"]["type"] == SpanTypeAttribute.TASK
     assert cli_span["span_attributes"]["name"] == "agent_to_cli_sync [cli-agent]"
-    assert cli_span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert cli_span["metadata"]["model"] == "gpt-6-luna"
     assert cli_span["metadata"]["provider"] == "openai"
     assert cli_span["input"]["prog_name"] == "braintrust-cli"
     assert "message_history" in cli_span["input"]
@@ -495,13 +494,13 @@ async def test_agent_run_stream(memory_logger):
 
     # Check agent span
     assert agent_span["span_attributes"]["type"] == SpanTypeAttribute.TASK
-    assert agent_span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert agent_span["metadata"]["model"] == "gpt-6-luna"
     assert "Count from 1 to 5" in str(agent_span["input"])
     _assert_metrics_are_valid(agent_span["metrics"], start, end)
 
     # Check chat span is nested under agent span
     assert chat_span["span_parents"] == [agent_span["span_id"]], "chat span should be nested under agent_run_stream"
-    assert chat_span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert chat_span["metadata"]["model"] == "gpt-6-luna"
     assert chat_span["metadata"]["provider"] == "openai"
     _assert_metrics_are_valid(chat_span["metrics"], start, end)
 
@@ -554,7 +553,7 @@ async def test_direct_model_request(memory_logger, direct):
     assert direct_span["context"]["span_origin"]["instrumentation"]["name"] == "pydantic-ai-auto"
 
     assert direct_span["span_attributes"]["type"] == SpanTypeAttribute.TASK
-    assert direct_span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert direct_span["metadata"]["model"] == "gpt-6-luna"
     assert direct_span["metadata"]["provider"] == "openai"
     assert TEST_PROMPT in str(direct_span["input"])
     assert "4" in str(direct_span["output"])
@@ -584,7 +583,7 @@ def test_direct_model_request_sync(memory_logger, direct):
     span = next((s for s in spans if s["span_attributes"]["name"] == "model_request_sync"), None)
     assert span is not None, "model_request_sync span not found"
     assert span["span_attributes"]["type"] == SpanTypeAttribute.TASK
-    assert span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert span["metadata"]["model"] == "gpt-6-luna"
     assert TEST_PROMPT in str(span["input"])
     _assert_metrics_are_valid(span["metrics"], start, end)
 
@@ -632,11 +631,11 @@ async def test_direct_model_request_with_settings(memory_logger, direct):
     chat_span = next(span for span in spans if span["span_attributes"]["type"] == SpanTypeAttribute.LLM)
     assert direct_span["context"]["span_origin"]["instrumentation"]["name"] == "pydantic-ai-auto"
     assert chat_span["span_parents"] == [direct_span["span_id"]]
-    assert chat_span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert chat_span["metadata"]["model"] == "gpt-6-luna"
     assert chat_span["metadata"]["provider"] == "openai"
     _assert_metrics_are_valid(chat_span["metrics"], start, end)
 
-    assert direct_span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert direct_span["metadata"]["model"] == "gpt-6-luna"
     assert direct_span["metadata"]["provider"] == "openai"
 
     _assert_metrics_are_valid(direct_span["metrics"], start, end)
@@ -689,7 +688,7 @@ async def test_direct_model_request_stream(memory_logger, direct):
     assert direct_span is not None
 
     assert direct_span["span_attributes"]["type"] == SpanTypeAttribute.TASK
-    assert direct_span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert direct_span["metadata"]["model"] == "gpt-6-luna"
     _assert_metrics_are_valid(direct_span["metrics"], start, end)
 
     # CRITICAL: Verify time_to_first_token is captured in direct streaming
@@ -751,7 +750,7 @@ async def test_agent_structured_output(memory_logger):
 
     # Check agent span
     assert agent_span["span_attributes"]["type"] == SpanTypeAttribute.TASK
-    assert agent_span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert agent_span["metadata"]["model"] == "gpt-6-luna"
     assert agent_span["metadata"]["provider"] == "openai"
     assert "10 + 15" in str(agent_span["input"])
     assert "25" in str(agent_span["output"])
@@ -761,7 +760,7 @@ async def test_agent_structured_output(memory_logger):
     span_by_id = {s["span_id"]: s for s in spans}
 
     assert _is_descendant(span_by_id, chat_span, agent_span["span_id"]), "chat span should be nested under agent_run"
-    assert chat_span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert chat_span["metadata"]["model"] == "gpt-6-luna"
     assert chat_span["metadata"]["provider"] == "openai"
     output_tool = next(
         (
@@ -832,7 +831,7 @@ async def test_agent_model_settings(memory_logger, settings_source):
     assert "model_settings" not in chat_span["metadata"]
     assert chat_span["span_parents"] == [agent_span["span_id"]]
     for span in (agent_span, chat_span):
-        assert span["metadata"]["model"] == OPENAI_CHAT_MODEL
+        assert span["metadata"]["model"] == "gpt-6-luna"
         assert span["metadata"]["provider"] == "openai"
         _assert_metrics_are_valid(span["metrics"], start, end)
 
@@ -870,7 +869,7 @@ async def test_agent_with_system_prompt_in_metadata(memory_logger):
     assert "system_prompt" not in agent_span["metadata"], "system_prompt should NOT be in agent_run metadata"
 
     # Verify other metadata is present
-    assert agent_span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert agent_span["metadata"]["model"] == "gpt-6-luna"
     assert agent_span["metadata"]["provider"] == "openai"
 
 
@@ -938,7 +937,7 @@ def test_agent_run_stream_sync(memory_logger):
 
     # Check agent span
     assert agent_span["span_attributes"]["type"] == SpanTypeAttribute.TASK
-    assert agent_span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert agent_span["metadata"]["model"] == "gpt-6-luna"
     assert "Count from 1 to 3" in str(agent_span["input"])
     _assert_metrics_are_valid(agent_span["metrics"], start, end)
 
@@ -963,7 +962,7 @@ def test_agent_run_stream_sync(memory_logger):
     assert _is_descendant(span_by_id, chat_span, agent_span["span_id"]), (
         "chat span should be nested under agent_run_stream_sync"
     )
-    assert chat_span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert chat_span["metadata"]["model"] == "gpt-6-luna"
     assert chat_span["metadata"]["provider"] == "openai"
     # Chat span may not have complete metrics since it's an intermediate span
     assert "start" in chat_span["metrics"]
@@ -1012,7 +1011,7 @@ async def test_agent_run_stream_events(memory_logger):
 
     # Check agent span has basic structure
     assert agent_span["span_attributes"]["type"] == SpanTypeAttribute.TASK
-    assert agent_span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert agent_span["metadata"]["model"] == "gpt-6-luna"
     assert "5+5" in str(agent_span["input"]) or "What" in str(agent_span["input"])
     assert agent_span["metrics"]["event_count"] == event_count
     assert agent_span["output"]
@@ -1073,7 +1072,7 @@ def test_direct_model_request_stream_sync(memory_logger, direct):
     span = next((s for s in spans if s["span_attributes"]["name"] == "model_request_stream_sync"), None)
     assert span is not None
     assert span["span_attributes"]["type"] == SpanTypeAttribute.TASK
-    assert span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert span["metadata"]["model"] == "gpt-6-luna"
     assert "output" in span
     assert "parts" in span["output"]
     _assert_metrics_are_valid(span["metrics"], start, end)
@@ -1393,7 +1392,7 @@ async def test_agent_with_binary_input(memory_logger, data, media_type, prompt, 
 
     # Verify basic span structure
     assert agent_span["span_attributes"]["type"] == SpanTypeAttribute.TASK
-    assert agent_span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert agent_span["metadata"]["model"] == "gpt-6-luna"
     _assert_metrics_are_valid(agent_span["metrics"], start, end)
     _assert_metrics_are_valid(chat_span["metrics"], start, end)
 
@@ -1849,16 +1848,14 @@ async def test_agent_run_anthropic_reasoning_tokens(memory_logger):
     assert not memory_logger.pop()
 
     model = AnthropicModel(
-        ANTHROPIC_CHAT_MODEL,
+        "claude-haiku-5-5",
         provider=AnthropicProvider(anthropic_client=anthropic.AsyncAnthropic()),
     )
     agent = Agent(
         model,
         model_settings=AnthropicModelSettings(
             max_tokens=2048,
-            anthropic_thinking=(
-                {"type": "adaptive", "display": "summarized"} if LATEST else {"type": "enabled", "budget_tokens": 1024}
-            ),
+            anthropic_thinking=({"type": "adaptive", "display": "summarized"}),
         ),
     )
 
@@ -1903,7 +1900,11 @@ async def test_agent_run_openai_web_search_usage(memory_logger):
     from pydantic_ai.capabilities import NativeTool
     from pydantic_ai.native_tools import WebSearchTool
 
-    agent = Agent("openai-responses:gpt-4.1-mini", capabilities=[NativeTool(WebSearchTool())])
+    agent = Agent(
+        "openai-responses:gpt-6-luna",
+        capabilities=[NativeTool(WebSearchTool())],
+        model_settings={"openai_reasoning_effort": "low"},
+    )
     result = await agent.run("Search the web for the current weather in Paris and answer in one sentence.")
     assert result.output
 
@@ -1984,12 +1985,12 @@ async def test_agent_run_stream_structured_output(memory_logger):
 
     # Check agent span
     assert agent_span["span_attributes"]["type"] == SpanTypeAttribute.TASK
-    assert agent_span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert agent_span["metadata"]["model"] == "gpt-6-luna"
     _assert_metrics_are_valid(agent_span["metrics"], start, end)
 
     # Check chat span is nested
     assert chat_span["span_parents"] == [agent_span["span_id"]], "chat span should be nested under agent_run_stream"
-    assert chat_span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert chat_span["metadata"]["model"] == "gpt-6-luna"
     _assert_metrics_are_valid(chat_span["metrics"], start, end)
 
 
@@ -2074,7 +2075,7 @@ def test_shape_message_and_response_pass_through_when_no_binary():
     response = SimpleNamespace(
         kind="response",
         state="complete",
-        model_name=OPENAI_CHAT_MODEL,
+        model_name="gpt-6-luna",
         provider_name="openai",
         parts=["done"],
     )
@@ -2344,7 +2345,7 @@ def _assert_conversation_input(spans, conversation, output, method):
 
     assert "Ada" in output
     chat_span = next(span for span in spans if span["span_attributes"]["name"].startswith("chat "))
-    assert chat_span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert chat_span["metadata"]["model"] == "gpt-6-luna"
     assert chat_span["metadata"]["provider"] == "openai"
     assert chat_span["metrics"]["prompt_tokens"] > 0
     assert chat_span["metrics"]["completion_tokens"] > 0
@@ -2445,7 +2446,7 @@ async def test_agent_with_prefill(memory_logger):
 
     agent_span = _find_agent_span(spans)
     assert agent_span is not None, "agent_run span not found"
-    assert agent_span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert agent_span["metadata"]["model"] == "gpt-6-luna"
 
     # The prefill history (including the partial assistant TextPart) must appear
     # in the span input so that the trace is complete and auditable.
@@ -2467,11 +2468,7 @@ async def test_model_fallback_traces_each_attempt(memory_logger, candidate_kind)
         pytest.skip("ModelFallback is unavailable in this Pydantic AI version")
     from pydantic_ai.models.openai import OpenAIChatModel, OpenAIResponsesModel
 
-    fallback = (
-        f"openai-responses:{OPENAI_CHAT_MODEL}"
-        if candidate_kind == "string"
-        else OpenAIResponsesModel(OPENAI_CHAT_MODEL)
-    )
+    fallback = "openai-responses:gpt-6-luna" if candidate_kind == "string" else OpenAIResponsesModel("gpt-6-luna")
     agent = Agent(
         OpenAIChatModel("braintrust-nonexistent-model-for-fallback-test"),
         capabilities=[ModelFallback(fallback, sticky=True)],
@@ -2490,10 +2487,10 @@ async def test_model_fallback_traces_each_attempt(memory_logger, candidate_kind)
         for span in model_spans
         if span["metadata"].get("model") == "braintrust-nonexistent-model-for-fallback-test"
     )
-    answered = next(span for span in model_spans if span["metadata"].get("model") == OPENAI_CHAT_MODEL)
+    answered = next(span for span in model_spans if span["metadata"].get("model") == "gpt-6-luna")
     assert failed.get("error")
     assert not answered.get("error")
-    assert agent_span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert agent_span["metadata"]["model"] == "gpt-6-luna"
     assert agent_span["metadata"]["provider"] == "openai"
     for span in model_spans:
         assert span["metadata"]["provider"] == "openai"
@@ -2506,8 +2503,8 @@ async def test_model_fallback_traces_each_attempt(memory_logger, candidate_kind)
     agent_span = _find_agent_span(spans)
     model_spans = [span for span in spans if span["span_attributes"].get("type") == SpanTypeAttribute.LLM]
     assert len(model_spans) == 1
-    assert model_spans[0]["metadata"]["model"] == OPENAI_CHAT_MODEL
-    assert agent_span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert model_spans[0]["metadata"]["model"] == "gpt-6-luna"
+    assert agent_span["metadata"]["model"] == "gpt-6-luna"
     assert agent_span["metadata"]["provider"] == "openai"
 
 
@@ -2522,7 +2519,7 @@ async def test_model_fallback_stream_closes_failed_attempt(memory_logger):
 
     agent = Agent(
         OpenAIChatModel("braintrust-nonexistent-model-for-fallback-test"),
-        capabilities=[ModelFallback(OpenAIResponsesModel(OPENAI_CHAT_MODEL))],
+        capabilities=[ModelFallback(OpenAIResponsesModel("gpt-6-luna"))],
         model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=50),
     )
     async with agent.run_stream(TEST_PROMPT) as result:
@@ -2539,7 +2536,7 @@ async def test_model_fallback_stream_closes_failed_attempt(memory_logger):
         for span in model_spans
         if span["metadata"].get("model") == "braintrust-nonexistent-model-for-fallback-test"
     )
-    answered = next(span for span in model_spans if span["metadata"].get("model") == OPENAI_CHAT_MODEL)
+    answered = next(span for span in model_spans if span["metadata"].get("model") == "gpt-6-luna")
     assert failed.get("error")
     assert failed["metrics"].get("end") is not None
     assert not answered.get("error")

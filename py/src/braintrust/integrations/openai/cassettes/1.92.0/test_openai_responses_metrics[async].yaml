@@ -1,233 +1,242 @@
 interactions:
 - request:
-    body: '{"input":"What''s 12 + 12?","instructions":"Just the number please","model":"gpt-4o-mini"}'
+    body: '{"input":"What''s 12 + 12?","instructions":"Just the number please","model":"gpt-6-luna","reasoning":{"effort":"low"}}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
-      - '89'
-      Content-Type:
+      content-length:
+      - '117'
+      content-type:
       - application/json
-      Host:
+      host:
       - api.openai.com
-      User-Agent:
+      user-agent:
       - AsyncOpenAI/Python 1.92.0
-      X-Stainless-Arch:
+      x-stainless-arch:
       - arm64
-      X-Stainless-Async:
+      x-stainless-async:
       - async:asyncio
-      X-Stainless-Lang:
+      x-stainless-lang:
       - python
-      X-Stainless-OS:
+      x-stainless-os:
       - MacOS
-      X-Stainless-Package-Version:
+      x-stainless-package-version:
       - 1.92.0
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.13.3
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
       - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.13
     method: POST
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_063b14ebb74e9fba0069e0174c62e881a2b1ba0e1190ed90d0\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1776293708,\n  \"status\":
-        \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1776293708,\n  \"error\": null,\n
-        \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
-        \"Just the number please\",\n  \"max_output_tokens\": null,\n  \"max_tool_calls\":
-        null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_063b14ebb74e9fba0069e0174cb74481a2ae0de6bdc633bc8b\",\n
+      string: "{\n  \"id\": \"resp_004b0949e5582307016af3433d630487d2b687aebc0277e701\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1794327357,\n  \"status\":
+        \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794327358,\n  \"error\":
+        null,\n  \"frequency_penalty\": 0.0,\n  \"image\": {\n    \"context_compression\":
+        \"disabled\"\n  },\n  \"incomplete_details\": null,\n  \"instructions\": \"Just
+        the number please\",\n  \"max_output_tokens\": null,\n  \"max_tool_calls\":
+        null,\n  \"model\": \"gpt-6-luna\",\n  \"moderation\": null,\n  \"output\":
+        [\n    {\n      \"id\": \"msg_004b0949e5582307016af3433e332087d2b5f71d196313cc23\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"24\"\n        }\n
-        \     ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
-        true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
-        null,\n  \"prompt_cache_retention\": null,\n  \"reasoning\": {\n    \"effort\":
-        null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
-        \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n
-        \   \"format\": {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n
-        \ },\n  \"tool_choice\": \"auto\",\n  \"tools\": [],\n  \"top_logprobs\":
-        0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\":
-        22,\n    \"input_tokens_details\": {\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 2,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 24\n  },\n  \"user\": null,\n  \"metadata\":
+        \     ],\n      \"phase\": \"final_answer\",\n      \"role\": \"assistant\"\n
+        \   }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n
+        \ \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
+        \"24h\",\n  \"reasoning\": {\n    \"context\": \"all_turns\",\n    \"effort\":
+        \"low\",\n    \"mode\": \"standard\",\n    \"summary\": null\n  },\n  \"safety_identifier\":
+        null,\n  \"service_tier\": \"default\",\n  \"store\": false,\n  \"temperature\":
+        1.0,\n  \"text\": {\n    \"format\": {\n      \"type\": \"text\"\n    },\n
+        \   \"verbosity\": \"medium\"\n  },\n  \"tool_choice\": \"auto\",\n  \"tool_usage\":
+        {\n    \"image_gen\": {\n      \"input_tokens\": 0,\n      \"input_tokens_details\":
+        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\":
+        0,\n      \"output_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
+        0\n      },\n      \"total_tokens\": 0\n    },\n    \"web_search\": {\n      \"num_requests\":
+        0\n    }\n  },\n  \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 0.98,\n
+        \ \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 21,\n
+        \   \"input_tokens_details\": {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\":
+        0\n    },\n    \"output_tokens\": 5,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        0\n    },\n    \"total_tokens\": 26\n  },\n  \"user\": null,\n  \"metadata\":
         {}\n}"
     headers:
-      CF-RAY:
-      - 9ece893d1fef7118-YYZ
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json
-      Date:
-      - Wed, 15 Apr 2026 22:55:08 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID, Server-Timing-Total
+      - CF-Ray
+      - CF-Ray
       alt-svc:
       - h3=":443"; ma=86400
       cf-cache-status:
       - DYNAMIC
+      cf-ray:
+      - a5865bdf395babe8-YYZ
+      connection:
+      - keep-alive
       content-length:
-      - '1549'
-      openai-organization:
-      - braintrust-data
+      - '2121'
+      content-type:
+      - application/json
+      date:
+      - Tue, 10 Nov 2026 16:15:58 GMT
       openai-processing-ms:
-      - '449'
-      openai-project:
-      - proj_vsCSXafhhByzWOThMrJcZiw9
+      - '971'
       openai-version:
       - '2020-10-01'
-      set-cookie:
-      - __cf_bm=8vKPSZZyjXaQib69Vk1Cegpd854IelrmgZmhwL4o9aI-1776293708.3367646-1.0.1.1-e58XDEcEsbKD7Rsz1voRxdHt5aPOg1chU6fhWljDH.mnYZlu3Tr2CUjazrLwLj5y1sSeJr5TflaDdqcvZxpk9ET.iicg8kri6qMOiF7ovWyTFWeMLWI4Ne7B69CT00r5;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 15 Apr 2026
-        23:25:08 GMT
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999957'
+      - '180000000'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_f35874edcec548ff9ec5e5eae0463d11
+      - req_a25e26a4136343f38c38de3917be756f
     status:
       code: 200
       message: OK
 - request:
-    body: '{"input":"What''s 12 + 12?","model":"gpt-4o-mini","text":{"format":{"type":"json_schema","strict":true,"name":"NumberAnswer","schema":{"properties":{"value":{"title":"Value","type":"integer"},"reasoning":{"title":"Reasoning","type":"string"}},"required":["value","reasoning"],"title":"NumberAnswer","type":"object","additionalProperties":false}}}}'
+    body: '{"input":"What''s 12 + 12?","model":"gpt-6-luna","reasoning":{"effort":"low"},"text":{"format":{"type":"json_schema","strict":true,"name":"NumberAnswer","schema":{"properties":{"value":{"title":"Value","type":"integer"},"reasoning":{"title":"Reasoning","type":"string"}},"required":["value","reasoning"],"title":"NumberAnswer","type":"object","additionalProperties":false}}}}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
-      - '346'
-      Content-Type:
+      content-length:
+      - '374'
+      content-type:
       - application/json
-      Cookie:
-      - __cf_bm=8vKPSZZyjXaQib69Vk1Cegpd854IelrmgZmhwL4o9aI-1776293708.3367646-1.0.1.1-e58XDEcEsbKD7Rsz1voRxdHt5aPOg1chU6fhWljDH.mnYZlu3Tr2CUjazrLwLj5y1sSeJr5TflaDdqcvZxpk9ET.iicg8kri6qMOiF7ovWyTFWeMLWI4Ne7B69CT00r5
-      Host:
+      host:
       - api.openai.com
-      User-Agent:
+      user-agent:
       - AsyncOpenAI/Python 1.92.0
-      X-Stainless-Arch:
+      x-stainless-arch:
       - arm64
-      X-Stainless-Async:
+      x-stainless-async:
       - async:asyncio
-      X-Stainless-Lang:
+      x-stainless-lang:
       - python
-      X-Stainless-OS:
+      x-stainless-os:
       - MacOS
-      X-Stainless-Package-Version:
+      x-stainless-package-version:
       - 1.92.0
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.13.3
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
       - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.13
     method: POST
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0f00cdf177d8bf730069e0174e43f481939d135b4f5fd876ad\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1776293710,\n  \"status\":
-        \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1776293710,\n  \"error\": null,\n
-        \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
-        null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
-        \"gpt-4o-mini-2024-07-18\",\n  \"output\": [\n    {\n      \"id\": \"msg_0f00cdf177d8bf730069e0174e9fa4819390d41334d96d9cb7\",\n
-        \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
-        [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"{\\\"value\\\":24,\\\"reasoning\\\":\\\"Adding
-        12 and 12 together gives 24.\\\"}\"\n        }\n      ],\n      \"role\":
+      string: "{\n  \"id\": \"resp_02113e043c2e6427016af3433e72fc87d296172440cc0abea8\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1794327358,\n  \"status\":
+        \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794327359,\n  \"error\":
+        null,\n  \"frequency_penalty\": 0.0,\n  \"image\": {\n    \"context_compression\":
+        \"disabled\"\n  },\n  \"incomplete_details\": null,\n  \"instructions\": null,\n
+        \ \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
+        \"gpt-6-luna\",\n  \"moderation\": null,\n  \"output\": [\n    {\n      \"id\":
+        \"msg_02113e043c2e6427016af3433eff6087d2b1f65ebb8eba1f6e\",\n      \"type\":
+        \"message\",\n      \"status\": \"completed\",\n      \"content\": [\n        {\n
+        \         \"type\": \"output_text\",\n          \"annotations\": [],\n          \"logprobs\":
+        [],\n          \"text\": \"{\\\"value\\\":24,\\\"reasoning\\\":\\\"12 + 12
+        = 24.\\\"}\"\n        }\n      ],\n      \"phase\": \"final_answer\",\n      \"role\":
         \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\":
         0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
-        null,\n  \"reasoning\": {\n    \"effort\": null,\n    \"summary\": null\n
-        \ },\n  \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n  \"store\":
-        true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
-        \"json_schema\",\n      \"description\": null,\n      \"name\": \"NumberAnswer\",\n
-        \     \"schema\": {\n        \"properties\": {\n          \"value\": {\n            \"title\":
+        \"24h\",\n  \"reasoning\": {\n    \"context\": \"all_turns\",\n    \"effort\":
+        \"low\",\n    \"mode\": \"standard\",\n    \"summary\": null\n  },\n  \"safety_identifier\":
+        null,\n  \"service_tier\": \"default\",\n  \"store\": false,\n  \"temperature\":
+        1.0,\n  \"text\": {\n    \"format\": {\n      \"type\": \"json_schema\",\n
+        \     \"description\": null,\n      \"name\": \"NumberAnswer\",\n      \"schema\":
+        {\n        \"properties\": {\n          \"value\": {\n            \"title\":
         \"Value\",\n            \"type\": \"integer\"\n          },\n          \"reasoning\":
         {\n            \"title\": \"Reasoning\",\n            \"type\": \"string\"\n
         \         }\n        },\n        \"required\": [\n          \"value\",\n          \"reasoning\"\n
         \       ],\n        \"title\": \"NumberAnswer\",\n        \"type\": \"object\",\n
         \       \"additionalProperties\": false\n      },\n      \"strict\": true\n
         \   },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\": \"auto\",\n
-        \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
-        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 59,\n    \"input_tokens_details\":
-        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 21,\n    \"output_tokens_details\":
-        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 80\n  },\n
-        \ \"user\": null,\n  \"metadata\": {}\n}"
+        \ \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\": 0,\n      \"input_tokens_details\":
+        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\":
+        0,\n      \"output_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
+        0\n      },\n      \"total_tokens\": 0\n    },\n    \"web_search\": {\n      \"num_requests\":
+        0\n    }\n  },\n  \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 0.98,\n
+        \ \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 57,\n
+        \   \"input_tokens_details\": {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\":
+        0\n    },\n    \"output_tokens\": 25,\n    \"output_tokens_details\": {\n
+        \     \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 82\n  },\n  \"user\":
+        null,\n  \"metadata\": {}\n}"
     headers:
-      CF-RAY:
-      - 9ece8948cca1c9d6-YYZ
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json
-      Date:
-      - Wed, 15 Apr 2026 22:55:11 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID, Server-Timing-Total
+      - CF-Ray
+      - CF-Ray
       alt-svc:
       - h3=":443"; ma=86400
       cf-cache-status:
       - DYNAMIC
+      cf-ray:
+      - a5865be5dcf0abe8-YYZ
+      connection:
+      - keep-alive
       content-length:
-      - '2109'
-      openai-organization:
-      - braintrust-data
+      - '2659'
+      content-type:
+      - application/json
+      date:
+      - Tue, 10 Nov 2026 16:15:59 GMT
       openai-processing-ms:
-      - '805'
-      openai-project:
-      - proj_vsCSXafhhByzWOThMrJcZiw9
+      - '833'
       openai-version:
       - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999922'
+      - '180000000'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_bad18129e39f4fa181ed154654c95379
+      - req_11aa863e52df4b5abd04713d4dc38226
     status:
       code: 200
       message: OK

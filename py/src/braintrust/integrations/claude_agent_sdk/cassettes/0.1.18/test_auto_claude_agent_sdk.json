@@ -10,7 +10,7 @@
             "hooks": null,
             "subtype": "initialize"
           },
-          "request_id": "req_1_a3b7674a",
+          "request_id": "req_1_30e41c14",
           "type": "control_request"
         }
       }
@@ -19,7 +19,7 @@
       "op": "read",
       "payload": {
         "response": {
-          "request_id": "req_1_a3b7674a",
+          "request_id": "req_1_30e41c14",
           "response": {
             "account": {
               "apiKeySource": "ANTHROPIC_API_KEY",
@@ -62,11 +62,11 @@
         "claude_code_version": "2.0.72",
         "cwd": "<REDACTED_CWD>",
         "mcp_servers": [],
-        "model": "claude-3-5-haiku-20241022",
+        "model": "claude-haiku-5-5",
         "output_style": "default",
         "permissionMode": "bypassPermissions",
         "plugins": [],
-        "session_id": "677ceafb-0254-445c-bf05-32abc6a9ae28",
+        "session_id": "a68b7a5f-a09e-4b88-b368-ec8f0106a1c5",
         "skills": [],
         "slash_commands": [
           "compact",
@@ -100,80 +100,89 @@
           "EnterPlanMode"
         ],
         "type": "system",
-        "uuid": "cb0e7702-373e-4b38-aa1b-c13940f3bbb0"
+        "uuid": "a55c3aec-5c5e-4b5a-96ff-382a4d5c25bf"
       }
     },
     {
       "op": "read",
       "payload": {
-        "error": "unknown",
         "message": {
           "container": null,
           "content": [
             {
-              "text": "API Error: 404 {\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"model: claude-3-5-haiku-20241022\"},\"request_id\":\"req_011CgDuQNKUwxDDgW1DFxVj7\"}",
+              "text": "Hi! What can I help you with today?",
               "type": "text"
             }
           ],
           "context_management": null,
-          "id": "daa121d1-2cbd-4ee3-a394-dd15c22135ad",
-          "model": "<synthetic>",
+          "diagnostics": null,
+          "id": "msg_011CguYsSirkP4j8VVn52JGB",
+          "model": "claude-haiku-5-5",
           "role": "assistant",
-          "stop_reason": "stop_sequence",
-          "stop_sequence": "",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
           "type": "message",
           "usage": {
             "cache_creation": {
               "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 0
+              "ephemeral_5m_input_tokens": 76
             },
-            "cache_creation_input_tokens": 0,
-            "cache_read_input_tokens": 0,
-            "input_tokens": 0,
-            "output_tokens": 0,
-            "server_tool_use": {
-              "web_fetch_requests": 0,
-              "web_search_requests": 0
-            },
-            "service_tier": null
+            "cache_creation_input_tokens": 76,
+            "cache_read_input_tokens": 20435,
+            "inference_geo": "global",
+            "input_tokens": 4,
+            "output_tokens": 14,
+            "service_tier": "standard",
+            "speed": "standard"
           }
         },
         "parent_tool_use_id": null,
-        "session_id": "677ceafb-0254-445c-bf05-32abc6a9ae28",
+        "session_id": "a68b7a5f-a09e-4b88-b368-ec8f0106a1c5",
         "type": "assistant",
-        "uuid": "99837369-a309-4fde-8b76-3c8ed3821f61"
+        "uuid": "b925f7fe-841c-4993-bfb8-209e488d3c4a"
       }
     },
     {
       "op": "read",
       "payload": {
-        "duration_api_ms": 0,
-        "duration_ms": 413,
-        "is_error": true,
-        "modelUsage": {},
+        "duration_api_ms": 943,
+        "duration_ms": 3354,
+        "is_error": false,
+        "modelUsage": {
+          "claude-haiku-5-5": {
+            "cacheCreationInputTokens": 76,
+            "cacheReadInputTokens": 20435,
+            "contextWindow": 200000,
+            "costUSD": 0.0022124999999999996,
+            "inputTokens": 4,
+            "outputTokens": 14,
+            "webSearchRequests": 0
+          }
+        },
         "num_turns": 1,
         "permission_denials": [],
-        "result": "API Error: 404 {\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"model: claude-3-5-haiku-20241022\"},\"request_id\":\"req_011CgDuQNKUwxDDgW1DFxVj7\"}",
-        "session_id": "677ceafb-0254-445c-bf05-32abc6a9ae28",
+        "result": "Hi! What can I help you with today?",
+        "session_id": "a68b7a5f-a09e-4b88-b368-ec8f0106a1c5",
         "subtype": "success",
-        "total_cost_usd": 0,
+        "total_cost_usd": 0.0022124999999999996,
         "type": "result",
         "usage": {
           "cache_creation": {
             "ephemeral_1h_input_tokens": 0,
-            "ephemeral_5m_input_tokens": 0
+            "ephemeral_5m_input_tokens": 76
           },
-          "cache_creation_input_tokens": 0,
-          "cache_read_input_tokens": 0,
-          "input_tokens": 0,
-          "output_tokens": 0,
+          "cache_creation_input_tokens": 76,
+          "cache_read_input_tokens": 20435,
+          "input_tokens": 4,
+          "output_tokens": 14,
           "server_tool_use": {
             "web_fetch_requests": 0,
             "web_search_requests": 0
           },
           "service_tier": "standard"
         },
-        "uuid": "d09aa80c-1e77-4744-b0ed-d13a178ede25"
+        "uuid": "c641c78d-0594-46fb-80ba-15d62246474c"
       }
     }
   ],

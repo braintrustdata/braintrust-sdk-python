@@ -4,65 +4,63 @@ interactions:
       "mimeType": "application/pdf"}}, {"text": "What is in this document?"}], "role":
       "user"}], "generationConfig": {"maxOutputTokens": 150}}'
     headers:
-      Accept:
+      accept:
       - '*/*'
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '14661'
-      Content-Type:
+      content-type:
       - application/json
-      Host:
+      host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.70.0 gl-python/3.13.3
+      - google-genai-sdk/1.30.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/1.70.0 gl-python/3.13.3
+      - google-genai-sdk/1.30.0 gl-python/3.14.7
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"The document contains the following
-        text: \\\"This is a test PDF. It contains only a few sentences.\\\"\\n\"\n
-        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
-        \"STOP\",\n      \"avgLogprobs\": -0.036889948628165505\n    }\n  ],\n  \"usageMetadata\":
-        {\n    \"promptTokenCount\": 1296,\n    \"candidatesTokenCount\": 22,\n    \"totalTokenCount\":
-        1318,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"DOCUMENT\",\n
-        \       \"tokenCount\": 1290\n      },\n      {\n        \"modality\": \"TEXT\",\n
-        \       \"tokenCount\": 6\n      }\n    ],\n    \"candidatesTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 22\n
-        \     }\n    ]\n  },\n  \"modelVersion\": \"gemini-2.0-flash-001\",\n  \"responseId\":
-        \"5KzNabC4De6x1MkPjP3x6AQ\"\n}\n"
+        [\n          {\n            \"text\": \"The document states that it is a test
+        PDF and that it contains only a few sentences.\"\n          }\n        ],\n
+        \       \"role\": \"model\"\n      },\n      \"finishReason\": \"STOP\",\n
+        \     \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        265,\n    \"candidatesTokenCount\": 18,\n    \"totalTokenCount\": 283,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 7\n      },\n
+        \     {\n        \"modality\": \"DOCUMENT\",\n        \"tokenCount\": 258\n
+        \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
+        \"gemini-2.5-flash-lite\",\n  \"responseId\": \"h0LzavyrBa6pytMP59jb4A8\"\n}\n"
     headers:
-      Alt-Svc:
+      alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Content-Type:
+      content-length:
+      - '708'
+      content-type:
       - application/json; charset=UTF-8
-      Date:
-      - Wed, 01 Apr 2026 23:40:21 GMT
-      Server:
+      date:
+      - Tue, 10 Nov 2026 16:12:56 GMT
+      server:
       - scaffolding on HTTPServer2
-      Server-Timing:
-      - gfet4t7; dur=1599
-      Transfer-Encoding:
+      server-timing:
+      - gfet4t7; dur=1188
+      transfer-encoding:
       - chunked
-      Vary:
+      vary:
       - Origin
       - X-Origin
       - Referer
-      X-Content-Type-Options:
+      x-content-type-options:
       - nosniff
-      X-Frame-Options:
+      x-frame-options:
       - SAMEORIGIN
-      X-Gemini-Service-Tier:
+      x-gemini-service-tier:
       - standard
-      X-XSS-Protection:
+      x-xss-protection:
       - '0'
-      content-length:
-      - '831'
     status:
       code: 200
       message: OK

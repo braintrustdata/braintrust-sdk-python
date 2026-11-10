@@ -1,7 +1,7 @@
 interactions:
 - request:
-    body: '{"input":"What''s 12 + 12?","model":"gpt-4o-mini","instructions":"Just
-      the number please"}'
+    body: '{"input":"What''s 12 + 12?","model":"gpt-6-luna","instructions":"Just the
+      number please","reasoning":{"effort":"low"}}'
     headers:
       accept:
       - application/json
@@ -10,7 +10,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '89'
+      - '117'
       content-type:
       - application/json
       host:
@@ -41,38 +41,11 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0cb00652010f03d8006ac7e05e4adc87d1aa807ac7e6a5febb\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1791483998,\n  \"status\":
-        \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1791483998,\n  \"error\":
-        null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
-        \"Just the number please\",\n  \"max_output_tokens\": null,\n  \"max_tool_calls\":
-        null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n
-        \ \"output\": [\n    {\n      \"id\": \"msg_0cb00652010f03d8006ac7e05ea2e887d1b7f99fc5da583d42\",\n
-        \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
-        [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"24\"\n        }\n
-        \     ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
-        true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
-        null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
-        \   \"context\": null,\n    \"effort\": null,\n    \"summary\": null\n  },\n
-        \ \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n  \"store\":
-        true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
-        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
-        \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\":
-        0,\n      \"input_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
-        0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
-        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
-        0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
-        \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
-        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 22,\n    \"input_tokens_details\":
-        {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 2,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 24\n  },\n  \"user\": null,\n  \"metadata\":
-        {}\n}"
+      string: '{"id":"resp_0c80e4252fcc6baf016af34415868487d2b9b1f32ae398f8d2","object":"response","created_at":1794327573,"completed_at":1794327574,"status":"completed","background":false,"billing":{"payer":"developer"},"frequency_penalty":0.0,"presence_penalty":0.0,"moderation":null,"model":"gpt-6-luna","access_programs":null,"previous_response_id":null,"instructions":"Just
+        the number please","output":[{"type":"message","id":"msg_0c80e4252fcc6baf016af34416025087d2a06870016ecbb457","role":"assistant","status":"completed","content":[{"type":"output_text","text":"24","annotations":[],"logprobs":[]}],"phase":"final_answer"}],"error":null,"incomplete_details":null,"tools":[],"tool_choice":"auto","parallel_tool_calls":true,"prompt_cache_key":null,"prompt_cache_retention":"24h","text":{"format":{"type":"text"},"verbosity":"medium"},"top_p":0.98,"top_logprobs":0,"temperature":1.0,"reasoning":{"effort":"low","context":"all_turns","summary":null,"mode":"standard"},"user":null,"usage":{"input_tokens":21,"input_tokens_details":{"cached_tokens":0,"cache_write_tokens":0},"output_tokens":5,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":26},"tool_usage":{"image_gen":{"input_tokens":0,"output_tokens":0,"total_tokens":0,"input_tokens_details":{"text_tokens":0,"image_tokens":0},"output_tokens_details":{"image_tokens":0,"text_tokens":0}},"web_search":{"num_requests":0}},"safety_identifier":null,"store":false,"metadata":{},"max_output_tokens":null,"max_tool_calls":null,"service_tier":"default","truncation":"disabled","image":{"context_compression":"disabled"}}'
     headers:
       access-control-expose-headers:
-      - X-Request-ID
+      - X-Request-ID, Server-Timing-Total
       - CF-Ray
       - CF-Ray
       alt-svc:
@@ -80,17 +53,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a47731ecce498eb6-YYZ
+      - a58661260838ac6c-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2018'
+      - '1567'
       content-type:
       - application/json
       date:
-      - Thu, 08 Oct 2026 18:26:38 GMT
+      - Tue, 10 Nov 2026 16:19:34 GMT
       openai-processing-ms:
-      - '570'
+      - '670'
       openai-version:
       - '2020-10-01'
       server:
@@ -104,17 +77,17 @@ interactions:
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
-      - '150000000'
+      - '180000000'
       x-ratelimit-remaining-requests:
-      - '29997'
+      - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999875'
+      - '180000000'
       x-ratelimit-reset-requests:
-      - 6ms
+      - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_a94c6d4857424d119d91b6f3fc11be8a
+      - req_eae3e12c43574713b06b0d2a30fd3d66
     status:
       code: 200
       message: OK

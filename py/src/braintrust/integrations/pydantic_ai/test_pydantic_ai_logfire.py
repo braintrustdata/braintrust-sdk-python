@@ -9,15 +9,14 @@ import time
 
 import pytest
 from braintrust import logger, setup_pydantic_ai
-from braintrust.integrations._test_models import LATEST, OPENAI_CHAT_MODEL
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import init_test_logger
 from pydantic_ai import Agent, ModelSettings
 
 
 PROJECT_NAME = "test-pydantic-ai-logfire"
-MODEL = f"openai:{OPENAI_CHAT_MODEL}"
-OPENAI_SETTINGS = {"openai_reasoning_effort": "none"} if LATEST else {}
+MODEL = "openai:gpt-6-luna"
+OPENAI_SETTINGS = {"openai_reasoning_effort": "none"}
 TEST_PROMPT = "What is 2+2? Answer with just the number."
 
 
@@ -69,11 +68,11 @@ async def test_no_model_agent_run_with_logfire(memory_logger):
     assert chat_span is not None, "chat span not found"
 
     assert agent_span["span_attributes"]["type"] == SpanTypeAttribute.TASK
-    assert agent_span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert agent_span["metadata"]["model"] == "gpt-6-luna"
     assert agent_span["metadata"]["provider"] == "openai"
     assert TEST_PROMPT in str(agent_span["input"])
     assert "4" in str(agent_span["output"])
 
     assert chat_span["span_parents"] == [agent_span["span_id"]]
     assert chat_span["span_attributes"]["type"] == SpanTypeAttribute.LLM
-    assert chat_span["metadata"]["model"] == OPENAI_CHAT_MODEL
+    assert chat_span["metadata"]["model"] == "gpt-6-luna"

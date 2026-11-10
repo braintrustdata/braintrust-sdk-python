@@ -1,125 +1,7 @@
 interactions:
 - request:
-    body: '{"max_tokens":512,"messages":[{"role":"user","content":"Summarize this
-      sentence: compaction captures request metadata."}],"model":"claude-opus-5","compaction":{"type":"summarize"}}'
-    headers:
-      accept:
-      - application/json
-      accept-encoding:
-      - gzip, deflate, zstd
-      anthropic-beta:
-      - compact-2026-09-04
-      anthropic-version:
-      - '2023-06-01'
-      connection:
-      - keep-alive
-      content-length:
-      - '180'
-      content-type:
-      - application/json
-      host:
-      - api.anthropic.com
-      user-agent:
-      - Anthropic/Python 1.13.0
-      x-stainless-arch:
-      - arm64
-      x-stainless-async:
-      - 'false'
-      x-stainless-lang:
-      - python
-      x-stainless-os:
-      - MacOS
-      x-stainless-package-version:
-      - 1.13.0
-      x-stainless-read-timeout:
-      - '600'
-      x-stainless-retry-count:
-      - '0'
-      x-stainless-runtime:
-      - CPython
-      x-stainless-runtime-version:
-      - 3.14.7
-      x-stainless-timeout:
-      - '600'
-    method: POST
-    uri: https://api.anthropic.com/v1/messages?beta=true
-  response:
-    body:
-      string: "{\"model\":\"claude-opus-5\",\"id\":\"msg_011CfzNQNdg4uRiEEFBopF2b\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"compaction\",\"content\":\"**Conversation
-        context:** The transcript is very short \u2014 it contains a single user request
-        and no assistant response yet.\\n\\n**User's request:** \\\"Summarize this
-        sentence: compaction captures request metadata.\\\"\\n\\n**Work completed
-        so far:** None. No tools were called, no files were accessed, and no answer
-        was produced before the context window ended.\\n\\n**Remaining task:** Provide
-        a brief summary/paraphrase of the sentence \\\"compaction captures request
-        metadata.\\\" Since the input is already a single short sentence, the appropriate
-        response is a concise restatement, e.g., \\\"Compaction records/retains metadata
-        about requests.\\\" A one-line reply is sufficient; no tool use or further
-        research is required unless the user asks for additional detail or context
-        about what \\\"compaction\\\" refers to in their system.\",\"signature\":\"CAIS5wgKHggSGALyARdjb21wYWN0aW9uX3NpZ25hdHVyZV92MRIMfKO0FhIJdDDl6JbtGgzvHGOtOEulrYJuiUIiMDlY98Qw7NVp++GsOuy5mpzoAVFS+yHm5qZ5MGC/TJhh+1yr/ieBgQ6oP3HMlG/0nyr2B03lOAoluU05OZqRuOTZUO3s2u7VbQ+FljGrx94gQKjvVdyMhLhhPCP43m8hrlfZN+xr0+t0hnBJhZZSw3+/rkXVe1UfxQySMTy8ihr2qQTEn2oeiIwA6oHuVPP7WxzyOm1o95qzc9+hbZWyDcF+qCZr0uGcUf9dgPTQDlMK7+RbLZpFUialyojOvZ9AAE0Theb/33dif0bjriE4g4CcD+t0gPHtISycMOp7v+wzSX9uxaPQ2OzoFg3aZP0rQHNS3c3q3Y5p8ZxTmW+2eBqElQO0JxxWcAbPh9XZ7Od32kYzY1HmePwmYX1TtPbibWuelqG7uF+CutHNLXi8XDhm1fs9ruTlbaE1Znp+iTZHWg0fI2YLUWQebsdJM6W+Ff9WkQ/BkoFuPu2g1LAdQxWRn2entXi2dqLGjbQ7C1cflYvn5zHKw6r/SPZlVl134d18BN+C13YgmGgcDIJKZQmKimPxJWiLq6Nfyf0XMXhE52U6LZck20Jbd1n9oMnlvCIb/F2k2fe2tOEjrha7BsqvI/pF0YdgUyp2iCN+IFmU/Rb+xG1eZQqrnXPJje3afDNATJoi2Tb7P1Go54TxAOxILHB/yjsyLM443qcfEQuL3gQS7pvpSKt/15rZTkxzLfaINGPmy/GKbCyyP0KtLxFa0tCI8DOYcKcSKu5RE86H9I4hW4PuBOnSXcVCMaVtpyYVnPEgmdJFqoMiuY54ODtw9sbPKdliflUkn07lrpNSbtP06kG2VObyh0oAQqnYxrdYKMAN+Xeg6u5/aESZrFqU9QHVHPkj/Ezv92RH1p/alqW91V1rQrHQ5U8ciqeOAx4cFuD3GVnikGaloFdfur6WujmsgKlGsY1QzxS31TwGvS18mi7TpBMep9Vp783NeTM6kj5AAJw41eaDhJkL+LgcrtdTJx8gzpeG9RG7EUaLvqKW5yCaFxxgM7o5AextGmzcvYxhBovs1JcAwTroCPJtXhPA8xCzaxBd78106IFQ16o/de2+BlBVwgD1q/3IkLhYpxxdVW6cGHRUY2KPGlKtGkTSNoNDzapotd1gUJFE16hgbU3AUT3dxn/DPtrLQhuy6QBDwNuk0MQfZMuaW1zpO/fk8AjMHZApUvz5cfTik+nTZRYlzFZTqYRq6x83Qh+T6ZQZ2k9OuChMh/OxS3gxYgPSpzAEU9rJv+qwF64TfJdSZCW031NR9BElFSW3xL6c8xwK/yTo0cLuA3XuypsNMH4Y9QUthY/kLSJl/MH781zS9uLpJNxQOkXjVaTxOyJSW3HPYGd9ZwJtMaUimHj1BR2OFytx6UdEmvTA/LmAmDvwegA2srRGRAou532M2w8V2ib2Y651yRgL\"}],\"container\":null,\"stop_reason\":\"compaction\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"iterations\":[{\"input_tokens\":82,\"output_tokens\":489,\"cache_read_input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"type\":\"compaction\"}],\"output_tokens\":0,\"service_tier\":\"standard\",\"inference_geo\":\"global\"},\"diagnostics\":null}"
-    headers:
-      anthropic-organization-id:
-      - 27796668-7351-40ac-acc4-024aee8995a5
-      anthropic-ratelimit-input-tokens-limit:
-      - '10000000'
-      anthropic-ratelimit-input-tokens-remaining:
-      - '10000000'
-      anthropic-ratelimit-input-tokens-reset:
-      - '2026-10-13T14:10:04Z'
-      anthropic-ratelimit-output-tokens-limit:
-      - '2000000'
-      anthropic-ratelimit-output-tokens-remaining:
-      - '2000000'
-      anthropic-ratelimit-output-tokens-reset:
-      - '2026-10-13T14:10:04Z'
-      anthropic-ratelimit-requests-limit:
-      - '20000'
-      anthropic-ratelimit-requests-remaining:
-      - '19999'
-      anthropic-ratelimit-requests-reset:
-      - '2026-10-13T14:09:57Z'
-      anthropic-ratelimit-tokens-limit:
-      - '12000000'
-      anthropic-ratelimit-tokens-remaining:
-      - '12000000'
-      anthropic-ratelimit-tokens-reset:
-      - '2026-10-13T14:10:04Z'
-      anthropic-workspace-id:
-      - wrkspc_018bFG1FgNVWqx5pthtdGTzS
-      cf-cache-status:
-      - DYNAMIC
-      cf-ray:
-      - a49eecceffd0f4cc-YYZ
-      connection:
-      - keep-alive
-      content-length:
-      - '3043'
-      content-security-policy:
-      - default-src 'none'; frame-ancestors 'none'
-      content-type:
-      - application/json
-      date:
-      - Tue, 13 Oct 2026 14:10:04 GMT
-      request-id:
-      - req_011CfzNQNR2yxtuUtd6bMwax
-      server:
-      - cloudflare
-      strict-transport-security:
-      - max-age=31536000; includeSubDomains; preload
-      traceresponse:
-      - 00-49029e194135ba0bea2e456a07871376-c0fc485a2c9636c6-01
-      transfer-encoding:
-      - chunked
-      vary:
-      - Accept-Encoding
-      x-robots-tag:
-      - none
-    status:
-      code: 200
-      message: OK
-- request:
     body: '{"max_tokens":4096,"messages":[{"role":"user","content":"Summarize this
-      sentence: compaction captures request metadata."}],"model":"claude-opus-5","compaction":{"type":"summarize"}}'
+      sentence: compaction captures request metadata."}],"model":"claude-opus-5-5","compaction":{"type":"summarize"}}'
     headers:
       accept:
       - application/json
@@ -132,7 +14,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '181'
+      - '183'
       content-type:
       - application/json
       host:
@@ -163,16 +45,11 @@ interactions:
     uri: https://api.anthropic.com/v1/messages?beta=true
   response:
     body:
-      string: "{\"model\":\"claude-opus-5\",\"id\":\"msg_011CgeERXxVzd9sEaUEGoN9H\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"compaction\",\"content\":\"**Context:**
-        The conversation consisted of a single user request with no prior history
-        or tool use.\\n\\n**User's task:** \\\"Summarize this sentence: compaction
-        captures request metadata.\\\"\\n\\n**Status:** No response had yet been delivered
-        to the user; the summarization request remains outstanding.\\n\\n**Work product
-        / proposed answer for the pending task:** A suitable summary of the sentence
-        is: \\\"Compaction records request metadata\\\" \u2014 i.e., the compaction
-        process preserves information describing the requests.\\n\\n**Next step:**
-        Provide the user with this brief summary (optionally noting that the original
-        sentence is already very short, so the summary is essentially a restatement/condensation).\",\"signature\":\"CAIS9ggKHggTGALyARdjb21wYWN0aW9uX3NpZ25hdHVyZV92MRIMgE4t1981KuRr00I0GgyCg1kaAbPkPy9WOM4iMDbpbVRYLGoFhzBQLDThqehbTmFG2gg46LauPg5ispdbiyrQCkvqC40KhE5kgYEvSiqFCD+y0pO/pLbcHLrZYOXVElBJg5pv4hMivSi6v7s/PcIrHD7C/U+N8nHjAAtpmUssRveYpbBqtOxuBwOIlxboKqjfaqznj7G8KIzuaMeBZqSJhcMgMh76F+4W2JnwhpP3cTVVgbjgYzJMvEM2geFv0fvmCf4z8pfJIUzCnZwCeno72NjvQmOS93M7SvBtJtSvuFWTdVEVAmwt+bs0kF2dQWUAoTmQ/FzkIa3vK9LPN5Z5riFVYo+AJJ3L8sVQyRL5Plm57XRNSpYhGuR9KMaK/lM3w0l0KA4EO1hJwBPezQ3KWW6ZwamLZ0H4QSIbddFzGWcpdJL0lkMwBog95ajWeRT73JCYbjozoDaiaYkqZ5ciWJqB9XQa03LXJTZL/4KX2gvmOyFL8Zlm/s2TLBAre5sSzeXfqUjr4vcQfCDeQjnF9rjRA2MYCHbMXFOnw0SWXdi4uqARjCc2lP2vOfUqEDg+tGKUAGMWlzGx7ZAeCjvjMT4ozHiEh0aSycNUtg726EQtgbBYC87WQCukxjhbwLslu3lPGFytyUB18Isge8Q2lSMsSpMhDgbECUnVFtY0Y4DqXkIjK2ajpY0tU2K6nQsFc6u1nfm4eC7P1AHV49QJPjQVBPD4CulZ4uiMiBO/FDQdsq3HBtU9NOZDpLCFi68yGSHsQAB65JS8hEDrFR2emPjnrL6WUtUE7xZagd8daaDBUxBubhP+F4Tsz0dvOtMLHjsmrOCscY5+LQ3bFeHY1CrGxWKVJtLTzR4b8gKhxnV7rUnwk/jF+vzcBqiL+b2rwvaHUcreK5ppLDwyRJgspFJBOskHDz6VyfmSqf0gW1rGEk+LiqD4l91fu1CSoie58WNjMrASn1EdnpOVTXFMXM9yugGBLIBCQsuwpWnCdyH5j/e4FLLrC4FQYe8zVqcFA3V49toJAWwEKKB0xk03LKyBv5gmCPcEHZrp3TzyHnRndJ9rtYxdN3ZC+fXSbyEQFvW92fCqpEdwIt4Jhm9kVsycCUw/bSeJYonxG0eLO7UFg4PCywhrZ3GIb+gltssyTKyLDI0hkzKsUpeSJBgVhhxUCX6qfZtcO/z5Ex+TimpF6XQpH0enEa61+vgnM7PyaAVkkgsUwm7gbq0EKam4DywJhDllMn8wBG+l+68FIVe3HejfvsMR64lARAujcyS6631X+xb6nAj5c2VOMquYnfABejIiG0mK4TqubSnETiYGqXuoZ8FWz9EK1DuQuJzhfK2/+UiBkAboaM5ewDx1aWDQ2Pll3tr3qRPjngIQUWs9A5Mtbb8z5WNz3rTtXb2EB/yMPCwktsaZLZ+fQcLLWipSGwOsJeNX/1xFjYB7WjW+i0Q8q9gpizuvfOO7ur5SNqPDNxgL\"}],\"container\":null,\"stop_reason\":\"compaction\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"iterations\":[{\"input_tokens\":82,\"output_tokens\":459,\"cache_read_input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"type\":\"compaction\"}],\"output_tokens\":0,\"service_tier\":\"standard\",\"inference_geo\":\"global\",\"speed\":\"standard\"},\"diagnostics\":null}"
+      string: '{"model":"claude-opus-5-5","id":"msg_011CguZa64Hn255TMSogTtAt","type":"message","role":"assistant","content":[{"type":"compaction","content":"The
+        user asked for a summary of the sentence \"compaction captures request metadata.\"
+        That request has not yet been answered. A concise summary would be: \"Compaction
+        records request metadata\" or simply \"Compaction stores request details.\"
+        No other tasks, context, or constraints were provided.","signature":"CAISjgkKHggTGALyARdjb21wYWN0aW9uX3NpZ25hdHVyZV92MRIMdoen8lwx31zAKUWIGgyzKZcJPpq2kM+wTqUiMAnFQ0VrEXmOTbfFwyC2mTqy8ZRUMLD5dEmfc+06KWpKyiVog2a3di8ABm0V0NCH3yqdCAXiPbRitTA0ciZ73xoX84ZeXoVKYmnlVC7w+IJuwFWSLrFbrNhm4TOyJLLrYexEDLHshm2q8u6qDf5Fk2CqgKH2EfsZ8i9ZwlaW9vdsMYco1sjj7n8HoWm5uUJDkcMcTPP9HN7PiaXGiEJ81kpARbE25SoMKquXBhrM1xQ5PHB8momfjpYCZ/+r/mIluO/HBS9xqWQozcXvZBiLW+uSAlGw2zzIAZGsECQOS9WU3JqUyDFDxm2S74f2eU214HmkFToYvQ/vb3LjdbasCAy9bscQ1lP+CCi/kNdzSGcsYlt0mHD5lMhrAD+UZ1arXSrTY0/t7AiDs/3UXQOn6egOWErdG96pLBNMcMgKc19zFAKEj5jWoSRHXvtbAHnc/BHmsqmvQ505XYPM9898ns253iUn0iHD7qbjVfh/jwkqnegtIEJbAYcV/Bkx+iCTqoIPqwta3qEoqCfWaRDnNZW/9F2GaT6V35gT2gpjxptOR4PN8TmBOkt8Ez4fmTD4Pg2IW5z+HqTvghUr3rmLw0UFvEsg6kZfm7xxEdWsA8/0iTXUJBYyNbdvCEelcDF4da5tWXhQA3EYk8cFV7NpMpxxsfUUuI9+iCducNZPJssCqTkgGS8lR/1UAaxP90RQrTdmEUxZHj2q/cPQ8KIk9B5XZOiXH6j8isLbZGok3NTcuroQDJLsyjvYYCcDJJdr5f3dJhHwBod3Tefkc4H/adpZ1189SrlH8DD4btsCG7StfalP1aH373+X/+FCzRbCMru0Ts7SjQJr7HCbUFR6eoGxVmmuEMXZqi5JvDP1pBHF3svJ4Iu+ozdCNwN45wOZnCCKwb9MSeL+jEJqkFVvtsqT+1P/YOS023n3ORHixCsPuxqMRdwJzwzVf1b5aGV6ytBCrzEZB+BrmBF6U7Ys8FU35tDuh4Zi1mVA3hKcX4Uv/MT2+K6zcvP0RXNg/OZgREY8V+rJCl+ICiNTzkxKHczk1Pc+WXc6ZMYeMfmL+O0Lh4ANB3eOY5mrBcVlZ0P/WdSYyXqbMyNNjJz+V1Rly1cEB/pRKp5XTU/M5wgRXa9uKT/1W9z6vIsKcQEBezW24NU4cDaqyhRwIF1uzQvDDstWFDd3iXlOoHgTJOXlNjCxiVLBYpxe8ssFC2bK4gIAamoqxoqN3dqnkm0csoXzXOS9bCGcNrRdqSUXzs5dUMw2sP5GZ9CgTxWPFpZHk/UzhK2zQJXZ7AkFQv1AoSebycNoT+gOxmfPcQn68JZZzcyhV6lJTHIKy7gl9+l0szCzjMXrNTQuU4EQwhygJdlPKf1vrED4N8M44b76QMjoemKmrY5/8A5fK/IZFf4lHXckHaEzS5adTbg5NPuBKkYupXjlUxPWOv9EJ5jBX4NZZAx9Tc80Ceg3RmG3AkI+CQqR5xgL"}],"container":null,"stop_reason":"compaction","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":0,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"iterations":[{"input_tokens":85,"output_tokens":263,"cache_read_input_tokens":0,"cache_creation_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"type":"compaction"}],"output_tokens":0,"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
     headers:
       anthropic-organization-id:
       - 27796668-7351-40ac-acc4-024aee8995a5
@@ -181,51 +58,51 @@ interactions:
       anthropic-ratelimit-input-tokens-remaining:
       - '10000000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-11-02T14:08:00Z'
+      - '2026-11-10T16:27:56Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-11-02T14:08:00Z'
+      - '2026-11-10T16:27:56Z'
       anthropic-ratelimit-requests-limit:
-      - '20000'
+      - '45000'
       anthropic-ratelimit-requests-remaining:
-      - '19999'
+      - '44999'
       anthropic-ratelimit-requests-reset:
-      - '2026-11-02T14:07:53Z'
+      - '2026-11-10T16:27:53Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
       - '12000000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-11-02T14:08:00Z'
+      - '2026-11-10T16:27:56Z'
       anthropic-workspace-id:
       - wrkspc_018bFG1FgNVWqx5pthtdGTzS
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a543b546ed78f288-YYZ
+      - a5866d5d8e6dac51-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2965'
+      - '2595'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - application/json
       date:
-      - Mon, 02 Nov 2026 14:08:00 GMT
+      - Tue, 10 Nov 2026 16:27:56 GMT
       request-id:
-      - req_011CgeERXh8dodsZ3dy7yF42
+      - req_011CguZa5t7sGWXWZNTihb5u
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=7253
+      - x-originResponse;dur=2928
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-ad0104fd9fef44f6c11cc5585eae248d-73f6598e9c20e109-01
+      - 00-16d1756fddafc34bf79edc9e8239cf4a-c9a7d2d6f0b26c9c-01
       transfer-encoding:
       - chunked
       vary:
