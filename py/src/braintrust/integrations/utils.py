@@ -20,6 +20,7 @@ import warnings
 import wave
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from enum import Enum
 from numbers import Real
 from typing import Any
 
@@ -581,6 +582,60 @@ def _is_not_given(value: object) -> bool:
         return type(value).__name__ in {"NotGiven", "Omit"}
     except Exception:
         return False
+
+
+def _normalize_service_tier(value: Any) -> str | None:
+    """Normalize a provider service tier identifier, or return ``None`` if unusable."""
+    if isinstance(value, Enum):
+        value = value.value
+    if not isinstance(value, str):
+        return None
+    tier = value.strip().lower()
+    return tier or None
+
+
+def _service_tier_metadata(*, requested: Any = None, served: Any = None) -> dict[str, str]:
+    """Return canonical ``requested_service_tier`` / ``served_service_tier`` metadata.
+
+    The fields are independent: a requested tier (or policy such as ``"auto"``)
+    never implies the served tier. Absent, empty, or non-string values are omitted.
+    """
+    metadata: dict[str, str] = {}
+    if (tier := _normalize_service_tier(requested)) is not None:
+        metadata["requested_service_tier"] = tier
+    if (tier := _normalize_service_tier(served)) is not None:
+        metadata["served_service_tier"] = tier
+    return metadata
+
+
+def _service_tier_type(value: Any) -> Any:
+    """Reduce a ``{"type": tier}`` object (e.g. Bedrock ``serviceTier``) to its ``type``."""
+    return value.get("type") if isinstance(value, Mapping) else value
+
+
+class _ServedServiceTierTracker:
+    """Log a streamed call's served tier on its span as soon as it is reported or changes.
+
+    Logging on change, not at stream end, keeps an observed tier when the caller
+    stops early or the stream fails. Absent or empty values never erase a captured tier.
+    """
+
+    __slots__ = ("_raw", "_span", "tier")
+
+    def __init__(self, span: Span) -> None:
+        self._span = span
+        self._raw: Any = None
+        self.tier: str | None = None
+
+    def observe(self, served: Any) -> None:
+        # Most streams repeat the same raw value on every chunk; skip normalizing it again.
+        if served is None or served == self._raw:
+            return
+        self._raw = served
+        tier = _normalize_service_tier(served)
+        if tier is not None and tier != self.tier:
+            self.tier = tier
+            self._span.log(metadata={"served_service_tier": tier})
 
 
 def _serialize_response_format(response_format: Any) -> Any:

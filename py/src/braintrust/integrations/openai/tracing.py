@@ -20,6 +20,8 @@ from braintrust.integrations.utils import (
     _parse_openai_usage_metrics,
     _prettify_response_params,
     _serialize_response_format,
+    _ServedServiceTierTracker,
+    _service_tier_metadata,
     _timing_metrics,
     _try_to_dict,
 )
@@ -251,6 +253,11 @@ def log_headers(response: Any, span: Span):
                 "cached": 1 if cached_value.lower() in ["true", "hit"] else 0,
             }
         )
+
+
+def _responses_event_served_tier(event: Any) -> Any:
+    # Lifecycle events (created/in_progress/completed/...) carry the response.
+    return _get_attr_or_item(_get_attr_or_item(event, "response"), "service_tier")
 
 
 def _extract_moderation_metadata(response: Any) -> dict[str, Any]:
@@ -638,6 +645,7 @@ class ChatCompletionWrapper:
                     try:
                         first = True
                         all_results = []
+                        served_tier = _ServedServiceTierTracker(span)
                         for item in raw_response:
                             if first:
                                 span.log(
@@ -646,6 +654,7 @@ class ChatCompletionWrapper:
                                     }
                                 )
                                 first = False
+                            served_tier.observe(_get_attr_or_item(item, "service_tier"))
                             all_results.append(item)
                             yield item
 
@@ -663,7 +672,10 @@ class ChatCompletionWrapper:
                 span.log(
                     metrics=metrics,
                     output=_choices_output(raw_response, audio_format=audio_format),
-                    metadata=_extract_moderation_metadata(raw_response),
+                    metadata={
+                        **_extract_moderation_metadata(raw_response),
+                        **_service_tier_metadata(served=getattr(raw_response, "service_tier", None)),
+                    },
                 )
                 return create_response if (raw_requested and hasattr(create_response, "parse")) else raw_response
         finally:
@@ -701,6 +713,7 @@ class ChatCompletionWrapper:
                     try:
                         first = True
                         all_results = []
+                        served_tier = _ServedServiceTierTracker(span)
                         async for item in raw_response:
                             if first:
                                 span.log(
@@ -709,6 +722,7 @@ class ChatCompletionWrapper:
                                     }
                                 )
                                 first = False
+                            served_tier.observe(_get_attr_or_item(item, "service_tier"))
                             all_results.append(item)
                             yield item
 
@@ -731,7 +745,10 @@ class ChatCompletionWrapper:
                 span.log(
                     metrics=metrics,
                     output=_choices_output(raw_response, audio_format=audio_format),
-                    metadata=_extract_moderation_metadata(raw_response),
+                    metadata={
+                        **_extract_moderation_metadata(raw_response),
+                        **_service_tier_metadata(served=getattr(raw_response, "service_tier", None)),
+                    },
                 )
                 return create_response if (raw_requested and hasattr(create_response, "parse")) else raw_response
         finally:
@@ -746,7 +763,10 @@ class ChatCompletionWrapper:
             ret,
             {
                 "input": processed_input,
-                "metadata": _filter_metadata(params, _CHAT_COMPLETION_METADATA_PARAMS),
+                "metadata": {
+                    **_filter_metadata(params, _CHAT_COMPLETION_METADATA_PARAMS),
+                    **_service_tier_metadata(requested=params.get("service_tier")),
+                },
             },
         )
 
@@ -1624,6 +1644,7 @@ class ResponseWrapper:
                     try:
                         first = True
                         all_results = []
+                        served_tier = _ServedServiceTierTracker(span)
                         for item in raw_response:
                             if first:
                                 span.log(
@@ -1632,6 +1653,7 @@ class ResponseWrapper:
                                     }
                                 )
                                 first = False
+                            served_tier.observe(_responses_event_served_tier(item))
                             all_results.append(item)
                             yield item
 
@@ -1683,6 +1705,7 @@ class ResponseWrapper:
                     try:
                         first = True
                         all_results = []
+                        served_tier = _ServedServiceTierTracker(span)
                         async for item in raw_response:
                             if first:
                                 span.log(
@@ -1691,6 +1714,7 @@ class ResponseWrapper:
                                     }
                                 )
                                 first = False
+                            served_tier.observe(_responses_event_served_tier(item))
                             all_results.append(item)
                             yield item
 
@@ -1735,7 +1759,10 @@ class ResponseWrapper:
             ret,
             {
                 "input": processed_input,
-                "metadata": _filter_metadata(params, _RESPONSES_METADATA_PARAMS),
+                "metadata": {
+                    **_filter_metadata(params, _RESPONSES_METADATA_PARAMS),
+                    **_service_tier_metadata(requested=params.get("service_tier")),
+                },
             },
         )
 
@@ -1755,6 +1782,7 @@ class ResponseWrapper:
             value = getattr(result, key, None)
             if value is not None:
                 metadata[key] = value
+        metadata.update(_service_tier_metadata(served=getattr(result, "service_tier", None)))
         if metadata:
             data["metadata"] = metadata
 

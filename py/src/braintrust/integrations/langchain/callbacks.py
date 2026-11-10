@@ -6,9 +6,11 @@ from typing import Any, TypedDict
 from uuid import UUID
 
 from braintrust.generated_types import SpanAttributes
+from braintrust.integrations.utils import _ServedServiceTierTracker, _service_tier_metadata, _service_tier_type
 from braintrust.logger import NOOP_SPAN, Logger, Span, current_span, init_logger
 from braintrust.logger import start_span as _bt_start_span
 from braintrust.span_types import SpanTypeAttribute
+from braintrust.util import coalesce
 from braintrust.version import VERSION as sdk_version
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks.base import BaseCallbackHandler
@@ -104,6 +106,44 @@ def _split_tools(invocation_params: Mapping[str, Any] | None) -> tuple[dict[str,
     return remaining, tools, tool_choice
 
 
+def _tier_from(source: Mapping[str, Any]) -> Any:
+    return _service_tier_type(coalesce(source.get("service_tier"), source.get("serviceTier")))
+
+
+def _requested_service_tier(invocation_params: Any) -> dict[str, str]:
+    """Requested tier from the effective (default + per-call) invocation params."""
+    if not isinstance(invocation_params, Mapping):
+        return {}
+    return _service_tier_metadata(requested=_tier_from(invocation_params))
+
+
+def _served_service_tier_from_source(source: Any) -> Any:
+    """Raw served tier from a response metadata dict, its ``usage``, or its ``usage_metadata``."""
+    if not isinstance(source, Mapping):
+        return None
+    for candidate in (source, source.get("usage"), source.get("usage_metadata")):
+        if isinstance(candidate, Mapping) and (tier := _tier_from(candidate)) is not None:
+            return tier
+    return None
+
+
+def _served_service_tiers_from_generation(generation: Any) -> list[Any]:
+    message = getattr(generation, "message", None)
+    return [
+        _served_service_tier_from_source(getattr(generation, "generation_info", None)),
+        _served_service_tier_from_source(getattr(message, "response_metadata", None)),
+    ]
+
+
+def _served_service_tier_from_response(response: LLMResult) -> dict[str, str]:
+    """Served tier reported in an LLM result; later sources replace earlier ones."""
+    metadata = _service_tier_metadata(served=_served_service_tier_from_source(response.llm_output))
+    for generation in _walk_generations(response):
+        for tier in _served_service_tiers_from_generation(generation):
+            metadata.update(_service_tier_metadata(served=tier))
+    return metadata
+
+
 class BraintrustCallbackHandler(BaseCallbackHandler):
     root_run_id: UUID | None = None
 
@@ -122,6 +162,8 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         self._start_times: dict[UUID, float] = {}
         self._first_token_times: dict[UUID, float] = {}
         self._ttft_ms: dict[UUID, float] = {}
+        # Served tier observed on streamed chunks, keyed by LLM run.
+        self._streamed_service_tiers: dict[UUID, _ServedServiceTierTracker] = {}
 
     def _start_span(
         self,
@@ -269,6 +311,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         self._start_times.pop(run_id, None)
         self._first_token_times.pop(run_id, None)
         self._ttft_ms.pop(run_id, None)
+        self._streamed_service_tiers.pop(run_id, None)
 
     def on_chain_error(
         self,
@@ -389,11 +432,13 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         self._start_times[run_id] = time.perf_counter()
         self._first_token_times.pop(run_id, None)
         self._ttft_ms.pop(run_id, None)
+        self._streamed_service_tiers.pop(run_id, None)
 
         span_metadata: dict[str, Any] = {"metadata": metadata or {}}
         provider = _provider_from_serialized(serialized)
         if provider:
             span_metadata["provider"] = provider
+        span_metadata.update(_requested_service_tier(kwargs.get("invocation_params")))
 
         self._start_span(
             parent_run_id,
@@ -419,6 +464,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         self._start_times[run_id] = time.perf_counter()
         self._first_token_times.pop(run_id, None)
         self._ttft_ms.pop(run_id, None)
+        self._streamed_service_tiers.pop(run_id, None)
 
         remaining_params, tools, tool_choice = _split_tools(invocation_params)
         provider = _provider_from_serialized(serialized)
@@ -433,6 +479,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
             span_metadata["tool_choice"] = tool_choice
         if provider:
             span_metadata["provider"] = provider
+        span_metadata.update(_requested_service_tier(invocation_params))
 
         self._start_span(
             parent_run_id,
@@ -468,6 +515,11 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
             end_metadata["model"] = model_name
         if provider:
             end_metadata["provider"] = provider
+        # A streamed result's generations are chunks merged by LangChain, which
+        # concatenates repeated string fields, so prefer the tier seen per chunk.
+        streamed = self._streamed_service_tiers.pop(run_id, None)
+        if streamed is None or streamed.tier is None:
+            end_metadata.update(_served_service_tier_from_response(response))
 
         self._end_span(
             run_id,
@@ -561,6 +613,14 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
             start = self._start_times.get(run_id)
             if start is not None:
                 self._ttft_ms[run_id] = now - start
+
+        if chunk is not None and run_id in self.spans:
+            # The tracker logs on change, so the tier survives if the stream later errors.
+            tracker = self._streamed_service_tiers.get(run_id)
+            if tracker is None:
+                tracker = self._streamed_service_tiers[run_id] = _ServedServiceTierTracker(self.spans[run_id])
+            for tier in _served_service_tiers_from_generation(chunk):
+                tracker.observe(tier)
 
     def on_text(
         self,

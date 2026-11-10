@@ -9,6 +9,7 @@ from typing import cast
 import pytest
 from braintrust import logger
 from braintrust.integrations.langchain import BraintrustCallbackHandler
+from braintrust.integrations.test_utils import assert_service_tiers
 from braintrust.logger import NOOP_SPAN, current_span, flush
 from braintrust.test_helpers import init_test_logger
 from langchain_core.callbacks import BaseCallbackHandler
@@ -70,6 +71,10 @@ def test_llm_calls(logger_memory_logger):
     trace_root_id = spans[0]["root_span_id"]
 
     assert_matches_object(spans, expected_prompt_chain_spans(root_span_id, trace_root_id, tags=["test"]))
+
+    # No tier requested; OpenAI reports the tier that served the call.
+    llm_span = next(span for span in spans if span["span_attributes"]["type"] == "llm")
+    assert_service_tiers(llm_span["metadata"], served="default")
 
 
 @pytest.mark.vcr
@@ -693,6 +698,29 @@ async def test_streaming_ttft(logger_memory_logger, is_async, count_to, max_comp
     # async recordings are guaranteed to carry token counts.
     if is_async:
         assert llm_span["metrics"]["total_tokens"] > 0
+    # Only the finish-reason chunk carries the served tier.
+    assert_service_tiers(llm_span["metadata"], served="default")
+
+
+SERVICE_TIER_MODEL = "gpt-5-nano"
+
+
+@pytest.mark.vcr
+def test_service_tier_requested_and_served(logger_memory_logger):
+    test_logger, memory_logger = logger_memory_logger
+    assert not memory_logger.pop()
+
+    handler = BraintrustCallbackHandler(logger=test_logger)
+    model = ChatOpenAI(model=SERVICE_TIER_MODEL, service_tier="flex", reasoning_effort="minimal")
+    config: RunnableConfig = {"callbacks": [cast(BaseCallbackHandler, handler)]}
+
+    # The model default applies to the first call; the second overrides it per call.
+    model.invoke("Reply with the word ok.", config=config)
+    model.invoke("Reply with the word ok.", config=config, service_tier="auto")
+
+    first, second = [span for span in memory_logger.pop() if span["span_attributes"]["type"] == "llm"]
+    assert_service_tiers(first["metadata"], requested="flex", served="flex")
+    assert_service_tiers(second["metadata"], requested="auto", served="default")
 
 
 @pytest.mark.vcr

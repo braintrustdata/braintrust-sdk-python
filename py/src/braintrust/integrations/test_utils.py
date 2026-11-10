@@ -1,3 +1,4 @@
+import enum
 import os
 import subprocess
 import sys
@@ -28,6 +29,8 @@ from braintrust.integrations.utils import (
     _resolve_audio_attachment_options,
     _ResolvedAttachment,
     _serialize_response_format,
+    _ServedServiceTierTracker,
+    _service_tier_metadata,
     _timing_metrics,
     _try_to_dict,
 )
@@ -137,6 +140,15 @@ def verify_autoinstrument_script(script_name: str, timeout: int = 30) -> subproc
         f"Script {script_name} exited without printing SUCCESS:\n{result.stdout}\n{result.stderr}"
     )
     return result
+
+
+def assert_service_tiers(metadata, *, requested=None, served=None):
+    """Assert the canonical service tier fields; ``None`` means the field must be absent."""
+    for key, expected in (("requested_service_tier", requested), ("served_service_tier", served)):
+        if expected is None:
+            assert key not in metadata, (key, metadata.get(key))
+        else:
+            assert metadata.get(key) == expected, (key, metadata.get(key))
 
 
 def assert_metrics_are_valid(metrics, start=None, end=None):
@@ -553,3 +565,56 @@ def test_merge_timing_and_usage_metrics(monkeypatch):
         "time_to_first_token": 2.0,
         "tokens": 1,
     }
+
+
+class _TierEnum(str, enum.Enum):
+    PRIORITY = "PRIORITY"
+
+
+@pytest.mark.parametrize(
+    ("requested", "served", "expected"),
+    [
+        ("flex", "flex", {"requested_service_tier": "flex", "served_service_tier": "flex"}),
+        ("flex", "default", {"requested_service_tier": "flex", "served_service_tier": "default"}),
+        ("auto", "priority", {"requested_service_tier": "auto", "served_service_tier": "priority"}),
+        (None, "priority", {"served_service_tier": "priority"}),
+        ("flex", None, {"requested_service_tier": "flex"}),
+        (None, None, {}),
+        ("   ", 7, {}),
+        ({"type": "flex"}, ["default"], {}),
+        (
+            " Standard_Only ",
+            "  PRIORITY",
+            {"requested_service_tier": "standard_only", "served_service_tier": "priority"},
+        ),
+        ("on_demand", "mystery_TIER", {"requested_service_tier": "on_demand", "served_service_tier": "mystery_tier"}),
+        (
+            _TierEnum.PRIORITY,
+            _TierEnum.PRIORITY,
+            {"requested_service_tier": "priority", "served_service_tier": "priority"},
+        ),
+        (NotGiven(), "default", {"served_service_tier": "default"}),
+    ],
+)
+def test_service_tier_metadata(requested, served, expected):
+    assert _service_tier_metadata(requested=requested, served=served) == expected
+
+
+class _RecordingSpan:
+    def __init__(self):
+        self.logged = []
+
+    def log(self, **event):
+        self.logged.append(event)
+
+
+def test_served_service_tier_tracker_logs_on_change_and_never_erases():
+    span = _RecordingSpan()
+    tracker = _ServedServiceTierTracker(span)
+    for served in ("auto", "auto", None, "", "DEFAULT", "default", None):
+        tracker.observe(served)
+    assert tracker.tier == "default"
+    assert span.logged == [
+        {"metadata": {"served_service_tier": "auto"}},
+        {"metadata": {"served_service_tier": "default"}},
+    ]

@@ -6,8 +6,14 @@ import time
 import pytest
 from braintrust import logger
 from braintrust.integrations.openrouter import OpenRouterIntegration, wrap_openrouter
-from braintrust.integrations.test_utils import assert_metrics_are_valid, verify_autoinstrument_script
+from braintrust.integrations.test_utils import (
+    assert_metrics_are_valid,
+    assert_service_tiers,
+    verify_autoinstrument_script,
+)
+from braintrust.integrations.utils import _normalize_service_tier
 from braintrust.test_helpers import init_test_logger
+from braintrust.util import get_signature
 from wrapt import FunctionWrapper
 
 
@@ -29,6 +35,17 @@ def memory_logger():
 
 def _get_client():
     return OpenRouter(api_key=os.environ.get("OPENROUTER_API_KEY"))
+
+
+def _last_tier(raw_tiers):
+    """The tier a stream span should end with: the last one reported, if any."""
+    return next((t for t in map(_normalize_service_tier, reversed(raw_tiers)) if t), None)
+
+
+def _skip_without_chat_service_tier():
+    Chat = importlib.import_module("openrouter.chat").Chat
+    if "service_tier" not in get_signature(Chat.send).parameters:
+        pytest.skip("Chat service_tier is unavailable in this OpenRouter version")
 
 
 @pytest.mark.vcr
@@ -87,6 +104,9 @@ def test_wrap_openrouter_chat_send_stream_sync(memory_logger):
     assert span["metadata"]["provider"] == "openai"
     assert span["metadata"]["model"] == "gpt-4o-mini"
     assert span["metrics"]["time_to_first_token"] >= 0
+    assert_service_tiers(
+        span["metadata"], served=_last_tier([getattr(chunk, "service_tier", None) for chunk in chunks])
+    )
     assert "10" in span["output"][0]["message"]["content"]
     assert_metrics_are_valid(span["metrics"], start, end)
 
@@ -177,6 +197,8 @@ def test_wrap_openrouter_beta_responses_send(memory_logger):
     assert span["metadata"]["model"] == "gpt-4o-mini"
     assert span["metadata"]["status"] == "completed"
     assert span["metadata"]["id"]
+    # The SDK sends its ``service_tier="auto"`` default on every Responses request.
+    assert_service_tiers(span["metadata"], requested="auto", served=_normalize_service_tier(response.service_tier))
     assert span["metrics"]["prompt_tokens"] > 0
     assert span["metrics"]["completion_tokens"] > 0
     assert span["metrics"]["tokens"] > 0
@@ -242,8 +264,33 @@ async def test_wrap_openrouter_responses_send_async_stream(memory_logger):
     assert span["metrics"]["completion_tokens"] > 0
     assert span["metrics"]["tokens"] > 0
     assert span["metrics"]["time_to_first_token"] >= 0
+    # The final lifecycle event's tier wins (latest: "auto" events, then "default" on completion).
+    lifecycle_tiers = [item.response.service_tier for item in items if getattr(item, "response", None) is not None]
+    served = _last_tier(lifecycle_tiers)
+    assert served is not None
+    assert_service_tiers(span["metadata"], requested="auto", served=served)
     assert span["output"][0]["content"][0]["text"]
     assert_metrics_are_valid(span["metrics"], start, end)
+
+
+@pytest.mark.vcr
+def test_wrap_openrouter_chat_send_service_tier(memory_logger):
+    _skip_without_chat_service_tier()
+    assert not memory_logger.pop()
+
+    client = wrap_openrouter(_get_client())
+    result = client.chat.send(
+        model=CHAT_MODEL,
+        messages=[{"role": "user", "content": "What is 2+2? Reply with just the number."}],
+        max_tokens=10,
+        service_tier="flex",
+    )
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    # Requested flex, but the provider reports the tier that actually served the call.
+    assert result.service_tier == "default"
+    assert_service_tiers(spans[0]["metadata"], requested="flex", served="default")
 
 
 ARMOR_TOOL = {

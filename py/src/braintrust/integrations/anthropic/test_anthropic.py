@@ -1140,6 +1140,9 @@ def test_anthropic_messages_model_params_inputs(memory_logger):
         assert "2" in log["output"]["content"][0]["text"]
         assert log["metadata"]["model"] == MODEL
         assert log["metadata"]["max_tokens"] == 300
+        assert msg.usage.service_tier == "standard"
+        assert log["metadata"]["served_service_tier"] == "standard"
+        assert "requested_service_tier" not in log["metadata"]
         if MODEL == LEGACY_MODEL:
             assert log["metadata"]["temperature"] == 0.5
             assert log["metadata"]["top_p"] == 0.5
@@ -1192,6 +1195,31 @@ def test_anthropic_messages_stream_errors(memory_logger):
     span = spans[0]
     assert "Exception: fake-error" in span["error"]
     assert span["metrics"]["end"] > 0
+
+
+def _skip_if_service_tier_unsupported():
+    if "service_tier" not in inspect.signature(_get_client().messages.create).parameters:
+        pytest.skip("Installed anthropic SDK does not support the service_tier request parameter")
+
+
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
+def test_anthropic_messages_create_service_tier(memory_logger):
+    _skip_if_service_tier_unsupported()
+    assert not memory_logger.pop()
+
+    client = wrap_anthropic(_get_client())
+    msg = client.messages.create(
+        model=LATEST_MODEL,
+        max_tokens=16,
+        service_tier="standard_only",
+        messages=[{"role": "user", "content": "Reply with just the word ok."}],
+    )
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    assert msg.usage.service_tier == "standard"
+    assert spans[0]["metadata"]["requested_service_tier"] == "standard_only"
+    assert spans[0]["metadata"]["served_service_tier"] == "standard"
 
 
 @pytest.mark.vcr
@@ -2051,6 +2079,11 @@ async def test_anthropic_create_stream_lifecycle(memory_logger, is_async, cleanu
     if cleanup.endswith("partial"):
         assert span["output"]["role"] == "assistant"
         assert span["metrics"]["time_to_first_token"] >= 0
+        # message_start was consumed before cancellation, so its tier is retained.
+        assert span["metadata"]["served_service_tier"] == "standard"
+    else:
+        # No event reported a tier before the stream ended.
+        assert "served_service_tier" not in span["metadata"]
     if cleanup.endswith("error") or cleanup == "provider_cancel":
         assert str(error) in span["error"]
     if not cleanup.startswith("gc"):

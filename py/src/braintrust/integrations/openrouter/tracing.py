@@ -1,6 +1,8 @@
 """OpenRouter-specific tracing helpers."""
 
+import functools
 import importlib.util
+import inspect
 import logging
 import time
 from collections.abc import AsyncIterator, Iterator
@@ -12,10 +14,13 @@ from braintrust.integrations.utils import (
     _log_and_end_span,
     _log_error_and_end_span,
     _merge_timing_and_usage_metrics,
+    _ServedServiceTierTracker,
+    _service_tier_metadata,
     _try_to_dict,
 )
 from braintrust.logger import start_span as _bt_start_span
 from braintrust.span_types import SpanTypeAttribute
+from braintrust.util import get_signature
 
 
 _INSTRUMENTATION = "openrouter-auto"
@@ -188,14 +193,35 @@ def _stamp_model_and_provider(metadata: dict[str, Any], raw_model: Any, routing:
     return model
 
 
+@functools.lru_cache(maxsize=32)
+def _default_service_tier(fn: Any) -> Any:
+    """The ``service_tier`` default of an SDK method, which it sends when the caller omits it.
+
+    Responses ``send`` defaults to ``"auto"`` and serializes it into every request,
+    so that default is the effective requested tier.
+    """
+    try:
+        param = get_signature(fn).parameters.get("service_tier")
+    except (NameError, TypeError, ValueError):
+        return None
+    return None if param is None or param.default is inspect.Parameter.empty else param.default
+
+
 def _build_request_metadata(
-    kwargs: dict[str, Any], keys: tuple[str, ...], *, embedding: bool = False
+    kwargs: dict[str, Any], keys: tuple[str, ...], *, embedding: bool = False, wrapped: Any = None
 ) -> dict[str, Any]:
     metadata = {key: kwargs[key] for key in keys if key in kwargs and kwargs[key] is not None}
     model = _stamp_model_and_provider(metadata, kwargs.get("model"), kwargs.get("provider"))
     metadata.setdefault("provider", "openrouter")
     if embedding and isinstance(model, str):
         metadata["embedding_model"] = model
+    if "service_tier" in keys:
+        requested = (
+            kwargs["service_tier"]
+            if "service_tier" in kwargs
+            else _default_service_tier(getattr(wrapped, "__func__", wrapped))
+        )
+        metadata.update(_service_tier_metadata(requested=requested))
     return metadata
 
 
@@ -278,6 +304,7 @@ class _TracedOpenRouterSyncStream:
         self._first_token_time = None
         self._items = []
         self._closed = False
+        self._served_tier = _ServedServiceTierTracker(span)
 
     def __iter__(self) -> Iterator[Any]:
         return self
@@ -295,6 +322,7 @@ class _TracedOpenRouterSyncStream:
         if self._first_token_time is None and _chunk_has_output(item):
             self._first_token_time = time.time()
         self._items.append(item)
+        self._served_tier.observe(_stream_item_service_tier(item, self._kind))
         return item
 
     def __enter__(self):
@@ -332,6 +360,7 @@ class _TracedOpenRouterAsyncStream:
         self._first_token_time = None
         self._items = []
         self._closed = False
+        self._served_tier = _ServedServiceTierTracker(span)
 
     def __aiter__(self) -> AsyncIterator[Any]:
         return self
@@ -349,6 +378,7 @@ class _TracedOpenRouterAsyncStream:
         if self._first_token_time is None and _chunk_has_output(item):
             self._first_token_time = time.time()
         self._items.append(item)
+        self._served_tier.observe(_stream_item_service_tier(item, self._kind))
         return item
 
     async def __aenter__(self):
@@ -374,6 +404,11 @@ class _TracedOpenRouterAsyncStream:
             return
 
         _finalize_stream(self._span, self._metadata, self._items, self._kind, self._start_time, self._first_token_time)
+
+
+def _stream_item_service_tier(item: Any, kind: str) -> Any:
+    # Responses streams report the tier on lifecycle events' ``response``.
+    return _get_field(item if kind == "chat" else _get_field(item, "response"), "service_tier")
 
 
 def _finalize_stream(
@@ -536,6 +571,8 @@ def _finalize_response(
         **_pick_response_metadata(result, response_keys),
         **_usage_metadata(usage),
     }
+    if "service_tier" in response_keys:
+        metadata.update(_service_tier_metadata(served=_get_field(result, "service_tier")))
     _log_and_end_span(
         span,
         output=output,
@@ -545,7 +582,7 @@ def _finalize_response(
 
 
 def _chat_send_wrapper(wrapped, instance, args, kwargs):
-    request_metadata = _build_request_metadata(kwargs, _CHAT_REQUEST_KEYS)
+    request_metadata = _build_request_metadata(kwargs, _CHAT_REQUEST_KEYS, wrapped=wrapped)
     span = _start_span("openrouter.chat.send", kwargs.get("messages"), request_metadata)
     start_time = time.time()
 
@@ -570,7 +607,7 @@ def _chat_send_wrapper(wrapped, instance, args, kwargs):
 
 
 async def _chat_send_async_wrapper(wrapped, instance, args, kwargs):
-    request_metadata = _build_request_metadata(kwargs, _CHAT_REQUEST_KEYS)
+    request_metadata = _build_request_metadata(kwargs, _CHAT_REQUEST_KEYS, wrapped=wrapped)
     span = _start_span("openrouter.chat.send", kwargs.get("messages"), request_metadata)
     start_time = time.time()
 
@@ -648,7 +685,7 @@ def _responses_span_name(span_name: str | None) -> str:
 
 
 def _responses_send_wrapper(wrapped, instance, args, kwargs, *, span_name: str | None = None):
-    request_metadata = _build_request_metadata(kwargs, _RESPONSES_REQUEST_KEYS)
+    request_metadata = _build_request_metadata(kwargs, _RESPONSES_REQUEST_KEYS, wrapped=wrapped)
     span = _start_span(_responses_span_name(span_name), kwargs.get("input"), request_metadata)
     start_time = time.time()
 
@@ -673,7 +710,7 @@ def _responses_send_wrapper(wrapped, instance, args, kwargs, *, span_name: str |
 
 
 async def _responses_send_async_wrapper(wrapped, instance, args, kwargs, *, span_name: str | None = None):
-    request_metadata = _build_request_metadata(kwargs, _RESPONSES_REQUEST_KEYS)
+    request_metadata = _build_request_metadata(kwargs, _RESPONSES_REQUEST_KEYS, wrapped=wrapped)
     span = _start_span(_responses_span_name(span_name), kwargs.get("input"), request_metadata)
     start_time = time.time()
 

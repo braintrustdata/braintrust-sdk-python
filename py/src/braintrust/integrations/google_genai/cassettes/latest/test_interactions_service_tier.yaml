@@ -1,0 +1,54 @@
+interactions:
+- request:
+    body: '{"model":"gemini-2.5-flash","input":"Say hi in five words or less.","service_tier":"flex"}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '90'
+      content-type:
+      - application/json
+      host:
+      - generativelanguage.googleapis.com
+      user-agent:
+      - google-genai-sdk/3.0.0 gl-python/3.14.7
+      x-goog-api-client:
+      - google-genai-sdk/3.0.0 gl-python/3.14.7
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1/interactions
+  response:
+    body:
+      string: '{"id":"v1_ChdvVGJ6YXJuN0pvbXp4ZElQN19XaDBRYxIXb1RiemFybjdKb216eGRJUDdfV2gwUWM","status":"completed","usage":{"total_tokens":204,"total_input_tokens":9,"input_tokens_by_modality":[{"modality":"text","tokens":9}],"total_cached_tokens":0,"total_output_tokens":2,"total_tool_use_tokens":0,"total_thought_tokens":193,"initial_input_tokens":9},"created":"2026-11-10T15:22:09Z","updated":"2026-11-10T15:22:09Z","service_tier":"flex","steps":[{"signature":"CroFAWkUfRO4UbitN0AEM3QmOHSj8UBhYUBj/7DtZrnmPEVZxDdcZfkEGIdRku92Go3KoGhmehatt/FEO/4P7gskXexNS1JjhwQrP892eNJJHvUtXtbZxxyHQi7suNWASDXiHGHvu/Gk4B2TyTUkdEJlHzjRVsYaVbepBitaWIQgEh8aj2wuPWJbI30X0oCGRWj1q7hPqOrBu0l6h3BbcecYMc00qsuRa19OjJKlAzWACwo6rHw09W6RRRhOxqUvgPJ2qLOLZqgrylZOW1140NSJ7vTaWQhsrJPq1SkKK2p/3G4JuJ+k9FW4dE2pg2zmJsDmbC1c3gNoyPP2XDG4u1GZzHTiCadPva6z9SUGQ2mGPzO0ed7b/y20bc32T3Cvloqf9VcvUT2lUA9vi6p5RKvJo5oyglUmgEDXB5ODKxWb3qtM4G+aiiA7cLEUS4QpZqlKtX+4JmKypUQkSecx8dUHtJVlWMi7LuGXPkPyls7y0Iixs3TpqgfNNIblWu01R6wlQkzjk74F8CWPMV4HmrDMWXDrC2EeT/fvyJnzF/r1pLBXPdjWzBcJUwxOqPmhhuSYYSvg7ocxuBotM486Ye2dPPlEyC6Ib9cO0klOfRjiNUJTYqo6ZAB3SsMCV4Hjt+ZdFnLiDJWMFCE191K6dUx+gkKNBSozWR9mGRk7GU4iapnhMJgX17dOTBncWaPYJXKdBaWCynlp3S2mGZ8h8+QCsPZZ6KcrJhb3pOdqNwtOWvvdPdTQWGdhDH6yI46+QdKrM8M9Hz+VrsYqtqYiNEbDRAzPdIC0oVALnPOG7usZiHB48RgYl1IXAtN5FUqYCUa87XKpmCBsdtZjL+X5SE5abA39QqUHLnIIKKOfVU2Yb7RX+JnRt/Gk/P33HOLDMBDbkJHc1K4xMqVUdwiWhnkJ7o0MxZnMLAbNo7I=","type":"thought"},{"content":[{"text":"Hi!","type":"text"}],"type":"model_output"}],"object":"interaction","model":"gemini-2.5-flash"}'
+    headers:
+      alt-svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      content-length:
+      - '1521'
+      content-type:
+      - application/json
+      date:
+      - Tue, 10 Nov 2026 15:22:10 GMT
+      server:
+      - scaffolding on HTTPServer2
+      server-timing:
+      - gfet4t7; dur=2559
+      transfer-encoding:
+      - chunked
+      vary:
+      - Origin
+      - X-Origin
+      - Referer
+      x-content-type-options:
+      - nosniff
+      x-frame-options:
+      - SAMEORIGIN
+      x-xss-protection:
+      - '0'
+    status:
+      code: 200
+      message: OK
+version: 1

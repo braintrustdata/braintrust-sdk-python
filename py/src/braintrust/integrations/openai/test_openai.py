@@ -28,7 +28,11 @@ from braintrust.integrations.test_decisions import (
     assert_decisions_span,
     decisions_image_input,
 )
-from braintrust.integrations.test_utils import assert_metrics_are_valid, verify_autoinstrument_script
+from braintrust.integrations.test_utils import (
+    assert_metrics_are_valid,
+    assert_service_tiers,
+    verify_autoinstrument_script,
+)
 from braintrust.integrations.utils import _try_to_dict
 from braintrust.integrations.versioning import version_satisfies
 from braintrust.span_types import SpanTypeAttribute
@@ -137,6 +141,15 @@ def _supports_responses_access_programs() -> bool:
         return False
 
 
+def _supports_responses_service_tier() -> bool:
+    try:
+        from openai.resources.responses import Responses
+
+        return "service_tier" in inspect.signature(Responses.create).parameters
+    except (ImportError, AttributeError, ValueError):
+        return False
+
+
 @sync_async
 @pytest.mark.asyncio
 @pytest.mark.vcr
@@ -174,6 +187,9 @@ async def test_openai_chat_metrics(memory_logger, is_async):
     assert TEST_MODEL in span["metadata"]["model"]
     assert span["metadata"]["provider"] == "openai"
     assert span["input"] == [{"role": "user", "content": TEST_PROMPT}]
+    # No tier was requested, but the provider still reports the tier that served it.
+    assert parsed_response.service_tier == "default"
+    assert_service_tiers(span["metadata"], served="default")
 
 
 @pytest.mark.asyncio
@@ -400,6 +416,40 @@ def test_openai_responses_access_programs(memory_logger):
     assert len(spans) == 1
     assert _try_to_dict(response.access_programs) == access_programs
     assert _try_to_dict(spans[0]["metadata"]["access_programs"]) == access_programs
+
+
+@pytest.mark.vcr
+def test_openai_chat_service_tier(memory_logger):
+    """A requested policy ("auto") and the served tier are recorded independently."""
+    assert not memory_logger.pop()
+
+    client = wrap_openai(openai.OpenAI())
+    response = client.chat.completions.create(
+        model=TEST_MODEL,
+        messages=[{"role": "user", "content": TEST_PROMPT}],
+        service_tier="auto",
+    )
+    assert response.service_tier == "default"
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert_service_tiers(span["metadata"], requested="auto", served="default")
+
+
+@pytest.mark.vcr
+def test_openai_responses_service_tier(memory_logger):
+    if not _supports_responses_service_tier():
+        pytest.skip("Responses service_tier is not available in this SDK version")
+    assert not memory_logger.pop()
+
+    client = wrap_openai(openai.OpenAI())
+    response = client.responses.create(model=TEST_MODEL, input=TEST_PROMPT, service_tier="auto")
+    assert response.service_tier == "default"
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    assert_service_tiers(spans[0]["metadata"], requested="auto", served="default")
 
 
 @pytest.mark.vcr
@@ -769,6 +819,9 @@ def test_openai_chat_streaming_sync(memory_logger):
     # assert span["metadata"]["provider"] == "openai"
     assert TEST_PROMPT in str(span["input"])
     assert "24" in str(span["output"]) or "twenty-four" in str(span["output"]).lower()
+    # Every chunk, including the usage-only final chunk, reports the served tier.
+    assert chunks[-1].service_tier == "default"
+    assert_service_tiers(span["metadata"], served="default")
 
 
 @pytest.mark.vcr
@@ -795,6 +848,9 @@ def test_openai_chat_streaming_sync_context_manager_partial_close(memory_logger)
     assert TEST_MODEL in span["metadata"]["model"]
     assert TEST_PROMPT in str(span["input"])
     assert "output" not in span
+    # A tier observed before the stream was closed is retained.
+    assert first_chunk.service_tier == "default"
+    assert_service_tiers(span["metadata"], served="default")
 
 
 @sync_async
@@ -1252,6 +1308,9 @@ async def test_openai_response_streaming_async(memory_logger):
     assert span["metadata"]["stream"] == True
     assert "What's 12 + 12?" in str(span["input"])
     assert "24" in str(span["output"])
+    # Lifecycle events report "auto" before the terminal event reports "default";
+    # the final reported tier wins.
+    assert_service_tiers(span["metadata"], served="default")
 
 
 @sync_async

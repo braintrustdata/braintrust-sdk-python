@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import inspect
 import os
 import re
 import time
@@ -22,6 +23,7 @@ from braintrust.integrations.test_decisions import (
 )
 from braintrust.integrations.test_utils import (
     assert_metrics_are_valid,
+    assert_service_tiers,
     verify_autoinstrument_script,
 )
 from braintrust.integrations.versioning import detect_module_version, version_satisfies
@@ -590,6 +592,7 @@ def test_litellm_responses(memory_logger, is_async, stream):
     assert "24" in str(span["output"]) or "twenty-four" in str(span["output"]).lower()
     if stream:
         assert span["metadata"]["stream"] is True
+    assert_service_tiers(span["metadata"], served="default")
 
 
 @pytest.mark.vcr
@@ -741,6 +744,7 @@ def test_litellm_completion_error(memory_logger, is_async):
             litellm.acompletion,
             model=fake_model,
             messages=[{"role": "user", "content": TEST_PROMPT}],
+            service_tier="flex",
         )
 
     logs = memory_logger.pop()
@@ -748,6 +752,40 @@ def test_litellm_completion_error(memory_logger, is_async):
     log = logs[0]
     assert log["project_id"] == PROJECT_NAME
     assert log["metadata"]["model"] == fake_model
+    # The requested tier is retained on a failed call; no served tier is fabricated.
+    assert_service_tiers(log["metadata"], requested="flex")
+
+
+@pytest.mark.vcr
+def test_litellm_completion_service_tier(memory_logger):
+    """A requested policy ("auto") and the served tier are recorded independently."""
+    assert not memory_logger.pop()
+
+    response = litellm.completion(
+        model=TEST_MODEL,
+        messages=[{"role": "user", "content": TEST_PROMPT}],
+        service_tier="auto",
+    )
+    assert response.service_tier == "default"
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    assert_service_tiers(spans[0]["metadata"], requested="auto", served="default")
+
+
+@pytest.mark.vcr
+def test_litellm_responses_service_tier(memory_logger):
+    # Older LiteLLM (e.g. 1.74.0) has no ``service_tier`` parameter on
+    # ``responses()`` and silently drops it, so no tier is requested there.
+    forwards_tier = "service_tier" in inspect.signature(litellm.responses).parameters
+    assert not memory_logger.pop()
+
+    response = litellm.responses(model=TEST_MODEL, input=TEST_PROMPT, service_tier="auto")
+    assert response.service_tier == "default"
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    assert_service_tiers(spans[0]["metadata"], requested="auto" if forwards_tier else None, served="default")
 
 
 @pytest.mark.vcr

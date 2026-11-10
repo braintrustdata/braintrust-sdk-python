@@ -13,7 +13,11 @@ from braintrust.integrations.bedrock_runtime.patchers import (
     BedrockClientCreatorPatcher,
     BedrockRuntimeClientMethodsPatcher,
 )
-from braintrust.integrations.test_utils import assert_metrics_are_valid, verify_autoinstrument_script
+from braintrust.integrations.test_utils import (
+    assert_metrics_are_valid,
+    assert_service_tiers,
+    verify_autoinstrument_script,
+)
 from braintrust.test_helpers import init_test_logger
 
 
@@ -408,6 +412,81 @@ def test_wrap_bedrock_converse_with_document_input_materializes_attachment(memor
     assert isinstance(file_part["file"]["file_data"], Attachment)
     assert file_part["file"]["file_data"].reference["content_type"] == "application/pdf"
     assert "source" not in file_part
+
+
+# ---------------------------------------------------------------------------
+# Service tier metadata
+# ---------------------------------------------------------------------------
+
+_SERVICE_TIER = "flex"
+# Nova Lite v1 only accepts the "default" tier; Nova 2 Lite also accepts "flex" and "priority".
+SERVICE_TIER_MODEL = os.getenv("BRAINTRUST_BEDROCK_SERVICE_TIER_MODEL", "us.amazon.nova-2-lite-v1:0")
+
+
+def _skip_if_service_tier_unsupported(client, operation: str) -> None:
+    input_members = client.meta.service_model.operation_model(operation).input_shape.members
+    if "serviceTier" not in input_members:
+        pytest.skip(f"installed botocore does not support serviceTier on {operation}")
+
+
+@pytest.mark.vcr
+def test_wrap_bedrock_converse_service_tier(memory_logger):
+    assert not memory_logger.pop()
+    client = wrap_bedrock(_bedrock_client())
+    _skip_if_service_tier_unsupported(client, "Converse")
+
+    kwargs = {**_converse_kwargs(SERVICE_TIER_MODEL), "serviceTier": {"type": _SERVICE_TIER}}
+    response = client.converse(**kwargs)
+
+    assert response["serviceTier"]["type"] == _SERVICE_TIER
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    assert_service_tiers(spans[0]["metadata"], requested=_SERVICE_TIER, served=_SERVICE_TIER)
+
+
+@pytest.mark.vcr
+def test_wrap_bedrock_converse_stream_service_tier(memory_logger):
+    assert not memory_logger.pop()
+    client = wrap_bedrock(_bedrock_client())
+    _skip_if_service_tier_unsupported(client, "ConverseStream")
+
+    response = client.converse_stream(
+        **{**_converse_kwargs(SERVICE_TIER_MODEL), "serviceTier": {"type": _SERVICE_TIER}}
+    )
+    for _ in response["stream"]:
+        pass
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    assert_service_tiers(spans[0]["metadata"], requested=_SERVICE_TIER, served=_SERVICE_TIER)
+
+
+@pytest.mark.vcr
+def test_wrap_bedrock_invoke_model_service_tier(memory_logger):
+    assert not memory_logger.pop()
+    client = wrap_bedrock(_bedrock_client())
+    _skip_if_service_tier_unsupported(client, "InvokeModel")
+
+    response = client.invoke_model(
+        modelId=SERVICE_TIER_MODEL,
+        body=json.dumps(
+            {
+                "messages": [{"role": "user", "content": [{"text": "Say hello in one word."}]}],
+                "inferenceConfig": {"max_new_tokens": 20, "temperature": 0},
+            }
+        ),
+        contentType="application/json",
+        accept="application/json",
+        serviceTier=_SERVICE_TIER,
+    )
+    assert json.loads(response["body"].read())["output"]["message"]["content"]
+    # boto3 surfaces the X-Amzn-Bedrock-Service-Tier response header as a top-level string.
+    assert response.get("serviceTier") == _SERVICE_TIER
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    assert_service_tiers(spans[0]["metadata"], requested=_SERVICE_TIER, served=_SERVICE_TIER)
 
 
 @pytest.mark.vcr

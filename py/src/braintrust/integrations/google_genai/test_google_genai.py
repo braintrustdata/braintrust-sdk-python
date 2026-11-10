@@ -8,7 +8,7 @@ import google.genai as genai
 import pytest
 from braintrust import logger
 from braintrust.integrations.google_genai import setup_genai
-from braintrust.integrations.test_utils import verify_autoinstrument_script
+from braintrust.integrations.test_utils import assert_service_tiers, verify_autoinstrument_script
 from braintrust.integrations.versioning import detect_module_version, version_satisfies
 from braintrust.logger import Attachment
 from braintrust.span_types import SpanTypeAttribute
@@ -68,6 +68,16 @@ DEVELOPER_API_IMAGEN_ONLY = pytest.mark.skipif(
     not version_satisfies(_GENAI_VERSION, "<2.20.0"),
     reason="google-genai >=2.20.0 supports generate_images only in Vertex AI mode",
 )
+
+
+# ``types.ServiceTier`` / ``GenerateContentConfig.service_tier`` were added
+# after google-genai 1.30.0; older SDKs cannot request a tier.
+_HAS_GENERATE_CONTENT_SERVICE_TIER = hasattr(types, "ServiceTier")
+NEEDS_GENERATE_CONTENT_SERVICE_TIER = pytest.mark.skipif(
+    not _HAS_GENERATE_CONTENT_SERVICE_TIER,
+    reason="google-genai too old for GenerateContentConfig.service_tier",
+)
+SERVICE_TIER_MODEL = "gemini-2.5-flash-lite"
 
 
 def _sanitize_media_body(value):
@@ -394,6 +404,9 @@ async def test_basic_completion(memory_logger, mode):
     assert span["output"]
     assert "Paris" in str(span["output"])
     _assert_metrics_are_valid(span["metrics"], start, end)
+    # No tier was requested, but the reported usageMetadata.serviceTier is still
+    # recorded. The 1.30.0 cassettes predate serviceTier in responses.
+    assert_service_tiers(span["metadata"], served="standard" if _HAS_GENERATE_CONTENT_SERVICE_TIER else None)
 
 
 async def _start_text_stream(client, mode):
@@ -742,6 +755,26 @@ def test_error_handling(memory_logger):
     log = logs[0]
     assert log["project_id"] == PROJECT_NAME
     assert log["error"]
+
+
+@NEEDS_GENERATE_CONTENT_SERVICE_TIER
+@pytest.mark.vcr
+def test_service_tier(memory_logger):
+    """Requested ``config.service_tier`` (as an enum) and the served tier are recorded separately."""
+    assert not memory_logger.pop()
+
+    client = Client()
+    response = client.models.generate_content(
+        model=SERVICE_TIER_MODEL,
+        contents="What is the capital of France?",
+        config=types.GenerateContentConfig(max_output_tokens=100, service_tier=types.ServiceTier.FLEX),
+    )
+    assert "Paris" in response.text
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    metadata = spans[0]["metadata"]
+    assert_service_tiers(metadata, requested="flex", served="flex")
 
 
 @pytest.mark.vcr
@@ -1475,6 +1508,11 @@ def test_interactions_create_and_get(memory_logger):
     assert "tool_use_tokens" not in create_span["metrics"]
     assert create_span["metadata"]["total_tool_use_tokens"] == response.usage.total_tool_use_tokens
 
+    assert response.service_tier == "standard"
+    assert_service_tiers(create_span["metadata"], served="standard")
+    # Only the model-call span carries tier metadata.
+    assert_service_tiers(get_span["metadata"])
+
     assert get_span["input"]["id"] == response.id
     assert get_span["metadata"]["interaction_id"] == response.id
     assert get_span["output"]["status"] == "completed"
@@ -1517,6 +1555,8 @@ def test_interactions_create_stream(memory_logger):
         event_type in create_span["metadata"]["stream_event_types"]
         for event_type in ("interaction.complete", "interaction.completed")
     )
+    assert final_interaction.service_tier == "standard"
+    assert_service_tiers(create_span["metadata"], served="standard")
 
 
 @_needs_interactions
@@ -1669,6 +1709,27 @@ async def test_interactions_async_stream(memory_logger):
     assert any(
         event_type in create_span["metadata"]["stream_event_types"] for event_type in ("content.delta", "step.start")
     )
+
+
+@_needs_interactions
+@pytest.mark.skipif(
+    not version_satisfies(_GENAI_VERSION, ">=2.0.0"),
+    reason="the Gemini API rejects the legacy Interactions schema used by google-genai < 2.0.0, so it cannot be recorded",
+)
+@pytest.mark.vcr
+def test_interactions_service_tier(memory_logger):
+    """Interactions record request ``service_tier`` and the interaction's reported ``service_tier``."""
+    assert not memory_logger.pop()
+
+    client = Client()
+    response = client.interactions.create(
+        model=INTERACTIONS_MODEL, input="Say hi in five words or less.", service_tier="flex"
+    )
+
+    spans = memory_logger.pop()
+    create_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.LLM), "interactions.create")
+    assert response.service_tier == "flex"
+    assert_service_tiers(create_span["metadata"], requested="flex", served="flex")
 
 
 class TestAutoInstrumentGoogleGenAI:

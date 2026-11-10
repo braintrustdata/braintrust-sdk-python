@@ -12,6 +12,7 @@ from .tracing import (
     _async_interactions_delete_wrapper,
     _async_interactions_get_wrapper,
     _embed_content_wrapper,
+    _generate_content_response_from_wire_wrapper,
     _generate_content_stream_wrapper,
     _generate_content_wrapper,
     _generate_images_wrapper,
@@ -53,6 +54,24 @@ class ModelsGenerateContentStreamPatcher(FunctionWrapperPatcher):
     target_module = "google.genai.models"
     target_path = "Models.generate_content_stream"
     wrapper = _generate_content_stream_wrapper
+
+
+class GenerateContentResponseFromMldevPatcher(FunctionWrapperPatcher):
+    """Read ``usageMetadata.serviceTier`` from raw Gemini API responses before the SDK strips it."""
+
+    name = "google_genai.models.generate_content_response_from_mldev"
+    target_module = "google.genai.models"
+    target_path = "_GenerateContentResponse_from_mldev"
+    wrapper = _generate_content_response_from_wire_wrapper
+
+
+class GenerateContentResponseFromVertexPatcher(FunctionWrapperPatcher):
+    """Read ``usageMetadata.serviceTier`` from raw Vertex AI responses before the SDK strips it."""
+
+    name = "google_genai.models.generate_content_response_from_vertex"
+    target_module = "google.genai.models"
+    target_path = "_GenerateContentResponse_from_vertex"
+    wrapper = _generate_content_response_from_wire_wrapper
 
 
 class ModelsEmbedContentPatcher(FunctionWrapperPatcher):
