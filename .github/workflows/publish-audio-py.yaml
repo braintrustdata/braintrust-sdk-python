@@ -33,7 +33,7 @@ jobs:
           experimental: true
       - name: Validate and build
         run: |
-          mise exec -- uv run --project py nox -f py/noxfile.py -s test_audio test_audio_codecs
+          mise exec -- uv run --project py nox -f py/noxfile.py -s test_core test_audio_codecs
           mise exec -- uv build --project integrations/audio-py --out-dir integrations/audio-py/dist
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
