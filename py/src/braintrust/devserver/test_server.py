@@ -1,16 +1,21 @@
 import http.server
+import json
 import threading
 from collections.abc import Iterator
 from typing import Any
 
 import pytest
 from braintrust.logger import BraintrustState
-from braintrust.test_helpers import has_devserver_installed
+from braintrust.test_helpers import (
+    has_devserver_installed,
+    init_test_exp,
+    with_memory_logger,  # noqa: F401
+)
 
 
 @pytest.fixture
-def function_server() -> Iterator[tuple[str, list[str | None]]]:
-    org_names = []
+def function_server() -> Iterator[tuple[str, list[tuple[str | None, dict[str, Any]]]]]:
+    requests = []
 
     class FunctionHandler(http.server.BaseHTTPRequestHandler):
         def log_message(self, format: str, *args: Any) -> None:
@@ -18,8 +23,8 @@ def function_server() -> Iterator[tuple[str, list[str | None]]]:
 
         def do_POST(self) -> None:
             content_length = int(self.headers.get("Content-Length", "0"))
-            self.rfile.read(content_length)
-            org_names.append(self.headers.get("x-bt-org-name"))
+            request = json.loads(self.rfile.read(content_length))
+            requests.append((self.headers.get("x-bt-org-name"), request))
 
             body = b'{"score": 1}'
             self.send_response(200)
@@ -34,25 +39,32 @@ def function_server() -> Iterator[tuple[str, list[str | None]]]:
 
     try:
         host, port = server.server_address
-        yield f"http://{host}:{port}", org_names
+        yield f"http://{host}:{port}", requests
     finally:
         server.shutdown()
         server.server_close()
         thread.join()
 
 
-def test_ui_scorer_forwards_org_name_to_function_invoke(function_server):
+def test_ui_scorer_forwards_org_name_and_active_parent_to_function_invoke(function_server, with_memory_logger):
     if not has_devserver_installed():
         pytest.skip("Devserver dependencies not installed (requires .[cli])")
 
     from braintrust.devserver.server import make_scorer
 
-    base_url, org_names = function_server
+    base_url, requests = function_server
     state = BraintrustState()
     state.org_name = "test-org"
     state.proxy_url = base_url
 
     scorer = make_scorer(state, "ui-scorer", {"function_id": "function-id"}, "project-id")
-    scorer("input", "output", "expected", {})
 
-    assert org_names == ["test-org"]
+    with init_test_exp("test-project").start_span(name="eval") as row_span:
+        with row_span.start_span(name="ui-scorer", type="score") as scorer_span:
+            result = scorer("input", "output", "expected", {})
+            expected_parent = scorer_span.export()
+
+    assert result == {"score": 1}
+    [(org_name, request)] = requests
+    assert org_name == "test-org"
+    assert request["parent"] == expected_parent
