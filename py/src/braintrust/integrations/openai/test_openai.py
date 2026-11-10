@@ -10,6 +10,7 @@ import zlib
 import openai
 import pytest
 from braintrust import Attachment, logger, wrap_openai
+from braintrust.conftest import sanitize_generated_images
 from braintrust.integrations.openai import OpenAIIntegration
 from braintrust.integrations.openai.tracing import (
     RAW_RESPONSE_HEADER,
@@ -1954,7 +1955,7 @@ def _write_test_png(path: str, *, width: int = 64, height: int = 64) -> None:
         image_file.write(png)
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(before_record_response=sanitize_generated_images)
 def test_openai_images_generate(memory_logger):
     assert not memory_logger.pop()
 
@@ -2069,7 +2070,7 @@ def test_materialize_logged_file_input_preserves_unrecognized_values():
     assert materialized[1] is NOT_GIVEN
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(before_record_response=sanitize_generated_images)
 def test_openai_images_edit(memory_logger):
     assert not memory_logger.pop()
 

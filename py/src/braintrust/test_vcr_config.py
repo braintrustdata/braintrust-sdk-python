@@ -1,5 +1,19 @@
+import json
+
 import pytest
-from braintrust.conftest import get_vcr_config
+from braintrust.conftest import get_vcr_config, sanitize_generated_images
+
+
+def test_sanitize_generated_images_preserves_metadata_and_scrubs_headers():
+    response = {
+        "body": {"string": json.dumps({"data": [{"b64_json": "large-image"}], "usage": {"output_tokens": 42}})},
+        "headers": {"Content-Length": ["1234"], "Set-Cookie": ["secret"]},
+    }
+    result = sanitize_generated_images(response)
+    body = json.loads(result["body"]["string"])
+    assert body["data"][0]["b64_json"].startswith("iVBORw0KGgo")
+    assert body["usage"] == {"output_tokens": 42}
+    assert result["headers"] == {"Content-Length": [str(len(result["body"]["string"].encode()))]}
 
 
 def test_vcr_config_scrubs_sensitive_provider_headers():

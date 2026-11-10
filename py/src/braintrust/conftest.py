@@ -1,3 +1,4 @@
+import json
 import os
 from unittest.mock import MagicMock
 
@@ -142,6 +143,33 @@ def _scrub_sensitive_response_headers(response):
         for name, value in response.get("headers", {}).items()
         if name.lower() not in _SENSITIVE_RESPONSE_HEADERS
     }
+    return response
+
+
+def sanitize_generated_images(response):
+    """Keep image response metadata while replacing generated PNGs with a tiny PNG."""
+    response = _scrub_sensitive_response_headers(response)
+    body = response.get("body", {}).get("string")
+    if not body:
+        return response
+    try:
+        payload = json.loads(body)
+    except (ValueError, UnicodeDecodeError):
+        return response
+    if not isinstance(payload, dict) or not isinstance(payload.get("data"), list):
+        return response
+    tiny_png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="
+    changed = False
+    for image in payload["data"]:
+        if isinstance(image, dict) and isinstance(image.get("b64_json"), str):
+            image["b64_json"] = tiny_png
+            changed = True
+    if changed:
+        encoded = json.dumps(payload)
+        response["body"]["string"] = encoded.encode() if isinstance(body, bytes) else encoded
+        for name in response.get("headers", {}):
+            if name.lower() == "content-length":
+                response["headers"][name] = [str(len(encoded.encode()))]
     return response
 
 

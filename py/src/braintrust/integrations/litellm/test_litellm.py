@@ -11,7 +11,7 @@ from types import SimpleNamespace
 import litellm
 import pytest
 from braintrust import Attachment, logger
-from braintrust.conftest import get_vcr_config
+from braintrust.conftest import get_vcr_config, sanitize_generated_images
 from braintrust.integrations.litellm import patch_litellm, wrap_litellm
 from braintrust.integrations.test_decisions import (
     DECISIONS_INPUT,
@@ -666,7 +666,7 @@ def test_litellm_moderation(memory_logger, is_async):
     assert "This is a test message" in str(span["input"])
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(before_record_response=sanitize_generated_images)
 @sync_async
 def test_litellm_image_generation(memory_logger, is_async):
     assert not memory_logger.pop()
