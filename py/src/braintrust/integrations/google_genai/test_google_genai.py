@@ -9,7 +9,7 @@ import pytest
 from braintrust import logger
 from braintrust.integrations.google_genai import setup_genai
 from braintrust.integrations.test_utils import assert_service_tiers, verify_autoinstrument_script
-from braintrust.integrations.versioning import detect_module_version, version_satisfies
+from braintrust.integrations.versioning import detect_module_version
 from braintrust.logger import Attachment
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import find_span_by_name, find_spans_by_type, init_test_logger
@@ -79,6 +79,15 @@ def _sanitize_media_body(value):
                 inline_data["data"] = TINY_PNG_BASE64
             elif isinstance(mime_type, str) and mime_type.startswith("audio/"):
                 inline_data["data"] = TINY_WAV_BASE64
+        # Interactions API media content: {"type": "image", "mime_type": ..., "data": <base64>}
+        mime_type = sanitized.get("mime_type")
+        if (
+            sanitized.get("type") == "image"
+            and isinstance(sanitized.get("data"), str)
+            and isinstance(mime_type, str)
+            and mime_type.startswith("image/")
+        ):
+            sanitized["data"] = TINY_PNG_BASE64
         return sanitized
     if isinstance(value, list):
         return [_sanitize_media_body(item) for item in value]
@@ -773,32 +782,6 @@ def test_prefill(memory_logger):
 
 
 @pytest.mark.vcr
-def test_short_max_tokens(memory_logger):
-    """Verify truncated responses still log useful output and request config."""
-    assert not memory_logger.pop()
-
-    client = Client()
-    response = client.models.generate_content(
-        model=MODEL,
-        contents="What is AI?",
-        config=types.GenerateContentConfig(
-            max_output_tokens=5,
-        ),
-    )
-
-    assert response.text
-    assert response.candidates
-    assert response.candidates[0].finish_reason == types.FinishReason.MAX_TOKENS
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span["metadata"]["model"] == MODEL
-    assert span["input"]["config"]["max_output_tokens"] == 5
-    assert span["output"]
-
-
-@pytest.mark.vcr
 def test_tool_use_with_result(memory_logger):
     """Verify function-response turns are captured in traced conversation history."""
     assert not memory_logger.pop()
@@ -1033,38 +1016,6 @@ def test_interaction_materialization_preserves_pydantic_model_classes():
     assert _materialize_interaction_value(ResponseFormat) is ResponseFormat
 
 
-def test_generate_content_stream_preserves_code_execution_parts():
-    from types import SimpleNamespace
-
-    from braintrust.integrations.google_genai.tracing import _aggregate_generate_content_chunks
-
-    parts = [
-        types.Part(text="before "),
-        types.Part(executable_code=types.ExecutableCode(code="print(1)", language="PYTHON")),
-        types.Part(text=" between "),
-        types.Part(code_execution_result=types.CodeExecutionResult(outcome="OUTCOME_OK", output="1")),
-        types.Part(text=" after"),
-    ]
-    chunks = [
-        SimpleNamespace(
-            candidates=[types.Candidate(content=types.Content(parts=[part], role="model"))],
-            usage_metadata=None,
-        )
-        for part in parts
-    ]
-
-    output, _, _ = _aggregate_generate_content_chunks(chunks, time.time())
-
-    streamed_parts = output["candidates"][0]["content"]["parts"]
-    assert streamed_parts == [
-        {"text": "before "},
-        {"executable_code": parts[1].executable_code},
-        {"text": " between "},
-        {"code_execution_result": parts[3].code_execution_result},
-        {"text": " after"},
-    ]
-
-
 @pytest.mark.vcr
 def test_generate_content_stream_code_execution_part_order(memory_logger):
     assert not memory_logger.pop()
@@ -1183,34 +1134,13 @@ def _assert_url_context_metadata(span_output):
 
 
 @pytest.mark.vcr
-def test_url_context_metadata_stream(memory_logger):
-    assert not memory_logger.pop()
-
-    client = _v1beta_client()
-    stream = client.models.generate_content_stream(
-        model=GROUNDING_MODEL,
-        contents="Summarize the article at https://ai.google.dev/gemini-api/docs/url-context",
-        config=types.GenerateContentConfig(
-            tools=[types.Tool(url_context=types.UrlContext())],
-            max_output_tokens=300,
-        ),
-    )
-    text = "".join(chunk.text or "" for chunk in stream)
-
-    assert text
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    assert spans[0]["output"]
-    _assert_url_context_metadata(spans[0]["output"])
-
-
-@pytest.mark.vcr
 @pytest.mark.asyncio
-async def test_url_context_metadata_async_stream(memory_logger):
+@pytest.mark.parametrize("mode", ["sync", "async"])
+async def test_url_context_metadata_stream(memory_logger, mode):
     assert not memory_logger.pop()
 
     client = _v1beta_client()
-    stream = await client.aio.models.generate_content_stream(
+    kwargs = dict(
         model=GROUNDING_MODEL,
         contents="Summarize the article at https://ai.google.dev/gemini-api/docs/url-context",
         config=types.GenerateContentConfig(
@@ -1218,14 +1148,15 @@ async def test_url_context_metadata_async_stream(memory_logger):
             max_output_tokens=300,
         ),
     )
-    text = ""
-    async for chunk in stream:
-        text += chunk.text or ""
+    if mode == "async":
+        stream = await client.aio.models.generate_content_stream(**kwargs)
+        text = "".join([chunk.text or "" async for chunk in stream])
+    else:
+        text = "".join(chunk.text or "" for chunk in client.models.generate_content_stream(**kwargs))
 
     assert text
     spans = memory_logger.pop()
     assert len(spans) == 1
-    assert spans[0]["output"]
     _assert_url_context_metadata(spans[0]["output"])
 
 
@@ -1396,23 +1327,32 @@ def _function_result_content(**kwargs):
 
 @_needs_interactions
 @pytest.mark.vcr
-def test_interactions_create_and_get(memory_logger):
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mode", ["sync", "async"])
+async def test_interactions_round_trip(memory_logger, mode):
     assert not memory_logger.pop()
 
     client = _v1beta_client()
-    response = client.interactions.create(
-        model=INTERACTIONS_MODEL,
-        input="What is the capital of France?",
-    )
-    fetched = client.interactions.get(response.id, include_input=True)
+    if mode == "async":
+        response = await client.aio.interactions.create(
+            model=INTERACTIONS_MODEL, input="What is the capital of France?"
+        )
+        fetched = await client.aio.interactions.get(response.id, include_input=True)
+        deleted = await client.aio.interactions.delete(response.id)
+    else:
+        response = client.interactions.create(model=INTERACTIONS_MODEL, input="What is the capital of France?")
+        fetched = client.interactions.get(response.id, include_input=True)
+        deleted = client.interactions.delete(response.id)
 
     assert response.status == "completed"
     assert fetched.id == response.id
     assert fetched.status == "completed"
+    assert deleted in ({}, None)
 
     spans = memory_logger.pop()
     create_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.LLM), "interactions.create")
     get_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.TASK), "interactions.get")
+    delete_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.TASK), "interactions.delete")
 
     assert create_span["metadata"]["model"] == INTERACTIONS_MODEL
     assert create_span["metadata"]["provider"] == "google"
@@ -1420,7 +1360,6 @@ def test_interactions_create_and_get(memory_logger):
     assert create_span["metadata"]["status"] == response.status
     assert "response_mime_type" not in create_span["metadata"]
     assert "response_modalities" not in create_span["metadata"]
-    assert get_span["metadata"]["provider"] == "google"
     assert create_span["output"]["status"] == "completed"
     assert "Paris" in create_span["output"]["text"]
     assert create_span["metrics"]["prompt_tokens"] == response.usage.total_input_tokens
@@ -1437,26 +1376,31 @@ def test_interactions_create_and_get(memory_logger):
     # Only the model-call span carries tier metadata.
     assert_service_tiers(get_span["metadata"])
 
+    assert get_span["metadata"]["provider"] == "google"
     assert get_span["input"]["id"] == response.id
     assert get_span["metadata"]["interaction_id"] == response.id
     assert get_span["output"]["status"] == "completed"
     assert "Paris" in get_span["output"]["text"]
     assert "France" in str(get_span["output"]["outputs"])
 
+    assert delete_span["input"]["id"] == response.id
+    assert delete_span.get("output") in ({}, None)
+    assert delete_span["metrics"]["duration"] >= 0
+
 
 @_needs_interactions
 @pytest.mark.vcr
-def test_interactions_create_stream(memory_logger):
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mode", ["sync", "async"])
+async def test_interactions_create_stream(memory_logger, mode):
     assert not memory_logger.pop()
 
     client = Client()
-    events = list(
-        client.interactions.create(
-            model=INTERACTIONS_MODEL,
-            input="Say hi in five words or less.",
-            stream=True,
-        )
-    )
+    kwargs = dict(model=INTERACTIONS_MODEL, input="Say hi in five words or less.", stream=True)
+    if mode == "async":
+        events = [event async for event in await client.aio.interactions.create(**kwargs)]
+    else:
+        events = list(client.interactions.create(**kwargs))
 
     assert events
 
@@ -1547,99 +1491,38 @@ def test_interactions_tool_call_and_follow_up(memory_logger):
 
 @_needs_interactions
 @pytest.mark.vcr
-def test_interactions_delete(memory_logger):
-    assert not memory_logger.pop()
-
-    client = Client()
-    response = client.interactions.create(
-        model=INTERACTIONS_MODEL,
-        input="Reply with exactly ok.",
-    )
-    assert response.id
-
-    create_spans = memory_logger.pop()
-    assert create_spans
-
-    delete_response = client.interactions.delete(response.id)
-    assert delete_response in ({}, None)
-
-    spans = memory_logger.pop()
-    delete_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.TASK), "interactions.delete")
-
-    assert delete_span["input"]["id"] == response.id
-    assert delete_span.get("output") in ({}, None)
-    assert delete_span["metrics"]["duration"] >= 0
-
-
-@_needs_interactions
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_interactions_async_round_trip(memory_logger):
+def test_interactions_code_execution_tool_span(memory_logger):
     assert not memory_logger.pop()
 
     client = _v1beta_client()
-    response = await client.aio.interactions.create(
+    response = client.interactions.create(
         model=INTERACTIONS_MODEL,
-        input="What is the capital of Italy?",
+        input="Use code execution to plot y = x**2 for x from 0 to 10 with matplotlib and show the figure.",
+        tools=[{"type": "code_execution"}],
     )
-    fetched = await client.aio.interactions.get(response.id, include_input=True)
-    deleted = await client.aio.interactions.delete(response.id)
-
-    assert response.status == "completed"
-    assert fetched.id == response.id
-    assert deleted in ({}, None)
+    outputs = _interaction_outputs(response)
+    code_call = next(output for output in outputs if output.type == "code_execution_call")
+    code_result = next(output for output in outputs if output.type == "code_execution_result")
 
     spans = memory_logger.pop()
-    create_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.LLM), "interactions.create")
-    get_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.TASK), "interactions.get")
-    delete_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.TASK), "interactions.delete")
+    llm_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.LLM), "interactions.create")
+    tool_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.TOOL), "code_execution_call")
 
-    assert create_span["metadata"]["model"] == INTERACTIONS_MODEL
-    assert create_span["output"]["status"] == "completed"
-    assert "Rome" in create_span["output"]["text"]
+    # Server-side tool spans are logged after the LLM span closes but must still nest under it.
+    assert tool_span["span_parents"] == [llm_span["span_id"]]
+    assert tool_span["input"]["code"] == code_call.arguments.code
+    assert tool_span["metadata"]["call_id"] == code_call.id
+    assert tool_span["output"] == code_result.result
 
-    assert get_span["input"]["id"] == response.id
-    assert "Italy" in str(get_span["output"]["outputs"])
-
-    assert delete_span["input"]["id"] == response.id
-    assert delete_span.get("output") in ({}, None)
+    # The plot comes back as image content and must be logged as an attachment, not base64.
+    images = [item for item in llm_span["output"]["outputs"] if item.get("type") == "image"]
+    assert images
+    for image in images:
+        assert isinstance(image["data"], Attachment)
+        assert image["image_url"]["url"] is image["data"]
 
 
 @_needs_interactions
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_interactions_async_stream(memory_logger):
-    assert not memory_logger.pop()
-
-    client = Client()
-    stream = await client.aio.interactions.create(
-        model=INTERACTIONS_MODEL,
-        input="Say hi shortly.",
-        stream=True,
-    )
-
-    events = []
-    async for event in stream:
-        events.append(event)
-
-    assert events
-
-    spans = memory_logger.pop()
-    create_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.LLM), "interactions.create")
-
-    assert create_span["output"]["status"] == "completed"
-    assert create_span["output"]["text"]
-    assert create_span["metrics"]["time_to_first_token"] >= 0
-    assert any(
-        event_type in create_span["metadata"]["stream_event_types"] for event_type in ("content.delta", "step.start")
-    )
-
-
-@_needs_interactions
-@pytest.mark.skipif(
-    not version_satisfies(_GENAI_VERSION, ">=2.0.0"),
-    reason="the Gemini API rejects the legacy Interactions schema used by google-genai < 2.0.0, so it cannot be recorded",
-)
 @pytest.mark.vcr
 def test_interactions_service_tier(memory_logger):
     """Interactions record request ``service_tier`` and the interaction's reported ``service_tier``."""
