@@ -43,23 +43,26 @@ async def test_livekit_agents_function_tool_e2e(memory_logger, monkeypatch, lega
     if provider_mode == "fallback":
         monkeypatch.setattr(compat, "_PROVIDER_LLM_ADAPTERS", frozenset())
     llm = openai.LLM(model="gpt-4.1-mini", max_completion_tokens=32)
-    async with llm, AgentSession() as session:
-        await session.start(
-            Agent(
-                instructions="Use lookup_weather for weather questions, then answer briefly.",
-                llm=llm,
-                tools=[lookup_weather],
+    with logger.start_span(name="voice_call") as outer:
+        async with llm, AgentSession() as session:
+            await session.start(
+                Agent(
+                    instructions="Use lookup_weather for weather questions, then answer briefly.",
+                    llm=llm,
+                    tools=[lookup_weather],
+                )
             )
-        )
-        owner = getattr(session, STATE_ATTR)
-        result = await session.run(user_input="What is the weather in Paris?")
-        result.expect.next_event().is_function_call(name="lookup_weather")
-        result.expect.next_event().is_function_call_output()
-        result.expect.next_event().is_message(role="assistant")
-        assert not owner.turns and not owner.requests and not owner.tool_results
+            owner = getattr(session, STATE_ATTR)
+            result = await session.run(user_input="What is the weather in Paris?")
+            result.expect.next_event().is_function_call(name="lookup_weather")
+            result.expect.next_event().is_function_call_output()
+            result.expect.next_event().is_message(role="assistant")
+            assert not owner.turns and not owner.requests and not owner.tool_results
+        assert logger.current_span() is outer
     rows = memory_logger.pop()
     assert len(named(rows, "session")) == 1
     root = named(rows, "session")[0]
+    assert root["span_parents"] == [outer.span_id]
     assert root["metadata"]["audio.schema.version"] == "3.0.0"
     assert isinstance(root["metadata"]["audio.timeline"]["origin_unix_ms"], int)
     for row in rows:

@@ -13,7 +13,7 @@ from fractions import Fraction
 from braintrust._audio.config import AudioRecordingOptions
 from braintrust._audio.session import AudioSessionRecorder
 from braintrust._instrumentation import provider_content_allowed
-from braintrust.logger import parent_context, start_span
+from braintrust.logger import Span, start_span
 
 from .compat import STATE_ATTR, arguments, chat_messages, llm_metadata, provider_llm_expected, state_for
 from .privacy import Privacy, PrivacyCustomizer, opted_in
@@ -44,12 +44,24 @@ def _new(parent, name, *, kind="task", start_time=None, metadata=None, privacy=N
         name=name,
         type=kind,
         start_time=start_time,
-        set_current=False,
+        set_current=True,
         internal={"instrumentation": "livekit-agents-auto", "export_customizers": filters},
         # AudioSessionRecorder emits the schema marker with the session timeline.
         metadata=metadata or {},
     )
     return parent.start_span(**kwargs) if parent is not None else start_span(**kwargs)
+
+
+@contextlib.contextmanager
+def _operation_context(span: Span):
+    """Activate an owned operation without changing its explicit lifetime."""
+    # An active customer span takes precedence over a propagated parent slug.
+    # Set the operation itself current, then restore that customer's context.
+    span.set_current()
+    try:
+        yield
+    finally:
+        span.unset_current()
 
 
 def link(target, relationship):
@@ -630,7 +642,7 @@ async def llm_operation(wrapped, instance, args, kwargs):
     values["node"] = observed_node
     completed = False
     try:
-        with parent_context((fallback or span).export()):
+        with _operation_context(fallback or span):
             result = await wrapped(**values)
         completed = True
         return result
@@ -721,7 +733,7 @@ async def tts_operation(wrapped, instance, args, kwargs):
 
     values["input"] = observed_input()
     try:
-        with parent_context(span.export()):
+        with _operation_context(span):
             return await wrapped(**values)
     except asyncio.CancelledError:
         span.log(
@@ -762,7 +774,7 @@ async def stt_recognize(wrapped, instance, args, kwargs):
     )
     owner.stt = span
     try:
-        with parent_context(span.export()):
+        with _operation_context(span):
             event = await wrapped(*args, **kwargs)
         end = time.time()
         # Alternatives survive StreamAdapter and timestamp-alignment copies.
@@ -849,7 +861,7 @@ async def execute_tool(wrapped, instance, args, kwargs):
         if relationship := link(target, "requested_by"):
             span.log(metadata={"links": [relationship]})
     try:
-        with parent_context(span.export()):
+        with _operation_context(span):
             result = await wrapped(*args, **kwargs)
         owner.log(span, output=result)
         owner.tool_results.setdefault(handle, {})[call.call_id] = span

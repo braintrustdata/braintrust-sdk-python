@@ -51,30 +51,36 @@ async def test_consumed_input_drives_real_cascade(rooms, memory_logger, monkeypa
         track, rtc.TrackPublishOptions(source=rtc.TrackSource.SOURCE_MICROPHONE)
     )
 
-    async with llm, tts, stt, AgentSession(vad=vad, stt=stt, tts=tts, preemptive_generation=preemptive) as session:
-        frames = [chunk.frame async for chunk in tts.synthesize("hello there")]
-        assert frames
+    with logger.start_span(name="voice_call") as outer:
+        async with llm, tts, stt, AgentSession(vad=vad, stt=stt, tts=tts, preemptive_generation=preemptive) as session:
+            frames = [chunk.frame async for chunk in tts.synthesize("hello there")]
+            assert frames
 
-        def conversation(event):
-            if event.item.role == "assistant":
-                heard.set()
+            def conversation(event):
+                if event.item.role == "assistant":
+                    heard.set()
 
-        session.on("conversation_item_added", conversation)
-        await session.start(Agent(instructions="Reply with exactly: hi there", llm=llm), room=rooms[0], record=False)
-        owner = getattr(session, STATE_ATTR)
-        try:
-            silence = rtc.AudioFrame(data=bytes(2400 * 2), sample_rate=24000, num_channels=1, samples_per_channel=2400)
-            for _ in range(5):
-                await input_source.capture_frame(silence)
-            for frame in frames:
-                await input_source.capture_frame(frame)
-            for _ in range(15):
-                await input_source.capture_frame(silence)
-            await asyncio.wait_for(heard.wait(), 15)
-            await session.drain()
-            assert owner.input_end is not None
-        finally:
-            await input_source.aclose()
+            session.on("conversation_item_added", conversation)
+            await session.start(
+                Agent(instructions="Reply with exactly: hi there", llm=llm), room=rooms[0], record=False
+            )
+            owner = getattr(session, STATE_ATTR)
+            try:
+                silence = rtc.AudioFrame(
+                    data=bytes(2400 * 2), sample_rate=24000, num_channels=1, samples_per_channel=2400
+                )
+                for _ in range(5):
+                    await input_source.capture_frame(silence)
+                for frame in frames:
+                    await input_source.capture_frame(frame)
+                for _ in range(15):
+                    await input_source.capture_frame(silence)
+                await asyncio.wait_for(heard.wait(), 15)
+                await session.drain()
+                assert owner.input_end is not None
+            finally:
+                await input_source.aclose()
+        assert logger.current_span() is outer
     rows = memory_logger.pop()
     assert named(rows, "user_speech")
     recognitions = named(rows, "stt")
@@ -110,6 +116,7 @@ async def test_consumed_input_drives_real_cascade(rooms, memory_logger, monkeypa
         assert parent["metrics"]["start"] <= speech["metrics"]["start"]
     assert any(row["metadata"].get("turn.reply_to") == user["span_id"] for row in named(rows, "agent_turn"))
     root = named(rows, "session")[0]
+    assert root["span_parents"] == [outer.span_id]
     assert root["metadata"]["audio.schema.version"] == "3.0.0"
     assert isinstance(root["metadata"]["audio.timeline"]["origin_unix_ms"], int)
     for row in rows:
