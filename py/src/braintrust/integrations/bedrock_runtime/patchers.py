@@ -1,4 +1,4 @@
-"""Patchers for the boto3 Bedrock Runtime integration."""
+"""Patchers for the boto3/aiobotocore Bedrock Runtime integration."""
 
 from typing import Any
 
@@ -71,3 +71,17 @@ class BedrockClientCreatorPatcher(FunctionWrapperPatcher):
     target_module = "botocore.client"
     target_path = "ClientCreator.create_client"
     wrapper = _create_client_wrapper
+
+
+async def _create_async_client_wrapper(wrapped, instance, args, kwargs):  # noqa: ARG001
+    client = await wrapped(*args, **kwargs)
+    return wrap_bedrock_client(client)
+
+
+class AsyncBedrockClientCreatorPatcher(FunctionWrapperPatcher):
+    """aiobotocore overrides botocore's client factory with an async one."""
+
+    name = "bedrock_runtime.async_client_creator"
+    target_module = "aiobotocore.client"
+    target_path = "AioClientCreator.create_client"
+    wrapper = _create_async_client_wrapper

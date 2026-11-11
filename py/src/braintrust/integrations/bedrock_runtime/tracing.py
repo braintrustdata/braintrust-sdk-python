@@ -1,8 +1,10 @@
-"""Tracing helpers for the boto3 Bedrock Runtime integration."""
+"""Tracing helpers for the boto3/aiobotocore Bedrock Runtime integration."""
 
+import inspect
 import io
 import json
 import time
+from abc import ABC, abstractmethod
 from typing import Any
 
 from braintrust.integrations.utils import (
@@ -54,13 +56,10 @@ def _converse_wrapper(wrapped, instance, args, kwargs):  # noqa: ARG001
         _converse_input(kwargs),
         _converse_metadata(kwargs, endpoint="converse"),
     )
-    start_time = time.time()
-    try:
-        result = wrapped(*args, **kwargs)
-    except Exception as error:
-        _log_error_and_end_span(span, error)
-        raise
+    return _call_and_trace(wrapped, args, kwargs, span, _finish_converse)
 
+
+def _finish_converse(result, span, start_time):
     metadata = _converse_response_metadata(result)
     metrics = {
         **_timing_metrics(start_time, time.time()),
@@ -76,13 +75,10 @@ def _converse_stream_wrapper(wrapped, instance, args, kwargs):  # noqa: ARG001
         _converse_input(kwargs),
         _converse_metadata(kwargs, endpoint="converse-stream", stream=True),
     )
-    start_time = time.time()
-    try:
-        result = wrapped(*args, **kwargs)
-    except Exception as error:
-        _log_error_and_end_span(span, error)
-        raise
+    return _call_and_trace(wrapped, args, kwargs, span, _finish_converse_stream)
 
+
+def _finish_converse_stream(result, span, start_time):
     if isinstance(result, dict) and "stream" in result:
         result = dict(result)
         result["stream"] = _TracedConverseStream(result["stream"], span, start_time)
@@ -99,20 +95,33 @@ def _invoke_model_wrapper(wrapped, instance, args, kwargs):  # noqa: ARG001
         _invoke_model_input(kwargs),
         _invoke_model_metadata(kwargs, endpoint="invoke_model"),
     )
-    start_time = time.time()
-    try:
-        result = wrapped(*args, **kwargs)
-    except Exception as error:
-        _log_error_and_end_span(span, error)
-        raise
+    return _call_and_trace(wrapped, args, kwargs, span, _finish_invoke_model, model_id)
 
+
+def _finish_invoke_model(result, span, start_time, model_id):
     output = None
     if isinstance(result, dict) and "body" in result:
+        if inspect.iscoroutinefunction(getattr(result["body"], "read", None)):
+            return _finish_async_invoke_model(result, span, start_time, model_id)
         body_bytes = _read_streaming_body(result["body"])
         if body_bytes is not None:
             output = _parse_json_bytes(body_bytes)
             result = dict(result)
             result["body"] = _replacement_streaming_body(body_bytes)
+    return _log_invoke_model(result, span, start_time, model_id, output)
+
+
+async def _finish_async_invoke_model(result, span, start_time, model_id):
+    from ._async_body import BufferedAsyncBody
+
+    original_body = result["body"]
+    data = await original_body.read()
+    result = dict(result)
+    result["body"] = BufferedAsyncBody(original_body, data)
+    return _log_invoke_model(result, span, start_time, model_id, _parse_json_bytes(data))
+
+
+def _log_invoke_model(result, span, start_time, model_id, output):
     output_usage = output.get("usage") if isinstance(output, dict) else None
     metrics = {
         **_timing_metrics(start_time, time.time()),
@@ -136,13 +145,10 @@ def _invoke_model_stream_wrapper(wrapped, instance, args, kwargs):  # noqa: ARG0
         _invoke_model_input(kwargs),
         _invoke_model_metadata(kwargs, endpoint="invoke_model_stream", stream=True),
     )
-    start_time = time.time()
-    try:
-        result = wrapped(*args, **kwargs)
-    except Exception as error:
-        _log_error_and_end_span(span, error)
-        raise
+    return _call_and_trace(wrapped, args, kwargs, span, _finish_invoke_model_stream, model_id)
 
+
+def _finish_invoke_model_stream(result, span, start_time, model_id):
     # The served tier is a response header, so it is known before the body streams.
     metadata = _invoke_model_response_metadata(result)
     if isinstance(result, dict) and "body" in result:
@@ -154,6 +160,31 @@ def _invoke_model_stream_wrapper(wrapped, instance, args, kwargs):  # noqa: ARG0
 
     _log_and_end_span(span, metrics=_timing_metrics(start_time, time.time()), metadata=metadata)
     return result
+
+
+def _call_and_trace(wrapped, args, kwargs, span, finish, *finish_args):
+    start_time = time.time()
+    try:
+        result = wrapped(*args, **kwargs)
+    except Exception as error:
+        _log_error_and_end_span(span, error)
+        raise
+
+    # aiobotocore generates synchronous method stubs returning coroutines, so
+    # inspect the result rather than relying on iscoroutinefunction(method).
+    if inspect.isawaitable(result):
+        return _await_response(result, span, start_time, finish, finish_args)
+    return finish(result, span, start_time, *finish_args)
+
+
+async def _await_response(response, span, start_time, finish, finish_args):
+    try:
+        result = finish(await response, span, start_time, *finish_args)
+        return await result if inspect.isawaitable(result) else result
+    except BaseException as error:
+        # Cancellation must end the span as well as ordinary provider errors.
+        _log_error_and_end_span(span, error)
+        raise
 
 
 def _start_span(name: str, span_input: Any, metadata: dict[str, Any]):
@@ -638,7 +669,43 @@ def _anthropic_invoke_usage_metrics(model_id: Any, output: Any) -> dict[str, Any
     return metrics
 
 
-class _TracedConverseStream:
+class _AsyncTracedStream(ABC):
+    """Share async iteration and finalization across the two event protocols."""
+
+    _stream: Any
+
+    @abstractmethod
+    def _observe(self, event: Any) -> None:
+        """Accumulate a provider event."""
+
+    @abstractmethod
+    def _finish(self, error: BaseException | None) -> None:
+        """Log and end the span once."""
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        if not hasattr(self, "_async_iterator"):
+            self._async_iterator = self._stream.__aiter__()
+        try:
+            event = await self._async_iterator.__anext__()
+        except StopAsyncIteration:
+            self._finish(None)
+            raise
+        except BaseException as error:
+            self._finish(error)
+            raise
+        self._observe(event)
+        return event
+
+    def __del__(self):
+        # Only finalize trace state here; never schedule async transport cleanup.
+        if not getattr(self, "_finished", True):
+            self._finish(None)
+
+
+class _TracedConverseStream(_AsyncTracedStream):
     """Wrap a botocore EventStream and log the final span when it drains."""
 
     def __init__(self, stream: Any, span: Any, start_time: float):
@@ -754,7 +821,7 @@ class _TracedConverseStream:
         _log_and_end_span(self._span, output=output, metrics=metrics, metadata=metadata or None)
 
 
-class _TracedInvokeModelStream:
+class _TracedInvokeModelStream(_AsyncTracedStream):
     """Wrap an InvokeModelWithResponseStream EventStream and log observed chunks."""
 
     def __init__(self, stream: Any, span: Any, start_time: float, model_id: Any):
@@ -810,5 +877,9 @@ class _TracedInvokeModelStream:
         if output:
             for chunk in output:
                 usage_metrics.update(_anthropic_invoke_usage_metrics(self._model_id, chunk))
+                if isinstance(chunk, dict):
+                    metadata = chunk.get("metadata")
+                    if isinstance(metadata, dict):
+                        usage_metrics.update(_converse_usage_metrics(metadata.get("usage")))
         metrics = {**_timing_metrics(self._start_time, time.time(), self._first_token_time), **usage_metrics}
         _log_and_end_span(self._span, output=output, metrics=metrics)
