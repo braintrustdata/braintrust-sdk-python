@@ -2240,6 +2240,9 @@ class ProjectSettingsPatternAlertDestinations2(TypedDict):
     """
 
 
+ProjectSettingsSessionIdField: TypeAlias = str
+
+
 class ProjectSettings(TypedDict):
     comparison_key: NotRequired[str | None]
     """
@@ -2288,6 +2291,7 @@ class ProjectSettings(TypedDict):
     """
     Project-wide Slack, webhook, and PagerDuty destinations for new and reactivated Pattern alerts. An empty array disables alerts.
     """
+    session_id_fields: NotRequired[Sequence[Sequence[ProjectSettingsSessionIdField]] | None]
     default_preprocessor: NotRequired[NullableSavedFunctionId | None]
 
 
