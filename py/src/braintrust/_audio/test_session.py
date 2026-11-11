@@ -1,5 +1,6 @@
 import asyncio
 import threading
+from array import array
 
 import pytest
 from braintrust import SpanCustomizer, logger, set_span_customizers
@@ -29,6 +30,17 @@ def recording(**kwargs):
             **kwargs,
         ),
     )
+
+
+def test_session_timeline_converts_nanoseconds_and_wall_seconds(memory):
+    session = AudioSessionRecorder(logger.start_span(name="session"))
+    origin = session.to_wall(0)
+    later = session.to_wall(1_250_000_000)
+
+    assert later - origin == pytest.approx(1.25, rel=0, abs=1e-6)
+    # Unix seconds are floats: allow their sub-microsecond rounding error.
+    assert session.from_wall(later) == pytest.approx(1_250_000_000, rel=0, abs=512)
+    assert session.from_wall(origin - 1) == 0
 
 
 @pytest.mark.asyncio
@@ -171,13 +183,68 @@ async def test_shutdown_deadline_fences_late_success(memory, monkeypatch):
         return {"upload_status": "done"}
 
     monkeypatch.setattr(logger.Attachment, "upload", upload)
-    session = recording(shutdown_timeout_seconds=0.02)
+    session = recording(segment_duration_seconds=0.001, shutdown_timeout_seconds=0.02)
     session.record("session-input", bytes(96), sample_rate_hz=48000, channels=1, offset_ns=0)
-    result = await session.finish()
-    assert result.reason == "shutdown_timeout"
-    assert entered.is_set()
-    records = memory.pop()
-    assert records[0]["metadata"]["audio.segments"]["part-0"]["state"] == "omitted"
-    release.set()
+    # Start the upload before the shutdown deadline, even on a busy worker.
+    session.advance(1_000_000)
+    try:
+        assert await asyncio.to_thread(entered.wait, 5)
+        result = await session.finish()
+        assert result.reason == "shutdown_timeout"
+        records = memory.pop()
+        assert records[0]["metadata"]["audio.segments"]["part-0"]["state"] == "omitted"
+    finally:
+        release.set()
     await asyncio.sleep(0.02)
     assert not memory.pop()
+
+
+@pytest.mark.asyncio
+async def test_stream_frames_arriving_in_a_burst_are_recorded_back_to_back(memory, monkeypatch):
+    uploaded = []
+
+    def upload(attachment):
+        uploaded.append(attachment.data)
+        return {"upload_status": "done"}
+
+    monkeypatch.setattr(logger.Attachment, "upload", upload)
+    session = recording()
+    # Jitter: frames 1-3 (10 ms each at 48 kHz) arrive at once; frame 4 later.
+    for value, now_ns in ((1, 0), (2, 0), (3, 0), (4, 100_000_000)):
+        frame = array("h", [value] * 480).tobytes()
+        assert session.record_stream("session-input", frame, sample_rate_hz=48000, channels=1, now_ns=now_ns)
+    with pytest.raises(ValueError):
+        session.record_stream("session-input", b"\x01", sample_rate_hz=48000, channels=1, now_ns=200_000_000)
+    await session.finish()
+    samples = array("h", uploaded[0])
+    per_ms = [samples[index * 48] for index in range(len(samples) // 48)]
+    # The burst plays out in order instead of overwriting itself at 0 ms; the
+    # late frame keeps its arrival time; the invalid frame records nothing.
+    assert per_ms == [1] * 10 + [2] * 10 + [3] * 10 + [0] * 70 + [4] * 10
+
+
+@pytest.mark.asyncio
+async def test_stream_bursts_queue_per_source_while_other_sources_overlap(memory, monkeypatch):
+    uploaded = []
+
+    def upload(attachment):
+        uploaded.append(attachment.data)
+        return {"upload_status": "done"}
+
+    monkeypatch.setattr(logger.Attachment, "upload", upload)
+    session = AudioSessionRecorder(
+        logger.start_span(name="session"),
+        sources=("user", "agent"),
+        options=AudioRecordingOptions(encoding=AudioEncoding(codec="pcm", container=None)),
+    )
+    # Both sources burst at 0 ms: each queues behind only its own frames.
+    for source, values in (("user", (1, 2)), ("agent", (7, 8, 9))):
+        for value in values:
+            frame = array("h", [value] * 480).tobytes()
+            assert session.record_stream(source, frame, sample_rate_hz=48000, channels=1, now_ns=0)
+    await session.finish()
+    samples = array("h", uploaded[0])
+    channels = [samples[channel::2] for channel in range(2)]
+    user, agent = ([channel[index * 48] for index in range(len(channel) // 48)] for channel in channels)
+    assert user == [1] * 10 + [2] * 10 + [0] * 10
+    assert agent == [7] * 10 + [8] * 10 + [9] * 10

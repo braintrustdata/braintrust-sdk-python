@@ -1,0 +1,231 @@
+interactions:
+- request:
+    body: '{"model":"gpt-6-luna","stream":true,"messages":[{"role":"system","content":"Call
+      unavailable_tool exactly once with query=''hello''. After its result reply exactly:
+      Done."},{"role":"user","content":"Run the tool."}],"max_completion_tokens":60,"reasoning_effort":"none","stream_options":{"include_usage":true},"temperature":1.0,"tools":[{"type":"function","function":{"name":"unavailable_tool","description":"An
+      unavailable tool.","parameters":{"type":"object","properties":{"query":{"type":"string"}},"required":["query"]}}}]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '524'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 3.46.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 3.46.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.13
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: 'data: {"id":"chatcmpl-EilD5t0V5WP53eIng1xlwulqAXtiy","object":"chat.completion.chunk","created":1794336615,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{"role":"assistant","content":null,"tool_calls":[{"index":0,"id":"call_oqBzVxZE2UBwzsJvzVnSMuM5","type":"function","function":{"name":"unavailable_tool","arguments":""}}],"refusal":null},"finish_reason":null}],"usage":null,"obfuscation":"4KXab4"}
+
+
+        data: {"id":"chatcmpl-EilD5t0V5WP53eIng1xlwulqAXtiy","object":"chat.completion.chunk","created":1794336615,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"{\""}}]},"finish_reason":null}],"usage":null,"obfuscation":"VqKwz"}
+
+
+        data: {"id":"chatcmpl-EilD5t0V5WP53eIng1xlwulqAXtiy","object":"chat.completion.chunk","created":1794336615,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"query"}}]},"finish_reason":null}],"usage":null,"obfuscation":"3xR"}
+
+
+        data: {"id":"chatcmpl-EilD5t0V5WP53eIng1xlwulqAXtiy","object":"chat.completion.chunk","created":1794336615,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"\":\""}}]},"finish_reason":null}],"usage":null,"obfuscation":"EoV"}
+
+
+        data: {"id":"chatcmpl-EilD5t0V5WP53eIng1xlwulqAXtiy","object":"chat.completion.chunk","created":1794336615,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"hello"}}]},"finish_reason":null}],"usage":null,"obfuscation":"Zgk"}
+
+
+        data: {"id":"chatcmpl-EilD5t0V5WP53eIng1xlwulqAXtiy","object":"chat.completion.chunk","created":1794336615,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"\"}"}}]},"finish_reason":null}],"usage":null,"obfuscation":"5gTjK"}
+
+
+        data: {"id":"chatcmpl-EilD5t0V5WP53eIng1xlwulqAXtiy","object":"chat.completion.chunk","created":1794336615,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}],"usage":null,"obfuscation":"fWyeX8"}
+
+
+        data: {"id":"chatcmpl-EilD5t0V5WP53eIng1xlwulqAXtiy","object":"chat.completion.chunk","created":1794336615,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[],"usage":{"prompt_tokens":147,"completion_tokens":18,"total_tokens":165,"prompt_tokens_details":{"cached_tokens":0,"cache_write_tokens":0,"audio_tokens":0},"completion_tokens_details":{"reasoning_tokens":0,"audio_tokens":0,"accepted_prediction_tokens":0,"rejected_prediction_tokens":0}},"obfuscation":"tD85aG1L"}
+
+
+        data: [DONE]
+
+
+        '
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a5873de6596f52e6-YYZ
+      connection:
+      - keep-alive
+      content-type:
+      - text/event-stream; charset=utf-8
+      date:
+      - Tue, 10 Nov 2026 18:50:16 GMT
+      openai-processing-ms:
+      - '739'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '180000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '179999970'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_33d83a10bb2a4be08cf4036acbebc203
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"model":"gpt-6-luna","stream":true,"messages":[{"role":"system","content":"Call
+      unavailable_tool exactly once with query=''hello''. After its result reply exactly:
+      Done."},{"role":"user","content":"Run the tool."},{"role":"assistant","tool_calls":[{"id":"call_oqBzVxZE2UBwzsJvzVnSMuM5","function":{"name":"unavailable_tool","arguments":"{\"query\":
+      \"hello\"}"},"type":"function"}]},{"role":"tool","content":"\"The function `unavailable_tool`
+      is not currently available.\"","tool_call_id":"call_oqBzVxZE2UBwzsJvzVnSMuM5"}],"max_completion_tokens":60,"reasoning_effort":"none","stream_options":{"include_usage":true},"temperature":1.0,"tools":[{"type":"function","function":{"name":"unavailable_tool","description":"An
+      unavailable tool.","parameters":{"type":"object","properties":{"query":{"type":"string"}},"required":["query"]}}}]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '832'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 3.46.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 3.46.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.13
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: 'data: {"id":"chatcmpl-EilD6dt3GDO17BXWFZtAyZ636WoMs","object":"chat.completion.chunk","created":1794336616,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{"role":"assistant","content":"","refusal":null},"finish_reason":null}],"usage":null,"obfuscation":""}
+
+
+        data: {"id":"chatcmpl-EilD6dt3GDO17BXWFZtAyZ636WoMs","object":"chat.completion.chunk","created":1794336616,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":"Done"},"finish_reason":null}],"usage":null,"obfuscation":"s7uhNi78boC3iQ"}
+
+
+        data: {"id":"chatcmpl-EilD6dt3GDO17BXWFZtAyZ636WoMs","object":"chat.completion.chunk","created":1794336616,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":"."},"finish_reason":null}],"usage":null,"obfuscation":"I"}
+
+
+        data: {"id":"chatcmpl-EilD6dt3GDO17BXWFZtAyZ636WoMs","object":"chat.completion.chunk","created":1794336616,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":null,"obfuscation":"fDj5Jimxxgzu"}
+
+
+        data: {"id":"chatcmpl-EilD6dt3GDO17BXWFZtAyZ636WoMs","object":"chat.completion.chunk","created":1794336616,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[],"usage":{"prompt_tokens":189,"completion_tokens":5,"total_tokens":194,"prompt_tokens_details":{"cached_tokens":0,"cache_write_tokens":0,"audio_tokens":0},"completion_tokens_details":{"reasoning_tokens":0,"audio_tokens":0,"accepted_prediction_tokens":0,"rejected_prediction_tokens":0}},"obfuscation":"WROifqxW6"}
+
+
+        data: [DONE]
+
+
+        '
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a5873dec486852e6-YYZ
+      connection:
+      - keep-alive
+      content-type:
+      - text/event-stream; charset=utf-8
+      date:
+      - Tue, 10 Nov 2026 18:50:17 GMT
+      openai-processing-ms:
+      - '1180'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '180000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '179999955'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_0acd2ddcd69a4bbaacbf0eaf7eb25a6e
+    status:
+      code: 200
+      message: OK
+version: 1

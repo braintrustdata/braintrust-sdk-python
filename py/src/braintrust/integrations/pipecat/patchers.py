@@ -1,8 +1,10 @@
 """Pipecat integration patchers."""
 
+from contextvars import ContextVar
 from typing import Any
 
-from braintrust.integrations.base import FunctionWrapperPatcher
+from braintrust._audio.config import AudioRecordingOptions
+from braintrust.integrations.base import CompositeFunctionWrapperPatcher, FunctionWrapperPatcher
 
 from .tracing import BraintrustPipecatObserver
 
@@ -11,7 +13,7 @@ _DEFAULT_OBSERVER_OPTIONS: dict[str, Any] = {
     "capture_audio_attachments": None,
     "capture_user_audio_attachments": None,
     "capture_agent_audio_attachments": None,
-    "trace_turns": True,
+    "audio_recording_options": None,
 }
 
 
@@ -20,22 +22,91 @@ def set_default_observer_options(**options: Any) -> None:
     _DEFAULT_OBSERVER_OPTIONS.update(options)
 
 
-def _has_braintrust_observer(observers: list[Any]) -> bool:
-    return any(isinstance(observer, BraintrustPipecatObserver) for observer in observers)
+_OBSERVER_ATTR = "_braintrust_pipecat_observer"
+_RESPONSE_SPAN_ATTR = "_braintrust_pipecat_response_span"
+# The observer of the running worker. Every processor task inherits it.
+_ACTIVE_OBSERVER: ContextVar[BraintrustPipecatObserver | None] = ContextVar(
+    "braintrust_pipecat_observer", default=None
+)
 
 
-def _with_braintrust_observer(observers: Any) -> list[Any]:
+def _with_braintrust_observer(observers: Any) -> tuple[list[Any], BraintrustPipecatObserver]:
     ret = list(observers or [])
-    if not _has_braintrust_observer(ret):
-        ret.append(BraintrustPipecatObserver(**_DEFAULT_OBSERVER_OPTIONS))
-    return ret
+    for observer in ret:
+        if isinstance(observer, BraintrustPipecatObserver):
+            return ret, observer
+    observer = BraintrustPipecatObserver(**_DEFAULT_OBSERVER_OPTIONS)
+    ret.append(observer)
+    return ret, observer
 
 
-def traced_pipeline_worker_init(wrapped: Any, _instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
+def traced_pipeline_worker_init(wrapped: Any, instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
     """Inject the Braintrust Pipecat observer into PipelineWorker construction."""
     kwargs = dict(kwargs)
-    kwargs["observers"] = _with_braintrust_observer(kwargs.get("observers"))
-    return wrapped(*args, **kwargs)
+    kwargs["observers"], observer = _with_braintrust_observer(kwargs.get("observers"))
+    result = wrapped(*args, **kwargs)
+    setattr(instance, _OBSERVER_ATTR, observer)
+    return result
+
+
+async def traced_pipeline_worker_run(
+    wrapped: Any, instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]
+) -> Any:
+    """Run a worker with its session span current, so nested spans join it."""
+    observer = getattr(instance, _OBSERVER_ATTR, None)
+    if observer is None:
+        return await wrapped(*args, **kwargs)
+    token = _ACTIVE_OBSERVER.set(observer)
+    try:
+        with observer._current_session():
+            return await wrapped(*args, **kwargs)
+    finally:
+        _ACTIVE_OBSERVER.reset(token)
+
+
+def _release_response_span(service: Any) -> None:
+    span = getattr(service, _RESPONSE_SPAN_ATTR, None)
+    if span is not None:
+        setattr(service, _RESPONSE_SPAN_ATTR, None)
+        span.unset_current()
+
+
+async def traced_llm_push_frame(wrapped: Any, instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
+    """Make an LLM service's llm_response span current while it makes the call.
+
+    Every LLM service pushes its response start frame, sends the provider
+    request and pushes its response end frame from the same task. Spans the
+    provider integration starts in between nest under llm_response.
+    """
+    observer = _ACTIVE_OBSERVER.get()
+    frame = args[0] if args else kwargs.get("frame")
+    kind = type(frame).__name__
+    if observer is None or kind not in ("LLMFullResponseStartFrame", "LLMFullResponseEndFrame"):
+        return await wrapped(*args, **kwargs)
+    _release_response_span(instance)
+    if kind == "LLMFullResponseEndFrame":
+        return await wrapped(*args, **kwargs)
+    result, span = await observer._response_span(frame, lambda: wrapped(*args, **kwargs))
+    if span is not None:
+        span.set_current()
+        setattr(instance, _RESPONSE_SPAN_ATTR, span)
+    return result
+
+
+async def traced_stt_process_generator(
+    wrapped: Any, instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]
+) -> Any:
+    """Activate recognition in the service task that actually runs STT.
+
+    STT services consume their run_stt generator here, including segmented
+    services that execute it in a separate task. Merely constructing that
+    generator, or activating a span in the observer, cannot scope its work.
+    """
+    observer = _ACTIVE_OBSERVER.get()
+    if observer is None:
+        return await wrapped(*args, **kwargs)
+    with observer._current_recognition(instance):
+        return await wrapped(*args, **kwargs)
 
 
 class PipelineWorkerInitPatcher(FunctionWrapperPatcher):
@@ -47,10 +118,70 @@ class PipelineWorkerInitPatcher(FunctionWrapperPatcher):
     wrapper = staticmethod(traced_pipeline_worker_init)
 
 
-# Alias used by the implementation plan and public helper.
-PipelineWorkerPatcher = PipelineWorkerInitPatcher
+class PipelineWorkerRunPatcher(FunctionWrapperPatcher):
+    """Patch ``PipelineWorker.run`` to make the session span current."""
+
+    name = "pipeline_worker_run"
+    target_module = "pipecat.pipeline.worker"
+    target_path = "PipelineWorker.run"
+    wrapper = staticmethod(traced_pipeline_worker_run)
 
 
-def wrap_pipeline_worker(PipelineWorker: Any) -> Any:
-    """Instrument a Pipecat ``PipelineWorker`` class directly."""
-    return PipelineWorkerInitPatcher.wrap_target(PipelineWorker)
+class LLMServicePushFramePatcher(FunctionWrapperPatcher):
+    """Patch ``LLMService.push_frame`` to nest provider spans under responses."""
+
+    name = "llm_service_push_frame"
+    target_module = "pipecat.services.llm_service"
+    target_path = "LLMService.push_frame"
+    wrapper = staticmethod(traced_llm_push_frame)
+
+
+class STTServiceProcessGeneratorPatcher(FunctionWrapperPatcher):
+    """Scope provider transcription spans under their Pipecat recognition."""
+
+    name = "stt_service_process_generator"
+    target_module = "pipecat.services.stt_service"
+    target_path = "STTService.process_generator"
+    wrapper = staticmethod(traced_stt_process_generator)
+
+
+class PipelineWorkerPatcher(CompositeFunctionWrapperPatcher):
+    """Instrument ``PipelineWorker`` construction and runs together."""
+
+    name = "pipeline_worker"
+    sub_patchers = (PipelineWorkerInitPatcher, PipelineWorkerRunPatcher)
+
+
+def wrap_pipeline_worker(
+    PipelineWorker: Any,
+    *,
+    capture_audio_attachments: bool | None = None,
+    capture_user_audio_attachments: bool | None = None,
+    capture_agent_audio_attachments: bool | None = None,
+    audio_recording_options: AudioRecordingOptions | None = None,
+) -> Any:
+    """Instrument a Pipecat ``PipelineWorker`` class directly.
+
+    Every worker the class constructs afterwards is traced. Options match
+    ``setup_pipecat()``. Options omitted here keep their current values, so
+    wrapping again never discards earlier configuration; unset options fall
+    back to the generic audio capture environment variables.
+    """
+    set_default_observer_options(
+        **{
+            name: value
+            for name, value in {
+                "capture_audio_attachments": capture_audio_attachments,
+                "capture_user_audio_attachments": capture_user_audio_attachments,
+                "capture_agent_audio_attachments": capture_agent_audio_attachments,
+                "audio_recording_options": audio_recording_options,
+            }.items()
+            if value is not None
+        }
+    )
+    from pipecat.services.llm_service import LLMService  # pylint: disable=import-error
+    from pipecat.services.stt_service import STTService  # pylint: disable=import-error
+
+    LLMServicePushFramePatcher.wrap_target(LLMService)
+    STTServiceProcessGeneratorPatcher.wrap_target(STTService)
+    return PipelineWorkerPatcher.wrap_target(PipelineWorker)
