@@ -436,3 +436,28 @@ def test_registration_and_unregistration_are_idempotent():
 
 def test_auto_instrument_ai_sdk_subprocess():
     verify_autoinstrument_script("test_auto_ai_sdk.py")
+
+
+@pytest.mark.vcr(cassette_name="test_agent_tool_loop_emits_run_model_and_tool_hierarchy")
+@pytest.mark.asyncio
+async def test_agent_descendants_recheck_provider_privacy_at_export(memory_logger):
+    from braintrust._instrumentation import provider_content_allowed
+
+    allowed = True
+    token = provider_content_allowed.set(lambda: allowed)
+    try:
+        agent = ai.Agent(tools=[get_temperature])
+        async with agent.run(_model(), _temperature_messages(), params=_model_params()) as stream:
+            async for _ in stream:
+                pass
+    finally:
+        provider_content_allowed.reset(token)
+    with logger.start_span(name="customer", input="unrelated customer content"):
+        pass
+    allowed = False
+    rows = memory_logger.pop()
+    provider_rows = [row for row in rows if row["span_attributes"]["name"] != "customer"]
+    assert len(provider_rows) > 3
+    assert _span_named(provider_rows, "get_temperature")
+    assert all("input" not in row and "output" not in row and "error" not in row for row in provider_rows)
+    assert _span_named(rows, "customer")["input"] == "unrelated customer content"

@@ -510,8 +510,9 @@ LIVEKIT_AGENTS_VERSIONS = _get_matrix_versions("livekit-agents")
 def test_livekit_agents(session, version):
     _skip_if_incompatible(session)
     _install_test_deps(session)
-    # Install the locked plugins first so the matrix pin decides livekit-agents.
-    _install_group_locked(session, "test-livekit-agents")
+    # Qualify matching plugin releases alongside each framework version.
+    group = "test-livekit-agents" if version == LATEST else f"test-livekit-agents-{version.replace('.', '-')}"
+    _install_group_locked(session, group)
     _install_matrix_dep(session, "livekit-agents", version)
     livekit_server_dir = _ensure_livekit_server(session)
     env = {

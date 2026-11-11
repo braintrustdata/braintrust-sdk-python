@@ -21,6 +21,7 @@ async def lookup_order(order_id: str) -> str:
 async def entrypoint(ctx: JobContext):
     braintrust.init_logger(project="livekit-cascade")
     setup_livekit_agents()
+    braintrust.setup_openai()
     session = AgentSession(
         vad=silero.VAD.load(),
         stt=openai.STT(model="gpt-4o-mini-transcribe"),

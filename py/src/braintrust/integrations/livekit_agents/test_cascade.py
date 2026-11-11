@@ -5,6 +5,7 @@ from braintrust import logger
 from braintrust._audio.config import AudioEncoding, AudioRecordingOptions
 from braintrust.integrations.livekit_agents import setup_livekit_agents
 from braintrust.integrations.livekit_agents.compat import STATE_ATTR
+from braintrust.integrations.openai import OpenAIIntegration
 
 
 def named(rows, name):
@@ -36,6 +37,7 @@ async def test_consumed_input_drives_real_cascade(rooms, memory_logger, monkeypa
             segment_duration_seconds=0.5,
         )
     )
+    OpenAIIntegration.setup()
     tts = openai.TTS(model="gpt-4o-mini-tts", voice="ash")
     stt = openai.STT(model="gpt-4o-mini-transcribe")
     recognition_metrics = []
@@ -86,6 +88,9 @@ async def test_consumed_input_drives_real_cascade(rooms, memory_logger, monkeypa
     assert end - start == pytest.approx(measured.duration, abs=0.01)
     assert recognition["metadata"]["model"] == stt.model
     assert recognition["metadata"]["provider"] == stt.provider
+    transcriptions = named(rows, "Transcription")
+    assert len(transcriptions) == 1
+    assert transcriptions[0]["span_parents"] == [recognition["span_id"]]
     assert recognition["output"] == [{"role": "user", "content": "Hello there."}]
     assert named(rows, "llm_response")
     assert named(rows, "tts")

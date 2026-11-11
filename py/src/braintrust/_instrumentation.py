@@ -1,4 +1,4 @@
-"""Internal ownership of automatic provider telemetry by a framework operation."""
+"""Framework privacy policy inherited by automatic provider telemetry."""
 
 from collections.abc import Callable
 from contextvars import ContextVar
@@ -19,7 +19,6 @@ class _ProviderPrivacyCustomizer(SpanCustomizer):
         return data
 
 
-provider_spans_owned: ContextVar[bool] = ContextVar("braintrust_provider_spans_owned", default=False)
 provider_content_allowed: ContextVar[Callable[[], bool] | None] = ContextVar(
     "braintrust_provider_content_allowed", default=None
 )

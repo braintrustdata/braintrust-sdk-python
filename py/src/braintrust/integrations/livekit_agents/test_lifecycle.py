@@ -100,6 +100,12 @@ async def test_real_job_shutdown_callbacks_settle_playback_before_sealing(
         assert not hasattr(session, STATE_ATTR)
         rows = memory_logger.pop()
         root = next(row for row in rows if row.get("span_attributes", {}).get("name") == "session")
+        turn = next(row for row in rows if row.get("span_attributes", {}).get("name") == "agent_turn")
+        assert turn["metadata"]["turn.incomplete"]
+        for row in rows:
+            if row.get("span_attributes", {}).get("name") == "agent_speech":
+                assert row["metadata"]["contrib.livekit.incomplete"]
+        assert not owner.turns and not owner.requests and not owner.tool_results and not owner.pending_users
         if project_redaction:
             assert not uploads
             assert "input" not in root
@@ -112,3 +118,30 @@ async def test_real_job_shutdown_callbacks_settle_playback_before_sealing(
         _JobContextVar.reset(token)
         rooms[0].off("participant_connected", context._participant_available)
         await context._on_cleanup()
+
+
+@pytest.mark.asyncio
+async def test_recognition_reset_retires_unfinished_span_state(memory_logger):
+    from braintrust.integrations.livekit_agents.tracing import _new
+    from livekit.agents import Agent, AgentSession
+    from livekit.plugins import openai
+
+    setup_livekit_agents()
+    async with openai.STT() as stt, AgentSession(stt=stt, turn_detection="manual") as session:
+        await session.start(Agent(instructions="test"))
+        owner = getattr(session, STATE_ATTR)
+        # This is a bookkeeping regression: populate real spans, then exercise
+        # the real recognition reset without inventing provider response events.
+        user = owner.ensure_user()
+        recognition = owner.stt = _new(user, "stt")
+        speech = owner.user_speech = _new(user, "user_speech")
+        session._activity._audio_recognition._clear_user_turn()
+        assert owner.user is owner.stt is owner.user_speech is None
+        next_user = owner.ensure_user()
+        assert next_user is not user
+    rows = memory_logger.pop()
+    by_id = {row["span_id"]: row for row in rows}
+    assert by_id[user.span_id]["metadata"]["turn.incomplete"]
+    for span in (recognition, speech):
+        assert by_id[span.span_id]["metadata"]["contrib.livekit.incomplete"]
+        assert by_id[span.span_id]["metrics"]["end"] <= by_id[next_user.span_id]["metrics"]["start"]

@@ -57,7 +57,12 @@ async def test_provider_ownership_and_privacy_are_session_local(memory_logger, v
         canonical = named(rows, "llm_response")
         independent = named(rows, "Chat Completion")
         assert len(canonical) == 1
-        assert len(independent) == 1  # Nested provider call was suppressed.
+        assert canonical[0]["span_attributes"]["type"] == "task"
+        assert "tokens" not in canonical[0]["metrics"]
+        assert len(independent) == (1 if restricted else 2)
+        if not restricted:
+            nested = next(row for row in independent if row.get("span_parents") == [canonical[0]["span_id"]])
+            assert nested["metrics"]["tokens"] > 0
         assert "output" in independent[0]
         if restricted:
             assert "input" not in canonical[0]
@@ -85,7 +90,7 @@ async def test_late_session_redaction_filters_queued_content(memory_logger, vcr)
     rows = memory_logger.pop()
     assert "say hi" not in json.dumps(rows)
     assert "hi there" not in json.dumps(rows)
-    assert named(rows, "llm_response")[0]["metrics"]["tokens"] > 0
+    assert "tokens" not in named(rows, "llm_response")[0]["metrics"]
 
 
 @pytest.mark.asyncio
@@ -139,7 +144,7 @@ async def test_late_redaction_filters_supplemental_provider_content_only(memory_
     detail = named(rows, "customer_detail")[0]
     unrelated = named(rows, "unrelated")[0]
     providers = named(rows, "Chat Completion")
-    assert len(providers) == 2
+    assert len(providers) == 4
     supplemental = next(row for row in providers if row["span_parents"] == [detail["span_id"]])
     independent = next(row for row in providers if row["span_parents"] == [unrelated["span_id"]])
     assert "input" not in supplemental

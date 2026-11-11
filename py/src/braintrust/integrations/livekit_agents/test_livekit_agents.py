@@ -1,3 +1,5 @@
+import inspect
+
 import pytest
 from braintrust import logger
 from braintrust._audio.config import AudioEncoding, AudioRecordingOptions
@@ -13,8 +15,9 @@ def named(logs, name):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("legacy_ids", [False, True])
+@pytest.mark.parametrize("provider_mode", ["enabled", "disabled", "fallback"])
 @pytest.mark.vcr(cassette_name="test_livekit_agents_function_tool_e2e")
-async def test_livekit_agents_function_tool_e2e(memory_logger, monkeypatch, legacy_ids):
+async def test_livekit_agents_function_tool_e2e(memory_logger, monkeypatch, legacy_ids, provider_mode):
     from livekit.agents import Agent, AgentSession, function_tool
     from livekit.plugins import openai
 
@@ -26,7 +29,19 @@ async def test_livekit_agents_function_tool_e2e(memory_logger, monkeypatch, lega
         with logger.start_span(name="customer_tool_detail"):
             return f"sunny in {city}"
 
+    from braintrust.integrations.livekit_agents import compat
+    from braintrust.integrations.openai import OpenAIIntegration
+    from openai.resources.chat.completions import AsyncCompletions
+
     assert setup_livekit_agents()
+    if provider_mode == "enabled":
+        OpenAIIntegration.setup()
+    else:
+        # Exercise the real recorded provider without its SDK wrapper. The fallback
+        # case removes its capability registration, not an observed span.
+        monkeypatch.setattr(AsyncCompletions, "create", inspect.unwrap(AsyncCompletions.create))
+    if provider_mode == "fallback":
+        monkeypatch.setattr(compat, "_PROVIDER_LLM_ADAPTERS", frozenset())
     llm = openai.LLM(model="gpt-4.1-mini", max_completion_tokens=32)
     async with llm, AgentSession() as session:
         await session.start(
@@ -36,10 +51,12 @@ async def test_livekit_agents_function_tool_e2e(memory_logger, monkeypatch, lega
                 tools=[lookup_weather],
             )
         )
+        owner = getattr(session, STATE_ATTR)
         result = await session.run(user_input="What is the weather in Paris?")
         result.expect.next_event().is_function_call(name="lookup_weather")
         result.expect.next_event().is_function_call_output()
         result.expect.next_event().is_message(role="assistant")
+        assert not owner.turns and not owner.requests and not owner.tool_results
     rows = memory_logger.pop()
     assert len(named(rows, "session")) == 1
     root = named(rows, "session")[0]
@@ -60,7 +77,19 @@ async def test_livekit_agents_function_tool_e2e(memory_logger, monkeypatch, lega
     assert all(row["span_parents"] == [turns[0]["span_id"]] for row in models + tools)
     assert all(row["metrics"]["end"] >= row["metrics"]["start"] for row in rows)
     assert all("tokens" not in row.get("metrics", {}) for row in turns + tools)
-    assert models[0]["metrics"]["tokens"] == 69
+    assert all(row["span_attributes"]["type"] == "task" and "tokens" not in row["metrics"] for row in models)
+    leaves = [row for row in rows if row["span_attributes"].get("type") == "llm"]
+    assert len(leaves) == (0 if provider_mode == "disabled" else 2)
+    if leaves:
+        assert {row["span_parents"][0] for row in leaves} == {row["span_id"] for row in models}
+        assert leaves[0]["metrics"]["tokens"] == 69
+        assert leaves[0]["metadata"]["tools"][0]["function"]["name"] == "lookup_weather"
+        assert leaves[0]["output"][0]["message"]["tool_calls"][0]["function"]["name"] == "lookup_weather"
+        assert "cache_read_input_tokens" not in leaves[0]["metrics"]
+        if provider_mode == "fallback":
+            assert leaves[0]["output"][0]["finish_reason"] == "tool_calls"
+            assert leaves[0]["output"][0]["message"]["content"] is None
+    assert not owner.turns and not owner.requests and not owner.tool_results
     initial_input = [
         {"role": "system", "content": "Use lookup_weather for weather questions, then answer briefly."},
         {"role": "user", "content": "What is the weather in Paris?"},

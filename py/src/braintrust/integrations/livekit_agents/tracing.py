@@ -12,10 +12,10 @@ from fractions import Fraction
 
 from braintrust._audio.config import AudioRecordingOptions
 from braintrust._audio.session import AudioSessionRecorder
-from braintrust._instrumentation import provider_content_allowed, provider_spans_owned
+from braintrust._instrumentation import provider_content_allowed
 from braintrust.logger import parent_context, start_span
 
-from .compat import STATE_ATTR, arguments, chat_messages, state_for
+from .compat import STATE_ATTR, arguments, chat_messages, llm_metadata, provider_llm_expected, state_for
 from .privacy import Privacy, PrivacyCustomizer, opted_in
 
 
@@ -101,6 +101,7 @@ class Session:
         self.participants = {}
         self.stt = None
         self.closed = False
+        self.closing = False
         self._finishing = None
         if self.privacy.job is not None:
             reference = weakref.ref(self)
@@ -222,9 +223,20 @@ class Session:
             run.selections[f"selection-{len(run.selections)}"] = {"start_offset_ms": left, "end_offset_ms": right}
         run.speech.log(metadata={"audio.selections": run.selections})
 
+    def terminal_metadata(self, *, interrupted: bool = False, incomplete: bool = False) -> dict[str, bool]:
+        if self.closing:
+            return {"contrib.livekit.incomplete": True}
+        if interrupted:
+            return {"contrib.livekit.interrupted": True}
+        if incomplete:
+            return {"contrib.livekit.incomplete": True}
+        return {}
+
     def end_playback(self, run):
         if run.speech is None:
             return
+        if run.finished is None or getattr(run.finished, "interrupted", False):
+            run.speech.log(metadata=self.terminal_metadata(interrupted=True, incomplete=run.finished is None))
         transcript = getattr(run.finished, "synchronized_transcript", None)
         if transcript is not None:
             self.log(run.speech, output=[{"role": "assistant", "content": transcript}])
@@ -244,7 +256,11 @@ class Session:
         if self.tap is not None:
             self.tap.close()
             self.tap = None
-        for span in (self.user_speech, self.stt, self.user, *self.pending_users, *self.turns.values()):
+        for span in (self.user_speech, self.stt):
+            if span is not None:
+                span.log(metadata={"contrib.livekit.incomplete": True})
+                span.end(end)
+        for span in (self.user, *self.pending_users, *self.turns.values()):
             if span is not None:
                 span.log(metadata={"turn.incomplete": True})
                 span.end(end)
@@ -285,6 +301,8 @@ async def session_start(wrapped, instance, args, kwargs):
 
 async def session_close(wrapped, instance, args, kwargs):
     owner = state_for(instance)
+    if owner is not None:
+        owner.closing = True
     try:
         return await wrapped(*args, **kwargs)
     finally:
@@ -349,7 +367,15 @@ def speech_done(wrapped, instance, args, kwargs):
     finally:
         if owner is not None:
             if (span := owner.turns.pop(instance, None)) is not None:
-                span.log(metadata={"contrib.livekit.interrupted": instance.interrupted})
+                if instance.interrupted or instance.exception() is not None:
+                    span.log(
+                        metadata={
+                            "turn.incomplete": True,
+                            **owner.terminal_metadata(
+                                interrupted=instance.interrupted, incomplete=instance.exception() is not None
+                            ),
+                        }
+                    )
                 span.end()
             owner.requests.pop(instance, None)
             owner.tool_results.pop(instance, None)
@@ -425,7 +451,8 @@ def process_stt(wrapped, instance, args, kwargs):
         received_at = time.time()
         result = event.alternatives[0]
         interval = getattr(result, "_braintrust_recognition_interval", None)
-        if owner.stt is None:
+        recognized = getattr(result, "_braintrust_recognition_span", None)
+        if recognized is None and owner.stt is None:
             metadata = owner.source_metadata("session-input")
             metadata.update(
                 {
@@ -436,7 +463,9 @@ def process_stt(wrapped, instance, args, kwargs):
             )
             owner.stt = _new(parent, "stt", start_time=interval[0] if interval else received_at, metadata=metadata)
         if kind == "final_transcript":
-            span, owner.stt = owner.stt, None
+            span = recognized or owner.stt
+            if owner.stt is span:
+                owner.stt = None
             scope = getattr(event, "_braintrust_source_run", None)
             # Native timestamp alignment can replace the event and drop this
             # attribute. Without recognition ownership, omit attribution.
@@ -519,10 +548,15 @@ def recognition_end(wrapped, instance, args, kwargs):
     try:
         return wrapped(*args, **kwargs)
     finally:
-        if owner is not None and owner.user is not None:
-            owner.user.log(metadata={"turn.incomplete": True})
-            owner.user.end()
-            owner.user = None
+        if owner is not None:
+            for field in ("stt", "user_speech", "user"):
+                span = getattr(owner, field)
+                if span is not None:
+                    span.log(
+                        metadata={"turn.incomplete": True} if field == "user" else {"contrib.livekit.incomplete": True}
+                    )
+                    span.end()
+                    setattr(owner, field, None)
 
 
 def session_run(wrapped, instance, args, kwargs):
@@ -549,12 +583,18 @@ async def llm_operation(wrapped, instance, args, kwargs):
     span = _new(
         owner.agent_parent(),
         "llm_response",
-        kind="llm",
-        metadata={key: values[key] for key in ("model", "provider") if values.get(key)},
+        metadata=llm_metadata(values)
+        if owner.permits()
+        else {key: values[key] for key in ("model", "provider") if values.get(key)},
     )
     if owner.permits():
         owner.log(span, input=chat_messages(values["chat_ctx"]))
     data, node, usage, handle = values["data"], values["node"], None, _HANDLE.get()
+    fallback = None
+    if not provider_llm_expected(node):
+        fallback = _new(span, "LLM request", kind="llm", metadata=llm_metadata(values) if owner.permits() else {})
+        if owner.permits():
+            owner.log(fallback, input=chat_messages(values["chat_ctx"]))
     relationships = []
     for item in values["chat_ctx"].items:
         if getattr(item, "type", None) == "function_call_output":
@@ -588,17 +628,27 @@ async def llm_operation(wrapped, instance, args, kwargs):
         return chunks()
 
     values["node"] = observed_node
-    token = provider_spans_owned.set(True)
+    completed = False
     try:
-        return await wrapped(**values)
+        with parent_context((fallback or span).export()):
+            result = await wrapped(**values)
+        completed = True
+        return result
     except asyncio.CancelledError:
-        span.log(metadata={"contrib.livekit.cancelled": True})
+        status = {
+            "contrib.livekit.cancelled": True,
+            **owner.terminal_metadata(interrupted=bool(getattr(handle, "interrupted", False)), incomplete=True),
+        }
+        span.log(metadata=status)
+        if fallback is not None:
+            fallback.log(metadata=status)
         raise
     except Exception:
+        if fallback is not None:
+            fallback.log(error="LiveKit LLM operation failed")
         span.log(error="LiveKit LLM operation failed")
         raise
     finally:
-        provider_spans_owned.reset(token)
         output = [{"role": "assistant", "content": data.generated_text}]
         if functions := data.generated_functions:
             output[0]["tool_calls"] = [
@@ -620,17 +670,34 @@ async def llm_operation(wrapped, instance, args, kwargs):
                 ("prompt_tokens", "prompt_tokens"),
                 ("completion_tokens", "completion_tokens"),
                 ("total_tokens", "tokens"),
-                ("prompt_cached_tokens", "cache_read_input_tokens"),
+                ("prompt_cached_tokens", "prompt_cached_tokens"),
             ):
                 value = getattr(usage, native, None)
-                if value is not None:
+                if native in usage.model_fields_set and value is not None:
                     metrics[target] = value
-            metrics["cache_creation_input_tokens"] = usage.cache_creation_tokens
-            metrics["cache_read_input_tokens"] = max(usage.prompt_cached_tokens, usage.cache_read_tokens)
-            metrics["reasoning_tokens"] = usage.reasoning_tokens
+            if "cache_creation_tokens" in usage.model_fields_set:
+                metrics["prompt_cache_creation_tokens"] = usage.cache_creation_tokens
+            if "cache_read_tokens" in usage.model_fields_set:
+                metrics["prompt_cached_tokens"] = max(metrics.get("prompt_cached_tokens", 0), usage.cache_read_tokens)
+            if "reasoning_tokens" in usage.model_fields_set:
+                metrics["completion_reasoning_tokens"] = usage.reasoning_tokens
         if data.ttft is not None:
             metrics["time_to_first_token"] = data.ttft
-        span.log(metrics=metrics)
+        if fallback is not None:
+            # LiveKit exposes tool calls but not the provider's terminal reason.
+            # Keep an unknown text-only finish reason null rather than guessing stop.
+            owner.log(
+                fallback,
+                output=[
+                    {
+                        "index": 0,
+                        "message": {**output[0], "content": data.generated_text or None},
+                        "finish_reason": "tool_calls" if completed and functions else None,
+                    }
+                ],
+            )
+            fallback.log(metrics=metrics)
+            fallback.end()
         span.end()
 
 
@@ -653,17 +720,23 @@ async def tts_operation(wrapped, instance, args, kwargs):
             yield item
 
     values["input"] = observed_input()
-    token = provider_spans_owned.set(True)
     try:
-        return await wrapped(**values)
+        with parent_context(span.export()):
+            return await wrapped(**values)
     except asyncio.CancelledError:
-        span.log(metadata={"contrib.livekit.cancelled": True})
+        span.log(
+            metadata={
+                "contrib.livekit.cancelled": True,
+                **owner.terminal_metadata(
+                    interrupted=bool(getattr(_HANDLE.get(), "interrupted", False)), incomplete=True
+                ),
+            }
+        )
         raise
     except Exception:
         span.log(error="LiveKit TTS operation failed")
         raise
     finally:
-        provider_spans_owned.reset(token)
         owner.log(span, input="".join(text))
         if data.ttfb is not None:
             span.log(metrics={"time_to_first_audio": data.ttfb})
@@ -673,25 +746,47 @@ async def tts_operation(wrapped, instance, args, kwargs):
 async def stt_recognize(wrapped, instance, args, kwargs):
     from livekit.agents.voice.audio_recognition import _STTPipelineContextVar
 
-    if _STTPipelineContextVar.get(None) is None:
+    owner = _ACTIVE.get()
+    if owner is None or _STTPipelineContextVar.get(None) is None:
         return await wrapped(*args, **kwargs)
     start = time.time()
-    event = await wrapped(*args, **kwargs)
-    end = time.time()
-    # StreamAdapter rebuilds SpeechEvent, and timestamp alignment may replace it.
-    # Both retain the transcript alternatives, so carry request timing there.
-    for alternative in event.alternatives:
-        alternative._braintrust_recognition_interval = (start, end)
-    return event
+    span = _new(
+        owner.ensure_user(),
+        "stt",
+        start_time=start,
+        metadata={
+            **owner.source_metadata("session-input"),
+            "model": instance.model,
+            "provider": instance.provider,
+        },
+    )
+    owner.stt = span
+    try:
+        with parent_context(span.export()):
+            event = await wrapped(*args, **kwargs)
+        end = time.time()
+        # Alternatives survive StreamAdapter and timestamp-alignment copies.
+        for alternative in event.alternatives:
+            alternative._braintrust_recognition_interval = (start, end)
+            alternative._braintrust_recognition_span = span
+        if event.alternatives:
+            owner.log(span, output=[{"role": "user", "content": event.alternatives[0].text}])
+        return event
+    except asyncio.CancelledError:
+        span.log(metadata={"contrib.livekit.cancelled": True, "contrib.livekit.incomplete": True})
+        raise
+    except Exception:
+        span.log(error="LiveKit STT operation failed")
+        raise
+    finally:
+        span.end()
+        if owner.stt is span:
+            owner.stt = None
 
 
 async def stt_pump(wrapped, instance, args, kwargs):
     _wrap_stt_node(instance)
-    token = provider_spans_owned.set(True)
-    try:
-        return await wrapped(*args, **kwargs)
-    finally:
-        provider_spans_owned.reset(token)
+    return await wrapped(*args, **kwargs)
 
 
 def _wrap_stt_node(pipeline):
@@ -753,7 +848,6 @@ async def execute_tool(wrapped, instance, args, kwargs):
     if (target := owner.requests.get(handle, {}).get(call.call_id)) is not None:
         if relationship := link(target, "requested_by"):
             span.log(metadata={"links": [relationship]})
-    token = provider_spans_owned.set(not owner.permits())
     try:
         with parent_context(span.export()):
             result = await wrapped(*args, **kwargs)
@@ -761,11 +855,17 @@ async def execute_tool(wrapped, instance, args, kwargs):
         owner.tool_results.setdefault(handle, {})[call.call_id] = span
         return result
     except asyncio.CancelledError:
-        span.log(metadata={"contrib.livekit.cancelled": True})
+        span.log(
+            metadata={
+                "contrib.livekit.cancelled": True,
+                **owner.terminal_metadata(
+                    interrupted=bool(getattr(_HANDLE.get(), "interrupted", False)), incomplete=True
+                ),
+            }
+        )
         raise
     except Exception:
         span.log(error="LiveKit tool operation failed")
         raise
     finally:
-        provider_spans_owned.reset(token)
         span.end()

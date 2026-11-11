@@ -74,7 +74,14 @@ class PrivacyCustomizer(SpanCustomizer):
                 }
                 for key, segment in metadata["audio.segments"].items()
             }
-        for field in ("audio.participants", "audio.speakers", "audio.participant_ids", "audio.speaker_ids"):
+        for field in (
+            "audio.participants",
+            "audio.speakers",
+            "audio.participant_ids",
+            "audio.speaker_ids",
+            "tools",
+            "tool_choice",
+        ):
             metadata.pop(field, None)
         if metadata:
             data["metadata"] = metadata

@@ -1,4 +1,4 @@
-"""Private hooks qualified against livekit-agents==1.8.10 only."""
+"""Private hooks qualified against livekit-agents 1.8.9–1.8.10."""
 
 import inspect
 from typing import TYPE_CHECKING, Any
@@ -8,7 +8,6 @@ if TYPE_CHECKING:
     from livekit.agents.llm import ChatContext
 
 
-QUALIFIED_VERSION = "1.8.10"
 STATE_ATTR = "__braintrust_livekit_cascade__"
 
 
@@ -53,3 +52,34 @@ def detach_output(tap):
         downstream.off("playback_finished", tap._dispatch_playback_finished)
         downstream.off("playback_started", tap._forward_next_playback_started)
         downstream.off("playback_progressed", tap._forward_next_playback_progressed)
+
+
+# These concrete adapters call APIs covered by our provider integrations.
+# This is a capability decision, independent of setup order or observed spans.
+_PROVIDER_LLM_ADAPTERS = frozenset(
+    {
+        "livekit.plugins.openai.llm",
+        "livekit.plugins.anthropic.llm",
+        "livekit.plugins.google.llm",
+    }
+)
+
+
+def provider_llm_expected(node: Any) -> bool:
+    agent = getattr(node, "__self__", None)
+    activity = getattr(agent, "_activity", None)
+    model = getattr(activity, "llm", None)
+    return any(cls.__module__ in _PROVIDER_LLM_ADAPTERS for cls in type(model).__mro__)
+
+
+def llm_metadata(values: dict[str, Any]) -> dict[str, Any]:
+    from livekit.agents.llm._provider_format.openai import to_fnc_ctx
+
+    metadata = {key: values[key] for key in ("model", "provider") if values.get(key)}
+    tools = to_fnc_ctx(values["tool_ctx"], strict=False)
+    if tools:
+        metadata["tools"] = tools
+    choice = getattr(values.get("model_settings"), "tool_choice", None)
+    if isinstance(choice, (str, dict)):
+        metadata["tool_choice"] = choice
+    return metadata

@@ -1251,3 +1251,42 @@ def test_flush_failed_batch_does_not_skip_later_batches_or_waves(monkeypatch):
     # Batches within a wave run concurrently; waves run in order.
     assert sorted(attempts[:3]) == [[("a", "start")], [("a", "start")], [("b", "other")]]
     assert attempts[3:] == [[("a", None)], [("a", "end")]]
+
+
+@pytest.mark.parametrize("factory", ["module", "logger", "experiment", "child", "exported"])
+def test_provider_privacy_covers_all_span_factories(with_memory_logger, test_logger, factory):
+    from braintrust._instrumentation import provider_content_allowed
+
+    allowed = True
+    with test_logger.start_span(name="customer", input="customer content") as customer:
+        factories = {
+            "module": logger.start_span,
+            "logger": test_logger.start_span,
+            "experiment": init_test_exp("provider-privacy").start_span,
+            "child": customer.start_span,
+            "exported": lambda **kwargs: logger.start_span(parent=customer.export(), **kwargs),
+        }
+        token = provider_content_allowed.set(lambda: allowed)
+        try:
+            root = factories[factory](
+                name="provider", input="private root", internal={"instrumentation": "ai-sdk-auto"}
+            )
+        finally:
+            provider_content_allowed.reset(token)
+        # Adapter callbacks can create descendants after leaving the original context.
+        child = root.start_span(
+            name="provider child", input="private child", internal={"instrumentation": "ai-sdk-auto"}
+        )
+        grandchild = child.start_span(
+            name="provider grandchild", output="private output", internal={"instrumentation": "ai-sdk-auto"}
+        )
+        manual = root.start_span(name="customer child", input="customer child content")
+        allowed = False
+        for span in (root, child, grandchild, manual):
+            span.end()
+    rows = with_memory_logger.pop()
+    for span in (root, child, grandchild):
+        row = next(row for row in rows if row["id"] == span.id)
+        assert "input" not in row and "output" not in row
+    assert next(row for row in rows if row["id"] == manual.id)["input"] == "customer child content"
+    assert next(row for row in rows if row["id"] == customer.id)["input"] == "customer content"

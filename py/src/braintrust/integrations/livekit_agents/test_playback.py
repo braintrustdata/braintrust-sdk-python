@@ -162,6 +162,8 @@ async def test_actual_roomio_playback_records_only_confirmed_audio(rooms, memory
     selections = [selection for span in speech for selection in span["metadata"]["audio.selections"].values()]
     played_ms = sum(s["end_offset_ms"] - s["start_offset_ms"] for s in selections)
     if mode == "interrupted":
+        assert all(span["metadata"]["contrib.livekit.interrupted"] for span in speech)
+        assert named(rows, "agent_turn")[0]["metadata"]["turn.incomplete"]
         assert 0 < played_ms < 600
     elif mode in ("full", "handoff", "duplicate", "early_progress", "progress_only", "endpoints"):
         assert abs(played_ms - (1200 if mode == "handoff" else 600)) <= 2
