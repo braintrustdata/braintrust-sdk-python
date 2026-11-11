@@ -39,6 +39,9 @@ def configure(audio):
 
 
 def _new(parent, name, *, kind="task", start_time=None, metadata=None, privacy=None):
+    turn_id = getattr(parent, "_braintrust_turn_id", None)
+    if turn_id:
+        metadata = {"turn.id": turn_id, **(metadata or {})}
     filters = (PrivacyCustomizer(privacy),) if privacy is not None else getattr(parent, "_export_customizers", ())
     kwargs = dict(
         name=name,
@@ -49,7 +52,13 @@ def _new(parent, name, *, kind="task", start_time=None, metadata=None, privacy=N
         # AudioSessionRecorder emits the schema marker with the session timeline.
         metadata=metadata or {},
     )
-    return parent.start_span(**kwargs) if parent is not None else start_span(**kwargs)
+    span = parent.start_span(**kwargs) if parent is not None else start_span(**kwargs)
+    if name in ("user_turn", "agent_turn") and span.span_id:
+        turn_id = span.span_id
+        span.log(metadata={"turn.id": turn_id})
+    if turn_id:
+        span._braintrust_turn_id = turn_id
+    return span
 
 
 @contextlib.contextmanager
@@ -112,6 +121,7 @@ class Session:
         self.tool_results: dict[object, dict[str, object]] = {}
         self.participants = {}
         self.stt = None
+        self.realtime = {}
         self.closed = False
         self.closing = False
         self._finishing = None
@@ -214,6 +224,7 @@ class Session:
                 offset_ns=start,
             )
         self.advance()
+        return start
 
     def advance(self):
         watermark = self.audio.elapsed_ns()
@@ -272,6 +283,9 @@ class Session:
             return
         self.closed = True
         end = time.time()
+        for controller in self.realtime.values():
+            controller.close()
+        self.realtime.clear()
         if self.tap is not None:
             self.tap.close()
             self.tap = None
@@ -332,9 +346,22 @@ async def session_close(wrapped, instance, args, kwargs):
 
 
 async def activity_start(wrapped, instance, args, kwargs):
-    if (owner := state_for(instance)) is not None:
-        owner.attach_media()
-    return await wrapped(*args, **kwargs)
+    from . import realtime
+
+    owner = state_for(instance)
+    if owner is None:
+        return await wrapped(*args, **kwargs)
+    owner.attach_media()
+    realtime.prepare(instance)
+    resources = kwargs.get("reuse_resources")
+    native = getattr(resources, "rt_session", None)
+    if native is not None:
+        realtime.bind(owner, instance, native, instance.llm)
+    token = realtime._ACTIVITY.set((owner, instance))
+    try:
+        return await wrapped(*args, **kwargs)
+    finally:
+        realtime._ACTIVITY.reset(token)
 
 
 def participant_linked(wrapped, instance, args, kwargs):
@@ -348,9 +375,19 @@ def participant_linked(wrapped, instance, args, kwargs):
 
 
 def push_audio(wrapped, instance, args, kwargs):
-    if (owner := state_for(instance)) is not None:
-        owner.input(args[0] if args else kwargs["frame"])
-    return wrapped(*args, **kwargs)
+    from . import realtime
+
+    owner = state_for(instance)
+    if owner is None or owner.closed or not instance._started:
+        return wrapped(*args, **kwargs)
+    frame = args[0] if args else kwargs["frame"]
+    start = owner.input(frame)
+    duration = Fraction(frame.samples_per_channel * 1_000_000_000, frame.sample_rate)
+    token = realtime._INPUT.set((owner, start, duration))
+    try:
+        return wrapped(*args, **kwargs)
+    finally:
+        realtime._INPUT.reset(token)
 
 
 def create_speech_task(wrapped, instance, args, kwargs):
@@ -853,12 +890,26 @@ def rebind_stt(wrapped, instance, args, kwargs):
 
 
 async def audio_forward(wrapped, instance, args, kwargs):
-    data = arguments(wrapped, args, kwargs).get("tts_data")
-    token = _SYNTHESIS.set(getattr(data, "_braintrust_span", None))
+    from .realtime import _RESPONSE
+
+    values = arguments(wrapped, args, kwargs)
+    data = values.get("tts_data")
+    if data is None and (record := _RESPONSE.get()) is not None:
+        data = record.audio_sources.get(values["tts_output"], record.span)
+    token = _SYNTHESIS.set(data)
     try:
         return await wrapped(*args, **kwargs)
     finally:
         _SYNTHESIS.reset(token)
+
+
+def tts_created(wrapped, instance, args, kwargs):
+    from .realtime import _RESPONSE
+
+    result = wrapped(*args, **kwargs)
+    if (record := _RESPONSE.get()) is not None:
+        record.audio_sources[result[1].audio_ch] = result[1]
+    return result
 
 
 async def execute_tool(wrapped, instance, args, kwargs):
@@ -871,6 +922,10 @@ async def execute_tool(wrapped, instance, args, kwargs):
     span = _new(
         owner.turns.get(handle, owner.span), "tool", kind="tool", metadata={"gen_ai.tool.call.id": call.call_id}
     )
+    from .realtime import _RESPONSE
+
+    if (record := _RESPONSE.get()) is not None:
+        record.controller.tools[(record.controller.epoch, call.call_id)] = span
     if owner.permits():
         span.log(span_attributes={"name": call.name})
         owner.log(span, input=values["raw_arguments"])
