@@ -2,7 +2,7 @@
 
 from braintrust.integrations.base import BaseIntegration
 
-from .patchers import LLMServicePushFramePatcher, PipelineWorkerPatcher
+from .patchers import LLMServicePushFramePatcher, PipelineWorkerPatcher, STTServiceProcessGeneratorPatcher
 
 
 class PipecatIntegration(BaseIntegration):
@@ -12,4 +12,4 @@ class PipecatIntegration(BaseIntegration):
     import_names = ("pipecat",)
     distribution_names = ("pipecat-ai",)
     min_version = "1.3.0"
-    patchers = (PipelineWorkerPatcher, LLMServicePushFramePatcher)
+    patchers = (PipelineWorkerPatcher, LLMServicePushFramePatcher, STTServiceProcessGeneratorPatcher)

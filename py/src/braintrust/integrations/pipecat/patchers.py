@@ -93,6 +93,22 @@ async def traced_llm_push_frame(wrapped: Any, instance: Any, args: tuple[Any, ..
     return result
 
 
+async def traced_stt_process_generator(
+    wrapped: Any, instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]
+) -> Any:
+    """Activate recognition in the service task that actually runs STT.
+
+    STT services consume their run_stt generator here, including segmented
+    services that execute it in a separate task. Merely constructing that
+    generator, or activating a span in the observer, cannot scope its work.
+    """
+    observer = _ACTIVE_OBSERVER.get()
+    if observer is None:
+        return await wrapped(*args, **kwargs)
+    with observer._current_recognition(instance):
+        return await wrapped(*args, **kwargs)
+
+
 class PipelineWorkerInitPatcher(FunctionWrapperPatcher):
     """Patch ``PipelineWorker.__init__`` to add a Braintrust observer."""
 
@@ -118,6 +134,15 @@ class LLMServicePushFramePatcher(FunctionWrapperPatcher):
     target_module = "pipecat.services.llm_service"
     target_path = "LLMService.push_frame"
     wrapper = staticmethod(traced_llm_push_frame)
+
+
+class STTServiceProcessGeneratorPatcher(FunctionWrapperPatcher):
+    """Scope provider transcription spans under their Pipecat recognition."""
+
+    name = "stt_service_process_generator"
+    target_module = "pipecat.services.stt_service"
+    target_path = "STTService.process_generator"
+    wrapper = staticmethod(traced_stt_process_generator)
 
 
 class PipelineWorkerPatcher(CompositeFunctionWrapperPatcher):
@@ -155,6 +180,8 @@ def wrap_pipeline_worker(
         }
     )
     from pipecat.services.llm_service import LLMService  # pylint: disable=import-error
+    from pipecat.services.stt_service import STTService  # pylint: disable=import-error
 
     LLMServicePushFramePatcher.wrap_target(LLMService)
+    STTServiceProcessGeneratorPatcher.wrap_target(STTService)
     return PipelineWorkerPatcher.wrap_target(PipelineWorker)

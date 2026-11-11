@@ -56,7 +56,8 @@ class UserTracker:
 
     VAD usually detects speech before the user aggregator starts its turn, so
     speech and recognition spans are created once their turn is known: when
-    it starts, or when they end without one.
+    it starts, or when they end without one. Provider execution may open a
+    recognition earlier so its spans have an active parent.
 
     A recognition is per STT processor. It starts when the processor consumes
     audio during VAD speech (or, in a pipeline without VAD, during a user turn)
@@ -108,6 +109,11 @@ class UserTracker:
 
     def stop_turn(self) -> None:
         self._resolve_recognitions()
+        # Recognition without a final transcript must not keep timing through
+        # the agent's reply or into the next user turn. A later transcript can
+        # still be represented as transcript_received.
+        for recognition in list(self._recognitions.values()):
+            self._retire(recognition)
         self._finish_turn(incomplete=False)
 
     def log_input(self, message: dict[str, Any]) -> None:
@@ -184,11 +190,17 @@ class UserTracker:
             return
         self._emit(frame, recognition, end_ms)
 
+    def recognition_span(self, processor: "FrameProcessor") -> Span | None:
+        """The observed recognition whose provider work is about to execute."""
+        recognition = self._recognitions.get(id(processor))
+        return self._open(recognition) if recognition is not None else None
+
     def flush_transcribed(self) -> None:
         while self._transcribed:
             recognition = self._transcribed.popleft()
             if recognition.transcript is not None:
-                self._emit(*recognition.transcript, recognition)
+                frame, end_ms = recognition.transcript
+                self._emit(frame, recognition, end_ms)
 
     def fail(self, processor: "FrameProcessor | None", error: object) -> None:
         recognition = self._recognitions.pop(id(processor), None)
@@ -244,6 +256,7 @@ class UserTracker:
                 turn=self._turn_span,
                 start_ms=recognition.start_ms,
                 metadata={SOURCE_ID: "session-input", **metadata_from_processor(recognition.processor)},
+                can_set_current=True,
             )
             recognition.phase = _RecognitionPhase.ACTIVE
         return recognition.span

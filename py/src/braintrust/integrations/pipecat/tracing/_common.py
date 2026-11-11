@@ -1,6 +1,7 @@
 """Span and processor helpers shared by the Pipecat trackers."""
 
 import logging
+from dataclasses import dataclass, field
 from functools import cache
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -11,7 +12,9 @@ from braintrust.logger import start_span as _bt_start_span
 
 
 if TYPE_CHECKING:
+    from pipecat.frames.frames import TTSTextFrame
     from pipecat.processors.frame_processor import FrameProcessor
+    from pipecat.utils.string import TextPartForConcatenation
 
 
 LOG = logging.getLogger("braintrust")
@@ -21,6 +24,23 @@ INSTRUMENTATION = "pipecat-auto"
 MAX_PENDING = 256
 
 ProcessorKind = Literal["stt", "tts", "llm", "output"]
+
+
+@dataclass
+class SpeechText:
+    """Join TTS text with the same spacing rules as Pipecat's aggregator."""
+
+    parts: list["TextPartForConcatenation"] = field(default_factory=list)
+
+    def append(self, frame: "TTSTextFrame") -> None:
+        from pipecat.utils.string import TextPartForConcatenation  # pylint: disable=import-error
+
+        self.parts.append(TextPartForConcatenation(frame.text, frame.includes_inter_frame_spaces))
+
+    def __str__(self) -> str:
+        from pipecat.utils.string import concatenate_aggregated_text  # pylint: disable=import-error
+
+        return concatenate_aggregated_text(self.parts)
 
 
 def start_span(*args: Any, **kwargs: Any) -> Span:
@@ -124,7 +144,7 @@ def _provider_from_processor(processor: "FrameProcessor | None") -> str | None:
 
 
 # Request parameters a model call was made with. System instructions are
-# already part of the logged input; provider-specific values live in ``extra``.
+# logged in response input; provider-specific values live in ``extra``.
 _REQUEST_SETTINGS = (
     "temperature",
     "max_tokens",

@@ -1,5 +1,6 @@
 """Agent turns and the generation, tool, synthesis and playback work they own."""
 
+import json
 from collections import deque
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal, TypedDict
@@ -23,6 +24,7 @@ from ._common import (
     MAX_PENDING,
     ProcessorKind,
     SpanFactory,
+    SpeechText,
     metadata_from_processor,
     processor_kind,
     provider_from_name,
@@ -39,6 +41,7 @@ if TYPE_CHECKING:
         FunctionCallResultFrame,
         MetricsFrame,
         TTSStartedFrame,
+        TTSTextFrame,
     )
     from pipecat.metrics import metrics
     from pipecat.processors.frame_processor import FrameProcessor
@@ -51,7 +54,7 @@ else:
 
 class _FunctionCall(TypedDict):
     name: str
-    arguments: object
+    arguments: str
 
 
 class _ToolCall(TypedDict):
@@ -89,7 +92,7 @@ class _Synthesis:
     span: Span
     speaker_ids: list[str]
     processor: "FrameProcessor | None"
-    text: list[str] = field(default_factory=list)
+    text: SpeechText = field(default_factory=SpeechText)
     characters: int = 0
     ended: bool = False
 
@@ -104,7 +107,7 @@ class _Playback:
     # span and set its start only after the transport confirms an audio frame.
     span: Span | None = None
     start_ms: float = 0.0
-    text: list[str] = field(default_factory=list)
+    text: SpeechText = field(default_factory=SpeechText)
     generators: dict[str, _Synthesis] = field(default_factory=dict)
 
 
@@ -170,8 +173,14 @@ class AgentTracker:
             **request_settings_from_processor(processor),
             **metadata_from_processor(processor),
         }
+        messages = linker.messages
+        instruction = getattr(getattr(processor, "_settings", None), "system_instruction", None)
+        if isinstance(instruction, str) and instruction:
+            # Service settings are separate from LLMContext in current Pipecat.
+            # Keep the linker's context/cursor untouched when adding them.
+            messages = [{"role": "system", "content": instruction}, *(messages or [])]
         span = self._spans.start(
-            "llm_response", turn=turn.span, input=linker.messages, metadata=metadata, can_set_current=True
+            "llm_response", turn=turn.span, input=messages, metadata=metadata, can_set_current=True
         )
         links = linker.consume()
         if links:
@@ -189,11 +198,18 @@ class AgentTracker:
         if response is None:
             return
         for call in calls:
+            # broadcast_frame creates distinct upstream/downstream frames with
+            # the same call IDs, so frame-level deduplication cannot catch this.
+            if any(existing["id"] == call.tool_call_id for existing in response.tool_calls):
+                continue
             response.tool_calls.append(
                 {
                     "id": call.tool_call_id,
                     "type": "function",
-                    "function": {"name": call.function_name, "arguments": call.arguments},
+                    "function": {
+                        "name": call.function_name,
+                        "arguments": call.arguments if isinstance(call.arguments, str) else json.dumps(call.arguments),
+                    },
                 }
             )
             self._requesters[call.tool_call_id] = response.span
@@ -313,11 +329,11 @@ class AgentTracker:
         if pending:
             self._add_characters(synthesis, pending)
 
-    def tts_text(self, frame: "Frame") -> None:
+    def tts_text(self, frame: "TTSTextFrame") -> None:
         synthesis = self._resolve_synthesis(frame, adopt=True)
         if synthesis is not None:
-            synthesis.text.append(frame.text)
-            synthesis.span.log(input={"text": "".join(synthesis.text)})
+            synthesis.text.append(frame)
+            synthesis.span.log(input={"text": str(synthesis.text)})
 
     def stop_tts(self, frame: "Frame") -> None:
         synthesis = self._resolve_synthesis(frame)
@@ -415,9 +431,9 @@ class AgentTracker:
         # Links are replaced on each update: always send the complete set.
         set_links(span, [("generated_by", item.span) for item in playback.generators.values()])
 
-    def played_text(self, text: str) -> None:
+    def played_text(self, frame: "TTSTextFrame") -> None:
         if self._playback is not None:
-            self._playback.text.append(text)
+            self._playback.text.append(frame)
 
     def stop_playback(self) -> None:
         if self._playback is not None:
@@ -452,6 +468,8 @@ class AgentTracker:
         status = "contrib.pipecat.interrupted" if interrupted else "contrib.pipecat.incomplete"
         end_time = self._clock.wall(end_ms)
         if self._playback is not None:
+            if self._playback.span is not None:
+                self._playback.span.log(metadata={status: True})
             self._end_playback(self._playback, interrupted=interrupted, end_ms=end_ms)
         if self._response is not None:
             self._response.span.log(metadata={status: True})
@@ -509,7 +527,7 @@ class AgentTracker:
     def _end_synthesis(self, synthesis: _Synthesis, *, end_ms: float | None = None) -> None:
         synthesis.span.end(end_time=self._clock.wall(end_ms))
         synthesis.ended = True
-        synthesis.text.clear()
+        synthesis.text.parts.clear()
 
     def _end_playback(self, playback: _Playback, *, interrupted: bool, end_ms: float | None = None) -> None:
         if playback.span is None:
@@ -522,7 +540,7 @@ class AgentTracker:
                 "contrib.pipecat.interrupted": interrupted,
             }
         )
-        if playback.text:
-            playback.span.log(output=[{"role": "assistant", "content": "".join(playback.text)}])
+        if playback.text.parts:
+            playback.span.log(output=[{"role": "assistant", "content": str(playback.text)}])
         playback.span.end(end_time=self._clock.wall(end_ms))
         self._playback = None

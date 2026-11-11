@@ -230,6 +230,27 @@ class BraintrustPipecatObserver(BaseObserver):
             waiter.set_result(span)
 
     @contextmanager
+    def _current_recognition(self, processor: "FrameProcessor") -> Iterator[None]:
+        """Scope STT work in its executing task; the observer owns span timing."""
+        span = None
+        try:
+            if self._phase is _SessionPhase.RUNNING and self._session is not None:
+                span = self._session.user.recognition_span(processor)
+            # Reentrant setup/wrapping must not overwrite a span's scope token.
+            if span is not None and current_span() is span:
+                span = None
+            if span is not None:
+                span.set_current()
+        except Exception:
+            LOG.warning("Unable to activate Pipecat recognition", exc_info=True)
+            span = None
+        try:
+            yield
+        finally:
+            if span is not None:
+                span.unset_current()
+
+    @contextmanager
     def _current_session(self) -> Iterator[None]:
         """Make the session span current while a worker runs.
 
@@ -333,7 +354,7 @@ class BraintrustPipecatObserver(BaseObserver):
             self._record_audio(session, "agent-output", frame)
             session.agent.played_audio(frame)
         elif isinstance(frame, frames.TTSTextFrame):
-            session.agent.played_text(frame.text)
+            session.agent.played_text(frame)
 
     def _record_audio(self, session: _Session, source: _AudioSource, frame: "AudioRawFrame") -> None:
         enabled = (
