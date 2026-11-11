@@ -17,8 +17,11 @@ enable audio capture.
 The example enables both LiveKit and OpenAI instrumentation:
 
 ```python
+from braintrust.integrations.livekit_agents import setup_livekit_agents
+from braintrust.integrations.openai import setup_openai
+
 setup_livekit_agents()
-braintrust.setup_openai()
+setup_openai()
 ```
 
 LiveKit records turns and speech; OpenAI records model requests and usage under
