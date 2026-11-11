@@ -7439,6 +7439,23 @@
             "maxItems": 20,
             "description": "Project-wide Slack, webhook, and PagerDuty destinations for new and reactivated Pattern alerts. An empty array disables alerts."
           },
+          "session_id_fields": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "minItems": 2,
+              "maxItems": 32,
+              "description": "Path to the application's session or conversation identifier in metadata or span_attributes, for example [\"metadata\", \"conversation_id\"]. This links turns of one conversation across traces, rather than identifying a user, request, trace, organization, or service account."
+            }
+          },
           "default_preprocessor": {
             "$ref": "#/components/schemas/NullableSavedFunctionId"
           }
