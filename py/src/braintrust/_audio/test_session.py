@@ -183,14 +183,18 @@ async def test_shutdown_deadline_fences_late_success(memory, monkeypatch):
         return {"upload_status": "done"}
 
     monkeypatch.setattr(logger.Attachment, "upload", upload)
-    session = recording(shutdown_timeout_seconds=0.02)
+    session = recording(segment_duration_seconds=0.001, shutdown_timeout_seconds=0.02)
     session.record("session-input", bytes(96), sample_rate_hz=48000, channels=1, offset_ns=0)
-    result = await session.finish()
-    assert result.reason == "shutdown_timeout"
-    assert entered.is_set()
-    records = memory.pop()
-    assert records[0]["metadata"]["audio.segments"]["part-0"]["state"] == "omitted"
-    release.set()
+    # Start the upload before the shutdown deadline, even on a busy worker.
+    session.advance(1_000_000)
+    try:
+        assert await asyncio.to_thread(entered.wait, 5)
+        result = await session.finish()
+        assert result.reason == "shutdown_timeout"
+        records = memory.pop()
+        assert records[0]["metadata"]["audio.segments"]["part-0"]["state"] == "omitted"
+    finally:
+        release.set()
     await asyncio.sleep(0.02)
     assert not memory.pop()
 

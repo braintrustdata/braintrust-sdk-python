@@ -1013,8 +1013,11 @@ async def test_provider_transcriptions_nest_under_their_stt_spans(memory_logger,
     for recognition, call, turn in zip(recognitions, provider, turns):
         assert recognition["span_parents"] == [turn["span_id"]]
         assert call["span_parents"] == [recognition["span_id"]]
-        assert recognition["metrics"]["start"] <= call["metrics"]["start"]
-        assert call["metrics"]["end"] <= recognition["metrics"]["end"]
+        # Pipecat maps monotonic timestamps to wall time; provider spans use
+        # time.time(). Allow one coarse Windows clock tick between those clocks.
+        clock_tolerance = 0.02
+        assert recognition["metrics"]["start"] <= call["metrics"]["start"] + clock_tolerance
+        assert call["metrics"]["end"] <= recognition["metrics"]["end"] + clock_tolerance
         assert "tokens" not in recognition["metrics"]
     # Subsequent model calls must retain their own scope, never the STT scope.
     for response, call in zip(_spans_named(logs, "llm_response"), _spans_named(logs, "Chat Completion")):
