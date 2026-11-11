@@ -9,22 +9,9 @@ from braintrust.integrations.livekit_agents import setup_livekit_agents
 from braintrust.integrations.livekit_agents.compat import STATE_ATTR
 
 
-@pytest.mark.asyncio
-@pytest.mark.parametrize("project_redaction", [False, True])
-async def test_real_job_shutdown_callbacks_settle_playback_before_sealing(
-    rooms, memory_logger, monkeypatch, project_redaction
-):
-    from livekit import rtc
-    from livekit.agents import Agent, AgentSession
+def _job_context(room, *, name, sid="", url="ws://localhost:7880", token="", redaction=False):
     from livekit.agents.ipc.inference_proc_executor import InferenceProcExecutor
-    from livekit.agents.job import (
-        JobAcceptArguments,
-        JobContext,
-        JobExecutorType,
-        JobProcess,
-        RunningJobInfo,
-        _JobContextVar,
-    )
+    from livekit.agents.job import JobAcceptArguments, JobContext, JobExecutorType, JobProcess, RunningJobInfo
     from livekit.protocol import agent, models
 
     # Use the real job context, process descriptor, protocol messages and
@@ -42,26 +29,38 @@ async def test_real_job_shutdown_callbacks_settle_playback_before_sealing(
         loop=asyncio.get_running_loop(),
         http_proxy=None,
     )
-    context = JobContext(
+    return JobContext(
         proc=JobProcess(executor_type=JobExecutorType.THREAD, user_arguments=None, http_proxy=None),
         info=RunningJobInfo(
             accept_arguments=JobAcceptArguments(name="agent", identity="agent", metadata=""),
             # Protocol classes are generated dynamically by protobuf.
             job=agent.Job(  # pylint: disable=no-member
                 id="JB_cascade_test",
-                room=models.Room(sid=await rooms[0].sid, name=rooms[0].name),  # pylint: disable=no-member
-                enable_redaction=project_redaction,
+                room=models.Room(sid=sid, name=name),  # pylint: disable=no-member
+                enable_redaction=redaction,
             ),
-            url="ws://localhost:7880",
-            token="",
+            url=url,
+            token=token,
             worker_id="local-test",
             fake_job=False,
         ),
-        room=rooms[0],
+        room=room,
         on_connect=lambda: None,
         on_shutdown=lambda _: None,
         inference_executor=executor,
     )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("project_redaction", [False, True])
+async def test_real_job_shutdown_callbacks_settle_playback_before_sealing(
+    rooms, memory_logger, monkeypatch, project_redaction
+):
+    from livekit import rtc
+    from livekit.agents import Agent, AgentSession
+    from livekit.agents.job import _JobContextVar
+
+    context = _job_context(rooms[0], name=rooms[0].name, sid=await rooms[0].sid, redaction=project_redaction)
     context._connected = True  # The fixture has already established the real transport.
     token = _JobContextVar.set(context)
     uploads = []
@@ -145,3 +144,123 @@ async def test_recognition_reset_retires_unfinished_span_state(memory_logger):
     for span in (recognition, speech):
         assert by_id[span.span_id]["metadata"]["contrib.livekit.incomplete"]
         assert by_id[span.span_id]["metrics"]["end"] <= by_id[next_user.span_id]["metrics"]["start"]
+
+
+@pytest.mark.asyncio
+async def test_session_start_connects_room_without_crashing(livekit_server, memory_logger, monkeypatch):
+    # LiveKit joins the room concurrently with the first activity start when
+    # the job has not connected yet (no ctx.connect() before session.start()).
+    from livekit import rtc
+    from livekit.agents import Agent, AgentSession
+    from livekit.agents.job import _JobContextVar
+
+    from .conftest import LIVEKIT_URL, room_name, room_token
+
+    name = room_name()
+    room, caller = rtc.Room(), rtc.Room()
+    await asyncio.wait_for(caller.connect(LIVEKIT_URL, room_token(name, "caller")), 15)
+    context = _job_context(room, name=name, url=LIVEKIT_URL, token=room_token(name, "agent"))
+    token = _JobContextVar.set(context)
+    monkeypatch.setenv("BRAINTRUST_CAPTURE_AGENT_AUDIO_ATTACHMENTS", "true")
+    monkeypatch.delenv("BRAINTRUST_CAPTURE_USER_AUDIO_ATTACHMENTS", raising=False)
+    setup_livekit_agents(audio=AudioRecordingOptions(encoding=AudioEncoding(codec="pcm", container=None)))
+    session = AgentSession()
+    try:
+        assert not room.isconnected()
+        await session.start(Agent(instructions="test"), room=room, record=False)
+        assert room.isconnected()
+        owner = getattr(session, STATE_ATTR)
+        # The agent's participant is labelled once the room has connected.
+        assert owner.participants["agent-output"]
+        await _linked(session)
+        # attach_media runs on every activity start; repeats must not relabel.
+        owner.attach_media()
+        owner.attach_media()
+        assert set(owner.participants) == {"session-input", "agent-output"}
+    finally:
+        await session.aclose()
+        _JobContextVar.reset(token)
+        room.off("participant_connected", context._participant_available)
+        await context._on_cleanup()
+        await asyncio.gather(room.disconnect(), caller.disconnect())
+    root = next(row for row in memory_logger.pop() if row.get("span_attributes", {}).get("name") == "session")
+    assert sorted(member["type"] for member in root["metadata"]["audio.participants"].values()) == ["agent", "user"]
+
+
+async def _linked(session, caller=None):
+    # Wait for LiveKit's own RoomIO to link a caller (this connection, if given).
+    # Bounded with wait_for, which Python 3.10 supports.
+    async def poll():
+        while True:
+            linked = session._room_io.linked_participant
+            if linked is not None and (caller is None or linked.sid == caller.local_participant.sid):
+                return linked
+            await asyncio.sleep(0.05)
+
+    return await asyncio.wait_for(poll(), 10)
+
+
+def _participant_types(rows):
+    root = next(row for row in rows if row.get("span_attributes", {}).get("name") == "session")
+    return sorted(member["type"] for member in root["metadata"]["audio.participants"].values())
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("rejoin", "redaction"), [(False, False), (True, False), (False, True)])
+async def test_caller_linked_after_session_start_is_labelled(
+    livekit_server, memory_logger, monkeypatch, rejoin, redaction
+):
+    # RoomIO links the caller in a background task, usually after
+    # session.start() returns, and again whenever the caller rejoins.
+    from livekit import rtc
+    from livekit.agents import Agent, AgentSession, room_io
+    from livekit.agents.job import _JobContextVar
+
+    from .conftest import LIVEKIT_URL, room_name, room_token
+
+    name = room_name()
+    room, callers = rtc.Room(), []
+    context = _job_context(room, name=name, url=LIVEKIT_URL, token=room_token(name, "agent"), redaction=redaction)
+    token = _JobContextVar.set(context)
+    monkeypatch.setenv("BRAINTRUST_CAPTURE_AGENT_AUDIO_ATTACHMENTS", "true")
+    monkeypatch.delenv("BRAINTRUST_CAPTURE_USER_AUDIO_ATTACHMENTS", raising=False)
+    setup_livekit_agents(audio=AudioRecordingOptions(encoding=AudioEncoding(codec="pcm", container=None)))
+    session = AgentSession()
+
+    async def join():
+        caller = rtc.Room()
+        callers.append(caller)
+        await asyncio.wait_for(caller.connect(LIVEKIT_URL, room_token(name, "caller")), 15)
+        return caller
+
+    try:
+        await session.start(
+            Agent(instructions="test"),
+            room=room,
+            room_options=room_io.RoomOptions(close_on_disconnect=False),
+            record=False,
+        )
+        owner = getattr(session, STATE_ATTR)
+        assert "session-input" not in owner.participants
+        await _linked(session, await join())
+        if redaction:
+            # Project redaction withholds participant labels even once linked.
+            assert owner.participants == {}
+        elif rejoin:
+            first = owner.participants["session-input"]
+            await callers[0].disconnect()
+            await _linked(session, await join())
+            # LiveKit gives the rejoined caller a new sid, which gets its own label.
+            assert owner.participants["session-input"] != first
+    finally:
+        await session.aclose()
+        _JobContextVar.reset(token)
+        room.off("participant_connected", context._participant_available)
+        await context._on_cleanup()
+        await asyncio.gather(room.disconnect(), *(caller.disconnect() for caller in callers))
+    rows = memory_logger.pop()
+    if redaction:
+        session_row = next(row for row in rows if row.get("span_attributes", {}).get("name") == "session")
+        assert "audio.participants" not in session_row.get("metadata", {})
+    else:
+        assert _participant_types(rows) == (["agent", "user", "user"] if rejoin else ["agent", "user"])

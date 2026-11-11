@@ -32,6 +32,12 @@ class AgentSessionPatcher(CompositeFunctionWrapperPatcher):
         _patcher("cascade_close", "voice.agent_session", "AgentSession._aclose_impl", tracing.session_close),
         _patcher("cascade_run", "voice.agent_session", "AgentSession.run", tracing.session_run),
         _patcher("cascade_activity_start", "voice.agent_activity", "AgentActivity.start", tracing.activity_start),
+        _patcher(
+            "cascade_participant_linked",
+            "voice.agent_session",
+            "AgentSession._on_room_io_participant_linked",
+            tracing.participant_linked,
+        ),
         _patcher("cascade_input", "voice.agent_activity", "AgentActivity.push_audio", tracing.push_audio),
         _patcher(
             "cascade_speech_task",

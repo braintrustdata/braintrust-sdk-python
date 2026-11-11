@@ -181,14 +181,21 @@ class Session:
             self.native.output.audio = self.tap
         room_io = self.native._room_io
         if room_io is not None and self.permits():
-            for source, participant, kind in (
-                ("session-input", room_io.linked_participant, "user"),
-                ("agent-output", room_io.room.local_participant, "agent"),
-            ):
-                if participant is not None and participant.sid:
-                    identifier = self.audio.participant(participant.sid, {"type": kind})
-                    if identifier:
-                        self.participants[source] = identifier
+            # session.start() joins the room concurrently with the first activity
+            # start, and LiveKit raises when local_participant is read before the
+            # room connects. Skip the agent label until then; session_start calls
+            # attach_media again once the room has connected.
+            room = room_io.room
+            local = room.local_participant if room.isconnected() else None
+            self.label("session-input", room_io.linked_participant, "user")
+            self.label("agent-output", local, "agent")
+
+    def label(self, source, participant, kind):
+        # Labels are keyed by sid, so repeated calls for one participant reuse it.
+        if participant is not None and participant.sid:
+            identifier = self.audio.participant(participant.sid, {"type": kind})
+            if identifier:
+                self.participants[source] = identifier
 
     def input(self, frame):
         if self.closed:
@@ -328,6 +335,16 @@ async def activity_start(wrapped, instance, args, kwargs):
     if (owner := state_for(instance)) is not None:
         owner.attach_media()
     return await wrapped(*args, **kwargs)
+
+
+def participant_linked(wrapped, instance, args, kwargs):
+    # RoomIO links the caller in a background task, usually after
+    # session.start() returns, and again when a caller joins or rejoins later.
+    result = wrapped(*args, **kwargs)
+    owner = state_for(instance)
+    if owner is not None and not owner.closed and owner.permits():
+        owner.label("session-input", args[0] if args else kwargs["participant"], "user")
+    return result
 
 
 def push_audio(wrapped, instance, args, kwargs):
