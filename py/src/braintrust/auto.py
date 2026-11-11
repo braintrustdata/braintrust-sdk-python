@@ -99,7 +99,7 @@ def auto_instrument(
         openai_agents: Enable OpenAI Agents SDK instrumentation (default: True)
         cohere: Enable Cohere instrumentation (default: True)
         autogen: Enable AutoGen instrumentation (default: True)
-        bedrock: Enable boto3 Bedrock Runtime instrumentation (default: True)
+        bedrock: Enable boto3 and aiobotocore Bedrock Runtime instrumentation (default: True)
         crewai: Enable CrewAI instrumentation (default: True)
         strands: Enable Strands Agents instrumentation (default: True)
         temporal: Enable Temporal instrumentation (default: True)

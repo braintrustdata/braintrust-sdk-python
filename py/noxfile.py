@@ -279,6 +279,19 @@ FASTMCP_VERSIONS = _get_matrix_versions("fastmcp")
 FASTMCP_SLIM_VERSIONS = _get_matrix_versions("fastmcp-slim")
 
 
+@nox.session
+@nox.parametrize("version", _get_matrix_versions("aiobotocore"), ids=_get_matrix_versions("aiobotocore"))
+def test_aiobotocore(session, version):
+    """Async Bedrock clients, replaying the same wire recordings as boto3."""
+    _skip_if_incompatible(session)
+    _install_test_deps(session)
+    _install_matrix_dep(session, "aiobotocore", version)
+    _install_matrix_dep(session, "aiobotocore-botocore", version)
+    # Reuse existing Bedrock wire recordings instead of duplicating cassettes.
+    cassette_version = "latest" if version == LATEST else "1.34.116"
+    _run_tests(session, f"{INTEGRATION_DIR}/bedrock_runtime/test_aiobotocore.py", version=cassette_version)
+
+
 def _register_matrix_sessions(specs):
     """Register the routine provider sessions from compact data records."""
     for spec in specs:
