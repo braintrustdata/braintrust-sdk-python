@@ -105,10 +105,14 @@ async def test_consumed_input_drives_real_cascade(rooms, memory_logger, monkeypa
     assert recognition["output"] == [{"role": "user", "content": "Hello there."}]
     models = named(rows, "llm_response")
     assert models and len(models) == len(model_metrics)
-    assert sum(row["metrics"]["prompt_cached_tokens"] for row in models) == sum(
+    requests = named(rows, "Chat Completion")
+    assert len(requests) == len(models)
+    assert {row["span_parents"][0] for row in requests} == {row["span_id"] for row in models}
+    assert sum(row["metrics"].get("prompt_cached_tokens", 0) for row in requests) == sum(
         measured.prompt_cached_tokens for measured in model_metrics
     )
-    assert all("cache_read_input_tokens" not in row["metrics"] for row in models)
+    assert all("prompt_tokens" not in row["metrics"] for row in models)
+    assert all("cache_read_input_tokens" not in row["metrics"] for row in requests)
     assert named(rows, "tts")
     assert named(rows, "agent_speech")
     tts_ids = {row["span_id"] for row in named(rows, "tts")}

@@ -63,6 +63,7 @@ class Response:
     identifier: str
     accepted: bool = False
     span: Span | None = None
+    llm_span: Span | None = None
     handle: Any = None
     created: float | None = None
     ended: float | None = None
@@ -89,6 +90,18 @@ class Response:
             self.span = _new(
                 parent,
                 "llm_response",
+                start_time=self.created,
+                metadata={
+                    "model": self.controller.model.model,
+                    "provider": self.controller.model.provider,
+                    "contrib.livekit.response_id": self.identifier,
+                },
+            )
+            # OpenAI's SDK instrumentation covers HTTP completions, not this
+            # Realtime WebSocket API. Framework observations own its LLM span.
+            self.llm_span = _new(
+                self.span,
+                "Realtime request",
                 kind="llm",
                 start_time=self.created,
                 metadata={
@@ -98,8 +111,9 @@ class Response:
                 },
             )
             if self.context:
-                owner.log(self.span, input=self.context)
-                self.span.log(metadata={"contrib.livekit.input_partial": True})
+                for span in (self.span, self.llm_span):
+                    owner.log(span, input=self.context)
+                    span.log(metadata={"contrib.livekit.input_partial": True})
                 self.context.clear()
             relationships = [value for target in self.consumed if (value := link(target, "consumes_tool_result"))]
             if relationships:
@@ -110,33 +124,56 @@ class Response:
             owner.requests.setdefault(self.handle, {}).update({call: self.span for call in self.calls})
         self.publish()
 
-    def publish(self):
-        if self.span is None:
+    def publish(self) -> None:
+        if self.span is None or self.llm_span is None:
             return
         owner = self.controller.owner
         if self.outputs:
+            messages = [value for _, value in sorted(self.outputs.values(), key=lambda pair: pair[0])]
+            owner.log(self.span, output=messages)
+            # Realtime reports response status, not Chat Completion finish reasons.
             owner.log(
-                self.span, output=[value for _, value in sorted(self.outputs.values(), key=lambda pair: pair[0])]
+                self.llm_span,
+                output=[
+                    {
+                        "index": index,
+                        "message": message,
+                        "finish_reason": "tool_calls"
+                        if self.status == "completed" and message.get("tool_calls")
+                        else None,
+                    }
+                    for index, message in enumerate(messages)
+                ],
             )
             if self.ended is not None:
                 self.outputs.clear()
-        if self.metadata:
-            self.span.log(metadata=self.metadata)
-        event = dict(self.metrics)
+        timing = {}
         if self.created is not None:
-            event["start"] = self.created
+            timing["start"] = self.created
         if self.ended is not None:
-            event["end"] = self.ended
-        if event:
-            self.span.log(metrics=event)
-        if self.status:
-            self.span.log(metadata={"contrib.livekit.response_status": self.status})
-            if self.status == "cancelled":
-                self.span.log(metadata={"contrib.livekit.cancelled": True})
-            elif self.status in ("failed", "incomplete"):
-                owner.log(self.span, error="LiveKit Realtime response " + self.status)
-        if self.ended is not None and not self.span_ended:
-            self.span.end(self.ended)
+            timing["end"] = self.ended
+        self.span.log(metrics=timing)
+        self.llm_span.log(metrics={**self.metrics, **timing})
+        for span in (self.span, self.llm_span):
+            if self.metadata:
+                span.log(metadata=self.metadata)
+            if self.status:
+                span.log(metadata={"contrib.livekit.response_status": self.status})
+                if self.status == "cancelled":
+                    span.log(
+                        metadata={
+                            "contrib.livekit.cancelled": True,
+                            **owner.terminal_metadata(
+                                interrupted=bool(getattr(self.handle, "interrupted", False)), incomplete=True
+                            ),
+                        }
+                    )
+                elif self.status in ("failed", "incomplete"):
+                    span.log(metadata=owner.terminal_metadata(incomplete=True))
+                    owner.log(span, error="LiveKit Realtime response " + self.status)
+            if self.ended is not None and not self.span_ended:
+                span.end(self.ended)
+        if self.ended is not None:
             self.span_ended = True
 
 
@@ -151,6 +188,9 @@ class Realtime:
         self.responses: dict[tuple[int, str], Response] = {}
         self.tools = {}
         self.sent_items = set()
+        self.instructions: str | None = None
+        self.response_options: dict[str, dict[str, Any]] = {}
+        self.model_options: dict[str, Any] = {}
         self.listeners = []
         self.closed = False
         self.connected = False
@@ -183,9 +223,14 @@ class Realtime:
     def permits(self):
         allowed = self.owner.permits()
         if not allowed:
+            self.instructions = None
+            self.response_options.clear()
+            self.model_options.clear()
             for record in self.responses.values():
                 record.outputs.clear()
                 record.context.clear()
+                for key in ("tools", "tool_choice"):
+                    record.metadata.pop(key, None)
         return allowed
 
     def response(self, identifier):
@@ -201,6 +246,7 @@ class Realtime:
     def client(self, event):
         if self.closed:
             return
+        allowed = self.permits()
         kind = event.get("type")
         if kind == "input_audio_buffer.append":
             audio = event.get("audio", "")
@@ -211,19 +257,33 @@ class Realtime:
             item = event.get("item", {})
             if item.get("id"):
                 self.sent_items.add(item["id"])
-        self.permits()
+        elif kind == "response.create" and allowed:
+            response = event.get("response") or {}
+            request_id = (response.get("metadata") or {}).get("client_event_id")
+            if request_id:
+                self.response_options[request_id] = {
+                    key: response[key] for key in ("instructions", "tools", "tool_choice") if key in response
+                }
 
     def server(self, event):
         if self.closed:
             return
-        self.permits()
+        allowed = self.permits()
         self.raw_events = True
         kind = event.get("type", "")
         now = time.time()
-        if kind == "session.created":
-            if self.connected:
-                self.reconnected(None)
-            self.connected = True
+        if kind in ("session.created", "session.updated"):
+            if kind == "session.created":
+                if self.connected:
+                    self.reconnected(None)
+                self.connected = True
+            # Use acknowledged provider configuration, including live updates.
+            if allowed:
+                instructions = event.get("session", {}).get("instructions")
+                self.instructions = instructions if isinstance(instructions, str) else None
+                self.model_options = {
+                    key: event["session"][key] for key in ("tools", "tool_choice") if key in event["session"]
+                }
         elif kind in ("input_audio_buffer.speech_started", "input_audio_buffer.speech_stopped"):
             self.speech(event, now)
         elif kind == "conversation.item.input_audio_transcription.completed":
@@ -232,13 +292,22 @@ class Realtime:
             native = event["response"]
             record = self.response(native["id"])
             record.created = now
+            request_id = (native.get("metadata") or {}).get("client_event_id")
+            # A request override replaces session instructions verbatim.
+            options = {**self.model_options, **self.response_options.pop(request_id, {})}
+            instructions = options.get("instructions")
+            if not isinstance(instructions, str):
+                instructions = self.instructions
             # Only explicitly sent text/tool items from the actual remote mirror.
-            if self.permits():
+            if allowed:
                 from .compat import chat_messages
 
+                record.metadata.update(model_metadata(options))
                 context = self.native.chat_ctx.copy()
                 context.items[:] = [item for item in context.items if item.id in self.sent_items]
                 record.context = chat_messages(context)
+                if instructions is not None:
+                    record.context.insert(0, {"role": "system", "content": instructions})
                 for item in context.items:
                     if (
                         item.type == "function_call_output"
@@ -373,7 +442,9 @@ class Realtime:
                 }
             )
         if event.ttft >= 0 and record.modality is not None:
-            record.metrics["time_to_first_audio" if record.modality == "audio" else "time_to_first_token"] = event.ttft
+            record.metrics["time_to_first_token"] = event.ttft
+            if record.modality == "audio":
+                record.metrics["time_to_first_audio"] = event.ttft
         if event.input_token_details.cached_tokens_details is not None:
             record.metadata["contrib.livekit.cached_tokens"] = (
                 event.input_token_details.cached_tokens_details.model_dump()
@@ -418,6 +489,9 @@ class Realtime:
         self.clock.valid = False
         self.epoch += 1
         self.sent_items.clear()
+        self.instructions = None
+        self.response_options.clear()
+        self.model_options.clear()
 
     def close(self):
         if self.closed:
@@ -428,8 +502,9 @@ class Realtime:
             if record.accepted:
                 record.bind()
                 if record.ended is None and record.span is not None:
-                    record.span.log(metadata={"contrib.livekit.incomplete": True})
-                    record.span.end(now)
+                    record.metadata["contrib.livekit.incomplete"] = True
+                    record.ended = now
+                    record.publish()
         for item in self.inputs.values():
             if item.turn is not None and not item.stopped:
                 item.turn.log(metadata={"turn.incomplete": True})
@@ -446,6 +521,9 @@ class Realtime:
         self.responses.clear()
         self.tools.clear()
         self.sent_items.clear()
+        self.instructions = None
+        self.response_options.clear()
+        self.model_options.clear()
         self.native = self.activity = self.model = None
 
 
@@ -478,6 +556,31 @@ def bind(
     else:
         owner.realtime[native].activity = activity
     return owner.realtime[native]
+
+
+def model_metadata(options: dict[str, Any]) -> dict[str, Any]:
+    """Normalize acknowledged Realtime tool configuration to chat conventions."""
+    result = {}
+    tools = options.get("tools")
+    if tools:
+        result["tools"] = [
+            {
+                "type": "function",
+                "function": {
+                    key: tool[key]
+                    for key in ("name", "description", "parameters", "strict")
+                    if tool.get(key) is not None
+                },
+            }
+            for tool in tools
+            if tool.get("type") == "function"
+        ]
+    choice = options.get("tool_choice")
+    if isinstance(choice, str) and choice in ("auto", "none", "required"):
+        result["tool_choice"] = choice
+    elif isinstance(choice, dict) and choice.get("type") == "function" and choice.get("name"):
+        result["tool_choice"] = {"type": "function", "function": {"name": choice["name"]}}
+    return result
 
 
 def numeric_usage(value: dict[str, Any]) -> dict[str, Any]:

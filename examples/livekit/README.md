@@ -22,6 +22,9 @@ LIVEKIT_MODE=realtime uv run voice_agent.py dev
 | `half-cascade`      | Audio → Realtime text model → TTS | `gpt-realtime` with text output → `tts-1`                     |
 | `realtime`          | Native speech-to-speech           | `gpt-realtime`                                                |
 
+Agent instructions appear in each `llm_response` span's input as a `system` message,
+including any instructions specific to that response.
+
 With `braintrust[audio]`, enabled recordings default to Opus in Ogg. Installing
 the extra or setting the generic `BRAINTRUST_CAPTURE_ATTACHMENTS` flag does not
 enable audio capture.
@@ -54,4 +57,6 @@ session
 
 For adapters without known provider instrumentation, LiveKit emits an LLM child
 from the model data exposed by the framework. It does not infer provider support
-from whether a span appears.
+from whether a span appears. OpenAI Realtime uses a WebSocket API that the OpenAI
+integration does not instrument, so LiveKit supplies its `Realtime request` LLM
+child. Agent instructions and model usage are available on that child.

@@ -38,6 +38,9 @@ async def test_realtime_conversation(rooms, memory_logger, monkeypatch, vcr_cass
     from openai.types.realtime.realtime_audio_input_turn_detection import ServerVad
 
     timing_lost = mode == "unknown_timing"
+    instructions = (
+        "You help with fictional demo orders. Use lookup_order for order status. Speak English in one short sentence."
+    )
     observed_stops = {}
     original_speech = Realtime.speech
 
@@ -180,7 +183,7 @@ async def test_realtime_conversation(rooms, memory_logger, monkeypatch, vcr_cass
         try:
             await session.start(
                 Agent(
-                    instructions="You help with fictional demo orders. Use lookup_order for order status. Speak English in one short sentence.",
+                    instructions=instructions,
                     tools=[lookup_order],
                 ),
                 room=rooms[0],
@@ -234,6 +237,9 @@ async def test_realtime_conversation(rooms, memory_logger, monkeypatch, vcr_cass
                 assert all(item.stopped for item in controller.inputs.values()), (
                     "Observed stops must settle user speech"
                 )
+            if restricted:
+                assert controller.instructions is None
+                assert not controller.response_options
         finally:
             if pump is not None:
                 pump.cancel()
@@ -271,10 +277,27 @@ async def test_realtime_conversation(rooms, memory_logger, monkeypatch, vcr_cass
         if event["type"] == "conversation.item.input_audio_transcription.completed"
     }
     responses = {event["response"]["id"]: event["response"] for event in server if event["type"] == "response.done"}
+    session_tools = next(
+        event["session"]["tools"]
+        for event in server
+        if event["type"] == "session.updated" and event["session"].get("tools")
+    )
+    requested_instructions = {
+        entry["message"]["response"]["metadata"]["client_event_id"]: entry["message"]["response"].get("instructions")
+        for entry in tape.events
+        if entry["direction"] == "send" and entry["message"]["type"] == "response.create"
+    }
     users = named(rows, "user_turn")
     speeches = named(rows, "user_speech")
     receipts = named(rows, "transcript_received")
     models = named(rows, "llm_response")
+    llms = named(rows, "Realtime request")
+    assert len(llms) == len(models)
+    leaves = {row["span_parents"][0]: row for row in llms}
+    for task in models:
+        assert task["span_attributes"]["type"] == "task"
+        assert leaves[task["span_id"]]["span_attributes"]["type"] == "llm"
+        assert "tokens" not in task["metrics"]
     assert len(users) == len(speeches) == len(starts)
     assert len(receipts) == len(finals)
     assert bool(receipts) != no_transcription
@@ -288,7 +311,7 @@ async def test_realtime_conversation(rooms, memory_logger, monkeypatch, vcr_cass
         related = [row for row in rows if row["span_attributes"]["name"] != "unrelated"]
         assert all("input" not in row and "output" not in row for row in related)
         assert named(rows, "unrelated")[0]["input"] == "independent customer record"
-        assert sum(row["metrics"]["tokens"] for row in models) == sum(
+        assert sum(row["metrics"]["tokens"] for row in llms) == sum(
             r["usage"]["total_tokens"] for r in responses.values()
         )
         assert not owner.realtime and not controller.listeners
@@ -323,32 +346,50 @@ async def test_realtime_conversation(rooms, memory_logger, monkeypatch, vcr_cass
             assert receipt["metadata"]["links"][0]["context"]["spanId"] == speech["span_id"]
             assert receipt["metadata"]["turn.id"] == user["span_id"]
     for model in models:
+        leaf = leaves[model["span_id"]]
+        assert leaf["input"] == model["input"]
+        assert leaf["metadata"]["tools"] == [
+            {"type": "function", "function": {k: v for k, v in tool.items() if k != "type" and v is not None}}
+            for tool in session_tools
+        ]
+        assert leaf["metadata"]["tool_choice"] == "auto"
         native = responses[model["metadata"]["contrib.livekit.response_id"]]
+        override = requested_instructions.get((native.get("metadata") or {}).get("client_event_id"))
+        expected_instructions = override if isinstance(override, str) else instructions
+        assert model["input"][0] == {"role": "system", "content": expected_instructions}
+        assert [message for message in model["input"] if message["role"] == "system"] == [model["input"][0]]
         assert model["metadata"]["model"] == "gpt-realtime"
         assert model["metadata"]["contrib.livekit.response_status"] == native["status"]
-        assert model["metrics"]["tokens"] == native["usage"]["total_tokens"]
-        assert model["metrics"]["prompt_tokens"] == native["usage"]["input_tokens"]
-        assert model["metrics"]["completion_tokens"] == native["usage"]["output_tokens"]
-        assert model["metrics"]["prompt_audio_tokens"] == native["usage"]["input_token_details"]["audio_tokens"]
-        assert model["metrics"]["completion_audio_tokens"] == native["usage"]["output_token_details"]["audio_tokens"]
-        assert model["metrics"]["prompt_cached_tokens"] == native["usage"]["input_token_details"]["cached_tokens"]
-        assert "cache_read_input_tokens" not in model["metrics"]
-        assert model["metrics"]["start"] == pytest.approx(native_metrics[native["id"]].timestamp, abs=1e-6)
-        assert model["metrics"]["end"] == pytest.approx(
+        assert leaf["metrics"]["tokens"] == native["usage"]["total_tokens"]
+        assert leaf["metrics"]["prompt_tokens"] == native["usage"]["input_tokens"]
+        assert leaf["metrics"]["completion_tokens"] == native["usage"]["output_tokens"]
+        assert leaf["metrics"]["prompt_audio_tokens"] == native["usage"]["input_token_details"]["audio_tokens"]
+        assert leaf["metrics"]["completion_audio_tokens"] == native["usage"]["output_token_details"]["audio_tokens"]
+        assert leaf["metrics"]["prompt_cached_tokens"] == native["usage"]["input_token_details"]["cached_tokens"]
+        assert "cache_read_input_tokens" not in leaf["metrics"]
+        assert leaf["metrics"]["start"] == pytest.approx(native_metrics[native["id"]].timestamp, abs=1e-6)
+        assert leaf["metrics"]["end"] == pytest.approx(
             native_metrics[native["id"]].timestamp + native_metrics[native["id"]].duration, abs=1e-6
         )
         if any(item["type"] == "message" for item in native["output"]):
-            assert ("time_to_first_token" if hybrid else "time_to_first_audio") in model["metrics"]
-            assert ("time_to_first_audio" if hybrid else "time_to_first_token") not in model["metrics"]
+            assert "time_to_first_token" in leaf["metrics"]
         if native["status"] == "completed":
             expected = []
             for item in native["output"]:
                 if item["type"] == "message":
                     expected.append("".join(part.get("transcript", part.get("text", "")) for part in item["content"]))
             assert [out["content"] for out in model.get("output", []) if out.get("content") is not None] == expected
-    assert sum(row["metrics"]["tokens"] for row in models) == sum(
-        r["usage"]["total_tokens"] for r in responses.values()
-    )
+        assert leaf.get("output", []) == [
+            {
+                "index": index,
+                "message": message,
+                "finish_reason": "tool_calls"
+                if native["status"] == "completed" and message.get("tool_calls")
+                else None,
+            }
+            for index, message in enumerate(model.get("output", []))
+        ]
+    assert sum(row["metrics"]["tokens"] for row in llms) == sum(r["usage"]["total_tokens"] for r in responses.values())
     tools = named(rows, "lookup_order")
     assert len(tools) == 1
     assert tools[0]["metadata"]["links"][0]["attributes"]["braintrust.relationship.type"] == "requested_by"
@@ -364,8 +405,8 @@ async def test_realtime_conversation(rooms, memory_logger, monkeypatch, vcr_cass
     for model in observed_inputs:
         assert model["metadata"]["contrib.livekit.input_partial"] is True
         # This recording sends user audio, not its later ASR transcript as text.
-        # Only the explicitly sent tool results belong in observed text input.
-        for message in model["input"]:
+        # Beyond instructions, only explicitly sent tool results belong here.
+        for message in model["input"][1:]:
             assert message == {
                 "role": "tool",
                 "tool_call_id": message["tool_call_id"],
@@ -380,7 +421,7 @@ async def test_realtime_conversation(rooms, memory_logger, monkeypatch, vcr_cass
         # The later goodbye still uses the persistent conversation history,
         # including the earlier tool result, rather than a fresh empty context.
         goodbye = max(models, key=lambda row: row["metrics"]["start"])
-        assert goodbye["input"] == [
+        assert goodbye["input"][1:] == [
             {"role": "tool", "tool_call_id": call_id, "content": result} for call_id, result in sent_results.items()
         ]
         assert any(
@@ -388,7 +429,7 @@ async def test_realtime_conversation(rooms, memory_logger, monkeypatch, vcr_cass
             and link["context"]["spanId"] == tools[0]["span_id"]
             for link in goodbye["metadata"]["links"]
         )
-        assert goodbye["metrics"]["prompt_cached_tokens"] > 0
+        assert leaves[goodbye["span_id"]]["metrics"]["prompt_cached_tokens"] > 0
     for speech in named(rows, "agent_speech"):
         target = by_id[speech["metadata"]["links"][0]["context"]["spanId"]]
         assert target in (named(rows, "tts") if hybrid else models)
@@ -398,6 +439,7 @@ async def test_realtime_conversation(rooms, memory_logger, monkeypatch, vcr_cass
     assert root["metadata"]["audio.schema.version"] == "3.0.0"
     assert all("audio.schema.version" not in row.get("metadata", {}) for row in rows if row is not root)
     assert not controller.listeners and not controller.inputs and not controller.responses
+    assert controller.instructions is None and not controller.response_options
     assert not owner.realtime
     assert uploads
     if no_transcription:
