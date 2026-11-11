@@ -34,11 +34,14 @@ def pytest_make_collect_report(collector):
 
 
 def _patch_vcr_aiohttp_stubs():
-    """Patch VCR.py's aiohttp stubs to decompress gzip response bodies.
+    """Fill gaps in VCR.py's aiohttp response stubs.
 
     Cassettes store gzip-compressed response bodies (from Accept-Encoding: gzip).
     VCR's httpx stubs handle decompression, but the aiohttp stubs return raw gzip
     bytes, causing UnicodeDecodeError. Fix: decompress gzip in text() and read().
+
+    VCR.py 8.5.0 (the last Python 3.10 release) also omits raw_headers, which
+    aiobotocore requires. Populate them as newer VCR.py releases do.
     """
     try:
         from vcr.stubs import aiohttp_stubs
@@ -65,6 +68,20 @@ def _patch_vcr_aiohttp_stubs():
         return _decompress_body(self._body)
 
     aiohttp_stubs.MockClientResponse.read = patched_read
+
+    original_build_response = aiohttp_stubs.build_response
+
+    def patched_build_response(vcr_request, vcr_response, history):
+        response = original_build_response(vcr_request, vcr_response, history)
+        # Reading raw_headers first would cache the missing value in aiohttp.
+        if response._raw_headers is None:
+            response._raw_headers = tuple(
+                (name.encode("utf-8", "surrogateescape"), value.encode("utf-8", "surrogateescape"))
+                for name, value in response.headers.items()
+            )
+        return response
+
+    aiohttp_stubs.build_response = patched_build_response
     aiohttp_stubs.MockClientResponse._bt_patched = True
 
 

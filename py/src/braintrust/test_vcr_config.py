@@ -37,3 +37,26 @@ def test_vcr_config_scrubs_sensitive_provider_headers():
 @pytest.mark.vcr(cassette_name="test_vcr_config_scrubs_sensitive_provider_headers")
 def test_vcr_marker_cassette_name_overrides_default_cassette(vcr_cassette_name):
     assert vcr_cassette_name == "test_vcr_config_scrubs_sensitive_provider_headers"
+
+
+@pytest.mark.asyncio
+async def test_vcr_aiohttp_response_preserves_raw_headers():
+    pytest.importorskip("aiohttp")
+    from vcr.request import Request
+    from vcr.stubs.aiohttp_stubs import build_response
+
+    response = build_response(
+        Request("GET", "https://example.com/", b"", {}),
+        {
+            "status": {"code": 200, "message": "OK"},
+            "body": {"string": b"{}"},
+            "headers": {"Content-Type": ["application/json"], "X-Example": ["first", "café"]},
+        },
+        history=(),
+    )
+
+    assert response.raw_headers == (
+        (b"Content-Type", b"application/json"),
+        (b"X-Example", b"first"),
+        (b"X-Example", "café".encode("utf-8")),
+    )
