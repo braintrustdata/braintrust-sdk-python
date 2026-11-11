@@ -1,500 +1,209 @@
-import asyncio
-import importlib.metadata
 import inspect
-import shutil
-import socket
-import subprocess
-import time
-import wave
-from pathlib import Path
 
 import pytest
 from braintrust import logger
-from braintrust.integrations.livekit_agents import (
-    setup_livekit_agents,
-    tracing,
-    wrap_livekit_agents,
-)
-from braintrust.integrations.livekit_agents.tracing import (
-    _SESSION_PARENT_ATTR,
-    _SESSION_SPAN_ATTR,
-    traced_llm_stream_run,
-    traced_session_start,
-)
+from braintrust._audio.config import AudioEncoding, AudioRecordingOptions
+from braintrust.integrations.livekit_agents import setup_livekit_agents
+from braintrust.integrations.livekit_agents.compat import STATE_ATTR
+from braintrust.integrations.livekit_agents.privacy import Privacy, opted_in
 from braintrust.integrations.test_utils import verify_autoinstrument_script
-from braintrust.test_helpers import init_test_logger
-from packaging.version import Version
 
 
-TEST_MODEL = "gpt-6-luna"
-MODEL_OPTIONS = {"reasoning_effort": "none"}
-
-
-@pytest.fixture
-def memory_logger():
-    init_test_logger("test-project-livekit-agents-py-tracing")
-    with logger._internal_with_memory_background_logger() as bgl:
-        yield bgl
-
-
-def _span_name(log):
-    return log.get("span_attributes", {}).get("name")
-
-
-def _span_names(logs):
-    return {_span_name(log) for log in logs}
-
-
-def _spans_named(logs, name):
-    return [log for log in logs if _span_name(log) == name]
-
-
-def _single_span(logs, name):
-    matches = _spans_named(logs, name)
-    assert len(matches) == 1, (name, matches)
-    return matches[0]
-
-
-def _assert_any_span(spans, predicate):
-    assert any(predicate(span) for span in spans), spans
-
-
-def _assert_all_spans(spans, predicate):
-    assert all(predicate(span) for span in spans), spans
-
-
-def _assert_all_spans_have_end_time(logs):
-    spans_without_end = [
-        log for log in logs if log.get("span_attributes") is not None and "end" not in log.get("metrics", {})
-    ]
-    assert not spans_without_end, spans_without_end
-
-
-def _assert_no_metrics(spans, *metric_names):
-    assert all(not (set(metric_names) & set(span.get("metrics", {}))) for span in spans), spans
-
-
-def _port_in_use(port: int) -> bool:
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.settimeout(0.5)
-        return sock.connect_ex(("127.0.0.1", port)) == 0
-
-
-def _wait_for_port(port: int, timeout: float = 20.0) -> None:
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        if _port_in_use(port):
-            return
-        time.sleep(0.25)
-    raise TimeoutError(f"LiveKit server did not start within {timeout}s")
-
-
-@pytest.fixture(autouse=True)
-def isolate_livekit_agents_tracing_state():
-    # pylint: disable=protected-access
-    latest_session_parent = tracing._LATEST_SESSION_PARENT
-    outer_parent_to_session_parent = tracing._OUTER_PARENT_TO_SESSION_PARENT.copy()
-    outer_span_id_to_session_parent = tracing._OUTER_SPAN_ID_TO_SESSION_PARENT.copy()
-    active_session_parent_token = tracing._ACTIVE_SESSION_PARENT.set(None)
-
-    tracing._LATEST_SESSION_PARENT = None
-    tracing._OUTER_PARENT_TO_SESSION_PARENT.clear()
-    tracing._OUTER_SPAN_ID_TO_SESSION_PARENT.clear()
-    try:
-        yield
-    finally:
-        tracing._ACTIVE_SESSION_PARENT.reset(active_session_parent_token)
-        tracing._LATEST_SESSION_PARENT = latest_session_parent
-        tracing._OUTER_PARENT_TO_SESSION_PARENT.clear()
-        tracing._OUTER_PARENT_TO_SESSION_PARENT.update(outer_parent_to_session_parent)
-        tracing._OUTER_SPAN_ID_TO_SESSION_PARENT.clear()
-        tracing._OUTER_SPAN_ID_TO_SESSION_PARENT.update(outer_span_id_to_session_parent)
-    # pylint: enable=protected-access
-
-
-@pytest.fixture(scope="session")
-def livekit_server():
-    port = 7880
-    if _port_in_use(port):
-        yield
-        return
-
-    livekit_server_bin = shutil.which("livekit-server")
-    if not livekit_server_bin:
-        pytest.skip("livekit-server is required for LiveKit e2e tests")
-
-    proc = subprocess.Popen([livekit_server_bin, "--dev"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    try:
-        _wait_for_port(port)
-        yield
-    finally:
-        proc.terminate()
-        try:
-            proc.wait(timeout=10)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-            proc.wait(timeout=10)
+def named(logs, name):
+    return [row for row in logs if row.get("span_attributes", {}).get("name") == name]
 
 
 @pytest.mark.asyncio
-async def test_llm_stream_run_does_not_create_user_turn_on_cancellation(memory_logger):
-    async def cancelled_run():
-        raise asyncio.CancelledError
-
-    with pytest.raises(asyncio.CancelledError):
-        await traced_llm_stream_run(cancelled_run, object(), (), {})
-
-    logs = memory_logger.pop()
-    assert _span_names(logs) == {"llm_request_run"}, logs
-    llm_log = _single_span(logs, "llm_request_run")
-    assert "end" in llm_log.get("metrics", {})
-    assert not llm_log.get("error")
-
-
-@pytest.mark.asyncio
-async def test_session_start_cleans_up_span_on_cancellation(memory_logger):
-    pytest.importorskip("livekit.agents")
-
-    from livekit.agents import AgentSession
-
-    async def cancelled_start():
-        raise asyncio.CancelledError
-
-    session = AgentSession()
-    with pytest.raises(asyncio.CancelledError):
-        await traced_session_start(cancelled_start, session, (), {})
-
-    assert getattr(session, _SESSION_SPAN_ATTR) is None
-    assert getattr(session, _SESSION_PARENT_ATTR) is None
-    logs = memory_logger.pop()
-    session_logs = _spans_named(logs, "livekit_agent_session")
-    assert len(session_logs) == 1
-    assert session_logs[0]["context"]["span_origin"]["instrumentation"]["name"] == "livekit-agents-auto"
-
-
-def test_auto_instrument_livekit_agents_subprocess():
-    pytest.importorskip("livekit.agents")
-    verify_autoinstrument_script("test_auto_livekit_agents.py")
-
-
-def test_wrap_livekit_agents_wraps_real_agent_session():
-    pytest.importorskip("livekit.agents")
-
-    from livekit.agents import AgentSession
-
-    WrappedAgentSession = wrap_livekit_agents(AgentSession)
-
-    assert WrappedAgentSession is AgentSession
-    assert wrap_livekit_agents(AgentSession) is AgentSession
-    assert hasattr(inspect.getattr_static(AgentSession, "start"), "__wrapped__")
-    assert hasattr(inspect.getattr_static(AgentSession, "run"), "__wrapped__")
-    assert hasattr(inspect.getattr_static(AgentSession, "say"), "__wrapped__")
-
-
-@pytest.mark.asyncio
-async def test_livekit_agents_agent_audio_capture_respects_generic_env(monkeypatch):
-    class AudioOutput:
-        pass
-
-    class AudioFrame:
-        data = b"\x00\x00\x01\x00"
-        sample_rate = 16000
-        num_channels = 1
-        samples_per_channel = 2
-
-    async def capture_frame(frame):
-        return frame
-
-    output = AudioOutput()
-    setattr(output, tracing._PLAYBACK_HANDLER_ATTACHED_ATTR, True)
-    frame = AudioFrame()
-
-    monkeypatch.delenv("BRAINTRUST_CAPTURE_AGENT_AUDIO_ATTACHMENTS", raising=False)
-    assert await tracing.traced_audio_output_capture_frame(capture_frame, output, (frame,), {}) is frame
-    assert getattr(output, tracing._PLAYBACK_AUDIO_ATTR, None) is None
-
-    monkeypatch.setenv("BRAINTRUST_CAPTURE_AGENT_AUDIO_ATTACHMENTS", "false")
-    assert await tracing.traced_audio_output_capture_frame(capture_frame, output, (frame,), {}) is frame
-    assert getattr(output, tracing._PLAYBACK_AUDIO_ATTR, None) is None
-
-    monkeypatch.setenv("BRAINTRUST_CAPTURE_AGENT_AUDIO_ATTACHMENTS", "true")
-    assert await tracing.traced_audio_output_capture_frame(capture_frame, output, (frame,), {}) is frame
-    assert bytes(getattr(output, tracing._PLAYBACK_AUDIO_ATTR)) == frame.data
-
-
-@pytest.mark.asyncio
-@pytest.mark.vcr
-async def test_livekit_agents_e2e_parenting_under_custom_span(memory_logger, livekit_server):
-    assert setup_livekit_agents()
-    await _run_livekit_agents_openai_e2e_voice_turn(memory_logger, outer_parent_name="custom_livekit_parent")
-
-
-@pytest.mark.asyncio
-@pytest.mark.vcr
-async def test_livekit_agents_function_tool_e2e(memory_logger, livekit_server):
-    assert setup_livekit_agents()
-
+@pytest.mark.parametrize("legacy_ids", [False, True])
+@pytest.mark.parametrize("provider_mode", ["enabled", "disabled", "fallback"])
+@pytest.mark.vcr(cassette_name="test_livekit_agents_function_tool_e2e")
+async def test_livekit_agents_function_tool_e2e(memory_logger, monkeypatch, legacy_ids, provider_mode):
     from livekit.agents import Agent, AgentSession, function_tool
     from livekit.plugins import openai
 
+    monkeypatch.setenv("BRAINTRUST_LEGACY_IDS", str(legacy_ids).lower())
+    logger._state._reset_id_generator()
+
     @function_tool
     async def lookup_weather(city: str) -> str:
-        return f"sunny in {city}"
+        with logger.start_span(name="customer_tool_detail"):
+            return f"sunny in {city}"
 
-    class Assistant(Agent):
-        def __init__(self, llm):
-            super().__init__(
-                instructions="Use lookup_weather for weather questions, then answer briefly.",
-                llm=llm,
-                tools=[lookup_weather],
+    from braintrust.integrations.livekit_agents import compat
+    from braintrust.integrations.openai import OpenAIIntegration
+    from openai.resources.chat.completions import AsyncCompletions
+
+    assert setup_livekit_agents()
+    if provider_mode == "enabled":
+        OpenAIIntegration.setup()
+    else:
+        # Exercise the real recorded provider without its SDK wrapper. The fallback
+        # case removes its capability registration, not an observed span.
+        monkeypatch.setattr(AsyncCompletions, "create", inspect.unwrap(AsyncCompletions.create))
+    if provider_mode == "fallback":
+        monkeypatch.setattr(compat, "_PROVIDER_LLM_ADAPTERS", frozenset())
+    llm = openai.LLM(model="gpt-4.1-mini", max_completion_tokens=32)
+    with logger.start_span(name="voice_call") as outer:
+        async with llm, AgentSession() as session:
+            await session.start(
+                Agent(
+                    instructions="Use lookup_weather for weather questions, then answer briefly.",
+                    llm=llm,
+                    tools=[lookup_weather],
+                )
             )
+            owner = getattr(session, STATE_ATTR)
+            result = await session.run(user_input="What is the weather in Paris?")
+            result.expect.next_event().is_function_call(name="lookup_weather")
+            result.expect.next_event().is_function_call_output()
+            result.expect.next_event().is_message(role="assistant")
+            assert not owner.turns and not owner.requests and not owner.tool_results
+        assert logger.current_span() is outer
+    rows = memory_logger.pop()
+    assert len(named(rows, "session")) == 1
+    root = named(rows, "session")[0]
+    assert root["span_parents"] == [outer.span_id]
+    assert root["metadata"]["audio.schema.version"] == "3.0.0"
+    assert isinstance(root["metadata"]["audio.timeline"]["origin_unix_ms"], int)
+    for row in rows:
+        if row["span_id"] != root["span_id"]:
+            assert "audio.schema.version" not in row.get("metadata", {}), row["span_attributes"]["name"]
+    turns = named(rows, "agent_turn")
+    models = named(rows, "llm_response")
+    tools = named(rows, "lookup_weather")
+    assert len(turns) == 1
+    assert len(models) == 2
+    assert len(tools) == 1
+    assert tools[0]["input"] == {"city": "Paris"}
+    assert tools[0]["output"] == "sunny in Paris"
+    assert named(rows, "customer_tool_detail")[0]["span_parents"] == [tools[0]["span_id"]]
+    assert all(row["span_parents"] == [turns[0]["span_id"]] for row in models + tools)
+    assert all(row["metrics"]["end"] >= row["metrics"]["start"] for row in rows)
+    assert all("tokens" not in row.get("metrics", {}) for row in turns + tools)
+    assert all(row["span_attributes"]["type"] == "task" and "tokens" not in row["metrics"] for row in models)
+    leaves = [row for row in rows if row["span_attributes"].get("type") == "llm"]
+    assert len(leaves) == (0 if provider_mode == "disabled" else 2)
+    if leaves:
+        assert {row["span_parents"][0] for row in leaves} == {row["span_id"] for row in models}
+        assert leaves[0]["metrics"]["tokens"] == 69
+        assert leaves[0]["metadata"]["tools"][0]["function"]["name"] == "lookup_weather"
+        assert leaves[0]["output"][0]["message"]["tool_calls"][0]["function"]["name"] == "lookup_weather"
+        assert "cache_read_input_tokens" not in leaves[0]["metrics"]
+        if provider_mode == "fallback":
+            assert leaves[0]["output"][0]["finish_reason"] == "tool_calls"
+            assert leaves[0]["output"][0]["message"]["content"] is None
+    assert not owner.turns and not owner.requests and not owner.tool_results
+    initial_input = [
+        {"role": "system", "content": "Use lookup_weather for weather questions, then answer briefly."},
+        {"role": "user", "content": "What is the weather in Paris?"},
+    ]
+    assert models[0]["input"] == initial_input
+    call = models[0]["output"][0]["tool_calls"][0]
+    # LiveKit serializes the parsed arguments when adding the tool to context.
+    observed_call = {
+        "id": call["id"],
+        "type": "function",
+        "function": {"name": "lookup_weather", "arguments": '{"city": "Paris"}'},
+    }
+    assert models[1]["input"] == initial_input + [
+        {"role": "assistant", "content": None, "tool_calls": [observed_call]},
+        {"role": "tool", "content": "sunny in Paris", "tool_call_id": call["id"]},
+    ]
+    if legacy_ids:
+        assert all("links" not in row.get("metadata", {}) for row in models + tools)
+    else:
+        for row, target, relationship in (
+            (tools[0], models[0], "requested_by"),
+            (models[1], tools[0], "consumes_tool_result"),
+        ):
+            assert row["metadata"]["links"] == [
+                {
+                    "context": {
+                        "traceId": target["root_span_id"],
+                        "spanId": target["span_id"],
+                        "traceFlags": 1,
+                    },
+                    "attributes": {"braintrust.relationship.type": relationship},
+                }
+            ]
+    assert not hasattr(session, STATE_ATTR)
 
-    llm = openai.LLM(model=TEST_MODEL, max_completion_tokens=32, **MODEL_OPTIONS)
 
-    async with llm, AgentSession() as session:
-        await session.start(Assistant(llm))
-        result = await session.run(user_input="What is the weather in Paris?")
-        result.expect.next_event().is_function_call(name="lookup_weather")
-        result.expect.next_event().is_function_call_output()
-        result.expect.next_event().is_message(role="assistant")
-
-    logs = memory_logger.pop()
-    span_names = _span_names(logs)
-    assert "function_tool" in span_names, sorted(str(name) for name in span_names)
-    function_tool_logs = _spans_named(logs, "function_tool")
-    assert all("tokens" not in log.get("metrics", {}) for log in function_tool_logs)
-    assert any(log.get("input", {}).get("name") == "lookup_weather" for log in function_tool_logs), function_tool_logs
-    assert any(log.get("input", {}).get("arguments", {}).get("city") == "Paris" for log in function_tool_logs), (
-        function_tool_logs
-    )
-    assert any(log.get("output", {}).get("output") == "sunny in Paris" for log in function_tool_logs), (
-        function_tool_logs
-    )
-    session_logs = _spans_named(logs, "livekit_agent_session")
-    assert session_logs, logs
-    assert all(log.get("root_span_id") == session_logs[0].get("root_span_id") for log in function_tool_logs), logs
-
-
-async def _run_livekit_agents_openai_e2e_voice_turn(memory_logger, outer_parent_name):
-    from livekit import rtc
+@pytest.mark.asyncio
+@pytest.mark.vcr
+async def test_livekit_agents_agent_speaking_e2e(memory_logger):
+    # Real roomless session and recorded HTTP provider responses. Playback is
+    # qualified independently using LiveKit's real RoomIO sink in test_playback.
     from livekit.agents import Agent, AgentSession
     from livekit.plugins import openai
 
-    silero = pytest.importorskip("livekit.plugins.silero")
-
-    class Assistant(Agent):
-        def __init__(self, llm):
-            super().__init__(instructions="Reply with exactly: hi there", llm=llm)
-
-    stt, llm, vad = _create_openai_voice_turn_components(openai, silero)
-    audio_frames, speech_text = await _prepare_openai_speech_input(stt)
-
-    async def run_session():
-        await _run_openai_voice_turn_session(
-            agent_session_cls=AgentSession,
-            assistant_cls=Assistant,
-            rtc=rtc,
-            llm=llm,
-            stt=stt,
-            vad=vad,
-            audio_frames=audio_frames,
-            user_input=speech_text,
-        )
-
-    with logger.start_span(name=outer_parent_name):
-        await run_session()
-
-    logs = memory_logger.pop()
-    _assert_openai_voice_turn_spans(logs, speech_text=speech_text, outer_parent_name=outer_parent_name)
+    assert setup_livekit_agents()
+    llm = openai.LLM(model="gpt-4.1-mini", max_completion_tokens=8)
+    async with llm, AgentSession() as session:
+        with logger.start_span(name="outer"):
+            await session.start(Agent(instructions="Reply with exactly: hi there", llm=llm))
+            result = await session.run(user_input="say hi")
+            result.expect.next_event().is_message(role="assistant")
+    rows = memory_logger.pop()
+    outer, root = named(rows, "outer")[0], named(rows, "session")[0]
+    assert root["span_parents"] == [outer["span_id"]]
+    assert named(rows, "llm_response")[0]["output"][0]["content"] == "hi there"
+    assert root["metadata"]["audio.schema.version"] == "3.0.0"
+    assert "audio.segments" not in root["metadata"]
+    user = named(rows, "user_turn")[0]
+    assert named(rows, "agent_turn")[0]["metadata"]["turn.reply_to"] == user["span_id"]
 
 
-def _create_openai_voice_turn_components(openai, silero):
-    stt = openai.STT(model="gpt-transcribe")
-    llm = openai.LLM(model=TEST_MODEL, max_completion_tokens=8, **MODEL_OPTIONS)
-    vad = silero.VAD.load()
-    return stt, llm, vad
+@pytest.mark.asyncio
+async def test_real_session_start_failure_cleans_up(memory_logger):
+    from livekit.agents import Agent, AgentSession
+
+    assert setup_livekit_agents()
+    session = AgentSession()
+    # Real framework rejection, without a stand-in start function.
+    with pytest.raises(Exception):
+        await session.start(Agent(instructions="test"), room=object())
+    assert not hasattr(session, STATE_ATTR)
+    assert named(memory_logger.pop(), "session")[0]["metrics"]["end"]
 
 
-async def _prepare_openai_speech_input(stt):
-    from livekit import rtc
-
-    with wave.open(str(Path(__file__).resolve().parents[2] / "fixtures" / "test_speech.wav"), "rb") as audio:
-        assert audio.getsampwidth() == 2
-        sample_rate = audio.getframerate()
-        num_channels = audio.getnchannels()
-        audio_frames = []
-        while data := audio.readframes(sample_rate // 100):
-            audio_frames.append(
-                rtc.AudioFrame(
-                    data=data,
-                    sample_rate=sample_rate,
-                    num_channels=num_channels,
-                    samples_per_channel=len(data) // (2 * num_channels),
-                )
-            )
-    assert audio_frames
-
-    speech_event = await stt.recognize(audio_frames)
-    assert speech_event.alternatives
-    speech_text = speech_event.alternatives[0].text
-    assert speech_text
-    return audio_frames, speech_text
+@pytest.mark.parametrize("value", ["false", "0", "no", "off", " FALSE ", ""])
+def test_audio_dedicated_opt_in_false_forms(monkeypatch, value):
+    monkeypatch.setenv("BRAINTRUST_CAPTURE_ATTACHMENTS", "true")
+    monkeypatch.setenv("BRAINTRUST_CAPTURE_AGENT_AUDIO_ATTACHMENTS", value)
+    assert not opted_in("AGENT")
 
 
-async def _run_openai_voice_turn_session(
-    *, agent_session_cls, assistant_cls, rtc, llm, stt, vad, audio_frames, user_input
-):
-    async with llm, stt, agent_session_cls(vad=vad) as session:
-        await session.start(assistant_cls(llm))
-        session._update_user_state("speaking")
-        await asyncio.sleep(0.01)
-        session._update_user_state("listening")
-        await _run_silero_vad(vad, rtc, audio_frames)
-        result = await session.run(user_input=user_input)
-        result.expect.next_event().is_message(role="assistant")
+@pytest.mark.asyncio
+async def test_provider_privacy_configured_before_setup_is_effective():
+    from livekit.agents import AgentSession, telemetry
+    from livekit.agents.telemetry import traces
+    from opentelemetry.sdk.trace import TracerProvider
 
-
-def _assert_openai_voice_turn_spans(logs, *, speech_text, outer_parent_name):
-    _assert_all_spans_have_end_time(logs)
-    _assert_required_voice_turn_spans(logs)
-    _assert_vad_endpointing_spans(logs)
-    _assert_eou_spans(logs)
-    _assert_stt_spans(logs, speech_text)
-    _assert_session_spans(logs)
-    _assert_no_function_tool_spans_without_tools(logs)
-    _assert_custom_metrics_stay_in_metadata(logs)
-    _assert_voice_turn_parenting(logs, outer_parent_name)
-
-
-def _assert_required_voice_turn_spans(logs):
-    span_names = _span_names(logs)
-    span_name_list = sorted(str(name) for name in span_names)
-    for span_name in ("llm_request_run", "user_speaking", "vad_endpointing", "stt_processing"):
-        assert span_name in span_names, span_name_list
-
-
-def _assert_vad_endpointing_spans(logs):
-    vad_endpointing_logs = _spans_named(logs, "vad_endpointing")
-    _assert_any_span(vad_endpointing_logs, lambda log: log.get("metadata", {}).get("silence_duration", 0) > 0)
-    # Silero <1.3.4 resets speech_duration to 0 before emitting END_OF_SPEECH.
-    if Version(importlib.metadata.version("livekit-plugins-silero")) >= Version("1.3.4"):
-        _assert_any_span(vad_endpointing_logs, lambda log: log.get("metadata", {}).get("speech_duration", 0) > 0)
-    _assert_all_spans(vad_endpointing_logs, lambda log: "duration" not in log.get("metrics", {}))
-    _assert_all_spans(vad_endpointing_logs, lambda log: "event_type" not in log.get("metadata", {}))
-    _assert_all_spans(vad_endpointing_logs, lambda log: "timestamp" not in log.get("metadata", {}))
-
-
-def _assert_eou_spans(logs):
-    eou_logs = _spans_named(logs, "eou_detection")
-    if eou_logs:
-        _assert_any_span(eou_logs, lambda log: log.get("input", {}).get("text"))
-        _assert_any_span(eou_logs, lambda log: "is_end_of_turn" in log.get("output", {}))
-        _assert_any_span(
-            eou_logs,
-            lambda log: log.get("metrics", {}).get("end", 0) - log.get("metrics", {}).get("start", 0) > 0,
-        )
-
-
-def _assert_stt_spans(logs, speech_text):
-    from livekit.agents.metrics import STTMetrics
-
-    stt_logs = _spans_named(logs, "stt_processing")
-    _assert_any_span(stt_logs, lambda log: log.get("metrics", {}).get("duration", 0) > 0)
-    _assert_any_span(stt_logs, lambda log: log.get("output", {}).get("text") == speech_text)
-    _assert_any_span(
-        stt_logs, lambda log: log.get("metadata", {}).get("livekit_metrics", {}).get("audio_duration", 0) > 0
-    )
-    _assert_all_spans(stt_logs, lambda log: "audio_duration" not in log.get("metrics", {}))
-
-    stt_log = stt_logs[0]
-    assert "prompt_tokens" not in stt_log.get("metrics", {}), stt_log
-    assert "completion_tokens" not in stt_log.get("metrics", {}), stt_log
-    compact_livekit_metrics = stt_log.get("metadata", {}).get("livekit_metrics", {})
-    # LiveKit only reports STT tokens for streamed recognition; the non-streamed
-    # HTTP path emits STTMetrics without usage.
-    streamed_stt_logs = [log for log in stt_logs if log.get("metadata", {}).get("livekit_metrics", {}).get("streamed")]
-    if streamed_stt_logs and {"input_audio_tokens", "total_tokens"}.issubset(STTMetrics.model_fields):
-        _assert_any_span(
-            streamed_stt_logs,
-            lambda log: all(
-                log.get("metadata", {}).get("livekit_metrics", {}).get(field, 0) > 0
-                for field in ("total_tokens", "input_audio_tokens")
-            ),
-        )
-    assert "duration" not in compact_livekit_metrics, stt_log
-    assert "label" not in compact_livekit_metrics, stt_log
-    assert "metadata" not in compact_livekit_metrics, stt_log
-    assert "request_id" not in compact_livekit_metrics, stt_log
-
-
-def _assert_session_spans(logs):
-    session_logs = _spans_named(logs, "livekit_agent_session")
-    _assert_any_span(session_logs, lambda log: log.get("root_span_id"))
-    _assert_no_metrics(session_logs, "prompt_tokens", "completion_tokens", "tokens")
-
-
-def _assert_no_function_tool_spans_without_tools(logs):
-    assert not _spans_named(logs, "function_tool")
-
-
-def _assert_voice_turn_parenting(logs, outer_parent_name):
-    outer_parent_log = _single_span(logs, outer_parent_name)
-    session_log = _single_span(logs, "livekit_agent_session")
-    assert session_log.get("span_parents") == [outer_parent_log.get("span_id")]
-    assert "end" in session_log.get("metrics", {})
-
-    for child_name in ("llm_request_run", "user_speaking", "vad_endpointing"):
-        child_log = _single_span(logs, child_name)
-        assert child_log.get("span_parents") == [session_log.get("span_id")], child_name
-    assert _single_span(logs, "llm_request_run")["span_attributes"]["type"].value == "task"
-
-
-def _assert_custom_metrics_stay_in_metadata(logs):
-    custom_metric_names = {
-        "audio_duration",
-        "end_of_turn_delay",
-        "input_audio_tokens",
-        "input_cached_tokens",
-        "input_text_tokens",
-        "on_user_turn_completed_delay",
-        "output_audio_tokens",
-        "output_text_tokens",
-        "tokens_per_second",
-        "transcription_delay",
-    }
-    _assert_all_spans(logs, lambda log: not (custom_metric_names & set(log.get("metrics", {}))))
-
-
-async def _run_silero_vad(vad, rtc, speech_frames):
-    stream = vad.stream()
-
-    async def consume():
-        async for _ in stream:
-            pass
-
-    consume_task = asyncio.create_task(consume())
+    original = traces.tracer._tracer_provider
+    provider = TracerProvider()
     try:
-        for frame in speech_frames[:80]:
-            stream.push_frame(frame)
-            await asyncio.sleep(0.01)
-        sample_rate = getattr(speech_frames[0], "sample_rate", 16000) if speech_frames else 16000
-        num_channels = getattr(speech_frames[0], "num_channels", 1) if speech_frames else 1
-        samples_per_channel = max(1, sample_rate // 100)
-        for _ in range(600):
-            stream.push_frame(
-                rtc.AudioFrame(
-                    data=b"\0\0" * samples_per_channel * num_channels,
-                    sample_rate=sample_rate,
-                    num_channels=num_channels,
-                    samples_per_channel=samples_per_channel,
-                )
-            )
-            await asyncio.sleep(0.01)
-        await asyncio.sleep(0.1)
+        telemetry.set_tracer_provider(provider, allow_pii=False)
+        assert setup_livekit_agents()
+        assert not Privacy(AgentSession(), None).allows_content()
     finally:
-        await stream.aclose()
-        consume_task.cancel()
-        try:
-            await consume_task
-        except asyncio.CancelledError:
-            pass
+        traces.tracer.set_provider(original)
+        provider.shutdown()
+
+
+def test_explicit_setup_survives_automatic_setup():
+    from braintrust.integrations.livekit_agents import tracing
+
+    original = tracing._OPTIONS
+    try:
+        options = AudioRecordingOptions(encoding=AudioEncoding(codec="pcm", container="wav"))
+        assert setup_livekit_agents(audio=options)
+        assert setup_livekit_agents()
+        assert tracing._OPTIONS is options
+    finally:
+        tracing._OPTIONS = original
+
+
+def test_auto_instrument_livekit_agents_subprocess():
+    verify_autoinstrument_script("test_auto_livekit_agents.py")
+    verify_autoinstrument_script("test_auto_livekit_agents_before_import.py")

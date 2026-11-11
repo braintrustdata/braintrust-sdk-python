@@ -242,6 +242,9 @@ class SpanInternalOptions(TypedDict, total=False):
     `context.span_origin.instrumentation.name`. Set by SDK integrations
     (`openai-auto`, `anthropic-auto`, etc.)."""
 
+    export_customizers: tuple[SpanCustomizer, ...]
+    """Internal per-span privacy filters, applied before user customizers."""
+
     initial_span_write_as_merge: bool
     """Emit the initial row as a merge for an SDK-owned deterministic span."""
 
@@ -3329,7 +3332,7 @@ def start_span(
             # No row id (object-only slug): there is no span to link to, so start
             # a fresh root, keeping the object routing from the slug.
             parent_span_ids = None
-        return SpanImpl(
+        return _start_span_impl(
             parent_object_type=parent_obj.object_type,
             parent_object_id=LazyValue(_span_components_to_object_id_lambda(parent_obj), use_mutex=False),
             parent_compute_object_metadata_args=parent_obj.compute_object_metadata_args,
@@ -4314,7 +4317,7 @@ def _internal_resume_span(exported: str, state: BraintrustState | None = None) -
     components = SpanComponentsV4.from_str(exported)
     if not components.row_id or not components.span_id or not components.root_span_id:
         raise ValueError("Only exported root spans can be resumed")
-    return SpanImpl(
+    return _start_span_impl(
         parent_object_type=components.object_type,
         parent_object_id=LazyValue(_span_components_to_object_id_lambda(components), use_mutex=False),
         parent_compute_object_metadata_args=components.compute_object_metadata_args,
@@ -4921,7 +4924,7 @@ class Experiment(_ExperimentFetcher, Exportable):
             parent_span_ids=None,
             propagated_event=propagated_event,
         )
-        return SpanImpl(
+        return _start_span_impl(
             **parent_args,
             name=name,
             type=type,
@@ -5028,6 +5031,32 @@ def _internal_reset_span_hooks(token: contextvars.Token) -> None:
     _span_hooks.reset(token)
 
 
+def _start_span_impl(*, parent_export_customizers: tuple[SpanCustomizer, ...] = (), **kwargs: Any) -> Span:
+    """Apply automatic-provider policy for every native span factory."""
+    internal = kwargs.get("internal") or {}
+    if internal.get("instrumentation"):
+        from ._instrumentation import AUTOMATIC_PROVIDERS, _ProviderPrivacyCustomizer, provider_content_allowed
+
+        if internal["instrumentation"] in AUTOMATIC_PROVIDERS:
+            customizers = list(internal.get("export_customizers", ()))
+            for customizer in parent_export_customizers:
+                if isinstance(customizer, _ProviderPrivacyCustomizer) and customizer not in customizers:
+                    customizers.append(customizer)
+            policy = provider_content_allowed.get()
+            if policy is not None and not any(
+                isinstance(customizer, _ProviderPrivacyCustomizer) and customizer.policy == policy
+                for customizer in customizers
+            ):
+                customizers.append(_ProviderPrivacyCustomizer(policy))
+            if any(
+                isinstance(customizer, _ProviderPrivacyCustomizer) and not customizer.policy()
+                for customizer in customizers
+            ):
+                return NOOP_SPAN
+            kwargs["internal"] = {**internal, "export_customizers": tuple(customizers)}
+    return SpanImpl(**kwargs)
+
+
 class SpanImpl(Span):
     """Primary implementation of the `Span` interface. See the `Span` interface for full details on each method.
 
@@ -5124,6 +5153,7 @@ class SpanImpl(Span):
         internal = internal or {}
         # Integration consumers use this provenance independently of export hooks.
         self._instrumentation = internal.get("instrumentation") or "braintrust-python-logger"
+        self._export_customizers = internal.get("export_customizers", ())
         internal_data["context"] = merge_span_origin_context(
             caller_location or {},
             self._instrumentation,
@@ -5225,7 +5255,7 @@ class SpanImpl(Span):
 
         # Snapshot at log time so the span cache and the export agree on whether
         # (and how) this record is customized.
-        customizers = _get_span_customizers()
+        customizers = self._export_customizers + _get_span_customizers()
         pending_cache_key = (
             object()
             if customizers
@@ -5317,7 +5347,8 @@ class SpanImpl(Span):
         # - If parent is not provided, we explicitly set parent_span_ids from self
         # Either way, we don't want to look up parent from context manager
         lookup_span_parent = False
-        return SpanImpl(
+        return _start_span_impl(
+            parent_export_customizers=self._export_customizers,
             **_start_span_parent_args(
                 parent=parent,
                 parent_object_type=self.parent_object_type,
@@ -6555,7 +6586,7 @@ class Logger(Exportable):
             parent_span_ids=None,
             propagated_event=propagated_event,
         )
-        return SpanImpl(
+        return _start_span_impl(
             **parent_args,
             name=name,
             type=type,
