@@ -172,9 +172,7 @@ async def test_session_start_connects_room_without_crashing(livekit_server, memo
         owner = getattr(session, STATE_ATTR)
         # The agent's participant is labelled once the room has connected.
         assert owner.participants["agent-output"]
-        async with asyncio.timeout(10):
-            while session._room_io.linked_participant is None:
-                await asyncio.sleep(0.05)
+        await _linked(session)
         # attach_media runs on every activity start; repeats must not relabel.
         owner.attach_media()
         owner.attach_media()
@@ -189,14 +187,17 @@ async def test_session_start_connects_room_without_crashing(livekit_server, memo
     assert sorted(member["type"] for member in root["metadata"]["audio.participants"].values()) == ["agent", "user"]
 
 
-async def _linked(session, caller):
-    # Wait for LiveKit's own RoomIO to link this caller connection.
-    async with asyncio.timeout(10):
+async def _linked(session, caller=None):
+    # Wait for LiveKit's own RoomIO to link a caller (this connection, if given).
+    # Bounded with wait_for, which Python 3.10 supports.
+    async def poll():
         while True:
             linked = session._room_io.linked_participant
-            if linked is not None and linked.sid == caller.local_participant.sid:
+            if linked is not None and (caller is None or linked.sid == caller.local_participant.sid):
                 return linked
             await asyncio.sleep(0.05)
+
+    return await asyncio.wait_for(poll(), 10)
 
 
 def _participant_types(rows):
