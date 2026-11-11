@@ -42,3 +42,10 @@ class BufferedAsyncBody(StreamingBody):
 
     def close(self):
         return self._self_original.close()
+
+    async def aclose(self):
+        close = getattr(self._self_original, "aclose", None)
+        if close is not None:
+            return await close()
+        # Older aiobotocore releases only expose synchronous close().
+        return self.close()

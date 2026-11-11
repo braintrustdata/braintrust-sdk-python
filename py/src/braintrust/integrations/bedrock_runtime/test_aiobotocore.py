@@ -6,6 +6,7 @@ import inspect
 import json
 import os
 import time
+import warnings
 
 import pytest
 from braintrust import current_span
@@ -103,6 +104,7 @@ async def test_aiobotocore_tracing(entry, operation, cassette, memory_logger, vc
                     assert output["output"]["message"]["content"]
                     assert response_body.tell() == len(data)
                     assert await stream.read() == b""
+                await response_body.aclose()
             else:
                 response = await getattr(client, operation)(**_converse_kwargs())
                 if operation == "converse_stream":
@@ -276,3 +278,27 @@ async def test_aiobotocore_request_cancellation_is_logged(monkeypatch, memory_lo
         assert len(spans) == 1
         assert "cancelled before response" in spans[0]["error"]
         assert "end" in spans[0]["metrics"]
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_aiobotocore_httpx_body_aclose(memory_logger, vcr):
+    httpx_session = pytest.importorskip("aiobotocore.httpxsession")
+    from aiobotocore.config import AioConfig
+
+    config = AioConfig(http_session_cls=httpx_session.HttpxSession)
+    with vcr.use_cassette("test_wrap_bedrock_invoke_model_preserves_response_body_and_logs_json.yaml"):
+        async with get_session().create_client("bedrock-runtime", region_name=REGION, config=config) as client:
+            wrap_bedrock(client)
+            response = await client.invoke_model(**_invoke_kwargs())
+            body = response["body"]
+            output = json.loads(await body.read())
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter("always", RuntimeWarning)
+                await body.aclose()
+            assert not caught
+            assert body._self_original.raw_stream.is_closed
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    assert spans[0]["output"] == output
