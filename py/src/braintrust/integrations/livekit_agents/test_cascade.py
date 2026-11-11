@@ -57,7 +57,7 @@ async def test_consumed_input_drives_real_cascade(rooms, memory_logger, monkeypa
             assert frames
 
             def conversation(event):
-                if event.item.role == "assistant":
+                if event.item.type == "message" and event.item.role == "assistant":
                     heard.set()
 
             session.on("conversation_item_added", conversation)
@@ -91,12 +91,15 @@ async def test_consumed_input_drives_real_cascade(rooms, memory_logger, monkeypa
     start, end = recognition["metrics"]["start"], recognition["metrics"]["end"]
     assert start < measured.timestamp <= end
     assert start <= measured.timestamp - measured.duration + 0.001
-    assert end - start == pytest.approx(measured.duration, abs=0.01)
+    # The wrapper includes span setup and scheduling around LiveKit's measured
+    # request. Assert containment, not a fixed overhead budget on shared CI.
     assert recognition["metadata"]["model"] == stt.model
     assert recognition["metadata"]["provider"] == stt.provider
     transcriptions = named(rows, "Transcription")
     assert len(transcriptions) == 1
     assert transcriptions[0]["span_parents"] == [recognition["span_id"]]
+    assert start <= transcriptions[0]["metrics"]["start"]
+    assert transcriptions[0]["metrics"]["end"] <= end
     assert recognition["output"] == [{"role": "user", "content": "Hello there."}]
     assert named(rows, "llm_response")
     assert named(rows, "tts")
