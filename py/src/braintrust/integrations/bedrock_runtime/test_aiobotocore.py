@@ -65,87 +65,124 @@ def clean_client_creators():
                         delattr(obj, name)
 
 
+def _assert_bedrock_span(span, *, name, start, end):
+    assert span["span_attributes"]["name"] == name
+    assert span["span_attributes"]["type"] == "llm"
+    assert span["metadata"]["provider"] == "bedrock"
+    assert span["metadata"]["model"] == MODEL
+    assert span["context"]["span_origin"]["instrumentation"]["name"] == "bedrock-runtime-auto"
+    assert_metrics_are_valid(span["metrics"], start, end)
+
+
 @pytest.mark.vcr
 @pytest.mark.asyncio
-@pytest.mark.parametrize("entry", ["wrap", "setup"])
-@pytest.mark.parametrize(
-    "operation,cassette",
-    [
-        ("converse", "test_wrap_bedrock_converse.yaml"),
-        ("converse_stream", "test_wrap_bedrock_converse_stream.yaml"),
-        ("invoke_model", "test_wrap_bedrock_invoke_model_preserves_response_body_and_logs_json.yaml"),
-    ],
-)
-async def test_aiobotocore_tracing(entry, operation, cassette, memory_logger, vcr):
-    if entry == "setup":
-        assert setup_bedrock()
-        assert setup_bedrock()
-    async with get_session().create_client("bedrock-runtime", region_name=REGION) as client:
-        if entry == "wrap":
+@pytest.mark.parametrize("streaming", [False, True])
+async def test_aiobotocore_converse(streaming, memory_logger, vcr):
+    operation = "converse_stream" if streaming else "converse"
+    with vcr.use_cassette(f"test_wrap_bedrock_{operation}.yaml"):
+        async with get_session().create_client("bedrock-runtime", region_name=REGION) as client:
             assert wrap_bedrock(client) is client
             assert wrap_bedrock(client) is client
-        with vcr.use_cassette(cassette):
             parent = current_span()
             start = time.time()
-            if operation == "invoke_model":
-                body = {
-                    "messages": [{"role": "user", "content": [{"text": "Say hello in one word."}]}],
-                    "inferenceConfig": {"max_new_tokens": 20, "temperature": 0},
-                }
-                response = await client.invoke_model(
-                    modelId=MODEL, body=json.dumps(body), contentType="application/json", accept="application/json"
+            response = await getattr(client, operation)(**_converse_kwargs())
+            if streaming:
+                assert all("end" not in record.get().get("metrics", {}) for record in memory_logger.logs)
+                events = [event async for event in response["stream"]]
+                text = "".join(
+                    event["contentBlockDelta"]["delta"].get("text", "")
+                    for event in events
+                    if "contentBlockDelta" in event
                 )
-                response_body = response["body"]
-                assert response_body.tell() == 0
-                async with response_body as stream:
+                assert text
+                response["stream"].close()
+            else:
+                assert response["usage"]["totalTokens"] > 0
+                text = response["output"]["message"]["content"][0]["text"]
+            end = time.time()
+            assert current_span() is parent
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    _assert_bedrock_span(
+        span, name="bedrock.converse-stream" if streaming else "bedrock.converse", start=start, end=end
+    )
+    assert span["input"][0]["role"] == "system"
+    assert span["output"] == [{"role": "assistant", "content": [{"type": "text", "text": text}]}]
+    if streaming:
+        assert span["metrics"]["time_to_first_token"] >= 0
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "streaming,backend",
+    [(False, "aiohttp"), (True, "aiohttp"), (False, "httpx")],
+)
+async def test_aiobotocore_invoke_model(streaming, backend, memory_logger, vcr):
+    from aiobotocore.config import AioConfig
+
+    config = None
+    if backend == "httpx":
+        httpx_session = pytest.importorskip("aiobotocore.httpxsession")
+        config = AioConfig(http_session_cls=httpx_session.HttpxSession)
+    operation = "invoke_model_with_response_stream" if streaming else "invoke_model"
+    cassette = (
+        "test_aiobotocore_invoke_model_stream.yaml"
+        if streaming
+        else "test_wrap_bedrock_invoke_model_preserves_response_body_and_logs_json.yaml"
+    )
+    kwargs = _invoke_kwargs()
+    with vcr.use_cassette(cassette):
+        async with get_session().create_client("bedrock-runtime", region_name=REGION, config=config) as client:
+            wrap_bedrock(client)
+            parent = current_span()
+            start = time.time()
+            response = await getattr(client, operation)(**kwargs)
+            body = response["body"]
+            if streaming:
+                output = [json.loads(event["chunk"]["bytes"]) async for event in body if "chunk" in event]
+                assert output
+                body.close()
+            else:
+                assert body.tell() == 0
+                async with body as stream:
                     prefix = await stream.read(4)
                     data = prefix + b"".join([chunk async for chunk in stream.iter_chunks(17)])
                     output = json.loads(data)
                     assert output["output"]["message"]["content"]
-                    assert response_body.tell() == len(data)
+                    assert body.tell() == len(data)
                     assert await stream.read() == b""
-                await response_body.aclose()
-            else:
-                response = await getattr(client, operation)(**_converse_kwargs())
-                if operation == "converse_stream":
-                    # Stream spans remain open until the async stream is consumed.
-                    assert all("end" not in record.get().get("metrics", {}) for record in memory_logger.logs)
-                    events = [event async for event in response["stream"]]
-                    text = "".join(
-                        event["contentBlockDelta"]["delta"].get("text", "")
-                        for event in events
-                        if "contentBlockDelta" in event
-                    )
-                    assert text
-                    response["stream"].close()
-                else:
-                    assert response["output"]["message"]["role"] == "assistant"
-                    assert response["usage"]["totalTokens"] > 0
+                # HTTPX has async close(), whereas aiohttp closes synchronously.
+                # Awaiting the wrong implementation silently discards a coroutine.
+                with warnings.catch_warnings(record=True) as caught:
+                    warnings.simplefilter("always", RuntimeWarning)
+                    await body.aclose()
+                assert not caught
+                if backend == "httpx":
+                    assert body._self_original.raw_stream.is_closed
             end = time.time()
             assert current_span() is parent
-        spans = memory_logger.pop()
-        assert len(spans) == 1
-        span = spans[0]
-        assert span["output"]
-        assert span["span_attributes"]["type"] == "llm"
-        assert span["metadata"]["provider"] == "bedrock"
-        assert span["metadata"]["model"] == MODEL
-        assert span["context"]["span_origin"]["instrumentation"]["name"] == "bedrock-runtime-auto"
-        assert_metrics_are_valid(span["metrics"], start, end)
-        if operation == "invoke_model":
-            assert span["output"] == output
-            assert span["input"]["body"] == body
-        else:
-            assert span["output"][0]["role"] == "assistant"
-            assert span["input"][0]["role"] == "system"
-            if operation == "converse_stream":
-                assert span["output"][0]["content"][0]["text"] == text
-                assert span["metrics"]["time_to_first_token"] >= 0
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    _assert_bedrock_span(
+        span, name="bedrock.invoke_model_stream" if streaming else "bedrock.invoke_model", start=start, end=end
+    )
+    assert span["input"]["body"] == json.loads(kwargs["body"])
+    assert span["output"] == output
+    if streaming:
+        assert span["metrics"]["time_to_first_token"] >= 0
 
 
 @pytest.mark.asyncio
-async def test_aiobotocore_setup_leaves_other_services_unchanged():
+async def test_aiobotocore_setup_wraps_only_bedrock_clients():
     assert setup_bedrock()
+    assert setup_bedrock()
+    async with get_session().create_client("bedrock-runtime", region_name=REGION) as client:
+        assert BedrockRuntimeClientMethodsPatcher.is_patched(None, None, target=client)
     async with get_session().create_client("s3", region_name=REGION) as client:
         assert wrap_bedrock(client) is client
         assert not BedrockRuntimeClientMethodsPatcher.is_patched(None, None, target=client)
@@ -155,30 +192,6 @@ async def test_aiobotocore_setup_leaves_other_services_unchanged():
 def test_auto_instrument_aiobotocore_subprocess(monkeypatch, import_first):
     monkeypatch.setenv("BRAINTRUST_TEST_AIOBOTOCORE_IMPORT_FIRST", str(int(import_first)))
     verify_autoinstrument_script("test_auto_aiobotocore.py")
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-@pytest.mark.parametrize("entry", ["wrap", "setup"])
-async def test_aiobotocore_invoke_model_stream(entry, memory_logger, vcr):
-    if entry == "setup":
-        assert setup_bedrock()
-    with vcr.use_cassette("test_aiobotocore_invoke_model_stream.yaml"):
-        async with get_session().create_client("bedrock-runtime", region_name=REGION) as client:
-            if entry == "wrap":
-                wrap_bedrock(client)
-            start = time.time()
-            response = await client.invoke_model_with_response_stream(**_invoke_kwargs())
-            chunks = [json.loads(event["chunk"]["bytes"]) async for event in response["body"] if "chunk" in event]
-            end = time.time()
-            response["body"].close()
-            spans = memory_logger.pop()
-            assert len(spans) == 1
-            span = spans[0]
-            assert span["span_attributes"]["name"] == "bedrock.invoke_model_stream"
-            assert span["output"] == chunks
-            assert span["metrics"]["time_to_first_token"] >= 0
-            assert_metrics_are_valid(span["metrics"], start, end)
 
 
 @pytest.mark.vcr
@@ -278,27 +291,3 @@ async def test_aiobotocore_request_cancellation_is_logged(monkeypatch, memory_lo
         assert len(spans) == 1
         assert "cancelled before response" in spans[0]["error"]
         assert "end" in spans[0]["metrics"]
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_aiobotocore_httpx_body_aclose(memory_logger, vcr):
-    httpx_session = pytest.importorskip("aiobotocore.httpxsession")
-    from aiobotocore.config import AioConfig
-
-    config = AioConfig(http_session_cls=httpx_session.HttpxSession)
-    with vcr.use_cassette("test_wrap_bedrock_invoke_model_preserves_response_body_and_logs_json.yaml"):
-        async with get_session().create_client("bedrock-runtime", region_name=REGION, config=config) as client:
-            wrap_bedrock(client)
-            response = await client.invoke_model(**_invoke_kwargs())
-            body = response["body"]
-            output = json.loads(await body.read())
-            with warnings.catch_warnings(record=True) as caught:
-                warnings.simplefilter("always", RuntimeWarning)
-                await body.aclose()
-            assert not caught
-            assert body._self_original.raw_stream.is_closed
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    assert spans[0]["output"] == output

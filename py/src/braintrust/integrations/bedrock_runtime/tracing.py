@@ -59,11 +59,11 @@ def _converse_wrapper(wrapped, instance, args, kwargs):  # noqa: ARG001
     return _call_and_trace(wrapped, args, kwargs, span, _finish_converse)
 
 
-def _finish_converse(result, span, start_time):
+def _finish_converse(result: dict[str, Any], span, start_time):
     metadata = _converse_response_metadata(result)
     metrics = {
         **_timing_metrics(start_time, time.time()),
-        **_converse_usage_metrics(result.get("usage") if isinstance(result, dict) else None),
+        **_converse_usage_metrics(result.get("usage")),
     }
     _log_and_end_span(span, output=_converse_output(result), metrics=metrics, metadata=metadata or None)
     return result
@@ -78,14 +78,8 @@ def _converse_stream_wrapper(wrapped, instance, args, kwargs):  # noqa: ARG001
     return _call_and_trace(wrapped, args, kwargs, span, _finish_converse_stream)
 
 
-def _finish_converse_stream(result, span, start_time):
-    if isinstance(result, dict) and "stream" in result:
-        result = dict(result)
-        result["stream"] = _TracedConverseStream(result["stream"], span, start_time)
-        return result
-
-    _log_and_end_span(span, metrics=_timing_metrics(start_time, time.time()))
-    return result
+def _finish_converse_stream(result: dict[str, Any], span, start_time):
+    return {**result, "stream": _TracedConverseStream(result["stream"], span, start_time)}
 
 
 def _invoke_model_wrapper(wrapped, instance, args, kwargs):  # noqa: ARG001
@@ -98,30 +92,23 @@ def _invoke_model_wrapper(wrapped, instance, args, kwargs):  # noqa: ARG001
     return _call_and_trace(wrapped, args, kwargs, span, _finish_invoke_model, model_id)
 
 
-def _finish_invoke_model(result, span, start_time, model_id):
-    output = None
-    if isinstance(result, dict) and "body" in result:
-        if inspect.iscoroutinefunction(getattr(result["body"], "read", None)):
-            return _finish_async_invoke_model(result, span, start_time, model_id)
-        body_bytes = _read_streaming_body(result["body"])
-        if body_bytes is not None:
-            output = _parse_json_bytes(body_bytes)
-            result = dict(result)
-            result["body"] = _replacement_streaming_body(body_bytes)
-    return _log_invoke_model(result, span, start_time, model_id, output)
+def _finish_invoke_model(result: dict[str, Any], span, start_time, model_id):
+    data = result["body"].read()
+    if inspect.isawaitable(data):
+        return _finish_async_invoke_model(result, span, start_time, model_id, data)
+    result = {**result, "body": _replacement_streaming_body(data)}
+    return _log_invoke_model(result, span, start_time, model_id, _parse_json_body(data))
 
 
-async def _finish_async_invoke_model(result, span, start_time, model_id):
+async def _finish_async_invoke_model(result: dict[str, Any], span, start_time, model_id, body_read):
     from ._async_body import BufferedAsyncBody
 
-    original_body = result["body"]
-    data = await original_body.read()
-    result = dict(result)
-    result["body"] = BufferedAsyncBody(original_body, data)
-    return _log_invoke_model(result, span, start_time, model_id, _parse_json_bytes(data))
+    data = await body_read
+    result = {**result, "body": BufferedAsyncBody(result["body"], data)}
+    return _log_invoke_model(result, span, start_time, model_id, _parse_json_body(data))
 
 
-def _log_invoke_model(result, span, start_time, model_id, output):
+def _log_invoke_model(result: dict[str, Any], span, start_time, model_id, output):
     output_usage = output.get("usage") if isinstance(output, dict) else None
     metrics = {
         **_timing_metrics(start_time, time.time()),
@@ -148,18 +135,12 @@ def _invoke_model_stream_wrapper(wrapped, instance, args, kwargs):  # noqa: ARG0
     return _call_and_trace(wrapped, args, kwargs, span, _finish_invoke_model_stream, model_id)
 
 
-def _finish_invoke_model_stream(result, span, start_time, model_id):
+def _finish_invoke_model_stream(result: dict[str, Any], span, start_time, model_id):
     # The served tier is a response header, so it is known before the body streams.
     metadata = _invoke_model_response_metadata(result)
-    if isinstance(result, dict) and "body" in result:
-        if metadata:
-            span.log(metadata=metadata)
-        result = dict(result)
-        result["body"] = _TracedInvokeModelStream(result["body"], span, start_time, model_id)
-        return result
-
-    _log_and_end_span(span, metrics=_timing_metrics(start_time, time.time()), metadata=metadata)
-    return result
+    if metadata:
+        span.log(metadata=metadata)
+    return {**result, "body": _TracedInvokeModelStream(result["body"], span, start_time, model_id)}
 
 
 def _call_and_trace(wrapped, args, kwargs, span, finish, *finish_args):
@@ -276,9 +257,7 @@ def _invoke_model_metadata(kwargs: dict[str, Any], *, endpoint: str, stream: boo
     return metadata
 
 
-def _invoke_model_response_metadata(result: Any) -> dict[str, Any]:
-    if not isinstance(result, dict):
-        return {}
+def _invoke_model_response_metadata(result: dict[str, Any]) -> dict[str, Any]:
     # boto3 surfaces the X-Amzn-Bedrock-Service-Tier response header as a top-level string.
     return _service_tier_metadata(served=result.get("serviceTier"))
 
@@ -470,18 +449,14 @@ def _reasoning_to_json(value: Any) -> dict[str, Any]:
     return result
 
 
-def _converse_output(result: Any) -> Any:
-    if not isinstance(result, dict):
-        return None
+def _converse_output(result: dict[str, Any]) -> Any:
     output = result.get("output")
     if isinstance(output, dict) and isinstance(output.get("message"), dict):
         return [_message_to_json(output["message"])]
     return output
 
 
-def _converse_response_metadata(result: Any) -> dict[str, Any]:
-    if not isinstance(result, dict):
-        return {}
+def _converse_response_metadata(result: dict[str, Any]) -> dict[str, Any]:
     metadata: dict[str, Any] = {}
     if result.get("stopReason") is not None:
         metadata["stop_reason"] = result["stopReason"]
@@ -552,37 +527,18 @@ def _invoke_model_input(kwargs: dict[str, Any]) -> dict[str, Any]:
 
 
 def _parse_json_body(body: Any) -> Any:
-    if body is None:
-        return None
-    if isinstance(body, str):
-        return _parse_json_text(body)
+    # Decode Bedrock's wire body; leave span serialization to the SDK.
     if isinstance(body, (bytes, bytearray)):
-        return _parse_json_bytes(bytes(body))
-    return None
-
-
-def _parse_json_bytes(data: bytes) -> Any:
-    try:
-        return json.loads(data.decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError):
-        return data.decode("utf-8", errors="replace")
-
-
-def _parse_json_text(value: str) -> Any:
-    try:
-        return json.loads(value)
-    except json.JSONDecodeError:
-        return value
-
-
-def _read_streaming_body(body: Any) -> bytes | None:
-    read = getattr(body, "read", None)
-    if not callable(read):
+        try:
+            body = body.decode("utf-8")
+        except UnicodeDecodeError:
+            return body.decode("utf-8", errors="replace")
+    if not isinstance(body, str):
         return None
-    data = read()
-    if isinstance(data, (bytes, bytearray)):
-        return bytes(data)
-    return None
+    try:
+        return json.loads(body)
+    except json.JSONDecodeError:
+        return body
 
 
 def _replacement_streaming_body(data: bytes) -> Any:
@@ -591,12 +547,9 @@ def _replacement_streaming_body(data: bytes) -> Any:
     return StreamingBody(io.BytesIO(data), len(data))
 
 
-def _invoke_header_usage_metrics(result: Any) -> dict[str, Any]:
+def _invoke_header_usage_metrics(result: dict[str, Any]) -> dict[str, Any]:
     """Token counts Bedrock reports in the response headers for every InvokeModel call."""
-    metadata = result.get("ResponseMetadata") if isinstance(result, dict) else None
-    headers = metadata.get("HTTPHeaders") if isinstance(metadata, dict) else None
-    if not isinstance(headers, dict):
-        return {}
+    headers = result["ResponseMetadata"]["HTTPHeaders"]
     metrics: dict[str, Any] = {}
     for header, key in (
         ("x-amzn-bedrock-input-token-count", "prompt_tokens"),
@@ -669,10 +622,11 @@ def _anthropic_invoke_usage_metrics(model_id: Any, output: Any) -> dict[str, Any
     return metrics
 
 
-class _AsyncTracedStream(ABC):
-    """Share async iteration and finalization across the two event protocols."""
+class _TracedStream(ABC):
+    """Share sync/async iteration and cleanup across the event protocols."""
 
     _stream: Any
+    _async_iterator: Any = None
 
     @abstractmethod
     def _observe(self, event: Any) -> None:
@@ -682,11 +636,31 @@ class _AsyncTracedStream(ABC):
     def _finish(self, error: BaseException | None) -> None:
         """Log and end the span once."""
 
+    def __iter__(self):
+        try:
+            for event in self._stream:
+                self._observe(event)
+                yield event
+        except Exception as error:
+            self._finish(error)
+            raise
+        else:
+            self._finish(None)
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._stream, name)
+
+    def close(self):
+        try:
+            return self._stream.close()
+        finally:
+            self._finish(None)
+
     def __aiter__(self):
         return self
 
     async def __anext__(self):
-        if not hasattr(self, "_async_iterator"):
+        if self._async_iterator is None:
             self._async_iterator = self._stream.__aiter__()
         try:
             event = await self._async_iterator.__anext__()
@@ -705,7 +679,7 @@ class _AsyncTracedStream(ABC):
             self._finish(None)
 
 
-class _TracedConverseStream(_AsyncTracedStream):
+class _TracedConverseStream(_TracedStream):
     """Wrap a botocore EventStream and log the final span when it drains."""
 
     def __init__(self, stream: Any, span: Any, start_time: float):
@@ -721,27 +695,6 @@ class _TracedConverseStream(_AsyncTracedStream):
         self._stop_reason: str | None = None
         self._served_tier = _ServedServiceTierTracker(span)
         self._finished = False
-
-    def __iter__(self):
-        try:
-            for event in self._stream:
-                self._observe(event)
-                yield event
-        except Exception as error:
-            self._finish(error)
-            raise
-        else:
-            self._finish(None)
-
-    def __getattr__(self, name: str) -> Any:
-        return getattr(self._stream, name)
-
-    def close(self):
-        close = getattr(self._stream, "close", None)
-        try:
-            return close() if callable(close) else None
-        finally:
-            self._finish(None)
 
     def _observe(self, event: Any) -> None:
         if not isinstance(event, dict):
@@ -821,7 +774,7 @@ class _TracedConverseStream(_AsyncTracedStream):
         _log_and_end_span(self._span, output=output, metrics=metrics, metadata=metadata or None)
 
 
-class _TracedInvokeModelStream(_AsyncTracedStream):
+class _TracedInvokeModelStream(_TracedStream):
     """Wrap an InvokeModelWithResponseStream EventStream and log observed chunks."""
 
     def __init__(self, stream: Any, span: Any, start_time: float, model_id: Any):
@@ -833,27 +786,6 @@ class _TracedInvokeModelStream(_AsyncTracedStream):
         self._chunks: list[Any] = []
         self._finished = False
 
-    def __iter__(self):
-        try:
-            for event in self._stream:
-                self._observe(event)
-                yield event
-        except Exception as error:
-            self._finish(error)
-            raise
-        else:
-            self._finish(None)
-
-    def __getattr__(self, name: str) -> Any:
-        return getattr(self._stream, name)
-
-    def close(self):
-        close = getattr(self._stream, "close", None)
-        try:
-            return close() if callable(close) else None
-        finally:
-            self._finish(None)
-
     def _observe(self, event: Any) -> None:
         if self._first_token_time is None:
             self._first_token_time = time.time()
@@ -861,7 +793,7 @@ class _TracedInvokeModelStream(_AsyncTracedStream):
             return
         chunk = event.get("chunk")
         if isinstance(chunk, dict) and isinstance(chunk.get("bytes"), (bytes, bytearray)):
-            self._chunks.append(_parse_json_bytes(bytes(chunk["bytes"])))
+            self._chunks.append(_parse_json_body(chunk["bytes"]))
         elif event:
             self._chunks.append(event)
 
