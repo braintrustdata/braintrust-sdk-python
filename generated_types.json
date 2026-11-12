@@ -498,6 +498,14 @@
             "format": "uuid",
             "description": "Unique identifier for the organization"
           },
+          "last_used_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Approximate time this credential was last used to authenticate. Updates are limited to once every 10 minutes and may be delayed by authorization caches. If null, no usage has been recorded."
+          },
           "expires_at": {
             "type": [
               "string",
@@ -7328,6 +7336,39 @@
               "description": "Path to the application's end-user identifier in metadata or span_attributes, for example [\"metadata\", \"customer_id\"]. This identifies an end user, not a session, request, organization, or the Braintrust user who created the project."
             }
           },
+          "pattern_alert_mention": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "workspace_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "mention_user_id": {
+                "type": "string",
+                "pattern": "^[UW][A-Z0-9]+$",
+                "description": "Slack member ID of the user or agent to mention in a Pattern alert's thread to investigate the pattern."
+              },
+              "mention_handle": {
+                "type": "string",
+                "maxLength": 80,
+                "description": "Username shown for the selected user or agent. Mentions use mention_user_id."
+              },
+              "mention_prompt": {
+                "type": "string",
+                "maxLength": 2000,
+                "pattern": "\\{\\{pattern\\}\\}",
+                "description": "Message posted after the mention in a Pattern alert's thread. {{pattern}} is replaced with a link to the pattern. Defaults to \"Please investigate this pattern: {{pattern}}. Review the evidence, identify the root cause, and suggest a fix.\""
+              }
+            },
+            "required": [
+              "workspace_id",
+              "mention_user_id"
+            ],
+            "description": "Project-wide Slack user or agent and prompt for Pattern alert threads. Applies only to destinations in the selected workspace. Unset or null disables mentions."
+          },
           "pattern_alert_destinations": {
             "type": [
               "array",
@@ -9226,6 +9267,14 @@
             ],
             "format": "uuid",
             "description": "Unique identifier for the organization"
+          },
+          "last_used_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Approximate time this credential was last used to authenticate. Updates are limited to once every 10 minutes and may be delayed by authorization caches. If null, no usage has been recorded."
           },
           "expires_at": {
             "type": [
