@@ -5,399 +5,80 @@ description: Work with Braintrust Python SDK VCR and cassette-backed tests. Use 
 
 # SDK VCR Workflows
 
-Use this skill for VCR and cassette work in the Braintrust Python SDK repo.
-
-This repo prefers real recorded integration coverage over mocks for provider behavior. Do not treat cassette work as an afterthought. The normal bug-fix path here is: reproduce with a failing cassette-backed test, implement the fix, and only re-record when the behavior change is intentional.
+This repo prefers real recorded provider coverage over mocks. The normal bug-fix path: reproduce with a failing cassette-backed test, implement the fix, and re-record only when the behavior change is intentional. `AGENTS.md` rules (work from `py/`, `mise`, red → green, no guessed session names) apply throughout.
 
 ## Read First
 
-Always read:
+- `py/pyproject.toml` `[tool.braintrust.matrix]` (provider version pins, what `latest` resolves to) and `py/noxfile.py` (session names)
+- `py/src/braintrust/conftest.py` (record modes, dummy keys, media sanitizers) and `py/src/braintrust/integrations/conftest.py` (version-aware cassette dirs)
+- the target test file and its `cassettes/<version>/` directory
 
-- `AGENTS.md`
-- `py/pyproject.toml` (`[tool.braintrust.matrix]` for provider version pins)
-- `py/noxfile.py`
-- `py/src/braintrust/conftest.py`
-- `py/src/braintrust/integrations/conftest.py` (shared version-aware cassette directory resolution)
-- the target provider test file under `py/src/braintrust/integrations/<provider>/` or `py/src/braintrust/wrappers/`
+Open these references when the task needs them:
+- [references/recording-failures.md](references/recording-failures.md) — a live recording failed (auth, quota, retired model, partial run), or a cassette-backed test fails and you need the debugging order.
+- [references/discovery-engine.md](references/discovery-engine.md) — recording `google_discoveryengine` (REST VCR + gRPC helper, gcloud ADC setup).
 
-Read when relevant:
+## How VCR Works Here
 
-- the provider integration package under `py/src/braintrust/integrations/<provider>/`
-- the provider cassette directory under `py/src/braintrust/integrations/<provider>/cassettes/<version>/`
-- `py/src/braintrust/cassettes/`
-- `py/src/braintrust/wrappers/cassettes/`
-- `py/src/braintrust/devserver/cassettes/`
-- `py/src/braintrust/wrappers/claude_agent_sdk/` for subprocess transport recordings instead of HTTP VCR
-- `py/src/braintrust/integrations/auto_test_scripts/` when auto-instrument subprocess coverage and cassettes interact
-
-Do not guess cassette locations or session names. Check the current tree and `py/noxfile.py` first.
-
-## Repo Rules To Follow
-
-These rules must stay aligned with `AGENTS.md`:
-
-- Work from `py/` for SDK tasks.
-- Use `mise` as the source of truth for tools and environment.
-- Do not guess nox session names or provider/version coverage. Provider version pins (including what "latest" resolves to) are in `py/pyproject.toml` `[tool.braintrust.matrix]`.
-- Default bug-fix workflow is red -> green.
-- Prefer VCR-backed provider tests over mocks or fakes whenever practical.
-- Treat mock/fake tests for provider behavior as an exception that requires justification, not as a neutral alternative.
-- Only re-record HTTP or subprocess cassettes when the behavior change is intentional. If unsure, ask the user.
-- Do not assume optional provider packages are installed outside the active nox session.
-
-## How VCR Works In This Repo
-
-Behavior from `py/src/braintrust/conftest.py` is the source of truth.
-
-Current defaults:
-
-- local default: `record_mode="once"`
-- CI default: `record_mode="none"`
-- fixtures inject dummy API keys and reset global state
-
-### Per-version cassette directories
-
-Integration cassettes are stored in version-specific subdirectories:
-
-- `py/src/braintrust/integrations/<provider>/cassettes/<version>/` (e.g. `cassettes/latest/`, `cassettes/1.71.0/`)
-
-The mechanism:
-
-- Nox sessions pass the version under test via the `BRAINTRUST_TEST_PACKAGE_VERSION` env var.
-- The shared `py/src/braintrust/integrations/conftest.py` provides a `vcr_cassette_dir` fixture that resolves `<test_dir>/cassettes/<version>/`.
-- When the env var is absent (e.g. running a test file directly outside nox), cassettes fall back to the base `cassettes/` directory.
-- Individual test files do not define their own `vcr_cassette_dir` or `cassette_library_dir` fixtures; the shared conftest handles it.
-- Claude Agent SDK `_test_transport.py` also reads `BRAINTRUST_TEST_PACKAGE_VERSION` for version-specific cassette resolution.
-
-Implications:
-
-- A test that passes locally by silently recording new traffic may still fail in CI if the cassette is missing or stale.
-- CI will not save you by recording fresh traffic. If the cassette is wrong, CI should fail.
-- Reproducing a CI VCR failure locally usually means running the exact nox session named in `py/noxfile.py`, not raw pytest in whatever environment happens to exist.
-- When re-recording, always use a nox session so cassettes land in the correct version subdirectory.
+- Record mode: `once` locally, `none` in CI. A local pass that silently recorded new traffic can still fail in CI.
+- Cassettes are per version: `integrations/<provider>/cassettes/<version>/` (e.g. `latest/`, `1.71.0/`). Nox sets `BRAINTRUST_TEST_PACKAGE_VERSION`; `integrations/conftest.py` resolves the directory. Without the env var (raw pytest), cassettes fall back to base `cassettes/` — so always record through nox.
+- Never add per-test `vcr_cassette_dir` / `cassette_library_dir` fixtures.
+- Other locations: `py/src/braintrust/cassettes/`, `py/src/braintrust/wrappers/cassettes/`, `py/src/braintrust/devserver/cassettes/`. Keep cassettes next to their tests and move them with the tests.
 
 ## Standard Workflow
 
-1. Identify the exact provider test or cassette-backed failure.
-2. Read `py/noxfile.py` and reproduce with the exact provider session and version.
-3. If fixing a bug, add or update a focused failing cassette-backed test first.
-4. Decide whether the intended behavior should reuse an existing cassette or requires a new or updated one.
-5. Re-record only the narrowest affected test when behavior intentionally changes.
-6. Re-run the exact provider session after recording.
-7. Expand only if shared integration code changed.
+1. Identify the exact failing test, then reproduce with the exact nox session and version from `py/noxfile.py`.
+2. For a bug, add or update a focused failing cassette-backed test first.
+3. Decide whether the test can reuse an existing cassette or needs a new one.
+4. Record only the narrowest affected test, then inspect the cassette diff.
+5. Re-run the provider session in replay (`--vcr-record=none`). Expand only if shared code changed.
 
-Do not re-record a broad provider suite when one focused test is enough.
+## Choosing Coverage
 
-Do not default to mocks/fakes just to avoid recording work. Extra setup effort is not, by itself, a good reason to abandon cassette-backed coverage.
+Use a cassette whenever the provider's request or response shape is part of the behavior: tracing/span contents derived from real payloads, streaming aggregation, version-specific provider behavior, or replacing older mock-heavy tests.
 
-## Choosing The Right Coverage Style
-
-### Prefer cassette-backed tests when:
-
-- validating real provider request or response shape
-- testing tracing/span contents derived from actual provider payloads
-- checking streaming aggregation against real wire behavior
-- confirming version-specific provider behavior that mocks could misrepresent
-- replacing older fake- or mock-heavy provider tests
-
-### Use mocks/fakes only when:
-
-- injecting a narrow error path that is hard to provoke via recordings
-- testing purely local patcher resolution or applicability logic
-- validating behavior that does not need real provider traffic
-- the code under test is entirely internal and a cassette would add little value
-
-If the task is about provider behavior and you can reasonably record it, prefer VCR.
-
-Do not use mocks/fakes as the primary regression test for provider behavior merely because:
-- the bug appears in local tracing or post-processing code
-- a mock is faster to write
-- recording requires adding a new cassette
-- an existing mock test already exists nearby
-
-In those situations, the right move is usually to add or update a focused cassette-backed test and keep any mock/unit test only as supplemental coverage.
-
-## Cassette Locations
-
-Common locations in this repo:
-
-- `py/src/braintrust/cassettes/`
-- `py/src/braintrust/wrappers/cassettes/`
-- `py/src/braintrust/devserver/cassettes/`
-- `py/src/braintrust/integrations/<provider>/cassettes/<version>/` for per-version integration cassettes
-- `py/src/braintrust/integrations/claude_agent_sdk/cassettes/<version>/` for Claude Agent SDK subprocess transport recordings
-
-Each version tested in a nox session gets its own cassette subdirectory (e.g. `cassettes/latest/`, `cassettes/0.48.0/`). The `latest` subdirectory holds cassettes for the unpinned latest version.
-
-Keep cassettes next to the tests they support. When migrating or moving tests, move the cassettes with them.
+Mocks or fakes only for: a narrow error path recordings cannot provoke, purely local patcher resolution or version routing, or internal code where traffic adds nothing. Hand-built stand-ins for provider objects (stub clients, fake tools, response dicts) count as fakes. "The bug is in local post-processing", "a mock is faster", or "a mock already exists nearby" are not reasons. If you choose a mock for provider behavior, state why a cassette is impractical.
 
 ## Commands
-
-Run from `py/` unless the task is clearly repo-level.
-
-Common provider VCR commands:
-
-```bash
-cd py
-nox -s "test_openai(latest)"
-nox -s "test_openai(latest)" -- -k "test_openai_chat_metrics"
-nox -s "test_openai(latest)" -- --disable-vcr
-nox -s "test_openai(latest)" -- --vcr-record=all -k "test_openai_chat_metrics"
-```
-
-Generic reproduction shape:
 
 ```bash
 cd py
 nox -s "test_<provider>(<version>)"
 nox -s "test_<provider>(<version>)" -- -k "test_name"
-nox -s "test_<provider>(<version>)" -- --vcr-record=all -k "test_name"
+nox -s "test_<provider>(<version>)" -- --vcr-record=all -k "test_name"   # narrow re-record
+nox -s "test_<provider>(<version>)" -- --vcr-record=none                 # replay-only check
+nox -s "test_<provider>(<version>)" -- --disable-vcr
+
+# Claude Agent SDK: subprocess transport recordings, not HTTP VCR
+BRAINTRUST_CLAUDE_AGENT_SDK_RECORD_MODE=all nox -s "test_claude_agent_sdk(latest)" -- -k "test_name"
 ```
 
-Claude Agent SDK transport-recording commands:
-
-```bash
-cd py
-nox -s "test_claude_agent_sdk(latest)"
-BRAINTRUST_CLAUDE_AGENT_SDK_RECORD_MODE=all nox -s "test_claude_agent_sdk(latest)"
-BRAINTRUST_CLAUDE_AGENT_SDK_RECORD_MODE=all nox -s "test_claude_agent_sdk(latest)" -- -k "test_calculator_with_multiple_operations"
-```
+Claude Agent SDK talks to the bundled `claude` subprocess over stdin/stdout; `integrations/claude_agent_sdk/_test_transport.py` records and resolves per-version cassettes. Do not force HTTP VCR patterns onto it.
 
 ## Re-recording Rules
 
-Re-record only when the behavior change is intentional.
+Re-record only when behavior intentionally changed: the traced request/response shape changed, the provider behavior under test changed, the old cassette covered the wrong scenario, or you are adding a new focused regression. If unsure, ask the user.
 
-Good reasons to re-record:
+Never re-record to mask an unexplained failure, fix a flake you don't understand, paper over a version mismatch, or as a broad suite refresh when one scenario changed. A large cassette diff needs an explanation.
 
-- the traced request or response shape intentionally changed
-- the provider behavior you are validating intentionally changed
-- the old cassette covered the wrong scenario and the test now targets the correct one
-- a new focused cassette-backed regression test is being added
-
-Bad reasons to re-record:
-
-- masking an unexplained failure
-- making a flaky test pass without understanding the difference
-- updating many cassettes when only one focused scenario changed
-- papering over version mismatches or incorrect assumptions about old provider releases
-
-If a cassette diff is large, verify that the behavioral change is truly intended before keeping it.
-
-## When Recording Fails
-
-Live recording fails for reasons unrelated to the SDK change. Handle each case so a failed recording does not destroy a good cassette or leave a bad one behind.
-
-- **Missing or invalid API key (401/403, auth errors):** stop and ask the user for a working key. Never hand-write or edit a cassette to stand in for a recording.
-- **Quota or rate limits (429, 402 "no remaining credits"):** a cassette that captured an error response is worse than the old one. Delete only the cassettes that captured the error, wait or ask for another key, then refill them with the default `once` mode.
-- **Retired models or upstream drift:** if the live API no longer returns what the test asserts (a retired model returns 404, a moderation block, a search result that no longer appears, a different stop reason), keep the old cassette with `git checkout` and tell the user. Do not loosen the assertion just to get a recording.
-- **Hand-authored cassettes:** some cassettes are hand-edited to force a scenario such as a validation retry. Never re-record them; restore them with `git checkout`.
-
-### Restore from git vs. re-record
-
-- Restore from git when the cassette is hand-authored, upstream behavior drifted, or the provider is unusable locally (no key, no quota). The old cassette still matches the request the SDK sends.
-- Re-record when the SDK's request shape intentionally changed, or when the new pin changes the wire format and playback fails.
-- If some tests in a directory may fail to record, record without deleting the directory first, so failed tests keep their old cassettes. If a test fails partway through, `git checkout` its cassette, because a partial refresh can leave truncated files.
-- After any refresh, run `git status` on the cassette directory and look for ` D` entries (cassettes deleted but never recreated).
-
-### Traps that silently lose cassettes
-
-- **Skipped sessions record nothing.** If a session skips on your Python version (see `_skip_if_incompatible` and the constraints in `py/noxfile.py`), deleting its cassettes first destroys them. Run nox from a compatible interpreter instead.
-- **Multi-file sessions stop at the first failing file.** After a partial failure, re-run in `once` mode to fill the files that later test files never recorded.
-- **Shared cassette names under `--vcr-record=all`.** When several parametrizations share a cassette name, later cases read an earlier case's response. Delete only those cassettes and re-run in `once` mode, so the first case of each name records and the rest replay.
-- **Hangs.** Tests that drive long-lived live sessions can hang while recording. Exclude them with `-k "not <test>"` and keep their old cassettes.
-
-## Narrow Recording Strategy
-
-When you need new traffic, record the smallest thing possible:
-
-1. use the exact session from `py/noxfile.py`
-2. target a single test with `-k` when practical
-3. record only the affected scenario
-4. inspect the cassette diff before moving on
-
-Preferred shape:
-
-```bash
-cd py
-nox -s "test_google_genai(latest)" -- --vcr-record=all -k "test_interactions_create_and_get"
-```
-
-Avoid broad commands like re-recording an entire provider suite unless the change genuinely affects the whole suite.
-
-## Debugging VCR Failures
-
-When a cassette-backed test fails, check these in order:
-
-1. **Wrong nox session or provider version**
-   - Did you reproduce under the exact session from `py/noxfile.py`?
-   - Are you accidentally testing `latest` when CI pins an older version?
-
-2. **Cassette missing or stale**
-   - Does the expected cassette file exist in the right directory?
-   - Did the test move without moving the cassette?
-   - Does the cassette still match the intended request shape?
-
-3. **Behavior changed but cassette did not**
-   - Did the code intentionally change the payload, headers, streaming sequence, or traced output?
-   - If yes, re-record narrowly.
-
-4. **Behavior did not change, but the test became too strict**
-   - Prefer fixing brittle assertions before churning cassettes.
-   - Assert the meaningful span structure, not incidental provider noise.
-
-5. **Local-only pass, CI fail**
-   - Remember CI uses `record_mode="none"`.
-   - A local silent record can hide a missing cassette or wrong request shape.
-
-6. **Optional dependency or auth confusion**
-   - Do not rely on globally installed provider packages.
-   - Use the active nox session.
-   - Read `py/src/braintrust/conftest.py` before assuming credential behavior.
+When a live recording fails: on auth errors stop and ask for a key; never hand-write a cassette; delete cassettes that captured 429/402 error responses; restore hand-authored or drifted cassettes with `git checkout`. Then check `git status` for ` D` entries. Details and traps: [references/recording-failures.md](references/recording-failures.md).
 
 ## Cassette Hygiene
 
-Keep cassettes reviewable and intentional.
+- One focused cassette per scenario; reuse existing patterns in the provider package.
+- After deleting or renaming tests, run `make check-unused-cassettes INTEGRATIONS="<provider>"` and remove orphans. After dropping matrix versions, run `make check-stale-cassettes`.
+- Sanitize binary bodies. For image tests that don't depend on pixels or byte size, replace generated images with a tiny valid image, keeping response structure, usage metadata, header scrubbing, and correct content-length (see `sanitize_generated_images` in `py/src/braintrust/conftest.py`). Keep original media when its contents, format, or size is under test.
+- Prefer fixing brittle assertions over cassette churn. Assert meaningful span structure, not incidental provider noise.
 
-Prefer:
+## Related Skills
 
-- one focused cassette per scenario or regression when practical
-- reusing existing cassette patterns in the same provider package
-- keeping fixture names stable and descriptive
-- moving cassettes with tests when code moves from wrappers to integrations
-
-Be careful about:
-
-- duplicate old cassettes left behind after moves or renames
-- storing unnecessary raw binary content when sanitization is possible
-- overfitting tests to incidental details in recordings
-- broad cassette churn from unfocused recording commands
-
-When the provider returns binary HTTP responses or generated media, sanitize the recordings as needed so the repo does not keep unnecessary raw file bytes.
-
-For image tests that do not depend on the actual pixels or original byte size, replace large generated image payloads with a tiny valid image while preserving the provider response structure and usage metadata. Scope the recording hook to the relevant tests, retain sensitive-header scrubbing, and update content-length headers when changing bodies. See `sanitize_generated_images` in `py/src/braintrust/conftest.py` and the OpenAI and LiteLLM image tests for an example; Google GenAI has its own media sanitizer. Apply the same transformation to existing recordings where appropriate, and verify replay across the affected provider versions. Keep original media where its contents, format, dimensions, or size are part of the behavior under test.
-
-## Claude Agent SDK Exception
-
-Claude Agent SDK coverage is cassette-backed, but not through HTTP VCR.
-
-Important differences:
-
-- it talks to the bundled `claude` subprocess over stdin/stdout
-- it uses transport-level cassette helpers instead of HTTP request recording
-- cassettes are stored per-version under `integrations/claude_agent_sdk/cassettes/<version>/`
-- `_test_transport.py` reads `BRAINTRUST_TEST_PACKAGE_VERSION` (set by nox) to resolve the version subdirectory
-- use `BRAINTRUST_CLAUDE_AGENT_SDK_RECORD_MODE=all` when re-recording
-
-Do not try to force ordinary HTTP VCR patterns onto Claude Agent SDK subprocess tests.
-
-## Discovery Engine Recording
-
-Discovery Engine tests use HTTP VCR for sync REST calls and the test-only
-`integrations/google_discoveryengine/_test_grpc.py` helper for async gRPC calls. Both
-recording formats live under `py/src/braintrust/integrations/google_discoveryengine/cassettes/<version>/`.
-
-### Prerequisites
-
-- Install `gcloud` and use a Google Cloud project with billing and the
-  `discoveryengine.googleapis.com` API enabled.
-- Authenticate with Application Default Credentials (ADC). The account needs
-  permission to invoke Discovery Engine in the target project. A `GEMINI_API_KEY`
-  alone does not authenticate these tests.
-- For answer and conversation tests, create a search app with generative responses
-  enabled and attach a populated datastore. Wait for indexing to finish before
-  recording. Ranking and grounding-check tests do not require indexed documents.
-
-```sh
-gcloud config set project YOUR_PROJECT_ID
-gcloud auth application-default login
-gcloud auth application-default set-quota-project YOUR_PROJECT_ID
-```
-
-The recording fixture obtains an access token using
-`gcloud auth application-default print-access-token`, outside the recorded call.
-Playback uses anonymous credentials and needs no Google account.
-
-Live recording requires explicit resource IDs through environment variables.
-There are no private-project defaults in the test code. Tests use the `global`
-location. Ranking and grounding checks require the project; answer and
-conversation coverage also requires the app and datastore.
-
-A datastore can be populated from Google's public Alphabet earnings-report
-sample PDFs at `gs://cloud-samples-data/gen-app-builder/search/alphabet-investor-pdfs`.
-Wait for indexing to finish before recording.
-
-```sh
-export BRAINTRUST_GOOGLE_DISCOVERYENGINE_PROJECT="your-project"
-export BRAINTRUST_GOOGLE_DISCOVERYENGINE_APP="your-app-id"
-export BRAINTRUST_GOOGLE_DISCOVERYENGINE_DATASTORE="your-datastore-id"
-```
-
-### Record and replay
-
-From `py/`, select a focused scenario. `--vcr-record=all` enables recording for
-both REST and gRPC; the gRPC helper otherwise requires an existing cassette.
-
-```sh
-# REST ranking, including manual/setup entry-point coverage.
-mise exec -- nox -s 'test_google_discoveryengine(latest)' -- --vcr-record=all -k 'test_rank and not test_rank_output_limit'
-
-# Async gRPC ranking.
-mise exec -- nox -s 'test_google_discoveryengine(latest)' -- --vcr-record=all -k 'test_async_grpc and rank'
-
-# Verify all recordings without network access to Google.
-mise exec -- nox -R -s 'test_google_discoveryengine(latest)' -- --vcr-record=none
-```
-
-Playback derives resource paths from the checked-in REST cassettes and ignores
-resource environment overrides. No access to the recorded project's resources is
-needed. The auto-instrument subprocess test also reads its ranking resource from
-the cassette. Keep the project's recordings consistent when recording against a
-different project.
-
-The gRPC helper temporarily replaces one callable on one client transport,
-records real protobuf requests/responses and errors as JSON, then restores the
-callable. Playback reconstructs provider response objects and checks requests;
-it does not exercise networking, retries, or real cancellation behavior.
-HTTP authorization headers are filtered by shared VCR configuration; gRPC
-recordings omit credentials and transport metadata. Inspect new recordings before
-checking them in.
-
-`generate_grounded_content` and `stream_generate_grounded_content` are deferred:
-the v1 endpoints returned method-not-found errors during initial recording.
-Do not fabricate success recordings for those methods.
-
-## Relationship To Other Skills
-
-- Use `sdk-integrations` when the main task is integration implementation, patchers, tracing, or provider package structure.
-- Use this skill when the main difficulty is cassette-backed test design, VCR behavior, re-recording decisions, or cassette hygiene.
-- Use `sdk-ci-triage` when the entry point is a GitHub Actions failure, even if the fix eventually involves VCR.
-- Use `sdk-wrapper-migrations` when moving a legacy wrapper into `py/src/braintrust/integrations/` while preserving tests and cassettes.
+- `sdk-integrations` — integration implementation, patchers, tracing, span shape.
+- `sdk-ci-triage` — the entry point is a GitHub Actions failure, even if the fix involves VCR.
+- `sdk-dependency-updates` — re-recording `latest` cassettes after a provider version bump.
 
 ## Validation Checklist
 
-- Read `py/noxfile.py` before choosing commands.
-- Reproduce under the exact provider session and version.
-- Use red -> green when fixing a bug.
-- Prefer a focused cassette-backed test over mocks/fakes.
-- If you choose a mock/fake test for provider behavior, be able to state exactly why a cassette-backed test is impractical.
-- Re-record only when behavior intentionally changed.
-- Record the narrowest affected test first.
-- Inspect the cassette diff before finishing.
-- Re-run the relevant provider session after recording.
-- If patching or `auto_instrument()` changed, also check the relevant subprocess auto-instrument coverage.
-
-## Common Mistakes
-
-Avoid these failures:
-
-- running raw pytest in an ad hoc environment instead of the exact nox session
-- re-recording against `latest` when CI covers an older pinned version
-- letting local `record_mode="once"` hide a missing or stale cassette
-- replacing meaningful assertions with cassette churn
-- using mocks for provider behavior that should be validated from real recordings
-- treating local tracing/span-shaping bugs as mock-first when the trigger is a real provider payload
-- forgetting that Claude Agent SDK uses subprocess transport recordings, not HTTP VCR
-- leaving duplicate stale cassettes behind after moving tests or renaming scenarios
-- broad re-records that create unnecessary review noise
-- running raw pytest outside nox when re-recording, causing cassettes to land in the base `cassettes/` directory instead of the correct version subdirectory
-- adding per-test `vcr_cassette_dir` or `cassette_library_dir` fixtures — the shared `integrations/conftest.py` handles version routing
+- Exact provider session and version reproduced; red → green for bugs.
+- Cassette-backed test over mocks/fakes, or a stated reason why not.
+- Narrowest recording; cassette diff inspected; no ` D` entries left behind.
+- Provider session re-run in replay mode after recording.
+- Subprocess auto-instrument coverage checked if patching or `auto_instrument()` changed.
