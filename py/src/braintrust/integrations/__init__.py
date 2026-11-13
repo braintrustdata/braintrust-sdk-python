@@ -10,6 +10,7 @@ _INTEGRATION_MODULES = {
     "AgnoIntegration": "agno",
     "AISDKIntegration": "ai_sdk",
     "AnthropicIntegration": "anthropic",
+    "AntigravityIntegration": "antigravity",
     "AutoGenIntegration": "autogen",
     "BedrockRuntimeIntegration": "bedrock_runtime",
     "ClaudeAgentSDKIntegration": "claude_agent_sdk",
@@ -45,6 +46,7 @@ if TYPE_CHECKING:
     from .agno import AgnoIntegration as AgnoIntegration
     from .ai_sdk import AISDKIntegration as AISDKIntegration
     from .anthropic import AnthropicIntegration as AnthropicIntegration
+    from .antigravity import AntigravityIntegration as AntigravityIntegration
     from .autogen import AutoGenIntegration as AutoGenIntegration
     from .bedrock_runtime import BedrockRuntimeIntegration as BedrockRuntimeIntegration
     from .claude_agent_sdk import ClaudeAgentSDKIntegration as ClaudeAgentSDKIntegration
@@ -79,6 +81,7 @@ __all__ = [
     "AgnoIntegration",
     "AISDKIntegration",
     "AnthropicIntegration",
+    "AntigravityIntegration",
     "AutoGenIntegration",
     "BedrockRuntimeIntegration",
     "ClaudeAgentSDKIntegration",

@@ -1,0 +1,412 @@
+[
+  {
+    "send": {
+      "config": {
+        "cascadeId": "",
+        "harnessSideTools": {
+          "find": {
+            "enabled": false
+          },
+          "runCommand": {
+            "enabled": true,
+            "maxTimeoutMs": 0,
+            "enableDaemonCommands": false,
+            "enableSandbox": false
+          },
+          "subagents": {
+            "enabled": false
+          },
+          "userQuestions": {
+            "enabled": false
+          },
+          "fileEdit": {
+            "enabled": true
+          },
+          "viewFile": {
+            "enabled": true
+          },
+          "writeToFile": {
+            "enabled": true
+          },
+          "grepSearch": {
+            "enabled": false
+          },
+          "listDir": {
+            "enabled": false
+          },
+          "generateImage": {
+            "enabled": false
+          },
+          "searchWeb": {
+            "enabled": false
+          },
+          "readUrlContent": {
+            "enabled": false
+          },
+          "manageTask": {
+            "enabled": true
+          },
+          "schedule": {
+            "enabled": false
+          },
+          "runWorkflow": {
+            "enabled": false
+          }
+        },
+        "compactionThreshold": 65536,
+        "workspaces": [
+          {
+            "filesystemWorkspace": {
+              "directory": "WORKSPACE"
+            }
+          }
+        ],
+        "finishToolSchemaJson": "",
+        "appDataDir": "TEST_WORKSPACE",
+        "models": [
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.1-flash-lite-image",
+            "types": [
+              "MODEL_TYPE_IMAGE"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          }
+        ],
+        "sessionContinuationMode": "SESSION_CONTINUATION_MODE_UNSPECIFIED",
+        "policyConfig": {
+          "rules": [
+            {
+              "tool": "run_command",
+              "serverName": "",
+              "name": "confirm_run_command",
+              "decision": "POLICY_DECISION_DENY",
+              "denyReason": "",
+              "isDynamic": false,
+              "ruleId": ""
+            },
+            {
+              "tool": "*",
+              "serverName": "",
+              "name": "confirm_run_command",
+              "decision": "POLICY_DECISION_ALLOW",
+              "denyReason": "",
+              "isDynamic": false,
+              "ruleId": ""
+            }
+          ],
+          "workspaceContainment": "WORKSPACE_CONTAINMENT_UNSPECIFIED"
+        },
+        "agentBehavior": "AGENT_BEHAVIOR_MINIMAL",
+        "compactionConfig": {
+          "tokenThreshold": 65536
+        }
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "1",
+      "timestampMicros": "1794582465566755",
+      "initializeConversationResponse": {
+        "cascadeId": "53a3ed29f9b6a3d8a33000b8e8c2dc0d",
+        "sandboxStatus": {
+          "available": true,
+          "unavailableReason": ""
+        }
+      }
+    }
+  },
+  {
+    "send": {
+      "userInput": {
+        "parts": [
+          {
+            "text": "What is the secret word in this document?"
+          },
+          {
+            "media": {
+              "mimeType": "text/plain",
+              "data": "VGhlIHNlY3JldCB3b3JkIGlzIHBpbmVhcHBsZS4="
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "2",
+      "timestampMicros": "1794582465572784",
+      "trajectoryStateUpdate": {
+        "trajectoryId": "53a3ed29f9b6a3d8a33000b8e8c2dc0d",
+        "state": "STATE_RUNNING"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "3",
+      "timestampMicros": "1794582465590444",
+      "stepUpdate": {
+        "cascadeId": "53a3ed29f9b6a3d8a33000b8e8c2dc0d",
+        "trajectoryId": "53a3ed29f9b6a3d8a33000b8e8c2dc0d",
+        "stepIndex": 0,
+        "state": "STATE_DONE",
+        "source": "SOURCE_USER",
+        "target": "TARGET_MODEL",
+        "thinking": "",
+        "textDelta": "What is the secret word in this document?",
+        "thinkingDelta": "",
+        "text": "What is the secret word in this document?"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "4",
+      "timestampMicros": "1794582470555245",
+      "stepUpdate": {
+        "cascadeId": "53a3ed29f9b6a3d8a33000b8e8c2dc0d",
+        "trajectoryId": "53a3ed29f9b6a3d8a33000b8e8c2dc0d",
+        "stepIndex": 1,
+        "state": "STATE_ERROR",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "errorMessage": "Denied by policy \"confirm_run_command\".",
+        "thinking": "",
+        "textDelta": "Denied by policy \"confirm_run_command\". (\"denied by pre-tool hook: Denied by policy \\\"confirm_run_command\\\".\")",
+        "thinkingDelta": "",
+        "text": "Denied by policy \"confirm_run_command\". (\"denied by pre-tool hook: Denied by policy \\\"confirm_run_command\\\".\")",
+        "error": {
+          "errorMessage": "Denied by policy \"confirm_run_command\". (\"denied by pre-tool hook: Denied by policy \\\"confirm_run_command\\\".\")",
+          "httpCode": 0
+        }
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "5",
+      "timestampMicros": "1794582470556031",
+      "usageUpdate": {
+        "agents": [
+          {
+            "trajectoryId": "53a3ed29f9b6a3d8a33000b8e8c2dc0d",
+            "usage": {
+              "promptTokenCount": "4218",
+              "cachedContentTokenCount": "0",
+              "candidatesTokenCount": "134",
+              "thoughtsTokenCount": "288",
+              "totalTokenCount": "4640",
+              "promptTokensDetails": [
+                {
+                  "modality": "TEXT",
+                  "tokenCount": "4218"
+                }
+              ]
+            }
+          }
+        ],
+        "total": {
+          "promptTokenCount": "4218",
+          "cachedContentTokenCount": "0",
+          "candidatesTokenCount": "134",
+          "thoughtsTokenCount": "288",
+          "totalTokenCount": "4640",
+          "promptTokensDetails": [
+            {
+              "modality": "TEXT",
+              "tokenCount": "4218"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "6",
+      "timestampMicros": "1794582474689291",
+      "stepUpdate": {
+        "cascadeId": "53a3ed29f9b6a3d8a33000b8e8c2dc0d",
+        "trajectoryId": "53a3ed29f9b6a3d8a33000b8e8c2dc0d",
+        "stepIndex": 2,
+        "state": "STATE_ACTIVE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": "The secret word is **pineapple**.",
+        "thinkingDelta": "",
+        "text": "The secret word is **pineapple**."
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "7",
+      "timestampMicros": "1794582474704013",
+      "stepUpdate": {
+        "cascadeId": "53a3ed29f9b6a3d8a33000b8e8c2dc0d",
+        "trajectoryId": "53a3ed29f9b6a3d8a33000b8e8c2dc0d",
+        "stepIndex": 2,
+        "state": "STATE_ACTIVE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": "",
+        "thinkingDelta": "",
+        "text": "The secret word is **pineapple**."
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "8",
+      "timestampMicros": "1794582474704146",
+      "stepUpdate": {
+        "cascadeId": "53a3ed29f9b6a3d8a33000b8e8c2dc0d",
+        "trajectoryId": "53a3ed29f9b6a3d8a33000b8e8c2dc0d",
+        "stepIndex": 2,
+        "state": "STATE_ACTIVE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": "",
+        "thinkingDelta": "",
+        "text": "The secret word is **pineapple**."
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "9",
+      "timestampMicros": "1794582474706247",
+      "stepUpdate": {
+        "cascadeId": "53a3ed29f9b6a3d8a33000b8e8c2dc0d",
+        "trajectoryId": "53a3ed29f9b6a3d8a33000b8e8c2dc0d",
+        "stepIndex": 2,
+        "state": "STATE_DONE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": "",
+        "thinkingDelta": "",
+        "text": "The secret word is **pineapple**."
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "10",
+      "timestampMicros": "1794582474706247",
+      "usageUpdate": {
+        "agents": [
+          {
+            "trajectoryId": "53a3ed29f9b6a3d8a33000b8e8c2dc0d",
+            "usage": {
+              "promptTokenCount": "8927",
+              "cachedContentTokenCount": "2188",
+              "candidatesTokenCount": "141",
+              "thoughtsTokenCount": "602",
+              "totalTokenCount": "9670",
+              "promptTokensDetails": [
+                {
+                  "modality": "TEXT",
+                  "tokenCount": "8927"
+                }
+              ],
+              "cacheTokensDetails": [
+                {
+                  "modality": "TEXT",
+                  "tokenCount": "2188"
+                }
+              ]
+            }
+          }
+        ],
+        "total": {
+          "promptTokenCount": "8927",
+          "cachedContentTokenCount": "2188",
+          "candidatesTokenCount": "141",
+          "thoughtsTokenCount": "602",
+          "totalTokenCount": "9670",
+          "promptTokensDetails": [
+            {
+              "modality": "TEXT",
+              "tokenCount": "8927"
+            }
+          ],
+          "cacheTokensDetails": [
+            {
+              "modality": "TEXT",
+              "tokenCount": "2188"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "11",
+      "timestampMicros": "1794582474708301",
+      "trajectoryStateUpdate": {
+        "trajectoryId": "53a3ed29f9b6a3d8a33000b8e8c2dc0d",
+        "state": "STATE_FULLY_IDLE"
+      }
+    }
+  }
+]
