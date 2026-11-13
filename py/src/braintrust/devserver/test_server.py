@@ -5,7 +5,7 @@ from collections.abc import Iterator
 from typing import Any
 
 import pytest
-from braintrust.logger import BraintrustState
+from braintrust.logger import BraintrustState, Experiment
 from braintrust.test_helpers import (
     has_devserver_installed,
     init_test_exp,
@@ -46,7 +46,10 @@ def function_server() -> Iterator[tuple[str, list[tuple[str | None, dict[str, An
         thread.join()
 
 
-def test_ui_scorer_forwards_org_name_and_active_parent_to_function_invoke(function_server, with_memory_logger):
+@pytest.mark.parametrize("global_span_active", [False, True])
+def test_ui_scorer_forwards_org_name_and_active_parent_to_function_invoke(
+    function_server, with_memory_logger, global_span_active
+):
     if not has_devserver_installed():
         pytest.skip("Devserver dependencies not installed (requires .[cli])")
 
@@ -56,13 +59,18 @@ def test_ui_scorer_forwards_org_name_and_active_parent_to_function_invoke(functi
     state = BraintrustState()
     state.org_name = "test-org"
     state.proxy_url = base_url
+    state._override_bg_logger.logger = with_memory_logger
+
+    global_experiment = init_test_exp("test-project")
+    request_experiment = Experiment(global_experiment._lazy_metadata, state=state)
 
     scorer = make_scorer(state, "ui-scorer", {"function_id": "function-id"}, "project-id")
 
-    with init_test_exp("test-project").start_span(name="eval") as row_span:
-        with row_span.start_span(name="ui-scorer", type="score") as scorer_span:
-            result = scorer("input", "output", "expected", {})
-            expected_parent = scorer_span.export()
+    with global_experiment.start_span(name="unrelated", set_current=global_span_active):
+        with request_experiment.start_span(name="eval") as row_span:
+            with row_span.start_span(name="ui-scorer", type="score") as scorer_span:
+                result = scorer("input", "output", "expected", {})
+                expected_parent = scorer_span.export()
 
     assert result == {"score": 1}
     [(org_name, request)] = requests
