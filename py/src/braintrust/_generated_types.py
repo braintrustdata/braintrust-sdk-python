@@ -50,6 +50,10 @@ class Agent(TypedDict):
     """
     Date of agent creation
     """
+    deleted_at: NotRequired[str | None]
+    """
+    Date of agent deletion, or null if the agent is still active
+    """
     name: str
     """
     Name of the agent. Within a project, agent names are unique
