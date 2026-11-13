@@ -1208,7 +1208,7 @@ class _MemoryBackgroundLogger(_BackgroundLogger):
             if not logs:
                 return []
 
-            # all the logs get merged before gettig sent to the server, so simulate that
+            # all the logs get merged before getting sent to the server, so simulate that
             # here
             batch = merge_row_batch(logs)
 
@@ -5534,7 +5534,7 @@ class SpanImpl(Span):
             if is_resolved:
                 return self.parent_object_type, {"id": experiment_id}
             # For experiments, we resolve the ID by calling get(). We can't pass
-            # along the "lazy compuete metadata args" because we can't tell OTel to do that.
+            # along the "lazy compute metadata args" because we can't tell OTel to do that.
             # We must pass along an explicit resolved parent.
             try:
                 experiment_id = self.parent_object_id.get()
