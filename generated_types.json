@@ -145,6 +145,14 @@
             "format": "date-time",
             "description": "Date of agent creation"
           },
+          "deleted_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Date of agent deletion, or null if the agent is still active"
+          },
           "name": {
             "type": "string",
             "description": "Name of the agent. Within a project, agent names are unique"
