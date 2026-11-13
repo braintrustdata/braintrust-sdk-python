@@ -1,0 +1,354 @@
+[
+  {
+    "send": {
+      "config": {
+        "cascadeId": "",
+        "harnessSideTools": {
+          "find": {
+            "enabled": false
+          },
+          "runCommand": {
+            "enabled": true,
+            "maxTimeoutMs": 0,
+            "enableDaemonCommands": false,
+            "enableSandbox": false
+          },
+          "subagents": {
+            "enabled": false
+          },
+          "userQuestions": {
+            "enabled": false
+          },
+          "fileEdit": {
+            "enabled": true
+          },
+          "viewFile": {
+            "enabled": true
+          },
+          "writeToFile": {
+            "enabled": true
+          },
+          "grepSearch": {
+            "enabled": false
+          },
+          "listDir": {
+            "enabled": false
+          },
+          "generateImage": {
+            "enabled": false
+          },
+          "searchWeb": {
+            "enabled": false
+          },
+          "readUrlContent": {
+            "enabled": false
+          },
+          "manageTask": {
+            "enabled": true
+          },
+          "schedule": {
+            "enabled": false
+          },
+          "runWorkflow": {
+            "enabled": false
+          }
+        },
+        "compactionThreshold": 65536,
+        "workspaces": [
+          {
+            "filesystemWorkspace": {
+              "directory": "WORKSPACE"
+            }
+          }
+        ],
+        "finishToolSchemaJson": "{\"type\": \"object\", \"properties\": {\"word\": {\"type\": \"string\"}}, \"required\": [\"word\"]}",
+        "appDataDir": "TEST_WORKSPACE",
+        "models": [
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.1-flash-lite-image",
+            "types": [
+              "MODEL_TYPE_IMAGE"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          }
+        ],
+        "sessionContinuationMode": "SESSION_CONTINUATION_MODE_UNSPECIFIED",
+        "policyConfig": {
+          "rules": [
+            {
+              "tool": "run_command",
+              "serverName": "",
+              "name": "confirm_run_command",
+              "decision": "POLICY_DECISION_DENY",
+              "denyReason": "",
+              "isDynamic": false,
+              "ruleId": ""
+            },
+            {
+              "tool": "*",
+              "serverName": "",
+              "name": "confirm_run_command",
+              "decision": "POLICY_DECISION_ALLOW",
+              "denyReason": "",
+              "isDynamic": false,
+              "ruleId": ""
+            }
+          ],
+          "workspaceContainment": "WORKSPACE_CONTAINMENT_UNSPECIFIED"
+        },
+        "agentBehavior": "AGENT_BEHAVIOR_MINIMAL",
+        "compactionConfig": {
+          "tokenThreshold": 65536
+        }
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "1",
+      "timestampMicros": "1794584142666042",
+      "initializeConversationResponse": {
+        "cascadeId": "e2a0a7488908ad2c428cfcff1d688727",
+        "sandboxStatus": {
+          "available": true,
+          "unavailableReason": ""
+        }
+      }
+    }
+  },
+  {
+    "send": {
+      "userInput": {
+        "parts": [
+          {
+            "text": "Return the word pineapple using the required output schema."
+          }
+        ]
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "2",
+      "timestampMicros": "1794584142668855",
+      "trajectoryStateUpdate": {
+        "trajectoryId": "e2a0a7488908ad2c428cfcff1d688727",
+        "state": "STATE_RUNNING"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "3",
+      "timestampMicros": "1794584142685927",
+      "stepUpdate": {
+        "cascadeId": "e2a0a7488908ad2c428cfcff1d688727",
+        "trajectoryId": "e2a0a7488908ad2c428cfcff1d688727",
+        "stepIndex": 0,
+        "state": "STATE_DONE",
+        "source": "SOURCE_USER",
+        "target": "TARGET_MODEL",
+        "thinking": "",
+        "textDelta": "Return the word pineapple using the required output schema.",
+        "thinkingDelta": "",
+        "text": "Return the word pineapple using the required output schema."
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "4",
+      "timestampMicros": "1794584145629729",
+      "stepUpdate": {
+        "cascadeId": "e2a0a7488908ad2c428cfcff1d688727",
+        "trajectoryId": "e2a0a7488908ad2c428cfcff1d688727",
+        "stepIndex": 1,
+        "state": "STATE_ACTIVE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": "Finished",
+        "thinkingDelta": "",
+        "text": "Finished",
+        "finish": {
+          "outputString": "{\"word\":\"pineapple\"}"
+        }
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "5",
+      "timestampMicros": "1794584145630801",
+      "stepUpdate": {
+        "cascadeId": "e2a0a7488908ad2c428cfcff1d688727",
+        "trajectoryId": "e2a0a7488908ad2c428cfcff1d688727",
+        "stepIndex": 1,
+        "state": "STATE_ACTIVE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": "",
+        "thinkingDelta": "",
+        "text": "Finished",
+        "finish": {
+          "outputString": "{\"word\":\"pineapple\"}"
+        }
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "6",
+      "timestampMicros": "1794584145630901",
+      "usageUpdate": {
+        "agents": [
+          {
+            "trajectoryId": "e2a0a7488908ad2c428cfcff1d688727",
+            "usage": {
+              "promptTokenCount": "4289",
+              "cachedContentTokenCount": "0",
+              "candidatesTokenCount": "14",
+              "thoughtsTokenCount": "194",
+              "totalTokenCount": "4497",
+              "promptTokensDetails": [
+                {
+                  "modality": "TEXT",
+                  "tokenCount": "4289"
+                }
+              ]
+            }
+          }
+        ],
+        "total": {
+          "promptTokenCount": "4289",
+          "cachedContentTokenCount": "0",
+          "candidatesTokenCount": "14",
+          "thoughtsTokenCount": "194",
+          "totalTokenCount": "4497",
+          "promptTokensDetails": [
+            {
+              "modality": "TEXT",
+              "tokenCount": "4289"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "7",
+      "timestampMicros": "1794584145631141",
+      "stepUpdate": {
+        "cascadeId": "e2a0a7488908ad2c428cfcff1d688727",
+        "trajectoryId": "e2a0a7488908ad2c428cfcff1d688727",
+        "stepIndex": 1,
+        "state": "STATE_ACTIVE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": "",
+        "thinkingDelta": "",
+        "text": "Finished",
+        "finish": {
+          "outputString": "{\"word\":\"pineapple\"}"
+        }
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "8",
+      "timestampMicros": "1794584145631375",
+      "stepUpdate": {
+        "cascadeId": "e2a0a7488908ad2c428cfcff1d688727",
+        "trajectoryId": "e2a0a7488908ad2c428cfcff1d688727",
+        "stepIndex": 1,
+        "state": "STATE_DONE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": "",
+        "thinkingDelta": "",
+        "text": "Finished",
+        "finish": {
+          "outputString": "{\"word\":\"pineapple\"}"
+        }
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "9",
+      "timestampMicros": "1794584145633149",
+      "trajectoryStateUpdate": {
+        "trajectoryId": "e2a0a7488908ad2c428cfcff1d688727",
+        "state": "STATE_FULLY_IDLE"
+      }
+    }
+  }
+]
