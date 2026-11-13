@@ -660,6 +660,15 @@ latest = "braintrust-core==0.0.59"
 latest = "boto3==1.43.126"
 "1.34.116" = "boto3==1.34.116"
 
+[tool.braintrust.matrix.aiobotocore]
+latest = "aiobotocore[httpx]==3.10.0"
+"2.13.1" = "aiobotocore==2.13.1"
+
+# aiobotocore supports a narrower botocore range than boto3.
+[tool.braintrust.matrix.aiobotocore-botocore]
+latest = "botocore==1.43.117"
+"2.13.1" = "botocore==1.34.116"
+
 [tool.braintrust.matrix.botocore]
 latest = "botocore==1.43.126"
 "1.34.116" = "botocore==1.34.116"
@@ -734,6 +743,7 @@ anthropic = "anthropic"
 cohere = "cohere"
 autoevals = "autoevals"
 braintrust-core = "braintrust_core"
+aiobotocore = "aiobotocore"
 boto3 = "boto3"
 harbor = "harbor"
 botocore = "botocore"
