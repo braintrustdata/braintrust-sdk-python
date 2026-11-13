@@ -1,0 +1,332 @@
+[
+  {
+    "send": {
+      "config": {
+        "cascadeId": "",
+        "harnessSideTools": {
+          "find": {
+            "enabled": false
+          },
+          "runCommand": {
+            "enabled": true,
+            "maxTimeoutMs": 0,
+            "enableDaemonCommands": false,
+            "enableSandbox": false
+          },
+          "subagents": {
+            "enabled": false
+          },
+          "userQuestions": {
+            "enabled": false
+          },
+          "fileEdit": {
+            "enabled": true
+          },
+          "viewFile": {
+            "enabled": true
+          },
+          "writeToFile": {
+            "enabled": true
+          },
+          "grepSearch": {
+            "enabled": false
+          },
+          "listDir": {
+            "enabled": false
+          },
+          "generateImage": {
+            "enabled": false
+          },
+          "searchWeb": {
+            "enabled": false
+          },
+          "readUrlContent": {
+            "enabled": false
+          },
+          "manageTask": {
+            "enabled": true
+          },
+          "schedule": {
+            "enabled": false
+          },
+          "runWorkflow": {
+            "enabled": false
+          }
+        },
+        "compactionThreshold": 65536,
+        "workspaces": [
+          {
+            "filesystemWorkspace": {
+              "directory": "WORKSPACE"
+            }
+          }
+        ],
+        "finishToolSchemaJson": "",
+        "appDataDir": "TEST_WORKSPACE",
+        "models": [
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.1-flash-lite-image",
+            "types": [
+              "MODEL_TYPE_IMAGE"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          }
+        ],
+        "sessionContinuationMode": "SESSION_CONTINUATION_MODE_UNSPECIFIED",
+        "policyConfig": {
+          "rules": [
+            {
+              "tool": "run_command",
+              "serverName": "",
+              "name": "confirm_run_command",
+              "decision": "POLICY_DECISION_DENY",
+              "denyReason": "",
+              "isDynamic": false,
+              "ruleId": ""
+            },
+            {
+              "tool": "*",
+              "serverName": "",
+              "name": "confirm_run_command",
+              "decision": "POLICY_DECISION_ALLOW",
+              "denyReason": "",
+              "isDynamic": false,
+              "ruleId": ""
+            }
+          ],
+          "workspaceContainment": "WORKSPACE_CONTAINMENT_UNSPECIFIED"
+        },
+        "agentBehavior": "AGENT_BEHAVIOR_MINIMAL",
+        "compactionConfig": {
+          "tokenThreshold": 65536
+        }
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "1",
+      "timestampMicros": "1794582005876262",
+      "initializeConversationResponse": {
+        "cascadeId": "4c2b1a384f84d2ad4703d59f9885b554",
+        "sandboxStatus": {
+          "available": true,
+          "unavailableReason": ""
+        }
+      }
+    }
+  },
+  {
+    "send": {
+      "userInput": {
+        "parts": [
+          {
+            "text": "Reply with exactly: antigravity tracing complete"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "2",
+      "timestampMicros": "1794582005879508",
+      "trajectoryStateUpdate": {
+        "trajectoryId": "4c2b1a384f84d2ad4703d59f9885b554",
+        "state": "STATE_RUNNING"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "3",
+      "timestampMicros": "1794582005889778",
+      "stepUpdate": {
+        "cascadeId": "4c2b1a384f84d2ad4703d59f9885b554",
+        "trajectoryId": "4c2b1a384f84d2ad4703d59f9885b554",
+        "stepIndex": 0,
+        "state": "STATE_DONE",
+        "source": "SOURCE_USER",
+        "target": "TARGET_MODEL",
+        "thinking": "",
+        "textDelta": "Reply with exactly: antigravity tracing complete",
+        "thinkingDelta": "",
+        "text": "Reply with exactly: antigravity tracing complete"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "4",
+      "timestampMicros": "1794582008018830",
+      "stepUpdate": {
+        "cascadeId": "4c2b1a384f84d2ad4703d59f9885b554",
+        "trajectoryId": "4c2b1a384f84d2ad4703d59f9885b554",
+        "stepIndex": 1,
+        "state": "STATE_ACTIVE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": "antigravity tracing complete",
+        "thinkingDelta": "",
+        "text": "antigravity tracing complete"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "5",
+      "timestampMicros": "1794582008024828",
+      "stepUpdate": {
+        "cascadeId": "4c2b1a384f84d2ad4703d59f9885b554",
+        "trajectoryId": "4c2b1a384f84d2ad4703d59f9885b554",
+        "stepIndex": 1,
+        "state": "STATE_ACTIVE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": "",
+        "thinkingDelta": "",
+        "text": "antigravity tracing complete"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "6",
+      "timestampMicros": "1794582008024961",
+      "stepUpdate": {
+        "cascadeId": "4c2b1a384f84d2ad4703d59f9885b554",
+        "trajectoryId": "4c2b1a384f84d2ad4703d59f9885b554",
+        "stepIndex": 1,
+        "state": "STATE_ACTIVE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": "",
+        "thinkingDelta": "",
+        "text": "antigravity tracing complete"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "7",
+      "timestampMicros": "1794582008026147",
+      "stepUpdate": {
+        "cascadeId": "4c2b1a384f84d2ad4703d59f9885b554",
+        "trajectoryId": "4c2b1a384f84d2ad4703d59f9885b554",
+        "stepIndex": 1,
+        "state": "STATE_DONE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": "",
+        "thinkingDelta": "",
+        "text": "antigravity tracing complete"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "8",
+      "timestampMicros": "1794582008026147",
+      "usageUpdate": {
+        "agents": [
+          {
+            "trajectoryId": "4c2b1a384f84d2ad4703d59f9885b554",
+            "usage": {
+              "promptTokenCount": "4213",
+              "cachedContentTokenCount": "0",
+              "candidatesTokenCount": "5",
+              "thoughtsTokenCount": "56",
+              "totalTokenCount": "4274",
+              "promptTokensDetails": [
+                {
+                  "modality": "TEXT",
+                  "tokenCount": "4213"
+                }
+              ]
+            }
+          }
+        ],
+        "total": {
+          "promptTokenCount": "4213",
+          "cachedContentTokenCount": "0",
+          "candidatesTokenCount": "5",
+          "thoughtsTokenCount": "56",
+          "totalTokenCount": "4274",
+          "promptTokensDetails": [
+            {
+              "modality": "TEXT",
+              "tokenCount": "4213"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "9",
+      "timestampMicros": "1794582008028043",
+      "trajectoryStateUpdate": {
+        "trajectoryId": "4c2b1a384f84d2ad4703d59f9885b554",
+        "state": "STATE_FULLY_IDLE"
+      }
+    }
+  }
+]

@@ -473,6 +473,17 @@ def test_claude_agent_sdk(session, version):
     _run_tests(session, f"{INTEGRATION_DIR}/claude_agent_sdk/test_claude_agent_sdk.py", version=version)
 
 
+ANTIGRAVITY_VERSIONS = _get_matrix_versions("google-antigravity")
+
+
+@nox.session()
+@nox.parametrize("version", ANTIGRAVITY_VERSIONS, ids=ANTIGRAVITY_VERSIONS)
+def test_antigravity(session, version):
+    _install_test_deps(session)
+    _install_matrix_dep(session, "google-antigravity", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/antigravity/test_antigravity.py", version=version)
+
+
 CURSOR_SDK_VERSIONS = _get_matrix_versions("cursor-sdk")
 
 
