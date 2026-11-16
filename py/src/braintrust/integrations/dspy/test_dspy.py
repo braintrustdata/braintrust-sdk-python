@@ -2,6 +2,7 @@
 Tests for DSPy integration with Braintrust.
 """
 
+import asyncio
 import base64
 import inspect
 import os
@@ -25,7 +26,17 @@ MODEL = "openai/gpt-6-luna"
 # vendored lm15 raw-socket transport that VCR cannot intercept. Pin LiteLLM so
 # the request is recorded.
 LM_KWARGS = {"engine": "litellm"} if "engine" in inspect.signature(dspy.LM.__init__).parameters else {}
+if LM_KWARGS:
+    LM_KWARGS["model_type"] = "chat"
 LM_KWARGS.update({"reasoning_effort": "none"})
+
+try:
+    from dspy import lm15
+    from dspy.adapters.base import Prompt, prompt_to_openai_messages
+
+    HAS_LM15 = True
+except ImportError:
+    HAS_LM15 = False
 
 
 def test_dspy_image_conversion_preserves_other_model_serializers():
@@ -57,12 +68,23 @@ def test_dspy_image_conversion_preserves_other_model_serializers():
 @pytest.mark.parametrize("url", ["https://example.com/page.png", "data:image/png;base64,not base64!"])
 def test_dspy_image_conversion_preserves_unmaterialized_images(url):
     image = dspy.Image(url=url)
+    if HAS_LM15:
+        # Invalid base64 cannot use DSPy's prompt serializer in 3.5.
+        expected_image = (
+            {"type": "image_url", "image_url": {"url": url}}
+            if url.startswith("https:")
+            else {"image_url": {"url": url}}
+        )
+        expected_root = [expected_image] if url.startswith("https:") else [{"url": url}]
+    else:
+        expected_image = image.model_dump(exclude_none=True)
+        expected_root = [expected_image]
     assert _process_images({"image": image, "url": url}) == {
-        "image": image.model_dump(exclude_none=True),
+        "image": expected_image,
         "url": url,
     }
     model = RootModel[list[dspy.Image]]([image])
-    assert _process_images(model) == model.model_dump(exclude_none=True)
+    assert _process_images(model) == expected_root
 
 
 @pytest.mark.vcr(
@@ -133,7 +155,7 @@ def test_dspy_images_materialize_attachments(memory_logger, model_kind):
         page = RootModel[list[Page]]([page])
     elif model_kind in ("list", "scalar", "dict", "redacted"):
         page = SerializedPage(page=page)
-    with dspy.context(lm=lm, callbacks=[BraintrustDSpyCallback()]):
+    with dspy.context(lm=lm, adapter=dspy.ChatAdapter(), callbacks=[BraintrustDSpyCallback()]):
         result = DescribePages()(image=image, page=page)
 
     assert result.answer
@@ -230,6 +252,88 @@ def test_dspy_images_materialize_attachments(memory_logger, model_kind):
     assert "serializer-hidden-value" not in serialized
 
 
+@pytest.mark.vcr(
+    cassette_name="test_dspy_lm_usage", match_on=["method", "scheme", "host", "port", "path", "query", "body"]
+)
+@pytest.mark.parametrize("asynchronous", [False, True], ids=["sync", "async"])
+@pytest.mark.parametrize("prompt_kind", ["string", "request"])
+@pytest.mark.parametrize("model_type", ["chat", "responses"])
+def test_dspy_lm_usage(memory_logger, prompt_kind, asynchronous, model_type):
+    """Read real usage for both LM call contracts, including async callbacks."""
+    if prompt_kind == "request" and not HAS_LM15:
+        pytest.skip("Typed requests require DSPy lm15")
+    if model_type == "responses" and not HAS_LM15:
+        pytest.skip("Responses routing requires DSPy lm15")
+    if asynchronous and not hasattr(dspy.LM, "acall"):
+        pytest.skip("This DSPy version has no async LM API")
+    lm = dspy.LM(MODEL, cache=False, **{**LM_KWARGS, "model_type": model_type})
+    lm.kwargs["max_completion_tokens"] = lm.kwargs.pop("max_tokens", 1000)
+    prompt = "Say hello."
+    options = {"temperature": 0.5}
+    if prompt_kind == "request":
+        # A typed request owns its generation config; LM defaults do not apply.
+        lm.kwargs.update(temperature=1.0, top_p=0.2)
+        prompt = lm15.Request(
+            model=MODEL,
+            messages=(lm15.Message.user("Call get_weather for Toronto."),),
+            system="Be concise.",
+            tools=(
+                lm15.FunctionTool(
+                    name="get_weather",
+                    description="Get the weather for a city.",
+                    parameters={"type": "object", "properties": {"city": {"type": "string"}}, "required": ["city"]},
+                ),
+            ),
+            config=lm15.Config(temperature=0.5, max_tokens=100, reasoning=lm15.Reasoning(effort="off")),
+        )
+        options = {}
+    with dspy.context(callbacks=[BraintrustDSpyCallback()]):
+        result = asyncio.run(lm.acall(prompt, **options)) if asynchronous else lm(prompt, **options)
+    assert result
+    span = next(span for span in memory_logger.pop() if span["span_attributes"]["name"] == "dspy.lm")
+    assert span["metadata"]["temperature"] == 0.5
+    assert span["metadata"]["model"] == MODEL
+    assert span["metadata"]["provider"] == "openai"
+    metrics = span["metrics"]
+    assert metrics["prompt_tokens"] > 0
+    assert metrics["completion_tokens"] > 0
+    assert metrics["tokens"] == metrics["prompt_tokens"] + metrics["completion_tokens"]
+    if prompt_kind == "request":
+        assert span["input"]["messages"] == prompt_to_openai_messages(
+            Prompt(messages=prompt.messages, system=prompt.system)
+        )
+        assert "prompt" not in span["input"]
+        assert "tools" not in span["input"]
+        assert span["metadata"]["tools"] == [
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_weather",
+                    "description": "Get the weather for a city.",
+                    "parameters": prompt.tools[0].parameters,
+                },
+            }
+        ]
+        assert span["metadata"]["max_tokens"] == 100
+        assert "top_p" not in span["metadata"]
+        assert result.tool_calls
+        assert span["output"] == [
+            {
+                "index": 0,
+                "message": prompt_to_openai_messages(Prompt(messages=(result.message,)))[0],
+                "finish_reason": result.finish_reason,
+            }
+        ]
+        for source, target in (
+            ("cache_read_tokens", "prompt_cached_tokens"),
+            ("cache_write_tokens", "prompt_cache_creation_tokens"),
+            ("reasoning_tokens", "completion_reasoning_tokens"),
+        ):
+            value = getattr(result.usage, source)
+            if value is not None:
+                assert metrics[target] == value
+
+
 @pytest.fixture
 def memory_logger():
     init_test_logger(PROJECT_NAME)
@@ -312,7 +416,7 @@ def test_dspy_adapter_callbacks(memory_logger):
 
     assert format_span["metadata"]["adapter_class"].endswith("ChatAdapter")
     assert format_span["input"]["inputs"] == {"question": "2+2"}
-    assert format_span["output"] == formatted
+    assert format_span["output"] == (prompt_to_openai_messages(formatted) if HAS_LM15 else formatted)
 
     assert parse_span["metadata"]["adapter_class"].endswith("ChatAdapter")
     assert parse_span["input"]["completion"] == "[[ ## answer ## ]]\n4"
