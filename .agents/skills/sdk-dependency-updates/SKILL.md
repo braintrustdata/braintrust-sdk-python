@@ -1,6 +1,6 @@
 ---
 name: sdk-dependency-updates
-description: "Review and refresh Braintrust Python SDK dependency update PRs, especially automated `chore(deps): weekly dependency update` PRs. Use when Codex needs to inspect `py/pyproject.toml` and `py/uv.lock`, reproduce the workflow's label decision, decide whether provider `latest` cassettes need re-recording, run the exact nox sessions, and validate playback before merge."
+description: "Review and refresh Braintrust Python SDK dependency update PRs, especially automated `chore(deps): weekly dependency update` PRs. Use when Codex needs to inspect `py/pyproject.toml` and `py/uv.lock`, reproduce the workflow's label decision, decide whether provider `latest` cassettes need re-recording, check that bumped pins still install on CI's lowest Python, research whether minor/major bumps need SDK changes, run the exact nox sessions, and validate playback before merge."
 ---
 
 # SDK Dependency Updates
@@ -38,6 +38,12 @@ Read when relevant:
 - PR metadata from `gh pr view <pr>`
 - changed integration tests and cassette directories for affected providers
 - [references/session-mapping.md](./references/session-mapping.md) for matrix-key classification, non-obvious session/cassette mappings, shared-directory constraints, and recording gotchas
+
+Helper scripts (run from the repo root; each takes `--help`):
+
+- [scripts/check_labels.py](./scripts/check_labels.py): the workflow's label decision for a committed PR branch (step 2)
+- [scripts/check_requires_python.py](./scripts/check_requires_python.py): bumped pins that newly exclude CI's lowest Python (step 4)
+- [scripts/cassette_shape_diff.py](./scripts/cassette_shape_diff.py): endpoint, status and count changes in re-recorded cassettes (step 10)
 
 ## Core Rules
 
@@ -79,6 +85,12 @@ cd py
 python scripts/determine-dependency-update-labels.py
 ```
 
+The script reads the uncommitted working-tree diff (`git diff`). The workflow runs it before committing. On a checked-out PR branch the changes are already committed, so it prints `changed=false`. Reproduce its decision against the merge base instead:
+
+```bash
+python3 .agents/skills/sdk-dependency-updates/scripts/check_labels.py   # --base origin/main --head HEAD
+```
+
 Treat the script as the source of truth for workflow labels. Treat your manual diff review as the source of truth for what work to do next.
 
 ### 3. Classify the changed keys
@@ -89,9 +101,59 @@ Classify each changed matrix key before recording anything:
 - keys with versioned integration cassettes: usually targeted `latest` playback or re-record work
 - keys without versioned integration cassettes: targeted validation only
 
-Use [references/session-mapping.md](./references/session-mapping.md) for the current classification and mappings.
+`[tool.braintrust.cassette-dirs]` in `py/pyproject.toml` is the source of truth for which keys own versioned cassettes. Use [references/session-mapping.md](./references/session-mapping.md) for non-obvious session mappings and shared directories.
 
-### 4. Apply the bump-severity policy
+### 4. Check Python-version floors for every bumped pin
+
+Check every changed `latest` pin, patch bumps included: a patch release can raise `Requires-Python` (for example, llama-index-core `0.14.25 -> 0.14.26` moved from `>=3.10` to `>=3.11`). Local playback on the default Python will not catch this. CI fails at install time on the lowest Python in `.github/workflows/checks.yaml`.
+
+Compare the old and new pins' `Requires-Python` against the lowest `python-version` in `checks.yaml`:
+
+```bash
+py/.venv/bin/python .agents/skills/sdk-dependency-updates/scripts/check_requires_python.py
+```
+
+It marks pins that newly exclude the lowest CI Python with `NEW`, and exits 1 if there are any. Pins that already excluded it are listed as `already excluded`; they should already be gated, but confirm when a key is new to the matrix.
+
+For each pin marked `NEW`:
+
+- Add a `latest`-only rule in `py/nox_session_constraints.py`, for example `"test_<name>": {"versions": {"latest": {"min_python": "3.11"}}}`, merged into any existing entry. Older pins keep covering the lower Python.
+- Make sure the nox session calls `_skip_if_incompatible(session)`. Matrix-registered sessions already do; hand-written ones may not.
+- Check sessions that install another key's `latest` pin through `_install_matrix_dep(..., LATEST)` (grep `noxfile.py`). For example, `test_mcp_interop` installs langchain-core `latest`.
+- If the package is in `[tool.braintrust.vendor-packages]`, the `pylint` session installs its `latest` pin too. Add it to the pylint session's minimum-Python handling: either lint lower Pythons against an older matrix pin, or mark the integration unlintable there.
+- Verify that the CI sharder drops the session on the lowest Python:
+
+  ```bash
+  cd py
+  python scripts/nox-matrix.py --dry-run --python-version 3.10 --os ubuntu-latest --exclude-static-checks 0 1
+  ```
+
+- Reproduce `pylint` on the real lowest Python. `mise exec python@3.10 -- nox` still runs on the `py/.venv` interpreter, so use a separate envdir:
+
+  ```bash
+  env -u VIRTUAL_ENV uvx --python "$(mise where python@3.10)/bin/python3.10" --from nox \
+    nox -f ./py/noxfile.py -s pylint --envdir <scratch>/nox310
+  ```
+
+### 5. Sweep playback and baseline failures before recording
+
+Automated PRs are opened with `GITHUB_TOKEN`, which does not trigger CI. Until someone pushes to the branch, local playback is the only signal. Before deleting or recording anything, replay every `latest` session against the new pins, not just the changed keys: `uv.lock` churn and cross-pin installs reach further than the matrix diff. Replay costs no API calls and finds most real breaks.
+
+- Run with `CI=true` (forces `record_mode="none"`) and with `BRAINTRUST_API_KEY` unset, as CI does.
+- Sessions can run in parallel; give each a separate log. Don't run two sessions that share an external service at once. For example, livekit tests use one local LiveKit server.
+- For every failure, re-run the same session on a clean `origin/main` worktree. Use the same env and its own `.nox` directory. A failure there too comes from local env or was already broken; a pass on `main` is a regression from the bump.
+
+Sessions that skip on the default interpreter need a nox install under an older Python. Check `max_python_exclusive` in `py/nox_session_constraints.py`; for example, sessions capped below 3.14 skip on 3.14:
+
+```bash
+uv venv --python 3.13 <scratch>/venv313
+VIRTUAL_ENV=<scratch>/venv313 uv pip install nox packaging
+cd py && <scratch>/venv313/bin/nox -s "<session>(latest)"
+```
+
+When driving nox from a script, put the real `uv` binary ahead of the mise shims on `PATH`. The shim re-applies `mise.toml`'s `py/.venv`, and session installs then land there instead of in `.nox/<session>`. The symptom is `ModuleNotFoundError: No module named 'braintrust'` in the session sanity check.
+
+### 6. Apply the bump-severity policy
 
 Default policy:
 
@@ -112,7 +174,52 @@ Override the default and re-record a patch bump when:
 - release notes call out wire-format or response-shape changes
 - the integration is known-fragile and has recent cassette drift
 
-### 5. Decide the minimum validation scope
+### 7. Research minor and major bumps for SDK changes
+
+For every minor or major bump of a package an integration instruments, check whether the SDK needs to change. Passing playback does not prove the integration still works:
+
+- Tests can pass while tracing silently loses data, such as a token metric or an attachment.
+- A test can fail for a reason that re-recording will not fix.
+
+Seen in practice:
+
+- **A patch target was no longer called.** pipecat 1.16 moved segmented STT from `STTService.process_generator` to a new `SegmentedSTTService._push_segment_frames`. The wrapper never ran, and provider spans lost their parent.
+- **Returned types changed.** dspy 3.5 moved adapters and LMs onto vendored `lm15` dataclasses. Images were logged as raw base64 and LM spans lost token metrics.
+- **A field was removed upstream.** harbor 0.26 dropped `TrialResult.failure_cause`. The plugin tolerated it, but the tests asserted it.
+- **A version cap blocked the new pin.** `livekit_agents` had `max_version = "1.8.10"`, so the integration silently stopped patching 1.8.12. `update-matrix-latest.py` does not read integration `max_version` caps, so grep `max_version` under `py/src/braintrust/integrations/` for every bumped key.
+
+Method:
+
+- Install old and new versions side by side, with no dependencies, in separate scratch dirs:
+
+  ```bash
+  uv pip install --no-deps --target <scratch>/<pkg>-<old> <pkg>==<old>
+  uv pip install --no-deps --target <scratch>/<pkg>-<new> <pkg>==<new>
+  ```
+
+  Treat them as untrusted: run any Python that reads them with `-I`.
+- Read the integration's `patchers.py`, `tracing.py` and `integration.py`, then diff the upstream code they touch:
+  - every patch target: does it still exist, does its signature still bind the same argument names, and is it still on the call path?
+  - every private attribute or helper the integration reads
+  - the types and shapes it serializes: response and usage fields, streaming event types, content blocks
+- Look for new public surfaces worth tracing, and new response or usage fields not yet captured.
+- Check `min_version`/`max_version` on the integration and any gates in `py/src/braintrust/integrations/versioning.py`. Fixes must keep every matrix version working: prefer feature detection, and remember patchers skip targets that don't exist.
+- For many packages, fan the research out in parallel with one subagent per group of packages. Scope each to scratch dirs: no nox runs or edits in the PR worktree while cassettes are being recorded there.
+
+Classify each package's findings:
+
+- **Required**: breaks or silent data loss. Give file:line evidence in both the SDK and the upstream package.
+- **Recommended**: new surfaces or fields worth tracing.
+- **Nothing needed**: say what was checked.
+
+Decide what to do with required findings:
+
+- **Small and contained** (a new patcher target, a version-gated test assertion, a removed cap): fix it in the dependency PR, with the failing test as the reproduction. Validate on `latest` and on every older matrix pin for that key.
+- **Large** (an integration rework): keep the previous `latest` pin in the PR. Open an issue with the findings and fix plan, and link it from the PR description. Expect the weekly job to bump the pin again until the fix lands.
+
+Treat recommended findings as follow-ups. Do not expand the dependency PR for them.
+
+### 8. Decide the minimum validation scope
 
 Default to the smallest scope that matches the diff:
 
@@ -122,49 +229,66 @@ Default to the smallest scope that matches the diff:
 
 When several matrix keys share a directory, delete and refresh that directory once, then run every affected session that writes to it.
 
-### 6. Re-record only when justified
+### 9. Re-record only when justified
 
-For cassette refresh work, delete the affected `latest` directory first so stale responses are not silently reused:
+Set up the recording environment. Provider keys live in the repo-root `.env`, which mise loads through `_.file`; non-interactive shells such as scripts and agent tool calls do not load it. Leave `BRAINTRUST_API_KEY` unset, as CI does. A placeholder key such as `___TEST_API_KEY__` points the SDK at `api.braintrust.ai` and breaks playback for tests that talk to Braintrust.
+
+```bash
+set -a; . ./.env; set +a
+unset BRAINTRUST_API_URL BRAINTRUST_APP_URL BRAINTRUST_ORG_NAME BRAINTRUST_API_KEY CI GITHUB_ACTIONS
+```
+
+Delete every affected `latest` directory first, all at once, before any nox session starts. Deleting a directory while another session runs `uv pip install -e .` breaks that install. Deleting also stops stale responses from being silently reused.
 
 ```bash
 cd py
 rm -rf src/braintrust/integrations/<provider>/cassettes/latest
 ```
 
-Before recording, neutralize local Braintrust env vars so provider cassettes do not capture unrelated Braintrust traffic:
-
-```bash
-unset BRAINTRUST_API_URL
-unset BRAINTRUST_APP_URL
-unset BRAINTRUST_ORG_NAME
-export BRAINTRUST_API_KEY=___TEST_API_KEY__
-```
-
-Use the exact nox session from `py/noxfile.py`. Prefer nox over raw pytest so `BRAINTRUST_TEST_PACKAGE_VERSION=latest` is set correctly.
-
-Examples:
+Then run the exact nox session from `py/noxfile.py` without a record-mode flag. Prefer nox over raw pytest so `BRAINTRUST_TEST_PACKAGE_VERSION=latest` is set. With `CI` unset, the default mode is `once`, which on an empty directory records every cassette fresh. Unlike `--vcr-record=all`, it does not re-overwrite a cassette that several tests share.
 
 ```bash
 cd py
-nox -s "test_openai_agents(latest)" -- --vcr-record=all
-nox -s "test_litellm(latest)" -- --vcr-record=all
-nox -s "test_langchain(latest)" -- --vcr-record=all
-```
-
-For Claude Agent SDK transport recordings:
-
-```bash
-cd py
+nox -s "test_litellm(latest)"
+nox -s "test_langchain(latest)"
+nox -s "test_btx_openai(latest)" -- --vcr-record=all   # btx spec cassettes need explicit record mode
 BRAINTRUST_CLAUDE_AGENT_SDK_RECORD_MODE=all nox -s "test_claude_agent_sdk(latest)"
 ```
 
+Groups of sessions that write to different directories can record in parallel. Sessions that share a directory record serially, in one pass.
+
 Provider API keys are expected to exist in this local environment. If a session fails fast with an auth error, stop and ask the user instead of fabricating cassettes.
 
-### 7. Review diffs and scan for pollution
+#### Restore cassettes from failed recordings
+
+A test that fails while recording still writes its cassette, holding the failed run. For each recording failure, decide whether the failure comes from the bump:
+
+- **Not from the bump:** restore the committed cassette with `git checkout -- <file>`, and confirm it still plays back against the new pin. Typical causes:
+  - nondeterministic model output that a test asserts on;
+  - upstream latency, such as a test that polls a long-running job past its deadline;
+  - auth or quota errors.
+- **From the bump:** keep the new recording only once the SDK or test fix makes the test pass. Otherwise hold the pin (see step 7).
+
+#### Tests that need a real Braintrust org
+
+Some tests record real Braintrust API traffic on purpose: a login to `www.braintrust.dev/api/apikey/login` plus attachment uploads or experiment fetches. To find them:
+
+```bash
+cd py
+git grep -l 'apikey/login' -- 'src/braintrust/**/cassettes/latest/*'
+```
+
+With no key, these tests error during setup with a 401. Restore their cassettes, or re-record them with a real `BRAINTRUST_API_KEY` from `.env`, still with `BRAINTRUST_API_URL`/`BRAINTRUST_APP_URL` unset so they hit the same production hosts as the committed copies. Then confirm the key does not appear in the recorded files:
+
+```bash
+grep -cF "$BRAINTRUST_API_KEY" <cassette files>   # expect 0
+```
+
+### 10. Review diffs and scan for pollution
 
 Be suspicious of:
 
-- Braintrust API traffic inside provider cassettes
+- Braintrust API traffic inside provider cassettes, apart from the real-org tests above
 - missing interactions after a delete-and-record pass
 - brand-new endpoint families unrelated to the provider under test
 - large request-shape changes that do not match the dependency bump
@@ -172,23 +296,36 @@ Be suspicious of:
 Quick scan:
 
 ```bash
-rg -n "staging-api\.braintrust\.dev|api\.braintrust\.dev/version|/logs3|braintrust\.dev/version" \
+rg -l "staging-api\.braintrust\.dev|api\.braintrust\.ai|api\.braintrust\.dev/version|/logs3|braintrust\.dev/version" \
   py/src/braintrust/integrations/*/cassettes/latest
+```
+
+Any hit outside the real-org files found in step 9 is pollution.
+
+Then compare each re-recorded cassette's structure with the committed copy, not just its text: the set of `(method, URL, status)` interactions and their count. Expect only regenerated resource IDs in URLs. Investigate added or removed endpoints, non-2xx statuses that are new, count changes, and added or deleted files.
+
+```bash
+py/.venv/bin/python .agents/skills/sdk-dependency-updates/scripts/cassette_shape_diff.py   # optionally: <integration> ...
 ```
 
 If recording appears to succeed but produces no real cassette updates, read [references/session-mapping.md](./references/session-mapping.md) for provider-specific cache gotchas.
 
-### 8. Validate playback
+### 11. Validate playback
 
-After recording, rerun playback without forcing record mode:
+After recording, re-run every affected session in replay-only mode, the way CI runs it:
 
 ```bash
 cd py
-nox -s "test_openai_agents(latest)"
-nox -s "test_litellm(latest)"
-nox -s "test_langchain(latest)"
-BRAINTRUST_CLAUDE_AGENT_SDK_RECORD_MODE=none nox -s "test_claude_agent_sdk(latest)"
+CI=true nox -s "test_litellm(latest)"
+CI=true nox -s "test_langchain(latest)"
+CI=true BRAINTRUST_CLAUDE_AGENT_SDK_RECORD_MODE=none nox -s "test_claude_agent_sdk(latest)"
 ```
+
+Also re-run:
+
+- every session that shares a re-recorded directory;
+- every session you changed code or constraints for, on `latest` and on each older matrix pin for that key;
+- `test_core`.
 
 If matrix versions changed in a way that could orphan cassette directories, also run:
 
@@ -199,6 +336,19 @@ make check-stale-cassettes
 
 If the PR changed broader CI or workflow wiring, expand validation based on `.github/workflows/checks.yaml`.
 
+### 12. Push and update the PR
+
+Pushing to the bot branch from your own account is what first starts CI on the PR, including the lowest-Python shards. Watch that run, and triage failures with `sdk-ci-triage`.
+
+Update the PR description to cover:
+
+- a table of `latest` bumps by type (minor with cassettes, playback only, patch), with any held-back pins and their issue links
+- cassette dispositions: re-recorded, recorded against a real org, kept as committed (and why)
+- SDK and test changes made for the new pins, plus any Python-floor gating
+- the sessions validated locally and how they ran (replay-only, no Braintrust key)
+
+Held-back pins come back: the weekly job bumps every `latest` pin again on its next run. Revert held pins on each new weekly PR until the linked fix lands.
+
 ## Report Back
 
 Always report:
@@ -206,7 +356,10 @@ Always report:
 1. whether the PR was infra-only or needed targeted refresh work
 2. which matrix keys or provider packages changed
 3. which nox sessions you ran
-4. which cassette directories or files you deleted and re-recorded
+4. which cassette directories or files you deleted and re-recorded, and which you restored from git (and why)
 5. any suspicious diff items you investigated
 6. whether you found and removed pollution
-7. the final playback or validation result
+7. any pins that raise `Requires-Python` above CI's lowest Python, and how they were gated
+8. for each minor or major bump: the required SDK changes (fixed in the PR, or held back with an issue link), the recommended follow-ups, or "nothing needed"
+9. playback-sweep failures, and whether each also fails on `main`
+10. the final playback or validation result

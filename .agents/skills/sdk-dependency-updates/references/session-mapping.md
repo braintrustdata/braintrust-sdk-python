@@ -17,31 +17,16 @@ These do not imply provider cassette refresh work:
 
 ### Keys with versioned integration cassettes
 
-These appear in `[tool.braintrust.cassette-dirs]` and usually map to targeted `latest` playback or re-record work:
+`[tool.braintrust.cassette-dirs]` in `py/pyproject.toml` maps each integration cassette directory to the matrix keys that own it. It is the source of truth. Don't keep a copy of the list here. Print it with:
 
-- `anthropic`
-- `cohere`
-- `openai`
-- `openai-agents`
-- `litellm`
-- `claude-agent-sdk`
-- `agno`
-- `agentscope`
-- `pydantic-ai-integration`
-- `pydantic-ai-wrap-openai`
-- `google-genai`
-- `dspy`
-- `google-adk`
-- `langchain-core`
-- `openrouter`
-- `mistralai`
+```bash
+cd py
+python3 -c 'import tomllib; [print(d, k) for d, k in tomllib.load(open("pyproject.toml", "rb"))["tool"]["braintrust"]["cassette-dirs"].items()]'
+```
 
 ### Keys without versioned integration cassettes
 
-These still need targeted validation, but do not map to `integrations/*/cassettes/latest/`:
-
-- `autoevals`
-- `temporalio`
+Any other matrix key, such as `autoevals`, `temporalio` or `mcp`, still needs targeted validation but has no `integrations/*/cassettes/latest/` directory to refresh.
 
 ## Non-obvious mappings
 
@@ -56,12 +41,21 @@ For obvious keys, still confirm the exact session name in `py/noxfile.py`.
 
 ## Shared-directory rule
 
-Do not split these across workers or independent recording passes:
+A `latest` directory is shared when:
 
-- `pydantic-ai-integration`
-- `pydantic-ai-wrap-openai`
+- `cassette-dirs` maps it to more than one key, or
+- several nox sessions run tests from the same integration directory.
 
-Both write into `py/src/braintrust/integrations/pydantic_ai/cassettes/latest/`. Delete that directory once, then run all affected sessions serially.
+Grep `py/noxfile.py` for `INTEGRATION_DIR}/<dir>`. Sessions registered through `_register_matrix_sessions` and the btx spec sessions don't match that grep, so check those entries too.
+
+Current shared directories:
+
+- `openai/cassettes/latest/` (including `btx/`): `test_openai`, `test_openai_http2_streaming`, `test_openai_ddtrace`, `test_btx_openai`
+- `pydantic_ai/cassettes/latest/`: `test_pydantic_ai_integration`, `test_pydantic_ai_logfire`, `test_pydantic_ai_wrap_openai` (keys `pydantic-ai-integration`, `pydantic-ai-wrap-openai`)
+- `langchain/cassettes/latest/`: `test_langchain`, `test_deepagents` (keys `langchain-core`, `deepagents`)
+- `bedrock_runtime/cassettes/latest/`: keys `boto3`, `botocore`
+
+Do not split a shared directory across workers or independent recording passes. Delete it once, then run every session that writes to it, serially. Deleting `openai/cassettes/latest` also deletes `btx/`, so re-record `test_btx_openai(latest)` as well.
 
 ## Recording gotchas
 
@@ -91,5 +85,6 @@ These are usually local-environment leakage, not meaningful provider behavior:
 - `403 ForbiddenError` from Braintrust logging endpoints
 - `api.braintrust.dev/version`
 - `staging-api.braintrust.dev/version`
+- any `api.braintrust.ai` host (a placeholder `BRAINTRUST_API_KEY` was set)
 
-If these show up in provider cassettes, neutralize local Braintrust env vars and re-record.
+If these show up in provider cassettes, neutralize local Braintrust env vars and re-record. Tests that log in to a real Braintrust org are the exception: their cassettes contain `www.braintrust.dev/api/apikey/login` and other `api.braintrust.dev` calls on purpose. Find them with `git grep -l 'apikey/login' -- 'py/src/braintrust/**/cassettes/latest/*'`.
