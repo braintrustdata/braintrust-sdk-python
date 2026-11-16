@@ -17,22 +17,25 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/3.0.0 gl-python/3.14.7
+      - google-genai-sdk/3.3.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/3.0.0 gl-python/3.14.7
+      - google-genai-sdk/3.3.0 gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
         [\n          {\n            \"text\": \"The population of Tokyo depends on
-        how the boundaries are measured:\\n\\n* **Tokyo Metropolis (Prefecture):**
-        The total population for the entire Tokyo prefecture is estimated at approximately
-        **14.2 million to 14.3 million** people.\\n* **Greater Tokyo Area (Metropolitan
-        Area):** If you include the wider urban agglomeration spanning the surrounding
-        prefectures, the population is estimated to be around **33.4 million** people
-        according to United Nations demographic reports, making it one of the largest
-        metropolitan areas in the world.\",\n            \"thoughtSignature\": \"EmAKXgFpFH0Tm1CiZb7KTFzs9Tj6Q0UBaaDzwPaftT0JtRZzRKXTVotakTgZYtlwdjkeh8VljXjpHVHHMKFUmVUKXuSCQA8BFksSrsAzkmuuWSgGrXmmVyEzHxuI1KJ/jlE=\"\n
+        how the boundaries are measured:\\n\\n* **Tokyo Metropolis (Tokyo-to / Prefecture):**
+        The official population of the entire Tokyo prefecture (which includes the
+        central wards, western Tama area, and outlying islands) is approximately **14.2
+        to 14.3 million** residents. \\n* **The 23 Special Wards:** The central urban
+        core of Tokyo has a population of about **9.95 million** people.\\n* **Greater
+        Tokyo Area / Metro Area:** If you include the wider continuously developed
+        urban agglomeration and surrounding commuter prefectures, the population is
+        estimated to be between **33.4 million** (according to UN urban agglomeration
+        definitions) and nearly **37 million** people, making it one of the largest
+        metropolitan areas in the world.\",\n            \"thoughtSignature\": \"EmAKXgFpFH0TyJyYj4evTx/oNcVHhKmx6uOyKP/qBTFFvGYzzRKdUsUKSmcP6lzut1mZ8Sx4Rotgk1oRslsNKfBnlmsS/TS7jPLYXZcVqWIeucXUX6ALo4iUnOKocX6MrHQ=\"\n
         \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
         \"STOP\",\n      \"index\": 0,\n      \"groundingMetadata\": {\n        \"searchEntryPoint\":
         {\n          \"renderedContent\": \"\\u003cstyle\\u003e\\n.container {\\n
@@ -97,44 +100,53 @@ interactions:
         0-11.01 3.4-13.45 8.36l5.03 3.85A8.86 8.86 0 0 1 24 14.14z\\\" fill=\\\"#EA4335\\\"/\\u003e\\n
         \   \\u003c/svg\\u003e\\n    \\u003cdiv class=\\\"gradient-container\\\"\\u003e\\u003cdiv
         class=\\\"gradient\\\"\\u003e\\u003c/div\\u003e\\u003c/div\\u003e\\n  \\u003c/div\\u003e\\n
-        \ \\u003cdiv class=\\\"carousel\\\"\\u003e\\n\\u003ca class=\\\"chip\\\" href=\\\"https://www.google.com/search?q=current+population+of+Tokyo+Japan+2026&client=app-vertex-grounding&safesearch=active\\\"\\u003ecurrent
-        population of Tokyo Japan 2026\\u003c/a\\u003e\\n  \\u003c/div\\u003e\\n\\u003c/div\\u003e\"\n
+        \ \\u003cdiv class=\\\"carousel\\\"\\u003e\\n\\u003ca class=\\\"chip\\\" href=\\\"https://www.google.com/search?q=current+population+of+Tokyo+Japan+2025+2026&client=app-vertex-grounding&safesearch=active\\\"\\u003ecurrent
+        population of Tokyo Japan 2025 2026\\u003c/a\\u003e\\n  \\u003c/div\\u003e\\n\\u003c/div\\u003e\"\n
         \       },\n        \"groundingChunks\": [\n          {\n            \"web\":
-        {\n              \"uri\": \"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEAdVe6dWdY5BfqL0X7WdCTobxK_b60oEENLEodSwdA6hKNtFvlDnCUM7R4hyVleILyCx2LFPqZSm8WUVN4PVnPpmLC3Gp-T42wKR88NFWsVBjhpuvop3blCguzVfOfcqLgyhC1OXhVlIg=\",\n
-        \             \"title\": \"wikipedia.org\"\n            }\n          },\n
-        \         {\n            \"web\": {\n              \"uri\": \"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQF6wpMUgAnPLyILcIE9HPz3EHU6HUnABGznxguvPWbuIzObiD4fo8UimgYAim0kHFYTntyXBO84sVxsxOxRwca2bP2Z3f9buT9KcCKiYnq-T9Oo-nHt21cAenhG0Lqer-w=\",\n
+        {\n              \"uri\": \"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHC-lRJ_MjLH_I7TjK8GCRu_PmqY5N-fR0kCjXC4kg4J5ZUb6aBS7z36MoC33Pil_zGwTypXnCTwoeFy-mft6uTFmvBToAFh-yHPHgFQNgLba43xu7yaujWarYvkpTjcJMcff9JOTSmfPLuv1SM\",\n
+        \             \"title\": \"tokyobureau.com\"\n            }\n          },\n
+        \         {\n            \"web\": {\n              \"uri\": \"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQF7mDeua3vcVuNSCuJve9TQ6rpE8ZhXldH3yGf26ThUmGY28uQD2OIP0DEWSKqQal7vxwVOeVdAofRHkroExMxPVAi-wCRagT4_AEd99k2EVPvu5sw8kTMDRWlY_xIQlNct9izYPGPbKZL77kzh87BE0PBMxU_C2ouO98Hfd54=\",\n
+        \             \"title\": \"macrotrends.net\"\n            }\n          },\n
+        \         {\n            \"web\": {\n              \"uri\": \"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGDOjHGGkop7oQMQMKBB2dt3TkMwh18XH811hmetA7iW3G17N5CH8Hyea-7UAFf4iupi2DaBrr8uXgTfcXwXsdyseK8QtpFD05LMZvrnOcMuu0Gml_s8FjcuSUu9esW5rk=\",\n
         \             \"title\": \"nippon.com\"\n            }\n          }\n        ],\n
         \       \"groundingSupports\": [\n          {\n            \"segment\": {\n
-        \             \"startIndex\": 71,\n              \"endIndex\": 228,\n              \"text\":
-        \"**Tokyo Metropolis (Prefecture):** The total population for the entire Tokyo
-        prefecture is estimated at approximately **14.2 million to 14.3 million**
-        people\"\n            },\n            \"groundingChunkIndices\": [\n              0\n
+        \             \"startIndex\": 71,\n              \"endIndex\": 299,\n              \"text\":
+        \"**Tokyo Metropolis (Tokyo-to / Prefecture):** The official population of
+        the entire Tokyo prefecture (which includes the central wards, western Tama
+        area, and outlying islands) is approximately **14.2 to 14.3 million** residents\"\n
+        \           },\n            \"groundingChunkIndices\": [\n              0\n
         \           ]\n          },\n          {\n            \"segment\": {\n              \"startIndex\":
-        232,\n              \"endIndex\": 471,\n              \"text\": \"**Greater
-        Tokyo Area (Metropolitan Area):** If you include the wider urban agglomeration
-        spanning the surrounding prefectures, the population is estimated to be around
-        **33.4 million** people according to United Nations demographic reports\"\n
-        \           },\n            \"groundingChunkIndices\": [\n              1\n
-        \           ]\n          }\n        ],\n        \"webSearchQueries\": [\n
-        \         \"current population of Tokyo Japan 2026\"\n        ]\n      }\n
-        \   }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\": 11,\n    \"candidatesTokenCount\":
-        122,\n    \"totalTokenCount\": 133,\n    \"promptTokensDetails\": [\n      {\n
-        \       \"modality\": \"TEXT\",\n        \"tokenCount\": 11\n      }\n    ],\n
-        \   \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-3.5-flash-lite\",\n
-        \ \"responseId\": \"ID7zapbWNO79wbUPwK-FgA8\"\n}\n"
+        304,\n              \"endIndex\": 411,\n              \"text\": \"**The 23
+        Special Wards:** The central urban core of Tokyo has a population of about
+        **9.95 million** people\"\n            },\n            \"groundingChunkIndices\":
+        [\n              0\n            ]\n          },\n          {\n            \"segment\":
+        {\n              \"startIndex\": 415,\n              \"endIndex\": 761,\n
+        \             \"text\": \"**Greater Tokyo Area / Metro Area:** If you include
+        the wider continuously developed urban agglomeration and surrounding commuter
+        prefectures, the population is estimated to be between **33.4 million** (according
+        to UN urban agglomeration definitions) and nearly **37 million** people, making
+        it one of the largest metropolitan areas in the world\"\n            },\n
+        \           \"groundingChunkIndices\": [\n              1,\n              2,\n
+        \             0\n            ]\n          }\n        ],\n        \"webSearchQueries\":
+        [\n          \"current population of Tokyo Japan 2025 2026\"\n        ]\n
+        \     }\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\": 11,\n
+        \   \"candidatesTokenCount\": 199,\n    \"totalTokenCount\": 210,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 11\n
+        \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
+        \"gemini-3.5-flash-lite\",\n  \"responseId\": \"uCX7aou8IKahuMYPv9uOmAw\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '8014'
+      - '9171'
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Tue, 10 Nov 2026 15:54:10 GMT
+      - Mon, 16 Nov 2026 15:48:10 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=1869
+      - gfet4t7; dur=2046
       transfer-encoding:
       - chunked
       vary:

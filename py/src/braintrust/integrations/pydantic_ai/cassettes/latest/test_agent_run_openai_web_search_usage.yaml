@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.66.0
+      - pydantic-ai/2.68.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.46.0
+      - 3.51.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,23 +39,23 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0dfd0dde1a1a25f4016af3445dfa7087d2ac720d9d28adccaa\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1794327646,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0219baab663a2245016afb23358f4487d2aee85bf7187e55c0\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1794843445,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794327647,\n  \"error\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794843448,\n  \"error\":
         null,\n  \"frequency_penalty\": 0.0,\n  \"image\": {\n    \"context_compression\":
-        \"disabled\"\n  },\n  \"incomplete_details\": null,\n  \"instructions\": null,\n
-        \ \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
-        \"gpt-6-luna\",\n  \"moderation\": null,\n  \"output\": [\n    {\n      \"id\":
-        \"ws_0dfd0dde1a1a25f4016af3445e73b087d29dfa195a472990a2\",\n      \"type\":
-        \"web_search_call\",\n      \"status\": \"completed\",\n      \"action\":
+        \"disabled\"\n  },\n  \"incomplete_details\": null,\n  \"input_transformations\":
+        [],\n  \"instructions\": null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\":
+        null,\n  \"model\": \"gpt-6-luna\",\n  \"moderation\": null,\n  \"output\":
+        [\n    {\n      \"id\": \"ws_0219baab663a2245016afb233612e887d2b0aacffd73cdf1e1\",\n
+        \     \"type\": \"web_search_call\",\n      \"status\": \"completed\",\n      \"action\":
         {\n        \"type\": \"search\",\n        \"queries\": [\n          \"weather:
         Paris, France\"\n        ],\n        \"query\": \"weather: Paris, France\"\n
-        \     }\n    },\n    {\n      \"id\": \"msg_0dfd0dde1a1a25f4016af3445f0edc87d2996712ff7c1c1ff9\",\n
+        \     }\n    },\n    {\n      \"id\": \"msg_0219baab663a2245016afb2337f0bc87d2a244f49a317a15ea\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"Paris is currently
-        drizzling at 54\\u00b0F (12\\u00b0C). \"\n        }\n      ],\n      \"phase\":
+        cloudy and 54\\u00b0F (12\\u00b0C). \"\n        }\n      ],\n      \"phase\":
         \"final_answer\",\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
         true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
         null,\n  \"prompt_cache_retention\": \"24h\",\n  \"reasoning\": {\n    \"context\":
@@ -74,14 +74,15 @@ interactions:
         \"approximate\",\n        \"city\": null,\n        \"country\": \"US\",\n
         \       \"region\": null,\n        \"timezone\": null\n      }\n    }\n  ],\n
         \ \"top_logprobs\": 0,\n  \"top_p\": 0.98,\n  \"truncation\": \"disabled\",\n
-        \ \"usage\": {\n    \"input_tokens\": 4762,\n    \"input_tokens_details\":
-        {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 4454\n    },\n
-        \   \"output_tokens\": 57,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        25\n    },\n    \"total_tokens\": 4819\n  },\n  \"user\": null,\n  \"metadata\":
-        {}\n}"
+        \ \"usage\": {\n    \"input_tokens\": 5119,\n    \"input_tokens_details\":
+        {\n      \"cache_write_tokens\": 0,\n      \"cache_write_tokens_details\":
+        {\n        \"ttl_12h_tokens\": 0,\n        \"ttl_30m_tokens\": 0\n      },\n
+        \     \"cached_tokens\": 4454\n    },\n    \"output_tokens\": 56,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 25\n    },\n    \"total_tokens\": 5175\n  },\n
+        \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
       access-control-expose-headers:
-      - X-Request-ID, Server-Timing-Total
+      - X-Request-ID, Server-Timing-Total, X-OpenAI-Inference-Capacity-Reason
       - CF-Ray
       - CF-Ray
       alt-svc:
@@ -89,17 +90,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a58662ea1de62116-YYZ
+      - a5b793ae4b4ade74-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2806'
+      - '2939'
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 16:20:47 GMT
+      - Mon, 16 Nov 2026 15:37:28 GMT
       openai-processing-ms:
-      - '1363'
+      - '2708'
       openai-version:
       - '2020-10-01'
       server:
@@ -117,13 +118,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '180000000'
+      - '179999739'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_9d32d4d4a17747ddb4edfbc5a3a20799
+      - req_9e25cc21d1dd4b32822b67f082b9f74a
     status:
       code: 200
       message: OK

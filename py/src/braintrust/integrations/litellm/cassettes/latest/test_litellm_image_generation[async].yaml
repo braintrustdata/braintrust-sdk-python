@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - AsyncOpenAI/Python 3.46.0
+      - AsyncOpenAI/Python 3.51.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.46.0
+      - 3.51.0
       x-stainless-raw-response:
       - 'true'
       x-stainless-read-timeout:
@@ -41,29 +41,27 @@ interactions:
     uri: https://api.openai.com/v1/images/generations
   response:
     body:
-      string: "{\n  \"created\": 1794325625,\n  \"background\": \"opaque\",\n  \"data\":
-        [\n    {\n      \"b64_json\": \"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==\",\n
-        \     \"generation_id\": \"9e961730-c038-43fb-b7e1-b36bf98c6302\"\n    }\n
-        \ ],\n  \"output_format\": \"png\",\n  \"quality\": \"low\",\n  \"safety_identifier\":
-        null,\n  \"size\": \"1024x1024\",\n  \"usage\": {\n    \"input_tokens\": 14,\n
-        \   \"input_tokens_details\": {\n      \"image_tokens\": 0,\n      \"text_tokens\":
-        14\n    },\n    \"output_tokens\": 824,\n    \"output_tokens_details\": {\n
-        \     \"image_tokens\": 824,\n      \"text_tokens\": 0\n    },\n    \"total_tokens\":
-        838\n  }\n}"
+      string: '{"created": 1794844435, "background": "opaque", "data": [{"b64_json":
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==",
+        "generation_id": "acbe449a-9a44-46da-ae53-60bbdb3bdc40"}], "output_format":
+        "png", "quality": "high", "safety_identifier": null, "size": "1024x1024",
+        "usage": {"input_tokens": 14, "input_tokens_details": {"image_tokens": 0,
+        "text_tokens": 14}, "output_tokens": 1758, "output_tokens_details": {"image_tokens":
+        1758, "text_tokens": 0}, "total_tokens": 1772}}'
     headers:
       Access-Control-Expose-Headers:
-      - X-Request-ID, Server-Timing-Total
+      - X-Request-ID, Server-Timing-Total, X-OpenAI-Inference-Capacity-Reason
       - CF-Ray
       Alt-Svc:
       - h3=":443"; ma=86400
       CF-RAY:
-      - a586317b58050c26-YYZ
+      - a5b7abb4fe01de04-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Tue, 10 Nov 2026 15:47:05 GMT
+      - Mon, 16 Nov 2026 15:53:55 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -73,13 +71,13 @@ interactions:
       X-Content-Type-Options:
       - nosniff
       X-Request-ID:
-      - req_f796f10f6f314e57815d217806a75bd4
+      - req_a9ae6e876d0842829e829da91bc6ab3f
       cf-cache-status:
       - DYNAMIC
       content-length:
-      - '626'
+      - '526'
       openai-processing-ms:
-      - '4208'
+      - '6249'
       openai-version:
       - '2020-10-01'
     status:

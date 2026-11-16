@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"run_id":"2ef3e139-4a15-4967-b1ce-3cda6899c3cc","eval_type":"reliability","data":{"team_id":null,"agent_id":"calculator-agent","model_id":"gpt-6-luna","model_provider":"OpenAI"},"sdk_version":"3.1.12"}'
+    body: '{"run_id":"53d7bf18-53de-4c1a-a895-3fb2f3bd3e0e","eval_type":"reliability","data":{"team_id":null,"agent_id":"calculator-agent","model_id":"gpt-6-luna","model_provider":"OpenAI"},"sdk_version":"3.2.0"}'
     headers:
       accept:
       - '*/*'
@@ -9,18 +9,18 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '202'
+      - '201'
       content-type:
       - application/json
       host:
       - os-api.agno.com
       user-agent:
-      - agno/3.1.12
+      - agno/3.2.0
     method: POST
     uri: https://os-api.agno.com/telemetry/evals
   response:
     body:
-      string: '{"message":"Eval creation acknowledged: 2ef3e139-4a15-4967-b1ce-3cda6899c3cc","status":"success"}'
+      string: '{"message":"Eval creation acknowledged: 53d7bf18-53de-4c1a-a895-3fb2f3bd3e0e","status":"success"}'
     headers:
       content-length:
       - '97'
@@ -31,7 +31,7 @@ interactions:
       cross-origin-resource-policy:
       - same-origin
       date:
-      - Tue, 10 Nov 2026 15:50:09 GMT
+      - Mon, 16 Nov 2026 15:53:58 GMT
       permissions-policy:
       - camera=(), microphone=(), geolocation=()
       referrer-policy:
@@ -87,8 +87,8 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EiiOozQaLWRdErD9P1raUy0PVWL3X\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1794325810,\n  \"model\": \"gpt-6-luna\",\n
+      string: "{\n  \"id\": \"chatcmpl-EktJn015OhGBlL2tGvTJkRyzLGcKV\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794844439,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"4\",\n        \"refusal\": null,\n
         \       \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
@@ -109,7 +109,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a58636187b11aaa8-YYZ
+      - a5b7abeeabd046b5-YYZ
       connection:
       - keep-alive
       content-length:
@@ -117,159 +117,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 15:50:12 GMT
+      - Mon, 16 Nov 2026 15:53:59 GMT
       openai-processing-ms:
-      - '2169'
-      openai-version:
-      - '2020-10-01'
-      server:
-      - cloudflare
-      strict-transport-security:
-      - max-age=31536000; includeSubDomains; preload
-      transfer-encoding:
-      - chunked
-      x-content-type-options:
-      - nosniff
-      x-openai-proxy-wasm:
-      - v0.1
-      x-ratelimit-limit-requests:
-      - '30000'
-      x-ratelimit-limit-tokens:
-      - '180000000'
-      x-ratelimit-remaining-requests:
-      - '29999'
-      x-ratelimit-remaining-tokens:
-      - '179999988'
-      x-ratelimit-reset-requests:
-      - 2ms
-      x-ratelimit-reset-tokens:
-      - 0s
-      x-request-id:
-      - req_8321bf4736554b328ee65d174ade2824
-    status:
-      code: 200
-      message: OK
-- request:
-    body: '{"session_id":"29b4a7a3-775f-44f6-a910-60737691e830","run_id":"414693c4-17ba-4eee-a455-d2ed5f889ca9","data":{"agent_id":"perf-agent","db_type":null,"model_provider":"OpenAI","model_name":"OpenAIChat","model_id":"gpt-6-luna","parser_model":null,"output_model":null,"has_tools":true,"has_memory":false,"has_learnings":false,"has_reasoning":false,"has_knowledge":false,"has_input_schema":false,"has_output_schema":false,"has_team":false},"sdk_version":"3.1.12","type":"agent"}'
-    headers:
-      accept:
-      - '*/*'
-      accept-encoding:
-      - gzip, deflate
-      connection:
-      - keep-alive
-      content-length:
-      - '473'
-      content-type:
-      - application/json
-      host:
-      - os-api.agno.com
-      user-agent:
-      - agno/3.1.12
-    method: POST
-    uri: https://os-api.agno.com/telemetry/runs
-  response:
-    body:
-      string: '{"message":"Run creation acknowledged: 414693c4-17ba-4eee-a455-d2ed5f889ca9","status":"success"}'
-    headers:
-      content-length:
-      - '96'
-      content-type:
-      - application/json
-      cross-origin-opener-policy:
-      - same-origin
-      cross-origin-resource-policy:
-      - same-origin
-      date:
-      - Tue, 10 Nov 2026 15:50:12 GMT
-      permissions-policy:
-      - camera=(), microphone=(), geolocation=()
-      referrer-policy:
-      - strict-origin-when-cross-origin
-      server:
-      - uvicorn
-      strict-transport-security:
-      - max-age=31536000; includeSubDomains
-      x-content-type-options:
-      - nosniff
-      x-frame-options:
-      - DENY
-    status:
-      code: 201
-      message: Created
-- request:
-    body: '{"messages":[{"role":"developer","content":"Answer with the final number
-      only."},{"role":"user","content":"What is 2+2?"}],"model":"gpt-6-luna","reasoning_effort":"none"}'
-    headers:
-      accept:
-      - application/json
-      accept-encoding:
-      - gzip, deflate
-      connection:
-      - keep-alive
-      content-length:
-      - '170'
-      content-type:
-      - application/json
-      host:
-      - api.openai.com
-      user-agent:
-      - OpenAI/Python 2.31.0
-      x-stainless-arch:
-      - arm64
-      x-stainless-async:
-      - 'false'
-      x-stainless-lang:
-      - python
-      x-stainless-os:
-      - MacOS
-      x-stainless-package-version:
-      - 2.31.0
-      x-stainless-read-timeout:
-      - '600'
-      x-stainless-retry-count:
-      - '0'
-      x-stainless-runtime:
-      - CPython
-      x-stainless-runtime-version:
-      - 3.14.7
-    method: POST
-    uri: https://api.openai.com/v1/chat/completions
-  response:
-    body:
-      string: "{\n  \"id\": \"chatcmpl-EiiOqJdR7vCBc5y8PJMKKmWv0BTJN\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1794325812,\n  \"model\": \"gpt-6-luna\",\n
-        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"4\",\n        \"refusal\": null,\n
-        \       \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
-        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 24,\n    \"completion_tokens\":
-        4,\n    \"total_tokens\": 28,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
-        0,\n      \"cache_write_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n
-        \   \"completion_tokens_details\": {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\":
-        0,\n      \"accepted_prediction_tokens\": 0,\n      \"rejected_prediction_tokens\":
-        0\n    }\n  },\n  \"service_tier\": \"default\",\n  \"system_fingerprint\":
-        null\n}\n"
-    headers:
-      access-control-expose-headers:
-      - X-Request-ID
-      - CF-Ray
-      - CF-Ray
-      alt-svc:
-      - h3=":443"; ma=86400
-      cf-cache-status:
-      - DYNAMIC
-      cf-ray:
-      - a58636271cfcaaa8-YYZ
-      connection:
-      - keep-alive
-      content-length:
-      - '791'
-      content-type:
-      - application/json
-      date:
-      - Tue, 10 Nov 2026 15:50:14 GMT
-      openai-processing-ms:
-      - '1648'
+      - '613'
       openai-version:
       - '2020-10-01'
       server:
@@ -295,7 +145,157 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_5914f2ab05b748c99375cbc6200ff015
+      - req_8bb20d9393d34a6c93091521484f369d
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"session_id":"e7399be6-40d7-45bd-876a-867e78b4c8b2","run_id":"f3b59c81-7bc2-4cd5-a2bd-3f8b0b09db24","data":{"agent_id":"perf-agent","db_type":null,"model_provider":"OpenAI","model_name":"OpenAIChat","model_id":"gpt-6-luna","parser_model":null,"output_model":null,"has_tools":true,"has_memory":false,"has_learnings":false,"has_reasoning":false,"has_knowledge":false,"has_input_schema":false,"has_output_schema":false,"has_team":false},"sdk_version":"3.2.0","type":"agent"}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '472'
+      content-type:
+      - application/json
+      host:
+      - os-api.agno.com
+      user-agent:
+      - agno/3.2.0
+    method: POST
+    uri: https://os-api.agno.com/telemetry/runs
+  response:
+    body:
+      string: '{"message":"Run creation acknowledged: f3b59c81-7bc2-4cd5-a2bd-3f8b0b09db24","status":"success"}'
+    headers:
+      content-length:
+      - '96'
+      content-type:
+      - application/json
+      cross-origin-opener-policy:
+      - same-origin
+      cross-origin-resource-policy:
+      - same-origin
+      date:
+      - Mon, 16 Nov 2026 15:53:59 GMT
+      permissions-policy:
+      - camera=(), microphone=(), geolocation=()
+      referrer-policy:
+      - strict-origin-when-cross-origin
+      server:
+      - uvicorn
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      x-content-type-options:
+      - nosniff
+      x-frame-options:
+      - DENY
+    status:
+      code: 201
+      message: Created
+- request:
+    body: '{"messages":[{"role":"developer","content":"Answer with the final number
+      only."},{"role":"user","content":"What is 2+2?"}],"model":"gpt-6-luna","reasoning_effort":"none"}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '170'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - OpenAI/Python 2.31.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.31.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-EktJnm94RHbA10NfFNxU1tgnCgu6g\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794844439,\n  \"model\": \"gpt-6-luna\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"4\",\n        \"refusal\": null,\n
+        \       \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 24,\n    \"completion_tokens\":
+        4,\n    \"total_tokens\": 28,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"cache_write_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n
+        \   \"completion_tokens_details\": {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\":
+        0,\n      \"accepted_prediction_tokens\": 0,\n      \"rejected_prediction_tokens\":
+        0\n    }\n  },\n  \"service_tier\": \"default\",\n  \"system_fingerprint\":
+        null\n}\n"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a5b7abf38f9346b5-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '791'
+      content-type:
+      - application/json
+      date:
+      - Mon, 16 Nov 2026 15:54:00 GMT
+      openai-processing-ms:
+      - '696'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '180000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '179999985'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_1cd489a8c5ed405a8850151fb88ce78f
     status:
       code: 200
       message: OK

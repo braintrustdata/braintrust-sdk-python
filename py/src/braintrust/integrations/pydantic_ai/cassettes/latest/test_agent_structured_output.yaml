@@ -17,7 +17,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.66.0
+      - pydantic-ai/2.68.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -27,7 +27,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.46.0
+      - 3.51.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -40,17 +40,18 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_08aec355d392ee11016af33c184a9c87d28ea051a5a96e2eba\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1794325528,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0df796ed4ec9c3f9016afb23131ba887d2ad5743fe55517e87\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1794843411,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794325529,\n  \"error\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794843412,\n  \"error\":
         null,\n  \"frequency_penalty\": 0.0,\n  \"image\": {\n    \"context_compression\":
-        \"disabled\"\n  },\n  \"incomplete_details\": null,\n  \"instructions\": null,\n
-        \ \"max_output_tokens\": 200,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-6-luna\",\n
-        \ \"moderation\": null,\n  \"output\": [\n    {\n      \"id\": \"fc_08aec355d392ee11016af33c18f92087d283d19a61989a2eb2\",\n
+        \"disabled\"\n  },\n  \"incomplete_details\": null,\n  \"input_transformations\":
+        [],\n  \"instructions\": null,\n  \"max_output_tokens\": 200,\n  \"max_tool_calls\":
+        null,\n  \"model\": \"gpt-6-luna\",\n  \"moderation\": null,\n  \"output\":
+        [\n    {\n      \"id\": \"fc_0df796ed4ec9c3f9016afb2313f15487d289ef1d594112fb36\",\n
         \     \"type\": \"function_call\",\n      \"status\": \"completed\",\n      \"arguments\":
         \"{\\\"answer\\\":25,\\\"explanation\\\":\\\"10 + 15 = 25.\\\"}\",\n      \"call_id\":
-        \"call_JGgACH81fmbNx57AfqlgGY34\",\n      \"name\": \"final_result\"\n    }\n
+        \"call_8swp7XTfNhncAQPxk60PR21g\",\n      \"name\": \"final_result\"\n    }\n
         \ ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\":
         null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\": \"24h\",\n
         \ \"reasoning\": {\n    \"context\": \"all_turns\",\n    \"effort\": \"none\",\n
@@ -72,12 +73,14 @@ interactions:
         false\n      },\n      \"strict\": true\n    }\n  ],\n  \"top_logprobs\":
         0,\n  \"top_p\": 0.98,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n
         \   \"input_tokens\": 56,\n    \"input_tokens_details\": {\n      \"cache_write_tokens\":
-        0,\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 30,\n    \"output_tokens_details\":
-        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 86\n  },\n
-        \ \"user\": null,\n  \"metadata\": {}\n}"
+        0,\n      \"cache_write_tokens_details\": {\n        \"ttl_12h_tokens\": 0,\n
+        \       \"ttl_30m_tokens\": 0\n      },\n      \"cached_tokens\": 0\n    },\n
+        \   \"output_tokens\": 30,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        0\n    },\n    \"total_tokens\": 86\n  },\n  \"user\": null,\n  \"metadata\":
+        {}\n}"
     headers:
       access-control-expose-headers:
-      - X-Request-ID, Server-Timing-Total
+      - X-Request-ID, Server-Timing-Total, X-OpenAI-Inference-Capacity-Reason
       - CF-Ray
       - CF-Ray
       alt-svc:
@@ -85,17 +88,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5862f373df7b408-YYZ
+      - a5b792d6dffe8816-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2579'
+      - '2714'
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 15:45:29 GMT
+      - Mon, 16 Nov 2026 15:36:52 GMT
       openai-processing-ms:
-      - '1197'
+      - '1255'
       openai-version:
       - '2020-10-01'
       server:
@@ -119,7 +122,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_fa862b1cf9264c76a909cf8eef25d300
+      - req_1218ade541c34617816d14ca268ae482
     status:
       code: 200
       message: OK

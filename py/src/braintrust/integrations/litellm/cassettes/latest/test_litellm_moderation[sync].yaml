@@ -15,7 +15,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 3.46.0
+      - OpenAI/Python 3.51.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +25,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.46.0
+      - 3.51.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -38,7 +38,7 @@ interactions:
     uri: https://api.openai.com/v1/moderations
   response:
     body:
-      string: "{\n  \"id\": \"modr-9852\",\n  \"model\": \"omni-moderation-latest\",\n
+      string: "{\n  \"id\": \"modr-9552\",\n  \"model\": \"omni-moderation-latest\",\n
         \ \"results\": [\n    {\n      \"flagged\": false,\n      \"categories\":
         {\n        \"harassment\": false,\n        \"harassment/threatening\": false,\n
         \       \"sexual\": false,\n        \"hate\": false,\n        \"hate/threatening\":
@@ -48,12 +48,12 @@ interactions:
         \       \"violence\": false,\n        \"violence/graphic\": false\n      },\n
         \     \"category_scores\": {\n        \"harassment\": 0.000048785712278226595,\n
         \       \"harassment/threatening\": 4.469407144215697e-6,\n        \"sexual\":
-        0.00002868540823874629,\n        \"hate\": 0.000010889691002655445,\n        \"hate/threatening\":
-        2.72647027069593e-7,\n        \"illicit\": 0.00004238847419937498,\n        \"illicit/violent\":
-        9.170196905195049e-6,\n        \"self-harm/intent\": 0.00021196745065203636,\n
-        \       \"self-harm/instructions\": 1.4510478554719287e-6,\n        \"self-harm\":
-        8.750299760661308e-6,\n        \"sexual/minors\": 2.710880136557205e-6,\n
-        \       \"violence\": 0.00048422495919655346,\n        \"violence/graphic\":
+        0.00002868540823874629,\n        \"hate\": 0.000010554685795431098,\n        \"hate/threatening\":
+        2.561282210758673e-7,\n        \"illicit\": 0.00004108485376346404,\n        \"illicit/violent\":
+        8.750299760661308e-6,\n        \"self-harm/intent\": 0.0002117642425769555,\n
+        \       \"self-harm/instructions\": 1.3846004563753396e-6,\n        \"self-harm\":
+        8.750299760661308e-6,\n        \"sexual/minors\": 2.586743108135441e-6,\n
+        \       \"violence\": 0.00048297182378774457,\n        \"violence/graphic\":
         4.832563818725537e-6\n      },\n      \"category_applied_input_types\": {\n
         \       \"harassment\": [\n          \"text\"\n        ],\n        \"harassment/threatening\":
         [\n          \"text\"\n        ],\n        \"sexual\": [\n          \"text\"\n
@@ -73,7 +73,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a57e47353e5bb408-YYZ
+      - a5b7ab77384cc65d-YYZ
       connection:
       - keep-alive
       content-length:
@@ -81,9 +81,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 09 Nov 2026 16:43:44 GMT
+      - Mon, 16 Nov 2026 15:53:40 GMT
       openai-processing-ms:
-      - '81'
+      - '154'
       openai-version:
       - '2020-10-01'
       server:
@@ -97,7 +97,7 @@ interactions:
       x-openai-proxy-wasm:
       - v0.1
       x-request-id:
-      - req_c04eae6823d4491883e7bda0882032f5
+      - req_e3cd1267839146f9a592b5a6fd01429e
     status:
       code: 200
       message: OK

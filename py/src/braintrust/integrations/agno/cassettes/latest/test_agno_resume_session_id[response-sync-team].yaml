@@ -41,11 +41,11 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EiiO0O3vg81CCuKGeGlCG22eITpU2\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1794325760,\n  \"model\": \"gpt-6-luna\",\n
+      string: "{\n  \"id\": \"chatcmpl-EktJMF0Ls0ajpPn8YmbQOgE1OLPDL\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794844412,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
-        \           \"id\": \"call_6VrzHyuiwCohPqmXMxlW56Rr\",\n            \"type\":
+        \           \"id\": \"call_5mGyh9N8jjkKbApECW1h3Zhv\",\n            \"type\":
         \"function\",\n            \"function\": {\n              \"name\": \"get_weather\",\n
         \             \"arguments\": \"{\\\"city\\\":\\\"Paris\\\"}\"\n            }\n
         \         }\n        ],\n        \"refusal\": null,\n        \"annotations\":
@@ -66,7 +66,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a58634e238194d63-YYZ
+      - a5b7ab45cd594fcb-YYZ
       connection:
       - keep-alive
       content-length:
@@ -74,9 +74,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 15:49:21 GMT
+      - Mon, 16 Nov 2026 15:53:32 GMT
       openai-processing-ms:
-      - '1166'
+      - '659'
       openai-version:
       - '2020-10-01'
       server:
@@ -102,15 +102,15 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_a4bb18199ebd4021b19ef98d13b0896a
+      - req_f472131e020d4c89bc49c7432245fdf7
     status:
       code: 200
       message: OK
 - request:
     body: '{"messages":[{"role":"developer","content":"Use get_weather to find the
       weather. Report the result briefly."},{"role":"user","content":"What''s the
-      weather in Paris?"},{"role":"assistant","tool_calls":[{"id":"call_6VrzHyuiwCohPqmXMxlW56Rr","function":{"arguments":"{\"city\":\"Paris\"}","name":"get_weather"},"type":"function"}],"content":""},{"role":"tool","content":"The
-      weather in Paris is 72F and sunny.","tool_call_id":"call_6VrzHyuiwCohPqmXMxlW56Rr"}],"model":"gpt-6-luna","reasoning_effort":"none","tools":[{"type":"function","function":{"name":"get_weather","description":"Get
+      weather in Paris?"},{"role":"assistant","tool_calls":[{"id":"call_5mGyh9N8jjkKbApECW1h3Zhv","function":{"arguments":"{\"city\":\"Paris\"}","name":"get_weather"},"type":"function"}],"content":""},{"role":"tool","content":"The
+      weather in Paris is 72F and sunny.","tool_call_id":"call_5mGyh9N8jjkKbApECW1h3Zhv"}],"model":"gpt-6-luna","reasoning_effort":"none","tools":[{"type":"function","function":{"name":"get_weather","description":"Get
       the current weather for a city.","parameters":{"type":"object","properties":{"city":{"type":"string"}},"required":["city"],"additionalProperties":false},"external_execution":true}}]}'
     headers:
       accept:
@@ -149,10 +149,10 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EiiO18MUP7z4eS34tXBy9PKmvsD3e\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1794325761,\n  \"model\": \"gpt-6-luna\",\n
+      string: "{\n  \"id\": \"chatcmpl-EktJMvFw7s6XVsJ7Kehgxo7VLPZ1A\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794844412,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"Paris is sunny and 72\xB0F.\",\n        \"refusal\":
+        \"assistant\",\n        \"content\": \"Paris is 72\xB0F and sunny.\",\n        \"refusal\":
         null,\n        \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
         \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 187,\n    \"completion_tokens\":
         11,\n    \"total_tokens\": 198,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
@@ -171,7 +171,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a58634ea8d074d63-YYZ
+      - a5b7ab4ad8c74fcb-YYZ
       connection:
       - keep-alive
       content-length:
@@ -179,9 +179,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 15:49:22 GMT
+      - Mon, 16 Nov 2026 15:53:33 GMT
       openai-processing-ms:
-      - '803'
+      - '564'
       openai-version:
       - '2020-10-01'
       server:
@@ -201,13 +201,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '179999964'
+      - '179999961'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_ae3c57e25bcd4e53bedab1d1db9133ee
+      - req_0170d43cb7ae411284798d3571cb7b1c
     status:
       code: 200
       message: OK

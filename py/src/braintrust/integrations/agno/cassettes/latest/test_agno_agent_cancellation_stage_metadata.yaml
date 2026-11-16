@@ -40,11 +40,11 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EiiNmkccqEAGU1yNL2wC2jGbsXprK\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1794325746,\n  \"model\": \"gpt-6-luna\",\n
+      string: "{\n  \"id\": \"chatcmpl-EktJ7AxIhyEDy9EzWPom2okdWLHNc\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794844397,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
-        \           \"id\": \"call_yz2YX3ESRcWRWwgXuR5bBAHt\",\n            \"type\":
+        \           \"id\": \"call_yF05lAixie1RF3xl8jgnTHKA\",\n            \"type\":
         \"function\",\n            \"function\": {\n              \"name\": \"get_weather\",\n
         \             \"arguments\": \"{\\\"city\\\":\\\"Paris\\\"}\"\n            }\n
         \         }\n        ],\n        \"refusal\": null,\n        \"annotations\":
@@ -65,7 +65,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5863489fd9dab7e-YYZ
+      - a5b7aaeaffae39c9-YYZ
       connection:
       - keep-alive
       content-length:
@@ -73,9 +73,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 15:49:07 GMT
+      - Mon, 16 Nov 2026 15:53:18 GMT
       openai-processing-ms:
-      - '794'
+      - '632'
       openai-version:
       - '2020-10-01'
       server:
@@ -95,20 +95,20 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '179999976'
+      - '179999979'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_38de194452634d3db389cdf64bfd5fb3
+      - req_b2053bb7a25f4470aa0461361efb6b60
     status:
       code: 200
       message: OK
 - request:
     body: '{"messages":[{"role":"developer","content":"Use the get_weather tool to
-      answer questions."},{"role":"user","content":"What''s the weather in Paris?"},{"role":"assistant","tool_calls":[{"id":"call_yz2YX3ESRcWRWwgXuR5bBAHt","function":{"arguments":"{\"city\":\"Paris\"}","name":"get_weather"},"type":"function"}],"content":""},{"role":"tool","content":"The
-      weather in Paris is 72F and sunny.","tool_call_id":"call_yz2YX3ESRcWRWwgXuR5bBAHt"}],"model":"gpt-6-luna","reasoning_effort":"none","tools":[{"type":"function","function":{"name":"get_weather","description":"Return
+      answer questions."},{"role":"user","content":"What''s the weather in Paris?"},{"role":"assistant","tool_calls":[{"id":"call_yF05lAixie1RF3xl8jgnTHKA","function":{"arguments":"{\"city\":\"Paris\"}","name":"get_weather"},"type":"function"}],"content":""},{"role":"tool","content":"The
+      weather in Paris is 72F and sunny.","tool_call_id":"call_yF05lAixie1RF3xl8jgnTHKA"}],"model":"gpt-6-luna","reasoning_effort":"none","tools":[{"type":"function","function":{"name":"get_weather","description":"Return
       the current weather for *city*.","parameters":{"type":"object","properties":{"city":{"type":"string"}},"required":["city"]}}}]}'
     headers:
       accept:
@@ -147,8 +147,8 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EiiNnxLmSRgh0z1arImXQb0pJQyvT\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1794325747,\n  \"model\": \"gpt-6-luna\",\n
+      string: "{\n  \"id\": \"chatcmpl-EktJ94Y14tX1Sm359doDBZ3mExadW\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794844399,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"It\u2019s 72\xB0F and sunny in Paris.\",\n
         \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"finish_reason\":
@@ -169,7 +169,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a58634907de3ab7e-YYZ
+      - a5b7aaf22d6139c9-YYZ
       connection:
       - keep-alive
       content-length:
@@ -177,9 +177,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 15:49:08 GMT
+      - Mon, 16 Nov 2026 15:53:20 GMT
       openai-processing-ms:
-      - '1473'
+      - '1026'
       openai-version:
       - '2020-10-01'
       server:
@@ -205,7 +205,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_db8b17807fcf454da12cf004dbfc537d
+      - req_d55e37086ab84d21b808ad9c3639ac17
     status:
       code: 200
       message: OK

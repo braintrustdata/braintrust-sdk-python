@@ -1,4 +1,4 @@
-"""Private hooks qualified against livekit-agents 1.8.9–1.8.10."""
+"""Private hooks qualified against livekit-agents 1.8.9 and later."""
 
 import inspect
 from typing import TYPE_CHECKING, Any

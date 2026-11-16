@@ -22,9 +22,9 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/3.0.0 gl-python/3.14.7
+      - google-genai-sdk/3.3.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/3.0.0 gl-python/3.14.7
+      - google-genai-sdk/3.3.0 gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent
   response:
@@ -33,28 +33,28 @@ interactions:
         [\n          {\n            \"functionCall\": {\n              \"name\": \"calculate\",\n
         \             \"args\": {\n                \"operation\": \"multiply\",\n
         \               \"b\": 49,\n                \"a\": 127\n              },\n
-        \             \"id\": \"call_14141266815337858502\"\n            },\n            \"thoughtSignature\":
-        \"EmAKXgFpFH0TBJENqAsjxsW0YPwIwDyz56BBG6ug6l97h2MY4/baIuQyVLJnoWO6CPZnQJ6knzetQ1ucKvaCpoX1iQ8pKHJcbkxlQr8WiZ+WyBWHupWAoZQoR2e4V6DSz5I=\"\n
+        \             \"id\": \"call_9200429983032131918\"\n            },\n            \"thoughtSignature\":
+        \"EmAKXgFpFH0TqeZtoyViaJWdmHMqArm0mlx29Z9Sh8CW5FBhbF5/x5BXA4GB748ma5y5lToaLASP786qyKkrK9mI83MTbtTo6ubSqtinHCDoOV8HuYgSHiknvIBzNQY3BwU=\"\n
         \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
         \"STOP\",\n      \"index\": 0,\n      \"finishMessage\": \"Model generated
         function call(s).\"\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
         122,\n    \"candidatesTokenCount\": 25,\n    \"totalTokenCount\": 147,\n    \"promptTokensDetails\":
         [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 122\n
         \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
-        \"gemini-3.5-flash-lite\",\n  \"responseId\": \"_z3zarPXGJfHxdIPsKmEyAw\"\n}\n"
+        \"gemini-3.5-flash-lite\",\n  \"responseId\": \"miX7at_fH_2ZiLMPkfWJ2Qo\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '1015'
+      - '1014'
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Tue, 10 Nov 2026 15:53:36 GMT
+      - Mon, 16 Nov 2026 15:47:39 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=791
+      - gfet4t7; dur=1067
       transfer-encoding:
       - chunked
       vary:
@@ -74,9 +74,9 @@ interactions:
       message: OK
 - request:
     body: '{"contents": [{"parts": [{"text": "What is 127 multiplied by 49?"}], "role":
-      "user"}, {"parts": [{"functionCall": {"id": "call_14141266815337858502", "args":
+      "user"}, {"parts": [{"functionCall": {"id": "call_9200429983032131918", "args":
       {"operation": "multiply", "b": 49, "a": 127}, "name": "calculate"}, "thoughtSignature":
-      "EmAKXgFpFH0TBJENqAsjxsW0YPwIwDyz56BBG6ug6l97h2MY4_baIuQyVLJnoWO6CPZnQJ6knzetQ1ucKvaCpoX1iQ8pKHJcbkxlQr8WiZ-WyBWHupWAoZQoR2e4V6DSz5I="}],
+      "EmAKXgFpFH0TqeZtoyViaJWdmHMqArm0mlx29Z9Sh8CW5FBhbF5_x5BXA4GB748ma5y5lToaLASP786qyKkrK9mI83MTbtTo6ubSqtinHCDoOV8HuYgSHiknvIBzNQY3BwU="}],
       "role": "model"}, {"parts": [{"functionResponse": {"name": "calculate", "response":
       {"result": 6223}}}], "role": "user"}], "tools": [{"functionDeclarations": [{"description":
       "Perform a mathematical calculation", "name": "calculate", "parameters_json_schema":
@@ -93,28 +93,28 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '1008'
+      - '1007'
       content-type:
       - application/json
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/3.0.0 gl-python/3.14.7
+      - google-genai-sdk/3.3.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/3.0.0 gl-python/3.14.7
+      - google-genai-sdk/3.3.0 gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
         [\n          {\n            \"text\": \"127 multiplied by 49 is 6,223.\",\n
-        \           \"thoughtSignature\": \"EmAKXgFpFH0TQ+iDFLwefFqnD7YhWjFJvvOpmN4JhctkyGaT/hPX7HrtIHeThDjVLzdLBw90EAa5nldUHR1xz0WMrynLJ2R5o3VB/uLd+pCCJi9328YCcO6Kop/YpX5KkRw=\"\n
+        \           \"thoughtSignature\": \"EmAKXgFpFH0TW/ZJqSlNCWGws3lnMlvJAxVLkaB2+xDAnSQ6tu4G2xyf0OAVA0F0ve45i1TpOCb4AfSeai4WbnfHmMiYKcGaWbO+Z82JTzJp0/yceEeJ9apyx5GqZGutRmY=\"\n
         \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
         \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
         160,\n    \"candidatesTokenCount\": 16,\n    \"totalTokenCount\": 176,\n    \"promptTokensDetails\":
         [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 160\n
         \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
-        \"gemini-3.5-flash-lite\",\n  \"responseId\": \"AD7zav66DcP9ytMPkZ-I-Ag\"\n}\n"
+        \"gemini-3.5-flash-lite\",\n  \"responseId\": \"myX7asztJoG9xdIPyLzUsQI\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
@@ -123,11 +123,11 @@ interactions:
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Tue, 10 Nov 2026 15:53:36 GMT
+      - Mon, 16 Nov 2026 15:47:40 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=824
+      - gfet4t7; dur=707
       transfer-encoding:
       - chunked
       vary:

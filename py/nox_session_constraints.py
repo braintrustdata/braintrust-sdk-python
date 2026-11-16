@@ -30,11 +30,25 @@ CONSTRAINTS = {
     },
     "test_harbor": {"min_python": "3.12", "max_python_exclusive": "3.15"},  # fastuuid
     "test_instructor": {"max_python_exclusive": "3.15"},  # jiter 0.10
-    "test_langchain": {"max_python_exclusive": "3.15"},  # ormsgpack
+    "test_langchain": {
+        "max_python_exclusive": "3.15",  # ormsgpack
+        "versions": {"latest": {"min_python": "3.11"}},  # langchain-core 1.8 requires 3.11
+    },
+    # Installs the langchain-core latest pin, which requires Python 3.11.
+    "test_mcp_interop": {"min_python": "3.11"},
+    "test_temporal": {"versions": {"latest": {"min_python": "3.11"}}},  # temporalio 1.36 requires 3.11
+    "test_llamaindex": {"versions": {"latest": {"min_python": "3.11"}}},  # llama-index-core 0.14.26 requires 3.11
     "test_openrouter": {"versions": {"latest": {"max_python_exclusive": "3.15"}}},  # pydantic-core 2.41
     "test_openai_ddtrace": {"max_python_exclusive": "3.15"},  # ddtrace requires Python < 3.15
     # fastmcp 2.x depends on lupa, which has no cp315 wheels and does not build on Windows.
-    "test_fastmcp": {"versions": {"not_latest_below": {"version": "3.0.0", "max_python_exclusive": "3.15"}}},
+    # fastmcp/fastmcp-slim 4.2 require Python 3.11.
+    "test_fastmcp": {
+        "versions": {
+            "latest": {"min_python": "3.11"},
+            "not_latest_below": {"version": "3.0.0", "max_python_exclusive": "3.15"},
+        }
+    },
+    "test_fastmcp_slim": {"versions": {"latest": {"min_python": "3.11"}}},
 }
 
 

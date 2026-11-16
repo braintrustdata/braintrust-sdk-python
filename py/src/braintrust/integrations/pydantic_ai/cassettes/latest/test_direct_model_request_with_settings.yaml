@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.66.0
+      - pydantic-ai/2.68.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.46.0
+      - 3.51.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,14 +39,15 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_081cd83aef2950a7016af33c15854887d294d9d49475db4f62\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1794325525,\n  \"status\":
+      string: "{\n  \"id\": \"resp_052b7c046d5aecda016afb231152dc87d29a06885d2e978527\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1794843409,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794325527,\n  \"error\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794843409,\n  \"error\":
         null,\n  \"frequency_penalty\": 0.0,\n  \"image\": {\n    \"context_compression\":
-        \"disabled\"\n  },\n  \"incomplete_details\": null,\n  \"instructions\": null,\n
-        \ \"max_output_tokens\": 50,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-6-luna\",\n
-        \ \"moderation\": null,\n  \"output\": [\n    {\n      \"id\": \"msg_081cd83aef2950a7016af33c16ee8487d281a70fb1abc20d41\",\n
+        \"disabled\"\n  },\n  \"incomplete_details\": null,\n  \"input_transformations\":
+        [],\n  \"instructions\": null,\n  \"max_output_tokens\": 50,\n  \"max_tool_calls\":
+        null,\n  \"model\": \"gpt-6-luna\",\n  \"moderation\": null,\n  \"output\":
+        [\n    {\n      \"id\": \"msg_052b7c046d5aecda016afb2311c2d087d2bb26ee78da956956\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"Hello!\"\n        }\n
@@ -64,13 +65,14 @@ interactions:
         0\n      },\n      \"total_tokens\": 0\n    },\n    \"web_search\": {\n      \"num_requests\":
         0\n    }\n  },\n  \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 0.98,\n
         \ \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 8,\n
-        \   \"input_tokens_details\": {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\":
-        0\n    },\n    \"output_tokens\": 6,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 14\n  },\n  \"user\": null,\n  \"metadata\":
-        {}\n}"
+        \   \"input_tokens_details\": {\n      \"cache_write_tokens\": 0,\n      \"cache_write_tokens_details\":
+        {\n        \"ttl_12h_tokens\": 0,\n        \"ttl_30m_tokens\": 0\n      },\n
+        \     \"cached_tokens\": 0\n    },\n    \"output_tokens\": 6,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 14\n  },\n
+        \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
       access-control-expose-headers:
-      - X-Request-ID, Server-Timing-Total
+      - X-Request-ID, Server-Timing-Total, X-OpenAI-Inference-Capacity-Reason
       - CF-Ray
       - CF-Ray
       alt-svc:
@@ -78,17 +80,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5862f260a3e086a-YYZ
+      - a5b792cbaf6aac75-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2103'
+      - '2238'
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 15:45:27 GMT
+      - Mon, 16 Nov 2026 15:36:49 GMT
       openai-processing-ms:
-      - '1566'
+      - '557'
       openai-version:
       - '2020-10-01'
       server:
@@ -112,7 +114,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_a749982444da4d5397bd7c3bf33e853b
+      - req_84c10dfb03414ad5bacda9129bb09b28
     status:
       code: 200
       message: OK

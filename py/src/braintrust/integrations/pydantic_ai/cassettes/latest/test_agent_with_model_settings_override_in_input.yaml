@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.66.0
+      - pydantic-ai/2.68.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.46.0
+      - 3.51.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,51 +39,54 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_029cd133420c2acd016af33c1b881c87d29fe1da961e15791f\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1794325531,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0a5dc4ad93f51cb7016afb2315a18887d28b4f892ce30c3fcd\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1794843413,\n  \"status\":
         \"incomplete\",\n  \"access_programs\": null,\n  \"background\": false,\n
         \ \"billing\": {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\":
         null,\n  \"error\": null,\n  \"frequency_penalty\": 0.0,\n  \"image\": {\n
         \   \"context_compression\": \"disabled\"\n  },\n  \"incomplete_details\":
-        {\n    \"reason\": \"max_output_tokens\"\n  },\n  \"instructions\": null,\n
-        \ \"max_output_tokens\": 200,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-6-luna\",\n
-        \ \"moderation\": null,\n  \"output\": [\n    {\n      \"id\": \"msg_029cd133420c2acd016af33c1c430487d2aa084dc13b6e336b\",\n
+        {\n    \"reason\": \"max_output_tokens\"\n  },\n  \"input_transformations\":
+        [],\n  \"instructions\": null,\n  \"max_output_tokens\": 200,\n  \"max_tool_calls\":
+        null,\n  \"model\": \"gpt-6-luna\",\n  \"moderation\": null,\n  \"output\":
+        [\n    {\n      \"id\": \"msg_0a5dc4ad93f51cb7016afb23160b6887d295043958941b7c53\",\n
         \     \"type\": \"message\",\n      \"status\": \"incomplete\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"At the edge of a quiet
-        village stood a clock that had not moved in a hundred years.\\n\\nEvery morning,
-        Mara climbed the hill to wind it. She didn\\u2019t know why. Her grandmother
-        had done it, and her grandmother before her. The clock never ticked, but Mara
-        kept turning the brass key until it wouldn\\u2019t turn anymore.\\n\\nOne
-        winter morning, she found a small bird tucked behind the clock\\u2019s hands.
-        It was shivering, with a thread of red wool tangled around one wing.\\n\\nMara
-        wrapped it in her scarf and carried it home. For three days she fed it crumbs
-        and warmed it by the stove. On the fourth morning, the bird fluttered to the
-        windowsill, where the sunlight touched its feathers.\\n\\nThen the village
-        clock began to tick.\\n\\nIts hands moved forward\\u2014not quickly, but steadily.
-        From that day on, it marked the hours again. And whenever Mara heard it chime,
-        she thought of the little bird, brave enough to keep time moving\"\n        }\n
-        \     ],\n      \"phase\": \"final_answer\",\n      \"role\": \"assistant\"\n
-        \   }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n
-        \ \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
-        \"24h\",\n  \"reasoning\": {\n    \"context\": \"all_turns\",\n    \"effort\":
-        \"none\",\n    \"mode\": \"standard\",\n    \"summary\": null\n  },\n  \"safety_identifier\":
-        null,\n  \"service_tier\": \"default\",\n  \"store\": false,\n  \"temperature\":
-        0.9,\n  \"text\": {\n    \"format\": {\n      \"type\": \"text\"\n    },\n
-        \   \"verbosity\": \"medium\"\n  },\n  \"tool_choice\": \"auto\",\n  \"tool_usage\":
-        {\n    \"image_gen\": {\n      \"input_tokens\": 0,\n      \"input_tokens_details\":
-        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\":
-        0,\n      \"output_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
-        0\n      },\n      \"total_tokens\": 0\n    },\n    \"web_search\": {\n      \"num_requests\":
-        0\n    }\n  },\n  \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 0.98,\n
-        \ \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 10,\n
-        \   \"input_tokens_details\": {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\":
-        0\n    },\n    \"output_tokens\": 200,\n    \"output_tokens_details\": {\n
-        \     \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 210\n  },\n  \"user\":
-        null,\n  \"metadata\": {}\n}"
+        [],\n          \"logprobs\": [],\n          \"text\": \"Every night, the lighthouse
+        keeper lit the lamp at exactly nine.\\n\\nOne evening, a storm rolled in so
+        thick that the sea vanished. The keeper climbed the spiral stairs, struck
+        a match, and watched the flame catch. As the great light swept over the water,
+        he saw a small boat below, drifting without a sail.\\n\\nHe rang the fog bell
+        until his arms ached. Then he hurried down the cliff path with a lantern,
+        calling into the wind. A voice answered from the boat: \\u201cWe can\\u2019t
+        find the shore!\\u201d\\n\\n\\u201cFollow my light,\\u201d he shouted.\\n\\nThe
+        boat turned toward him. Slowly, carefully, it made its way through the waves
+        until it reached the harbor wall. Three soaked sailors climbed out, trembling
+        but safe.\\n\\nThe next morning, one of them asked the keeper how he\\u2019d
+        known they were there.\\n\\n\\u201cI didn\\u2019t,\\u201d he said. \\u201cI
+        just kept the light on.\\u201d\\n\\nAnd from then on, whenever the storm hid
+        the sea, the sailors in\"\n        }\n      ],\n      \"phase\": \"final_answer\",\n
+        \     \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n
+        \ \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
+        null,\n  \"prompt_cache_retention\": \"24h\",\n  \"reasoning\": {\n    \"context\":
+        \"all_turns\",\n    \"effort\": \"none\",\n    \"mode\": \"standard\",\n    \"summary\":
+        null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n
+        \ \"store\": false,\n  \"temperature\": 0.9,\n  \"text\": {\n    \"format\":
+        {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n
+        \ \"tool_choice\": \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n
+        \     \"input_tokens\": 0,\n      \"input_tokens_details\": {\n        \"image_tokens\":
+        0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
+        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
+        0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
+        \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 0.98,\n  \"truncation\":
+        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 10,\n    \"input_tokens_details\":
+        {\n      \"cache_write_tokens\": 0,\n      \"cache_write_tokens_details\":
+        {\n        \"ttl_12h_tokens\": 0,\n        \"ttl_30m_tokens\": 0\n      },\n
+        \     \"cached_tokens\": 0\n    },\n    \"output_tokens\": 200,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 210\n  },\n
+        \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
       access-control-expose-headers:
-      - X-Request-ID, Server-Timing-Total
+      - X-Request-ID, Server-Timing-Total, X-OpenAI-Inference-Capacity-Reason
       - CF-Ray
       - CF-Ray
       alt-svc:
@@ -91,17 +94,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5862f4b6aaf0f01-YYZ
+      - a5b792e66f295163-YYZ
       connection:
       - keep-alive
       content-length:
-      - '3065'
+      - '3217'
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 15:45:34 GMT
+      - Mon, 16 Nov 2026 15:36:56 GMT
       openai-processing-ms:
-      - '2977'
+      - '3070'
       openai-version:
       - '2020-10-01'
       server:
@@ -113,7 +116,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-id:
-      - req_c8112801d477448ab5076136753db635
+      - req_bbf2c6096f4d45d5a90c6c03fa145264
     status:
       code: 200
       message: OK

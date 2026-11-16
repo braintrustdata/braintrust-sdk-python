@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"run_id":"94914560-bf24-490f-949e-8a41480578e1","eval_type":"agent_as_judge","data":{"criteria_length":43,"scoring_strategy":"binary","threshold":null,"num_results":1},"sdk_version":"3.1.12"}'
+    body: '{"run_id":"e808033f-6106-415e-8300-79e860b6726c","eval_type":"agent_as_judge","data":{"criteria_length":43,"scoring_strategy":"binary","threshold":null,"num_results":1},"sdk_version":"3.2.0"}'
     headers:
       accept:
       - '*/*'
@@ -9,13 +9,13 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '192'
+      - '191'
       content-type:
       - application/json
       host:
       - os-api.agno.com
       user-agent:
-      - agno/3.1.12
+      - agno/3.2.0
     method: POST
     uri: https://os-api.agno.com/telemetry/evals
   response:
@@ -33,7 +33,7 @@ interactions:
       cross-origin-resource-policy:
       - same-origin
       date:
-      - Tue, 10 Nov 2026 15:50:08 GMT
+      - Mon, 16 Nov 2026 15:53:56 GMT
       permissions-policy:
       - camera=(), microphone=(), geolocation=()
       referrer-policy:
@@ -50,7 +50,7 @@ interactions:
       code: 422
       message: Unprocessable Entity
 - request:
-    body: '{"session_id":"cfcaec40-2662-4775-bf01-a20d36308656","run_id":"fb2da8b7-4b0d-420e-815a-bba961e4d703","data":{"agent_id":"post-hook-agent","db_type":null,"model_provider":"OpenAI","model_name":"OpenAIChat","model_id":"gpt-6-luna","parser_model":null,"output_model":null,"has_tools":true,"has_memory":false,"has_learnings":false,"has_reasoning":false,"has_knowledge":false,"has_input_schema":false,"has_output_schema":false,"has_team":false},"sdk_version":"3.1.12","type":"agent"}'
+    body: '{"session_id":"efd6ae63-cc60-4389-93e8-9db7af49a99b","run_id":"4847ce2a-baa2-4b31-8f2f-0f51cb9b1be9","data":{"agent_id":"post-hook-agent","db_type":null,"model_provider":"OpenAI","model_name":"OpenAIChat","model_id":"gpt-6-luna","parser_model":null,"output_model":null,"has_tools":true,"has_memory":false,"has_learnings":false,"has_reasoning":false,"has_knowledge":false,"has_input_schema":false,"has_output_schema":false,"has_team":false},"sdk_version":"3.2.0","type":"agent"}'
     headers:
       accept:
       - '*/*'
@@ -59,18 +59,18 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '478'
+      - '477'
       content-type:
       - application/json
       host:
       - os-api.agno.com
       user-agent:
-      - agno/3.1.12
+      - agno/3.2.0
     method: POST
     uri: https://os-api.agno.com/telemetry/runs
   response:
     body:
-      string: '{"message":"Run creation acknowledged: fb2da8b7-4b0d-420e-815a-bba961e4d703","status":"success"}'
+      string: '{"message":"Run creation acknowledged: 4847ce2a-baa2-4b31-8f2f-0f51cb9b1be9","status":"success"}'
     headers:
       content-length:
       - '96'
@@ -81,7 +81,7 @@ interactions:
       cross-origin-resource-policy:
       - same-origin
       date:
-      - Tue, 10 Nov 2026 15:50:08 GMT
+      - Mon, 16 Nov 2026 15:53:56 GMT
       permissions-policy:
       - camera=(), microphone=(), geolocation=()
       referrer-policy:
@@ -153,11 +153,11 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EiiOmx97zYNsxGykFYgvMbUFTepEK\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1794325808,\n  \"model\": \"gpt-6-luna\",\n
+      string: "{\n  \"id\": \"chatcmpl-EktJkfpAOhQ8EeLsgaOkgRWSGkJUD\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794844436,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
-        \           \"id\": \"call_Y21gnA7PYQjKOdFFzPLwgTeS\",\n            \"type\":
+        \           \"id\": \"call_kopBK6yqgMyXZftVBJHOqvbN\",\n            \"type\":
         \"function\",\n            \"function\": {\n              \"name\": \"multiply\",\n
         \             \"arguments\": \"{\\\"a\\\":10,\\\"b\\\":5}\"\n            }\n
         \         }\n        ],\n        \"refusal\": null,\n        \"annotations\":
@@ -178,7 +178,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a586360c89aeab7b-YYZ
+      - a5b7abe0f9260c69-YYZ
       connection:
       - keep-alive
       content-length:
@@ -186,9 +186,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 15:50:09 GMT
+      - Mon, 16 Nov 2026 15:53:57 GMT
       openai-processing-ms:
-      - '908'
+      - '969'
       openai-version:
       - '2020-10-01'
       server:
@@ -214,14 +214,14 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_1d29ab0e2e3140dfab5b48ecbb9d9d02
+      - req_bf147b87f0c84f78960a730a6a4add83
     status:
       code: 200
       message: OK
 - request:
     body: '{"messages":[{"role":"developer","content":"Answer with the final number
-      only."},{"role":"user","content":"What is 10*5? Use your tools."},{"role":"assistant","tool_calls":[{"id":"call_Y21gnA7PYQjKOdFFzPLwgTeS","function":{"arguments":"{\"a\":10,\"b\":5}","name":"multiply"},"type":"function"}],"content":""},{"role":"tool","content":"{\"operation\":
-      \"multiplication\", \"result\": 50.0}","tool_call_id":"call_Y21gnA7PYQjKOdFFzPLwgTeS"}],"model":"gpt-6-luna","reasoning_effort":"none","tools":[{"type":"function","function":{"name":"add","description":"Add
+      only."},{"role":"user","content":"What is 10*5? Use your tools."},{"role":"assistant","tool_calls":[{"id":"call_kopBK6yqgMyXZftVBJHOqvbN","function":{"arguments":"{\"a\":10,\"b\":5}","name":"multiply"},"type":"function"}],"content":""},{"role":"tool","content":"{\"operation\":
+      \"multiplication\", \"result\": 50.0}","tool_call_id":"call_kopBK6yqgMyXZftVBJHOqvbN"}],"model":"gpt-6-luna","reasoning_effort":"none","tools":[{"type":"function","function":{"name":"add","description":"Add
       two numbers and return the result.","parameters":{"type":"object","properties":{"a":{"type":"number","description":"(float)
       First number."},"b":{"type":"number","description":"(float) Second number."}},"required":["a","b"]},"requires_confirmation":false,"external_execution":false}},{"type":"function","function":{"name":"divide","description":"Divide
       first number by second and return the result.","parameters":{"type":"object","properties":{"a":{"type":"number","description":"(float)
@@ -275,8 +275,8 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EiiOn8KAo7zCmMRQHaSSg9BIOxe6B\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1794325809,\n  \"model\": \"gpt-6-luna\",\n
+      string: "{\n  \"id\": \"chatcmpl-EktJmK8cvrUIqFipUYPTQhxTnxSWA\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794844438,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"50\",\n        \"refusal\": null,\n
         \       \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
@@ -297,7 +297,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a58636132b11ab7b-YYZ
+      - a5b7abe8598a0c69-YYZ
       connection:
       - keep-alive
       content-length:
@@ -305,9 +305,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 15:50:09 GMT
+      - Mon, 16 Nov 2026 15:53:58 GMT
       openai-processing-ms:
-      - '654'
+      - '760'
       openai-version:
       - '2020-10-01'
       server:
@@ -333,7 +333,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_2f92a510b45d472a8dbc4e93388540ec
+      - req_e9e7c9dfcf1c472bb88ebbfbb97ab1c3
     status:
       code: 200
       message: OK

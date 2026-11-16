@@ -18,42 +18,37 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/3.0.0 gl-python/3.14.7
+      - google-genai-sdk/3.3.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/3.0.0 gl-python/3.14.7
+      - google-genai-sdk/3.3.0 gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"Ahoy there, matey! Ye be askin' about
-        the weather, eh? Well, pull up a plank and listen close, for I've seen me
-        share o' skies!\\n\\nThis mornin', the sun be peekin' through the clouds like
-        a shy mermaid, a bit o' mist still clingin' to the air like barnacles to a
-        hull. A fair breeze be blowin', just enough to fill the sails and set us on
-        our way. No squalls on the horizon, thankfully!\\n\\nBut mind ye, the sea
-        be a fickle mistress. One moment she be calm as a sleeping kraken, the next
-        she can unleash a tempest fit to swallow ships whole! So keep yer wits about
-        ye, and\"\n          }\n        ],\n        \"role\": \"model\"\n      },\n
-        \     \"finishReason\": \"MAX_TOKENS\",\n      \"index\": 0\n    }\n  ],\n
-        \ \"usageMetadata\": {\n    \"promptTokenCount\": 19,\n    \"candidatesTokenCount\":
-        150,\n    \"totalTokenCount\": 169,\n    \"promptTokensDetails\": [\n      {\n
-        \       \"modality\": \"TEXT\",\n        \"tokenCount\": 19\n      }\n    ],\n
-        \   \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n
-        \ \"responseId\": \"xUXzaqH8LYnmytMP0Pm0-Qg\"\n}\n"
+        [\n          {\n            \"text\": \"Ahoy there, matey! The weather be
+        lookin' a bit rough, I'd wager. The skies be lookin' a bit cloudy, and the
+        winds be pickin' up. Best be battenin' down the hatches and makin' sure the
+        ship be seaworthy, lest ye be findin' yerself walkin' the plank in a storm!\"\n
+        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        19,\n    \"candidatesTokenCount\": 78,\n    \"totalTokenCount\": 97,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 19\n
+        \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
+        \"gemini-2.5-flash-lite\",\n  \"responseId\": \"mCX7aoacLMGoxdIP-_eR0Ag\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '1127'
+      - '808'
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Tue, 10 Nov 2026 16:26:46 GMT
+      - Mon, 16 Nov 2026 15:47:37 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=1222
+      - gfet4t7; dur=500
       transfer-encoding:
       - chunked
       vary:

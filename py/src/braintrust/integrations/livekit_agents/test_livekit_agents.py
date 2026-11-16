@@ -1,4 +1,5 @@
 import inspect
+import json
 
 import pytest
 from braintrust import logger
@@ -99,11 +100,14 @@ async def test_livekit_agents_function_tool_e2e(memory_logger, monkeypatch, lega
     ]
     assert models[0]["input"] == initial_input
     call = models[0]["output"][0]["tool_calls"][0]
-    # LiveKit serializes the parsed arguments when adding the tool to context.
+    # LiveKit < 1.8.12 re-serializes the parsed arguments when adding the tool
+    # to context; 1.8.12 keeps the model's raw argument string.
+    arguments = models[1]["input"][2]["tool_calls"][0]["function"]["arguments"]
+    assert json.loads(arguments) == {"city": "Paris"}
     observed_call = {
         "id": call["id"],
         "type": "function",
-        "function": {"name": "lookup_weather", "arguments": '{"city": "Paris"}'},
+        "function": {"name": "lookup_weather", "arguments": arguments},
     }
     assert models[1]["input"] == initial_input + [
         {"role": "assistant", "content": None, "tool_calls": [observed_call]},
