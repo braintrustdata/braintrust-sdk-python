@@ -746,6 +746,7 @@ LLAMAINDEX_VERSIONS = _get_matrix_versions("llama-index-core")
 @nox.session()
 @nox.parametrize("version", LLAMAINDEX_VERSIONS, ids=LLAMAINDEX_VERSIONS)
 def test_llamaindex(session, version):
+    _skip_if_incompatible(session)
     group = "test-llamaindex-0-13" if version == "0.13.0" else "test-llamaindex"
     _install_test_deps(session, group)
     _install_matrix_dep(session, "llama-index-core", version, "test-sqlalchemy-2-0")

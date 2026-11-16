@@ -37,6 +37,7 @@ CONSTRAINTS = {
     # Installs the langchain-core latest pin, which requires Python 3.11.
     "test_mcp_interop": {"min_python": "3.11"},
     "test_temporal": {"versions": {"latest": {"min_python": "3.11"}}},  # temporalio 1.36 requires 3.11
+    "test_llamaindex": {"versions": {"latest": {"min_python": "3.11"}}},  # llama-index-core 0.14.26 requires 3.11
     "test_openrouter": {"versions": {"latest": {"max_python_exclusive": "3.15"}}},  # pydantic-core 2.41
     "test_openai_ddtrace": {"max_python_exclusive": "3.15"},  # ddtrace requires Python < 3.15
     # fastmcp 2.x depends on lupa, which has no cp315 wheels and does not build on Windows.
