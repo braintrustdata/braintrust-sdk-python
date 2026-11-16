@@ -1964,6 +1964,31 @@ async def test_current_logger_async_context_isolation(with_simulate_login, with_
     assert braintrust.current_logger() is parent_logger
 
 
+@pytest.mark.parametrize("global_span_active", [False, True])
+def test_current_span_and_parent_use_explicit_state(with_memory_logger, global_span_active):
+    global_experiment = init_test_exp("global-experiment")
+    state = BraintrustState()
+    state._override_bg_logger.logger = with_memory_logger
+    request_experiment = logger.Experiment(global_experiment._lazy_metadata, state=state)
+
+    with global_experiment.start_span(name="global", set_current=global_span_active) as global_span:
+        expected_global_span = global_span if global_span_active else logger.NOOP_SPAN
+        assert logger.current_span(state=state) is logger.NOOP_SPAN
+        with request_experiment.start_span(name="request") as request_span:
+            assert logger.current_span() is expected_global_span
+            assert logger.current_span(state=state) is request_span
+            assert logger.get_span_parent_object(state=state) is request_span
+            with logger.start_span(name="child", state=state) as child_span:
+                assert logger.current_span(state=state) is child_span
+            assert logger.current_span(state=state) is request_span
+        assert logger.current_span(state=state) is logger.NOOP_SPAN
+        assert logger.get_span_parent_object(state=state) is global_experiment
+
+    rows = {row["span_attributes"]["name"]: row for row in with_memory_logger.pop()}
+    assert rows["child"]["span_parents"] == [rows["request"]["span_id"]]
+    assert rows["child"]["root_span_id"] == rows["request"]["root_span_id"]
+
+
 def test_span_set_current(with_memory_logger):
     """Test that span.set_current() makes the span accessible via current_span()."""
     init_test_logger(__name__)
