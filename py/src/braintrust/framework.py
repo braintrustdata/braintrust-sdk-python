@@ -1586,10 +1586,10 @@ async def _run_evaluator_internal(
             experiment, evaluator, position, filters, stream, state, cancel_event
         )
     finally:
-        # Clean up disk-based span cache after eval completes and stop caching
+        # Stop this eval before disposing the cache, preserving other active evals.
         if enable_cache:
-            state.span_cache.dispose()
             state.span_cache.stop()
+            state.span_cache.dispose()
 
 
 async def _run_evaluator_internal_impl(

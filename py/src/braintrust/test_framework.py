@@ -1,10 +1,13 @@
 import asyncio
 import copy
 import importlib.util
+import inspect
 import re
 import sys
 import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -28,6 +31,7 @@ from .framework import (
 )
 from .resource_manager import ResourceManager
 from .score import Classification, Score, Scorer
+from .span_cache import SpanCache, _active_caches
 from .test_helpers import init_test_exp, with_memory_logger, with_simulate_login  # noqa: F401
 
 
@@ -1838,6 +1842,221 @@ async def test_hooks_without_setting_tags(with_memory_logger, with_simulate_logi
     assert root_span[0].get("tags") == None
 
 
+@pytest.fixture
+def eval_span_cache(with_memory_logger):
+    experiment = init_test_exp("test-eval-span-cache")
+    cache = experiment.state.span_cache
+    try:
+        yield experiment.state, cache
+    finally:
+        cache.dispose()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("outcome", ["success", "task_error", "scorer_error"])
+async def test_eval_span_cache_released_after_repeated_evals(eval_span_cache, outcome):
+    state, cache = eval_span_cache
+    paths = []
+
+    async def task(input):
+        path = Path(cache._cache_file_path)
+        paths.append(path)
+        assert path.exists()
+        assert cache._active_eval_count == 1
+        if outcome == "task_error":
+            raise ValueError("task failed")
+        return input * 2
+
+    def score(output):
+        if outcome == "scorer_error":
+            raise ValueError("scorer failed")
+        return 1
+
+    for _ in range(2):
+        result = await EvalAsync(
+            "test-eval-span-cache", data=[EvalCase(input=2)], task=task, scores=[score], state=state, no_send_logs=True
+        )
+        row = result.results[0]
+        if outcome == "task_error":
+            assert isinstance(row.error, ValueError)
+        else:
+            assert row.output == 4
+            assert row.error is None
+        if outcome == "scorer_error":
+            assert "score" in row.metadata["scorer_errors"]
+        assert cache._active_eval_count == 0
+        assert cache._cache_file_path is None
+        assert cache.size == 0
+        assert cache not in _active_caches
+        assert not paths[-1].exists()
+    assert paths[0] != paths[1]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("trigger", ["caller", "event", "timeout", "data_error"])
+async def test_eval_span_cache_released_after_draining_tasks(eval_span_cache, trigger):
+    state, cache = eval_span_cache
+    started = asyncio.Event()
+    drained = asyncio.Event()
+    cancel_event = threading.Event()
+    paths = []
+
+    async def task(input):
+        paths.append(Path(cache._cache_file_path))
+        started.set()
+        try:
+            await asyncio.Event().wait()
+        finally:
+            await asyncio.sleep(0)
+            assert paths[0].exists()
+            assert cache._active_eval_count == 1
+            drained.set()
+
+    async def data():
+        yield EvalCase(input=2)
+        if trigger == "data_error":
+            await started.wait()
+            raise ValueError("data failed")
+
+    evaluation = asyncio.create_task(
+        EvalAsync(
+            "test-eval-span-cache",
+            data=data,
+            task=task,
+            scores=[],
+            state=state,
+            no_send_logs=True,
+            cancel_event=cancel_event,
+            timeout=1 if trigger == "timeout" else None,
+        )
+    )
+    try:
+        await asyncio.wait_for(started.wait(), 2)
+        if trigger == "caller":
+            evaluation.cancel()
+        elif trigger == "event":
+            cancel_event.set()
+        error = (
+            ValueError
+            if trigger == "data_error"
+            else asyncio.TimeoutError
+            if trigger == "timeout"
+            else asyncio.CancelledError
+        )
+        with pytest.raises(error):
+            await asyncio.wait_for(evaluation, 3)
+        assert drained.is_set()
+        assert cache._active_eval_count == 0
+        assert cache._cache_file_path is None
+        assert cache.size == 0
+        assert cache not in _active_caches
+        assert not paths[0].exists()
+    finally:
+        evaluation.cancel()
+        await asyncio.gather(evaluation, return_exceptions=True)
+
+
+@pytest.mark.asyncio
+async def test_eval_span_cache_nested_evals_preserve_outer_cache(eval_span_cache):
+    state, cache = eval_span_cache
+    paths = []
+
+    async def inner(input):
+        assert cache._active_eval_count == 2
+        assert Path(cache._cache_file_path) == paths[0]
+        return input * 2
+
+    async def outer(input):
+        paths.append(Path(cache._cache_file_path))
+        result = await EvalAsync(
+            "test-inner-cache", data=[EvalCase(input=input)], task=inner, scores=[], state=state, no_send_logs=True
+        )
+        assert result.results[0].error is None
+        assert cache._active_eval_count == 1
+        assert paths[0].exists()
+        assert cache.size > 0
+        assert cache in _active_caches
+        return result.results[0].output
+
+    result = await EvalAsync(
+        "test-outer-cache", data=[EvalCase(input=2)], task=outer, scores=[], state=state, no_send_logs=True
+    )
+    assert result.results[0].output == 4
+    assert result.results[0].error is None
+    assert cache._active_eval_count == 0
+    assert cache._cache_file_path is None
+    assert cache.size == 0
+    assert cache not in _active_caches
+    assert not paths[0].exists()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("first_exit", ["success", "cancel", "cache_disabled"])
+async def test_eval_span_cache_concurrent_evals_preserve_active_cache(eval_span_cache, first_exit):
+    state, cache = eval_span_cache
+    started = asyncio.Event()
+    release = asyncio.Event()
+    first_started = asyncio.Event()
+
+    async def slow(input):
+        started.set()
+        await release.wait()
+        return input * 2
+
+    async def fast(input):
+        first_started.set()
+        if first_exit == "cancel":
+            await asyncio.Event().wait()
+        return input * 2
+
+    second = asyncio.create_task(
+        EvalAsync("test-second-cache", data=[EvalCase(input=2)], task=slow, scores=[], state=state, no_send_logs=True)
+    )
+    first = None
+    try:
+        await asyncio.wait_for(started.wait(), 2)
+        path = Path(cache._cache_file_path)
+        first = asyncio.create_task(
+            EvalAsync(
+                "test-first-cache",
+                data=[EvalCase(input=2)],
+                task=fast,
+                scores=[],
+                state=state,
+                no_send_logs=True,
+                enable_cache=first_exit != "cache_disabled",
+            )
+        )
+        await asyncio.wait_for(first_started.wait(), 2)
+        if first_exit == "cancel":
+            first.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await first
+        else:
+            result = await first
+            assert result.results[0].output == 4
+            assert result.results[0].error is None
+        assert cache._active_eval_count == 1
+        assert path.exists()
+        assert cache.size > 0
+        assert cache in _active_caches
+        release.set()
+        result = await second
+        assert result.results[0].output == 4
+        assert result.results[0].error is None
+        assert cache._active_eval_count == 0
+        assert cache._cache_file_path is None
+        assert cache.size == 0
+        assert cache not in _active_caches
+        assert not path.exists()
+    finally:
+        release.set()
+        second.cancel()
+        if first is not None:
+            first.cancel()
+        await asyncio.gather(second, *([first] if first is not None else []), return_exceptions=True)
+
+
 @pytest.mark.asyncio
 async def test_eval_enable_cache():
     state = BraintrustState()
@@ -2022,3 +2241,145 @@ class TestEvaluateFilter:
         # Only the "foo" case should pass the filter
         assert len(result.results) == 1
         assert result.results[0].input == "hello"
+
+
+def test_eval_span_cache_threaded_final_disposal_preserves_new_evaluation(with_memory_logger):
+    state = init_test_exp("threaded-final-release").state
+    cache = state.span_cache
+    disposal_paused = threading.Event()
+    resume_disposal = threading.Event()
+    first_done = threading.Event()
+    second_started = threading.Event()
+    release_second = threading.Event()
+    observations = {}
+    source, first_line = inspect.getsourcelines(SpanCache.dispose)
+    pause_line = first_line + next(i for i, line in enumerate(source) if "os.unlink(self._cache_file_path)" in line)
+
+    def trace(frame, event, arg):
+        if (
+            event == "line"
+            and frame.f_code is SpanCache.dispose.__code__
+            and frame.f_lineno == pause_line
+            and frame.f_locals.get("self") is cache
+            and not disposal_paused.is_set()
+        ):
+            assert cache._active_eval_count == 0
+            disposal_paused.set()
+            assert resume_disposal.wait(5)
+        return trace
+
+    async def first_task(input):
+        observations["first_path"] = cache._cache_file_path
+        return input
+
+    def first():
+        sys.settrace(trace)
+        try:
+            return asyncio.run(
+                EvalAsync("first", data=[{"input": 1}], task=first_task, scores=[], state=state, no_send_logs=True)
+            )
+        finally:
+            sys.settrace(None)
+            first_done.set()
+
+    async def second_task(input):
+        observations["second_path"] = cache._cache_file_path
+        second_started.set()
+        while not release_second.is_set():
+            await asyncio.sleep(0.01)
+        return input
+
+    def second():
+        return asyncio.run(
+            EvalAsync("second", data=[{"input": 2}], task=second_task, scores=[], state=state, no_send_logs=True)
+        )
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        first_result = pool.submit(first)
+        second_result = None
+        try:
+            deadline = time.monotonic() + 5
+            while not disposal_paused.is_set() and not first_done.is_set():
+                assert time.monotonic() < deadline
+                time.sleep(0.001)
+            second_result = pool.submit(second)
+            # A repaired lifecycle lock may serialize start behind disposal.
+            if not second_started.wait(0.1):
+                resume_disposal.set()
+            assert second_started.wait(5)
+            path = Path(observations["second_path"])
+            assert path.exists() and cache._active_eval_count == 1
+            resume_disposal.set()
+            result = first_result.result(timeout=5)
+            assert result.results[0].output == 1 and result.results[0].error is None
+            print(
+                "THREAD_INTERLEAVE",
+                {
+                    "paused_after_zero_guard": disposal_paused.is_set(),
+                    "count_while_second_active": cache._active_eval_count,
+                    "path_while_second_active": cache._cache_file_path,
+                    "second_path_exists": path.exists(),
+                    "cache_size": cache.size,
+                },
+            )
+            assert cache._active_eval_count == 1
+            assert path.exists(), "Final cleanup deleted the next active evaluation cache"
+            assert cache._cache_file_path == str(path) and cache.size > 0
+        finally:
+            resume_disposal.set()
+            release_second.set()
+            first_result.result(timeout=5)
+            if second_result is not None:
+                second_result.result(timeout=5)
+            cache.dispose()
+
+
+@pytest.mark.asyncio
+async def test_eval_span_cache_reentrant_payload_serialization(with_memory_logger):
+    from braintrust import SpanCustomizer, set_span_customizers
+
+    exp = init_test_exp("serialization-callback")
+    calls = []
+
+    class LoggingDict(dict):
+        def items(self):
+            if not calls:
+                calls.append("entered")
+                set_span_customizers(None)
+                try:
+                    with exp.start_span(name="during-serialization"):
+                        pass
+                finally:
+                    set_span_customizers([customizer])
+                calls.append("returned")
+            return super().items()
+
+    class Customize(SpanCustomizer):
+        def on_span_export(self, data):
+            if data.get("output") == "trigger":
+                data["metadata"] = {"callback": LoggingDict(value=1)}
+            return data
+
+    customizer = Customize()
+    set_span_customizers([customizer])
+    try:
+
+        async def score(trace):
+            assert await trace.get_spans()
+            return 1
+
+        result = await EvalAsync(
+            "callback",
+            data=[{"input": 1}],
+            task=lambda input: "trigger",
+            scores=[score],
+            state=exp.state,
+            no_send_logs=True,
+        )
+        assert result.results[0].output == "trigger"
+        assert result.results[0].error is None
+        with_memory_logger.pop()
+        assert calls == ["entered", "returned"]
+    finally:
+        set_span_customizers(None)
+        exp.state.span_cache.dispose()

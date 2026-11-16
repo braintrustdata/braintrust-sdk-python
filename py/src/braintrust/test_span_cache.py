@@ -1,5 +1,6 @@
 """Tests for SpanCache (disk-based cache)."""
 
+import pytest
 from braintrust.span_cache import CachedSpan, SpanCache
 
 
@@ -348,3 +349,132 @@ def test_span_cache_refcount_underflow():
 
     cache.stop()
     cache.dispose()
+
+
+def test_span_cache_serialization_retries_and_retains_unflushed_data():
+    import json
+    from pathlib import Path
+
+    attempts = []
+
+    class RetryDict(dict):
+        def items(self):
+            attempts.append(1)
+            if len(attempts) == 1:
+                raise ValueError("first serialization fails")
+            return super().items()
+
+    cache = SpanCache()
+    cache.start()
+    try:
+        cache.queue_write("root", "first", CachedSpan(span_id="first", metadata={"nested": RetryDict(value=1)}))
+        assert cache.get_by_root_span_id("root")[0].metadata["nested"] == {"value": 1}
+        assert cache._write_buffer
+        cache.queue_write("root", "second", CachedSpan(span_id="second"))
+        rows = [json.loads(line) for line in Path(cache._cache_file_path).read_text().splitlines()]
+        assert [row["spanId"] for row in rows] == ["first", "second"]
+        assert len(attempts) == 2
+        assert not cache._write_buffer
+    finally:
+        cache.stop()
+        cache.dispose()
+
+
+def test_span_cache_write_error_retains_data_for_read_and_retry():
+    import json
+    from pathlib import Path
+
+    cache = SpanCache()
+    cache.start()
+    try:
+        cache.queue_write("root", "initial", CachedSpan(span_id="initial"))
+        path = Path(cache._cache_file_path)
+        path.unlink()
+        path.mkdir()
+        cache.queue_write("root", "retry", CachedSpan(span_id="retry", output="retained"))
+        assert cache.get_by_root_span_id("root")[0].output == "retained"
+        assert cache._write_buffer
+        path.rmdir()
+        path.touch()
+        cache.queue_write("root", "last", CachedSpan(span_id="last"))
+        rows = [json.loads(line) for line in path.read_text().splitlines()]
+        assert [row["spanId"] for row in rows] == ["retry", "last"]
+        assert not cache._write_buffer
+    finally:
+        cache.stop()
+        cache.dispose()
+
+
+def test_span_cache_serialization_can_disable_cache():
+    cache = SpanCache()
+
+    class DisableDict(dict):
+        def items(self):
+            cache.disable()
+            return super().items()
+
+    cache.start()
+    try:
+        cache.queue_write("root", "span", CachedSpan(span_id="span", metadata={"nested": DisableDict(value=1)}))
+        assert cache.disabled
+    finally:
+        cache.stop()
+        cache.dispose()
+
+
+@pytest.mark.parametrize("remove_file", [False, True])
+def test_span_cache_serialization_cannot_write_into_next_evaluation(remove_file):
+    import threading
+    from pathlib import Path
+
+    cache = SpanCache()
+    entered = threading.Event()
+    resume = threading.Event()
+    timed_out = []
+    errors = []
+
+    class BlockingDict(dict):
+        def items(self):
+            if not entered.is_set():
+                entered.set()
+                if not resume.wait(5):
+                    timed_out.append(True)
+            return super().items()
+
+    def write_old():
+        try:
+            cache.queue_write("old", "old", CachedSpan(span_id="old", metadata={"nested": BlockingDict(value=1)}))
+        except BaseException as exc:
+            errors.append(exc)
+
+    cache.start()
+    writer = threading.Thread(target=write_old, daemon=True)
+    writer.start()
+    try:
+        assert entered.wait(5)
+        old_path = Path(cache._cache_file_path)
+        if remove_file:
+            old_path.unlink()
+        cache.stop()
+        cache.dispose()
+        cache.start()
+        resume.set()
+        writer.join(5)
+        assert not writer.is_alive()
+        assert not timed_out
+        assert not errors
+        assert not old_path.exists()
+        cache.queue_write("new", "new", CachedSpan(span_id="new", output="new-eval"))
+        new_path = Path(cache._cache_file_path)
+        assert new_path != old_path
+        assert new_path.is_file()
+        assert not cache.has("old")
+        assert cache.get_by_root_span_id("old") is None
+        assert [span.output for span in cache.get_by_root_span_id("new")] == ["new-eval"]
+        assert '"rootSpanId": "old"' not in new_path.read_text()
+        assert not cache._write_buffer
+    finally:
+        resume.set()
+        writer.join(5)
+        cache.stop()
+        cache.dispose()

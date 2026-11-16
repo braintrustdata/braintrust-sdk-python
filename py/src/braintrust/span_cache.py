@@ -114,10 +114,13 @@ class SpanCache:
         self._enabled = False
         # Reference count of active evals using this cache
         self._active_eval_count = 0
+        # Acquisition must not race the final cache-file cleanup.
+        self._lifecycle_lock = threading.Lock()
         # Small in-memory index tracking which rootSpanIds have data
         self._root_span_index: set[str] = set()
         # Buffer for pending writes
         self._write_buffer: list[DiskSpanRecord] = []
+        self._flush_in_progress: object | None = None
         # Unresolved exports must be cached or dropped before a trace read returns.
         self._pending_records: dict[str, dict[object, LazyValue[dict[str, Any] | None]]] = {}
         self._pending_lock = threading.Lock()
@@ -127,9 +130,10 @@ class SpanCache:
         Disable the cache at runtime. This is called automatically when
         OTEL is registered, since OTEL spans won't be in the cache.
         """
-        self._explicitly_disabled = True
-        with self._pending_lock:
-            self._pending_records.clear()
+        with self._lifecycle_lock:
+            self._explicitly_disabled = True
+            with self._pending_lock:
+                self._pending_records.clear()
 
     def start(self) -> None:
         """
@@ -138,9 +142,10 @@ class SpanCache:
         Called by Eval() to turn on caching for the duration of the eval.
         Uses reference counting to support parallel evals.
         """
-        if not self._explicitly_disabled:
-            self._enabled = True
-            self._active_eval_count += 1
+        with self._lifecycle_lock:
+            if not self._explicitly_disabled:
+                self._enabled = True
+                self._active_eval_count += 1
 
     def stop(self) -> None:
         """
@@ -149,12 +154,13 @@ class SpanCache:
         Called after an eval completes to return to the default state.
         Uses reference counting - only disables when all evals are complete.
         """
-        self._active_eval_count -= 1
-        if self._active_eval_count <= 0:
-            self._active_eval_count = 0
-            self._enabled = False
-            with self._pending_lock:
-                self._pending_records.clear()
+        with self._lifecycle_lock:
+            self._active_eval_count -= 1
+            if self._active_eval_count <= 0:
+                self._active_eval_count = 0
+                self._enabled = False
+                with self._pending_lock:
+                    self._pending_records.clear()
 
     @property
     def disabled(self) -> bool:
@@ -221,32 +227,57 @@ class SpanCache:
         Write a span to the cache.
         In Python, we write synchronously (no async queue like in TS).
         """
-        if self.disabled:
-            return
+        with self._lifecycle_lock:
+            if self.disabled:
+                return
 
-        self._ensure_initialized()
+            self._ensure_initialized()
 
-        record = DiskSpanRecord(root_span_id, span_id, data)
-        self._write_buffer.append(record)
-        self._root_span_index.add(root_span_id)
+            record = DiskSpanRecord(root_span_id, span_id, data)
+            self._write_buffer.append(record)
+            self._root_span_index.add(root_span_id)
 
         # Write to disk immediately (simplified compared to TS async version)
         self._flush_write_buffer()
 
     def _flush_write_buffer(self) -> None:
-        """Flush the write buffer to disk."""
-        if not self._write_buffer or not self._cache_file_path:
-            return
+        """Flush a snapshot without holding lifecycle ownership during serialization."""
+        token = object()
+        with self._lifecycle_lock:
+            if self._flush_in_progress is not None:
+                return
+            self._flush_in_progress = token
 
         try:
-            with open(self._cache_file_path, "a") as f:
-                for record in self._write_buffer:
-                    f.write(json.dumps(record.to_dict()) + "\n")
-            self._write_buffer.clear()
+            while True:
+                with self._lifecycle_lock:
+                    if self.disabled or not self._write_buffer or not self._cache_file_path:
+                        self._flush_in_progress = None
+                        return
+                    buffer = self._write_buffer
+                    records = tuple(buffer)
+                    path = self._cache_file_path
+
+                # JSON containers can log spans; nested writes remain in the buffer.
+                lines = [json.dumps(record.to_dict()) + "\n" for record in records]
+
+                with self._lifecycle_lock:
+                    # Disposal may have removed this batch while it was serializing.
+                    if buffer is not self._write_buffer:
+                        continue
+                    if self.disabled:
+                        self._flush_in_progress = None
+                        return
+                    with open(path, "a") as f:
+                        f.writelines(lines)
+                    del self._write_buffer[: len(records)]
         except Exception:
-            # Silently fail if write fails - cache is best-effort
-            # This can happen if disk is full or file permissions changed
+            # Keep unflushed records readable and retry them on the next write.
             pass
+        finally:
+            with self._lifecycle_lock:
+                if self._flush_in_progress is token:
+                    self._flush_in_progress = None
 
     def get_by_root_span_id(self, root_span_id: str) -> list[CachedSpan] | None:
         """
@@ -348,25 +379,26 @@ class SpanCache:
         Clean up the cache file. Call this when the eval is complete.
         Only performs cleanup when all active evals have completed (refcount = 0).
         """
-        # Only dispose if no active evals are using this cache
-        if self._active_eval_count > 0:
-            return
+        with self._lifecycle_lock:
+            # Only dispose if no active evals are using this cache
+            if self._active_eval_count > 0:
+                return
 
-        # Remove from global registry
-        _active_caches.discard(self)
+            # Remove from global registry
+            _active_caches.discard(self)
 
-        # Clear pending writes
-        self._write_buffer.clear()
-        with self._pending_lock:
-            self._pending_records.clear()
+            # Clear pending writes
+            self._write_buffer = []
+            with self._pending_lock:
+                self._pending_records.clear()
 
-        if self._cache_file_path and os.path.exists(self._cache_file_path):
-            try:
-                os.unlink(self._cache_file_path)
-            except Exception:
-                # Ignore cleanup errors - file might not exist or already deleted
-                pass
-            self._cache_file_path = None
+            if self._cache_file_path and os.path.exists(self._cache_file_path):
+                try:
+                    os.unlink(self._cache_file_path)
+                except Exception:
+                    # Ignore cleanup errors - file might not exist or already deleted
+                    pass
+                self._cache_file_path = None
 
-        self._initialized = False
-        self._root_span_index.clear()
+            self._initialized = False
+            self._root_span_index.clear()
