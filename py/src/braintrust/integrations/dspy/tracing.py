@@ -91,8 +91,18 @@ def _process_images_impl(value: Any) -> Any:
         # so omitted fields stay omitted and custom output shapes survive.
         parts = json.loads(value[len(_CUSTOM_TYPE_START) : -len(_CUSTOM_TYPE_END)])
         if isinstance(parts, list):
-            converted_parts = _process_images(parts)
-            if converted_parts is not parts:
+            converted_parts = []
+            for part in parts:
+                # Only marker payloads identify lm15 image parts; user dictionaries
+                # with type="image" must retain their fields and original shape.
+                if isinstance(part, dict) and part.get("type") == "image":
+                    url = part.get("url")
+                    if part.get("data") is not None and isinstance(part.get("media_type"), str):
+                        url = f"data:{part['media_type']};base64,{part['data']}"
+                    if isinstance(url, str):
+                        part = {"type": "image_url", "image_url": {"url": url}}
+                converted_parts.append(_process_images(part))
+            if any(item is not original for item, original in zip(converted_parts, parts)):
                 if (
                     len(converted_parts) == 1
                     and isinstance(converted_parts[0], dict)
@@ -127,13 +137,6 @@ def _process_images_impl(value: Any) -> Any:
             return {"image_url": converted_model}
         return converted_model
     if isinstance(value, dict):
-        if value.get("type") == "image":
-            # lm15 custom-type markers contain image parts with raw base64.
-            url = value.get("url")
-            if value.get("data") is not None and isinstance(value.get("media_type"), str):
-                url = f"data:{value['media_type']};base64,{value['data']}"
-            if isinstance(url, str):
-                return {"type": "image_url", "image_url": {"url": _process_images(url)}}
         converted_dict = {key: _process_images(item) for key, item in value.items()}
         return value if all(converted_dict[key] is item for key, item in value.items()) else converted_dict
     return value

@@ -133,7 +133,7 @@ def test_dspy_images_materialize_attachments(memory_logger, model_kind):
             super().__init__()
             self.predict = dspy.Predict(describe)
 
-        def forward(self, image, page):
+        def forward(self, image, page, details):
             # The outer module accepts several model shapes, while every case
             # sends the same request to the provider and reuses its recording.
             if isinstance(page, RootModel):
@@ -143,7 +143,7 @@ def test_dspy_images_materialize_attachments(memory_logger, model_kind):
             else:
                 predictor_page = page
             result = self.predict(image=image, page=predictor_page if nested_images else predictor_page.image)
-            return dspy.Prediction(answer=result.answer, image=image, page=page)
+            return dspy.Prediction(answer=result.answer, image=image, page=page, details=details)
 
     patch_litellm()
     lm = dspy.LM(MODEL, cache=False, **LM_KWARGS)
@@ -155,12 +155,17 @@ def test_dspy_images_materialize_attachments(memory_logger, model_kind):
         page = RootModel[list[Page]]([page])
     elif model_kind in ("list", "scalar", "dict", "redacted"):
         page = SerializedPage(page=page)
+    details = [
+        {"type": "image", "url": url, "caption": "Required context", "id": "image-123"}
+        for url in ("https://example.com/photo.png", image_url)
+    ]
     with dspy.context(lm=lm, adapter=dspy.ChatAdapter(), callbacks=[BraintrustDSpyCallback()]):
-        result = DescribePages()(image=image, page=page)
+        result = DescribePages()(image=image, page=page, details=details)
 
     assert result.answer
     assert result.image is image
     assert result.page is page
+    assert result.details is details
     assert image.url == image_url
     spans = {span["span_attributes"]["name"]: span for span in memory_logger.pop()}
 
@@ -198,6 +203,12 @@ def test_dspy_images_materialize_attachments(memory_logger, model_kind):
         assert attachment.data == base64.b64decode(image_base64)
         assert attachment.reference["content_type"] == "image/png"
 
+    def assert_details(value):
+        assert len(value) == 2
+        assert value[0] == details[0]
+        assert {**value[1], "url": image_url} == details[1]
+        assert_image(value[1])
+
     def assert_page(value):
         if model_kind in ("root", "list"):
             assert len(value) == 1
@@ -221,6 +232,7 @@ def test_dspy_images_materialize_attachments(memory_logger, model_kind):
         assert_image(inputs["image"])
         if name == "dspy.module.DescribePages":
             assert_page(inputs["page"])
+            assert_details(inputs["details"])
         elif nested_images:
             assert_image(inputs["page"]["image"])
             assert inputs["page"]["number"] == 2
@@ -228,6 +240,7 @@ def test_dspy_images_materialize_attachments(memory_logger, model_kind):
             assert_image(inputs["page"])
     assert_image(spans["dspy.module.DescribePages"]["output"]["image"])
     assert_page(spans["dspy.module.DescribePages"]["output"]["page"])
+    assert_details(spans["dspy.module.DescribePages"]["output"]["details"])
     assert_image(spans["dspy.adapter.format"]["input"]["inputs"]["image"])
     logged_page = spans["dspy.adapter.format"]["input"]["inputs"]["page"]
     assert_image(logged_page["image"] if nested_images else logged_page)
