@@ -10,19 +10,16 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Install Python build dependencies
-      if: runner.os == 'Linux'
-      shell: bash
-      run: |
-        sudo apt-get update
-        sudo apt-get install --no-install-recommends --yes libbz2-dev liblzma-dev libreadline-dev
+    # mise installs prebuilt python-build-standalone interpreters, so no apt
+    # build headers are needed here.
+    #
+    # Dev dependencies are installed by the `postinstall` hook in mise.toml
+    # (`make install-deps` -> `make -C py install-dev`), which runs as part of
+    # `mise install` below against the py/.venv created for the requested
+    # Python version. Do not add a second install step here.
     - name: Set up mise
       uses: jdx/mise-action@7e36c90d9ab29c415a2384db3006f3ec8a8cc654 # v4.2.4
       with:
         cache: true
         experimental: true
         install_args: ${{ inputs.python-version && format('python@{0}', inputs.python-version) || '' }}
-    - name: Install dependencies
-      shell: bash
-      run: |
-        mise exec ${{ inputs.python-version && format('python@{0}', inputs.python-version) || '' }} -- make -C py install-dev
