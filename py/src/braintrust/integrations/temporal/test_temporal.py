@@ -32,8 +32,8 @@ from braintrust.integrations.temporal.plugin import _workflow_span_context, _wor
 from braintrust.span_identifier_v3 import SpanComponentsV3, SpanObjectTypeV3
 from braintrust.span_identifier_v4 import SpanComponentsV4
 from braintrust.test_helpers import init_test_logger, preserve_env_vars
-from temporalio.client import Client, WorkflowFailureError
-from temporalio.common import RetryPolicy
+from temporalio.client import Client, WithStartWorkflowOperation, WorkflowFailureError
+from temporalio.common import RetryPolicy, WorkflowIDConflictPolicy
 from temporalio.worker import Worker
 
 
@@ -330,6 +330,35 @@ class CancellationWorkflow:
     @temporalio.workflow.query
     def state(self) -> str:
         return "waiting"
+
+
+@temporalio.workflow.defn
+class FirstTaskHandlerWorkflow:
+    """Waits until a signal or update handler has run an activity."""
+
+    def __init__(self) -> None:
+        self._result: int | None = None
+
+    @temporalio.workflow.run
+    async def run(self) -> int:
+        await temporalio.workflow.wait_condition(lambda: self._result is not None)
+        return self._result or 0
+
+    async def _run_activity(self, input: TaskInput) -> int:
+        self._result = await temporalio.workflow.execute_activity(
+            simple_activity,
+            input,
+            start_to_close_timeout=timedelta(seconds=10),
+        )
+        return self._result
+
+    @temporalio.workflow.signal
+    async def start_work(self, input: TaskInput) -> None:
+        await self._run_activity(input)
+
+    @temporalio.workflow.update
+    async def do_work(self, input: TaskInput) -> int:
+        return await self._run_activity(input)
 
 
 @temporalio.workflow.defn
@@ -750,6 +779,70 @@ class TestBraintrustPluginIntegration:
         assert sorted(a["span_parents"][0] for a in activities) == sorted(
             [first_tool["span_id"], second_tool["span_id"]]
         )
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("start", ["signal_with_start", "update_with_start"])
+    @pytest.mark.parametrize("max_cached_workflows", [1000, 0], ids=["cached", "replay"])
+    async def test_first_task_handler_work_joins_workflow_trace(
+        self, temporal_env, memory_logger, start, max_cached_workflows
+    ):
+        # In the first task, Temporal runs signal and update handlers before the run method, so
+        # the activity starts before the workflow span exists. It must still nest under it, and
+        # the workflow must join the caller's trace for both ways of starting it.
+        task_queue = f"test-queue-{uuid.uuid4()}"
+        workflow_id = f"test-first-task-{uuid.uuid4()}"
+        client = await Client.connect(
+            temporal_env.client.service_client.config.target_host,
+            namespace=temporal_env.client.namespace,
+            plugins=[BraintrustPlugin(logger=memory_logger)],
+        )
+
+        async with Worker(
+            temporal_env.client,
+            task_queue=task_queue,
+            workflows=[FirstTaskHandlerWorkflow],
+            activities=[simple_activity],
+            max_cached_workflows=max_cached_workflows,
+            plugins=[BraintrustPlugin(logger=memory_logger)],
+        ):
+            with braintrust.start_span(name="test.client_first_task", type="task"):
+                if start == "signal_with_start":
+                    handle = await client.start_workflow(
+                        FirstTaskHandlerWorkflow.run,
+                        id=workflow_id,
+                        task_queue=task_queue,
+                        start_signal="start_work",
+                        start_signal_args=[TaskInput(value=5)],
+                    )
+                else:
+                    start_operation = WithStartWorkflowOperation(
+                        FirstTaskHandlerWorkflow.run,
+                        id=workflow_id,
+                        id_conflict_policy=WorkflowIDConflictPolicy.FAIL,
+                        task_queue=task_queue,
+                    )
+                    assert (
+                        await client.execute_update_with_start_workflow(
+                            FirstTaskHandlerWorkflow.do_work,
+                            TaskInput(value=5),
+                            start_workflow_operation=start_operation,
+                        )
+                        == 15
+                    )
+                    handle = await start_operation.workflow_handle()
+            assert await handle.result() == 15
+
+        braintrust.flush()
+        spans = memory_logger.pop()
+        client_spans = _spans_named(spans, "test.client_first_task")
+        workflow_spans = _spans_named(spans, "temporal.workflow.FirstTaskHandlerWorkflow")
+        activity_spans = _spans_named(spans, "temporal.activity.simple_activity")
+        assert len(client_spans) == 1
+        assert len(workflow_spans) == 1
+        assert len(activity_spans) == 1
+        assert workflow_spans[0]["root_span_id"] == client_spans[0]["root_span_id"]
+        assert activity_spans[0]["span_parents"] == [workflow_spans[0]["span_id"]]
+        assert activity_spans[0]["root_span_id"] == workflow_spans[0]["root_span_id"]
 
     @pytest.mark.asyncio
     async def test_plugin_workflow_span_records_original_execution_run_id(self, temporal_env, memory_logger):

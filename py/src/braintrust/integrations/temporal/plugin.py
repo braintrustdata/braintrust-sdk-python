@@ -194,14 +194,26 @@ class _BraintrustClientOutboundInterceptor(temporalio.client.OutboundInterceptor
         super().__init__(next)
         self.root = root
 
+    def _add_current_span_context(
+        self, headers: Mapping[str, temporalio.api.common.v1.Payload]
+    ) -> Mapping[str, temporalio.api.common.v1.Payload]:
+        current_span = _current_span()
+        if current_span:
+            return self.root._span_context_to_headers(current_span.export(), headers)
+        return headers
+
     async def start_workflow(
         self, input: temporalio.client.StartWorkflowInput
     ) -> temporalio.client.WorkflowHandle[Any, Any]:
-        current_span = _current_span()
-        if current_span:
-            span_context = current_span.export()
-            input.headers = self.root._span_context_to_headers(span_context, input.headers)
+        input.headers = self._add_current_span_context(input.headers)
         return await super().start_workflow(input)
+
+    async def start_update_with_start_workflow(
+        self, input: "temporalio.client.StartWorkflowUpdateWithStartInput"
+    ) -> "temporalio.client.WorkflowUpdateHandle[Any]":
+        # The start half carries its own headers, which the workflow interceptor reads.
+        input.start_workflow_input.headers = self._add_current_span_context(input.start_workflow_input.headers)
+        return await super().start_update_with_start_workflow(input)
 
 
 class _BraintrustActivityInboundInterceptor(temporalio.worker.ActivityInboundInterceptor):
@@ -266,19 +278,38 @@ class BraintrustWorkflowInboundInterceptor(temporalio.worker.WorkflowInboundInte
         self._workflow_span: Any | None = None
         self._span_hooks: _WorkflowSpanHooks | None = None
         self._span_hooks_token: Any | None = None
+        self._run_started = False
 
     def init(self, outbound: temporalio.worker.WorkflowOutboundInterceptor) -> None:
         super().init(_BraintrustWorkflowOutboundInterceptor(outbound, self))
 
-    async def execute_workflow(self, input: temporalio.worker.ExecuteWorkflowInput) -> Any:
-        parent_span_context = None
-        if _HEADER_KEY in input.headers:
-            header_payload = input.headers.get(_HEADER_KEY)
-            if header_payload:
-                payloads = self.payload_converter.from_payloads([header_payload])
-                if payloads:
-                    parent_span_context = payloads[0]
+    def _span_context_from_headers(self, headers: Mapping[str, temporalio.api.common.v1.Payload]) -> Any | None:
+        header_payload = headers.get(_HEADER_KEY)
+        if header_payload:
+            payloads = self.payload_converter.from_payloads([header_payload])
+            if payloads:
+                return payloads[0]
+        return None
 
+    def _parent_span_context_before_run(self) -> Any | None:
+        """Return the workflow span's context before ``execute_workflow`` has created it.
+
+        In a workflow's first task, Temporal runs signal and update handlers before the run
+        method, so work they start (as with signal-with-start or update-with-start) would have
+        no parent. The workflow span's IDs are deterministic, so compute the context it will have.
+        """
+        info = temporalio.workflow.info()
+        parent_span_context = self._span_context_from_headers(info.headers)
+        with temporalio.workflow.unsafe.sandbox_unrestricted():
+            logger = temporalio.workflow.extern_functions()["__braintrust_get_logger"]()
+            if not logger:
+                return parent_span_context
+            parent = parent_span_context or logger.export()
+            return _workflow_span_context(parent, _workflow_span_ids(info, parent))
+
+    async def execute_workflow(self, input: temporalio.worker.ExecuteWorkflowInput) -> Any:
+        self._run_started = True
+        parent_span_context = self._span_context_from_headers(input.headers)
         self._parent_span_context = parent_span_context
 
         # sandbox_unrestricted lets us touch logger state that the workflow sandbox would otherwise block.
@@ -381,6 +412,8 @@ class _BraintrustWorkflowOutboundInterceptor(temporalio.worker.WorkflowOutboundI
                 span = _current_span()
                 if span is not braintrust.logger.NOOP_SPAN and span is not self.root._workflow_span:
                     return span.export()
+        if not self.root._run_started:
+            return self.root._parent_span_context_before_run()
         return self.root._parent_span_context
 
     def start_activity(self, input: temporalio.worker.StartActivityInput) -> temporalio.workflow.ActivityHandle:
