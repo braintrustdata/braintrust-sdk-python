@@ -39,6 +39,12 @@ Read when relevant:
 - changed integration tests and cassette directories for affected providers
 - [references/session-mapping.md](./references/session-mapping.md) for matrix-key classification, non-obvious session/cassette mappings, shared-directory constraints, and recording gotchas
 
+Helper scripts (run from the repo root; each takes `--help`):
+
+- [scripts/check_labels.py](./scripts/check_labels.py): the workflow's label decision for a committed PR branch (step 2)
+- [scripts/check_requires_python.py](./scripts/check_requires_python.py): bumped pins that newly exclude CI's lowest Python (step 4)
+- [scripts/cassette_shape_diff.py](./scripts/cassette_shape_diff.py): endpoint, status and count changes in re-recorded cassettes (step 10)
+
 ## Core Rules
 
 - Work from `py/` for SDK commands.
@@ -82,15 +88,7 @@ python scripts/determine-dependency-update-labels.py
 The script reads the uncommitted working-tree diff (`git diff`). The workflow runs it before committing. On a checked-out PR branch the changes are already committed, so it prints `changed=false`. Reproduce its decision against the merge base instead:
 
 ```bash
-cd py
-python3 - <<'EOF'
-import subprocess, tomllib
-diff = subprocess.check_output(["git", "diff", "origin/main...HEAD", "--", "pyproject.toml", "uv.lock"], text=True)
-matrix = tomllib.load(open("pyproject.toml", "rb"))["tool"]["braintrust"]["matrix"]
-pkgs = {r.split("==")[0].split("[")[0].strip() for k, v in matrix.items()
-        if k not in {"pytest-matrix", "braintrust-core"} for r in v.values()}
-print("changed =", bool(diff), "needs_rerecord =", any(p in diff for p in pkgs))
-EOF
+python3 .agents/skills/sdk-dependency-updates/scripts/check_labels.py   # --base origin/main --head HEAD
 ```
 
 Treat the script as the source of truth for workflow labels. Treat your manual diff review as the source of truth for what work to do next.
@@ -109,20 +107,15 @@ Classify each changed matrix key before recording anything:
 
 Check every changed `latest` pin, patch bumps included: a patch release can raise `Requires-Python` (for example, llama-index-core `0.14.25 -> 0.14.26` moved from `>=3.10` to `>=3.11`). Local playback on the default Python will not catch this. CI fails at install time on the lowest Python in `.github/workflows/checks.yaml`.
 
-Compare the old and new pins' `Requires-Python`:
+Compare the old and new pins' `Requires-Python` against the lowest `python-version` in `checks.yaml`:
 
 ```bash
-cd py
-git diff origin/main...HEAD -- pyproject.toml \
-  | sed -nE 's/^([-+])latest = "([^"]+)"/\1 \2/p' | sed -E 's/\[[^]]*\]//' \
-  | while read -r sign req; do
-      name=${req%%==*}; version=${req#*==}
-      printf '%s %-30s %-12s %s\n' "$sign" "$name" "$version" \
-        "$(curl -s "https://pypi.org/pypi/$name/$version/json" | python3 -c 'import json,sys; print(json.load(sys.stdin)["info"]["requires_python"])')"
-    done
+py/.venv/bin/python .agents/skills/sdk-dependency-updates/scripts/check_requires_python.py
 ```
 
-For each pin whose floor rises above CI's lowest Python:
+It marks pins that newly exclude the lowest CI Python with `NEW`, and exits 1 if there are any. Pins that already excluded it are listed as `already excluded`; they should already be gated, but confirm when a key is new to the matrix.
+
+For each pin marked `NEW`:
 
 - Add a `latest`-only rule in `py/nox_session_constraints.py`, for example `"test_<name>": {"versions": {"latest": {"min_python": "3.11"}}}`, merged into any existing entry. Older pins keep covering the lower Python.
 - Make sure the nox session calls `_skip_if_incompatible(session)`. Matrix-registered sessions already do; hand-written ones may not.
@@ -309,26 +302,10 @@ rg -l "staging-api\.braintrust\.dev|api\.braintrust\.ai|api\.braintrust\.dev/ver
 
 Any hit outside the real-org files found in step 9 is pollution.
 
-Then compare each re-recorded cassette's structure with the committed copy, not just its text: the set of `(method, URL, status)` triples and the interaction count. Expect only regenerated resource IDs in URLs. Investigate added or removed endpoints, non-2xx statuses that are new, and count changes.
+Then compare each re-recorded cassette's structure with the committed copy, not just its text: the set of `(method, URL, status)` interactions and their count. Expect only regenerated resource IDs in URLs. Investigate added or removed endpoints, non-2xx statuses that are new, count changes, and added or deleted files.
 
 ```bash
-cd py
-python3 - <<'PY'   # needs PyYAML; run with py/.venv/bin/python if python3 lacks it
-import collections, re, subprocess, yaml
-def shape(text):
-    d = yaml.safe_load(text) or {}
-    return collections.Counter(
-        (i["request"]["method"], re.sub(r"\?.*", "", i["request"]["uri"]), (i["response"].get("status") or {}).get("code"))
-        for i in d.get("interactions", []))
-for line in subprocess.check_output(["git", "status", "--porcelain", "--", "src/braintrust/integrations"], text=True).splitlines():
-    path = line[3:]
-    if line[:2] != " M" or "/cassettes/latest/" not in path:
-        continue
-    old = shape(subprocess.check_output(["git", "show", f"HEAD:{path}"], text=True))
-    new = shape(open(path.removeprefix("py/")).read())
-    if old != new:
-        print(path, sum(old.values()), "->", sum(new.values()), "+", sorted(new - old)[:2], "-", sorted(old - new)[:2])
-PY
+py/.venv/bin/python .agents/skills/sdk-dependency-updates/scripts/cassette_shape_diff.py   # optionally: <integration> ...
 ```
 
 If recording appears to succeed but produces no real cassette updates, read [references/session-mapping.md](./references/session-mapping.md) for provider-specific cache gotchas.
