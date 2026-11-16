@@ -16,20 +16,20 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - litellm/1.108.3
+      - litellm/1.109.1
     method: POST
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0fd116aff30aa1a1016af342c7342087d285f3bd2008cad72d\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1794327239,\n  \"status\":
+      string: "{\n  \"id\": \"resp_048a7b7a9064a79c016afb27003fec87d291ec380310d66b30\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1794844416,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794327240,\n  \"error\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794844417,\n  \"error\":
         null,\n  \"frequency_penalty\": 0.0,\n  \"image\": {\n    \"context_compression\":
-        \"disabled\"\n  },\n  \"incomplete_details\": null,\n  \"instructions\": \"Just
-        the number please\",\n  \"max_output_tokens\": null,\n  \"max_tool_calls\":
-        null,\n  \"model\": \"gpt-6-luna\",\n  \"moderation\": null,\n  \"output\":
-        [\n    {\n      \"id\": \"msg_0fd116aff30aa1a1016af342c7f78887d29e2ef531c40c4ad8\",\n
+        \"disabled\"\n  },\n  \"incomplete_details\": null,\n  \"input_transformations\":
+        [],\n  \"instructions\": \"Just the number please\",\n  \"max_output_tokens\":
+        null,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-6-luna\",\n  \"moderation\":
+        null,\n  \"output\": [\n    {\n      \"id\": \"msg_048a7b7a9064a79c016afb27010ce487d2bd1a8e4ee696f156\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"24\"\n        }\n
@@ -47,13 +47,14 @@ interactions:
         0\n      },\n      \"total_tokens\": 0\n    },\n    \"web_search\": {\n      \"num_requests\":
         0\n    }\n  },\n  \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 0.98,\n
         \ \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 21,\n
-        \   \"input_tokens_details\": {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\":
-        0\n    },\n    \"output_tokens\": 5,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 26\n  },\n  \"user\": null,\n  \"metadata\":
-        {}\n}"
+        \   \"input_tokens_details\": {\n      \"cache_write_tokens\": 0,\n      \"cache_write_tokens_details\":
+        {\n        \"ttl_12h_tokens\": 0,\n        \"ttl_30m_tokens\": 0\n      },\n
+        \     \"cached_tokens\": 0\n    },\n    \"output_tokens\": 5,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 26\n  },\n
+        \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
       Access-Control-Expose-Headers:
-      - X-Request-ID, Server-Timing-Total
+      - X-Request-ID, Server-Timing-Total, X-OpenAI-Inference-Capacity-Reason
       - CF-Ray
       - CF-Ray
       Alt-Svc:
@@ -61,13 +62,13 @@ interactions:
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - a58658fc2fda39f9-YYZ
+      - a5b7ab612ba8ab1c-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Tue, 10 Nov 2026 16:14:00 GMT
+      - Mon, 16 Nov 2026 15:53:37 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -77,11 +78,11 @@ interactions:
       X-Content-Type-Options:
       - nosniff
       X-Request-ID:
-      - req_a2e9a05225354a61a20703bde823302d
+      - req_9b5c0776392f46fba6717837783eb613
       content-length:
-      - '2121'
+      - '2256'
       openai-processing-ms:
-      - '939'
+      - '917'
       openai-version:
       - '2020-10-01'
       x-ratelimit-limit-requests:

@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 3.46.0
+      - OpenAI/Python 3.51.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,9 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.46.0
+      - 3.51.0
+      x-stainless-raw-response:
+      - 'true'
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,8 +41,8 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EiiKKvc2M3nfFivAid5Kcij3rQyXv\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1794325532,\n  \"model\": \"gpt-6-luna\",\n
+      string: "{\n  \"id\": \"chatcmpl-Ekt2zSZ7P26kXz6n7H9bRd6NgMoaJ\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794843397,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"24\",\n        \"refusal\": null,\n
         \       \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
@@ -61,7 +63,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5862f4f4c8f0eff-YYZ
+      - a5b7927d6c6cdc46-YYZ
       connection:
       - keep-alive
       content-length:
@@ -69,9 +71,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 15:45:33 GMT
+      - Mon, 16 Nov 2026 15:36:38 GMT
       openai-processing-ms:
-      - '1333'
+      - '947'
       openai-version:
       - '2020-10-01'
       server:
@@ -97,7 +99,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_7cec4b3c145a41e495a3d16b6e67518b
+      - req_6785652690274b039a2e8479e36e0742
     status:
       code: 200
       message: OK

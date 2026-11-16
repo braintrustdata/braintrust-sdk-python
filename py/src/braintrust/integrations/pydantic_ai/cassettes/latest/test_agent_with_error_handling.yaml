@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.66.0
+      - pydantic-ai/2.68.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.46.0
+      - 3.51.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -46,7 +46,7 @@ interactions:
         \"invalid_value\"\n  }\n}"
     headers:
       access-control-expose-headers:
-      - X-Request-ID, Server-Timing-Total
+      - X-Request-ID, Server-Timing-Total, X-OpenAI-Inference-Capacity-Reason
       - CF-Ray
       - CF-Ray
       alt-svc:
@@ -54,7 +54,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a58630d1fe85a450-YYZ
+      - a5b794264866ebb6-YYZ
       connection:
       - keep-alive
       content-length:
@@ -62,9 +62,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 15:46:34 GMT
+      - Mon, 16 Nov 2026 15:37:44 GMT
       openai-processing-ms:
-      - '78'
+      - '84'
       openai-version:
       - '2020-10-01'
       server:
@@ -74,7 +74,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-id:
-      - req_8b6f238f5f974caa8fbb3e22b632503a
+      - req_17cd58794515420491e5a9dce3039cfe
     status:
       code: 400
       message: Bad Request

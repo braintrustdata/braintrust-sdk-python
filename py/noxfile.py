@@ -424,6 +424,7 @@ LITELLM_VERSIONS = _get_matrix_versions("litellm")
 @nox.session()
 def test_mcp_interop(session):
     """MCP 1.x coexistence with the upstream OTel instrumentor and LangChain tools."""
+    _skip_if_incompatible(session)
     _install_test_deps(session, "test-mcp-interop")
     # The upstream OTel instrumentor targets the MCP 1.x BaseSession API.
     _install_matrix_dep(session, "mcp", "1.28.1")
@@ -829,6 +830,7 @@ TEMPORAL_VERSIONS = _get_matrix_versions("temporalio")
 @nox.session()
 @nox.parametrize("version", TEMPORAL_VERSIONS, ids=TEMPORAL_VERSIONS)
 def test_temporal(session, version):
+    _skip_if_incompatible(session)
     _install_test_deps(session)
     _install_matrix_dep(session, "temporalio", version)
     # Pydantic AI's Temporal durability extra needs temporalio>=1.27 and Python 3.11+,
@@ -1013,8 +1015,18 @@ def pylint(session):
         "openrouter": ((3, 15), "openrouter"),
         "transformers": ((3, 15), None),
     }
+    # Latest pins that require a newer Python, linted on older Pythons against
+    # the newest matrix pin that still installs there so imports keep resolving.
+    fallback_below_python = {
+        "fastmcp": ((3, 11), "4.0.0"),  # fastmcp 4.2 requires Python 3.11
+        "temporalio": ((3, 11), "1.20.0"),  # temporalio 1.36 requires Python 3.11
+    }
     unlintable_integrations = set()
     for package in _VENDOR_TABLE:
+        min_python, fallback_version = fallback_below_python.get(package, (None, None))
+        if min_python and sys.version_info[:2] < min_python:
+            _install_matrix_dep(session, package, fallback_version)
+            continue
         if sys.version_info[:2] < minimum_python.get(package, (3, 10)):
             if package == "google-adk":
                 # ADK is installed only via its matrix pin for lint, and the

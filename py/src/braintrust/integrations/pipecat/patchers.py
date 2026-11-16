@@ -145,6 +145,20 @@ class STTServiceProcessGeneratorPatcher(FunctionWrapperPatcher):
     wrapper = staticmethod(traced_stt_process_generator)
 
 
+class SegmentedSTTPushSegmentFramesPatcher(FunctionWrapperPatcher):
+    """Scope segmented STT transcription spans under their Pipecat recognition.
+
+    Since Pipecat 1.16, ``SegmentedSTTService`` consumes ``run_stt`` in
+    ``_push_segment_frames`` instead of ``process_generator``. Older versions
+    lack the method, so the patcher skips them.
+    """
+
+    name = "segmented_stt_push_segment_frames"
+    target_module = "pipecat.services.stt_service"
+    target_path = "SegmentedSTTService._push_segment_frames"
+    wrapper = staticmethod(traced_stt_process_generator)
+
+
 class PipelineWorkerPatcher(CompositeFunctionWrapperPatcher):
     """Instrument ``PipelineWorker`` construction and runs together."""
 
@@ -180,8 +194,9 @@ def wrap_pipeline_worker(
         }
     )
     from pipecat.services.llm_service import LLMService  # pylint: disable=import-error
-    from pipecat.services.stt_service import STTService  # pylint: disable=import-error
+    from pipecat.services.stt_service import SegmentedSTTService, STTService  # pylint: disable=import-error
 
     LLMServicePushFramePatcher.wrap_target(LLMService)
     STTServiceProcessGeneratorPatcher.wrap_target(STTService)
+    SegmentedSTTPushSegmentFramesPatcher.wrap_target(SegmentedSTTService)
     return PipelineWorkerPatcher.wrap_target(PipelineWorker)

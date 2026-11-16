@@ -40,11 +40,11 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EiiLiTKOMbv5PFpRzED74CfAdC42g\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1794325618,\n  \"model\": \"gpt-6-luna\",\n
+      string: "{\n  \"id\": \"chatcmpl-EktJWCDyaZN7RQe507AN9ZAPA0bsx\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794844422,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
-        \           \"id\": \"call_hClGSffDerlpdQEPiM9Udgpg\",\n            \"type\":
+        \           \"id\": \"call_gjyCWrxiocwWmEVYVu0r2c0P\",\n            \"type\":
         \"function\",\n            \"function\": {\n              \"name\": \"calculate\",\n
         \             \"arguments\": \"{\\\"operation\\\":\\\"multiply\\\",\\\"a\\\":127,\\\"b\\\":49}\"\n
         \           }\n          }\n        ],\n        \"refusal\": null,\n        \"annotations\":
@@ -65,7 +65,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a586316a1aa7ebba-YYZ
+      - a5b7ab80baf7fcd9-YYZ
       connection:
       - keep-alive
       content-length:
@@ -73,9 +73,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 15:46:59 GMT
+      - Mon, 16 Nov 2026 15:53:42 GMT
       openai-processing-ms:
-      - '1083'
+      - '1201'
       openai-version:
       - '2020-10-01'
       server:
@@ -101,13 +101,13 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_c125a06336134e8a94600434872110e2
+      - req_621f16403d45422193ab69a342aeadaa
     status:
       code: 200
       message: OK
 - request:
-    body: '{"messages":[{"content":"What is 127 multiplied by 49?","role":"user"},{"content":null,"role":"assistant","tool_calls":[{"type":"function","id":"call_hClGSffDerlpdQEPiM9Udgpg","function":{"name":"calculate","arguments":"{\"operation\":
-      \"multiply\", \"a\": 127, \"b\": 49}"}}]},{"content":"6223","role":"tool","tool_call_id":"call_hClGSffDerlpdQEPiM9Udgpg"}],"model":"gpt-6-luna","reasoning_effort":"none","stream":false,"tools":[{"type":"function","function":{"name":"calculate","description":"Perform
+    body: '{"messages":[{"content":"What is 127 multiplied by 49?","role":"user"},{"content":null,"role":"assistant","tool_calls":[{"type":"function","id":"call_gjyCWrxiocwWmEVYVu0r2c0P","function":{"name":"calculate","arguments":"{\"operation\":
+      \"multiply\", \"a\": 127, \"b\": 49}"}}]},{"content":"6223","role":"tool","tool_call_id":"call_gjyCWrxiocwWmEVYVu0r2c0P"}],"model":"gpt-6-luna","reasoning_effort":"none","stream":false,"tools":[{"type":"function","function":{"name":"calculate","description":"Perform
       a mathematical calculation.\n\nArgs:\n    operation: The mathematical operation
       (add, subtract, multiply, divide)\n    a: First number\n    b: Second number","parameters":{"properties":{"operation":{"type":"string"},"a":{"type":"number"},"b":{"type":"number"}},"required":["operation","a","b"],"type":"object"}}}]}'
     headers:
@@ -147,8 +147,8 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EiiLjKBwiB03FFNAcE91jfTWAk1PT\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1794325619,\n  \"model\": \"gpt-6-luna\",\n
+      string: "{\n  \"id\": \"chatcmpl-EktJXYQ2UmcHflKuCiLb2uU1xrzlc\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794844423,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"127 \xD7 49 = **6,223**.\",\n        \"refusal\":
         null,\n        \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
@@ -169,7 +169,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a58631718f79ebba-YYZ
+      - a5b7ab8b19e2fcd9-YYZ
       connection:
       - keep-alive
       content-length:
@@ -177,9 +177,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 15:47:00 GMT
+      - Mon, 16 Nov 2026 15:53:43 GMT
       openai-processing-ms:
-      - '1116'
+      - '790'
       openai-version:
       - '2020-10-01'
       server:
@@ -205,7 +205,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_86a6a2fb894b4a6dac3b1630cf71f12d
+      - req_46bf73cfa8364b7d8efbcfebac9a0865
     status:
       code: 200
       message: OK

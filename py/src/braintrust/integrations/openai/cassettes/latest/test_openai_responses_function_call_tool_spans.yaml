@@ -17,7 +17,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 3.46.0
+      - OpenAI/Python 3.51.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -27,7 +27,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.46.0
+      - 3.51.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -40,17 +40,17 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_03e4d28c5ef0adb9016af343c02c5087d2ae22edc2f70bfad2\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1794327488,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0d1647e44c2ba7c2016afb2313c16c87d29d760bfc2c9078c0\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1794843411,\n  \"status\":
         \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794327489,\n  \"error\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794843412,\n  \"error\":
         null,\n  \"frequency_penalty\": 0.0,\n  \"image\": {\n    \"context_compression\":
-        \"disabled\"\n  },\n  \"incomplete_details\": null,\n  \"instructions\": null,\n
-        \ \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
-        \"gpt-6-luna\",\n  \"moderation\": null,\n  \"output\": [\n    {\n      \"id\":
-        \"fc_03e4d28c5ef0adb9016af343c109fc87d2a2e0e7965883336b\",\n      \"type\":
-        \"function_call\",\n      \"status\": \"completed\",\n      \"arguments\":
-        \"{\\\"location\\\":\\\"Paris\\\"}\",\n      \"call_id\": \"call_kd3qnojKLgz8vJVcPRSNvUDR\",\n
+        \"disabled\"\n  },\n  \"incomplete_details\": null,\n  \"input_transformations\":
+        [],\n  \"instructions\": null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\":
+        null,\n  \"model\": \"gpt-6-luna\",\n  \"moderation\": null,\n  \"output\":
+        [\n    {\n      \"id\": \"fc_0d1647e44c2ba7c2016afb2314600c87d29d336a61ee653f0a\",\n
+        \     \"type\": \"function_call\",\n      \"status\": \"completed\",\n      \"arguments\":
+        \"{\\\"location\\\":\\\"Paris\\\"}\",\n      \"call_id\": \"call_Ev6fuvnimFw1wYjIfVf5M68L\",\n
         \     \"name\": \"get_weather\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n
         \ \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
         null,\n  \"prompt_cache_retention\": \"24h\",\n  \"reasoning\": {\n    \"context\":
@@ -72,13 +72,14 @@ interactions:
         \       \"additionalProperties\": false\n      },\n      \"strict\": true\n
         \   }\n  ],\n  \"top_logprobs\": 0,\n  \"top_p\": 0.98,\n  \"truncation\":
         \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 57,\n    \"input_tokens_details\":
-        {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 18,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 75\n  },\n  \"user\": null,\n  \"metadata\":
-        {}\n}"
+        {\n      \"cache_write_tokens\": 0,\n      \"cache_write_tokens_details\":
+        {\n        \"ttl_12h_tokens\": 0,\n        \"ttl_30m_tokens\": 0\n      },\n
+        \     \"cached_tokens\": 0\n    },\n    \"output_tokens\": 18,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 75\n  },\n
+        \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
       access-control-expose-headers:
-      - X-Request-ID, Server-Timing-Total
+      - X-Request-ID, Server-Timing-Total, X-OpenAI-Inference-Capacity-Reason
       - CF-Ray
       - CF-Ray
       alt-svc:
@@ -86,17 +87,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5865f1098a8a06e-YYZ
+      - a5b792dadcdf4cc4-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2490'
+      - '2625'
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 16:18:09 GMT
+      - Mon, 16 Nov 2026 15:36:52 GMT
       openai-processing-ms:
-      - '1033'
+      - '771'
       openai-version:
       - '2020-10-01'
       server:
@@ -120,7 +121,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_9884e762a83b432a93f01f8f2651407f
+      - req_49107fe7256f424c984c0c2499708d61
     status:
       code: 200
       message: OK

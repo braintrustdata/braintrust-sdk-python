@@ -18,35 +18,35 @@ interactions:
       typesafe-danger-zone-images:
       - 'true'
       user-agent:
-      - litellm/1.108.3
+      - litellm/1.109.1
     method: POST
     uri: https://api.typesafe.ai/v1/systemone
   response:
     body:
       string: '{"model":"jev-1.14.0","answers":{"red":{"type":"noul","noul":0.02}},"usage":{"input_tokens":487,"output_tokens":20}}'
     headers:
-      alt-svc:
+      Alt-Svc:
       - h3=":443"; ma=86400
+      CF-RAY:
+      - a5b7ab56ca1e78a5-YYZ
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 16 Nov 2026 15:53:34 GMT
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
       cf-cache-status:
       - DYNAMIC
-      cf-ray:
-      - a57e47060ff5ac9a-YYZ
-      connection:
-      - keep-alive
       content-length:
       - '116'
-      content-type:
-      - application/json
-      date:
-      - Mon, 09 Nov 2026 16:43:37 GMT
-      server:
-      - cloudflare
-      transfer-encoding:
-      - chunked
       x-envoy-upstream-service-time:
-      - '45'
+      - '50'
       x-typesafe-request-id:
-      - req_01a1c1319fd170959e603d820c245d95
+      - req_01a1e510524d7bed8950f807d8141921
     status:
       code: 200
       message: OK

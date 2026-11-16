@@ -41,11 +41,11 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EiiO3S5S1wrqJgBL4zMLmJoYwqeGk\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1794325763,\n  \"model\": \"gpt-6-luna\",\n
+      string: "{\n  \"id\": \"chatcmpl-EktJNqBK122eWSaXeOJVhtlgrEDGZ\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1794844413,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
-        \           \"id\": \"call_K5W1e3mQ9xIOiUx3LE7oJC6b\",\n            \"type\":
+        \           \"id\": \"call_4wXPiokaKzSdhm3L8nXOiYds\",\n            \"type\":
         \"function\",\n            \"function\": {\n              \"name\": \"get_weather\",\n
         \             \"arguments\": \"{\\\"city\\\":\\\"Paris\\\"}\"\n            }\n
         \         }\n        ],\n        \"refusal\": null,\n        \"annotations\":
@@ -66,7 +66,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a58634f0b828e910-YYZ
+      - a5b7ab4feb7cc48a-YYZ
       connection:
       - keep-alive
       content-length:
@@ -74,9 +74,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 15:49:23 GMT
+      - Mon, 16 Nov 2026 15:53:34 GMT
       openai-processing-ms:
-      - '1096'
+      - '630'
       openai-version:
       - '2020-10-01'
       server:
@@ -102,15 +102,15 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_737a268019114fa8a474e16ab1edcc99
+      - req_075f32243f2e4c12ae7ac4f6dc165136
     status:
       code: 200
       message: OK
 - request:
     body: '{"messages":[{"role":"developer","content":"Use get_weather to find the
       weather. Report the result briefly."},{"role":"user","content":"What''s the
-      weather in Paris?"},{"role":"assistant","tool_calls":[{"id":"call_K5W1e3mQ9xIOiUx3LE7oJC6b","function":{"arguments":"{\"city\":\"Paris\"}","name":"get_weather"},"type":"function"}],"content":""},{"role":"tool","content":"The
-      weather in Paris is 72F and sunny.","tool_call_id":"call_K5W1e3mQ9xIOiUx3LE7oJC6b"}],"model":"gpt-6-luna","reasoning_effort":"none","stream":true,"stream_options":{"include_usage":true},"tools":[{"type":"function","function":{"name":"get_weather","description":"Get
+      weather in Paris?"},{"role":"assistant","tool_calls":[{"id":"call_4wXPiokaKzSdhm3L8nXOiYds","function":{"arguments":"{\"city\":\"Paris\"}","name":"get_weather"},"type":"function"}],"content":""},{"role":"tool","content":"The
+      weather in Paris is 72F and sunny.","tool_call_id":"call_4wXPiokaKzSdhm3L8nXOiYds"}],"model":"gpt-6-luna","reasoning_effort":"none","stream":true,"stream_options":{"include_usage":true},"tools":[{"type":"function","function":{"name":"get_weather","description":"Get
       the current weather for a city.","parameters":{"type":"object","properties":{"city":{"type":"string"}},"required":["city"],"additionalProperties":false},"external_execution":true}}]}'
     headers:
       accept:
@@ -149,23 +149,21 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "data: {\"id\":\"chatcmpl-EiiO40AhE6FNOMFy4XXYDKW9yeyDK\",\"object\":\"chat.completion.chunk\",\"created\":1794325764,\"model\":\"gpt-6-luna\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"refusal\":null},\"finish_reason\":null}],\"usage\":null,\"obfuscation\":\"\"}\n\ndata:
-        {\"id\":\"chatcmpl-EiiO40AhE6FNOMFy4XXYDKW9yeyDK\",\"object\":\"chat.completion.chunk\",\"created\":1794325764,\"model\":\"gpt-6-luna\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[{\"index\":0,\"delta\":{\"content\":\"Paris\"},\"finish_reason\":null}],\"usage\":null,\"obfuscation\":\"RVR5dv8plnzo5\"}\n\ndata:
-        {\"id\":\"chatcmpl-EiiO40AhE6FNOMFy4XXYDKW9yeyDK\",\"object\":\"chat.completion.chunk\",\"created\":1794325764,\"model\":\"gpt-6-luna\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[{\"index\":0,\"delta\":{\"content\":\"
-        is\"},\"finish_reason\":null}],\"usage\":null,\"obfuscation\":\"DIUbUapCqZqtFon\"}\n\ndata:
-        {\"id\":\"chatcmpl-EiiO40AhE6FNOMFy4XXYDKW9yeyDK\",\"object\":\"chat.completion.chunk\",\"created\":1794325764,\"model\":\"gpt-6-luna\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[{\"index\":0,\"delta\":{\"content\":\"
-        currently\"},\"finish_reason\":null}],\"usage\":null,\"obfuscation\":\"IB79CsYF\"}\n\ndata:
-        {\"id\":\"chatcmpl-EiiO40AhE6FNOMFy4XXYDKW9yeyDK\",\"object\":\"chat.completion.chunk\",\"created\":1794325764,\"model\":\"gpt-6-luna\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[{\"index\":0,\"delta\":{\"content\":\"
-        \"},\"finish_reason\":null}],\"usage\":null,\"obfuscation\":\"T\"}\n\ndata:
-        {\"id\":\"chatcmpl-EiiO40AhE6FNOMFy4XXYDKW9yeyDK\",\"object\":\"chat.completion.chunk\",\"created\":1794325764,\"model\":\"gpt-6-luna\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[{\"index\":0,\"delta\":{\"content\":\"72\"},\"finish_reason\":null}],\"usage\":null,\"obfuscation\":\"\"}\n\ndata:
-        {\"id\":\"chatcmpl-EiiO40AhE6FNOMFy4XXYDKW9yeyDK\",\"object\":\"chat.completion.chunk\",\"created\":1794325764,\"model\":\"gpt-6-luna\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\xB0F\"},\"finish_reason\":null}],\"usage\":null,\"obfuscation\":\"\"}\n\ndata:
-        {\"id\":\"chatcmpl-EiiO40AhE6FNOMFy4XXYDKW9yeyDK\",\"object\":\"chat.completion.chunk\",\"created\":1794325764,\"model\":\"gpt-6-luna\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[{\"index\":0,\"delta\":{\"content\":\"
-        and\"},\"finish_reason\":null}],\"usage\":null,\"obfuscation\":\"v5s9ODzE2zCjrC\"}\n\ndata:
-        {\"id\":\"chatcmpl-EiiO40AhE6FNOMFy4XXYDKW9yeyDK\",\"object\":\"chat.completion.chunk\",\"created\":1794325764,\"model\":\"gpt-6-luna\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[{\"index\":0,\"delta\":{\"content\":\"
-        sunny\"},\"finish_reason\":null}],\"usage\":null,\"obfuscation\":\"nIh8LL7RClZp\"}\n\ndata:
-        {\"id\":\"chatcmpl-EiiO40AhE6FNOMFy4XXYDKW9yeyDK\",\"object\":\"chat.completion.chunk\",\"created\":1794325764,\"model\":\"gpt-6-luna\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[{\"index\":0,\"delta\":{\"content\":\".\"},\"finish_reason\":null}],\"usage\":null,\"obfuscation\":\"8\"}\n\ndata:
-        {\"id\":\"chatcmpl-EiiO40AhE6FNOMFy4XXYDKW9yeyDK\",\"object\":\"chat.completion.chunk\",\"created\":1794325764,\"model\":\"gpt-6-luna\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}],\"usage\":null,\"obfuscation\":\"Zqs3Flzbl1xG\"}\n\ndata:
-        {\"id\":\"chatcmpl-EiiO40AhE6FNOMFy4XXYDKW9yeyDK\",\"object\":\"chat.completion.chunk\",\"created\":1794325764,\"model\":\"gpt-6-luna\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[],\"usage\":{\"prompt_tokens\":187,\"completion_tokens\":12,\"total_tokens\":199,\"prompt_tokens_details\":{\"cached_tokens\":0,\"cache_write_tokens\":0,\"audio_tokens\":0},\"completion_tokens_details\":{\"reasoning_tokens\":0,\"audio_tokens\":0,\"accepted_prediction_tokens\":0,\"rejected_prediction_tokens\":0}},\"obfuscation\":\"EtgqTJ40\"}\n\ndata:
+      string: "data: {\"id\":\"chatcmpl-EktJORIVEZdRkOJuIez8SUIZRn8OV\",\"object\":\"chat.completion.chunk\",\"created\":1794844414,\"model\":\"gpt-6-luna\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"refusal\":null},\"finish_reason\":null}],\"usage\":null,\"obfuscation\":\"\"}\n\ndata:
+        {\"id\":\"chatcmpl-EktJORIVEZdRkOJuIez8SUIZRn8OV\",\"object\":\"chat.completion.chunk\",\"created\":1794844414,\"model\":\"gpt-6-luna\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[{\"index\":0,\"delta\":{\"content\":\"Paris\"},\"finish_reason\":null}],\"usage\":null,\"obfuscation\":\"KoaKP7Ga1zcMi\"}\n\ndata:
+        {\"id\":\"chatcmpl-EktJORIVEZdRkOJuIez8SUIZRn8OV\",\"object\":\"chat.completion.chunk\",\"created\":1794844414,\"model\":\"gpt-6-luna\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[{\"index\":0,\"delta\":{\"content\":\"
+        is\"},\"finish_reason\":null}],\"usage\":null,\"obfuscation\":\"ELMNIiEFgvtKV56\"}\n\ndata:
+        {\"id\":\"chatcmpl-EktJORIVEZdRkOJuIez8SUIZRn8OV\",\"object\":\"chat.completion.chunk\",\"created\":1794844414,\"model\":\"gpt-6-luna\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[{\"index\":0,\"delta\":{\"content\":\"
+        sunny\"},\"finish_reason\":null}],\"usage\":null,\"obfuscation\":\"YB5hwsPK6F9V\"}\n\ndata:
+        {\"id\":\"chatcmpl-EktJORIVEZdRkOJuIez8SUIZRn8OV\",\"object\":\"chat.completion.chunk\",\"created\":1794844414,\"model\":\"gpt-6-luna\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[{\"index\":0,\"delta\":{\"content\":\"
+        and\"},\"finish_reason\":null}],\"usage\":null,\"obfuscation\":\"UONV00K4S7Zcgh\"}\n\ndata:
+        {\"id\":\"chatcmpl-EktJORIVEZdRkOJuIez8SUIZRn8OV\",\"object\":\"chat.completion.chunk\",\"created\":1794844414,\"model\":\"gpt-6-luna\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[{\"index\":0,\"delta\":{\"content\":\"
+        \"},\"finish_reason\":null}],\"usage\":null,\"obfuscation\":\"t\"}\n\ndata:
+        {\"id\":\"chatcmpl-EktJORIVEZdRkOJuIez8SUIZRn8OV\",\"object\":\"chat.completion.chunk\",\"created\":1794844414,\"model\":\"gpt-6-luna\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[{\"index\":0,\"delta\":{\"content\":\"72\"},\"finish_reason\":null}],\"usage\":null,\"obfuscation\":\"\"}\n\ndata:
+        {\"id\":\"chatcmpl-EktJORIVEZdRkOJuIez8SUIZRn8OV\",\"object\":\"chat.completion.chunk\",\"created\":1794844414,\"model\":\"gpt-6-luna\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\xB0F\"},\"finish_reason\":null}],\"usage\":null,\"obfuscation\":\"\"}\n\ndata:
+        {\"id\":\"chatcmpl-EktJORIVEZdRkOJuIez8SUIZRn8OV\",\"object\":\"chat.completion.chunk\",\"created\":1794844414,\"model\":\"gpt-6-luna\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[{\"index\":0,\"delta\":{\"content\":\".\"},\"finish_reason\":null}],\"usage\":null,\"obfuscation\":\"2\"}\n\ndata:
+        {\"id\":\"chatcmpl-EktJORIVEZdRkOJuIez8SUIZRn8OV\",\"object\":\"chat.completion.chunk\",\"created\":1794844414,\"model\":\"gpt-6-luna\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}],\"usage\":null,\"obfuscation\":\"R2tzt6ZW3vn5\"}\n\ndata:
+        {\"id\":\"chatcmpl-EktJORIVEZdRkOJuIez8SUIZRn8OV\",\"object\":\"chat.completion.chunk\",\"created\":1794844414,\"model\":\"gpt-6-luna\",\"service_tier\":\"default\",\"system_fingerprint\":null,\"choices\":[],\"usage\":{\"prompt_tokens\":187,\"completion_tokens\":11,\"total_tokens\":198,\"prompt_tokens_details\":{\"cached_tokens\":0,\"cache_write_tokens\":0,\"audio_tokens\":0},\"completion_tokens_details\":{\"reasoning_tokens\":0,\"audio_tokens\":0,\"accepted_prediction_tokens\":0,\"rejected_prediction_tokens\":0}},\"obfuscation\":\"lrxeczxB\"}\n\ndata:
         [DONE]\n\n"
     headers:
       access-control-expose-headers:
@@ -177,15 +175,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a58634f90c09e910-YYZ
+      - a5b7ab54aeb2c48a-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Tue, 10 Nov 2026 15:49:24 GMT
+      - Mon, 16 Nov 2026 15:53:35 GMT
       openai-processing-ms:
-      - '682'
+      - '1548'
       openai-version:
       - '2020-10-01'
       server:
@@ -205,13 +203,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '179999964'
+      - '179999961'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_3b5fac1486d644e18ce18e5bed5a56f2
+      - req_7c3d16f5d449436a9c2fe7f9bec2ff6e
     status:
       code: 200
       message: OK

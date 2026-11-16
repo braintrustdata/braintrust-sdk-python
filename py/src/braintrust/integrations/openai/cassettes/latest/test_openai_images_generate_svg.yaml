@@ -15,7 +15,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 3.46.0
+      - OpenAI/Python 3.51.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +25,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.46.0
+      - 3.51.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -38,36 +38,36 @@ interactions:
     uri: https://api.openai.com/v1/images/generations
   response:
     body:
-      string: "{\n  \"created\": 1794252924,\n  \"background\": \"transparent\",\n
-        \ \"data\": [\n    {\n      \"b64_json\": \"PHN2ZyB2aWV3Qm94PSIwIDAgMTAyNCAxMDI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDI0IiBoZWlnaHQ9IjEwMjQiPgogIDx0aXRsZT5SZWQgY2lyY2xlIGljb248L3RpdGxlPgogIDxjaXJjbGUgaWQ9InJlZC1jaXJjbGUiIGN4PSI1MTIiIGN5PSI1MTIiIHI9IjQ1OCIgZmlsbD0iI2YwMDAxOCIgLz4KPC9zdmc+\"\n
+      string: "{\n  \"created\": 1794843487,\n  \"background\": \"transparent\",\n
+        \ \"data\": [\n    {\n      \"b64_json\": \"PHN2ZyB2aWV3Qm94PSIwIDAgMTAyNCAxMDI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDI0IiBoZWlnaHQ9IjEwMjQiPgogIDx0aXRsZT5SZWQgQ2lyY2xlPC90aXRsZT4KICA8Y2lyY2xlIGlkPSJyZWQtY2lyY2xlIiBjeD0iNTEyIiBjeT0iNTEyIiByPSI0NzciIGZpbGw9IiNmNTAwMTIiIC8+Cjwvc3ZnPg==\"\n
         \   }\n  ],\n  \"output_format\": \"svg\",\n  \"quality\": \"high\",\n  \"safety_identifier\":
         null,\n  \"size\": \"1024x1024\",\n  \"svg_usage\": {\n    \"input_tokens\":
-        1590,\n    \"model\": \"gpt-5.6-sol\",\n    \"output_tokens\": 71,\n    \"reasoning_tokens\":
-        0,\n    \"total_tokens\": 1661\n  },\n  \"usage\": {\n    \"input_tokens\":
+        1590,\n    \"model\": \"gpt-5.6-sol\",\n    \"output_tokens\": 70,\n    \"reasoning_tokens\":
+        0,\n    \"total_tokens\": 1660\n  },\n  \"usage\": {\n    \"input_tokens\":
         81,\n    \"input_tokens_details\": {\n      \"image_tokens\": 0,\n      \"text_tokens\":
         81\n    },\n    \"output_tokens\": 1758,\n    \"output_tokens_details\": {\n
         \     \"image_tokens\": 1758,\n      \"text_tokens\": 0\n    },\n    \"total_tokens\":
         1839\n  }\n}"
     headers:
       access-control-expose-headers:
-      - X-Request-ID, Server-Timing-Total
+      - X-Request-ID, Server-Timing-Total, X-OpenAI-Inference-Capacity-Reason
       - CF-Ray
       alt-svc:
       - h3=":443"; ma=86400
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a57f4284ac417aa8-YYZ
+      - a5b7948d9d0e36a7-YYZ
       connection:
       - keep-alive
       content-length:
-      - '897'
+      - '893'
       content-type:
       - application/json
       date:
-      - Mon, 09 Nov 2026 19:35:26 GMT
+      - Mon, 16 Nov 2026 15:38:10 GMT
       openai-processing-ms:
-      - '7854'
+      - '9207'
       openai-version:
       - '2020-10-01'
       server:
@@ -89,7 +89,7 @@ interactions:
       x-ratelimit-remaining-requests:
       - '14999'
       x-ratelimit-remaining-tokens:
-      - '39999867'
+      - '39999868'
       x-ratelimit-reset-input-images:
       - 0s
       x-ratelimit-reset-requests:
@@ -97,7 +97,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_d9b157b3e93f4c8d8fa4626406bc7132
+      - req_317f94257d6743f9a03fc5b81f863dcd
     status:
       code: 200
       message: OK

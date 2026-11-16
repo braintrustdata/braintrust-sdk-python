@@ -806,9 +806,12 @@ def test_final_sync_respects_reward_validity(tmp_path, exception_type, with_memo
         assert metadata["warnings"] == []
     if has_reward_validity:
         assert metadata["reward_valid"] == (not invalid)
-        assert metadata["failure_cause"] == ("sandbox_failed" if invalid else "agent_exhausted_budget")
     else:
         assert "reward_valid" not in metadata
+    # Harbor 0.25 exposes TrialResult.failure_cause; 0.26 removed it.
+    if hasattr(TrialResult, "failure_cause"):
+        assert metadata["failure_cause"] == ("sandbox_failed" if invalid else "agent_exhausted_budget")
+    else:
         assert "failure_cause" not in metadata
 
 
@@ -880,7 +883,10 @@ def test_verification_span_keeps_verifier_evidence_without_scores(tmp_path, with
     assert not any("reward_valid=False" in warning for warning in metadata["warnings"])
     if hasattr(TrialResult, "reward_valid"):
         assert metadata["reward_valid"] is False
+    if hasattr(TrialResult, "failure_cause"):
         assert metadata["failure_cause"] is None
+    else:
+        assert "failure_cause" not in metadata
     verification = find_span_by_name(spans, "verification")
     assert verification["output"]["verifier_output"]["type"] == "braintrust_attachment"
 
