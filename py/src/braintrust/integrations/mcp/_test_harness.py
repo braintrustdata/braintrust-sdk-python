@@ -300,8 +300,16 @@ async def _serve_stdio() -> None:
         else:
             await run()
         spans = memory_logger.pop()
-    with open(os.environ[SPANS_FILE_ENV], "w") as f:
+    _write_spans_file(os.environ[SPANS_FILE_ENV], spans)
+
+
+def _write_spans_file(path: str, spans: list[dict[str, Any]]) -> None:
+    # Readers use destination existence as a completion signal. Publish only
+    # after the JSON is fully written and the file is closed (also on Windows).
+    temporary_path = f"{path}.tmp"
+    with open(temporary_path, "w") as f:
         json.dump(spans, f, default=repr)
+    os.replace(temporary_path, path)
 
 
 if __name__ == "__main__" and sys.argv[1:] == ["stdio"]:
