@@ -1,8 +1,12 @@
 """Real Antigravity agent coverage with recorded harness transport."""
 
 import asyncio
+import base64
+import copy
+import functools
 import gc
 import statistics
+from pathlib import Path
 
 import pytest
 from braintrust import logger
@@ -27,6 +31,17 @@ def memory_logger():
 
 def agent_config(tmp_path):
     return LocalAgentConfig(model="gemini-3.8-flash", app_data_dir=str(tmp_path)).lightweight()
+
+
+def mean_tool():
+    return ToolWithSchema(
+        statistics.mean,
+        {
+            "type": "object",
+            "properties": {"data": {"type": "array", "items": {"type": "number"}}},
+            "required": ["data"],
+        },
+    )
 
 
 def test_setup_and_wrap_are_idempotent():
@@ -181,39 +196,55 @@ async def test_cancel_active_turn(memory_logger, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_multiple_turns(memory_logger, tmp_path):
+@pytest.mark.parametrize("first_turn", ["chat", "tool"])
+@pytest.mark.parametrize("consumption", ["full", "unconsumed", "partial"])
+async def test_multiple_turns(memory_logger, tmp_path, first_turn, consumption):
     assert AntigravityIntegration.setup()
-    counts = []
-    responses = []
-    with cassette_transport("multiple_turns"):
-        async with Agent(agent_config(tmp_path)) as agent:
-            for _ in range(2):
-                response = await agent.chat(PROMPT)
-                await response.text()
-                responses.append(response)
-                counts.append(response.usage_metadata.total_token_count)
-            assert await responses[0].text() == await responses[-1].text()
+    config = agent_config(tmp_path)
+    if first_turn == "tool":
+        config.tools = [mean_tool()]
+    prompt = "Use the mean tool to calculate the average of 12, 18, and 24." if first_turn == "tool" else PROMPT
+    with cassette_transport("tool_turns" if first_turn == "tool" else "multiple_turns"):
+        async with Agent(config) as agent:
+            first = await agent.chat(prompt)
+            if consumption == "full":
+                await first.text()
+            elif consumption == "partial":
+                # Release the SDK's single step reader before its implicit
+                # drain, while retaining the unfinished ChatResponse.
+                cursor = agent.conversation.receive_steps()
+                async for step in cursor:
+                    if step.source == "MODEL":
+                        break
+                await cursor.aclose()
+                for _ in range(3):
+                    await asyncio.sleep(0)
+            second = await agent.chat(PROMPT)
+            text = await second.text()
+            second_usage = second.usage_metadata.total_token_count
             total = agent.conversation.total_usage.total_token_count
-    chats = [s for s in memory_logger.pop() if s["span_attributes"]["name"] == "antigravity.chat"]
+    spans = memory_logger.pop()
+    chats = [s for s in spans if s["span_attributes"]["name"] == "antigravity.chat"]
     assert len(chats) == 2
-    assert [s["metrics"]["tokens"] for s in chats] == counts
-    assert sum(counts) == total
+    assert [s["metrics"]["tokens"] for s in chats] == [total - second_usage, second_usage]
+    assert chats[0]["output"][0]["content"]
+    assert chats[1]["output"][0]["content"] == text
+    assert sum(s["metrics"]["tokens"] for s in chats) == total
+    first_children = [s for s in spans if s.get("span_parents") == [chats[0]["span_id"]]]
+    assert first_children
+    assert all(s["metrics"]["end"] <= chats[0]["metrics"]["end"] for s in first_children)
+    if first_turn == "tool":
+        tool = next(s for s in spans if s["span_attributes"]["name"] == "mean")
+        assert tool["span_parents"] == [chats[0]["span_id"]]
+        assert tool["output"] == 18
 
 
 @pytest.mark.asyncio
 async def test_python_tool(memory_logger, tmp_path):
     assert AntigravityIntegration.setup()
     # A standard-library callable, executed by the real ToolRunner.
-    mean = ToolWithSchema(
-        statistics.mean,
-        {
-            "type": "object",
-            "properties": {"data": {"type": "array", "items": {"type": "number"}}},
-            "required": ["data"],
-        },
-    )
     config = agent_config(tmp_path)
-    config.tools = [mean]
+    config.tools = [mean_tool()]
     with cassette_transport("python_tool"):
         async with Agent(config) as agent:
             response = await agent.chat("Use the mean tool to calculate the average of 12, 18, and 24.")
@@ -229,6 +260,73 @@ async def test_python_tool(memory_logger, tmp_path):
     definitions = chat["metadata"]["tools"]
     assert any(t.get("function", {}).get("name") == "mean" for t in definitions)
     assert tools[0]["context"]["span_origin"]["instrumentation"]["name"] == "antigravity-auto"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("media_kind", ["document", "image", "audio", "video"])
+@pytest.mark.parametrize("nested", [False, True], ids=["direct", "nested"])
+async def test_python_tool_media(memory_logger, tmp_path, media_kind, nested):
+    assert AntigravityIntegration.setup()
+    if media_kind == "document":
+        media = types.Document(data=b"The secret word is pineapple.", mime_type="text/plain", description="A note")
+    elif media_kind == "image":
+        media = types.Image(
+            data=base64.b64decode(
+                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII="
+            ),
+            mime_type="image/png",
+            description="A pixel",
+        )
+    else:
+        fixtures = Path(__file__).resolve().parents[2] / "fixtures"
+        media = (
+            types.Audio.from_file(fixtures / "test_audio.wav", description="A sound")
+            if media_kind == "audio"
+            else types.Video.from_file(fixtures / "decision-video.mp4", description="A clip")
+        )
+    original_data = media.data
+    payload = (
+        {"label": "keep", "items": [media, {"count": 2, "nothing": None}], "pair": (media, "tail")}
+        if nested
+        else media
+    )
+    # A real stdlib callable returns SDK media through the real ToolRunner.
+    tool = ToolWithSchema(functools.partial(copy.copy, payload), {"type": "object", "properties": {}})
+    tool.__name__ = "read_media"
+    config = agent_config(tmp_path)
+    config.tools = [tool]
+    with cassette_transport(f"tool_media_{media_kind}_{'nested' if nested else 'direct'}"):
+        async with Agent(config) as agent:
+            response = await agent.chat(
+                "Call read_media once, inspect the returned media, then reply with exactly: media received"
+            )
+            assert "media received" in (await response.text()).lower()
+    spans = memory_logger.pop()
+    chat = next(s for s in spans if s["span_attributes"]["name"] == "antigravity.chat")
+    tool_span = next(s for s in spans if s["span_attributes"]["name"] == "read_media")
+    assert tool_span["span_attributes"]["type"] == "tool"
+    assert tool_span["span_parents"] == [chat["span_id"]]
+    assert tool_span["context"]["span_origin"]["instrumentation"]["name"] == "antigravity-auto"
+    output = tool_span["output"]
+    if nested:
+        assert output["label"] == "keep"
+        assert output["items"][1] == {"count": 2, "nothing": None}
+        assert output["pair"][1] == "tail"
+        part = output["items"][0]
+    else:
+        part = output
+    attachment = part["image_url"]["url"] if media_kind == "image" else part["file"]["file_data"]
+    assert isinstance(attachment, Attachment)
+    assert attachment.reference["content_type"] == media.mime_type
+    assert part["description"] == media.description
+    assert "data" not in part
+    assert media.data == original_data
+    if nested:
+        assert payload["items"][0] is media
+        assert isinstance(
+            output["pair"][0]["image_url"]["url"] if media_kind == "image" else output["pair"][0]["file"]["file_data"],
+            Attachment,
+        )
 
 
 @pytest.mark.asyncio

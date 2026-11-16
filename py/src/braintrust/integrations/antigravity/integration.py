@@ -2,7 +2,14 @@
 
 from braintrust.integrations.base import BaseIntegration
 
-from .patchers import AgentPatcher, ChatPatcher, ConversationLifecyclePatcher, ReceiveStepsPatcher, ToolExecutePatcher
+from .patchers import (
+    AgentPatcher,
+    ChatPatcher,
+    ConnectionSendPatcher,
+    ConversationLifecyclePatcher,
+    StepPatcher,
+    ToolExecutePatcher,
+)
 
 
 class AntigravityIntegration(BaseIntegration):
@@ -12,4 +19,11 @@ class AntigravityIntegration(BaseIntegration):
     import_names = ("google.antigravity",)
     distribution_names = ("google-antigravity",)
     min_version = "0.1.23"
-    patchers = (AgentPatcher, ChatPatcher, ReceiveStepsPatcher, ToolExecutePatcher, ConversationLifecyclePatcher)
+    patchers = (
+        AgentPatcher,
+        ChatPatcher,
+        ConnectionSendPatcher,
+        StepPatcher,
+        ToolExecutePatcher,
+        ConversationLifecyclePatcher,
+    )

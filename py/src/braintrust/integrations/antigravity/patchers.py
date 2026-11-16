@@ -6,8 +6,9 @@ from .tracing import (
     _agent_chat_wrapper,
     _agent_exit_wrapper,
     _chat_wrapper,
+    _connection_send_wrapper,
+    _emit_step_wrapper,
     _lifecycle_wrapper,
-    _receive_steps_wrapper,
     _tool_execute_wrapper,
 )
 
@@ -46,11 +47,30 @@ class ChatPatcher(FunctionWrapperPatcher):
     wrapper = _chat_wrapper
 
 
-class ReceiveStepsPatcher(FunctionWrapperPatcher):
-    name = "antigravity.conversation.receive_steps"
-    target_module = "google.antigravity.conversation.conversation"
-    target_path = "Conversation.receive_steps"
-    wrapper = _receive_steps_wrapper
+class _LocalConnectionSendPatcher(FunctionWrapperPatcher):
+    name = "antigravity.connection.send.local"
+    target_module = "google.antigravity.connections.local.local_connection"
+    target_path = "LocalConnection.send"
+    wrapper = _connection_send_wrapper
+
+
+class _InteractionsConnectionSendPatcher(FunctionWrapperPatcher):
+    name = "antigravity.connection.send.interactions"
+    target_module = "google.antigravity.connections.local.interactions_connection"
+    target_path = "InteractionsConnection.send"
+    wrapper = _connection_send_wrapper
+
+
+class ConnectionSendPatcher(CompositeFunctionWrapperPatcher):
+    name = "antigravity.connection.send"
+    sub_patchers = (_LocalConnectionSendPatcher, _InteractionsConnectionSendPatcher)
+
+
+class StepPatcher(FunctionWrapperPatcher):
+    name = "antigravity.connection.step"
+    target_module = "google.antigravity.connections.local.event_processor"
+    target_path = "BaseLocalEventProcessor._emit_step"
+    wrapper = _emit_step_wrapper
 
 
 class ToolExecutePatcher(FunctionWrapperPatcher):

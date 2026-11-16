@@ -1,0 +1,824 @@
+[
+  {
+    "send": {
+      "config": {
+        "cascadeId": "",
+        "tools": [
+          {
+            "name": "mean",
+            "description": "Return the sample arithmetic mean of data.\n\n>>> mean([1, 2, 3, 4, 4])\n2.8\n\n>>> from fractions import Fraction as F\n>>> mean([F(3, 7), F(1, 21), F(5, 3), F(1, 3)])\nFraction(13, 21)\n\n>>> from decimal import Decimal as D\n>>> mean([D(\"0.5\"), D(\"0.75\"), D(\"0.625\"), D(\"0.375\")])\nDecimal('0.5625')\n\nIf ``data`` is empty, StatisticsError will be raised.\n\n",
+            "parametersJsonSchema": "{\"type\": \"object\", \"properties\": {\"data\": {\"type\": \"array\", \"items\": {\"type\": \"number\"}}}, \"required\": [\"data\"]}"
+          }
+        ],
+        "harnessSideTools": {
+          "find": {
+            "enabled": false
+          },
+          "runCommand": {
+            "enabled": true,
+            "maxTimeoutMs": 0,
+            "enableDaemonCommands": false,
+            "enableSandbox": false
+          },
+          "subagents": {
+            "enabled": false
+          },
+          "userQuestions": {
+            "enabled": false
+          },
+          "fileEdit": {
+            "enabled": true
+          },
+          "viewFile": {
+            "enabled": true
+          },
+          "writeToFile": {
+            "enabled": true
+          },
+          "grepSearch": {
+            "enabled": false
+          },
+          "listDir": {
+            "enabled": false
+          },
+          "generateImage": {
+            "enabled": false
+          },
+          "searchWeb": {
+            "enabled": false
+          },
+          "readUrlContent": {
+            "enabled": false
+          },
+          "manageTask": {
+            "enabled": true
+          },
+          "schedule": {
+            "enabled": false
+          },
+          "runWorkflow": {
+            "enabled": false
+          }
+        },
+        "compactionThreshold": 65536,
+        "workspaces": [
+          {
+            "filesystemWorkspace": {
+              "directory": "WORKSPACE"
+            }
+          }
+        ],
+        "finishToolSchemaJson": "",
+        "appDataDir": "TEST_WORKSPACE",
+        "models": [
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.1-flash-lite-image",
+            "types": [
+              "MODEL_TYPE_IMAGE"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          }
+        ],
+        "sessionContinuationMode": "SESSION_CONTINUATION_MODE_UNSPECIFIED",
+        "policyConfig": {
+          "rules": [
+            {
+              "tool": "run_command",
+              "serverName": "",
+              "name": "confirm_run_command",
+              "decision": "POLICY_DECISION_DENY",
+              "denyReason": "",
+              "isDynamic": false,
+              "ruleId": ""
+            },
+            {
+              "tool": "*",
+              "serverName": "",
+              "name": "confirm_run_command",
+              "decision": "POLICY_DECISION_ALLOW",
+              "denyReason": "",
+              "isDynamic": false,
+              "ruleId": ""
+            }
+          ],
+          "workspaceContainment": "WORKSPACE_CONTAINMENT_UNSPECIFIED"
+        },
+        "agentBehavior": "AGENT_BEHAVIOR_MINIMAL",
+        "compactionConfig": {
+          "tokenThreshold": 65536
+        }
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "1",
+      "timestampMicros": "1794850934947012",
+      "initializeConversationResponse": {
+        "cascadeId": "b98e986075f695ea0fd19e887ed6f40b",
+        "sandboxStatus": {
+          "available": true,
+          "unavailableReason": ""
+        }
+      }
+    }
+  },
+  {
+    "send": {
+      "userInput": {
+        "parts": [
+          {
+            "text": "Use the mean tool to calculate the average of 12, 18, and 24."
+          }
+        ]
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "2",
+      "timestampMicros": "1794850934950336",
+      "trajectoryStateUpdate": {
+        "trajectoryId": "b98e986075f695ea0fd19e887ed6f40b",
+        "state": "STATE_RUNNING"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "3",
+      "timestampMicros": "1794850934968779",
+      "stepUpdate": {
+        "cascadeId": "b98e986075f695ea0fd19e887ed6f40b",
+        "trajectoryId": "b98e986075f695ea0fd19e887ed6f40b",
+        "stepIndex": 0,
+        "state": "STATE_DONE",
+        "source": "SOURCE_USER",
+        "target": "TARGET_MODEL",
+        "thinking": "",
+        "textDelta": "Use the mean tool to calculate the average of 12, 18, and 24.",
+        "thinkingDelta": "",
+        "text": "Use the mean tool to calculate the average of 12, 18, and 24."
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "4",
+      "timestampMicros": "1794850936937664",
+      "stepUpdate": {
+        "cascadeId": "b98e986075f695ea0fd19e887ed6f40b",
+        "trajectoryId": "b98e986075f695ea0fd19e887ed6f40b",
+        "stepIndex": 1,
+        "state": "STATE_ACTIVE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_ENVIRONMENT",
+        "thinking": "",
+        "textDelta": "Calling custom tool \"mean\"",
+        "thinkingDelta": "",
+        "text": "Calling custom tool \"mean\"",
+        "customTool": {
+          "toolCall": {
+            "id": "call_2574660881945134418",
+            "name": "mean",
+            "argumentsJson": "{\"data\":[12,18,24]}",
+            "arguments": {
+              "fields": [
+                {
+                  "name": "data",
+                  "value": {
+                    "listValue": {
+                      "values": [
+                        {
+                          "numberValue": 12
+                        },
+                        {
+                          "numberValue": 18
+                        },
+                        {
+                          "numberValue": 24
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "5",
+      "timestampMicros": "1794850936938051",
+      "usageUpdate": {
+        "agents": [
+          {
+            "trajectoryId": "b98e986075f695ea0fd19e887ed6f40b",
+            "usage": {
+              "promptTokenCount": "4418",
+              "cachedContentTokenCount": "0",
+              "candidatesTokenCount": "19",
+              "thoughtsTokenCount": "52",
+              "totalTokenCount": "4489",
+              "promptTokensDetails": [
+                {
+                  "modality": "TEXT",
+                  "tokenCount": "4418"
+                }
+              ]
+            }
+          }
+        ],
+        "total": {
+          "promptTokenCount": "4418",
+          "cachedContentTokenCount": "0",
+          "candidatesTokenCount": "19",
+          "thoughtsTokenCount": "52",
+          "totalTokenCount": "4489",
+          "promptTokensDetails": [
+            {
+              "modality": "TEXT",
+              "tokenCount": "4418"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "6",
+      "timestampMicros": "1794850936938465",
+      "stepUpdate": {
+        "cascadeId": "b98e986075f695ea0fd19e887ed6f40b",
+        "trajectoryId": "b98e986075f695ea0fd19e887ed6f40b",
+        "stepIndex": 1,
+        "state": "STATE_ACTIVE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_ENVIRONMENT",
+        "thinking": "",
+        "textDelta": "",
+        "thinkingDelta": "",
+        "text": "Calling custom tool \"mean\"",
+        "customTool": {
+          "toolCall": {
+            "id": "call_2574660881945134418",
+            "name": "mean",
+            "argumentsJson": "{\"data\":[12,18,24]}",
+            "arguments": {
+              "fields": [
+                {
+                  "name": "data",
+                  "value": {
+                    "listValue": {
+                      "values": [
+                        {
+                          "numberValue": 12
+                        },
+                        {
+                          "numberValue": 18
+                        },
+                        {
+                          "numberValue": 24
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "7",
+      "timestampMicros": "1794850936938762",
+      "stepUpdate": {
+        "cascadeId": "b98e986075f695ea0fd19e887ed6f40b",
+        "trajectoryId": "b98e986075f695ea0fd19e887ed6f40b",
+        "stepIndex": 1,
+        "state": "STATE_ACTIVE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_ENVIRONMENT",
+        "thinking": "",
+        "textDelta": "",
+        "thinkingDelta": "",
+        "text": "Calling custom tool \"mean\"",
+        "customTool": {
+          "toolCall": {
+            "id": "call_2574660881945134418",
+            "name": "mean",
+            "argumentsJson": "{\"data\":[12,18,24]}",
+            "arguments": {
+              "fields": [
+                {
+                  "name": "data",
+                  "value": {
+                    "listValue": {
+                      "values": [
+                        {
+                          "numberValue": 12
+                        },
+                        {
+                          "numberValue": 18
+                        },
+                        {
+                          "numberValue": 24
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "8",
+      "timestampMicros": "1794850936938777",
+      "toolCall": {
+        "id": "call_2574660881945134418",
+        "name": "mean",
+        "argumentsJson": "{\"data\":[12,18,24]}",
+        "arguments": {
+          "fields": [
+            {
+              "name": "data",
+              "value": {
+                "listValue": {
+                  "values": [
+                    {
+                      "numberValue": 12
+                    },
+                    {
+                      "numberValue": 18
+                    },
+                    {
+                      "numberValue": 24
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "trajectoryId": "b98e986075f695ea0fd19e887ed6f40b"
+      }
+    }
+  },
+  {
+    "send": {
+      "toolResponse": {
+        "id": "call_2574660881945134418",
+        "responseJson": "{\"result\": 18.0}"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "9",
+      "timestampMicros": "1794850936941219",
+      "stepUpdate": {
+        "cascadeId": "b98e986075f695ea0fd19e887ed6f40b",
+        "trajectoryId": "b98e986075f695ea0fd19e887ed6f40b",
+        "stepIndex": 1,
+        "state": "STATE_DONE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_ENVIRONMENT",
+        "thinking": "",
+        "textDelta": "",
+        "thinkingDelta": "",
+        "text": "Calling custom tool \"mean\"",
+        "customTool": {
+          "toolCall": {
+            "id": "call_2574660881945134418",
+            "name": "mean",
+            "argumentsJson": "{\"data\":[12,18,24]}",
+            "arguments": {
+              "fields": [
+                {
+                  "name": "data",
+                  "value": {
+                    "listValue": {
+                      "values": [
+                        {
+                          "numberValue": 12
+                        },
+                        {
+                          "numberValue": 18
+                        },
+                        {
+                          "numberValue": 24
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "toolResponse": {
+            "id": "mean",
+            "responseJson": "{\"result\": 18.0}"
+          }
+        }
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "10",
+      "timestampMicros": "1794850938593703",
+      "stepUpdate": {
+        "cascadeId": "b98e986075f695ea0fd19e887ed6f40b",
+        "trajectoryId": "b98e986075f695ea0fd19e887ed6f40b",
+        "stepIndex": 2,
+        "state": "STATE_ACTIVE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": "The average of",
+        "thinkingDelta": "",
+        "text": "The average of"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "11",
+      "timestampMicros": "1794850938690467",
+      "stepUpdate": {
+        "cascadeId": "b98e986075f695ea0fd19e887ed6f40b",
+        "trajectoryId": "b98e986075f695ea0fd19e887ed6f40b",
+        "stepIndex": 2,
+        "state": "STATE_ACTIVE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": " 12, 18, and 24 is **18.0**.",
+        "thinkingDelta": "",
+        "text": "The average of 12, 18, and 24 is **18.0**."
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "12",
+      "timestampMicros": "1794850938694039",
+      "stepUpdate": {
+        "cascadeId": "b98e986075f695ea0fd19e887ed6f40b",
+        "trajectoryId": "b98e986075f695ea0fd19e887ed6f40b",
+        "stepIndex": 2,
+        "state": "STATE_ACTIVE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": "",
+        "thinkingDelta": "",
+        "text": "The average of 12, 18, and 24 is **18.0**."
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "13",
+      "timestampMicros": "1794850938694449",
+      "stepUpdate": {
+        "cascadeId": "b98e986075f695ea0fd19e887ed6f40b",
+        "trajectoryId": "b98e986075f695ea0fd19e887ed6f40b",
+        "stepIndex": 2,
+        "state": "STATE_ACTIVE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": "",
+        "thinkingDelta": "",
+        "text": "The average of 12, 18, and 24 is **18.0**."
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "14",
+      "timestampMicros": "1794850938696848",
+      "stepUpdate": {
+        "cascadeId": "b98e986075f695ea0fd19e887ed6f40b",
+        "trajectoryId": "b98e986075f695ea0fd19e887ed6f40b",
+        "stepIndex": 2,
+        "state": "STATE_DONE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": "",
+        "thinkingDelta": "",
+        "text": "The average of 12, 18, and 24 is **18.0**."
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "15",
+      "timestampMicros": "1794850938696848",
+      "usageUpdate": {
+        "agents": [
+          {
+            "trajectoryId": "b98e986075f695ea0fd19e887ed6f40b",
+            "usage": {
+              "promptTokenCount": "8998",
+              "cachedContentTokenCount": "2386",
+              "candidatesTokenCount": "41",
+              "thoughtsTokenCount": "67",
+              "totalTokenCount": "9106",
+              "promptTokensDetails": [
+                {
+                  "modality": "TEXT",
+                  "tokenCount": "8998"
+                }
+              ],
+              "cacheTokensDetails": [
+                {
+                  "modality": "TEXT",
+                  "tokenCount": "2386"
+                }
+              ]
+            }
+          }
+        ],
+        "total": {
+          "promptTokenCount": "8998",
+          "cachedContentTokenCount": "2386",
+          "candidatesTokenCount": "41",
+          "thoughtsTokenCount": "67",
+          "totalTokenCount": "9106",
+          "promptTokensDetails": [
+            {
+              "modality": "TEXT",
+              "tokenCount": "8998"
+            }
+          ],
+          "cacheTokensDetails": [
+            {
+              "modality": "TEXT",
+              "tokenCount": "2386"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "16",
+      "timestampMicros": "1794850938701718",
+      "trajectoryStateUpdate": {
+        "trajectoryId": "b98e986075f695ea0fd19e887ed6f40b",
+        "state": "STATE_FULLY_IDLE"
+      }
+    }
+  },
+  {
+    "send": {
+      "userInput": {
+        "parts": [
+          {
+            "text": "Reply with exactly: antigravity tracing complete"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "17",
+      "timestampMicros": "1794850938702880",
+      "trajectoryStateUpdate": {
+        "trajectoryId": "b98e986075f695ea0fd19e887ed6f40b",
+        "state": "STATE_RUNNING"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "18",
+      "timestampMicros": "1794850938710214",
+      "stepUpdate": {
+        "cascadeId": "b98e986075f695ea0fd19e887ed6f40b",
+        "trajectoryId": "b98e986075f695ea0fd19e887ed6f40b",
+        "stepIndex": 3,
+        "state": "STATE_DONE",
+        "source": "SOURCE_USER",
+        "target": "TARGET_MODEL",
+        "thinking": "",
+        "textDelta": "Reply with exactly: antigravity tracing complete",
+        "thinkingDelta": "",
+        "text": "Reply with exactly: antigravity tracing complete"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "19",
+      "timestampMicros": "1794850940263607",
+      "stepUpdate": {
+        "cascadeId": "b98e986075f695ea0fd19e887ed6f40b",
+        "trajectoryId": "b98e986075f695ea0fd19e887ed6f40b",
+        "stepIndex": 4,
+        "state": "STATE_ACTIVE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": "antigravity tracing complete",
+        "thinkingDelta": "",
+        "text": "antigravity tracing complete"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "20",
+      "timestampMicros": "1794850940264279",
+      "stepUpdate": {
+        "cascadeId": "b98e986075f695ea0fd19e887ed6f40b",
+        "trajectoryId": "b98e986075f695ea0fd19e887ed6f40b",
+        "stepIndex": 4,
+        "state": "STATE_ACTIVE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": "",
+        "thinkingDelta": "",
+        "text": "antigravity tracing complete"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "21",
+      "timestampMicros": "1794850940264777",
+      "stepUpdate": {
+        "cascadeId": "b98e986075f695ea0fd19e887ed6f40b",
+        "trajectoryId": "b98e986075f695ea0fd19e887ed6f40b",
+        "stepIndex": 4,
+        "state": "STATE_ACTIVE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": "",
+        "thinkingDelta": "",
+        "text": "antigravity tracing complete"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "22",
+      "timestampMicros": "1794850940265470",
+      "stepUpdate": {
+        "cascadeId": "b98e986075f695ea0fd19e887ed6f40b",
+        "trajectoryId": "b98e986075f695ea0fd19e887ed6f40b",
+        "stepIndex": 4,
+        "state": "STATE_DONE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": "",
+        "thinkingDelta": "",
+        "text": "antigravity tracing complete"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "23",
+      "timestampMicros": "1794850940265470",
+      "usageUpdate": {
+        "agents": [
+          {
+            "trajectoryId": "b98e986075f695ea0fd19e887ed6f40b",
+            "usage": {
+              "promptTokenCount": "13689",
+              "cachedContentTokenCount": "4941",
+              "candidatesTokenCount": "46",
+              "thoughtsTokenCount": "83",
+              "totalTokenCount": "13818",
+              "promptTokensDetails": [
+                {
+                  "modality": "TEXT",
+                  "tokenCount": "13689"
+                }
+              ],
+              "cacheTokensDetails": [
+                {
+                  "modality": "TEXT",
+                  "tokenCount": "4941"
+                }
+              ]
+            }
+          }
+        ],
+        "total": {
+          "promptTokenCount": "13689",
+          "cachedContentTokenCount": "4941",
+          "candidatesTokenCount": "46",
+          "thoughtsTokenCount": "83",
+          "totalTokenCount": "13818",
+          "promptTokensDetails": [
+            {
+              "modality": "TEXT",
+              "tokenCount": "13689"
+            }
+          ],
+          "cacheTokensDetails": [
+            {
+              "modality": "TEXT",
+              "tokenCount": "4941"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "24",
+      "timestampMicros": "1794850940273459",
+      "trajectoryStateUpdate": {
+        "trajectoryId": "b98e986075f695ea0fd19e887ed6f40b",
+        "state": "STATE_FULLY_IDLE"
+      }
+    }
+  }
+]
