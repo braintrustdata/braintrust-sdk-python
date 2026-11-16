@@ -42,15 +42,18 @@ def test_setup_and_wrap_are_idempotent():
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("accessor", ["text", "stream", "chunks", "concurrent", "manual"])
-async def test_chat(memory_logger, tmp_path, accessor):
-    if accessor == "manual":
-        assert wrap_antigravity_agent(Agent) is Agent
-    else:
-        assert setup_antigravity(project="test-antigravity")
-    assert AntigravityIntegration.setup()
-    with cassette_transport("chat"):
-        async with Agent(agent_config(tmp_path)) as agent:
-            with start_span(name="parent") as parent:
+async def test_chat(memory_logger, tmp_path, accessor, monkeypatch):
+    monkeypatch.delenv("BRAINTRUST_API_KEY", raising=False)
+    # An active span makes setup reuse the test logger instead of creating
+    # a production logger whose project metadata requires authentication.
+    with start_span(name="parent") as parent:
+        if accessor == "manual":
+            assert wrap_antigravity_agent(Agent) is Agent
+        else:
+            assert setup_antigravity(project="test-antigravity")
+        assert AntigravityIntegration.setup()
+        with cassette_transport("chat"):
+            async with Agent(agent_config(tmp_path)) as agent:
                 response = await agent.chat(PROMPT)
                 assert isinstance(response, types.ChatResponse)
                 assert current_span() is parent
