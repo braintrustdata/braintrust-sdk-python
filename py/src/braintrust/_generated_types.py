@@ -3699,6 +3699,7 @@ class AnyModelParams(TypedDict):
     reasoning_effort: NotRequired[Literal['none', 'minimal', 'low', 'medium', 'high'] | None]
     chat_template_kwargs: NotRequired[AnyModelParamsChatTemplateKwargs | None]
     verbosity: NotRequired[Literal['low', 'medium', 'high'] | None]
+    service_tier: NotRequired[str | None]
     top_k: NotRequired[float | None]
     stop_sequences: NotRequired[Sequence[str] | None]
     reasoning_enabled: NotRequired[bool | None]
@@ -4107,6 +4108,7 @@ class ModelParamsModelParams(TypedDict):
     reasoning_effort: NotRequired[Literal['none', 'minimal', 'low', 'medium', 'high'] | None]
     chat_template_kwargs: NotRequired[ModelParamsModelParamsChatTemplateKwargs | None]
     verbosity: NotRequired[Literal['low', 'medium', 'high'] | None]
+    service_tier: NotRequired[str | None]
 
 
 ModelParams: TypeAlias = (
