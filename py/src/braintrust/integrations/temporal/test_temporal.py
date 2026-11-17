@@ -31,7 +31,7 @@ from braintrust.integrations.temporal import BraintrustInterceptor, BraintrustPl
 from braintrust.integrations.temporal.plugin import _workflow_span_context, _workflow_span_ids
 from braintrust.span_identifier_v3 import SpanComponentsV3, SpanObjectTypeV3
 from braintrust.span_identifier_v4 import SpanComponentsV4
-from braintrust.test_helpers import init_test_logger, preserve_env_vars
+from braintrust.test_helpers import init_test_exp, init_test_logger, preserve_env_vars
 from temporalio.client import Client, WithStartWorkflowOperation, WorkflowFailureError
 from temporalio.common import RetryPolicy, WorkflowIDConflictPolicy
 from temporalio.worker import Worker
@@ -843,6 +843,62 @@ class TestBraintrustPluginIntegration:
         assert workflow_spans[0]["root_span_id"] == client_spans[0]["root_span_id"]
         assert activity_spans[0]["span_parents"] == [workflow_spans[0]["span_id"]]
         assert activity_spans[0]["root_span_id"] == workflow_spans[0]["root_span_id"]
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("start", ["signal_with_start", "update_with_start"])
+    async def test_experiment_parent_starts_independent_workflow_trace(self, temporal_env, memory_logger, start):
+        # A span exported from an experiment (e.g. a braintrust.Eval task) can't parent a span in
+        # the worker's project logger; the workflow must still run, as its own trace.
+        task_queue = f"test-queue-{uuid.uuid4()}"
+        workflow_id = f"test-experiment-parent-{uuid.uuid4()}"
+        client = await Client.connect(
+            temporal_env.client.service_client.config.target_host,
+            namespace=temporal_env.client.namespace,
+            plugins=[BraintrustPlugin(logger=memory_logger)],
+        )
+        experiment = init_test_exp("temporal-experiment-parent", "temporal-test")
+
+        async with Worker(
+            temporal_env.client,
+            task_queue=task_queue,
+            workflows=[FirstTaskHandlerWorkflow],
+            activities=[simple_activity],
+            plugins=[BraintrustPlugin(logger=memory_logger)],
+        ):
+            with experiment.start_span(name="test.experiment_task", type="task"):
+                if start == "signal_with_start":
+                    handle = await client.start_workflow(
+                        FirstTaskHandlerWorkflow.run,
+                        id=workflow_id,
+                        task_queue=task_queue,
+                        start_signal="start_work",
+                        start_signal_args=[TaskInput(value=5)],
+                    )
+                else:
+                    start_operation = WithStartWorkflowOperation(
+                        FirstTaskHandlerWorkflow.run,
+                        id=workflow_id,
+                        id_conflict_policy=WorkflowIDConflictPolicy.FAIL,
+                        task_queue=task_queue,
+                    )
+                    await client.execute_update_with_start_workflow(
+                        FirstTaskHandlerWorkflow.do_work,
+                        TaskInput(value=5),
+                        start_workflow_operation=start_operation,
+                    )
+                    handle = await start_operation.workflow_handle()
+            assert await handle.result() == 15
+
+        braintrust.flush()
+        spans = memory_logger.pop()
+        experiment_spans = _spans_named(spans, "test.experiment_task")
+        workflow_spans = _spans_named(spans, "temporal.workflow.FirstTaskHandlerWorkflow")
+        activity_spans = _spans_named(spans, "temporal.activity.simple_activity")
+        assert len(workflow_spans) == 1
+        assert len(activity_spans) == 1
+        assert not workflow_spans[0].get("span_parents")
+        assert all(workflow_spans[0]["root_span_id"] != span["root_span_id"] for span in experiment_spans)
+        assert activity_spans[0]["span_parents"] == [workflow_spans[0]["span_id"]]
 
     @pytest.mark.asyncio
     async def test_plugin_workflow_span_records_original_execution_run_id(self, temporal_env, memory_logger):

@@ -234,6 +234,7 @@ class _BraintrustActivityInboundInterceptor(temporalio.worker.ActivityInboundInt
         logger = self.root._get_logger()
         if not logger:
             return await super().execute_activity(input)
+        parent_span_context = _parent_for_logger(logger, parent_span_context)
 
         span = logger.start_span(
             internal={"instrumentation": "temporal-auto"},
@@ -304,7 +305,7 @@ class BraintrustWorkflowInboundInterceptor(temporalio.worker.WorkflowInboundInte
             logger = temporalio.workflow.extern_functions()["__braintrust_get_logger"]()
             if not logger:
                 return parent_span_context
-            parent = parent_span_context or logger.export()
+            parent = _parent_for_logger(logger, parent_span_context) or logger.export()
             return _workflow_span_context(parent, _workflow_span_ids(info, parent))
 
     async def execute_workflow(self, input: temporalio.worker.ExecuteWorkflowInput) -> Any:
@@ -319,6 +320,8 @@ class BraintrustWorkflowInboundInterceptor(temporalio.worker.WorkflowInboundInte
             logger = get_logger()
 
             if logger:
+                parent_span_context = _parent_for_logger(logger, parent_span_context)
+                self._parent_span_context = parent_span_context
                 info = temporalio.workflow.info()
                 parent = parent_span_context or logger.export()
                 if temporalio.workflow.patched(_SPAN_CONTEXT_PATCH_ID):
@@ -473,6 +476,26 @@ class _WorkflowSpanHooks:
             return True
         self._bind_logger()
         return True
+
+
+def _parent_for_logger(logger: Any, parent: Any) -> Any | None:
+    """Return ``parent`` if ``logger`` can log a span under it, else ``None``.
+
+    A span exported from an experiment (for example a ``braintrust.Eval`` task) can't parent a
+    span in a project logger: ``start_span`` asserts the object types match, which would fail the
+    workflow or activity. Start an independent trace instead.
+    """
+    if not parent or not isinstance(parent, str):
+        return parent
+    parent_object_type = getattr(logger, "_parent_object_type", None)
+    if parent_object_type is None:
+        return parent
+    try:
+        if SpanComponentsV4.from_str(parent).object_type != parent_object_type():
+            return None
+    except Exception:
+        return None
+    return parent
 
 
 def _workflow_span_id_base(info: temporalio.workflow.Info) -> str:
