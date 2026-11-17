@@ -44,6 +44,18 @@ except ImportError:
     _HAS_DSPY = False
     BaseCallback = object  # type: ignore[assignment,misc]
 
+try:
+    from dspy import lm15
+    from dspy.adapters.base import Prompt, prompt_to_openai_messages
+
+    _HAS_LM15 = True
+except ImportError:
+    _HAS_LM15 = False
+
+
+def _prompt_messages(value: Any) -> list[dict[str, Any]]:
+    return prompt_to_openai_messages(Prompt(messages=value.messages, system=value.system))
+
 
 def _process_images(value: Any) -> Any:
     """Materialize images in DSPy values while preserving Pydantic serialization.
@@ -59,6 +71,17 @@ def _process_images(value: Any) -> Any:
 
 
 def _process_images_impl(value: Any) -> Any:
+    if _HAS_LM15:
+        if isinstance(value, (Prompt, lm15.Request)):
+            return _process_images(_prompt_messages(value))
+        if isinstance(value, lm15.Response):
+            return [
+                {
+                    "index": 0,
+                    "message": _process_images(prompt_to_openai_messages(Prompt(messages=(value.message,)))[0]),
+                    "finish_reason": value.finish_reason,
+                }
+            ]
     if isinstance(value, str) and value.startswith("data:image/"):
         resolved = _materialize_attachment(value)
         return resolved.attachment if resolved is not None else value
@@ -68,8 +91,18 @@ def _process_images_impl(value: Any) -> Any:
         # so omitted fields stay omitted and custom output shapes survive.
         parts = json.loads(value[len(_CUSTOM_TYPE_START) : -len(_CUSTOM_TYPE_END)])
         if isinstance(parts, list):
-            converted_parts = _process_images(parts)
-            if converted_parts is not parts:
+            converted_parts = []
+            for part in parts:
+                # Only marker payloads identify lm15 image parts; user dictionaries
+                # with type="image" must retain their fields and original shape.
+                if isinstance(part, dict) and part.get("type") == "image":
+                    url = part.get("url")
+                    if part.get("data") is not None and isinstance(part.get("media_type"), str):
+                        url = f"data:{part['media_type']};base64,{part['data']}"
+                    if isinstance(url, str):
+                        part = {"type": "image_url", "image_url": {"url": url}}
+                converted_parts.append(_process_images(part))
+            if any(item is not original for item, original in zip(converted_parts, parts)):
                 if (
                     len(converted_parts) == 1
                     and isinstance(converted_parts[0], dict)
@@ -87,7 +120,14 @@ def _process_images_impl(value: Any) -> Any:
         # toDict() serializes nested Pydantic fields in DSPy >= 3.4.
         return {key: _process_images(item) for key, item in value.items()}
     if isinstance(value, BaseModel):
-        serialized = value.model_dump(exclude_none=True)
+        try:
+            serialized = value.model_dump(exclude_none=True)
+        except ValueError:
+            # DSPy 3.5's prompt serializer rejects malformed image data. Its
+            # round-trip serializer retains the raw fields without rendering.
+            serialized = value.model_dump(exclude_none=True, round_trip=True)
+            if type(value) is Image:
+                serialized = {"image_url": serialized}
         converted_model = _process_images(serialized)
         if converted_model is serialized:
             return serialized
@@ -160,7 +200,7 @@ class BraintrustDSpyCallback(BaseCallback):
     - Tool calls
     - Evaluation runs
 
-    Token usage metrics are read from the DSPy LM's history. LiteLLM patching (see Advanced Example
+    Token usage metrics are read from the DSPy response or LM history. LiteLLM patching (see Advanced Example
     above) can additionally create "Completion" spans with provider-level details.
 
     Spans are automatically nested based on the execution hierarchy.
@@ -196,13 +236,43 @@ class BraintrustDSpyCallback(BaseCallback):
         if provider is not None:
             metadata["provider"] = provider
 
-        for key in _LM_METADATA_PARAM_ALLOWLIST:
-            if key in inputs:
-                metadata[key] = inputs[key]
+        logged_inputs = dict(inputs)
+        try:
+            prompt = inputs.get("prompt")
+            if _HAS_LM15 and isinstance(prompt, lm15.Request):
+                parameters = {key: getattr(prompt.config, key, None) for key in _LM_METADATA_PARAM_ALLOWLIST}
+                messages = _prompt_messages(prompt)
+                logged_inputs.pop("prompt", None)
+                logged_inputs["messages"] = messages
+                if prompt.tools:
+                    metadata["tools"] = [
+                        {
+                            "type": "function",
+                            "function": {
+                                "name": tool.name,
+                                "parameters": tool.parameters,
+                                **({"description": tool.description} if tool.description is not None else {}),
+                            },
+                        }
+                        if isinstance(tool, lm15.FunctionTool)
+                        else {"type": tool.name, **(tool.config or {})}
+                        for tool in prompt.tools
+                    ]
+            else:
+                parameters = {
+                    **(getattr(instance, "kwargs", None) or {}),
+                    **(inputs.get("kwargs") or inputs.get("options") or {}),
+                    **inputs,
+                }
+            for key in _LM_METADATA_PARAM_ALLOWLIST:
+                if parameters.get(key) is not None:
+                    metadata[key] = parameters[key]
+        except Exception:
+            _log.debug("Failed to extract DSPy request metadata", exc_info=True)
 
         span = start_span(
             name="dspy.lm",
-            input=_process_images(inputs),
+            input=_process_images(logged_inputs),
             metadata=metadata,
         )
         span.set_current()
@@ -244,7 +314,7 @@ class BraintrustDSpyCallback(BaseCallback):
     def on_lm_end(
         self,
         call_id: str,
-        outputs: dict[str, Any] | None,
+        outputs: Any | None,
         exception: Exception | None = None,
     ):
         """Log the end of a language model call.
@@ -257,7 +327,21 @@ class BraintrustDSpyCallback(BaseCallback):
         call = self._lm_calls.pop(call_id, None)
         metrics: dict[str, int] = {}
         try:
-            if call is not None and outputs is not None:
+            if _HAS_LM15 and isinstance(outputs, lm15.Response):
+                for source, target in (
+                    ("input_tokens", "prompt_tokens"),
+                    ("output_tokens", "completion_tokens"),
+                    ("total_tokens", "tokens"),
+                    ("cache_read_tokens", "prompt_cached_tokens"),
+                    ("cache_write_tokens", "prompt_cache_creation_tokens"),
+                    ("reasoning_tokens", "completion_reasoning_tokens"),
+                    ("input_audio_tokens", "prompt_audio_tokens"),
+                    ("output_audio_tokens", "completion_audio_tokens"),
+                ):
+                    value = getattr(outputs.usage, source, None)
+                    if isinstance(value, int) and not isinstance(value, bool) and value >= 0:
+                        metrics[target] = value
+            elif call is not None and outputs is not None:
                 instance, inputs, last_history_entry = call
                 history = getattr(instance, "history", None)
                 if isinstance(history, list):
@@ -274,7 +358,7 @@ class BraintrustDSpyCallback(BaseCallback):
                         for entry in new_entries
                         if isinstance(entry, dict)
                         and entry.get("prompt") == inputs.get("prompt")
-                        and entry.get("messages") == inputs.get("messages")
+                        and (inputs.get("messages") is None or entry.get("messages") == inputs["messages"])
                     ]
                     # DSPy stores the same outputs object it returns to on_lm_end. Identity
                     # disambiguates concurrent calls with equal input and output values.
@@ -376,7 +460,7 @@ class BraintrustDSpyCallback(BaseCallback):
     def on_adapter_format_end(
         self,
         call_id: str,
-        outputs: list[dict[str, Any]] | None,
+        outputs: Any | None,
         exception: Exception | None = None,
     ):
         """Log the end of an adapter format call.
