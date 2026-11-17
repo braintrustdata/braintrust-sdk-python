@@ -1,12 +1,12 @@
-"""boto3 Bedrock Runtime integration orchestration."""
+"""boto3/aiobotocore Bedrock Runtime integration orchestration."""
 
 from braintrust.integrations.base import BaseIntegration
 
-from .patchers import BedrockClientCreatorPatcher
+from .patchers import AsyncBedrockClientCreatorPatcher, BedrockClientCreatorPatcher
 
 
 class BedrockRuntimeIntegration(BaseIntegration):
-    """Braintrust instrumentation for boto3 Bedrock Runtime clients."""
+    """Braintrust instrumentation for boto3/aiobotocore Bedrock Runtime clients."""
 
     name = "bedrock_runtime"
     import_names = ("botocore",)
@@ -14,4 +14,4 @@ class BedrockRuntimeIntegration(BaseIntegration):
     # Botocore 1.34.116 is the first release whose Bedrock Runtime service model
     # exposes both Converse and ConverseStream.
     min_version = "1.34.116"
-    patchers = (BedrockClientCreatorPatcher,)
+    patchers = (BedrockClientCreatorPatcher, AsyncBedrockClientCreatorPatcher)

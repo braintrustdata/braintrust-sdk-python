@@ -7,7 +7,7 @@ import os
 import time
 
 import pytest
-from braintrust import Attachment, logger
+from braintrust import Attachment
 from braintrust.integrations.bedrock_runtime import setup_bedrock, wrap_bedrock
 from braintrust.integrations.bedrock_runtime.patchers import (
     BedrockClientCreatorPatcher,
@@ -18,7 +18,6 @@ from braintrust.integrations.test_utils import (
     assert_service_tiers,
     verify_autoinstrument_script,
 )
-from braintrust.test_helpers import init_test_logger
 
 
 pytest.importorskip("boto3")
@@ -28,48 +27,11 @@ import boto3  # noqa: E402
 import botocore.client  # noqa: E402
 
 
-PROJECT_NAME = "test-boto3-bedrock"
 # Match the Java SDK Bedrock test defaults in Bedrock30TestUtils / BraintrustAWSBedrockTest.
 AWS_REGION = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "us-east-1"
 CONVERSE_MODEL = os.getenv("BRAINTRUST_BEDROCK_CONVERSE_MODEL", "us.amazon.nova-lite-v1:0")
 CONVERSE_STREAM_MODEL = os.getenv("BRAINTRUST_BEDROCK_CONVERSE_STREAM_MODEL", "us.amazon.nova-lite-v1:0")
 INVOKE_MODEL = os.getenv("BRAINTRUST_BEDROCK_INVOKE_MODEL", "us.amazon.nova-lite-v1:0")
-
-
-os.environ.setdefault("AWS_EC2_METADATA_DISABLED", "true")
-if not os.environ.get("AWS_PROFILE") and not os.environ.get("AWS_BEARER_TOKEN_BEDROCK"):
-    os.environ.setdefault("AWS_ACCESS_KEY_ID", "testing")
-    os.environ.setdefault("AWS_SECRET_ACCESS_KEY", "testing")
-    os.environ.setdefault("AWS_SESSION_TOKEN", "testing")
-
-
-@pytest.fixture(scope="module")
-def vcr_config():
-    record_mode = "none" if (os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS")) else "once"
-    return {
-        "record_mode": record_mode,
-        "decode_compressed_response": True,
-        "filter_headers": [
-            "authorization",
-            "Authorization",
-            "x-amz-security-token",
-            "X-Amz-Security-Token",
-            "x-amz-date",
-            "X-Amz-Date",
-            "x-amz-content-sha256",
-            "X-Amz-Content-Sha256",
-            "amz-sdk-invocation-id",
-            "amz-sdk-request",
-            "x-amzn-bedrock-api-key",
-        ],
-    }
-
-
-@pytest.fixture
-def memory_logger():
-    init_test_logger(PROJECT_NAME)
-    with logger._internal_with_memory_background_logger() as bgl:
-        yield bgl
 
 
 @pytest.fixture
