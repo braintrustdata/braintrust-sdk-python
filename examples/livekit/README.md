@@ -89,3 +89,13 @@ separate from the segmented session recording. Duration-only STT usage reports
 do not create token counts. TTS model children record the text after LiveKit's
 configured text transforms. Media model inputs identify their `operation` as
 `transcribe` or `speech`.
+
+
+LiveKit turn diagnostics are included without an OpenTelemetry exporter. User
+turns expose `contrib.livekit.end_of_turn_delay`,
+`contrib.livekit.transcription_delay`, and
+`contrib.livekit.on_user_turn_completed_delay` in seconds when available.
+`livekit.eou_wait` shows the observed interval from speech end to an accepted
+turn decision. User speech spans retain native `contrib.livekit.vad_silence_duration`
+and `contrib.livekit.vad_inference_duration`, also in seconds. Missing native
+timing stays absent. Model timing and usage continue to belong to model children.
