@@ -1,6 +1,6 @@
 # LiveKit voice tracing and recording
 
-The integration supports LiveKit 1.8.9–1.8.10; this example pins 1.8.10. Set the usual LiveKit and OpenAI
+The integration supports LiveKit 1.8.9+; this example pins 1.8.10. Set the usual LiveKit and OpenAI
 credentials, plus `BRAINTRUST_API_KEY`. Use Python 3.12–3.14 and install with
 `uv sync` from this directory.
 
@@ -70,5 +70,22 @@ session
 For adapters without known provider instrumentation, LiveKit emits an LLM child
 from the model data exposed by the framework. It does not infer provider support
 from whether a span appears. OpenAI Realtime uses a WebSocket API that the OpenAI
-integration does not instrument, so LiveKit supplies its `Realtime request` LLM
+integration does not instrument, so LiveKit supplies its `livekit.llm_response` LLM
 child. Agent instructions and model usage are available on that child.
+
+
+STT, LLM response, and TTS task wrappers record their own start/end times.
+Provider integrations own model metrics. When a client has no known integration,
+LiveKit supplies a `livekit.stt`, `livekit.llm_response`, or `livekit.tts` model
+child instead. OpenAI HTTP recognition/synthesis defer to OpenAI instrumentation
+regardless of whether it is enabled. Native streaming STT and Realtime use
+LiveKit's own clients. A native STT stream can span several turns and is traced
+as a session-level operation; transcript delivery alone does not create a model
+operation. With user audio capture enabled, a native STT model child includes a
+WAV of the input consumed by its node, limited to the first 4 MiB of PCM per
+stream. `contrib.livekit.input_audio_truncated=true` marks a partial recording;
+recognition continues normally after the capture limit. This model input is
+separate from the segmented session recording. Duration-only STT usage reports
+do not create token counts. TTS model children record the text after LiveKit's
+configured text transforms. Media model inputs identify their `operation` as
+`transcribe` or `speech`.

@@ -97,11 +97,11 @@ class Response:
                     "contrib.livekit.response_id": self.identifier,
                 },
             )
-            # OpenAI's SDK instrumentation covers HTTP completions, not this
-            # Realtime WebSocket API. Framework observations own its LLM span.
+            # LiveKit owns this WebSocket client; it does not call the OpenAI
+            # SDK. Its model child exists independently of SDK instrumentation.
             self.llm_span = _new(
                 self.span,
-                "Realtime request",
+                "livekit.llm_response",
                 kind="llm",
                 start_time=self.created,
                 metadata={

@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 
 import pytest
 from braintrust import logger
@@ -13,9 +14,19 @@ def named(rows, name):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("preemptive,directions", [(False, "both"), (True, "both"), (False, "user")])
+@pytest.mark.parametrize(
+    "preemptive,directions,provider_mode",
+    [
+        (False, "both", "enabled"),
+        (True, "both", "enabled"),
+        (False, "user", "enabled"),
+        (False, "both", "disabled"),
+    ],
+)
 @pytest.mark.vcr(cassette_name="test_livekit_agents_e2e_parenting_under_custom_span")
-async def test_consumed_input_drives_real_cascade(rooms, memory_logger, monkeypatch, preemptive, directions):
+async def test_consumed_input_drives_real_cascade(
+    rooms, memory_logger, monkeypatch, preemptive, directions, provider_mode
+):
     from livekit import rtc
     from livekit.agents import Agent, AgentSession
     from livekit.plugins import openai, silero
@@ -38,6 +49,12 @@ async def test_consumed_input_drives_real_cascade(rooms, memory_logger, monkeypa
         )
     )
     OpenAIIntegration.setup()
+    if provider_mode != "enabled":
+        from openai.resources.audio.transcriptions import AsyncTranscriptions
+        from openai.resources.chat.completions import AsyncCompletions
+
+        monkeypatch.setattr(AsyncTranscriptions, "create", inspect.unwrap(AsyncTranscriptions.create))
+        monkeypatch.setattr(AsyncCompletions, "create", inspect.unwrap(AsyncCompletions.create))
     tts = openai.TTS(model="gpt-4o-mini-tts", voice="ash")
     stt = openai.STT(model="gpt-4o-mini-transcribe")
     recognition_metrics = []
@@ -83,6 +100,7 @@ async def test_consumed_input_drives_real_cascade(rooms, memory_logger, monkeypa
             finally:
                 await input_source.aclose()
         assert logger.current_span() is outer
+    memory_logger.flush()
     rows = memory_logger.pop()
     assert named(rows, "user_speech")
     recognitions = named(rows, "stt")
@@ -98,22 +116,28 @@ async def test_consumed_input_drives_real_cascade(rooms, memory_logger, monkeypa
     assert recognition["metadata"]["model"] == stt.model
     assert recognition["metadata"]["provider"] == stt.provider
     transcriptions = named(rows, "Transcription")
-    assert len(transcriptions) == 1
-    assert transcriptions[0]["span_parents"] == [recognition["span_id"]]
-    assert start <= transcriptions[0]["metrics"]["start"]
-    assert transcriptions[0]["metrics"]["end"] <= end
+    assert len(transcriptions) == (1 if provider_mode == "enabled" else 0)
+    if transcriptions:
+        assert transcriptions[0]["span_parents"] == [recognition["span_id"]]
+        assert start <= transcriptions[0]["metrics"]["start"]
+        assert transcriptions[0]["metrics"]["end"] <= end
+    fallback_stt = named(rows, "livekit.stt")
+    fallback_tts = named(rows, "livekit.tts")
+    assert not fallback_stt and not fallback_tts
     assert recognition["output"] == [{"role": "user", "content": "Hello there."}]
     models = named(rows, "llm_response")
     assert models and len(models) == len(model_metrics)
     requests = named(rows, "Chat Completion")
-    assert len(requests) == len(models)
-    assert {row["span_parents"][0] for row in requests} == {row["span_id"] for row in models}
-    assert sum(row["metrics"].get("prompt_cached_tokens", 0) for row in requests) == sum(
-        measured.prompt_cached_tokens for measured in model_metrics
-    )
+    assert len(requests) == (len(models) if provider_mode == "enabled" else 0)
+    if requests:
+        assert {row["span_parents"][0] for row in requests} == {row["span_id"] for row in models}
+        assert sum(row["metrics"].get("prompt_cached_tokens", 0) for row in requests) == sum(
+            measured.prompt_cached_tokens for measured in model_metrics
+        )
     assert all("prompt_tokens" not in row["metrics"] for row in models)
     assert all("cache_read_input_tokens" not in row["metrics"] for row in requests)
     assert named(rows, "tts")
+    assert all(set(row["metrics"]) <= {"start", "end"} for row in recognitions + models + named(rows, "tts"))
     assert named(rows, "agent_speech")
     tts_ids = {row["span_id"] for row in named(rows, "tts")}
     for speech in named(rows, "agent_speech"):
@@ -142,3 +166,203 @@ async def test_consumed_input_drives_real_cascade(rooms, memory_logger, monkeypa
         for segment in root["metadata"]["audio.segments"].values()
     )
     assert owner.native is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("backend", ["openai", "inference"])
+@pytest.mark.parametrize(
+    "capture,cancel_stream",
+    [
+        pytest.param("off", False, id="off"),
+        pytest.param("full", False, id="full"),
+        pytest.param("bounded", False, id="bounded"),
+        pytest.param("off", True, id="cancelled"),
+    ],
+)
+async def test_native_streaming_stt_owns_model_child(
+    memory_logger, monkeypatch, vcr_cassette_dir, backend, capture, cancel_stream
+):
+    import wave
+    from pathlib import Path
+
+    from livekit import rtc
+    from livekit.agents import Agent, AgentSession, inference
+    from livekit.agents.utils import http_context
+    from livekit.plugins import openai
+    from openai.resources.audio.transcriptions import AsyncTranscriptions
+
+    from . import tracing
+    from .test_realtime_helpers import RealtimeCassette
+
+    limit = 4096 if capture == "bounded" else 4 * 1024 * 1024
+    monkeypatch.setattr(tracing, "_MAX_STT_INPUT_BYTES", limit)
+    setup_livekit_agents()
+    if capture == "off":
+        OpenAIIntegration.setup()
+    else:
+        monkeypatch.setattr(AsyncTranscriptions, "create", inspect.unwrap(AsyncTranscriptions.create))
+    monkeypatch.setenv("BRAINTRUST_CAPTURE_USER_AUDIO_ATTACHMENTS", "false" if capture == "off" else "true")
+    monkeypatch.setenv("BRAINTRUST_CAPTURE_AGENT_AUDIO_ATTACHMENTS", "false")
+    uploads = []
+
+    def upload(attachment):
+        uploads.append(attachment)
+        return {"upload_status": "done"}
+
+    monkeypatch.setattr(logger.Attachment, "upload", upload)
+    heard = asyncio.Event()
+    measured = asyncio.Event()
+    transcripts = []
+    measurements = []
+
+    def transcription(event):
+        if event.is_final:
+            transcripts.append(event.transcript)
+            heard.set()
+
+    def metrics(event):
+        if event.streamed:
+            measurements.append(event)
+            measured.set()
+
+    filename = "native-stt.json" if backend == "openai" else "inference-stt.json"
+    operation = "stt" if backend == "inference" else None
+    async with http_context.open(), RealtimeCassette(Path(vcr_cassette_dir) / filename, operation=operation) as tape:
+        stt = (
+            openai.STT(model="gpt-4o-mini-transcribe", use_realtime=True, base_url=tape.base_url)
+            if backend == "openai"
+            else inference.STT(model="deepgram/nova-3", base_url=tape.base_url, **tape.inference_credentials())
+        )
+        async with stt:
+            stt.on("metrics_collected", metrics)
+            async with AgentSession(stt=stt, turn_detection="manual") as session:
+                session.on("user_input_transcribed", transcription)
+                await session.start(Agent(instructions="Listen to the caller."))
+                with wave.open(str(Path(__file__).parents[2] / "fixtures/test_speech.wav"), "rb") as speech:
+                    rate, channels = speech.getframerate(), speech.getnchannels()
+                    pcm = speech.readframes(speech.getnframes())
+                pcm = bytes(rate * channels) + pcm + bytes(rate * channels * 4)
+                for offset in range(0, len(pcm), rate // 50 * channels * 2):
+                    data = pcm[offset : offset + rate // 50 * channels * 2]
+                    session._activity.push_audio(
+                        rtc.AudioFrame(
+                            data=data,
+                            sample_rate=rate,
+                            num_channels=channels,
+                            samples_per_channel=len(data) // (channels * 2),
+                        )
+                    )
+                    await asyncio.sleep(0)
+                await asyncio.wait_for(heard.wait(), 30)
+                await asyncio.wait_for(measured.wait(), 10)
+                if cancel_stream:
+                    # Cancel the real STT pump while the session is still open.
+                    assert not getattr(session, STATE_ATTR).closing
+                    pump = session._activity._audio_recognition._stt_pipeline._pump_task
+                    assert not pump.done()
+                    pump.cancel()
+                    with pytest.raises(asyncio.CancelledError):
+                        await pump
+    memory_logger.flush()
+    rows = memory_logger.pop()
+    wrappers, children = named(rows, "stt"), named(rows, "livekit.stt")
+    assert len(wrappers) == len(children) == 1
+    wrapper, child = wrappers[0], children[0]
+    for completed in (wrapper, child):
+        if cancel_stream:
+            assert completed["metadata"]["contrib.livekit.cancelled"] is True
+            assert completed["metadata"]["contrib.livekit.incomplete"] is True
+        else:
+            assert "contrib.livekit.cancelled" not in completed["metadata"]
+            assert "contrib.livekit.incomplete" not in completed["metadata"]
+        assert completed["metrics"]["end"] >= completed["metrics"]["start"]
+    assert wrapper["span_parents"] == [named(rows, "session")[0]["span_id"]]
+    assert child["span_parents"] == [wrapper["span_id"]]
+    assert child["span_attributes"]["type"] == "llm"
+    assert child["context"]["span_origin"]["instrumentation"]["name"] == "livekit-agents-auto"
+    assert child["metadata"]["model"] == stt.model
+    assert child["metadata"]["provider"] == stt.provider
+    assert child["output"]["content"] == [{"type": "text", "text": text} for text in transcripts]
+    if backend == "openai":
+        assert child["metrics"]["prompt_tokens"] == sum(event.input_tokens for event in measurements)
+    else:
+        assert all(event.input_tokens == event.output_tokens == 0 for event in measurements)
+        assert not {"prompt_tokens", "completion_tokens", "tokens"} & child["metrics"].keys()
+    assert set(wrapper["metrics"]) <= {"start", "end"}
+    assert not named(rows, "Transcription")
+    assert child["input"]["operation"] == "transcribe"
+    if capture == "off":
+        assert child["input"] == {"operation": "transcribe"}
+        assert not uploads and not memory_logger.upload_attempts
+    else:
+        import io
+
+        attachment = child["input"]["content"][0]["file"]["file_data"]
+        reference = attachment.reference if isinstance(attachment, logger.Attachment) else attachment
+        uploaded = next(item for item in uploads + memory_logger.upload_attempts if item.reference == reference)
+        with wave.open(io.BytesIO(uploaded.data), "rb") as captured:
+            assert captured.getframerate() == rate
+            assert captured.getnchannels() == channels
+            captured_pcm = captured.readframes(captured.getnframes())
+        assert captured_pcm == pcm[:limit]
+        assert len(captured_pcm) <= limit
+        assert child["metadata"].get("contrib.livekit.input_audio_truncated", False) == (capture == "bounded")
+    assert child["metrics"]["time_to_first_token"] >= 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("capture", [False, True])
+async def test_native_tts_observes_transformed_input(rooms, memory_logger, monkeypatch, vcr_cassette_dir, capture):
+    from pathlib import Path
+
+    from livekit.agents import Agent, AgentSession, inference
+    from livekit.agents.utils import http_context
+    from livekit.agents.voice.transcription.text_transforms import replace
+
+    from .test_realtime_helpers import RealtimeCassette
+
+    monkeypatch.setenv("BRAINTRUST_CAPTURE_USER_AUDIO_ATTACHMENTS", "false")
+    monkeypatch.setenv("BRAINTRUST_CAPTURE_AGENT_AUDIO_ATTACHMENTS", str(capture).lower())
+    uploads = []
+
+    def upload(attachment):
+        uploads.append(attachment)
+        return {"upload_status": "done"}
+
+    monkeypatch.setattr(logger.Attachment, "upload", upload)
+    setup_livekit_agents()
+    async with (
+        http_context.open(),
+        RealtimeCassette(Path(vcr_cassette_dir) / "inference-tts.json", operation="tts") as tape,
+    ):
+        async with (
+            inference.TTS(model="cartesia/sonic-3", base_url=tape.base_url, **tape.inference_credentials()) as tts,
+            AgentSession(tts=tts, tts_text_transforms=[replace({"placeholder": "Hello there"})]) as session,
+        ):
+            await session.start(Agent(instructions="Say hello."), room=rooms[0], record=False)
+            await session.say("placeholder.", allow_interruptions=False)
+            await session.drain()
+    memory_logger.flush()
+    rows = memory_logger.pop()
+    children = named(rows, "livekit.tts")
+    assert len(children) == 1
+    child = children[0]
+    assert child["input"] == {"operation": "speech", "prompt": "Hello there."}
+    sent_text = "".join(
+        entry["message"]["transcript"]
+        for entry in tape.events
+        if entry["direction"] == "send" and entry["message"]["type"] == "input_transcript"
+    )
+    assert sent_text.strip() == child["input"]["prompt"]
+    assert named(rows, "tts")[0]["input"] == "placeholder."
+    assert child["span_parents"] == [named(rows, "tts")[0]["span_id"]]
+    assert child["span_attributes"]["type"] == "llm"
+    assert child["context"]["span_origin"]["instrumentation"]["name"] == "livekit-agents-auto"
+    assert child["metadata"]["model"] == tts.model
+    assert child["metadata"]["provider"] == tts.provider
+    assert child["metrics"]["time_to_first_token"] >= 0
+    assert child["metrics"]["end"] >= child["metrics"]["start"]
+    assert bool(child.get("output", {}).get("content")) == capture
+    assert bool(uploads or memory_logger.upload_attempts) == capture
+    if capture:
+        assert child["output"]["content"][0]["type"] == "file"

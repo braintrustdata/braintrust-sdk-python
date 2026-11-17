@@ -391,3 +391,20 @@ def test_has_patch_marker_ignores_markers_inherited_through_mro():
 
     assert _SendPatcher.has_patch_marker(Parent) is True
     assert _SendPatcher.has_patch_marker(Child) is False
+
+
+@pytest.mark.parametrize("version", ["0.1.0", "99.0.0"])
+def test_unsupported_installed_version_warns_once(monkeypatch, caplog, version):
+    from braintrust.integrations.base import _warn_unsupported_version
+
+    _warn_unsupported_version.cache_clear()
+    _install_fake_sdk(monkeypatch)
+    monkeypatch.setattr(_FakeIntegration, "min_version", "1.0.0")
+    monkeypatch.setattr(_FakeIntegration, "max_version", "2.0.0")
+    monkeypatch.setattr(_FakeIntegration, "detect_version", classmethod(lambda cls, module: version))
+    assert not _FakeIntegration.setup()
+    assert not _FakeIntegration.setup()
+    assert len(caplog.records) == 1
+    assert version in caplog.text
+    assert "fake" in caplog.text
+    assert "instrumentation disabled" in caplog.text

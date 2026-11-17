@@ -1,8 +1,10 @@
 """Shared integration orchestration primitives."""
 
+import functools
 import importlib
 import importlib.metadata
 import inspect
+import logging
 import re
 import sys
 import types
@@ -563,6 +565,17 @@ class CompositeFunctionWrapperPatcher(BasePatcher):
         return target
 
 
+@functools.lru_cache(maxsize=128)
+def _warn_unsupported_version(name: str, version: str | None, supported: str) -> None:
+    logging.getLogger("braintrust").warning(
+        "%s %s is outside supported versions %s; instrumentation disabled. "
+        "Use a supported provider version or update braintrust.",
+        name,
+        version,
+        supported,
+    )
+
+
 class BaseIntegration(ABC):
     """Base class for an instrumentable third-party integration."""
 
@@ -602,7 +615,9 @@ class BaseIntegration(ABC):
         if module is None:
             return False
         version = cls.detect_version(module)
-        if not version_satisfies(version, make_specifier(min_version=cls.min_version, max_version=cls.max_version)):
+        supported = make_specifier(min_version=cls.min_version, max_version=cls.max_version)
+        if not version_satisfies(version, supported):
+            _warn_unsupported_version(cls.name, version, str(supported))
             return False
 
         success = False

@@ -83,3 +83,24 @@ def llm_metadata(values: dict[str, Any]) -> dict[str, Any]:
     if isinstance(choice, (str, dict)):
         metadata["tool_choice"] = choice
     return metadata
+
+
+# Only these audio paths delegate to an instrumentable provider SDK. OpenAI's
+# native streaming STT uses LiveKit's own WebSocket client instead.
+_PROVIDER_AUDIO_ADAPTERS = frozenset({"livekit.plugins.openai.stt", "livekit.plugins.openai.tts"})
+
+
+def node_model(node, operation):
+    agent = getattr(node, "__self__", None)
+    return getattr(getattr(agent, "_activity", None), operation, None)
+
+
+def provider_audio_expected(model):
+    return any(cls.__module__ in _PROVIDER_AUDIO_ADAPTERS for cls in type(model).__mro__)
+
+
+def model_metadata(values):
+    metadata = {key: values[key] for key in ("model", "provider") if values.get(key)}
+    if metadata.get("provider") == "api.openai.com":
+        metadata["provider"] = "openai"
+    return metadata
