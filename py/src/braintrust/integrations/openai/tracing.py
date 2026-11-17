@@ -41,7 +41,7 @@ def start_span(*args, **kwargs):
 
 
 from braintrust.span_types import SpanTypeAttribute
-from braintrust.util import clean_nones, merge_dicts
+from braintrust.util import clean_nones, is_numeric, merge_dicts
 from wrapt import FunctionWrapper
 
 
@@ -2565,13 +2565,29 @@ TOKEN_PREFIX_MAP = {
 
 
 def _parse_metrics_from_usage(usage: Any) -> dict[str, Any]:
+    usage = _try_to_dict(usage)
     metrics = _parse_openai_usage_metrics(
         usage,
         token_name_map=TOKEN_NAME_MAP,
         token_prefix_map=TOKEN_PREFIX_MAP,
     )
     cache_write_tokens = metrics.pop("prompt_cache_write_tokens", None)
-    if cache_write_tokens is not None:
+    has_cache_split = False
+    if isinstance(usage, dict):
+        for name in ("prompt_tokens_details", "input_tokens_details"):
+            details = usage.get(name)
+            if not isinstance(details, dict):
+                continue
+            writes = details.get("cache_write_tokens_details")
+            if not isinstance(writes, dict):
+                continue
+            for ttl in ("30m", "12h"):
+                count = writes.get(f"ttl_{ttl}_tokens")
+                if is_numeric(count):
+                    metrics[f"prompt_cache_creation_{ttl}_tokens"] = count
+                    has_cache_split = True
+    # TTL buckets replace the aggregate and are already included in prompt tokens.
+    if not has_cache_split and cache_write_tokens is not None:
         metrics.setdefault("prompt_cache_creation_tokens", cache_write_tokens)
     return metrics
 

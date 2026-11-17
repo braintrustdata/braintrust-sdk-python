@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import dataclasses
 import os
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -64,6 +65,27 @@ def _or_constructor(loader: yaml.SafeLoader, node: yaml.Node) -> OrMatcher:
     return OrMatcher(alternatives=alternatives)
 
 
+@dataclasses.dataclass
+class _Generator:
+    name: str
+
+
+def _gen_constructor(loader: yaml.SafeLoader, node: yaml.Node) -> _Generator:
+    return _Generator(loader.construct_scalar(node))  # type: ignore[arg-type]
+
+
+def _substitute_variables(value: Any, variables: dict[str, str]) -> Any:
+    if isinstance(value, str):
+        for name, replacement in variables.items():
+            value = value.replace("{{" + name + "}}", replacement)
+        return value
+    if isinstance(value, list):
+        return [_substitute_variables(item, variables) for item in value]
+    if isinstance(value, dict):
+        return {key: _substitute_variables(item, variables) for key, item in value.items()}
+    return value
+
+
 def _make_loader() -> type:
     """Return a SafeLoader subclass with BTX custom tags registered."""
 
@@ -73,6 +95,7 @@ def _make_loader() -> type:
     BtxLoader.add_constructor("!fn", _fn_constructor)
     BtxLoader.add_constructor("!starts_with", _starts_with_constructor)
     BtxLoader.add_constructor("!or", _or_constructor)
+    BtxLoader.add_constructor("!gen", _gen_constructor)
     return BtxLoader
 
 
@@ -135,6 +158,8 @@ def _spec_root(override: str | None = None) -> Path:
 def load_specs(
     spec_root: str | Path | None = None,
     providers: list[str] | None = None,
+    *,
+    live: bool = False,
 ) -> list[LlmSpanSpec]:
     """Load all YAML spec files under *spec_root*.
 
@@ -143,6 +168,7 @@ def load_specs(
                    :func:`_spec_root` resolution if ``None``.
         providers: Optional allow-list of provider names (e.g. ``["openai"]``).
                    If ``None``, all providers are loaded.
+        live: Use unique cache-busting nonces instead of stable cassette values.
 
     Returns:
         Sorted list of :class:`LlmSpanSpec` instances.
@@ -166,6 +192,21 @@ def load_specs(
 
         with open(yaml_path) as f:
             data = yaml.load(f, Loader=loader_cls)  # noqa: S506 — intentional, custom loader
+
+        variables = {}
+        for name, value in data.pop("variables", {}).items():
+            if isinstance(value, _Generator):
+                if value.name == "test_runner_client":
+                    client = os.environ.get("BTX_CLIENT") or os.environ.get("BTX_PROVIDER") or data["provider"]
+                    # Keep cold-cache prefixes separate from other SDK language runners.
+                    value = f"python-{client}"
+                elif value.name == "vcr_nonce":
+                    value = str(uuid.uuid4()) if live else "vcr-mode"
+                else:
+                    raise ValueError(f"Unknown BTX generator: {value.name}")
+            variables[name] = str(value)
+        if variables:
+            data = _substitute_variables(data, variables)
 
         spec = LlmSpanSpec.from_dict(data, source_path=yaml_path)
         specs.append(spec)
