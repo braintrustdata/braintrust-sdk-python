@@ -168,26 +168,49 @@ class SpanCache:
         return self._explicitly_disabled or not self._enabled
 
     def _ensure_initialized(self) -> None:
-        """Initialize the cache file if not already done."""
-        if self.disabled or self._initialized:
-            return
+        """Initialize under flush ownership, without locking across file callbacks."""
+        with self._lifecycle_lock:
+            if self.disabled or self._initialized:
+                return
+            buffer = self._write_buffer
 
         try:
             # Create temporary file
             unique_id = f"{int(os.times().elapsed * 1000000)}-{uuid.uuid4().hex[:8]}"
-            self._cache_file_path = os.path.join(tempfile.gettempdir(), f"braintrust-span-cache-{unique_id}.jsonl")
+            path = os.path.join(tempfile.gettempdir(), f"braintrust-span-cache-{unique_id}.jsonl")
+            with self._lifecycle_lock:
+                if buffer is not self._write_buffer or self.disabled:
+                    return
+                self._cache_file_path = path
 
-            # Create the file
-            with open(self._cache_file_path, "w") as f:
-                pass
+            try:
+                # Create the file
+                with open(path, "w"):
+                    pass
 
-            self._initialized = True
-            self._register_exit_handler()
+                with self._lifecycle_lock:
+                    if buffer is self._write_buffer:
+                        self._initialized = True
+                        self._register_exit_handler()
+            finally:
+                with self._lifecycle_lock:
+                    stale = buffer is not self._write_buffer
+                if stale:
+                    self._remove_file(path)
         except Exception:
             # Silently fail if filesystem is unavailable - cache is best-effort
             # This can happen if temp directory is not writable or disk is full
-            self._explicitly_disabled = True
-            return
+            with self._lifecycle_lock:
+                if buffer is self._write_buffer:
+                    self._explicitly_disabled = True
+
+    @staticmethod
+    def _remove_file(path: str) -> None:
+        try:
+            os.unlink(path)
+        except Exception:
+            # Cache cleanup is best-effort, including files already removed.
+            pass
 
     def _register_exit_handler(self) -> None:
         """Register a handler to clean up the temp file on process exit."""
@@ -231,8 +254,6 @@ class SpanCache:
             if self.disabled:
                 return
 
-            self._ensure_initialized()
-
             record = DiskSpanRecord(root_span_id, span_id, data)
             self._write_buffer.append(record)
             self._root_span_index.add(root_span_id)
@@ -241,7 +262,7 @@ class SpanCache:
         self._flush_write_buffer()
 
     def _flush_write_buffer(self) -> None:
-        """Flush a snapshot without holding lifecycle ownership during serialization."""
+        """Flush one snapshot; callback-generated records stay readable for the next flush."""
         token = object()
         with self._lifecycle_lock:
             if self._flush_in_progress is not None:
@@ -249,28 +270,42 @@ class SpanCache:
             self._flush_in_progress = token
 
         try:
-            while True:
-                with self._lifecycle_lock:
-                    if self.disabled or not self._write_buffer or not self._cache_file_path:
-                        self._flush_in_progress = None
-                        return
-                    buffer = self._write_buffer
-                    records = tuple(buffer)
-                    path = self._cache_file_path
-
-                # JSON containers can log spans; nested writes remain in the buffer.
-                lines = [json.dumps(record.to_dict()) + "\n" for record in records]
-
-                with self._lifecycle_lock:
-                    # Disposal may have removed this batch while it was serializing.
-                    if buffer is not self._write_buffer:
-                        continue
-                    if self.disabled:
-                        self._flush_in_progress = None
-                        return
-                    with open(path, "a") as f:
+            with self._lifecycle_lock:
+                if self.disabled or not self._write_buffer:
+                    return
+                buffer = self._write_buffer
+            self._ensure_initialized()
+            with self._lifecycle_lock:
+                if buffer is not self._write_buffer:
+                    return
+                if self.disabled or not self._initialized or not self._cache_file_path:
+                    return
+                records = tuple(buffer)
+                path = self._cache_file_path
+            # JSON containers can log spans; nested writes remain in the buffer.
+            lines = [json.dumps(record.to_dict()) + "\n" for record in records]
+            with self._lifecycle_lock:
+                # Disposal may have removed this batch while it was serializing.
+                if buffer is not self._write_buffer:
+                    return
+                if self.disabled:
+                    return
+            # Audit hooks can dispose before open reaches the filesystem.
+            # Once open, the descriptor remains safe across disposal.
+            try:
+                with open(path, "a") as f:
+                    with self._lifecycle_lock:
+                        current = buffer is self._write_buffer and not self.disabled
+                    if current:
                         f.writelines(lines)
-                    del self._write_buffer[: len(records)]
+                with self._lifecycle_lock:
+                    if current and buffer is self._write_buffer:
+                        del buffer[: len(records)]
+            finally:
+                with self._lifecycle_lock:
+                    stale = buffer is not self._write_buffer
+                if stale:
+                    self._remove_file(path)
         except Exception:
             # Keep unflushed records readable and retry them on the next write.
             pass
@@ -392,13 +427,10 @@ class SpanCache:
             with self._pending_lock:
                 self._pending_records.clear()
 
-            if self._cache_file_path and os.path.exists(self._cache_file_path):
-                try:
-                    os.unlink(self._cache_file_path)
-                except Exception:
-                    # Ignore cleanup errors - file might not exist or already deleted
-                    pass
-                self._cache_file_path = None
-
+            path = self._cache_file_path
+            self._cache_file_path = None
             self._initialized = False
             self._root_span_index.clear()
+
+        if path:
+            self._remove_file(path)

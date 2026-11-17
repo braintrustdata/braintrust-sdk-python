@@ -1,11 +1,9 @@
 import asyncio
 import copy
 import importlib.util
-import inspect
 import re
 import sys
 import threading
-import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -31,7 +29,7 @@ from .framework import (
 )
 from .resource_manager import ResourceManager
 from .score import Classification, Score, Scorer
-from .span_cache import SpanCache, _active_caches
+from .span_cache import _active_caches
 from .test_helpers import init_test_exp, with_memory_logger, with_simulate_login  # noqa: F401
 
 
@@ -2244,93 +2242,62 @@ class TestEvaluateFilter:
 
 
 def test_eval_span_cache_threaded_final_disposal_preserves_new_evaluation(with_memory_logger):
-    state = init_test_exp("threaded-final-release").state
+    state = init_test_exp("public-unlink-generation").state
     cache = state.span_cache
-    disposal_paused = threading.Event()
-    resume_disposal = threading.Event()
-    first_done = threading.Event()
-    second_started = threading.Event()
-    release_second = threading.Event()
-    observations = {}
-    source, first_line = inspect.getsourcelines(SpanCache.dispose)
-    pause_line = first_line + next(i for i, line in enumerate(source) if "os.unlink(self._cache_file_path)" in line)
+    entered = threading.Event()
+    resume = threading.Event()
+    started = threading.Event()
+    finish = threading.Event()
+    active = [True]
+    observed = {}
 
-    def trace(frame, event, arg):
-        if (
-            event == "line"
-            and frame.f_code is SpanCache.dispose.__code__
-            and frame.f_lineno == pause_line
-            and frame.f_locals.get("self") is cache
-            and not disposal_paused.is_set()
-        ):
-            assert cache._active_eval_count == 0
-            disposal_paused.set()
-            assert resume_disposal.wait(5)
-        return trace
+    def audit(event, args):
+        if active[0] and event == "os.remove" and args[0] == observed.get("old") and not entered.is_set():
+            entered.set()
+            assert resume.wait(5)
+
+    sys.addaudithook(audit)
 
     async def first_task(input):
-        observations["first_path"] = cache._cache_file_path
+        observed["old"] = cache._cache_file_path
         return input
 
-    def first():
-        sys.settrace(trace)
-        try:
-            return asyncio.run(
-                EvalAsync("first", data=[{"input": 1}], task=first_task, scores=[], state=state, no_send_logs=True)
-            )
-        finally:
-            sys.settrace(None)
-            first_done.set()
-
     async def second_task(input):
-        observations["second_path"] = cache._cache_file_path
-        second_started.set()
-        while not release_second.is_set():
+        observed["new"] = cache._cache_file_path
+        started.set()
+        while not finish.is_set():
             await asyncio.sleep(0.01)
         return input
 
-    def second():
+    def run(name, task, value):
         return asyncio.run(
-            EvalAsync("second", data=[{"input": 2}], task=second_task, scores=[], state=state, no_send_logs=True)
+            EvalAsync(name, data=[{"input": value}], task=task, scores=[], state=state, no_send_logs=True)
         )
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        first_result = pool.submit(first)
-        second_result = None
+        first = pool.submit(run, "old", first_task, 1)
+        second = None
         try:
-            deadline = time.monotonic() + 5
-            while not disposal_paused.is_set() and not first_done.is_set():
-                assert time.monotonic() < deadline
-                time.sleep(0.001)
-            second_result = pool.submit(second)
-            # A repaired lifecycle lock may serialize start behind disposal.
-            if not second_started.wait(0.1):
-                resume_disposal.set()
-            assert second_started.wait(5)
-            path = Path(observations["second_path"])
-            assert path.exists() and cache._active_eval_count == 1
-            resume_disposal.set()
-            result = first_result.result(timeout=5)
-            assert result.results[0].output == 1 and result.results[0].error is None
-            print(
-                "THREAD_INTERLEAVE",
-                {
-                    "paused_after_zero_guard": disposal_paused.is_set(),
-                    "count_while_second_active": cache._active_eval_count,
-                    "path_while_second_active": cache._cache_file_path,
-                    "second_path_exists": path.exists(),
-                    "cache_size": cache.size,
-                },
-            )
+            assert entered.wait(5)
+            second = pool.submit(run, "new", second_task, 2)
+            if not started.wait(0.1):
+                resume.set()
+            assert started.wait(5)
+            path = Path(observed["new"])
+            assert path.is_file()
+            resume.set()
+            assert first.result(timeout=5).results[0].output == 1
             assert cache._active_eval_count == 1
-            assert path.exists(), "Final cleanup deleted the next active evaluation cache"
-            assert cache._cache_file_path == str(path) and cache.size > 0
+            assert cache._cache_file_path == str(path) and path.is_file()
+            assert cache.size > 0
+            assert not Path(observed["old"]).exists()
         finally:
-            resume_disposal.set()
-            release_second.set()
-            first_result.result(timeout=5)
-            if second_result is not None:
-                second_result.result(timeout=5)
+            active[0] = False
+            resume.set()
+            finish.set()
+            first.result(timeout=5)
+            if second is not None:
+                assert second.result(timeout=5).results[0].output == 2
             cache.dispose()
 
 
@@ -2383,3 +2350,49 @@ async def test_eval_span_cache_reentrant_payload_serialization(with_memory_logge
     finally:
         set_span_customizers(None)
         exp.state.span_cache.dispose()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mode", ["w", "a"])
+async def test_eval_span_cache_file_audit_callback(mode, with_memory_logger):
+    import sys
+
+    exp = init_test_exp("file-audit-callback")
+    calls = []
+    state = {"active": True, "inside": False}
+
+    def audit(event, args):
+        if not state["active"] or state["inside"] or event != "open":
+            return
+        name, openmode, *_ = args
+        if not isinstance(name, str) or "braintrust-span-cache-" not in name or openmode != mode or calls:
+            return
+        state["inside"] = True
+        calls.append("entered")
+        try:
+            with exp.start_span(name="instrumented-file-open"):
+                pass
+            calls.append("returned")
+        finally:
+            state["inside"] = False
+
+    sys.addaudithook(audit)
+    try:
+
+        async def score(trace):
+            assert await trace.get_spans()
+            return 1
+
+        result = await EvalAsync(
+            "io-audit",
+            data=[{"input": 1}],
+            task=lambda input: "trigger",
+            scores=[score],
+            state=exp.state,
+            no_send_logs=True,
+        )
+        assert result.results[0].output == "trigger" and result.results[0].error is None
+        assert calls == ["entered", "returned"]
+        with_memory_logger.pop()
+    finally:
+        state["active"] = False
