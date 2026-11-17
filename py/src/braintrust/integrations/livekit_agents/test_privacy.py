@@ -76,9 +76,14 @@ async def test_provider_ownership_and_privacy_are_session_local(memory_logger, v
 
 
 @pytest.mark.asyncio
-async def test_late_session_redaction_filters_queued_content(memory_logger, vcr):
+@pytest.mark.parametrize("restricted", [False, True])
+async def test_late_session_redaction_filters_queued_content(memory_logger, vcr, restricted):
     from livekit.agents import Agent, AgentSession
     from livekit.plugins import openai
+
+    from .compat import STATE_ATTR
+
+    identity = "synthetic-participant@example.test"
 
     setup_livekit_agents()
     with vcr.use_cassette("test_livekit_agents_agent_speaking_e2e.yaml"):
@@ -86,18 +91,35 @@ async def test_late_session_redaction_filters_queued_content(memory_logger, vcr)
         async with llm, AgentSession() as session:
             await session.start(Agent(instructions="Reply with exactly: hi there", llm=llm))
             await session.run(user_input="say hi")
-            session._redaction_enabled = True
+            owner = getattr(session, STATE_ATTR)
+            # Each registry queues a metadata-only update. Removing its only
+            # key must not leave the original incremental payload behind.
+            participant = owner.audio.participant("caller", {"identity": identity})
+            speaker = owner.audio.speaker("session-input", "caller", {"label": identity})
+            assert participant is not None and speaker is not None
+            session._redaction_enabled = restricted
     rows = memory_logger.pop()
-    assert "say hi" not in json.dumps(rows)
-    assert "hi there" not in json.dumps(rows)
+    assert (identity in json.dumps(rows)) == (not restricted)
+    root = named(rows, "session")[0]
+    if restricted:
+        assert "say hi" not in json.dumps(rows)
+        assert "hi there" not in json.dumps(rows)
+        assert not {"audio.participants", "audio.speakers"} & root["metadata"].keys()
+    else:
+        assert root["metadata"]["audio.participants"][participant] == {"identity": identity}
+        assert root["metadata"]["audio.speakers"][speaker] == {"label": identity}
     assert "tokens" not in named(rows, "llm_response")[0]["metrics"]
 
 
 @pytest.mark.asyncio
-async def test_late_redaction_filters_supplemental_provider_content_only(memory_logger, vcr):
+@pytest.mark.parametrize("restricted", [False, True])
+async def test_late_redaction_filters_supplemental_provider_content_only(memory_logger, vcr, restricted):
     import openai as vendor
     from livekit.agents import Agent, AgentSession, function_tool
     from livekit.plugins import openai
+
+    identity = "synthetic-tool-owner@example.test"
+    description = f"Get the weather. Contact {identity}."
 
     OpenAIIntegration.setup()
     setup_livekit_agents()
@@ -118,10 +140,10 @@ async def test_late_redaction_filters_supplemental_provider_content_only(memory_
                 async for _ in stream:
                     pass
 
-    @function_tool
+    @function_tool(description=description)
     async def lookup_weather(city: str) -> str:
         with logger.start_span(name="customer_detail") as detail:
-            detail.log(input="customer-owned detail")
+            detail.log(input="customer-owned detail", metadata={"customer_context": "customer-owned metadata"})
             await provider_call()
         return f"sunny in {city}"
 
@@ -138,7 +160,7 @@ async def test_late_redaction_filters_supplemental_provider_content_only(memory_
                 )
             )
             await session.run(user_input="What is the weather in Paris?")
-            session._redaction_enabled = True
+            session._redaction_enabled = restricted
 
     rows = memory_logger.pop()
     detail = named(rows, "customer_detail")[0]
@@ -147,8 +169,16 @@ async def test_late_redaction_filters_supplemental_provider_content_only(memory_
     assert len(providers) == 4
     supplemental = next(row for row in providers if row["span_parents"] == [detail["span_id"]])
     independent = next(row for row in providers if row["span_parents"] == [unrelated["span_id"]])
-    assert "input" not in supplemental
-    assert "output" not in supplemental
+    scoped_providers = [row for row in providers if row is not independent]
+    assert len(scoped_providers) == 3
+    if restricted:
+        assert identity not in json.dumps(scoped_providers)
+        for row in scoped_providers:
+            assert not {"input", "output", "error"} & row.keys()
+            assert row["metadata"] == {"provider": "openai", "model": "gpt-4.1-mini"}
+    else:
+        assert sum(description in json.dumps(row.get("metadata", {}).get("tools")) for row in scoped_providers) == 2
+        assert supplemental["input"] and supplemental["output"]
     assert supplemental["metrics"]["tokens"] > 0
     assert independent["input"] == [
         {"role": "system", "content": "Reply with exactly: hi there"},
@@ -156,6 +186,7 @@ async def test_late_redaction_filters_supplemental_provider_content_only(memory_
     ]
     assert independent["output"][0]["message"]["content"] == "hi there"
     assert detail["input"] == "customer-owned detail"
+    assert detail["metadata"] == {"customer_context": "customer-owned metadata"}
 
 
 @pytest.mark.asyncio

@@ -42,6 +42,18 @@ setup_openai()
 LiveKit records turns and speech; OpenAI records model requests and usage under
 those operations. `auto_instrument()` also enables both integrations.
 
+Both audio capture flags default to false. OpenAI instrumentation also honors
+these flags: `USER` enables transcription/translation input audio, and `AGENT`
+enables generated output audio. This is a direction convention; OpenAI does not
+identify who is speaking. With capture disabled, transcripts are still logged,
+but provider audio attachments are omitted. Configure the flags before starting
+the worker; changing them does not retract already queued or uploaded audio.
+
+LiveKit redaction is also rechecked when queued records are exported. Redacted
+exports omit participant/speaker identities and provider request metadata such
+as tool descriptions and schemas. Automatic provider spans retain only model
+and provider attribution in metadata, alongside usage and timing metrics.
+
 ```text
 session
 ├── user_turn

@@ -1,18 +1,19 @@
 """Effective privacy of the qualified LiveKit release, including prior setup."""
 
 import logging
-import os
 
+from braintrust.env import BraintrustEnv
 from braintrust.span_customizer import SpanCustomizer
 
 
+_AUDIO_CAPTURE_FLAGS = {
+    "USER": BraintrustEnv.CAPTURE_USER_AUDIO_ATTACHMENTS,
+    "AGENT": BraintrustEnv.CAPTURE_AGENT_AUDIO_ATTACHMENTS,
+}
+
+
 def opted_in(direction):
-    return os.getenv(f"BRAINTRUST_CAPTURE_{direction}_AUDIO_ATTACHMENTS", "").strip().lower() in (
-        "true",
-        "1",
-        "yes",
-        "on",
-    )
+    return _AUDIO_CAPTURE_FLAGS[direction].get(False)
 
 
 class Privacy:
@@ -83,6 +84,6 @@ class PrivacyCustomizer(SpanCustomizer):
             "tool_choice",
         ):
             metadata.pop(field, None)
-        if metadata:
+        if "metadata" in data:
             data["metadata"] = metadata
         return data

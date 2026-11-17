@@ -171,11 +171,13 @@ async def test_real_session_start_failure_cleans_up(memory_logger):
     assert named(memory_logger.pop(), "session")[0]["metrics"]["end"]
 
 
-@pytest.mark.parametrize("value", ["false", "0", "no", "off", " FALSE ", ""])
-def test_audio_dedicated_opt_in_false_forms(monkeypatch, value):
+@pytest.mark.parametrize(
+    "value,expected", [(value, False) for value in ("false", "0", "no", "off", " FALSE ", "")] + [("y", True)]
+)
+def test_audio_dedicated_opt_in_forms(monkeypatch, value, expected):
     monkeypatch.setenv("BRAINTRUST_CAPTURE_ATTACHMENTS", "true")
     monkeypatch.setenv("BRAINTRUST_CAPTURE_AGENT_AUDIO_ATTACHMENTS", value)
-    assert not opted_in("AGENT")
+    assert opted_in("AGENT") is expected
 
 
 @pytest.mark.asyncio

@@ -10,6 +10,7 @@ import time
 from collections.abc import Callable, Iterable, Mapping
 from typing import Any
 
+from braintrust.env import BraintrustEnv
 from braintrust.integrations.question import _question_span_input, _question_span_output
 from braintrust.integrations.utils import (
     _extract_audio_output,
@@ -293,6 +294,19 @@ def _process_attachments_in_input(input_data: Any) -> Any:
         return [_process_attachments_in_input(item) for item in input_data]
 
     if isinstance(input_data, dict):
+        if input_data.get("type") == "input_audio":
+            if not BraintrustEnv.CAPTURE_USER_AUDIO_ATTACHMENTS.get(False):
+                return {"type": "input_audio"}
+            audio = input_data.get("input_audio", {})
+            resolved = _materialize_attachment(
+                audio.get("data"),
+                mime_type=_infer_audio_mime_type(None, response_format=audio.get("format")),
+                prefix="input_audio",
+            )
+            return {
+                **input_data,
+                "input_audio": {**audio, "data": resolved.attachment if resolved else audio.get("data")},
+            }
         if input_data.get("type") == "input_image" and isinstance(input_data.get("image_url"), str):
             resolved = _materialize_attachment(input_data["image_url"])
             if resolved is None:
@@ -371,7 +385,7 @@ def _process_chat_completion_audio(audio: Any, *, audio_format: str | None = Non
 
     processed_audio = {key: value for key, value in audio.items() if key not in {"data", "_decoded_data"}}
     audio_data = audio.get("_decoded_data", audio.get("data"))
-    if audio_data is None:
+    if audio_data is None or not BraintrustEnv.CAPTURE_AGENT_AUDIO_ATTACHMENTS.get(False):
         return processed_audio
 
     resolved = _materialize_attachment(
@@ -869,7 +883,7 @@ class ChatCompletionWrapper:
                 if delta_audio_transcript is not None:
                     audio["transcript"] = (audio.get("transcript") or "") + delta_audio_transcript
                 delta_audio_data = _get_attr_or_item(delta_audio, "data")
-                if delta_audio_data is not None:
+                if delta_audio_data is not None and BraintrustEnv.CAPTURE_AGENT_AUDIO_ATTACHMENTS.get(False):
                     decoded_audio = _decode_chat_completion_audio_chunk(delta_audio_data)
                     if decoded_audio is not None:
                         audio["_decoded_data"] = (audio.get("_decoded_data") or b"") + decoded_audio
@@ -2317,7 +2331,12 @@ class SpeechWrapper(BaseWrapper):
         super().__init__(create_fn, acreate_fn, "Speech")
 
     def process_output(self, response: Any, span: Span):
-        span.log(output=_extract_audio_output(response, prefix="generated_speech"))
+        output = (
+            _extract_audio_output(response, prefix="generated_speech")
+            if BraintrustEnv.CAPTURE_AGENT_AUDIO_ATTACHMENTS.get(False)
+            else {"type": "audio"}
+        )
+        span.log(output=output)
 
 
 class _AudioFileWrapper(BaseWrapper):
@@ -2328,8 +2347,13 @@ class _AudioFileWrapper(BaseWrapper):
     @classmethod
     def _parse_params(cls, params: dict[str, Any]) -> dict[str, Any]:
         ret = params.pop("span_info", {})
-        file_input = _materialize_logged_file_input(params.get("file"))
-        input_data = {"file": file_input} if file_input is not None else None
+        # Input audio is opt-in even outside a voice framework. Do not read or
+        # materialize the file for telemetry unless the customer enabled it.
+        input_data = None
+        if BraintrustEnv.CAPTURE_USER_AUDIO_ATTACHMENTS.get(False):
+            file_input = _materialize_logged_file_input(params.get("file"))
+            if file_input is not None:
+                input_data = {"file": file_input}
         return merge_dicts(
             ret,
             {
