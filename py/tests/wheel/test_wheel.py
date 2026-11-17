@@ -53,6 +53,14 @@ def test_ships_public_test_helpers():
     from braintrust.test_helpers import init_test_logger, with_memory_logger  # noqa: F401
 
 
+def test_public_audio_configuration_ships_without_optional_codecs():
+    from braintrust.audio import AudioEncoding, AudioRecordingOptions
+
+    options = AudioRecordingOptions(encoding=AudioEncoding(codec="pcm", container="wav"))
+    assert options.encoding.codec == "pcm"
+    assert "braintrust/audio.py" in WHEEL_FILES
+
+
 def test_all_modules_import():
     # Optional third-party dependencies are not installed, so ImportErrors for
     # them are expected. A missing braintrust module means the wheel is broken.

@@ -409,7 +409,13 @@ def test_tracing_only_session_has_no_media_imports_or_audio_workers():
             """
 import sys
 from braintrust.logger import NOOP_SPAN
+from braintrust.audio import AudioEncoding, AudioRecordingOptions
+from braintrust._audio.config import AudioEncoding as InternalEncoding
+from braintrust._audio.config import AudioRecordingOptions as InternalOptions
 from braintrust._audio.session import AudioSessionRecorder
+assert AudioEncoding is InternalEncoding
+assert AudioRecordingOptions is InternalOptions
+options = AudioRecordingOptions(encoding=AudioEncoding(codec="pcm", container="wav"))
 from braintrust._audio import worker
 session = AudioSessionRecorder(NOOP_SPAN)
 assert session.recorder is None

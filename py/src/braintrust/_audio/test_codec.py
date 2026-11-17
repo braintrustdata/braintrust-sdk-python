@@ -119,3 +119,21 @@ async def test_recorder_defaults_to_independently_playable_opus_segments():
         assert sum(frame.samples for frame in frames) == segment.meta.sample_count
         assert frames[0].pts == 0
         assert all(frame.sample_rate == 48000 for frame in frames)
+
+
+def test_missing_libopus_warns_and_explicit_opus_fails(monkeypatch, caplog):
+    from braintrust._audio import middleware
+
+    original = av.codec.Codec
+
+    def unavailable_encoder(*args, **kwargs):
+        # Exercise the real PyAV missing-codec error without requiring a custom
+        # FFmpeg build. Encoding setup is purely local, not a provider stand-in.
+        return original("braintrust_missing_encoder", "w")
+
+    monkeypatch.setattr(av.codec, "Codec", unavailable_encoder)
+    monkeypatch.setattr(middleware, "_warned_missing_codec", False)
+    assert encoding_stack(None) == ()
+    assert "libopus" in caplog.text
+    with pytest.raises(ValueError, match="libopus"):
+        encoding_stack(AudioEncoding())
