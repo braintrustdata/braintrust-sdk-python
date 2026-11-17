@@ -1,0 +1,504 @@
+[
+  {
+    "send": {
+      "config": {
+        "cascadeId": "",
+        "harnessSideTools": {
+          "find": {
+            "enabled": false
+          },
+          "runCommand": {
+            "enabled": true,
+            "maxTimeoutMs": 0,
+            "enableDaemonCommands": false,
+            "enableSandbox": false
+          },
+          "subagents": {
+            "enabled": false
+          },
+          "userQuestions": {
+            "enabled": false
+          },
+          "fileEdit": {
+            "enabled": true
+          },
+          "viewFile": {
+            "enabled": true
+          },
+          "writeToFile": {
+            "enabled": true
+          },
+          "grepSearch": {
+            "enabled": false
+          },
+          "listDir": {
+            "enabled": false
+          },
+          "generateImage": {
+            "enabled": false
+          },
+          "searchWeb": {
+            "enabled": false
+          },
+          "readUrlContent": {
+            "enabled": false
+          },
+          "manageTask": {
+            "enabled": true
+          },
+          "schedule": {
+            "enabled": false
+          },
+          "runWorkflow": {
+            "enabled": false
+          }
+        },
+        "compactionThreshold": 65536,
+        "workspaces": [
+          {
+            "filesystemWorkspace": {
+              "directory": "WORKSPACE"
+            }
+          }
+        ],
+        "finishToolSchemaJson": "",
+        "appDataDir": "TEST_WORKSPACE",
+        "models": [
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.1-flash-lite-image",
+            "types": [
+              "MODEL_TYPE_IMAGE"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          }
+        ],
+        "sessionContinuationMode": "SESSION_CONTINUATION_MODE_UNSPECIFIED",
+        "policyConfig": {
+          "rules": [
+            {
+              "tool": "run_command",
+              "serverName": "",
+              "name": "confirm_run_command",
+              "decision": "POLICY_DECISION_DENY",
+              "denyReason": "",
+              "isDynamic": false,
+              "ruleId": ""
+            },
+            {
+              "tool": "*",
+              "serverName": "",
+              "name": "confirm_run_command",
+              "decision": "POLICY_DECISION_ALLOW",
+              "denyReason": "",
+              "isDynamic": false,
+              "ruleId": ""
+            }
+          ],
+          "workspaceContainment": "WORKSPACE_CONTAINMENT_UNSPECIFIED"
+        },
+        "agentBehavior": "AGENT_BEHAVIOR_MINIMAL",
+        "compactionConfig": {
+          "tokenThreshold": 65536
+        }
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "1",
+      "timestampMicros": "1794582147784720",
+      "initializeConversationResponse": {
+        "cascadeId": "41ab9bc3ab6652e13fde72c222f7b058",
+        "sandboxStatus": {
+          "available": true,
+          "unavailableReason": ""
+        }
+      }
+    }
+  },
+  {
+    "send": {
+      "userInput": {
+        "parts": [
+          {
+            "text": "Reply with exactly: antigravity tracing complete"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "2",
+      "timestampMicros": "1794582147786113",
+      "trajectoryStateUpdate": {
+        "trajectoryId": "41ab9bc3ab6652e13fde72c222f7b058",
+        "state": "STATE_RUNNING"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "3",
+      "timestampMicros": "1794582147795578",
+      "stepUpdate": {
+        "cascadeId": "41ab9bc3ab6652e13fde72c222f7b058",
+        "trajectoryId": "41ab9bc3ab6652e13fde72c222f7b058",
+        "stepIndex": 0,
+        "state": "STATE_DONE",
+        "source": "SOURCE_USER",
+        "target": "TARGET_MODEL",
+        "thinking": "",
+        "textDelta": "Reply with exactly: antigravity tracing complete",
+        "thinkingDelta": "",
+        "text": "Reply with exactly: antigravity tracing complete"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "4",
+      "timestampMicros": "1794582149691338",
+      "stepUpdate": {
+        "cascadeId": "41ab9bc3ab6652e13fde72c222f7b058",
+        "trajectoryId": "41ab9bc3ab6652e13fde72c222f7b058",
+        "stepIndex": 1,
+        "state": "STATE_ACTIVE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": "antigravity tracing complete",
+        "thinkingDelta": "",
+        "text": "antigravity tracing complete"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "5",
+      "timestampMicros": "1794582149702673",
+      "stepUpdate": {
+        "cascadeId": "41ab9bc3ab6652e13fde72c222f7b058",
+        "trajectoryId": "41ab9bc3ab6652e13fde72c222f7b058",
+        "stepIndex": 1,
+        "state": "STATE_ACTIVE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": "",
+        "thinkingDelta": "",
+        "text": "antigravity tracing complete"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "6",
+      "timestampMicros": "1794582149702845",
+      "stepUpdate": {
+        "cascadeId": "41ab9bc3ab6652e13fde72c222f7b058",
+        "trajectoryId": "41ab9bc3ab6652e13fde72c222f7b058",
+        "stepIndex": 1,
+        "state": "STATE_ACTIVE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": "",
+        "thinkingDelta": "",
+        "text": "antigravity tracing complete"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "7",
+      "timestampMicros": "1794582149705522",
+      "stepUpdate": {
+        "cascadeId": "41ab9bc3ab6652e13fde72c222f7b058",
+        "trajectoryId": "41ab9bc3ab6652e13fde72c222f7b058",
+        "stepIndex": 1,
+        "state": "STATE_DONE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": "",
+        "thinkingDelta": "",
+        "text": "antigravity tracing complete"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "8",
+      "timestampMicros": "1794582149705522",
+      "usageUpdate": {
+        "agents": [
+          {
+            "trajectoryId": "41ab9bc3ab6652e13fde72c222f7b058",
+            "usage": {
+              "promptTokenCount": "4209",
+              "cachedContentTokenCount": "0",
+              "candidatesTokenCount": "5",
+              "thoughtsTokenCount": "22",
+              "totalTokenCount": "4236",
+              "promptTokensDetails": [
+                {
+                  "modality": "TEXT",
+                  "tokenCount": "4209"
+                }
+              ]
+            }
+          }
+        ],
+        "total": {
+          "promptTokenCount": "4209",
+          "cachedContentTokenCount": "0",
+          "candidatesTokenCount": "5",
+          "thoughtsTokenCount": "22",
+          "totalTokenCount": "4236",
+          "promptTokensDetails": [
+            {
+              "modality": "TEXT",
+              "tokenCount": "4209"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "9",
+      "timestampMicros": "1794582149708045",
+      "trajectoryStateUpdate": {
+        "trajectoryId": "41ab9bc3ab6652e13fde72c222f7b058",
+        "state": "STATE_FULLY_IDLE"
+      }
+    }
+  },
+  {
+    "send": {
+      "userInput": {
+        "parts": [
+          {
+            "text": "Reply with exactly: antigravity tracing complete"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "10",
+      "timestampMicros": "1794582149709032",
+      "trajectoryStateUpdate": {
+        "trajectoryId": "41ab9bc3ab6652e13fde72c222f7b058",
+        "state": "STATE_RUNNING"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "11",
+      "timestampMicros": "1794582149711998",
+      "stepUpdate": {
+        "cascadeId": "41ab9bc3ab6652e13fde72c222f7b058",
+        "trajectoryId": "41ab9bc3ab6652e13fde72c222f7b058",
+        "stepIndex": 2,
+        "state": "STATE_DONE",
+        "source": "SOURCE_USER",
+        "target": "TARGET_MODEL",
+        "thinking": "",
+        "textDelta": "Reply with exactly: antigravity tracing complete",
+        "thinkingDelta": "",
+        "text": "Reply with exactly: antigravity tracing complete"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "12",
+      "timestampMicros": "1794582151788602",
+      "stepUpdate": {
+        "cascadeId": "41ab9bc3ab6652e13fde72c222f7b058",
+        "trajectoryId": "41ab9bc3ab6652e13fde72c222f7b058",
+        "stepIndex": 3,
+        "state": "STATE_ACTIVE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": "antigravity tracing complete",
+        "thinkingDelta": "",
+        "text": "antigravity tracing complete"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "13",
+      "timestampMicros": "1794582151788892",
+      "stepUpdate": {
+        "cascadeId": "41ab9bc3ab6652e13fde72c222f7b058",
+        "trajectoryId": "41ab9bc3ab6652e13fde72c222f7b058",
+        "stepIndex": 3,
+        "state": "STATE_ACTIVE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": "",
+        "thinkingDelta": "",
+        "text": "antigravity tracing complete"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "14",
+      "timestampMicros": "1794582151789057",
+      "stepUpdate": {
+        "cascadeId": "41ab9bc3ab6652e13fde72c222f7b058",
+        "trajectoryId": "41ab9bc3ab6652e13fde72c222f7b058",
+        "stepIndex": 3,
+        "state": "STATE_ACTIVE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": "",
+        "thinkingDelta": "",
+        "text": "antigravity tracing complete"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "15",
+      "timestampMicros": "1794582151789283",
+      "stepUpdate": {
+        "cascadeId": "41ab9bc3ab6652e13fde72c222f7b058",
+        "trajectoryId": "41ab9bc3ab6652e13fde72c222f7b058",
+        "stepIndex": 3,
+        "state": "STATE_DONE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": "",
+        "thinkingDelta": "",
+        "text": "antigravity tracing complete"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "16",
+      "timestampMicros": "1794582151789284",
+      "usageUpdate": {
+        "agents": [
+          {
+            "trajectoryId": "41ab9bc3ab6652e13fde72c222f7b058",
+            "usage": {
+              "promptTokenCount": "8519",
+              "cachedContentTokenCount": "2175",
+              "candidatesTokenCount": "10",
+              "thoughtsTokenCount": "38",
+              "totalTokenCount": "8567",
+              "promptTokensDetails": [
+                {
+                  "modality": "TEXT",
+                  "tokenCount": "8519"
+                }
+              ],
+              "cacheTokensDetails": [
+                {
+                  "modality": "TEXT",
+                  "tokenCount": "2175"
+                }
+              ]
+            }
+          }
+        ],
+        "total": {
+          "promptTokenCount": "8519",
+          "cachedContentTokenCount": "2175",
+          "candidatesTokenCount": "10",
+          "thoughtsTokenCount": "38",
+          "totalTokenCount": "8567",
+          "promptTokensDetails": [
+            {
+              "modality": "TEXT",
+              "tokenCount": "8519"
+            }
+          ],
+          "cacheTokensDetails": [
+            {
+              "modality": "TEXT",
+              "tokenCount": "2175"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "17",
+      "timestampMicros": "1794582151791487",
+      "trajectoryStateUpdate": {
+        "trajectoryId": "41ab9bc3ab6652e13fde72c222f7b058",
+        "state": "STATE_FULLY_IDLE"
+      }
+    }
+  }
+]

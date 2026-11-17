@@ -47,6 +47,7 @@ def auto_instrument(
     agentscope: bool = True,
     claude_agent_sdk: bool = True,
     cursor_sdk: bool = True,
+    antigravity: bool = True,
     dspy: bool = True,
     adk: bool = True,
     langchain: bool = True,
@@ -92,6 +93,7 @@ def auto_instrument(
         agentscope: Enable AgentScope instrumentation (default: True)
         claude_agent_sdk: Enable Claude Agent SDK instrumentation (default: True)
         cursor_sdk: Enable Cursor SDK instrumentation (default: True)
+        antigravity: Enable Google Antigravity SDK instrumentation (default: True)
         dspy: Enable DSPy instrumentation (default: True)
         adk: Enable Google ADK instrumentation (default: True)
         langchain: Enable LangChain instrumentation (default: True)
@@ -198,6 +200,8 @@ def auto_instrument(
         results["claude_agent_sdk"] = _instrument_integration("claude_agent_sdk", "ClaudeAgentSDKIntegration")
     if cursor_sdk:
         results["cursor_sdk"] = _instrument_integration("cursor_sdk", "CursorSDKIntegration")
+    if antigravity:
+        results["antigravity"] = _instrument_integration("antigravity", "AntigravityIntegration")
     if dspy:
         results["dspy"] = _instrument_integration("dspy", "DSPyIntegration")
     if adk:

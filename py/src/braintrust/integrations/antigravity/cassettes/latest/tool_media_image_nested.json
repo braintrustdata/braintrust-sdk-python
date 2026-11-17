@@ -1,0 +1,569 @@
+[
+  {
+    "send": {
+      "config": {
+        "cascadeId": "",
+        "tools": [
+          {
+            "name": "read_media",
+            "description": "Create a new function with partial application of the given arguments\nand keywords.",
+            "parametersJsonSchema": "{\"type\": \"object\", \"properties\": {}}"
+          }
+        ],
+        "harnessSideTools": {
+          "find": {
+            "enabled": false
+          },
+          "runCommand": {
+            "enabled": true,
+            "maxTimeoutMs": 0,
+            "enableDaemonCommands": false,
+            "enableSandbox": false
+          },
+          "subagents": {
+            "enabled": false
+          },
+          "userQuestions": {
+            "enabled": false
+          },
+          "fileEdit": {
+            "enabled": true
+          },
+          "viewFile": {
+            "enabled": true
+          },
+          "writeToFile": {
+            "enabled": true
+          },
+          "grepSearch": {
+            "enabled": false
+          },
+          "listDir": {
+            "enabled": false
+          },
+          "generateImage": {
+            "enabled": false
+          },
+          "searchWeb": {
+            "enabled": false
+          },
+          "readUrlContent": {
+            "enabled": false
+          },
+          "manageTask": {
+            "enabled": true
+          },
+          "schedule": {
+            "enabled": false
+          },
+          "runWorkflow": {
+            "enabled": false
+          }
+        },
+        "compactionThreshold": 65536,
+        "workspaces": [
+          {
+            "filesystemWorkspace": {
+              "directory": "WORKSPACE"
+            }
+          }
+        ],
+        "finishToolSchemaJson": "",
+        "appDataDir": "TEST_WORKSPACE",
+        "models": [
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.1-flash-lite-image",
+            "types": [
+              "MODEL_TYPE_IMAGE"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          },
+          {
+            "name": "gemini-3.8-flash",
+            "types": [
+              "MODEL_TYPE_TEXT"
+            ],
+            "geminiApiEndpoint": {
+              "baseUrl": "",
+              "apiKey": "REDACTED"
+            }
+          }
+        ],
+        "sessionContinuationMode": "SESSION_CONTINUATION_MODE_UNSPECIFIED",
+        "policyConfig": {
+          "rules": [
+            {
+              "tool": "run_command",
+              "serverName": "",
+              "name": "confirm_run_command",
+              "decision": "POLICY_DECISION_DENY",
+              "denyReason": "",
+              "isDynamic": false,
+              "ruleId": ""
+            },
+            {
+              "tool": "*",
+              "serverName": "",
+              "name": "confirm_run_command",
+              "decision": "POLICY_DECISION_ALLOW",
+              "denyReason": "",
+              "isDynamic": false,
+              "ruleId": ""
+            }
+          ],
+          "workspaceContainment": "WORKSPACE_CONTAINMENT_UNSPECIFIED"
+        },
+        "agentBehavior": "AGENT_BEHAVIOR_MINIMAL",
+        "compactionConfig": {
+          "tokenThreshold": 65536
+        }
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "1",
+      "timestampMicros": "1794850955248228",
+      "initializeConversationResponse": {
+        "cascadeId": "dcdc593921193a4275eee6aad46684c4",
+        "sandboxStatus": {
+          "available": true,
+          "unavailableReason": ""
+        }
+      }
+    }
+  },
+  {
+    "send": {
+      "userInput": {
+        "parts": [
+          {
+            "text": "Call read_media once, inspect the returned media, then reply with exactly: media received"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "2",
+      "timestampMicros": "1794850955249893",
+      "trajectoryStateUpdate": {
+        "trajectoryId": "dcdc593921193a4275eee6aad46684c4",
+        "state": "STATE_RUNNING"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "3",
+      "timestampMicros": "1794850955260940",
+      "stepUpdate": {
+        "cascadeId": "dcdc593921193a4275eee6aad46684c4",
+        "trajectoryId": "dcdc593921193a4275eee6aad46684c4",
+        "stepIndex": 0,
+        "state": "STATE_DONE",
+        "source": "SOURCE_USER",
+        "target": "TARGET_MODEL",
+        "thinking": "",
+        "textDelta": "Call read_media once, inspect the returned media, then reply with exactly: media received",
+        "thinkingDelta": "",
+        "text": "Call read_media once, inspect the returned media, then reply with exactly: media received"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "4",
+      "timestampMicros": "1794850957225626",
+      "stepUpdate": {
+        "cascadeId": "dcdc593921193a4275eee6aad46684c4",
+        "trajectoryId": "dcdc593921193a4275eee6aad46684c4",
+        "stepIndex": 1,
+        "state": "STATE_ACTIVE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_ENVIRONMENT",
+        "thinking": "",
+        "textDelta": "Calling custom tool \"read_media\"",
+        "thinkingDelta": "",
+        "text": "Calling custom tool \"read_media\"",
+        "customTool": {
+          "toolCall": {
+            "id": "call_267382823255672072",
+            "name": "read_media",
+            "argumentsJson": "{}",
+            "arguments": {}
+          }
+        }
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "5",
+      "timestampMicros": "1794850957226988",
+      "stepUpdate": {
+        "cascadeId": "dcdc593921193a4275eee6aad46684c4",
+        "trajectoryId": "dcdc593921193a4275eee6aad46684c4",
+        "stepIndex": 1,
+        "state": "STATE_ACTIVE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_ENVIRONMENT",
+        "thinking": "",
+        "textDelta": "",
+        "thinkingDelta": "",
+        "text": "Calling custom tool \"read_media\"",
+        "customTool": {
+          "toolCall": {
+            "id": "call_267382823255672072",
+            "name": "read_media",
+            "argumentsJson": "{}",
+            "arguments": {}
+          }
+        }
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "6",
+      "timestampMicros": "1794850957228213",
+      "usageUpdate": {
+        "agents": [
+          {
+            "trajectoryId": "dcdc593921193a4275eee6aad46684c4",
+            "usage": {
+              "promptTokenCount": "4258",
+              "cachedContentTokenCount": "0",
+              "candidatesTokenCount": "10",
+              "thoughtsTokenCount": "58",
+              "totalTokenCount": "4326",
+              "promptTokensDetails": [
+                {
+                  "modality": "TEXT",
+                  "tokenCount": "4258"
+                }
+              ]
+            }
+          }
+        ],
+        "total": {
+          "promptTokenCount": "4258",
+          "cachedContentTokenCount": "0",
+          "candidatesTokenCount": "10",
+          "thoughtsTokenCount": "58",
+          "totalTokenCount": "4326",
+          "promptTokensDetails": [
+            {
+              "modality": "TEXT",
+              "tokenCount": "4258"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "7",
+      "timestampMicros": "1794850957229352",
+      "toolCall": {
+        "id": "call_267382823255672072",
+        "name": "read_media",
+        "argumentsJson": "{}",
+        "arguments": {},
+        "trajectoryId": "dcdc593921193a4275eee6aad46684c4"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "8",
+      "timestampMicros": "1794850957229450",
+      "stepUpdate": {
+        "cascadeId": "dcdc593921193a4275eee6aad46684c4",
+        "trajectoryId": "dcdc593921193a4275eee6aad46684c4",
+        "stepIndex": 1,
+        "state": "STATE_ACTIVE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_ENVIRONMENT",
+        "thinking": "",
+        "textDelta": "",
+        "thinkingDelta": "",
+        "text": "Calling custom tool \"read_media\"",
+        "customTool": {
+          "toolCall": {
+            "id": "call_267382823255672072",
+            "name": "read_media",
+            "argumentsJson": "{}",
+            "arguments": {}
+          }
+        }
+      }
+    }
+  },
+  {
+    "send": {
+      "toolResponse": {
+        "id": "call_267382823255672072",
+        "responseJson": "{\"label\": \"keep\", \"items\": [{\"count\": 2}], \"pair\": [\"tail\"]}",
+        "supplementalMedia": [
+          {
+            "mimeType": "image/png",
+            "description": "A pixel",
+            "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII="
+          },
+          {
+            "mimeType": "image/png",
+            "description": "A pixel",
+            "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII="
+          }
+        ]
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "9",
+      "timestampMicros": "1794850957236036",
+      "stepUpdate": {
+        "cascadeId": "dcdc593921193a4275eee6aad46684c4",
+        "trajectoryId": "dcdc593921193a4275eee6aad46684c4",
+        "stepIndex": 1,
+        "state": "STATE_DONE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_ENVIRONMENT",
+        "thinking": "",
+        "textDelta": "",
+        "thinkingDelta": "",
+        "text": "Calling custom tool \"read_media\"",
+        "customTool": {
+          "toolCall": {
+            "id": "call_267382823255672072",
+            "name": "read_media",
+            "argumentsJson": "{}",
+            "arguments": {}
+          },
+          "toolResponse": {
+            "id": "read_media",
+            "responseJson": "{\"label\": \"keep\", \"items\": [{\"count\": 2}], \"pair\": [\"tail\"]}",
+            "supplementalMedia": [
+              {
+                "mimeType": "image/png",
+                "description": "A pixel",
+                "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII="
+              },
+              {
+                "mimeType": "image/png",
+                "description": "A pixel",
+                "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII="
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "10",
+      "timestampMicros": "1794850959504580",
+      "stepUpdate": {
+        "cascadeId": "dcdc593921193a4275eee6aad46684c4",
+        "trajectoryId": "dcdc593921193a4275eee6aad46684c4",
+        "stepIndex": 2,
+        "state": "STATE_ACTIVE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": "media received",
+        "thinkingDelta": "",
+        "text": "media received"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "11",
+      "timestampMicros": "1794850959511849",
+      "stepUpdate": {
+        "cascadeId": "dcdc593921193a4275eee6aad46684c4",
+        "trajectoryId": "dcdc593921193a4275eee6aad46684c4",
+        "stepIndex": 2,
+        "state": "STATE_ACTIVE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": "",
+        "thinkingDelta": "",
+        "text": "media received"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "12",
+      "timestampMicros": "1794850959511986",
+      "stepUpdate": {
+        "cascadeId": "dcdc593921193a4275eee6aad46684c4",
+        "trajectoryId": "dcdc593921193a4275eee6aad46684c4",
+        "stepIndex": 2,
+        "state": "STATE_ACTIVE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": "",
+        "thinkingDelta": "",
+        "text": "media received"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "13",
+      "timestampMicros": "1794850959514143",
+      "stepUpdate": {
+        "cascadeId": "dcdc593921193a4275eee6aad46684c4",
+        "trajectoryId": "dcdc593921193a4275eee6aad46684c4",
+        "stepIndex": 2,
+        "state": "STATE_DONE",
+        "source": "SOURCE_MODEL",
+        "target": "TARGET_USER",
+        "thinking": "",
+        "textDelta": "",
+        "thinkingDelta": "",
+        "text": "media received"
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "14",
+      "timestampMicros": "1794850959514143",
+      "usageUpdate": {
+        "agents": [
+          {
+            "trajectoryId": "dcdc593921193a4275eee6aad46684c4",
+            "usage": {
+              "promptTokenCount": "10869",
+              "cachedContentTokenCount": "4263",
+              "candidatesTokenCount": "12",
+              "thoughtsTokenCount": "95",
+              "totalTokenCount": "10976",
+              "promptTokensDetails": [
+                {
+                  "modality": "TEXT",
+                  "tokenCount": "8691"
+                },
+                {
+                  "modality": "IMAGE",
+                  "tokenCount": "2178"
+                }
+              ],
+              "cacheTokensDetails": [
+                {
+                  "modality": "TEXT",
+                  "tokenCount": "2859"
+                },
+                {
+                  "modality": "IMAGE",
+                  "tokenCount": "1404"
+                }
+              ]
+            }
+          }
+        ],
+        "total": {
+          "promptTokenCount": "10869",
+          "cachedContentTokenCount": "4263",
+          "candidatesTokenCount": "12",
+          "thoughtsTokenCount": "95",
+          "totalTokenCount": "10976",
+          "promptTokensDetails": [
+            {
+              "modality": "TEXT",
+              "tokenCount": "8691"
+            },
+            {
+              "modality": "IMAGE",
+              "tokenCount": "2178"
+            }
+          ],
+          "cacheTokensDetails": [
+            {
+              "modality": "TEXT",
+              "tokenCount": "2859"
+            },
+            {
+              "modality": "IMAGE",
+              "tokenCount": "1404"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "recv": {
+      "seqNum": "15",
+      "timestampMicros": "1794850959517557",
+      "trajectoryStateUpdate": {
+        "trajectoryId": "dcdc593921193a4275eee6aad46684c4",
+        "state": "STATE_FULLY_IDLE"
+      }
+    }
+  }
+]
