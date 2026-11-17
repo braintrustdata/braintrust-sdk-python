@@ -45,7 +45,12 @@ def livekit_server():
         yield
     finally:
         process.terminate()
-        process.wait(timeout=10)
+        try:
+            process.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            # Graceful shutdown can stall while rooms drain; don't fail the session over it.
+            process.kill()
+            process.wait()
 
 
 LIVEKIT_URL = os.getenv("LIVEKIT_URL", "ws://localhost:7880")
