@@ -198,3 +198,34 @@ async def test_strands_decision_image_state_is_logged_as_attachment(memory_logge
     assert logged_state[1]["image"]["format"] == "png"
     # The model request keeps the original bytes.
     assert state[1]["image"]["source"]["bytes"] == image
+
+
+@pytest.mark.parametrize(
+    "kind,media_format,mime_type", [("image", "png", "image/png"), ("document", "pdf", "application/pdf")]
+)
+def test_strands_native_tracer_preserves_media(memory_logger, kind, media_format, mime_type):
+    from strands.telemetry.tracer import get_tracer
+
+    assert StrandsIntegration.setup()
+    filename = "test-image.png" if kind == "image" else "test-document.pdf"
+    data = (Path(__file__).parent.parent.parent / "fixtures" / filename).read_bytes()
+    text = "data:text/plain;base64,aGVsbG8="
+    messages = [
+        {"role": "user", "content": [{kind: {"format": media_format, "source": {"bytes": data}}}, {"text": text}]}
+    ]
+    tracer = get_tracer()
+    span = tracer.start_model_invoke_span(messages, model_id=TEST_MODEL)
+    tracer.end_model_invoke_span(
+        span,
+        {"role": "assistant", "content": [{"text": "Received"}]},
+        {"inputTokens": 1, "outputTokens": 1, "totalTokens": 2},
+        {},
+        "end_turn",
+    )
+
+    (logged_span,) = find_spans_by_type(memory_logger.pop(), SpanTypeAttribute.LLM)
+    attachment = logged_span["input"]["messages"][0]["content"][0][kind]["source"]["bytes"]
+    assert isinstance(attachment, Attachment)
+    assert attachment.reference["content_type"] == mime_type
+    assert logged_span["input"]["messages"][0]["content"][1]["text"] == text
+    assert messages[0]["content"][0][kind]["source"]["bytes"] == data

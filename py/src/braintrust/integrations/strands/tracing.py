@@ -121,7 +121,7 @@ def _start_span_for_otel(
     span = start(
         name=name,
         type=span_type,
-        input=input,
+        input=_strands_media(input),
         metadata=metadata,
         internal={"instrumentation": _INSTRUMENTATION},
     )
@@ -148,7 +148,7 @@ def _end_span_for_otel(
         return
     if error is not None:
         span.log(error=repr(error))
-    span.log(output=output, metadata=metadata)
+    span.log(output=_strands_media(output), metadata=metadata)
     span.end()
 
 
@@ -359,7 +359,18 @@ def _decision_answers(result: Any, questions: dict[str, Any]) -> dict[str, dict[
     return normalized
 
 
-def _decision_media_transform(value: Any) -> Any:
+def _strands_media(value: Any) -> Any:
+    transformed = _strands_media_transform(value)
+    if transformed is not value:
+        return transformed
+    if isinstance(value, dict):
+        return {key: _strands_media(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_strands_media(item) for item in value]
+    return value
+
+
+def _strands_media_transform(value: Any) -> Any:
     """Convert inline bytes in Strands ``image``/``document``/``video`` content blocks to attachments."""
     if not isinstance(value, dict) or len(value) != 1:
         return value
@@ -429,7 +440,7 @@ async def _decision_model_ask_wrapper(wrapped: Any, instance: Any, args: Any, kw
             name=f"{type(instance).__name__}.ask",
             type=SpanTypeAttribute.DECISION,
             input=_question_span_input(
-                state, _decision_questions(questions), media_transform=_decision_media_transform
+                state, _decision_questions(questions), media_transform=_strands_media_transform
             ),
             metadata=_decision_model_metadata(instance),
             internal={"instrumentation": _INSTRUMENTATION},
