@@ -24,26 +24,16 @@ def setup_pipecat(
     capture_agent_audio_attachments: bool | None = None,
     audio_recording_options: AudioRecordingOptions | None = None,
 ) -> bool:
-    """Set up Braintrust tracing for Pipecat ``PipelineWorker`` instances.
+    """Enable Braintrust tracing for newly created Pipecat ``PipelineWorker`` instances.
 
-    Setup instruments ``PipelineWorker`` so every newly constructed worker is
-    traced, the same as ``braintrust.auto_instrument()`` or
-    ``wrap_pipeline_worker()``. Pass ``capture_audio_attachments=True`` to attach
-    both user and agent audio, or configure them independently with
+    Set ``capture_audio_attachments=True`` to record both sides, or use
     ``capture_user_audio_attachments`` and ``capture_agent_audio_attachments``.
-    When arguments are omitted, the generic
-    environment variables ``BRAINTRUST_CAPTURE_USER_AUDIO_ATTACHMENTS`` and
-    ``BRAINTRUST_CAPTURE_AGENT_AUDIO_ATTACHMENTS`` apply. Explicit arguments
-    take precedence.
+    Omitted capture options use ``BRAINTRUST_CAPTURE_USER_AUDIO_ATTACHMENTS``
+    and ``BRAINTRUST_CAPTURE_AGENT_AUDIO_ATTACHMENTS`` environment defaults.
+    Explicit arguments take precedence.
 
-    Emits the audio v3 schema: a ``session`` with shared recordings, native
-    ``user_turn`` / ``agent_turn`` groups, speech, STT, LLM, tools and TTS.
-    Turn containers follow Pipecat's native boundaries. Agent recordings
-    contain transport-confirmed playback.
-    ``audio_recording_options`` configures segmentation, encoding and shutdown
-    using ``braintrust.audio.AudioRecordingOptions``. Recordings default
-    to Opus/Ogg when PyAV with libopus is available, otherwise raw PCM.
-    ``braintrust[audio]`` installs a pinned PyAV on Python 3.12+.
+    Use ``braintrust.audio.AudioRecordingOptions`` with ``audio_recording_options``
+    to configure recording format, segmentation, and shutdown.
     """
     set_default_observer_options(
         capture_audio_attachments=capture_audio_attachments,
