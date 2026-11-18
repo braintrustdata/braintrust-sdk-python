@@ -4,6 +4,7 @@ import asyncio
 import contextlib
 import inspect
 import logging
+import math
 import re
 import time
 import weakref
@@ -85,6 +86,18 @@ def _operation_context(span: Span):
         span.unset_current()
 
 
+def _log_native_diagnostics(span, **fields):
+    # Call sites explicitly select native fields. Do not invent zeroes when
+    # LiveKit lacks a reliable timing anchor, or promote these to model metrics.
+    metadata = {
+        f"contrib.livekit.{name}": value
+        for name, value in fields.items()
+        if type(value) in (int, float) and math.isfinite(value) and value >= 0
+    }
+    if metadata:
+        span.log(metadata=metadata)
+
+
 def link(target, relationship):
     global _warned_links
     trace_id, span_id = getattr(target, "root_span_id", ""), getattr(target, "span_id", "")
@@ -137,6 +150,7 @@ class Session:
         self.closed = False
         self.closing = False
         self._finishing = None
+        native.on("metrics_collected", self.metrics_collected)
         if self.privacy.job is not None:
             reference = weakref.ref(self)
 
@@ -151,6 +165,13 @@ class Session:
                         await owner.finish()
 
             self.privacy.job.add_shutdown_callback(shutdown)
+
+    def metrics_collected(self, event):
+        # The native callback report is emitted in _user_turn_completed_impl,
+        # where our existing context identifies the exact originating user turn.
+        user = _REPLY_TO.get()
+        if event.metrics.type == "eou_metrics" and user is not None:
+            _log_native_diagnostics(user, on_user_turn_completed_delay=event.metrics.on_user_turn_completed_delay)
 
     def permits(self):
         allowed = self.privacy.allows_content()
@@ -318,6 +339,8 @@ class Session:
         try:
             await self.audio.finish()
         finally:
+            if self.native is not None:
+                self.native.off("metrics_collected", self.metrics_collected)
             self.native = None
             self.privacy.session = None
             self.privacy.job = None
@@ -500,6 +523,12 @@ def user_speech_end(wrapped, instance, args, kwargs):
     owner = state_for(instance)
     event = arguments(wrapped, args, kwargs).get("ev")
     if owner is not None and owner.user_speech is not None:
+        if event is not None:
+            _log_native_diagnostics(
+                owner.user_speech,
+                vad_silence_duration=event.silence_duration,
+                vad_inference_duration=event.inference_duration,
+            )
         end = time.time() - event.silence_duration - event.inference_duration if event is not None else time.time()
         if event is not None:
             end_ns = owner.audio.from_wall(end)
@@ -579,6 +608,23 @@ def end_of_turn(wrapped, instance, args, kwargs):
         try:
             committed = wrapped(*args, **kwargs)
             if committed:
+                timing = info.metrics
+                _log_native_diagnostics(
+                    user, end_of_turn_delay=timing.end_of_turn_delay, transcription_delay=timing.transcription_delay
+                )
+                stopped, delay = timing.stopped_speaking_at, timing.end_of_turn_delay
+                if (
+                    type(stopped) in (int, float)
+                    and type(delay) in (int, float)
+                    and math.isfinite(stopped)
+                    and math.isfinite(delay)
+                    and stopped >= 0
+                    and delay >= 0
+                ):
+                    wait = _new(
+                        user, "livekit.eou_wait", start_time=stopped, metadata={"contrib.livekit.outcome": "committed"}
+                    )
+                    wait.end(stopped + delay)
                 owner.user = None
                 if info.user_turn_span_adopted:
                     owner.pending_users.add(user)

@@ -64,6 +64,7 @@ async def test_consumed_input_drives_real_cascade(
     llm.on("metrics_collected", model_metrics.append)
     vad = silero.VAD.load()
     heard = asyncio.Event()
+    eou_metrics = []
     input_source = rtc.AudioSource(24000, 1)
     track = rtc.LocalAudioTrack.create_audio_track("caller-microphone", input_source)
     await rooms[1].local_participant.publish_track(
@@ -80,6 +81,10 @@ async def test_consumed_input_drives_real_cascade(
                     heard.set()
 
             session.on("conversation_item_added", conversation)
+            session.on(
+                "metrics_collected",
+                lambda event: eou_metrics.append(event.metrics) if event.metrics.type == "eou_metrics" else None,
+            )
             await session.start(
                 Agent(instructions="Reply with exactly: hi there", llm=llm), room=rooms[0], record=False
             )
@@ -148,6 +153,24 @@ async def test_consumed_input_drives_real_cascade(
     user = next(row for row in named(rows, "user_turn") if row.get("input"))
     assert user["input"][0]["content"] == "Hello there."
     assert user["metadata"]["audio.selections"]
+    if not preemptive:
+        assert len(eou_metrics) == 1
+    if eou_metrics:
+        reported = eou_metrics[0]
+        assert user["metadata"]["contrib.livekit.end_of_turn_delay"] == pytest.approx(reported.end_of_utterance_delay)
+        assert user["metadata"]["contrib.livekit.transcription_delay"] == pytest.approx(reported.transcription_delay)
+        assert (
+            user["metadata"]["contrib.livekit.on_user_turn_completed_delay"] == reported.on_user_turn_completed_delay
+        )
+    wait = named(rows, "livekit.eou_wait")[0]
+    assert wait["span_parents"] == [user["span_id"]]
+    assert wait["span_attributes"]["type"] == "task"
+    assert wait["metrics"]["end"] - wait["metrics"]["start"] == pytest.approx(
+        user["metadata"]["contrib.livekit.end_of_turn_delay"], abs=1e-6
+    )
+    for speech in named(rows, "user_speech"):
+        assert speech["metadata"]["contrib.livekit.vad_silence_duration"] >= 0
+        assert speech["metadata"]["contrib.livekit.vad_inference_duration"] >= 0
     by_id = {row["span_id"]: row for row in rows}
     for speech in named(rows, "user_speech"):
         parent = by_id[speech["span_parents"][0]]
