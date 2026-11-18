@@ -31,7 +31,7 @@ Situational:
 References in this skill (open when the task needs them):
 - [references/span-design.md](references/span-design.md) — span type/name, completion vs agentic, payload format, `metadata` fields, token ownership, metric keys, attachments. Open before defining or changing span shape.
 - [references/span-origin.md](references/span-origin.md) — the `_INSTRUMENTATION = "<provider>-auto"` pattern. Open when creating spans in a new integration or a new code path.
-- [references/streaming-lifecycle.md](references/streaming-lifecycle.md) — exit paths and GC finalization for streamed responses. Open when wrapping any stream.
+- [references/streaming-lifecycle.md](references/streaming-lifecycle.md) — exit paths, lifecycle state, and cleanup. Open when wrapping a stream or tracking an event-driven session or response.
 
 ## Version And CI Routing
 
@@ -90,16 +90,21 @@ Declarative setup on the `BaseIntegration` subclass: `name`, `import_names`, `pa
 - Only instrument AI-generation-relevant ops (LLM calls, embeddings, tool exec, media gen, agent runs).
 - Do not over-serialize. `span.log` already runs `bt_safe_deep_copy` (pydantic, dataclasses, attachments). Log readable dicts/lists/scalars and materialized attachments; no JSON dumps/loads or recursive conversion in tracing code.
 - Every `llm` span has `metadata.model` and `metadata.provider` (whose pricing applies, not the framework name).
+- Before writing a usage mapper in a framework integration, check the underlying provider's `tracing.py` for a compatible parser. Reuse it when the payload shape matches, and verify reported usage details against the recording. For example, the OpenAI parser maps Responses `cache_write_tokens` to `prompt_cache_creation_tokens`.
 
 ## Patcher Rules
 
 One patcher per coherent target: `FunctionWrapperPatcher` (one import path / method surface), `CompositeFunctionWrapperPatcher` (one logical surface across related targets), `CallbackPatcher` (setup side effects). Use `target_module` for deep or optional submodules, `superseded_by` for version-conditional fallbacks, lower `priority` only when ordering matters. Manual `wrap_*()` helpers stay thin: `return AgentPatcher.wrap_target(Agent)`.
+
+When an optional feature depends on several hooks, gate the composite in `applies()`. Resolve all required hooks and check the call signatures or async behavior the wrappers depend on. Skip the feature quietly when the hooks are absent or incompatible. Apply the same gate from manual setup and let the shared composite manage patch markers and idempotency.
 
 ## Testing Rules
 
 Tests live in the provider package. Red → green for bug fixes.
 
 - **VCR, not mocks or fakes.** Use `@pytest.mark.vcr` with real provider recordings. Mocks are only for narrow error injection, purely local version-routing logic, or patcher existence checks. A fix in `tracing.py` still gets a cassette-backed regression when a real payload triggers the bug. Hand-built stand-ins for provider objects count as fakes.
+- **Framework behavior:** drive a real pipeline or runner through its normal entry point with recorded provider traffic, and assert on exported spans. Real frame classes fed directly to private trackers or observer callbacks still bypass the event path and ordering under test. Extend an existing replay case when possible. Keep error injection narrow when a recording cannot trigger the failure, such as a span-export error.
+- **Exception and cancellation tests:** put post-failure assertions, such as restoration of the caller's current span, after the `pytest.raises` block so they execute.
 - **Assert on emitted spans**, not just provider return values: `type`, `name`, `input`/`output` shape, `metadata.model`/`provider`/`tools`, required `metrics`, parent/child order for agentic APIs, `context.span_origin.instrumentation.name`, attachments, error logging.
 - **Streaming:** assert the provider iterator still works and the final span has aggregated `output` + `time_to_first_token`. Follow [references/streaming-lifecycle.md](references/streaming-lifecycle.md) for exit-path coverage.
 - **Cassettes** live in `integrations/<provider>/cassettes/<version>/`; `integrations/conftest.py` resolves the version dir — never add per-test `vcr_cassette_dir` fixtures. Re-record only when behavior intentionally changed. Sanitize binary media in request and response bodies.

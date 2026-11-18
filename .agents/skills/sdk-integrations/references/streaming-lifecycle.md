@@ -1,6 +1,8 @@
 # Streaming Lifecycle Review
 
-Open this when an integration wraps a streamed response (sync or async iterator, context manager, or provider stream object).
+Open this when an integration wraps a streamed response or tracks an event-driven session or response.
+
+## Wrapped streams
 
 Review every exit path, not just full consumption. Check the real provider's
 iterator, context-manager, cancellation, and garbage-collection behavior before
@@ -21,3 +23,9 @@ the span's final output and end time.
 - Check that neither iteration nor cleanup leaves the stream span current in
   the caller's context. GC is a best-effort fallback, not a substitute for
   deterministic cleanup when the caller explicitly closes the stream.
+
+## Event-driven sessions and responses
+
+- Identify which events end remote work and which end local processing. If queued events can arrive after the remote model ends, keep a draining phase until framework teardown. Give each lifecycle explicit phases when ordered transitions would otherwise be spread across several flags. Track independent completion signals together on the record that owns them and allow either arrival order.
+- Keep correlation state for each entity together. Remove active entries when their work completes. Bound recent routing history for long-lived sessions, keeping entries needed by in-flight work. Preserve transcript and output content required for span export.
+- On normal teardown and cancellation, finish pending spans once and release tracker-owned payload buffers and indexes. Extend a recorded pipeline test to verify cleanup after teardown. Retain a reference to the tracker when checking that cleanup releases its state.

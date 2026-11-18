@@ -133,6 +133,8 @@ nox -s "test_openai(latest)" -- -k "test_chat_metrics"
 
 ### Provider and integration changes
 
+Use the [SDK integrations skill](.agents/skills/sdk-integrations/SKILL.md) when changing integration patchers, tracing, or tests. Apply its review checks before opening a PR or handing off the change.
+
 Version-specific behavior matters in this repo.
 
 Before changing provider/integration behavior:
