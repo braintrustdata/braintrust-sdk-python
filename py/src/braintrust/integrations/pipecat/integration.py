@@ -4,6 +4,7 @@ from braintrust.integrations.base import BaseIntegration
 
 from .patchers import (
     LLMServicePushFramePatcher,
+    OpenAILivePatcher,
     PipelineWorkerPatcher,
     SegmentedSTTPushSegmentFramesPatcher,
     STTServiceProcessGeneratorPatcher,
@@ -22,4 +23,5 @@ class PipecatIntegration(BaseIntegration):
         LLMServicePushFramePatcher,
         STTServiceProcessGeneratorPatcher,
         SegmentedSTTPushSegmentFramesPatcher,
+        OpenAILivePatcher,
     )

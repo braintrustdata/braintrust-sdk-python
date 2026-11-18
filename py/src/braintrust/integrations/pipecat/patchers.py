@@ -1,5 +1,6 @@
 """Pipecat integration patchers."""
 
+import inspect
 from contextvars import ContextVar
 from typing import Any
 
@@ -7,6 +8,8 @@ from braintrust._audio.config import AudioRecordingOptions
 from braintrust.integrations.base import CompositeFunctionWrapperPatcher, FunctionWrapperPatcher
 
 from .tracing import BraintrustPipecatObserver
+from .tracing._common import LOG
+from .tracing._live import is_live_service
 
 
 _DEFAULT_OBSERVER_OPTIONS: dict[str, Any] = {
@@ -74,14 +77,18 @@ def _release_response_span(service: Any) -> None:
 async def traced_llm_push_frame(wrapped: Any, instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
     """Make an LLM service's llm_response span current while it makes the call.
 
-    Every LLM service pushes its response start frame, sends the provider
-    request and pushes its response end frame from the same task. Spans the
+    Cascade LLM services push their response start frame, send the provider
+    request and push their response end frame from the same task. Spans the
     provider integration starts in between nest under llm_response.
     """
     observer = _ACTIVE_OBSERVER.get()
     frame = args[0] if args else kwargs.get("frame")
     kind = type(frame).__name__
-    if observer is None or kind not in ("LLMFullResponseStartFrame", "LLMFullResponseEndFrame"):
+    if (
+        observer is None
+        or kind not in ("LLMFullResponseStartFrame", "LLMFullResponseEndFrame")
+        or is_live_service(instance)
+    ):
         return await wrapped(*args, **kwargs)
     _release_response_span(instance)
     if kind == "LLMFullResponseEndFrame":
@@ -166,6 +173,77 @@ class PipelineWorkerPatcher(CompositeFunctionWrapperPatcher):
     sub_patchers = (PipelineWorkerInitPatcher, PipelineWorkerRunPatcher)
 
 
+async def traced_live_event(wrapped: Any, instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
+    observer = _ACTIVE_OBSERVER.get()
+    event = args[0] if args else kwargs.get("evt")
+    if observer is not None:
+        observer._live_event(instance, event)
+    result = await wrapped(*args, **kwargs)
+    if observer is not None:
+        observer._live_event_processed(event)
+    return result
+
+
+async def traced_live_client_event(wrapped: Any, instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
+    observer = _ACTIVE_OBSERVER.get()
+    result = await wrapped(*args, **kwargs)
+    if observer is not None:
+        observer._live_client_event(args[0] if args else kwargs.get("event"))
+    return result
+
+
+class OpenAILiveEventPatcher(FunctionWrapperPatcher):
+    name = "openai_live_event"
+    target_module = "pipecat.services.openai.live.llm"
+    target_path = "OpenAILiveLLMService._handle_server_event"
+    wrapper = staticmethod(traced_live_event)
+
+
+class OpenAILiveClientEventPatcher(FunctionWrapperPatcher):
+    name = "openai_live_client_event"
+    target_module = "pipecat.services.openai.live.llm"
+    target_path = "OpenAILiveLLMService.send_client_event"
+    wrapper = staticmethod(traced_live_client_event)
+
+
+class OpenAILivePatcher(CompositeFunctionWrapperPatcher):
+    name = "openai_live"
+    sub_patchers = (OpenAILiveEventPatcher, OpenAILiveClientEventPatcher)
+
+    @classmethod
+    def applies(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
+        root = OpenAILiveEventPatcher.resolve_root(module, version, target=target)
+        return getattr(root, "OpenAILiveLLMService", None) is not None
+
+    @classmethod
+    def _compatible(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
+        for patcher, argument in ((OpenAILiveEventPatcher, "evt"), (OpenAILiveClientEventPatcher, "event")):
+            method = patcher.resolve_target(module, version, target=target)
+            if not inspect.iscoroutinefunction(method):
+                return False
+            try:
+                inspect.signature(method).bind(None, **{argument: None})
+            except (TypeError, ValueError):
+                return False
+        return True
+
+    @classmethod
+    def is_patched(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
+        return cls._compatible(module, version, target=target) and super().is_patched(module, version, target=target)
+
+    @classmethod
+    def patch(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
+        if not cls.applies(module, version, target=target):
+            return False
+        if not cls._compatible(module, version, target=target):
+            LOG.warning(
+                "GPT-Live model/turn tracing disabled: incompatible Pipecat Live event hooks. "
+                "Validated with pipecat-ai 1.16.0. Audio capture and other Pipecat tracing remain available."
+            )
+            return False
+        return super().patch(module, version, target=target)
+
+
 def wrap_pipeline_worker(
     PipelineWorker: Any,
     *,
@@ -199,4 +277,6 @@ def wrap_pipeline_worker(
     LLMServicePushFramePatcher.wrap_target(LLMService)
     STTServiceProcessGeneratorPatcher.wrap_target(STTService)
     SegmentedSTTPushSegmentFramesPatcher.wrap_target(SegmentedSTTService)
+    # Optional on older Pipecat versions; the patchers feature-detect the module.
+    OpenAILivePatcher.patch(None, None)
     return PipelineWorkerPatcher.wrap_target(PipelineWorker)

@@ -19,6 +19,7 @@ from braintrust.logger import NOOP_SPAN, Span, SpanTypeAttribute, current_span
 from ._agent import AgentTracker
 from ._common import LOG, SpanFactory, is_pipeline_sink, processor_kind, start_span
 from ._context import ContextLinker
+from ._live import LiveTracker, is_live_service
 from ._user import UserTracker
 
 
@@ -55,6 +56,8 @@ _TERMINAL_FRAME_TYPES = {"EndFrame", "StopFrame", "CancelFrame"}
 _UPSTREAM_IGNORED_FRAME_TYPES = {
     "UserStartedSpeakingFrame",
     "UserStoppedSpeakingFrame",
+    "ProposedUserStartedSpeakingFrame",
+    "ProposedUserStoppedSpeakingFrame",
     "VADUserStartedSpeakingFrame",
     "VADUserStoppedSpeakingFrame",
     "BotStartedSpeakingFrame",
@@ -81,6 +84,8 @@ class _Session:
     agent: AgentTracker
     # Without playback, a model response end is the agent completion boundary.
     has_output_transport: bool = False
+    live: LiveTracker | None = None
+    live_mode: bool = False
 
 
 class _FrameAdmission:
@@ -204,6 +209,36 @@ class BraintrustPipecatObserver(BaseObserver):
         await self._finish()
         await super().cleanup()
 
+    def _live_event(self, service: Any, event: Any) -> None:
+        if self._phase is _SessionPhase.CLOSED:
+            return
+        try:
+            session = self._start_session()
+            if session.live is None:
+                # The model span represents an observed remote session, not
+                # whichever notification happens to arrive first.
+                if event.type != "session.started":
+                    return
+                session.live_mode = True
+                session.live = LiveTracker(session, service)
+            session.live.event(event)
+        except Exception:
+            LOG.warning("Unable to trace Pipecat Live event", exc_info=True)
+
+    def _live_event_processed(self, event: Any) -> None:
+        try:
+            if self._session is not None and self._session.live is not None:
+                self._session.live.event_processed(event)
+        except Exception:
+            LOG.warning("Unable to finish Pipecat Live response processing", exc_info=True)
+
+    def _live_client_event(self, event: Any) -> None:
+        try:
+            if self._session is not None and self._session.live is not None:
+                self._session.live.client_event(event)
+        except Exception:
+            LOG.warning("Unable to trace Pipecat Live client event", exc_info=True)
+
     async def _response_span(self, frame: "Frame", push: Callable[[], Awaitable[Any]]) -> tuple[Any, Span | None]:
         """Push a service's response start frame, then return its span.
 
@@ -318,6 +353,7 @@ class BraintrustPipecatObserver(BaseObserver):
             return
         end_ms = session.clock.now_ms()
         closers: tuple[Callable[[], None], ...] = (
+            lambda: session.live.close(end_ms) if session.live is not None else None,
             lambda: session.user.close(end_ms),
             lambda: session.agent.interrupt(interrupted=False, end_ms=end_ms),
             lambda: session.span.end(end_time=session.clock.wall(end_ms)),
@@ -340,6 +376,37 @@ class BraintrustPipecatObserver(BaseObserver):
         self, session: _Session, frame: "Frame", processor: "FrameProcessor | None", *, played: bool
     ) -> None:
         kind = type(frame).__name__
+        live_service = is_live_service(processor)
+        if live_service:
+            # Even without compatible event hooks, never reinterpret Live's
+            # compatibility frames as cascade inference/TTS or speech ownership.
+            session.live_mode = True
+            session.agent.report_uninterrupted_playback = False
+        if live_service and kind in {
+            "ProposedUserStartedSpeakingFrame",
+            "ProposedUserStoppedSpeakingFrame",
+            "InterimTranscriptionFrame",
+            "LLMFullResponseStartFrame",
+            "LLMFullResponseEndFrame",
+            "LLMTextFrame",
+            "TTSStartedFrame",
+            "TTSStoppedFrame",
+            "TTSTextFrame",
+            "TranscriptionFrame",
+            "MetricsFrame",
+        }:
+            # Live's public frames delimit transcript groups, not backend
+            # inference or generated TTS. Speech stays transport-owned.
+            if session.live is not None and self._admission.admit(frame):
+                session.live.frame(frame)
+            return
+        if session.live_mode and kind in {
+            "UserStartedSpeakingFrame",
+            "UserStoppedSpeakingFrame",
+            "LLMContextUserTurnFrame",
+            "LLMContextAssistantTurnFrame",
+        }:
+            return
         action = self._FRAME_ACTIONS.get(kind)
         if action is None or (kind in _TERMINAL_FRAME_TYPES and not is_pipeline_sink(processor)):
             return
@@ -353,7 +420,7 @@ class BraintrustPipecatObserver(BaseObserver):
         if isinstance(frame, frames.OutputAudioRawFrame):
             self._record_audio(session, "agent-output", frame)
             session.agent.played_audio(frame)
-        elif isinstance(frame, frames.TTSTextFrame):
+        elif isinstance(frame, frames.TTSTextFrame) and not session.live_mode:
             session.agent.played_text(frame)
 
     def _record_audio(self, session: _Session, source: _AudioSource, frame: "AudioRawFrame") -> None:
@@ -470,11 +537,17 @@ class BraintrustPipecatObserver(BaseObserver):
         self, s: _Session, frame: "frames.FunctionCallResultFrame", _p: "FrameProcessor | None", _played: bool
     ) -> None:
         s.agent.finish_tool(frame, s.linker)
+        if s.live is not None and getattr(getattr(frame, "properties", None), "is_final", True):
+            # Frame observation is queued separately from Live's result
+            # submission. Both must finish before the parent task closes.
+            s.live.tool_finished(frame.tool_call_id)
 
     def _on_tool_cancelled(
         self, s: _Session, frame: "frames.FunctionCallCancelFrame", _p: "FrameProcessor | None", _played: bool
     ) -> None:
         s.agent.cancel_tool(frame.tool_call_id)
+        if s.live is not None:
+            s.live.tool_finished(frame.tool_call_id)
 
     def _on_tts_started(
         self, s: _Session, frame: "frames.TTSStartedFrame", processor: "FrameProcessor | None", _played: bool

@@ -13,6 +13,7 @@ import importlib
 import inspect
 import json
 import logging
+import math
 import os
 import socket
 import tempfile
@@ -858,21 +859,32 @@ async def test_tts_and_played_text_preserve_native_spacing(memory_logger, tracke
 @pytest.mark.asyncio
 @pytest.mark.parametrize("boundary", ["completed", "interrupted", "shutdown"])
 async def test_playback_completion_distinguishes_shutdown_from_interruption(memory_logger, tracker_observer, boundary):
+    # Local observer bookkeeping: use native public events, without a provider
+    # or private tracker calls. Provider replay cannot control cleanup latency.
     frames = _frames()
-    session = tracker_observer._start_session()
-    with session.clock.event(0):
-        session.agent.start_tts(frames.TTSStartedFrame(), _openai_tts())
-        session.agent.start_playback()
-        session.agent.played_audio(frames.OutputAudioRawFrame(bytes(320), 16000, 1))
-    with session.clock.event(100_000_000):
-        # Synthesis can finish while its audio is still playing.
-        session.agent.stop_tts(frames.TTSStoppedFrame())
-    with session.clock.event(200_000_000):
-        if boundary == "completed":
-            session.agent.stop_playback()
-        elif boundary == "interrupted":
-            session.agent.interrupt()
-        await tracker_observer._finish()
+    FramePushed = _import("pipecat.observers.base_observer.FramePushed")
+    FrameDirection = _import("pipecat.processors.frame_processor.FrameDirection")
+    FrameProcessor = _import("pipecat.processors.frame_processor.FrameProcessor")
+    Transport = _import("pipecat.transports.websocket.server.WebsocketServerTransport")
+    Params = _import("pipecat.transports.websocket.server.WebsocketServerParams")
+    transport = Transport(params=Params(audio_out_enabled=True))
+    destination = FrameProcessor()
+
+    async def push(frame, timestamp):
+        await tracker_observer.on_push_frame(
+            FramePushed(transport.output(), destination, frame, FrameDirection.DOWNSTREAM, timestamp)
+        )
+
+    await push(frames.BotStartedSpeakingFrame(), 0)
+    await push(frames.OutputAudioRawFrame(bytes(320), 16000, 1), 0)
+    if boundary == "completed":
+        await push(frames.BotStoppedSpeakingFrame(), 200_000_000)
+    elif boundary == "interrupted":
+        await push(frames.InterruptionFrame(), 200_000_000)
+    else:
+        # Teardown can outlast the final 10 ms of audio that was actually sent.
+        await asyncio.sleep(0.03)
+    await tracker_observer.cleanup()
 
     logs = memory_logger.pop()
     playback = _single_span(logs, "agent_speech")
@@ -881,10 +893,8 @@ async def test_playback_completion_distinguishes_shutdown_from_interruption(memo
         assert playback["metadata"]["contrib.pipecat.incomplete"] is True
     else:
         assert "contrib.pipecat.incomplete" not in playback["metadata"]
-    assert playback["metadata"]["audio.selections"]["selection-0"] == {
-        "start_offset_ms": 0,
-        "end_offset_ms": 200,
-    }
+    window = playback["metadata"]["audio.selections"]["selection-0"]
+    assert window["end_offset_ms"] - window["start_offset_ms"] == (10 if boundary == "shutdown" else 200)
     _assert_all_ended(logs)
 
 
@@ -908,7 +918,260 @@ async def test_recognition_scope_restores_context_after_errors_and_cancellation(
                 assert logger.current_span() is recognition
                 await asyncio.sleep(0)
                 raise failure("operation stopped")
-        assert logger.current_span() is caller
+            assert logger.current_span() is caller
+
+
+def test_live_incompatible_hook_reports_disabled_tracing(monkeypatch, caplog, memory_logger):
+    live = pytest.importorskip("pipecat.services.openai.live.llm")
+    # Simulate an upstream API removal. Provider cassettes cannot reproduce a
+    # missing method; assertions concern the public setup diagnostic only.
+    monkeypatch.delattr(live.OpenAILiveLLMService, "_handle_server_event")
+    with caplog.at_level(logging.WARNING):
+        _instrument()
+        assert "GPT-Live model/turn tracing disabled" in caplog.text
+        caplog.clear()
+        wrap_pipeline_worker(_import("pipecat.pipeline.worker.PipelineWorker"))
+        assert "GPT-Live model/turn tracing disabled" in caplog.text
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("boundary", ["late_transcript", "cancel", "cancel_callback"])
+async def test_live_observations(memory_logger, vcr_cassette_dir, boundary):
+    live = pytest.importorskip("pipecat.services.openai.live.llm")
+    from websockets.asyncio.server import serve
+    from websockets.exceptions import ConnectionClosed
+
+    FunctionSchema = _import("pipecat.adapters.llm.schemas.function_schema.FunctionSchema")
+    ToolsSchema = _import("pipecat.adapters.llm.schemas.tools_schema.ToolsSchema")
+    Pipeline = _import("pipecat.pipeline.pipeline.Pipeline")
+    LLMContext = _import("pipecat.processors.aggregators.llm_context.LLMContext")
+    OpenAIResponsesLLMService = _import("pipecat.services.openai.responses.llm.OpenAIResponsesLLMService")
+    WorkerRunner = _import("pipecat.workers.runner.WorkerRunner")
+
+    # Native WebSocket capture, including the real built-in missing-tool result.
+    # Audio payloads are omitted; shared recorder coverage lives in voice tests.
+    recording = [
+        json.loads(line) for line in (Path(vcr_cassette_dir) / "test_live_observations.jsonl").read_text().splitlines()
+    ]
+    config = recording[0]["event"]["session"]
+    backend = config["delegation"]["responses"]
+    server_events = [r["event"] for r in recording if r["direction"] == "server"]
+    transcripts = [
+        e for e in server_events if e["type"] in ("session.input_transcript.delta", "session.output_transcript.delta")
+    ]
+    late = transcripts[-1]
+    sent, outgoing = [], []
+    ready, callback_cancelled = asyncio.Event(), asyncio.Event()
+    replay_errors = []
+
+    async def replay(websocket):
+        delayed_transcripts = []
+        try:
+            for record in recording:
+                event = record["event"]
+                if record["direction"] == "client":
+                    actual = json.loads(await websocket.recv())
+                    outgoing.append(actual)
+                    assert actual["type"] == event["type"]
+                    if actual["type"] == "session.start":
+                        assert actual["session"]["instructions"] == event["session"]["instructions"]
+                    if actual["type"] == "response.item.create":
+                        assert actual["item"] == event["item"]
+                    if actual["type"] == "session.close":
+                        # Deliver a captured fragment late, while the real
+                        # service awaits the server's close acknowledgment.
+                        await websocket.send(json.dumps(late))
+                        sent.append(late)
+                else:
+                    if event == late:
+                        ready.set()
+                        continue
+                    if boundary == "cancel_callback" and event["type"] == "session.output_transcript.delta":
+                        # Delay the independent speech stream until backend
+                        # text has arrived, then cancel inside its public callback.
+                        delayed_transcripts.append(event)
+                        continue
+                    if (
+                        boundary == "cancel_callback"
+                        and event["type"] == "response.event"
+                        and event["event"]["type"] == "response.output_text.done"
+                    ):
+                        await websocket.send(json.dumps(delayed_transcripts[0]))
+                        sent.append(delayed_transcripts[0])
+                        await websocket.wait_closed()
+                        return
+                    await websocket.send(json.dumps(event))
+                    sent.append(event)
+                    if boundary != "late_transcript" and event["type"] == "session.output_transcript.delta":
+                        await websocket.wait_closed()
+                        return
+        except ConnectionClosed:
+            if boundary == "late_transcript":
+                raise
+        except Exception as exc:
+            replay_errors.append(exc)
+            ready.set()
+
+    _instrument()
+    async with serve(replay, "127.0.0.1", 0) as server:
+        port = server.sockets[0].getsockname()[1]
+        service = live.OpenAILiveLLMService(
+            api_key="unused-in-replay",
+            base_url=f"ws://127.0.0.1:{port}",
+            settings=live.OpenAILiveLLMService.Settings(
+                model=config["model"], system_instruction=config["instructions"]
+            ),
+            delegation=live.ResponsesDelegation(
+                settings=OpenAIResponsesLLMService.Settings(
+                    model=backend["model"], system_instruction=backend["instructions"]
+                )
+            ),
+        )
+        context = LLMContext(
+            messages=[{"role": "system", "content": "Superseded context instructions."}]
+            if boundary == "cancel_callback"
+            else [],
+            tools=ToolsSchema(
+                standard_tools=[
+                    FunctionSchema(
+                        name=t["name"],
+                        description=t["description"],
+                        properties=t["parameters"]["properties"],
+                        required=t["parameters"]["required"],
+                    )
+                    for t in backend["tools"]
+                ]
+            ),
+        )
+
+        # Pipecat executes its real missing-tool handler. No replacement tool,
+        # provider client, frame processor, or observer stands in for the SDK.
+        @service.event_handler("on_after_push_frame")
+        async def on_frame(_service, frame):
+            if isinstance(frame, _frames().LLMTextFrame) and boundary != "late_transcript":
+                ready.set()
+                if boundary == "cancel_callback":
+                    try:
+                        await asyncio.Event().wait()
+                    finally:
+                        callback_cancelled.set()
+
+        worker = _make_worker(Pipeline([service]))
+        runner = WorkerRunner(handle_sigint=False)
+        await runner.add_workers(worker)
+        running = asyncio.create_task(runner.run())
+        try:
+            await worker.queue_frame(_frames().LLMContextFrame(context))
+            await asyncio.wait_for(ready.wait(), 10)
+            if replay_errors:
+                raise replay_errors[0]
+            if boundary == "late_transcript":
+                await worker.queue_frame(_frames().EndFrame())
+            else:
+                await worker.cancel()
+            await asyncio.wait_for(running, 10)
+        finally:
+            if not running.done():
+                await worker.cancel()
+                await asyncio.wait_for(running, 10)
+    assert not replay_errors
+    if boundary == "cancel_callback":
+        assert callback_cancelled.is_set()
+
+    logs = memory_logger.pop()
+    session = _single_span(logs, "session")
+    model = _single_span(logs, "pipecat.live")
+    assert model["span_attributes"]["type"] == "llm"
+    assert model["metadata"]["audio.scope"] == "session"
+    assert model["span_parents"] == [session["span_id"]]
+    assert model["metadata"]["contrib.pipecat.live.finalization_confirmed"] is (boundary == "late_transcript")
+    assert all(row["metrics"].get("end") is not None for row in logs)
+    turns = _spans_named(logs, "user_turn") + _spans_named(logs, "agent_turn")
+    by_id = {row["span_id"]: row for row in turns}
+    received = _spans_named(logs, "transcript_received")
+    assert turns and len(turns) == len(received)
+    for role in ("user", "assistant"):
+        kind = "session.input_transcript.delta" if role == "user" else "session.output_transcript.delta"
+        observed = "".join(e["delta"] for e in sent if e["type"] == kind)
+        assert "".join(r["output"][0]["content"] for r in received if r["output"][0]["role"] == role) == observed
+    for row in received:
+        turn = by_id[row["metadata"]["turn.id"]]
+        assert row["span_parents"] == [turn["span_id"]]
+        assert turn["metadata"]["turn.id"] == turn["span_id"]
+        assert turn["span_attributes"]["name"] == ("user_turn" if row["output"][0]["role"] == "user" else "agent_turn")
+        assert turn["metrics"]["start"] <= row["metrics"]["start"] <= row["metrics"]["end"] <= turn["metrics"]["end"]
+        assert "audio.selections" not in row["metadata"]
+        assert "audio.selections" not in turn["metadata"]
+        assert "turn.reply_to" not in turn["metadata"]
+    # Cancellation, or a group opened by late text after native stop, must not
+    # be presented as a normally completed framework turn.
+    assert any(row["metadata"].get("turn.incomplete") for row in turns)
+    assert all("turn.id" not in row.get("metadata", {}) for row in logs if row not in turns + received)
+    responses = _spans_named(logs, "llm_response")
+    assert all(row["span_attributes"]["type"] == "task" and "tokens" not in row["metrics"] for row in responses)
+    assert all(not _link_targets(row, "consumes_tool_result") for row in responses)
+    llms = _spans_named(logs, "pipecat.live.backend_response")
+    if boundary == "late_transcript":
+        assert len(responses) == 2
+        assert (
+            responses[1]["metadata"]["contrib.pipecat.live.previous_response_id"]
+            == responses[0]["metadata"]["contrib.pipecat.live.response_id"]
+        )
+        delegation = next(e for e in server_events if e["type"] == "session.delegation.created")
+        assert all(
+            row["metadata"]["contrib.pipecat.live.delegation_offset_ms"] == delegation["offset_ms"]
+            for row in responses
+        )
+        tool = _single_span(logs, "lookup_order")
+        assert tool["span_parents"] == [responses[0]["span_id"]]
+        assert _link_targets(tool, "requested_by")
+        assert responses[0]["metrics"]["end"] >= tool["metrics"]["end"]
+        assert any(e["type"] == "response.item.create" for e in outgoing)
+        completions = [
+            e["event"]["response"]
+            for e in server_events
+            if e["type"] == "response.event" and e["event"]["type"] == "response.completed"
+        ]
+        assert [r["metrics"]["tokens"] for r in llms] == [r["usage"]["total_tokens"] for r in completions]
+        completed_items = [
+            e["event"]["item"]
+            for e in sent
+            if e["type"] == "response.event" and e["event"]["type"] == "response.output_item.done"
+        ]
+        assert [r["output"] for r in llms] == [[item] for item in completed_items]
+        closed = next(e for e in server_events if e["type"] == "session.closed")
+        assert model["metadata"]["contrib.pipecat.live.usage_seconds"] == closed["usage"]["seconds"]
+    else:
+        assert responses[-1]["metadata"].get("contrib.pipecat.incomplete")
+        assert llms[-1]["metadata"].get("contrib.pipecat.incomplete")
+        events = [e["event"] for e in sent if e["type"] == "response.event"]
+        item = [e["item"] for e in events if e["type"] == "response.output_item.added"][-1]
+        assert not any(e["type"] == "response.output_item.done" and e["item"]["id"] == item["id"] for e in events)
+        if boundary == "cancel":
+            arguments = "".join(e["delta"] for e in events if e["type"] == "response.function_call_arguments.delta")
+            assert arguments
+            expected = {**item, "arguments": arguments}
+        else:
+            part = next(e["part"] for e in events if e["type"] == "response.content_part.added")
+            text = "".join(e["delta"] for e in events if e["type"] == "response.output_text.delta")
+            assert text
+            expected = {**item, "content": [{**part, "text": text}]}
+        assert llms[-1]["output"] == responses[-1]["output"] == [expected]
+    started = next(e for e in server_events if e["type"] == "session.started")
+    assert [message for message in model["input"] if message.get("role") == "system"] == [
+        {"role": "system", "content": started["session"]["instructions"]}
+    ]
+    by_id = {row["span_id"]: row for row in logs}
+    for row in logs:
+        for parent_id in row.get("span_parents") or []:
+            parent = by_id[parent_id]
+            parent_start = parent["metrics"]["start"]
+            if parent_id == session["span_id"]:
+                # The session uses time.time(); recorder-derived child times
+                # can round the same Windows clock tick one float apart.
+                parent_start = math.nextafter(parent_start, -math.inf)
+            assert parent_start <= row["metrics"]["start"], row["span_attributes"]["name"]
+            assert row["metrics"]["end"] <= parent["metrics"]["end"], row["span_attributes"]["name"]
 
 
 # Keep provider tests last: enabling OpenAI patches the client for the process.
