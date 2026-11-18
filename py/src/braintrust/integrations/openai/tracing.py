@@ -13,7 +13,6 @@ from typing import Any
 from braintrust.env import BraintrustEnv
 from braintrust.integrations.question import _question_span_input, _question_span_output
 from braintrust.integrations.utils import (
-    _extract_audio_output,
     _image_attachment_from_base64,
     _infer_audio_mime_type,
     _is_not_given,
@@ -2331,12 +2330,22 @@ class SpeechWrapper(BaseWrapper):
         super().__init__(create_fn, acreate_fn, "Speech")
 
     def process_output(self, response: Any, span: Span):
-        output = (
-            _extract_audio_output(response, prefix="generated_speech")
-            if BraintrustEnv.CAPTURE_AGENT_AUDIO_ATTACHMENTS.get(False)
-            else {"type": "audio"}
+        from ._speech import speech_filename, speech_output
+
+        data = getattr(response, "content", b"")
+        span.log(output=speech_output(data, _infer_audio_mime_type(response), speech_filename(response)))
+
+    @classmethod
+    def _parse_params(cls, params: dict[str, Any]) -> dict[str, Any]:
+        from ._speech import speech_input
+
+        return merge_dicts(
+            params.pop("span_info", {}),
+            {
+                "input": speech_input(params),
+                "metadata": {"model": params.get("model"), "provider": "openai"},
+            },
         )
-        span.log(output=output)
 
 
 class _AudioFileWrapper(BaseWrapper):
@@ -2560,7 +2569,23 @@ class TranslationWrapper(_AudioFileWrapper):
         span.log(output=self._extract_text(response))
 
 
-_audio_speech_create_wrapper = _make_base_wrapper_callback(SpeechWrapper)
+def _audio_speech_create_wrapper(wrapped, instance, args, kwargs):
+    # The streaming-response API sets this header before invoking create.
+    headers = kwargs.get("extra_headers") or {}
+    if any(str(key).lower() == RAW_RESPONSE_HEADER and value == "stream" for key, value in headers.items()):
+        from ._speech import trace_stream
+
+        return trace_stream(
+            wrapped,
+            args,
+            kwargs,
+            is_async=_is_async_callable(wrapped),
+            start_span=start_span,
+            params=SpeechWrapper._parse_params(kwargs),
+        )
+    return _make_base_wrapper_callback(SpeechWrapper)(wrapped, instance, args, kwargs)
+
+
 _audio_transcription_create_wrapper = _make_base_wrapper_callback(TranscriptionWrapper)
 _audio_translation_create_wrapper = _make_base_wrapper_callback(TranslationWrapper)
 

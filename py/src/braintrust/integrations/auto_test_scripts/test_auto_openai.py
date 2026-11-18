@@ -101,4 +101,29 @@ if version_satisfies(openai.__version__, ">=3.26.0"):
             instrumentation="openai-auto",
         )
 
+
+# Binary streaming uses the same natural provider span after auto + manual
+# wrapping, without consuming audio ahead of the application.
+with autoinstrument_test_context("test_openai_audio_speech_capture", integration="openai") as memory_logger:
+    client = wrap_openai(openai.OpenAI())
+    with client.audio.speech.with_streaming_response.create(
+        model="tts-1",
+        voice="alloy",
+        input="Hi.",
+        response_format="wav",
+        span_info={"name": "custom speech", "metadata": {"request_tag": "auto-speech-test"}},
+    ) as response:
+        assert b"".join(response.iter_bytes()).startswith(b"RIFF")
+    (span,) = memory_logger.pop()
+    assert span["span_attributes"]["name"] == "custom speech"
+    assert span["metadata"] == {"model": "tts-1", "provider": "openai", "request_tag": "auto-speech-test"}
+    assert span["span_attributes"]["type"] == "llm"
+    assert span["context"]["span_origin"]["instrumentation"]["name"] == "openai-auto"
+    assert span["input"] == {
+        "operation": "speech",
+        "prompt": "Hi.",
+        "parameters": {"voice": "alloy", "format": "wav"},
+    }
+    assert "end" in span["metrics"]
+
 print("SUCCESS")
