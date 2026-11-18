@@ -391,7 +391,7 @@ async def test_voice_session_traces_turns_speech_recognition_generation_and_play
 
     logs = memory_logger.pop()
     root = _single_span(logs, "session")
-    assert root["metadata"]["audio.schema.version"] == "3.0.0"
+    assert root["metadata"]["audio.schema.version"] == "3.1.0"
     assert root["metadata"]["contrib.pipecat.terminal_frame"] == "EndFrame"
     assert root["metadata"]["contrib.pipecat.reason"] == "pipeline complete"
     user_turn = _single_span(logs, "user_turn")

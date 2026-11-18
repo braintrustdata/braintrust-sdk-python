@@ -178,7 +178,7 @@ async def test_consumed_input_drives_real_cascade(
     assert any(row["metadata"].get("turn.reply_to") == user["span_id"] for row in named(rows, "agent_turn"))
     root = named(rows, "session")[0]
     assert root["span_parents"] == [outer.span_id]
-    assert root["metadata"]["audio.schema.version"] == "3.0.0"
+    assert root["metadata"]["audio.schema.version"] == "3.1.0"
     assert isinstance(root["metadata"]["audio.timeline"]["origin_unix_ms"], int)
     for row in rows:
         if row["span_id"] != root["span_id"]:
