@@ -67,7 +67,9 @@ def _direct_prepare_model_wrapper(wrapped: Any, instance: Any, args: Any, kwargs
 
 
 def _start_tool_trace_capture() -> Any:
-    return _tool_trace_state.set([0])
+    # Reuse an active counter: run_sync() wraps run(), and the outer wrapper must see
+    # the tool spans the inner one logged, or it rebuilds them from the messages.
+    return _tool_trace_state.set(_tool_trace_state.get() or [0])
 
 
 def _reset_tool_trace_capture(token: Any) -> None:

@@ -16,7 +16,7 @@ from braintrust.test_helpers import init_test_logger
 from packaging.version import Version
 from pydantic import BaseModel
 from pydantic_ai import Agent, ModelSettings
-from pydantic_ai.messages import ModelRequest, ModelResponse, UserPromptPart
+from pydantic_ai.messages import ModelRequest, ModelResponse, ToolCallPart, UserPromptPart
 from pydantic_ai.usage import UsageLimits
 
 
@@ -1612,8 +1612,12 @@ def test_tool_execution_creates_spans(memory_logger):
     tool_names = [t["name"] for t in tools if isinstance(t, dict)]
     assert "calculate" in tool_names, f"calculate tool should be in toolset, got: {tool_names}"
 
+    # run_sync() wraps run(): the live tool spans must not be rebuilt again from the messages.
+    tool_calls = [p for m in result.new_messages() for p in m.parts if isinstance(p, ToolCallPart)]
     tool_spans = [s for s in spans if s["span_attributes"].get("type") == SpanTypeAttribute.TOOL]
-    assert len(tool_spans) >= 1, f"Expected at least 1 TOOL span, got {len(tool_spans)}"
+    assert len(tool_spans) == len(tool_calls) >= 1, (
+        f"Expected one TOOL span per tool call ({len(tool_calls)}), got {len(tool_spans)}"
+    )
 
     calc_tool_span = next((s for s in tool_spans if s["span_attributes"]["name"] == "calculate"), None)
     assert calc_tool_span is not None, "calculate TOOL span not found"
