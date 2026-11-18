@@ -255,8 +255,9 @@ async def test_agent_run_async(memory_logger, agent_kind):
     chat_span = next(span for span in spans if span["span_attributes"]["type"] == SpanTypeAttribute.LLM)
     assert agent_span is not None
     assert agent_span["span_attributes"]["type"] == SpanTypeAttribute.TASK
-    if agent_kind == "wrapper":
-        assert agent_span["span_attributes"]["name"] == "agent_run [wrapped-agent]"
+    # Unnamed agents must get the caller's variable name, not the wrapper's `instance` argument.
+    expected_name = "wrapped-agent" if agent_kind == "wrapper" else "agent"
+    assert agent_span["span_attributes"]["name"] == f"agent_run [{expected_name}]"
     assert agent_span["input"]["user_prompt"] == TEST_PROMPT
     assert "4" in str(agent_span["output"])
     assert chat_span["span_parents"] == [agent_span["span_id"]]
@@ -301,6 +302,8 @@ def test_agent_run_sync(memory_logger):
     assert chat_span is not None, "chat span not found"
 
     # Check agent span
+    assert agent.name == "agent"
+    assert agent_sync_span["span_attributes"]["name"] == "agent_run_sync [agent]"
     assert agent_sync_span["span_attributes"]["type"] == SpanTypeAttribute.TASK
     assert agent_sync_span["metadata"]["model"] == "gpt-6-luna"
     assert agent_sync_span["metadata"]["provider"] == "openai"
@@ -494,6 +497,7 @@ async def test_agent_run_stream(memory_logger):
 
     # Check agent span
     assert agent_span["span_attributes"]["type"] == SpanTypeAttribute.TASK
+    assert agent_span["span_attributes"]["name"] == "agent_run_stream [agent]"
     assert agent_span["metadata"]["model"] == "gpt-6-luna"
     assert "Count from 1 to 5" in str(agent_span["input"])
     _assert_metrics_are_valid(agent_span["metrics"], start, end)
@@ -937,6 +941,7 @@ def test_agent_run_stream_sync(memory_logger):
 
     # Check agent span
     assert agent_span["span_attributes"]["type"] == SpanTypeAttribute.TASK
+    assert agent_span["span_attributes"]["name"] == "agent_run_stream_sync [agent]"
     assert agent_span["metadata"]["model"] == "gpt-6-luna"
     assert "Count from 1 to 3" in str(agent_span["input"])
     _assert_metrics_are_valid(agent_span["metrics"], start, end)
@@ -1011,6 +1016,7 @@ async def test_agent_run_stream_events(memory_logger):
 
     # Check agent span has basic structure
     assert agent_span["span_attributes"]["type"] == SpanTypeAttribute.TASK
+    assert agent_span["span_attributes"]["name"] == "agent_run_stream_events [agent]"
     assert agent_span["metadata"]["model"] == "gpt-6-luna"
     assert "5+5" in str(agent_span["input"]) or "What" in str(agent_span["input"])
     assert agent_span["metrics"]["event_count"] == event_count

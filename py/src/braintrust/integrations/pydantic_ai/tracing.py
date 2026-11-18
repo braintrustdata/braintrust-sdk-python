@@ -117,7 +117,25 @@ def _log_agent_result(span: Any, input_data: dict[str, Any], result: Any, output
     span.log(input=resolved_input, output=output, metrics=metrics, metadata=metadata)
 
 
+_WRAPPER_MODULES = (__name__, "braintrust.integrations.base")
+
+
+def _infer_agent_name(instance: Any, kwargs: Any) -> None:
+    # Pydantic AI names an unnamed agent after the variable that holds it in the
+    # caller's frame. Under these wrappers that caller would be a Braintrust frame,
+    # so the agent would be named "instance". Infer from the user's frame instead.
+    if getattr(instance, "name", "") is not None or not kwargs.get("infer_name", True):
+        return
+    if not hasattr(instance, "_infer_name"):
+        return
+    frame = inspect.currentframe().f_back
+    while frame.f_back is not None and frame.f_back.f_globals.get("__name__") in _WRAPPER_MODULES:
+        frame = frame.f_back
+    instance._infer_name(frame)
+
+
 async def _agent_run_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+    _infer_agent_name(instance, kwargs)
     input_data, metadata = _build_agent_input_and_metadata(args, kwargs, instance)
 
     with start_span(
@@ -147,6 +165,7 @@ async def _agent_run_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any
 
 
 def _agent_run_sync_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+    _infer_agent_name(instance, kwargs)
     input_data, metadata = _build_agent_input_and_metadata(args, kwargs, instance)
 
     with start_span(
@@ -176,6 +195,7 @@ def _agent_run_sync_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any)
 
 
 def _agent_to_cli_sync_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+    _infer_agent_name(instance, kwargs)
     input_data, metadata = _build_agent_input_and_metadata(args, kwargs, instance)
 
     with start_span(
@@ -194,6 +214,7 @@ def _agent_to_cli_sync_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: A
 
 
 def _agent_run_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+    _infer_agent_name(instance, kwargs)
     input_data, metadata = _build_agent_input_and_metadata(args, kwargs, instance)
     agent_name = instance.name if hasattr(instance, "name") else None
     span_name = f"agent_run_stream [{agent_name}]" if agent_name else "agent_run_stream"
@@ -207,6 +228,7 @@ def _agent_run_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: An
 
 
 def _agent_run_stream_sync_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+    _infer_agent_name(instance, kwargs)
     input_data, metadata = _build_agent_input_and_metadata(args, kwargs, instance)
     agent_name = instance.name if hasattr(instance, "name") else None
     span_name = f"agent_run_stream_sync [{agent_name}]" if agent_name else "agent_run_stream_sync"
@@ -241,6 +263,7 @@ def _agent_run_stream_sync_wrapper(wrapped: Any, instance: Any, args: Any, kwarg
 
 
 def _agent_run_stream_events_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+    _infer_agent_name(instance, kwargs)
     input_data, metadata = _build_agent_input_and_metadata(args, kwargs, instance)
 
     agent_name = instance.name if hasattr(instance, "name") else None
