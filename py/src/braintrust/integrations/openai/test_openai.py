@@ -2155,6 +2155,17 @@ async def test_openai_audio_transcription(memory_logger, is_async, monkeypatch, 
     assert response.text.lower() == TEST_TRANSCRIPT.lower()
 
 
+def test_speech_input_preserves_generation_instructions():
+    # Request-only normalization: no provider response or transport is involved.
+    from braintrust.integrations.openai._speech import speech_input
+
+    assert speech_input({"input": "Hi.", "instructions": "Speak warmly."}) == {
+        "operation": "speech",
+        "prompt": "Hi.",
+        "parameters": {"instructions": "Speak warmly."},
+    }
+
+
 @sync_async
 @pytest.mark.asyncio
 @pytest.mark.parametrize("capture", [False, True])
@@ -2164,20 +2175,190 @@ async def test_openai_audio_speech_capture(memory_logger, monkeypatch, is_async,
     monkeypatch.setenv("BRAINTRUST_CAPTURE_USER_AUDIO_ATTACHMENTS", str(not capture).lower())
     client = wrap_openai(_client(is_async))
     response = await _call(
-        is_async, client.audio.speech.create, model="tts-1", voice="alloy", input="Hi.", response_format="wav"
+        is_async,
+        client.audio.speech.create,
+        model="tts-1",
+        voice="alloy",
+        input="Hi.",
+        response_format="wav",
+        span_info={"name": "custom speech", "metadata": {"request_tag": "speech-test"}},
     )
     assert response.content.startswith(b"RIFF")
     memory_logger.flush()
     (span,) = memory_logger.pop()
-    assert span["input"] == "Hi."
+    assert span["span_attributes"]["name"] == "custom speech"
+    assert span["metadata"] == {"model": "tts-1", "provider": "openai", "request_tag": "speech-test"}
+    assert span["input"] == {"operation": "speech", "prompt": "Hi.", "parameters": {"voice": "alloy", "format": "wav"}}
     if capture:
-        attachment = span["output"]["file"]["file_data"]
+        attachment = span["output"]["content"][0]["file"]["file_data"]
         assert attachment["type"] == "braintrust_attachment"
         assert attachment["content_type"].startswith("audio/")
         assert len(memory_logger.upload_attempts) == 1
     else:
-        assert span["output"] == {"type": "audio"}
+        assert span["output"] == {"content": []}
         assert not memory_logger.upload_attempts
+
+
+@sync_async
+@pytest.mark.asyncio
+@pytest.mark.parametrize("capture", [False, True])
+@pytest.mark.parametrize("consumption", ["full", "partial", "read", "empty"])
+@pytest.mark.vcr(cassette_name="test_openai_audio_speech_capture")
+async def test_openai_streaming_speech_preserves_consumption_and_parent(
+    memory_logger, monkeypatch, is_async, capture, consumption
+):
+    monkeypatch.setenv("BRAINTRUST_CAPTURE_AGENT_AUDIO_ATTACHMENTS", str(capture).lower())
+    client = wrap_openai(_client(is_async))
+    audio = bytearray()
+    with logger.start_span(name="tts", type="task") as parent:
+        manager = client.audio.speech.with_streaming_response.create(
+            model="tts-1",
+            voice="alloy",
+            input="Hi.",
+            response_format="wav",
+            span_info={"name": "custom speech", "metadata": {"request_tag": "speech-test"}},
+        )
+        if is_async:
+            async with manager as response:
+                if consumption == "read":
+                    audio.extend(await response.read())
+                elif consumption != "empty":
+                    async for chunk in response.iter_bytes(128):
+                        audio.extend(chunk)
+                        if consumption == "partial":
+                            break
+        else:
+            with manager as response:
+                if consumption == "read":
+                    audio.extend(response.read())
+                elif consumption != "empty":
+                    for chunk in response.iter_bytes(128):
+                        audio.extend(chunk)
+                        if consumption == "partial":
+                            break
+        assert logger.current_span() is parent
+    memory_logger.flush()
+    spans = memory_logger.pop()
+    model = _find_span_by_name(spans, "custom speech")
+    assert len(spans) == 2
+    assert model["span_parents"] == [parent.span_id]
+    assert model["span_attributes"]["type"] == "llm"
+    assert model["metadata"] == {"model": "tts-1", "provider": "openai", "request_tag": "speech-test"}
+    assert model["context"]["span_origin"]["instrumentation"]["name"] == "openai-auto"
+    assert model["input"] == {
+        "operation": "speech",
+        "prompt": "Hi.",
+        "parameters": {"voice": "alloy", "format": "wav"},
+    }
+    assert model["metrics"]["end"] >= model["metrics"]["start"]
+    assert not {"tokens", "prompt_tokens", "completion_tokens"} & set(model["metrics"])
+    if consumption == "empty":
+        assert not audio
+        assert "time_to_first_token" not in model["metrics"]
+    else:
+        assert audio.startswith(b"RIFF")
+        assert model["metrics"]["time_to_first_token"] >= 0
+    if capture and consumption in {"full", "read"}:
+        part = model["output"]["content"][0]["file"]
+        assert part["file_data"]["type"] == "braintrust_attachment"
+        assert part["byte_size"] == len(audio)
+        assert len(memory_logger.upload_attempts) == 1
+    else:
+        assert model["output"] == {"content": []}
+        assert not memory_logger.upload_attempts
+
+
+@sync_async
+@pytest.mark.asyncio
+@pytest.mark.vcr(cassette_name="test_openai_audio_speech_capture")
+async def test_speech_stream_mime_uses_native_response_headers(memory_logger, is_async):
+    from braintrust.integrations.openai._speech import _SpeechTrace
+
+    client = wrap_openai(_client(is_async))
+    manager = client.audio.speech.with_streaming_response.create(
+        model="tts-1", voice="alloy", input="Hi.", response_format="wav"
+    )
+    response = await manager.__aenter__() if is_async else manager.__enter__()
+    try:
+        # Exercise inference without a request-format hint using a real SDK
+        # response and its recorded headers, rather than a fabricated response.
+        state = _SpeechTrace(logger.NOOP_SPAN, response, None, time.monotonic())
+        assert state.mime_type == response.headers["content-type"] == "audio/wav"
+    finally:
+        if is_async:
+            await manager.__aexit__(None, None, None)
+        else:
+            manager.__exit__(None, None, None)
+
+
+@sync_async
+@pytest.mark.asyncio
+@pytest.mark.vcr(cassette_name="test_openai_audio_speech_capture")
+async def test_openai_streaming_speech_errors_omit_partial_attachments(memory_logger, monkeypatch, is_async):
+    monkeypatch.setenv("BRAINTRUST_CAPTURE_AGENT_AUDIO_ATTACHMENTS", "true")
+    client = wrap_openai(_client(is_async))
+    manager = client.audio.speech.with_streaming_response.create(
+        model="tts-1", voice="alloy", input="Hi.", response_format="wav"
+    )
+    if is_async:
+        async with manager as response:
+            stream = response.iter_bytes(128)
+            assert await anext(stream)
+            with pytest.raises(asyncio.CancelledError):
+                await stream.athrow(asyncio.CancelledError())
+    else:
+        with manager as response:
+            stream = response.iter_bytes(128)
+            assert next(stream)
+            with pytest.raises(RuntimeError, match="stopped"):
+                stream.throw(RuntimeError("stopped"))
+    memory_logger.flush()
+    (span,) = memory_logger.pop()
+    assert "error" in span
+    assert span["metrics"]["end"] >= span["metrics"]["start"]
+    assert span["output"] == {"content": []}
+    assert not memory_logger.upload_attempts
+
+
+@sync_async
+@pytest.mark.asyncio
+@pytest.mark.parametrize("consume_one", [False, True])
+@pytest.mark.vcr(cassette_name="test_openai_audio_speech_capture")
+async def test_abandoned_speech_response_finalizes_without_partial_audio(
+    memory_logger, monkeypatch, is_async, consume_one
+):
+    import gc
+
+    monkeypatch.setenv("BRAINTRUST_CAPTURE_AGENT_AUDIO_ATTACHMENTS", "true")
+    client = wrap_openai(_client(is_async))
+    manager = client.audio.speech.with_streaming_response.create(
+        model="tts-1", voice="alloy", input="Hi.", response_format="wav"
+    )
+    response = await manager.__aenter__() if is_async else manager.__enter__()
+    if consume_one:
+        stream = response.iter_bytes(128)
+        assert await anext(stream) if is_async else next(stream)
+        del stream
+    # Release the real transport resource, then abandon the SDK response.
+    # Its trace must finalize without asking the transport for more bytes.
+    if is_async:
+        await response.http_response.aclose()
+    else:
+        response.http_response.close()
+    del response, manager
+    gc.collect()
+    if is_async:
+        # Python first schedules async-generator close, then releases its
+        # response reference. Trace finalization itself does no async work.
+        await asyncio.sleep(0)
+        await asyncio.sleep(0)
+    memory_logger.flush()
+    (span,) = memory_logger.pop()
+    assert "end" in span["metrics"]
+    assert span["output"] == {"content": []}
+    assert not memory_logger.upload_attempts
+    gc.collect()
+    assert memory_logger.pop() == []
 
 
 @sync_async
