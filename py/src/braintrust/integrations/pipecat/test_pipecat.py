@@ -902,6 +902,8 @@ async def test_live_observations(memory_logger, vcr_cassette_dir, boundary):
             await asyncio.wait_for(ready.wait(), 10)
             if replay_errors:
                 raise replay_errors[0]
+            tracker = worker._braintrust_pipecat_observer._session.live
+            assert tracker is not None
             if boundary == "late_transcript":
                 await worker.queue_frame(_frames().EndFrame())
             else:
@@ -912,6 +914,9 @@ async def test_live_observations(memory_logger, vcr_cassette_dir, boundary):
                 await worker.cancel()
                 await asyncio.wait_for(running, 10)
     assert not replay_errors
+    # Cleanup releases the tracker's own payload buffers and correlation
+    # caches, even if a caller retains the tracker after pipeline shutdown.
+    assert not {name: len(value) for name, value in vars(tracker).items() if isinstance(value, (dict, list)) and value}
     if boundary == "cancel_callback":
         assert callback_cancelled.is_set()
 

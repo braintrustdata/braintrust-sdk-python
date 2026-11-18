@@ -8,16 +8,18 @@ delegation first.
 """
 
 import math
+from collections import OrderedDict
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import Any
+from enum import Enum, auto
+from typing import Any, Literal
 
 from braintrust._audio.clock import SessionClock
 from braintrust._audio.schema import SOURCE_ID
 from braintrust.integrations.openai.tracing import _parse_metrics_from_usage
 from braintrust.logger import Span, SpanTypeAttribute
 
-from ._common import SpanFactory, metadata_from_processor, tools_schema_to_openai_tools
+from ._common import MAX_PENDING, SpanFactory, metadata_from_processor, tools_schema_to_openai_tools
 
 
 # Prototype pricing bridge until the backend prices duration-based models.
@@ -30,12 +32,43 @@ def is_live_service(processor: Any) -> bool:
     return any(base.__name__ == "OpenAILiveLLMService" for base in type(processor).__mro__)
 
 
+class _LivePhase(Enum):
+    ACTIVE = auto()
+    DRAINING = auto()  # Remote model ended; queued transcript frames may still arrive.
+    CLOSED = auto()  # Pipeline cleanup finished.
+
+
+class _ResponsePhase(Enum):
+    STREAMING = auto()
+    PROCESSING = auto()  # Inference ended; Pipecat is handling its terminal event.
+    WAITING_FOR_TOOLS = auto()
+
+
+_Role = Literal["user", "assistant"]
+_ToolSignal = Literal["submission", "span"]
+
+
 @dataclass
-class _Transcript:
+class _Turn:
     span: Span
+    transcript: Span | None = None
     text: list[str] = field(default_factory=list)
     start_ms: int | None = None
     end_ms: int | None = None
+
+
+@dataclass
+class _Delegation:
+    response_id: str | None = None
+    offset_ms: int | None = None
+
+
+@dataclass
+class _PendingTool:
+    response_id: str
+    # Submission and observation run in different tasks and can arrive in
+    # either order. Neither alone proves that the response task can close.
+    waiting_for: set[_ToolSignal] = field(default_factory=lambda: {"submission", "span"})
 
 
 @dataclass
@@ -45,10 +78,26 @@ class _Response:
     start_ms: float
     output: dict[str, Any] = field(default_factory=dict)
     first_content: bool = False
-    llm_finished: bool = False
-    processing_finished: bool = False
-    pending_calls: set[str] = field(default_factory=set)
-    pending_tool_spans: set[str] = field(default_factory=set)
+    phase: _ResponsePhase = _ResponsePhase.STREAMING
+    pending_tools: set[str] = field(default_factory=set)
+
+    @property
+    def ready(self) -> bool:
+        return self.phase is _ResponsePhase.WAITING_FOR_TOOLS and not self.pending_tools
+
+    def finish_inference(self, kind: str, snapshot: dict[str, Any], end_time: float) -> None:
+        if self.phase is not _ResponsePhase.STREAMING:
+            return
+        if snapshot.get("model"):
+            self.llm.log(metadata={"model": snapshot["model"]})
+        self.llm.log(metrics=_parse_metrics_from_usage(snapshot.get("usage")))
+        if kind != "response.completed":
+            error = snapshot.get("error") or snapshot.get("incomplete_details") or {"status": kind}
+            self.llm.log(error=error)
+            self.wrapper.log(error=error)
+        self.llm.log(output=list(self.output.values()))
+        self.llm.end(end_time=end_time)
+        self.phase = _ResponsePhase.PROCESSING
 
     def record_output(self, event: dict[str, Any]) -> None:
         kind = event.get("type")
@@ -81,6 +130,19 @@ class _Response:
 
 
 class LiveTracker:
+    """Observe two independent lifecycles without making either one current.
+
+    The remote model goes ACTIVE -> DRAINING on session.closed; only pipeline
+    cleanup makes it CLOSED, after queued transcript frames have drained.
+
+    Each hosted response goes STREAMING -> PROCESSING -> WAITING_FOR_TOOLS,
+    then is removed once both tool submissions and tool spans have finished.
+    Cleanup ends any remaining work as incomplete. Response/tool indexes own
+    active work, and at most two transcript turns are open. Delegation history
+    keeps recent IDs/offsets plus active responses' routing. Full session
+    transcripts grow until cleanup by design.
+    """
+
     def __init__(self, session: Any, service: Any) -> None:
         self.session, self.service = session, service
         session.agent.report_uninterrupted_playback = False
@@ -90,14 +152,11 @@ class LiveTracker:
         self.spans = SpanFactory(session.span, self.clock)
         self.frame_spans = SpanFactory(session.span, session.clock)
         self.origin_ms = self.clock.now_ms()
-        self.turns: dict[str, Span] = {}
-        self.transcripts: dict[str, _Transcript] = {}
+        self.turns: dict[_Role, _Turn] = {}
         self.responses: dict[str, _Response] = {}
-        self.delegation_responses: dict[str, str] = {}
-        self.delegation_offsets: dict[str, int] = {}
-        self.tool_responses: dict[str, str] = {}
-        self.closed = False
-        self.model_closed = False
+        self.delegations: OrderedDict[str, _Delegation] = OrderedDict()
+        self.tools: dict[str, _PendingTool] = {}
+        self.phase = _LivePhase.ACTIVE
         self.inputs: list[Any] = []
         self.outputs: list[dict[str, str]] = []
         self.first_content = False
@@ -110,7 +169,7 @@ class LiveTracker:
         session.span.log(metadata={"contrib.pipecat.mode": "live"})
 
     def event(self, event: Any) -> None:
-        if self.closed:
+        if self.phase is _LivePhase.CLOSED:
             return
         kind = event.type
         if kind == "session.started":
@@ -139,17 +198,13 @@ class LiveTracker:
                     self.inputs.pop(0)
                 self.inputs.insert(0, {"role": "system", "content": resource.instructions})
             self.model.log(input=self.inputs)
-        elif kind == "session.output_audio.delta":
+        elif kind in ("session.output_audio.delta", "session.output_transcript.delta"):
             if event.delta:
                 self._first_content()
-        elif kind in ("session.input_transcript.delta", "session.output_transcript.delta"):
-            if kind == "session.output_transcript.delta" and event.delta:
-                self._first_content()
         elif kind == "session.delegation.created":
-            delegation = event.delegation
-            self.delegation_offsets[delegation.id] = event.offset_ms
-            if delegation.response_id:
-                self.delegation_responses[delegation.id] = delegation.response_id
+            delegation = self._delegation(event.delegation.id)
+            delegation.offset_ms = event.offset_ms
+            delegation.response_id = event.delegation.response_id
         elif kind == "response.event":
             self._response(event)
         elif kind in ("session.usage.updated", "session.closed"):
@@ -163,6 +218,25 @@ class LiveTracker:
                 self._end_model(confirmed=True)
         elif kind == "error":
             self.model.log(error=event.error.message)
+
+    def _delegation(self, delegation_id: str | None) -> _Delegation:
+        key = delegation_id or "uncorrelated"
+        if key not in self.delegations:
+            self.delegations[key] = _Delegation()
+        self.delegations.move_to_end(key)
+        self._trim_delegations(keep=key)
+        return self.delegations[key]
+
+    def _trim_delegations(self, *, keep: str | None = None) -> None:
+        # Live has no delegation-finished notification. Bound historical IDs
+        # and offsets, while keeping routing needed by an active response.
+        if len(self.delegations) <= MAX_PENDING:
+            return
+        for key, delegation in list(self.delegations.items()):
+            if key != keep and delegation.response_id not in self.responses:
+                del self.delegations[key]
+                if len(self.delegations) <= MAX_PENDING:
+                    break
 
     def _first_content(self) -> None:
         if not self.first_content:
@@ -190,7 +264,7 @@ class LiveTracker:
         self.model.log(metadata=metadata)
 
     def frame(self, frame: Any) -> None:
-        if self.closed:
+        if self.phase is _LivePhase.CLOSED:
             return
         kind = type(frame).__name__
         if kind == "ProposedUserStartedSpeakingFrame":
@@ -207,67 +281,65 @@ class LiveTracker:
         elif kind == "LLMFullResponseEndFrame":
             self._end_turn("assistant")
 
-    def _open_turn(self, role: str) -> None:
+    def _open_turn(self, role: _Role) -> None:
         if role in self.turns:
             return
-        turn = self.turns[role] = self.frame_spans.turn("user_turn" if role == "user" else "agent_turn")
-        turn.log(metadata={"contrib.pipecat.live.grouping": "pipecat_transcript_gap"})
+        turn = self.turns[role] = _Turn(self.frame_spans.turn("user_turn" if role == "user" else "agent_turn"))
+        turn.span.log(metadata={"contrib.pipecat.live.grouping": "pipecat_transcript_gap"})
 
-    def _transcript(self, role: str, text: str, *, replace: bool = False, event: Any = None) -> None:
-        if not text or role not in self.turns:
+    def _transcript(self, role: _Role, text: str, *, replace: bool = False, event: Any = None) -> None:
+        turn = self.turns.get(role)
+        if not text or turn is None:
             return
-        transcript = self.transcripts.get(role)
-        if transcript is None:
-            transcript = self.transcripts[role] = _Transcript(
-                self.frame_spans.start(
-                    "transcript_received",
-                    turn=self.turns[role],
-                    metadata={
-                        SOURCE_ID: "session-input" if role == "user" else "agent-output",
-                        "contrib.pipecat.live.grouping": "pipecat_transcript_gap",
-                    },
-                )
+        if turn.transcript is None:
+            turn.transcript = self.frame_spans.start(
+                "transcript_received",
+                turn=turn.span,
+                metadata={
+                    SOURCE_ID: "session-input" if role == "user" else "agent-output",
+                    "contrib.pipecat.live.grouping": "pipecat_transcript_gap",
+                },
             )
         if replace:
-            transcript.text = [text]
+            turn.text = [text]
         else:
-            transcript.text.append(text)
+            turn.text.append(text)
         # User interim frames carry the original event; assistant text frames
         # do not. Retain provider timestamps only when attached to this frame.
         start_ms, end_ms = getattr(event, "start_ms", None), getattr(event, "end_ms", None)
         if start_ms is not None:
-            transcript.start_ms = start_ms if transcript.start_ms is None else min(transcript.start_ms, start_ms)
+            turn.start_ms = start_ms if turn.start_ms is None else min(turn.start_ms, start_ms)
         if end_ms is not None:
-            transcript.end_ms = end_ms if transcript.end_ms is None else max(transcript.end_ms, end_ms)
-        transcript.span.log(output=[{"role": role, "content": "".join(transcript.text)}])
-        if transcript.start_ms is not None and transcript.end_ms is not None:
-            transcript.span.log(
+            turn.end_ms = end_ms if turn.end_ms is None else max(turn.end_ms, end_ms)
+        turn.transcript.log(output=[{"role": role, "content": "".join(turn.text)}])
+        if turn.start_ms is not None and turn.end_ms is not None:
+            turn.transcript.log(
                 metadata={
-                    "contrib.pipecat.live.start_ms": transcript.start_ms,
-                    "contrib.pipecat.live.end_ms": transcript.end_ms,
+                    "contrib.pipecat.live.start_ms": turn.start_ms,
+                    "contrib.pipecat.live.end_ms": turn.end_ms,
                 }
             )
 
-    def _end_turn(self, role: str, *, incomplete: bool = False, end_ms: float | None = None) -> None:
+    def _end_turn(self, role: _Role, *, incomplete: bool = False, end_ms: float | None = None) -> None:
+        turn = self.turns.pop(role, None)
+        if turn is None:
+            return
         end_time = self.session.clock.wall(end_ms)
-        transcript = self.transcripts.pop(role, None)
-        if transcript is not None:
-            message = {"role": role, "content": "".join(transcript.text)}
+        if turn.transcript is not None:
+            message = {"role": role, "content": "".join(turn.text)}
             if role == "assistant":
                 self.outputs.append(message)
                 self.model.log(output=self.outputs)
             else:
                 self.inputs.append(message)
                 self.model.log(input=self.inputs)
-            transcript.span.end(end_time=end_time)
-        turn = self.turns.pop(role, None)
-        if turn is not None:
-            if incomplete:
-                turn.log(metadata={"turn.incomplete": True})
-            turn.end(end_time=end_time)
+            turn.transcript.end(end_time=end_time)
+        if incomplete:
+            turn.span.log(metadata={"turn.incomplete": True})
+        turn.span.end(end_time=end_time)
 
     def client_event(self, event: Any) -> None:
-        if self.closed or event.type != "response.item.create":
+        if self.phase is _LivePhase.CLOSED or event.type != "response.item.create":
             return
         item = event.item
         kind = item.get("type") if isinstance(item, dict) else getattr(item, "type", None)
@@ -281,11 +353,11 @@ class LiveTracker:
         event = envelope.event
         kind = event.get("type", "")
         snapshot = event.get("response") or {}
-        delegation = envelope.delegation_id or "uncorrelated"
-        response_id = snapshot.get("id") or event.get("response_id") or self.delegation_responses.get(delegation)
+        delegation = self._delegation(envelope.delegation_id)
+        response_id = snapshot.get("id") or event.get("response_id") or delegation.response_id
         if not response_id:
             return
-        self.delegation_responses[delegation] = response_id
+        delegation.response_id = response_id
         response = self.responses.get(response_id)
         if response is None:
             # Missing an observed start is preferable to inventing one.
@@ -301,10 +373,10 @@ class LiveTracker:
             }
             if snapshot.get("previous_response_id"):
                 metadata["contrib.pipecat.live.previous_response_id"] = snapshot["previous_response_id"]
-            if delegation in self.delegation_offsets:
+            if delegation.offset_ms is not None:
                 # This locates delegation creation on the provider's session
                 # timeline, including for subsequent responses in that delegation.
-                metadata["contrib.pipecat.live.delegation_offset_ms"] = self.delegation_offsets[delegation]
+                metadata["contrib.pipecat.live.delegation_offset_ms"] = delegation.offset_ms
             context = getattr(self.service, "_context", None)
             tools = tools_schema_to_openai_tools(getattr(context, "tools", None))
             if tools:
@@ -330,94 +402,81 @@ class LiveTracker:
             item = event.get("item") or {}
             if item.get("type") == "function_call" and item.get("status") == "completed" and item.get("call_id"):
                 call_id = item["call_id"]
-                response.pending_calls.add(call_id)
-                response.pending_tool_spans.add(call_id)
-                self.tool_responses[call_id] = response_id
+                response.pending_tools.add(call_id)
+                self.tools[call_id] = _PendingTool(response_id)
                 self.session.agent.link_tool_request(call_id, response.wrapper)
         elif kind in ("response.completed", "response.failed", "response.incomplete"):
-            if snapshot.get("model"):
-                response.llm.log(metadata={"model": snapshot["model"]})
-            response.llm.log(metrics=_parse_metrics_from_usage(snapshot.get("usage")))
-            if kind != "response.completed":
-                error = snapshot.get("error") or snapshot.get("incomplete_details") or {"status": kind}
-                response.llm.log(error=error)
-                response.wrapper.log(error=error)
             # Provider inference ends here. Pipecat may still be executing
             # tools and submitting their results as part of this response.
-            response.llm.log(output=list(response.output.values()))
-            response.llm.end(end_time=self.clock.wall())
-            response.llm_finished = True
+            response.finish_inference(kind, snapshot, self.clock.wall())
 
     def event_processed(self, envelope: Any) -> None:
-        if self.closed or envelope.type != "response.event":
+        if self.phase is _LivePhase.CLOSED or envelope.type != "response.event":
             return
         event = envelope.event
         if event.get("type") not in ("response.completed", "response.failed", "response.incomplete"):
             return
-        response_id = (event.get("response") or {}).get("id") or self.delegation_responses.get(envelope.delegation_id)
+        response_id = (event.get("response") or {}).get("id") or self._delegation(envelope.delegation_id).response_id
         if response_id is None:
             return
         response = self.responses.get(response_id)
-        if response is not None:
-            response.processing_finished = True
+        if response is not None and response.phase is _ResponsePhase.PROCESSING:
+            response.phase = _ResponsePhase.WAITING_FOR_TOOLS
             self._finish_if_ready(response_id, response)
 
     def tool_result_submitted(self, call_id: str) -> None:
-        response_id = self.tool_responses.get(call_id)
-        if response_id is None:
-            return
-        response = self.responses.get(response_id)
-        if response is not None:
-            response.pending_calls.discard(call_id)
-            if call_id not in response.pending_tool_spans:
-                self.tool_responses.pop(call_id, None)
-            self._finish_if_ready(response_id, response)
+        self._tool_progress(call_id, "submission")
 
     def tool_finished(self, call_id: str) -> None:
-        response_id = self.tool_responses.get(call_id)
-        if response_id is None:
+        self._tool_progress(call_id, "span")
+
+    def _tool_progress(self, call_id: str, signal: _ToolSignal) -> None:
+        tool = self.tools.get(call_id)
+        if tool is None:
             return
-        response = self.responses.get(response_id)
+        tool.waiting_for.discard(signal)
+        if tool.waiting_for:
+            return
+        del self.tools[call_id]
+        response = self.responses.get(tool.response_id)
         if response is not None:
-            response.pending_tool_spans.discard(call_id)
-            if call_id not in response.pending_calls:
-                self.tool_responses.pop(call_id, None)
-            self._finish_if_ready(response_id, response)
+            response.pending_tools.discard(call_id)
+            self._finish_if_ready(tool.response_id, response)
 
     def _finish_if_ready(self, response_id: str, response: _Response) -> None:
-        if (
-            response.llm_finished
-            and response.processing_finished
-            and not response.pending_calls
-            and not response.pending_tool_spans
-        ):
+        if response.ready:
             self._end_response(response_id)
 
     def _end_response(self, response_id: str, *, incomplete: bool = False, end_ms: float | None = None) -> None:
         response = self.responses.pop(response_id)
         output = list(response.output.values())
-        spans = (response.wrapper,) if response.llm_finished else (response.llm, response.wrapper)
+        spans = (response.llm, response.wrapper) if response.phase is _ResponsePhase.STREAMING else (response.wrapper,)
         for span in spans:
             span.log(output=output)
             if incomplete:
                 span.log(metadata={"contrib.pipecat.incomplete": True})
             span.end(end_time=self.clock.wall(end_ms))
-        for call_id in response.pending_calls | response.pending_tool_spans:
-            self.tool_responses.pop(call_id, None)
+        for call_id in response.pending_tools:
+            self.tools.pop(call_id, None)
+        self._trim_delegations()
 
     def _end_model(self, *, confirmed: bool = False, end_ms: float | None = None) -> None:
-        if self.model_closed:
+        if self.phase is not _LivePhase.ACTIVE:
             return
-        self.model_closed = True
+        self.phase = _LivePhase.DRAINING
         self.model.log(metadata={"contrib.pipecat.live.finalization_confirmed": confirmed})
         self.model.end(end_time=self.clock.wall(end_ms))
 
     def close(self, end_ms: float) -> None:
-        if self.closed:
+        if self.phase is _LivePhase.CLOSED:
             return
-        self.closed = True
         for role in list(self.turns):
             self._end_turn(role, incomplete=True, end_ms=end_ms)
         for response_id in list(self.responses):
             self._end_response(response_id, incomplete=True, end_ms=end_ms)
         self._end_model(end_ms=end_ms)
+        self.phase = _LivePhase.CLOSED
+        self.delegations.clear()
+        self.tools.clear()
+        self.inputs.clear()
+        self.outputs.clear()
