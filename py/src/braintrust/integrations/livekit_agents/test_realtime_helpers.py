@@ -12,8 +12,9 @@ from aiohttp import web
 
 
 class RealtimeCassette:
-    def __init__(self, path: Path, *, late_transcript=False, burst=False):
+    def __init__(self, path: Path, *, late_transcript=False, burst=False, operation=None):
         self.path = path
+        self.operation = operation
         self.record = os.getenv("BRAINTRUST_LIVEKIT_RECORD_REALTIME") == "1"
         if self.record and os.getenv("CI", "").lower() == "true":
             raise RuntimeError("Realtime recording is disabled in CI")
@@ -39,7 +40,7 @@ class RealtimeCassette:
 
     async def __aenter__(self):
         app = web.Application()
-        app.router.add_get("/v1/realtime", self._connect)
+        app.router.add_get("/v1/" + (self.operation or "realtime"), self._connect)
         self.runner = web.AppRunner(app)
         await self.runner.setup()
         site = web.TCPSite(self.runner, "127.0.0.1", 0)
@@ -121,7 +122,7 @@ class RealtimeCassette:
                     if item.type != aiohttp.WSMsgType.TEXT:
                         continue
                     message = json.loads(item.data)
-                    if message["type"] == "input_audio_buffer.append":
+                    if message["type"] in ("input_audio_buffer.append", "input_audio"):
                         data = message["audio"]
                         self.audio_bytes += len(data) * 3 // 4 - (len(data) - len(data.rstrip("=")))
                     else:
@@ -136,11 +137,25 @@ class RealtimeCassette:
         return self.client
 
     async def _record(self, request):
-        key = self.recording_key()
+        if self.operation:
+            from livekit.agents.inference._utils import get_default_inference_url
+
+            url = get_default_inference_url().replace("https://", "wss://") + "/" + self.operation
+            query = dict(request.query)
+            authorization = request.headers["Authorization"]
+        else:
+            url = "wss://api.openai.com/v1/realtime"
+            query = (
+                {"intent": "transcription"}
+                if request.query.get("intent") == "transcription"
+                else {"model": request.query["model"]}
+            )
+            authorization = "Bearer " + self.recording_key()
         async with aiohttp.ClientSession() as session:
             async with session.ws_connect(
-                "wss://api.openai.com/v1/realtime?model=" + request.query["model"],
-                headers={"Authorization": "Bearer " + key},
+                url,
+                params=query,
+                headers={"Authorization": authorization},
             ) as upstream:
 
                 async def caller():
@@ -148,7 +163,7 @@ class RealtimeCassette:
                         if item.type != aiohttp.WSMsgType.TEXT:
                             continue
                         message = json.loads(item.data)
-                        if message["type"] == "input_audio_buffer.append":
+                        if message["type"] in ("input_audio_buffer.append", "input_audio"):
                             data = message["audio"]
                             self.audio_bytes += len(data) * 3 // 4 - (len(data) - len(data.rstrip("=")))
                         else:
@@ -178,8 +193,16 @@ class RealtimeCassette:
 
     @staticmethod
     def recording_key():
+        if "BRAINTRUST_LIVEKIT_RECORD_KEY_FILE" not in os.environ:
+            return os.environ["OPENAI_API_KEY"]
         key_path = Path(os.environ["BRAINTRUST_LIVEKIT_RECORD_KEY_FILE"])
         found = re.search(r"^(?:export\s+)?OPENAI_API_KEY\s*=\s*(.+)$", key_path.read_text(), re.M)
         if found is None:
             raise RuntimeError("No recording key configured")
         return found[1].strip().strip("\"'")
+
+    def inference_credentials(self):
+        return {
+            "api_key": os.environ["LIVEKIT_INFERENCE_API_KEY"] if self.record else "test-key",
+            "api_secret": os.environ["LIVEKIT_INFERENCE_API_SECRET"] if self.record else "test-secret",
+        }

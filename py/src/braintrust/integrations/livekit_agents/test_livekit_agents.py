@@ -91,6 +91,7 @@ async def test_livekit_agents_function_tool_e2e(memory_logger, monkeypatch, lega
         assert leaves[0]["output"][0]["message"]["tool_calls"][0]["function"]["name"] == "lookup_weather"
         assert "cache_read_input_tokens" not in leaves[0]["metrics"]
         if provider_mode == "fallback":
+            assert all(row["span_attributes"]["name"] == "livekit.llm_response" for row in leaves)
             assert leaves[0]["output"][0]["finish_reason"] == "tool_calls"
             assert leaves[0]["output"][0]["message"]["content"] is None
     assert not owner.turns and not owner.requests and not owner.tool_results

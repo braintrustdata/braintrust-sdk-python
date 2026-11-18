@@ -1,6 +1,7 @@
 import asyncio
 import base64
 import io
+import math
 import os
 from contextlib import nullcontext
 from pathlib import Path
@@ -99,6 +100,28 @@ async def test_realtime_conversation(rooms, memory_logger, monkeypatch, vcr_cass
         unrelated.log(input="independent customer record")
     uploads = []
     encoded = {}
+    # Observe input consumption and confirmed playback independently of the
+    # recorder's source labels and exported channel metadata.
+    from fractions import Fraction
+
+    from braintrust.integrations.livekit_agents.tracing import Session
+
+    intervals = {"session-input": [], "agent-output": []}
+    original_input, original_played = Session.input, Session.played
+
+    def observe_input(instance, frame):
+        start = original_input(instance, frame)
+        if start is not None:
+            duration = Fraction(frame.samples_per_channel * 1_000_000_000, frame.sample_rate)
+            intervals["session-input"].append((start, start + duration))
+        return start
+
+    def observe_played(instance, run, start, end):
+        intervals["agent-output"].append((start, end))
+        return original_played(instance, run, start, end)
+
+    monkeypatch.setattr(Session, "input", observe_input)
+    monkeypatch.setattr(Session, "played", observe_played)
     from braintrust._audio.session import AudioSessionRecorder
 
     original_export = AudioSessionRecorder._export
@@ -291,7 +314,7 @@ async def test_realtime_conversation(rooms, memory_logger, monkeypatch, vcr_cass
     speeches = named(rows, "user_speech")
     receipts = named(rows, "transcript_received")
     models = named(rows, "llm_response")
-    llms = named(rows, "Realtime request")
+    llms = named(rows, "livekit.llm_response")
     assert len(llms) == len(models)
     leaves = {row["span_parents"][0]: row for row in llms}
     for task in models:
@@ -462,7 +485,20 @@ async def test_realtime_conversation(rooms, memory_logger, monkeypatch, vcr_cass
         assert sum(frame.samples for frame in frames) == meta.sample_count
         declared = root["metadata"]["audio.segments"][identifier]
         assert abs(declared["duration_ms"] - meta.sample_count / 48) <= 1
-        assert declared["channels"] == {"0": {"sources": ["session-input"]}, "1": {"sources": ["agent-output"]}}
+        # Only independently observed gaps may have empty source mappings.
+        # Swapping/removing recorder source labels must fail this assertion.
+        assert declared["channels"] == {
+            str(index): {
+                "sources": [source]
+                if any(
+                    math.ceil(start * 48000 / 1_000_000_000) < meta.start_sample + meta.sample_count
+                    and math.ceil(end * 48000 / 1_000_000_000) > meta.start_sample
+                    for start, end in intervals[source]
+                )
+                else []
+            }
+            for index, source in enumerate(("session-input", "agent-output"))
+        }
         user_audio.extend(np.concatenate([frame.to_ndarray()[0] for frame in frames]))
         agent_audio.extend(np.concatenate([frame.to_ndarray()[1] for frame in frames]))
     # Compare energy envelopes of known supplied audio through RTC+Opus loss.

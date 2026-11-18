@@ -15,7 +15,17 @@ from braintrust._audio.session import AudioSessionRecorder
 from braintrust._instrumentation import provider_content_allowed
 from braintrust.logger import Span, start_span
 
-from .compat import STATE_ATTR, arguments, chat_messages, llm_metadata, provider_llm_expected, state_for
+from .compat import (
+    STATE_ATTR,
+    arguments,
+    chat_messages,
+    llm_metadata,
+    model_metadata,
+    node_model,
+    provider_audio_expected,
+    provider_llm_expected,
+    state_for,
+)
 from .privacy import Privacy, PrivacyCustomizer, opted_in
 
 
@@ -24,6 +34,8 @@ _HANDLE: ContextVar[object] = ContextVar("braintrust_livekit_speech", default=No
 _REPLY_TO: ContextVar[object] = ContextVar("braintrust_livekit_reply_to", default=None)
 _SYNTHESIS: ContextVar[object] = ContextVar("braintrust_livekit_synthesis", default=None)
 _OPTIONS = AudioRecordingOptions()
+# A session-long STT stream must not retain a session-long PCM buffer.
+_MAX_STT_INPUT_BYTES = 4 * 1024 * 1024
 _warned_links = False
 
 
@@ -518,18 +530,16 @@ def process_stt(wrapped, instance, args, kwargs):
         result = event.alternatives[0]
         interval = getattr(result, "_braintrust_recognition_interval", None)
         recognized = getattr(result, "_braintrust_recognition_span", None)
-        if recognized is None and owner.stt is None:
-            metadata = owner.source_metadata("session-input")
-            metadata.update(
-                {
-                    key: value
-                    for key, value in (("model", instance._stt_model), ("provider", instance._stt_provider))
-                    if value
-                }
-            )
-            owner.stt = _new(parent, "stt", start_time=interval[0] if interval else received_at, metadata=metadata)
         if kind == "final_transcript":
             span = recognized or owner.stt
+            if span is None:
+                # Receipt time alone does not establish a model operation.
+                span = _new(
+                    parent,
+                    "transcript_received",
+                    start_time=received_at,
+                    metadata=owner.source_metadata("session-input"),
+                )
             if owner.stt is span:
                 owner.stt = None
             scope = getattr(event, "_braintrust_source_run", None)
@@ -540,7 +550,8 @@ def process_stt(wrapped, instance, args, kwargs):
                 if speaker is not None:
                     span.log(metadata={"audio.speaker_ids": [speaker]})
             owner.log(span, output=[{"role": "user", "content": result.text}])
-            span.end(interval[1] if interval else received_at)
+            if not getattr(result, "_braintrust_streaming_recognition", False):
+                span.end(interval[1] if interval else received_at)
     return wrapped(*args, **kwargs)
 
 
@@ -658,7 +669,12 @@ async def llm_operation(wrapped, instance, args, kwargs):
     data, node, usage, handle = values["data"], values["node"], None, _HANDLE.get()
     fallback = None
     if not provider_llm_expected(node):
-        fallback = _new(span, "LLM request", kind="llm", metadata=llm_metadata(values) if owner.permits() else {})
+        fallback = _new(
+            span,
+            "livekit.llm_response",
+            kind="llm",
+            metadata=llm_metadata(values) if owner.permits() else model_metadata(values),
+        )
         if owner.permits():
             owner.log(fallback, input=chat_messages(values["chat_ctx"]))
     relationships = []
@@ -778,6 +794,44 @@ async def tts_operation(wrapped, instance, args, kwargs):
     data = values["data"]
     setattr(data, "_braintrust_span", span)
     stream, text = values["input"], []
+    model = node_model(values["node"], "tts")
+    child = (
+        None
+        if provider_audio_expected(model)
+        else _new(span, "livekit.tts", kind="llm", metadata=model_metadata(values))
+    )
+    frames, model_text = [], []
+    node = values["node"]
+
+    async def observed_node(model_input, *node_args, **node_kwargs):
+        # LiveKit passes the transformed text stream as the node's first argument.
+
+        async def observed_text():
+            async for item in model_input:
+                if owner.permits() and isinstance(item, str):
+                    model_text.append(item)
+                yield item
+
+        result = node(observed_text(), *node_args, **node_kwargs)
+        if inspect.isawaitable(result):
+            result = await result
+        if not hasattr(result, "__aiter__"):
+            return result
+
+        async def audio():
+            try:
+                async for frame in result:
+                    if child is not None and owner.permits() and opted_in("AGENT"):
+                        frames.append(frame)
+                    yield frame
+            finally:
+                if hasattr(result, "aclose"):
+                    await result.aclose()
+
+        return audio()
+
+    if child is not None:
+        values["node"] = observed_node
 
     async def observed_input():
         async for item in stream:
@@ -787,9 +841,11 @@ async def tts_operation(wrapped, instance, args, kwargs):
 
     values["input"] = observed_input()
     try:
-        with _operation_context(span):
+        with _operation_context(child or span):
             return await wrapped(**values)
     except asyncio.CancelledError:
+        if child is not None:
+            child.log(metadata={"contrib.livekit.cancelled": True, "contrib.livekit.incomplete": True})
         span.log(
             metadata={
                 "contrib.livekit.cancelled": True,
@@ -800,20 +856,49 @@ async def tts_operation(wrapped, instance, args, kwargs):
         )
         raise
     except Exception:
+        if child is not None:
+            child.log(error="LiveKit TTS operation failed")
         span.log(error="LiveKit TTS operation failed")
         raise
     finally:
         owner.log(span, input="".join(text))
-        if data.ttfb is not None:
-            span.log(metrics={"time_to_first_audio": data.ttfb})
+        if child is not None:
+            owner.log(child, input={"operation": "speech", "prompt": "".join(model_text)})
+            if owner.permits() and opted_in("AGENT") and frames:
+                try:
+                    from livekit import rtc
+
+                    output = {"content": [_audio_part(rtc.combine_audio_frames(frames))]}
+                except Exception:
+                    logging.getLogger("braintrust").warning("Unable to extract LiveKit synthesis telemetry")
+                else:
+                    owner.log(child, output=output)
+            if data.ttfb is not None:
+                child.log(metrics={"time_to_first_token": data.ttfb})
+            child.end()
         span.end()
 
 
+def _audio_part(frame):
+    from braintrust.integrations.utils import _materialize_attachment
+
+    resolved = _materialize_attachment(frame.to_wav_bytes(), mime_type="audio/wav", prefix="livekit_audio")
+    return {"type": "file", **resolved.multimodal_part_payload}
+
+
+def _transcription_output(alternatives):
+    result = {"content": [{"type": "text", "text": alternatives[0].text}]} if alternatives else {"content": []}
+    if alternatives and alternatives[0].language:
+        result["annotations"] = {"language": str(alternatives[0].language)}
+    return result
+
+
 async def stt_recognize(wrapped, instance, args, kwargs):
+    from livekit.agents.stt import StreamAdapter
     from livekit.agents.voice.audio_recognition import _STTPipelineContextVar
 
     owner = _ACTIVE.get()
-    if owner is None or _STTPipelineContextVar.get(None) is None:
+    if owner is None or _STTPipelineContextVar.get(None) is None or isinstance(instance, StreamAdapter):
         return await wrapped(*args, **kwargs)
     start = time.time()
     span = _new(
@@ -827,8 +912,30 @@ async def stt_recognize(wrapped, instance, args, kwargs):
         },
     )
     owner.stt = span
+    child = (
+        None
+        if provider_audio_expected(instance)
+        else _new(
+            span,
+            "livekit.stt",
+            kind="llm",
+            metadata=model_metadata({"model": instance.model, "provider": instance.provider}),
+        )
+    )
+    if child is not None:
+        owner.log(child, input={"operation": "transcribe"})
     try:
-        with _operation_context(span):
+        if child is not None and owner.permits() and opted_in("USER"):
+            try:
+                from livekit import rtc
+
+                buffer = arguments(wrapped, args, kwargs)["buffer"]
+                input_data = {"operation": "transcribe", "content": [_audio_part(rtc.combine_audio_frames(buffer))]}
+            except Exception:
+                logging.getLogger("braintrust").warning("Unable to extract LiveKit recognition input")
+            else:
+                owner.log(child, input=input_data)
+        with _operation_context(child or span):
             event = await wrapped(*args, **kwargs)
         end = time.time()
         # Alternatives survive StreamAdapter and timestamp-alignment copies.
@@ -837,14 +944,22 @@ async def stt_recognize(wrapped, instance, args, kwargs):
             alternative._braintrust_recognition_span = span
         if event.alternatives:
             owner.log(span, output=[{"role": "user", "content": event.alternatives[0].text}])
+        if child is not None:
+            owner.log(child, output=_transcription_output(event.alternatives))
         return event
     except asyncio.CancelledError:
+        if child is not None:
+            child.log(metadata={"contrib.livekit.cancelled": True, "contrib.livekit.incomplete": True})
         span.log(metadata={"contrib.livekit.cancelled": True, "contrib.livekit.incomplete": True})
         raise
     except Exception:
+        if child is not None:
+            child.log(error="LiveKit STT operation failed")
         span.log(error="LiveKit STT operation failed")
         raise
     finally:
+        if child is not None:
+            child.end()
         span.end()
         if owner.stt is span:
             owner.stt = None
@@ -860,24 +975,137 @@ def _wrap_stt_node(pipeline):
     if getattr(node, "_braintrust_stt", False):
         return
 
-    async def observed(*args, **kwargs):
+    async def observed(audio_input, *args, **kwargs):
         scope = object()
-        result = node(*args, **kwargs)
-        if inspect.isawaitable(result):
-            result = await result
-        if not hasattr(result, "__aiter__"):
-            return result
+        owner = _ACTIVE.get()
+        model = node_model(node, "stt")
+        # Non-streaming services use STT.recognize, including StreamAdapter.
+        # Native streaming clients own one operation per consumed node stream;
+        # it can span several user turns, so parent it directly to the session.
+        from livekit.agents.stt import StreamAdapter
 
-        async def events():
+        native_stream = model is not None and model.capabilities.streaming and not isinstance(model, StreamAdapter)
+        if owner is None or not native_stream:
+            result = node(audio_input, *args, **kwargs)
+            if inspect.isawaitable(result):
+                result = await result
+            if not hasattr(result, "__aiter__"):
+                return result
+
+            async def events():
+                try:
+                    async for event in result:
+                        event._braintrust_source_run = scope
+                        yield event
+                finally:
+                    if hasattr(result, "aclose"):
+                        await result.aclose()
+
+            return events()
+
+        async def recognition():
+            metadata = model_metadata({"model": model.model, "provider": model.provider})
+            span = _new(owner.span, "stt", metadata={**owner.source_metadata("session-input"), **metadata})
+            child = _new(span, "livekit.stt", kind="llm", metadata=metadata)
+            transcripts = []
+            started = time.perf_counter()
+            first_text = None
+            usage = None
+            result = None
+            pcm = bytearray()
+            audio_format = {}
+            truncated = False
+            capture_failed = False
+
+            async def observed_audio():
+                nonlocal truncated, capture_failed
+                async for frame in audio_input:
+                    if not capture_failed and owner.permits() and opted_in("USER"):
+                        try:
+                            current_format = {"sample_rate": frame.sample_rate, "num_channels": frame.num_channels}
+                            if not audio_format:
+                                audio_format.update(current_format)
+                            if current_format != audio_format:
+                                raise ValueError("STT input format changed during capture")
+                            stride = frame.num_channels * 2
+                            remaining = (_MAX_STT_INPUT_BYTES - len(pcm)) // stride * stride
+                            data = frame.data.cast("B")
+                            pcm.extend(data[:remaining])
+                            truncated = truncated or len(data) > remaining
+                        except Exception:
+                            pcm.clear()
+                            capture_failed = True
+                            logging.getLogger("braintrust").warning("Unable to extract LiveKit streaming input")
+                    yield frame
+
             try:
-                async for event in result:
-                    event._braintrust_source_run = scope
-                    yield event
+                with _operation_context(child):
+                    result = node(observed_audio(), *args, **kwargs)
+                    if inspect.isawaitable(result):
+                        result = await result
+                    if not hasattr(result, "__aiter__"):
+                        return
+                    async for event in result:
+                        event._braintrust_source_run = scope
+                        if first_text is None and any(alt.text for alt in event.alternatives):
+                            first_text = time.perf_counter() - started
+                        for alternative in event.alternatives:
+                            alternative._braintrust_recognition_span = span
+                            alternative._braintrust_streaming_recognition = True
+                        if event.type.value == "final_transcript" and event.alternatives and owner.permits():
+                            transcripts.append(event.alternatives[0].text)
+                        reported = event.recognition_usage
+                        # RecognitionUsage's dataclass zero defaults also mean
+                        # "duration only". LiveKit cannot distinguish measured
+                        # zero usage, so leave ambiguous all-zero reports absent.
+                        if reported is not None and (reported.input_tokens or reported.output_tokens):
+                            if usage is None:
+                                usage = {"prompt_tokens": 0, "completion_tokens": 0}
+                            usage["prompt_tokens"] += reported.input_tokens
+                            usage["completion_tokens"] += reported.output_tokens
+                        yield event
+            except asyncio.CancelledError:
+                # LiveKit cancels session-long STT streams during normal teardown.
+                if not owner.closing:
+                    for target in (span, child):
+                        target.log(metadata={"contrib.livekit.cancelled": True, "contrib.livekit.incomplete": True})
+                raise
+            except Exception:
+                for target in (span, child):
+                    target.log(error="LiveKit streaming STT operation failed")
+                raise
             finally:
-                if hasattr(result, "aclose"):
-                    await result.aclose()
+                try:
+                    if result is not None and hasattr(result, "aclose"):
+                        await result.aclose()
+                finally:
+                    input_data = {"operation": "transcribe"}
+                    if pcm and owner.permits() and opted_in("USER"):
+                        try:
+                            from livekit import rtc
 
-        return events()
+                            frame = rtc.AudioFrame(
+                                data=pcm,
+                                **audio_format,
+                                samples_per_channel=len(pcm) // (audio_format["num_channels"] * 2),
+                            )
+                            input_data["content"] = [_audio_part(frame)]
+                        except Exception:
+                            logging.getLogger("braintrust").warning("Unable to extract LiveKit streaming input")
+                        else:
+                            child.log(metadata={"contrib.livekit.input_audio_truncated": truncated})
+                    pcm.clear()
+                    owner.log(child, input=input_data)
+                    owner.log(span, output=[{"role": "user", "content": text} for text in transcripts])
+                    owner.log(child, output={"content": [{"type": "text", "text": text} for text in transcripts]})
+                    if first_text is not None:
+                        child.log(metrics={"time_to_first_token": first_text})
+                    if usage is not None:
+                        child.log(metrics={**usage, "tokens": sum(usage.values())})
+                    child.end()
+                    span.end()
+
+        return recognition()
 
     observed._braintrust_stt = True
     pipeline._stt_node = observed
