@@ -80,6 +80,7 @@ class UserTracker:
         self._speech: _UserSpeech | None = None
         self._last_turn: Span | None = None
         self._last_speech: Span | None = None
+        self._last_speech_participants: list[str] = []
         self._turn_index = 0
         self._vad_seen = False
         self._recognitions: dict[int, _Recognition] = {}
@@ -100,21 +101,29 @@ class UserTracker:
     def _context_turn(self) -> Span | None:
         return self._turn_span or self._last_turn
 
-    def start_turn(self) -> None:
+    @property
+    def turn_span(self) -> Span | None:
+        return self._turn_span
+
+    @property
+    def speech_participants(self) -> list[str]:
+        return sorted(self._speech.participants) if self._speech is not None else self._last_speech_participants
+
+    def start_turn(self, start_ms: float | None = None) -> None:
         if self._turn is None:
-            self._turn = _UserTurn(self._spans.turn("user_turn"))
+            self._turn = _UserTurn(self._spans.turn("user_turn", start_ms=start_ms))
             if self._speech is not None:
                 self._speech_span(self._speech)
             self._resolve_recognitions()
 
-    def stop_turn(self) -> None:
+    def stop_turn(self, end_ms: float | None = None) -> None:
         self._resolve_recognitions()
         # Recognition without a final transcript must not keep timing through
         # the agent's reply or into the next user turn. A later transcript can
         # still be represented as transcript_received.
         for recognition in list(self._recognitions.values()):
-            self._retire(recognition)
-        self._finish_turn(incomplete=False)
+            self._retire(recognition, end_ms)
+        self._finish_turn(incomplete=False, end_ms=end_ms)
 
     def log_input(self, message: dict[str, Any]) -> None:
         turn = self._context_turn
@@ -124,6 +133,7 @@ class UserTracker:
     def start_speech(self, start_ms: float) -> None:
         self._vad_seen = True
         if self._speech is None:
+            self._last_speech_participants = []
             self._speech = _UserSpeech(start_ms)
             if self._turn is not None:
                 self._speech_span(self._speech)
@@ -139,6 +149,7 @@ class UserTracker:
         span.end(end_time=self._clock.wall(end_ms))
         if self._turn is not None:
             self._turn.selections.append(interval)
+        self._last_speech_participants = sorted(speech.participants)
         self._last_speech, self._speech = span, None
 
     def identify(self, frame: "Frame", span: Span | None = None) -> None:
@@ -219,6 +230,8 @@ class UserTracker:
         self._recognitions.clear()
         self._recognized_until.clear()
         self._finish_turn(incomplete=True, end_ms=end_ms)
+        self._last_turn = self._last_speech = None
+        self._last_speech_participants.clear()
 
     def _finish_turn(self, *, incomplete: bool, end_ms: float | None = None) -> None:
         turn = self._turn
@@ -231,6 +244,7 @@ class UserTracker:
             }
         )
         turn.span.end(end_time=self._clock.wall(end_ms))
+        self._last_speech_participants = []
         self._last_turn, self._turn = turn.span, None
         self._turn_index += 1
 
@@ -261,11 +275,11 @@ class UserTracker:
             recognition.phase = _RecognitionPhase.ACTIVE
         return recognition.span
 
-    def _retire(self, recognition: _Recognition) -> None:
+    def _retire(self, recognition: _Recognition, end_ms: float | None = None) -> None:
         self._recognitions.pop(id(recognition.processor), None)
         if recognition.span is not None:
             recognition.span.log(metadata={"contrib.pipecat.incomplete": True})
-            recognition.span.end(end_time=self._clock.wall())
+            recognition.span.end(end_time=self._clock.wall(end_ms))
 
     def _emit(self, frame: "TranscriptionFrame", recognition: _Recognition | None, end_ms: float) -> None:
         speech: Span | None

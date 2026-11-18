@@ -34,7 +34,7 @@ else:
     try:
         import pipecat
         from pipecat.frames import frames
-        from pipecat.observers.base_observer import BaseObserver
+        from pipecat.observers.base_observer import BaseObserver, FrameProcessed
     except ImportError:  # pragma: no cover - Pipecat is an optional dependency.
         _USES_NATIVE_FRAME_DEDUPLICATION = False
 
@@ -44,6 +44,9 @@ else:
 
             async def cleanup(self) -> None:
                 pass
+
+        class FrameProcessed:
+            pass
     else:
         _USES_NATIVE_FRAME_DEDUPLICATION = version_satisfies(detect_module_version(pipecat, ("pipecat",)), ">=1.12.0")
 
@@ -116,6 +119,18 @@ _FrameAction = Callable[
 ]
 
 
+class _ControllerObservation(FrameProcessed):
+    """Instrumentation-only queue item; never submitted to the pipeline.
+
+    Both supported WorkerObservers route FrameProcessed items to the same
+    observer task as frames. No pipeline operation waits for this callback.
+    """
+
+    def __init__(self, action: Callable[[], None]) -> None:
+        super().__init__(processor=None, frame=None, direction=None, timestamp=0)
+        self.action = action
+
+
 class BraintrustPipecatObserver(BaseObserver):
     """Observe cascade sessions, native turns, speech, STT, LLM, tools and TTS.
 
@@ -149,6 +164,8 @@ class BraintrustPipecatObserver(BaseObserver):
         self._phase = _SessionPhase.NEW
         self._session: _Session | None = None
         self._finish_task: asyncio.Task[RecordingResult] | None = None
+        self._controllers: dict[Any, Any] = {}
+        self._controller_queue: asyncio.Queue | None = None
         # Response start frame ID -> its llm_response span, for the service.
         self._response_waiters: dict[int, asyncio.Future[Span | None]] = {}
 
@@ -162,6 +179,9 @@ class BraintrustPipecatObserver(BaseObserver):
         if self._phase is _SessionPhase.CLOSED:
             return
         try:
+            if isinstance(data, _ControllerObservation):
+                data.action()
+                return
             frame, processor = data.frame, data.processor
             session = self._start_session()
             kind = processor_kind(type(processor))
@@ -304,6 +324,21 @@ class BraintrustPipecatObserver(BaseObserver):
         finally:
             span.unset_current()
 
+    def _controller(self, controller):
+        from ._eou import ControllerWait
+
+        if self._phase is _SessionPhase.CLOSED:
+            return None
+        if controller not in self._controllers:
+            self._controllers[controller] = ControllerWait(controller, self._start_session(), self._enqueue_controller)
+        return self._controllers[controller]
+
+    def _enqueue_controller(self, action: Callable[[], None]) -> None:
+        if self._controller_queue is None:
+            action()  # Directly used observer, without a native worker proxy.
+        else:
+            self._controller_queue.put_nowait(_ControllerObservation(action))
+
     # Session lifecycle
 
     def _start_session(self) -> _Session:
@@ -352,10 +387,16 @@ class BraintrustPipecatObserver(BaseObserver):
         if session is None:
             return
         end_ms = session.clock.now_ms()
+        for controller in self._controllers.values():
+            # Use the same observed shutdown boundary as the session.
+            controller.close(ended=session.clock.wall(end_ms))
+        self._controllers.clear()
+        self._controller_queue = None
         closers: tuple[Callable[[], None], ...] = (
             lambda: session.live.close(end_ms) if session.live is not None else None,
             lambda: session.user.close(end_ms),
             lambda: session.agent.interrupt(interrupted=False, end_ms=end_ms),
+            session.linker.clear,
             lambda: session.span.end(end_time=session.clock.wall(end_ms)),
         )
         for close in closers:
@@ -471,10 +512,12 @@ class BraintrustPipecatObserver(BaseObserver):
         return self._finish() if frame.fatal else None
 
     def _on_user_turn_started(self, s: _Session, _f: "Frame", _p: "FrameProcessor | None", _played: bool) -> None:
-        s.user.start_turn()
+        if not self._controllers:
+            s.user.start_turn()
 
     def _on_user_turn_stopped(self, s: _Session, _f: "Frame", _p: "FrameProcessor | None", _played: bool) -> None:
-        s.user.stop_turn()
+        if not self._controllers:
+            s.user.stop_turn()
 
     def _on_vad_started(self, s: _Session, frame: "Frame", _p: "FrameProcessor | None", _played: bool) -> None:
         s.user.start_speech(s.clock.from_wall_ms(frame.timestamp - getattr(frame, "start_secs", 0)))
