@@ -656,6 +656,14 @@ class DatasetEventMetadata(TypedDict):
     """
     The model used for this example
     """
+    requested_service_tier: NotRequired[str | None]
+    """
+    The service tier requested for this LLM call
+    """
+    served_service_tier: NotRequired[str | None]
+    """
+    The service tier that served this LLM call
+    """
 
 
 class DatasetSnapshot(TypedDict):
@@ -746,6 +754,14 @@ class ExperimentEventMetadata(TypedDict):
     model: NotRequired[str | None]
     """
     The model used for this example
+    """
+    requested_service_tier: NotRequired[str | None]
+    """
+    The service tier requested for this LLM call
+    """
+    served_service_tier: NotRequired[str | None]
+    """
+    The service tier that served this LLM call
     """
 
 
@@ -1820,6 +1836,28 @@ For prompt-backed functions: the saved, global, or inline preprocessor to use fo
 """
 
 
+class ProjectAutomationConfigActionHeaders(TypedDict):
+    name: str
+    """
+    The HTTP header name
+    """
+    value: str
+    """
+    The HTTP header value
+    """
+
+
+class ProjectAutomationConfigActionHeaders1(TypedDict):
+    name: str
+    """
+    The HTTP header name
+    """
+    secret_name: str
+    """
+    The data-plane secret containing the header value, bound to the webhook URL it was saved for
+    """
+
+
 class ProjectAutomationConfigAction(TypedDict):
     type: Literal['webhook']
     """
@@ -1828,6 +1866,14 @@ class ProjectAutomationConfigAction(TypedDict):
     url: str
     """
     The webhook URL to send the request to
+    """
+    headers: NotRequired[
+        Sequence[
+            ProjectAutomationConfigActionHeaders | ProjectAutomationConfigActionHeaders1
+        ]
+    ]
+    """
+    Custom HTTP headers to send with the webhook request
     """
     formatting_prompt: NotRequired[str | None]
     """
@@ -1970,6 +2016,28 @@ class ProjectAutomationConfig2(TypedDict):
     """
 
 
+class ProjectAutomationConfig4ActionHeaders(TypedDict):
+    name: str
+    """
+    The HTTP header name
+    """
+    value: str
+    """
+    The HTTP header value
+    """
+
+
+class ProjectAutomationConfig4ActionHeaders1(TypedDict):
+    name: str
+    """
+    The HTTP header name
+    """
+    secret_name: str
+    """
+    The data-plane secret containing the header value, bound to the webhook URL it was saved for
+    """
+
+
 class ProjectAutomationConfig4Action(TypedDict):
     type: Literal['webhook']
     """
@@ -1978,6 +2046,15 @@ class ProjectAutomationConfig4Action(TypedDict):
     url: str
     """
     The webhook URL to send the request to
+    """
+    headers: NotRequired[
+        Sequence[
+            ProjectAutomationConfig4ActionHeaders
+            | ProjectAutomationConfig4ActionHeaders1
+        ]
+    ]
+    """
+    Custom HTTP headers to send with the webhook request
     """
     formatting_prompt: NotRequired[str | None]
     """
@@ -2090,6 +2167,14 @@ class ProjectLogsEventMetadata(TypedDict):
     model: NotRequired[str | None]
     """
     The model used for this example
+    """
+    requested_service_tier: NotRequired[str | None]
+    """
+    The service tier requested for this LLM call
+    """
+    served_service_tier: NotRequired[str | None]
+    """
+    The service tier that served this LLM call
     """
 
 
@@ -2210,6 +2295,28 @@ class ProjectSettingsPatternAlertMention(TypedDict):
     """
 
 
+class ProjectSettingsPatternAlertDestinationsHeaders(TypedDict):
+    name: str
+    """
+    The HTTP header name
+    """
+    value: str
+    """
+    The HTTP header value
+    """
+
+
+class ProjectSettingsPatternAlertDestinationsHeaders1(TypedDict):
+    name: str
+    """
+    The HTTP header name
+    """
+    secret_name: str
+    """
+    The data-plane secret containing the header value, bound to the webhook URL it was saved for
+    """
+
+
 class ProjectSettingsPatternAlertDestinations(TypedDict):
     type: Literal['webhook']
     """
@@ -2218,6 +2325,15 @@ class ProjectSettingsPatternAlertDestinations(TypedDict):
     url: str
     """
     The webhook URL to send the request to
+    """
+    headers: NotRequired[
+        Sequence[
+            ProjectSettingsPatternAlertDestinationsHeaders
+            | ProjectSettingsPatternAlertDestinationsHeaders1
+        ]
+    ]
+    """
+    Custom HTTP headers to send with the webhook request
     """
     formatting_prompt: NotRequired[str | None]
     """
@@ -3551,6 +3667,28 @@ class WindowedAutomationConfigLoop(TypedDict):
     """
 
 
+class WindowedAutomationConfigActionsHeaders(TypedDict):
+    name: str
+    """
+    The HTTP header name
+    """
+    value: str
+    """
+    The HTTP header value
+    """
+
+
+class WindowedAutomationConfigActionsHeaders1(TypedDict):
+    name: str
+    """
+    The HTTP header name
+    """
+    secret_name: str
+    """
+    The data-plane secret containing the header value, bound to the webhook URL it was saved for
+    """
+
+
 class WindowedAutomationConfigActions(TypedDict):
     type: Literal['webhook']
     """
@@ -3559,6 +3697,15 @@ class WindowedAutomationConfigActions(TypedDict):
     url: str
     """
     The webhook URL to send the request to
+    """
+    headers: NotRequired[
+        Sequence[
+            WindowedAutomationConfigActionsHeaders
+            | WindowedAutomationConfigActionsHeaders1
+        ]
+    ]
+    """
+    Custom HTTP headers to send with the webhook request
     """
     formatting_prompt: NotRequired[str | None]
     """
