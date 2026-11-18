@@ -14,6 +14,7 @@ from typing import Any
 
 from braintrust._audio.clock import SessionClock
 from braintrust._audio.schema import SOURCE_ID
+from braintrust.integrations.openai.tracing import _parse_metrics_from_usage
 from braintrust.logger import Span, SpanTypeAttribute
 
 from ._common import SpanFactory, metadata_from_processor, tools_schema_to_openai_tools
@@ -336,7 +337,7 @@ class LiveTracker:
         elif kind in ("response.completed", "response.failed", "response.incomplete"):
             if snapshot.get("model"):
                 response.llm.log(metadata={"model": snapshot["model"]})
-            response.llm.log(metrics=_usage_metrics(snapshot.get("usage") or {}))
+            response.llm.log(metrics=_parse_metrics_from_usage(snapshot.get("usage")))
             if kind != "response.completed":
                 error = snapshot.get("error") or snapshot.get("incomplete_details") or {"status": kind}
                 response.llm.log(error=error)
@@ -420,25 +421,3 @@ class LiveTracker:
         for response_id in list(self.responses):
             self._end_response(response_id, incomplete=True, end_ms=end_ms)
         self._end_model(end_ms=end_ms)
-
-
-def _usage_metrics(usage: dict[str, Any]) -> dict[str, int | float]:
-    metrics = {
-        target: usage[source]
-        for source, target in (
-            ("input_tokens", "prompt_tokens"),
-            ("output_tokens", "completion_tokens"),
-            ("total_tokens", "tokens"),
-        )
-        if isinstance(usage.get(source), (int, float))
-    }
-    for source, key, target in (
-        ("input_tokens_details", "cached_tokens", "prompt_cached_tokens"),
-        ("input_tokens_details", "audio_tokens", "prompt_audio_tokens"),
-        ("output_tokens_details", "reasoning_tokens", "completion_reasoning_tokens"),
-        ("output_tokens_details", "audio_tokens", "completion_audio_tokens"),
-    ):
-        value = (usage.get(source) or {}).get(key)
-        if isinstance(value, (int, float)):
-            metrics[target] = value
-    return metrics

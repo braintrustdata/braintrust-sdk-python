@@ -213,35 +213,24 @@ class OpenAILivePatcher(CompositeFunctionWrapperPatcher):
     @classmethod
     def applies(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
         root = OpenAILiveEventPatcher.resolve_root(module, version, target=target)
-        return getattr(root, "OpenAILiveLLMService", None) is not None
-
-    @classmethod
-    def _compatible(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
+        if getattr(root, "OpenAILiveLLMService", None) is None:
+            return False
+        # Both hooks are needed to track a response through tool submission.
+        # Let the composite own patch markers and idempotency after this gate.
         for patcher, argument in ((OpenAILiveEventPatcher, "evt"), (OpenAILiveClientEventPatcher, "event")):
             method = patcher.resolve_target(module, version, target=target)
-            if not inspect.iscoroutinefunction(method):
-                return False
             try:
-                inspect.signature(method).bind(None, **{argument: None})
+                if inspect.iscoroutinefunction(method):
+                    inspect.signature(method).bind(None, **{argument: None})
+                    continue
             except (TypeError, ValueError):
-                return False
-        return True
-
-    @classmethod
-    def is_patched(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
-        return cls._compatible(module, version, target=target) and super().is_patched(module, version, target=target)
-
-    @classmethod
-    def patch(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
-        if not cls.applies(module, version, target=target):
-            return False
-        if not cls._compatible(module, version, target=target):
+                pass
             LOG.warning(
                 "GPT-Live model/turn tracing disabled: incompatible Pipecat Live event hooks. "
                 "Validated with pipecat-ai 1.16.0. Audio capture and other Pipecat tracing remain available."
             )
             return False
-        return super().patch(module, version, target=target)
+        return super().applies(module, version, target=target)
 
 
 def wrap_pipeline_worker(
@@ -278,5 +267,6 @@ def wrap_pipeline_worker(
     STTServiceProcessGeneratorPatcher.wrap_target(STTService)
     SegmentedSTTPushSegmentFramesPatcher.wrap_target(SegmentedSTTService)
     # Optional on older Pipecat versions; the patchers feature-detect the module.
-    OpenAILivePatcher.patch(None, None)
+    if OpenAILivePatcher.applies(None, None):
+        OpenAILivePatcher.patch(None, None)
     return PipelineWorkerPatcher.wrap_target(PipelineWorker)

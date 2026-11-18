@@ -918,14 +918,15 @@ async def test_recognition_scope_restores_context_after_errors_and_cancellation(
                 assert logger.current_span() is recognition
                 await asyncio.sleep(0)
                 raise failure("operation stopped")
-            assert logger.current_span() is caller
+        assert logger.current_span() is caller
 
 
-def test_live_incompatible_hook_reports_disabled_tracing(monkeypatch, caplog, memory_logger):
+@pytest.mark.parametrize("hook", ["_handle_server_event", "send_client_event"])
+def test_live_incompatible_hook_reports_disabled_tracing(monkeypatch, caplog, memory_logger, hook):
     live = pytest.importorskip("pipecat.services.openai.live.llm")
     # Simulate an upstream API removal. Provider cassettes cannot reproduce a
     # missing method; assertions concern the public setup diagnostic only.
-    monkeypatch.delattr(live.OpenAILiveLLMService, "_handle_server_event")
+    monkeypatch.delattr(live.OpenAILiveLLMService, hook)
     with caplog.at_level(logging.WARNING):
         _instrument()
         assert "GPT-Live model/turn tracing disabled" in caplog.text
@@ -1133,6 +1134,9 @@ async def test_live_observations(memory_logger, vcr_cassette_dir, boundary):
             if e["type"] == "response.event" and e["event"]["type"] == "response.completed"
         ]
         assert [r["metrics"]["tokens"] for r in llms] == [r["usage"]["total_tokens"] for r in completions]
+        assert [r["metrics"]["prompt_cache_creation_tokens"] for r in llms] == [
+            r["usage"]["input_tokens_details"]["cache_write_tokens"] for r in completions
+        ]
         completed_items = [
             e["event"]["item"]
             for e in sent
