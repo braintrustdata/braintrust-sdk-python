@@ -107,6 +107,7 @@ class _Playback:
     # span and set its start only after the transport confirms an audio frame.
     span: Span | None = None
     start_ms: float = 0.0
+    audio_end_ms: float = 0.0
     text: SpeechText = field(default_factory=SpeechText)
     generators: dict[str, _Synthesis] = field(default_factory=dict)
 
@@ -133,6 +134,7 @@ class AgentTracker:
 
     def __init__(self, spans: SpanFactory, clock: SessionClock, recorder: AudioSessionRecorder) -> None:
         self._spans, self._clock, self._recorder = spans, clock, recorder
+        self.report_uninterrupted_playback = True
         self._turn: _AgentTurn | None = None
         self._response: _ModelResponse | None = None
         self._last_response: Span | None = None
@@ -249,6 +251,12 @@ class AgentTracker:
         response.metadata.update(metadata_from_processor(processor))
 
     # Tools
+
+    def link_tool_request(self, call_id: str, requester: Span) -> None:
+        """Associate a native Live backend request with its later tool frame."""
+        # Pipecat owns the tool's execution and result submission as part of
+        # handling this response, even when execution uses another task.
+        self._requesters[call_id] = requester
 
     def start_tool(self, frame: "FunctionCallInProgressFrame | FunctionCallResultFrame") -> None:
         key = frame.tool_call_id
@@ -405,6 +413,9 @@ class AgentTracker:
         playback = self._playback
         if playback is None:
             return
+        playback.audio_end_ms = max(playback.audio_end_ms, self._clock.now_ms()) + (
+            len(frame.audio) * 1000 / (2 * frame.num_channels * frame.sample_rate)
+        )
         span = playback.span
         if span is None:
             playback.start_ms = self._clock.now_ms()
@@ -470,7 +481,7 @@ class AgentTracker:
         if self._playback is not None:
             if self._playback.span is not None:
                 self._playback.span.log(metadata={status: True})
-            self._end_playback(self._playback, interrupted=interrupted, end_ms=end_ms)
+            self._end_playback(self._playback, interrupted=interrupted, end_ms=end_ms, shutdown=not interrupted)
         if self._response is not None:
             self._response.span.log(metadata={status: True})
             self._end_response(self._response, end_ms=end_ms)
@@ -529,17 +540,22 @@ class AgentTracker:
         synthesis.ended = True
         synthesis.text.parts.clear()
 
-    def _end_playback(self, playback: _Playback, *, interrupted: bool, end_ms: float | None = None) -> None:
+    def _end_playback(
+        self, playback: _Playback, *, interrupted: bool, end_ms: float | None = None, shutdown: bool = False
+    ) -> None:
         if playback.span is None:
             self._playback = None
             return
         end_ms = self._clock.now_ms() if end_ms is None else end_ms
-        playback.span.log(
-            metadata={
-                SELECTIONS: {"selection-0": selection(playback.start_ms, end_ms)},
-                "contrib.pipecat.interrupted": interrupted,
-            }
-        )
+        # Cleanup may wait for remote closure after the transport stops sending.
+        # Keep the observed span lifetime, but don't select teardown as speech.
+        selection_end = min(end_ms, playback.audio_end_ms) if shutdown else end_ms
+        metadata: dict[str, Any] = {SELECTIONS: {"selection-0": selection(playback.start_ms, selection_end)}}
+        # Live handles automatic interruption remotely without notifying
+        # Pipecat. An explicit local interruption is still observable.
+        if interrupted or self.report_uninterrupted_playback:
+            metadata["contrib.pipecat.interrupted"] = interrupted
+        playback.span.log(metadata=metadata)
         if playback.text.parts:
             playback.span.log(output=[{"role": "assistant", "content": str(playback.text)}])
         playback.span.end(end_time=self._clock.wall(end_ms))
