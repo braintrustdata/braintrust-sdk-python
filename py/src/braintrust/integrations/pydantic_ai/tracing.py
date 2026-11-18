@@ -6,6 +6,7 @@ import sys
 import time
 from collections.abc import Mapping
 from contextlib import AbstractAsyncContextManager
+from dataclasses import dataclass
 from typing import Any
 
 from braintrust.integrations.utils import _materialize_attachment, _timing_metrics
@@ -28,7 +29,19 @@ from wrapt import wrap_function_wrapper
 
 
 logger = logging.getLogger(__name__)
-_tool_trace_state: contextvars.ContextVar[list[int] | None] = contextvars.ContextVar(
+
+
+@dataclass
+class _ToolTraceState:
+    emitted: bool = False
+
+
+@dataclass
+class _SyncToolTraceState(_ToolTraceState):
+    traced_run_result: Any = None
+
+
+_tool_trace_state: contextvars.ContextVar[_ToolTraceState | None] = contextvars.ContextVar(
     "braintrust_pydantic_ai_tool_trace_state", default=None
 )
 
@@ -67,7 +80,7 @@ def _direct_prepare_model_wrapper(wrapped: Any, instance: Any, args: Any, kwargs
 
 
 def _start_tool_trace_capture() -> Any:
-    return _tool_trace_state.set([0])
+    return _tool_trace_state.set(_ToolTraceState())
 
 
 def _reset_tool_trace_capture(token: Any) -> None:
@@ -77,12 +90,12 @@ def _reset_tool_trace_capture(token: Any) -> None:
 def _mark_tool_span_emitted() -> None:
     state = _tool_trace_state.get()
     if state is not None:
-        state[0] += 1
+        state.emitted = True
 
 
 def _maybe_create_tool_spans_from_messages(result: Any) -> None:
     state = _tool_trace_state.get()
-    if state is not None and state[0] > 0:
+    if state is not None and state.emitted:
         return
     _create_tool_spans_from_messages(result)
 
@@ -141,6 +154,9 @@ async def _agent_run_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any
                 _shape_result_output(result),
                 _wrapper_span_metrics(start_time, end_time),
             )
+            parent_capture = tool_trace_token.old_value
+            if isinstance(parent_capture, _SyncToolTraceState):
+                parent_capture.traced_run_result = result
             return result
         finally:
             _reset_tool_trace_capture(tool_trace_token)
@@ -155,13 +171,16 @@ def _agent_run_sync_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any)
         input=input_data if input_data else None,
         metadata=metadata,
     ) as agent_span:
-        tool_trace_token = _start_tool_trace_capture()
+        tool_trace_state = _SyncToolTraceState()
+        tool_trace_token = _tool_trace_state.set(tool_trace_state)
         try:
             start_time = time.time()
             result = wrapped(*args, **kwargs)
             end_time = time.time()
 
-            _maybe_create_tool_spans_from_messages(result)
+            # run_sync normally delegates to run, which already traced this result.
+            if result is not tool_trace_state.traced_run_result:
+                _maybe_create_tool_spans_from_messages(result)
 
             _log_agent_result(
                 agent_span,

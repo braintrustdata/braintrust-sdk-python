@@ -16,7 +16,7 @@ from braintrust.test_helpers import init_test_logger
 from packaging.version import Version
 from pydantic import BaseModel
 from pydantic_ai import Agent, ModelSettings
-from pydantic_ai.messages import ModelRequest, ModelResponse, UserPromptPart
+from pydantic_ai.messages import ModelRequest, ModelResponse, ToolCallPart, UserPromptPart
 from pydantic_ai.usage import UsageLimits
 
 
@@ -1561,14 +1561,24 @@ async def test_tool_execution_tracing_does_not_depend_on_message_reconstruction(
     _assert_metrics_are_valid(agent_span["metrics"], start, end)
 
 
-@pytest.mark.vcr
-def test_tool_execution_creates_spans(memory_logger):
-    """Test that executing tools with agents works and creates traced spans."""
+@pytest.mark.vcr(cassette_name="test_tool_execution_creates_spans")
+@pytest.mark.parametrize("trace_tool_execution", [True, False], ids=["live", "from-messages"])
+def test_tool_execution_creates_spans(memory_logger, monkeypatch, trace_tool_execution):
+    """A synchronous agent run emits one span per tool call."""
+    if not trace_tool_execution:
+        from braintrust.integrations.pydantic_ai.patchers import ToolManagerFunctionToolPatcher
+        from pydantic_ai._agent_graph import ToolManager
+
+        # Exercise fallback tracing with the real tool execution method.
+        for patcher in ToolManagerFunctionToolPatcher.sub_patchers:
+            if patcher.applies(pydantic_ai, None):
+                name = patcher.target_path.rsplit(".", 1)[-1]
+                method = getattr(ToolManager, name)
+                monkeypatch.setattr(ToolManager, name, method.__wrapped__)
+
     assert not memory_logger.pop()
 
-    start = time.time()
-
-    agent = Agent(MODEL, model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=500))
+    agent = Agent(MODEL, name="calculator", model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=500))
 
     @agent.tool_plain
     def calculate(operation: str, a: float, b: float) -> float:
@@ -1582,7 +1592,6 @@ def test_tool_execution_creates_spans(memory_logger):
 
     # Run the agent with a query that will use the tool
     result = agent.run_sync("What is 127 multiplied by 49?")
-    end = time.time()
 
     # Verify the tool was actually called and result is correct
     assert result.output
@@ -1594,16 +1603,16 @@ def test_tool_execution_creates_spans(memory_logger):
     spans = memory_logger.pop()
 
     # Find spans by type
-    agent_span = _find_agent_span(spans)
+    sync_span = next(s for s in spans if s["span_attributes"]["name"] == "agent_run_sync [calculator]")
+    agent_span = next(s for s in spans if s["span_attributes"]["name"] == "agent_run [calculator]")
     chat_spans = [s for s in spans if "chat" in s["span_attributes"]["name"]]
 
     # Assertions - verify basic tracing works with tools
-    assert agent_span is not None, "agent_run span should exist"
     assert len(chat_spans) >= 1, f"Expected at least 1 chat span, got {len(chat_spans)}"
 
     # Verify agent span has tool information in input
-    assert "toolsets" in agent_span["input"], "Tool information should be captured in agent input"
-    toolsets = agent_span["input"]["toolsets"]
+    assert "toolsets" in sync_span["input"], "Tool information should be captured in agent input"
+    toolsets = sync_span["input"]["toolsets"]
     agent_toolset = next((ts for ts in toolsets if ts.get("id") == "<agent>"), None)
     assert agent_toolset is not None, "Agent toolset should be in input"
 
@@ -1612,18 +1621,18 @@ def test_tool_execution_creates_spans(memory_logger):
     tool_names = [t["name"] for t in tools if isinstance(t, dict)]
     assert "calculate" in tool_names, f"calculate tool should be in toolset, got: {tool_names}"
 
+    tool_call_count = sum(
+        isinstance(part, ToolCallPart) for message in result.new_messages() for part in message.parts
+    )
     tool_spans = [s for s in spans if s["span_attributes"].get("type") == SpanTypeAttribute.TOOL]
-    assert len(tool_spans) >= 1, f"Expected at least 1 TOOL span, got {len(tool_spans)}"
-
-    calc_tool_span = next((s for s in tool_spans if s["span_attributes"]["name"] == "calculate"), None)
-    assert calc_tool_span is not None, "calculate TOOL span not found"
+    assert len(tool_spans) == tool_call_count >= 1, (
+        f"Expected one TOOL span per tool call ({tool_call_count}), got {len(tool_spans)}"
+    )
+    calc_tool_span = _single_tool_span(tool_spans, "calculate")
     assert calc_tool_span["input"] is not None, "tool span should have input"
     assert calc_tool_span["output"] is not None, "tool span should have output"
-    # Verify tool span is nested within the agent span tree
-    all_span_ids = {s["span_id"] for s in spans}
-    assert calc_tool_span["span_parents"][0] in all_span_ids, (
-        "tool span should be nested under a span in the agent tree"
-    )
+    assert agent_span["span_parents"] == [sync_span["span_id"]]
+    assert calc_tool_span["span_parents"] == [agent_span["span_id"]]
 
 
 def _single_tool_span(spans, name):
