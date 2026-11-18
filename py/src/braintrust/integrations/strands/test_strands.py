@@ -198,3 +198,53 @@ async def test_strands_decision_image_state_is_logged_as_attachment(memory_logge
     assert logged_state[1]["image"]["format"] == "png"
     # The model request keeps the original bytes.
     assert state[1]["image"]["source"]["bytes"] == image
+
+
+@pytest.mark.asyncio
+@pytest.mark.vcr
+@pytest.mark.parametrize(
+    "kind,media_format,mime_type",
+    [("image", "png", "image/png"), ("document", "pdf", "application/pdf")],
+    ids=["image", "document"],
+)
+async def test_strands_native_agent_preserves_media(memory_logger, kind, media_format, mime_type):
+    from strands import Agent
+    from strands.models.openai import OpenAIModel
+
+    assert StrandsIntegration.setup()
+    filename = "test-image.png" if kind == "image" else "test-document.pdf"
+    data = (Path(__file__).parent.parent.parent / "fixtures" / filename).read_bytes()
+    text = "data:text/plain;base64,aGVsbG8="
+    media = {"format": media_format, "source": {"bytes": data}}
+    if kind == "document":
+        media["name"] = filename
+    content = [{kind: media}, {"text": text}]
+    agent = Agent(
+        model=OpenAIModel(model_id=DECISION_MODEL, params={**MODEL_OPTIONS, "max_completion_tokens": 16}),
+        name="bt-media-agent",
+        system_prompt="Acknowledge the attached media with one short sentence.",
+    )
+
+    result = await agent.invoke_async(content)
+
+    assert result.message["role"] == "assistant"
+    spans = memory_logger.pop()
+    (llm_span,) = find_spans_by_type(spans, SpanTypeAttribute.LLM)
+    task_spans = {span["span_attributes"]["name"]: span for span in find_spans_by_type(spans, SpanTypeAttribute.TASK)}
+    assert set(task_spans) == {"bt-media-agent.invoke", "event_loop.cycle"}
+    assert llm_span["span_parents"] == [task_spans["event_loop.cycle"]["span_id"]]
+    assert task_spans["event_loop.cycle"]["span_parents"] == [task_spans["bt-media-agent.invoke"]["span_id"]]
+    for span in [*task_spans.values(), llm_span]:
+        logged_content = span["input"]["messages"][0]["content"]
+        attachment = logged_content[0][kind]["source"]["bytes"]
+        assert isinstance(attachment, Attachment)
+        assert attachment.reference["content_type"] == mime_type
+        assert attachment.data == data
+        assert logged_content[0][kind]["format"] == media_format
+        assert logged_content[1]["text"] == text
+        assert span["output"]["message"]["role"] == result.message["role"]
+        assert span["output"]["message"]["content"] == result.message["content"]
+        assert span["context"]["span_origin"]["instrumentation"]["name"] == "strands-auto"
+    # Instrumentation leaves the original bytes available to the model and caller.
+    assert content[0][kind]["source"]["bytes"] == data
+    assert agent.messages[0]["content"][0][kind]["source"]["bytes"] == data
