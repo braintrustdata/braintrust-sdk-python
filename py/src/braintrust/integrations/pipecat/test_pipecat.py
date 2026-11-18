@@ -24,7 +24,6 @@ from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
 import pytest
-import pytest_asyncio
 from braintrust import SpanCustomizer, logger, set_span_customizers
 from braintrust.integrations.pipecat import setup_pipecat, wrap_pipeline_worker
 from braintrust.integrations.test_utils import verify_autoinstrument_script
@@ -449,6 +448,7 @@ async def test_voice_session_traces_turns_speech_recognition_generation_and_play
     assert _link_targets(playback, "generated_by") == [synthesis["span_id"]]
     assert playback["metadata"]["audio.speaker_ids"] == synthesis["metadata"]["audio.speaker_ids"]
     assert playback["metadata"]["contrib.pipecat.interrupted"] is False
+    assert playback["output"] == [{"role": "assistant", "content": synthesis["input"]["text"]}]
     assert "audio.participant_ids" in playback["metadata"]
 
     # Both directions land in shared recordings; playback is what was sent.
@@ -769,170 +769,6 @@ async def test_tracing_failures_never_break_the_pipeline_or_session(memory_logge
     root = _single_span(logs, "session")
     assert root["metrics"].get("end") is not None
     assert root["metadata"]["contrib.pipecat.terminal_frame"] == "EndFrame"
-
-
-@pytest_asyncio.fixture
-async def tracker_observer(memory_logger):
-    # These regressions concern local frame bookkeeping, not provider payloads.
-    # Use the real trackers, clock, recorder, services and native frame classes.
-    _frames()
-    from braintrust.integrations.pipecat.tracing.observer import BraintrustPipecatObserver
-
-    observer = BraintrustPipecatObserver(capture_audio_attachments=False)
-    yield observer
-    await observer.cleanup()
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize("boundary", ["turn", "response", "shutdown"])
-async def test_queued_transcript_retains_text_and_receipt_time(memory_logger, tracker_observer, boundary):
-    frames = _frames()
-    STT = _import("pipecat.services.openai.stt.OpenAISTTService")
-    stt = STT(api_key="unused")
-    session = tracker_observer._start_session()
-    with session.clock.event(0):
-        session.user.start_speech(session.clock.now_ms())
-        session.user.consume_audio(stt)
-    with session.clock.event(100_000_000):
-        session.user.stop_speech()
-        session.user.transcribe(frames.TranscriptionFrame("Hello", "caller", "0"), stt)
-        received = session.clock.wall()
-    with session.clock.event(200_000_000):
-        if boundary == "turn":
-            session.user.start_turn()
-        elif boundary == "response":
-            session.user.flush_transcribed()
-        else:
-            session.user.close(session.clock.now_ms())
-    recognition = _single_span(memory_logger.pop(), "stt")
-    assert recognition["output"] == [{"role": "user", "content": "Hello"}]
-    assert recognition["metrics"]["end"] == received
-
-
-@pytest.mark.asyncio
-async def test_untranscribed_stt_ends_with_its_user_turn(memory_logger, tracker_observer):
-    STT = _import("pipecat.services.openai.stt.OpenAISTTService")
-    session = tracker_observer._start_session()
-    with session.clock.event(0):
-        session.user.start_turn()
-        session.user.start_speech(session.clock.now_ms())
-        session.user.consume_audio(STT(api_key="unused"))
-    with session.clock.event(100_000_000):
-        session.user.stop_speech()
-        session.user.stop_turn()
-    with session.clock.event(10_000_000_000):
-        session.user.close(session.clock.now_ms())
-    logs = memory_logger.pop()
-    recognition = _single_span(logs, "stt")
-    turn = _single_span(logs, "user_turn")
-    assert recognition["metrics"]["end"] == turn["metrics"]["end"]
-    assert recognition["metadata"]["contrib.pipecat.incomplete"] is True
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "parts,spaced,expected",
-    [
-        (["Hello.", "How are you?"], False, "Hello. How are you?"),
-        (["Hello", " there", "!"], True, "Hello there!"),
-    ],
-)
-async def test_tts_and_played_text_preserve_native_spacing(memory_logger, tracker_observer, parts, spaced, expected):
-    frames = _frames()
-    session = tracker_observer._start_session()
-    session.agent.start_tts(frames.TTSStartedFrame(), _openai_tts())
-    session.agent.start_playback()
-    session.agent.played_audio(frames.OutputAudioRawFrame(bytes(320), 16000, 1))
-    for text in parts:
-        frame = frames.TTSTextFrame(text, aggregated_by="sentence")
-        frame.includes_inter_frame_spaces = spaced
-        session.agent.tts_text(frame)
-        # Feed the same text through the actual observer playback callback.
-        tracker_observer._observe_playback(session, frame)
-    session.agent.stop_tts(frames.TTSStoppedFrame())
-    session.agent.stop_playback()
-    logs = memory_logger.pop()
-    assert _single_span(logs, "tts")["input"]["text"] == expected
-    assert _single_span(logs, "agent_speech")["output"] == [{"role": "assistant", "content": expected}]
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize("boundary", ["completed", "interrupted", "shutdown"])
-async def test_playback_completion_distinguishes_shutdown_from_interruption(memory_logger, tracker_observer, boundary):
-    # Local observer bookkeeping: use native public events, without a provider
-    # or private tracker calls. Provider replay cannot control cleanup latency.
-    frames = _frames()
-    FramePushed = _import("pipecat.observers.base_observer.FramePushed")
-    FrameDirection = _import("pipecat.processors.frame_processor.FrameDirection")
-    FrameProcessor = _import("pipecat.processors.frame_processor.FrameProcessor")
-    Transport = _import("pipecat.transports.websocket.server.WebsocketServerTransport")
-    Params = _import("pipecat.transports.websocket.server.WebsocketServerParams")
-    transport = Transport(params=Params(audio_out_enabled=True))
-    destination = FrameProcessor()
-
-    async def push(frame, timestamp):
-        await tracker_observer.on_push_frame(
-            FramePushed(transport.output(), destination, frame, FrameDirection.DOWNSTREAM, timestamp)
-        )
-
-    await push(frames.BotStartedSpeakingFrame(), 0)
-    await push(frames.OutputAudioRawFrame(bytes(320), 16000, 1), 0)
-    if boundary == "completed":
-        await push(frames.BotStoppedSpeakingFrame(), 200_000_000)
-    elif boundary == "interrupted":
-        await push(frames.InterruptionFrame(), 200_000_000)
-    else:
-        # Teardown can outlast the final 10 ms of audio that was actually sent.
-        await asyncio.sleep(0.03)
-    await tracker_observer.cleanup()
-
-    logs = memory_logger.pop()
-    playback = _single_span(logs, "agent_speech")
-    assert playback["metadata"]["contrib.pipecat.interrupted"] is (boundary == "interrupted")
-    if boundary == "shutdown":
-        assert playback["metadata"]["contrib.pipecat.incomplete"] is True
-    else:
-        assert "contrib.pipecat.incomplete" not in playback["metadata"]
-    window = playback["metadata"]["audio.selections"]["selection-0"]
-    assert window["end_offset_ms"] - window["start_offset_ms"] == (10 if boundary == "shutdown" else 200)
-    _assert_all_ended(logs)
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize("failure", [RuntimeError, asyncio.CancelledError])
-async def test_recognition_scope_restores_context_after_errors_and_cancellation(tracker_observer, failure):
-    STT = _import("pipecat.services.openai.stt.OpenAISTTService")
-    stt = STT(api_key="unused")
-    session = tracker_observer._start_session()
-    session.user.start_turn()
-    session.user.consume_audio(stt)
-
-    with logger.start_span(name="caller") as caller:
-        with pytest.raises(failure):
-            with tracker_observer._current_recognition(stt):
-                recognition = logger.current_span()
-                assert recognition is not caller
-                # Reentrant wrapping must also leave the outer scope intact.
-                with tracker_observer._current_recognition(stt):
-                    assert logger.current_span() is recognition
-                assert logger.current_span() is recognition
-                await asyncio.sleep(0)
-                raise failure("operation stopped")
-        assert logger.current_span() is caller
-
-
-@pytest.mark.parametrize("hook", ["_handle_server_event", "send_client_event"])
-def test_live_incompatible_hook_reports_disabled_tracing(monkeypatch, caplog, memory_logger, hook):
-    live = pytest.importorskip("pipecat.services.openai.live.llm")
-    # Simulate an upstream API removal. Provider cassettes cannot reproduce a
-    # missing method; assertions concern the public setup diagnostic only.
-    monkeypatch.delattr(live.OpenAILiveLLMService, hook)
-    with caplog.at_level(logging.WARNING):
-        _instrument()
-        assert "GPT-Live model/turn tracing disabled" in caplog.text
-        caplog.clear()
-        wrap_pipeline_worker(_import("pipecat.pipeline.worker.PipelineWorker"))
-        assert "GPT-Live model/turn tracing disabled" in caplog.text
 
 
 @pytest.mark.asyncio

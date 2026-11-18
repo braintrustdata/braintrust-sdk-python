@@ -8,7 +8,6 @@ from braintrust._audio.config import AudioRecordingOptions
 from braintrust.integrations.base import CompositeFunctionWrapperPatcher, FunctionWrapperPatcher
 
 from .tracing import BraintrustPipecatObserver
-from .tracing._common import LOG
 from .tracing._live import is_live_service
 
 
@@ -212,24 +211,16 @@ class OpenAILivePatcher(CompositeFunctionWrapperPatcher):
 
     @classmethod
     def applies(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
-        root = OpenAILiveEventPatcher.resolve_root(module, version, target=target)
-        if getattr(root, "OpenAILiveLLMService", None) is None:
-            return False
         # Both hooks are needed to track a response through tool submission.
         # Let the composite own patch markers and idempotency after this gate.
         for patcher, argument in ((OpenAILiveEventPatcher, "evt"), (OpenAILiveClientEventPatcher, "event")):
             method = patcher.resolve_target(module, version, target=target)
+            if not inspect.iscoroutinefunction(method):
+                return False
             try:
-                if inspect.iscoroutinefunction(method):
-                    inspect.signature(method).bind(None, **{argument: None})
-                    continue
+                inspect.signature(method).bind(None, **{argument: None})
             except (TypeError, ValueError):
-                pass
-            LOG.warning(
-                "GPT-Live model/turn tracing disabled: incompatible Pipecat Live event hooks. "
-                "Validated with pipecat-ai 1.16.0. Audio capture and other Pipecat tracing remain available."
-            )
-            return False
+                return False
         return super().applies(module, version, target=target)
 
 
