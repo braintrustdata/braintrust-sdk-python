@@ -1,6 +1,6 @@
 """Braintrust integration for Pipecat AI."""
 
-from braintrust._audio.config import AudioRecordingOptions
+from braintrust.audio import AudioRecordingOptions
 from braintrust.logger import NOOP_SPAN, current_span, init_logger
 
 from .integration import PipecatIntegration
@@ -41,8 +41,9 @@ def setup_pipecat(
     Turn containers follow Pipecat's native boundaries. Agent recordings
     contain transport-confirmed playback.
     ``audio_recording_options`` configures segmentation, encoding and shutdown
-    using ``braintrust._audio.config.AudioRecordingOptions``. Recordings default
-    to Opus/Ogg with ``braintrust[audio]`` installed, otherwise raw PCM.
+    using ``braintrust.audio.AudioRecordingOptions``. Recordings default
+    to Opus/Ogg when PyAV with libopus is available, otherwise raw PCM.
+    ``braintrust[audio]`` installs a pinned PyAV on Python 3.12+.
     """
     set_default_observer_options(
         capture_audio_attachments=capture_audio_attachments,

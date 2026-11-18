@@ -19,6 +19,7 @@ from braintrust import (
     wrap_openai,
     wrap_openrouter,
 )
+from braintrust.audio import AudioEncoding, AudioRecordingOptions
 
 
 _PUBLIC_SYMBOLS = [
@@ -37,3 +38,9 @@ _PUBLIC_SYMBOLS = [
 def test_top_level_public_symbol(name: str, imported: object) -> None:
     assert callable(imported)
     assert callable(getattr(braintrust, name))
+
+
+def test_public_audio_configuration_types() -> None:
+    encoding: AudioEncoding = AudioEncoding(codec="pcm", container="wav")
+    options: AudioRecordingOptions = AudioRecordingOptions(encoding=encoding)
+    assert options.encoding is encoding

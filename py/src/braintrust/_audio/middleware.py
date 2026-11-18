@@ -97,10 +97,13 @@ def encoding_stack(config: AudioEncoding | None, *, channels: int | None = None)
         return create_stack(selected)
     except Exception as error:
         if config is not None:
-            raise ValueError("Opus/Ogg requires PyAV. Install braintrust[audio].") from error
+            raise ValueError(
+                "Opus/Ogg requires PyAV with libopus support. "
+                "Install braintrust[audio] or provide a compatible PyAV/FFmpeg build."
+            ) from error
         if not _warned_missing_codec:
             _warned_missing_codec = True
             logging.getLogger("braintrust").warning(
-                "PyAV is unavailable; recording raw PCM. Install braintrust[audio] for Opus/Ogg."
+                "PyAV or its libopus encoder is unavailable; recording raw PCM. Install braintrust[audio] for Opus/Ogg."
             )
         return ()

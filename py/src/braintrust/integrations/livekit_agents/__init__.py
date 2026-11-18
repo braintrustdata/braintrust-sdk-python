@@ -1,4 +1,4 @@
-from braintrust._audio.config import AudioRecordingOptions
+from braintrust.audio import AudioRecordingOptions
 
 from .integration import LiveKitAgentsIntegration
 from .patchers import wrap_livekit_agents

@@ -52,7 +52,8 @@ braintrust = "braintrust.wrappers.pytest_plugin.plugin"
 braintrust = "braintrust.integrations.harbor:HarborPlugin"
 
 [project.optional-dependencies]
-# Opus/Ogg encoding requires Python 3.12+ (PyAV).
+# Install the qualified PyAV on Python 3.12+. Encoding detects PyAV/libopus
+# capability at runtime, including PyAV installed by a voice framework.
 audio = ["av==19.0.2; python_version>='3.12'"]
 cli = ["boto3", "python-dotenv", "uv>=0.13.4", "starlette", "uvicorn"]
 # TODO: remove the doc extra in the next major version.
