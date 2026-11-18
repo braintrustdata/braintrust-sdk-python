@@ -14,6 +14,7 @@ from braintrust.logger import start_span as _bt_start_span
 
 
 _INSTRUMENTATION = "pydantic-ai-auto"
+_AGENT_WRAPPER_MODULES = (__name__, "braintrust.integrations.base", "wrapt.wrappers")
 
 
 def start_span(*args, **kwargs):
@@ -117,7 +118,50 @@ def _log_agent_result(span: Any, input_data: dict[str, Any], result: Any, output
     span.log(input=resolved_input, output=output, metrics=metrics, metadata=metadata)
 
 
+def _should_infer_agent_name(wrapped: Any, instance: Any, kwargs: dict[str, Any]) -> bool:
+    try:
+        if not kwargs.get("infer_name", True) or not callable(getattr(instance, "_infer_name", None)):
+            return False
+
+        # Manual wrapping can also target overrides with a different signature.
+        param = inspect.signature(wrapped).parameters.get("infer_name")
+        return (
+            param is not None
+            and param.kind == inspect.Parameter.KEYWORD_ONLY
+            and ("infer_name" in kwargs or param.default is True)
+        )
+    except Exception:
+        logger.debug("Failed to inspect Pydantic AI agent name inference", exc_info=True)
+        return False
+
+
+def _infer_name_from_caller(instance: Any) -> None:
+    # Pydantic AI looks one frame back from the frame we pass it. Skip Braintrust
+    # and wrapt so its normal locals/globals lookup runs in the caller's frame.
+    frame = inspect.currentframe()
+    try:
+        while frame is not None and (caller := frame.f_back) is not None:
+            if caller.f_globals.get("__name__") not in _AGENT_WRAPPER_MODULES:
+                instance._infer_name(frame)
+                return
+            frame = caller
+    except Exception:
+        logger.debug("Failed to infer Pydantic AI agent name", exc_info=True)
+    finally:
+        del frame
+
+
+def _infer_agent_name(wrapped: Any, instance: Any, kwargs: dict[str, Any]) -> dict[str, Any]:
+    if getattr(instance, "name", "") is None and _should_infer_agent_name(wrapped, instance, kwargs):
+        _infer_name_from_caller(instance)
+        if instance.name is None:
+            # With no caller binding, a second lookup would see the wrapper's locals.
+            return {**kwargs, "infer_name": False}
+    return kwargs
+
+
 async def _agent_run_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+    kwargs = _infer_agent_name(wrapped, instance, kwargs)
     input_data, metadata = _build_agent_input_and_metadata(args, kwargs, instance)
 
     with start_span(
@@ -147,6 +191,7 @@ async def _agent_run_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any
 
 
 def _agent_run_sync_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+    kwargs = _infer_agent_name(wrapped, instance, kwargs)
     input_data, metadata = _build_agent_input_and_metadata(args, kwargs, instance)
 
     with start_span(
@@ -195,18 +240,21 @@ def _agent_to_cli_sync_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: A
 
 def _agent_run_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
     input_data, metadata = _build_agent_input_and_metadata(args, kwargs, instance)
-    agent_name = instance.name if hasattr(instance, "name") else None
-    span_name = f"agent_run_stream [{agent_name}]" if agent_name else "agent_run_stream"
+    # Pydantic AI infers the name on stream entry, in the frame that enters it.
+    infer_name = _should_infer_agent_name(wrapped, instance, kwargs)
+    stream_kwargs = {**kwargs, "infer_name": False} if infer_name else kwargs
 
     return _AgentStreamWrapper(
-        wrapped(*args, **kwargs),
-        span_name,
+        wrapped(*args, **stream_kwargs),
+        instance,
+        infer_name,
         input_data,
         metadata,
     )
 
 
 def _agent_run_stream_sync_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+    kwargs = _infer_agent_name(wrapped, instance, kwargs)
     input_data, metadata = _build_agent_input_and_metadata(args, kwargs, instance)
     agent_name = instance.name if hasattr(instance, "name") else None
     span_name = f"agent_run_stream_sync [{agent_name}]" if agent_name else "agent_run_stream_sync"
@@ -241,6 +289,7 @@ def _agent_run_stream_sync_wrapper(wrapped: Any, instance: Any, args: Any, kwarg
 
 
 def _agent_run_stream_events_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+    kwargs = _infer_agent_name(wrapped, instance, kwargs)
     input_data, metadata = _build_agent_input_and_metadata(args, kwargs, instance)
 
     agent_name = instance.name if hasattr(instance, "name") else None
@@ -656,9 +705,17 @@ def _extract_stream_response(stream: Any) -> Any:
 
 
 class _AgentStreamWrapper(AbstractAsyncContextManager):
-    def __init__(self, stream_cm: Any, span_name: str, input_data: Any, metadata: Any):
+    def __init__(
+        self,
+        stream_cm: Any,
+        agent: Any,
+        infer_name: bool,
+        input_data: Any,
+        metadata: Any,
+    ):
         self.stream_cm = stream_cm
-        self.span_name = span_name
+        self.agent = agent
+        self.infer_name = infer_name
         self.input_data = input_data
         self.metadata = metadata
         self.span_cm = None
@@ -671,8 +728,16 @@ class _AgentStreamWrapper(AbstractAsyncContextManager):
     async def __aenter__(self):
         self._enter_task = asyncio.current_task()
 
+        if self.infer_name and self.agent.name is None:
+            _infer_name_from_caller(self.agent)
+        agent_name = getattr(self.agent, "name", None)
+        if agent_name is not None:
+            self.metadata["agent_name"] = agent_name
+        else:
+            self.metadata.pop("agent_name", None)
+
         self.span_cm = start_span(
-            name=self.span_name,
+            name=f"agent_run_stream [{agent_name}]" if agent_name else "agent_run_stream",
             type=SpanTypeAttribute.TASK,
             input=self.input_data if self.input_data else None,
             metadata=self.metadata,

@@ -16,6 +16,7 @@ assert results2.get("pydantic_ai") == True
 with autoinstrument_test_context("test_auto_pydantic_ai", integration="pydantic_ai") as memory_logger:
     from pydantic_ai import Agent
     from pydantic_ai.models.openai import OpenAIChatModel
+    from pydantic_ai.models.test import TestModel
     from pydantic_ai.settings import ModelSettings
 
     agent = Agent(
@@ -23,15 +24,26 @@ with autoinstrument_test_context("test_auto_pydantic_ai", integration="pydantic_
         model_settings=ModelSettings(max_tokens=100, openai_reasoning_effort="none"),
     )
 
-    import asyncio
-
-    result = asyncio.run(agent.run("Say hi"))
+    result = agent.run_sync("Say hi")
     assert result.output
+    assert agent.name == "agent"
 
-    spans = memory_logger.pop()
-    assert len(spans) >= 1, f"Expected at least 1 span, got {len(spans)}"
-    # Find the agent_run span
-    agent_spans = [s for s in spans if "agent_run" in s["span_attributes"]["name"]]
-    assert len(agent_spans) >= 1, f"Expected agent_run span, got {[s['span_attributes']['name'] for s in spans]}"
+    span_names = {span["span_attributes"]["name"] for span in memory_logger.pop()}
+    assert {"agent_run_sync [agent]", "agent_run [agent]"} <= span_names
+
+    agents = [Agent(TestModel())]
+    agents[0].run_sync("Say hi")
+    assert agents[0].name is None
+
+    opt_out_agent = Agent(TestModel())
+    opt_out_agent.run_sync("Say hi", infer_name=False)
+    assert opt_out_agent.name is None
+    span_names = [span["span_attributes"]["name"] for span in memory_logger.pop()]
+    assert sorted(name for name in span_names if name.startswith("agent_run")) == [
+        "agent_run",
+        "agent_run",
+        "agent_run_sync",
+        "agent_run_sync",
+    ]
 
 print("SUCCESS")
