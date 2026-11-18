@@ -985,8 +985,15 @@ def test_openai_chat_streaming_sync_preserves_logprobs(memory_logger, monkeypatc
     assert all("bytes" not in entry or entry["bytes"] is not None for entry in output_choice["logprobs"]["content"])
 
 
-@pytest.mark.vcr
-def test_openai_chat_streaming_sync_preserves_audio_attachment(memory_logger):
+@pytest.mark.parametrize("value", [None, "false", "invalid", "true"])
+@pytest.mark.vcr(cassette_name="test_openai_chat_streaming_sync_preserves_audio_attachment")
+def test_openai_chat_streaming_sync_preserves_audio_attachment(memory_logger, monkeypatch, value):
+    enabled = value == "true"
+    if value is None:
+        monkeypatch.delenv("BRAINTRUST_CAPTURE_AGENT_AUDIO_ATTACHMENTS", raising=False)
+    else:
+        monkeypatch.setenv("BRAINTRUST_CAPTURE_AGENT_AUDIO_ATTACHMENTS", value)
+    monkeypatch.setenv("BRAINTRUST_CAPTURE_USER_AUDIO_ATTACHMENTS", "false" if enabled else "true")
     assert not memory_logger.pop()
 
     client = wrap_openai(openai.OpenAI())
@@ -1019,6 +1026,7 @@ def test_openai_chat_streaming_sync_preserves_audio_attachment(memory_logger):
     assert transcript
     assert "hello" in transcript.lower()
 
+    memory_logger.flush()
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
@@ -1026,12 +1034,17 @@ def test_openai_chat_streaming_sync_preserves_audio_attachment(memory_logger):
     message = output_choice["message"]
     assert message["role"] == "assistant"
     assert message["content"] is None
-    _assert_chat_audio_attachment(
-        message["audio"],
-        transcript=transcript,
-        content_type="audio/pcm",
-        filename="generated_audio.pcm",
-    )
+    if enabled:
+        _assert_chat_audio_attachment(
+            message["audio"],
+            transcript=transcript,
+            content_type="audio/pcm",
+            filename="generated_audio.pcm",
+        )
+    else:
+        assert message["audio"]["transcript"] == transcript
+        assert not {"data", "_decoded_data", "file"} & message["audio"].keys()
+    assert len(memory_logger.upload_attempts) == (1 if enabled else 0)
 
 
 @sync_async
@@ -1908,9 +1921,11 @@ STREAMING_TRANSCRIPTION_MODEL = "gpt-transcribe"
 
 
 def _assert_audio_input_attachment(span) -> None:
-    assert isinstance(span["input"]["file"], Attachment)
-    assert span["input"]["file"].reference["filename"] == os.path.basename(TEST_AUDIO_FILE)
-    assert span["input"]["file"].reference["content_type"].startswith("audio/")
+    attachment = span["input"]["file"]
+    reference = attachment.reference if isinstance(attachment, Attachment) else attachment
+    assert reference["type"] == "braintrust_attachment"
+    assert reference["filename"] == os.path.basename(TEST_AUDIO_FILE)
+    assert reference["content_type"].startswith("audio/")
 
 
 def _assert_chat_audio_attachment(
@@ -1935,9 +1950,10 @@ def _assert_chat_audio_attachment(
     assert "data" not in audio
 
     attachment = audio["file"]["file_data"]
-    assert isinstance(attachment, Attachment)
-    assert attachment.reference["content_type"] == content_type
-    assert attachment.reference["filename"] == filename
+    reference = attachment.reference if isinstance(attachment, Attachment) else attachment
+    assert reference["type"] == "braintrust_attachment"
+    assert reference["content_type"] == content_type
+    assert reference["filename"] == filename
 
 
 def _write_test_png(path: str, *, width: int = 64, height: int = 64) -> None:
@@ -2107,29 +2123,68 @@ def test_openai_images_edit(memory_logger):
 
 @sync_async
 @pytest.mark.asyncio
-@pytest.mark.vcr
-async def test_openai_audio_transcription(memory_logger, is_async):
+@pytest.mark.parametrize("value", [None, "false", "invalid", "true"])
+async def test_openai_audio_transcription(memory_logger, is_async, monkeypatch, value, vcr):
+    enabled = value == "true"
+    if value is None:
+        monkeypatch.delenv("BRAINTRUST_CAPTURE_USER_AUDIO_ATTACHMENTS", raising=False)
+    else:
+        monkeypatch.setenv("BRAINTRUST_CAPTURE_USER_AUDIO_ATTACHMENTS", value)
+    monkeypatch.setenv("BRAINTRUST_CAPTURE_AGENT_AUDIO_ATTACHMENTS", "false" if enabled else "true")
     assert not memory_logger.pop()
 
     client = wrap_openai(_client(is_async))
-    with open(TEST_AUDIO_FILE, "rb") as f:
-        response = await _call(is_async, client.audio.transcriptions.create, model=TRANSCRIPTION_MODEL, file=f)
+    cassette = f"test_openai_audio_transcription[{'async' if is_async else 'sync'}].yaml"
+    with vcr.use_cassette(cassette):
+        with open(TEST_AUDIO_FILE, "rb") as f:
+            response = await _call(is_async, client.audio.transcriptions.create, model=TRANSCRIPTION_MODEL, file=f)
     assert response
 
+    memory_logger.flush()
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
     assert span["metadata"]["model"] == TRANSCRIPTION_MODEL
     assert span["metadata"]["provider"] == "openai"
-    _assert_audio_input_attachment(span)
+    if enabled:
+        _assert_audio_input_attachment(span)
+    else:
+        assert span.get("input") is None
+    assert len(memory_logger.upload_attempts) == (1 if enabled else 0)
     assert span["output"] == response.text
     assert response.text.lower() == TEST_TRANSCRIPT.lower()
 
 
 @sync_async
 @pytest.mark.asyncio
+@pytest.mark.parametrize("capture", [False, True])
+@pytest.mark.vcr(cassette_name="test_openai_audio_speech_capture")
+async def test_openai_audio_speech_capture(memory_logger, monkeypatch, is_async, capture):
+    monkeypatch.setenv("BRAINTRUST_CAPTURE_AGENT_AUDIO_ATTACHMENTS", str(capture).lower())
+    monkeypatch.setenv("BRAINTRUST_CAPTURE_USER_AUDIO_ATTACHMENTS", str(not capture).lower())
+    client = wrap_openai(_client(is_async))
+    response = await _call(
+        is_async, client.audio.speech.create, model="tts-1", voice="alloy", input="Hi.", response_format="wav"
+    )
+    assert response.content.startswith(b"RIFF")
+    memory_logger.flush()
+    (span,) = memory_logger.pop()
+    assert span["input"] == "Hi."
+    if capture:
+        attachment = span["output"]["file"]["file_data"]
+        assert attachment["type"] == "braintrust_attachment"
+        assert attachment["content_type"].startswith("audio/")
+        assert len(memory_logger.upload_attempts) == 1
+    else:
+        assert span["output"] == {"type": "audio"}
+        assert not memory_logger.upload_attempts
+
+
+@sync_async
+@pytest.mark.asyncio
 @pytest.mark.vcr
-async def test_openai_audio_transcription_streaming_early_close(memory_logger, is_async):
+async def test_openai_audio_transcription_streaming_early_close(memory_logger, is_async, monkeypatch):
+    monkeypatch.delenv("BRAINTRUST_CAPTURE_USER_AUDIO_ATTACHMENTS", raising=False)
     assert not memory_logger.pop()
 
     client = wrap_openai(_client(is_async))
@@ -2152,6 +2207,7 @@ async def test_openai_audio_transcription_streaming_early_close(memory_logger, i
     assert span["metadata"]["model"] == STREAMING_TRANSCRIPTION_MODEL
     assert span["metadata"]["stream"] == True
     assert span["output"] == first_event.delta
+    assert span.get("input") is None
     metrics = span["metrics"]
     assert start <= metrics["start"] <= metrics["end"] <= end
     assert metrics["duration"] >= 0
@@ -2187,7 +2243,8 @@ async def test_openai_audio_transcription_streaming_no_events_omits_output(memor
 
 
 @pytest.mark.vcr
-def test_openai_audio_transcription_text_format(memory_logger):
+def test_openai_audio_transcription_text_format(memory_logger, monkeypatch):
+    monkeypatch.setenv("BRAINTRUST_CAPTURE_USER_AUDIO_ATTACHMENTS", "true")
     """When response_format='text', the API returns a plain string (not JSON)."""
     assert not memory_logger.pop()
 
@@ -2440,7 +2497,8 @@ class TestZAICompatibleOpenAI:
         # No spans should be generated from this unit test
         assert not memory_logger.pop()
 
-    def test_chat_completion_streaming_audio_is_materialized_as_attachment(self, memory_logger):
+    def test_chat_completion_streaming_audio_is_materialized_as_attachment(self, memory_logger, monkeypatch):
+        monkeypatch.setenv("BRAINTRUST_CAPTURE_AGENT_AUDIO_ATTACHMENTS", "true")
         assert not memory_logger.pop()
 
         all_results = [
@@ -2490,7 +2548,8 @@ class TestZAICompatibleOpenAI:
         )
         assert not memory_logger.pop()
 
-    def test_chat_completion_non_stream_audio_is_materialized_as_attachment(self, memory_logger):
+    def test_chat_completion_non_stream_audio_is_materialized_as_attachment(self, memory_logger, monkeypatch):
+        monkeypatch.setenv("BRAINTRUST_CAPTURE_AGENT_AUDIO_ATTACHMENTS", "true")
         assert not memory_logger.pop()
 
         output = _process_attachments_in_chat_output(

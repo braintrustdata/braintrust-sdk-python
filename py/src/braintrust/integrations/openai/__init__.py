@@ -21,7 +21,11 @@ def setup_openai(
     """Setup Braintrust integration with OpenAI.
 
     Patches OpenAI resource classes at the module level so that all clients
-    produce Braintrust tracing spans.
+    produce Braintrust tracing spans. Audio capture is opt-in: transcription
+    and translation inputs use ``BRAINTRUST_CAPTURE_USER_AUDIO_ATTACHMENTS``;
+    generated audio uses ``BRAINTRUST_CAPTURE_AGENT_AUDIO_ATTACHMENTS``. Both
+    default to false. These names describe input/output direction at the provider
+    boundary, not speaker identity. Transcripts remain visible without audio.
 
     Args:
         api_key: Braintrust API key (optional, can use env var BRAINTRUST_API_KEY)

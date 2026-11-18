@@ -1258,6 +1258,14 @@ def test_provider_privacy_covers_all_span_factories(with_memory_logger, test_log
     from braintrust._instrumentation import provider_content_allowed
 
     allowed = True
+    identity = "synthetic-schema-owner@example.test"
+    content_metadata = {
+        "tools": [{"type": "function", "function": {"name": "lookup", "description": identity}}],
+        "stop": [identity],
+        "response_format": {"type": "json_schema", "json_schema": {"description": identity}},
+        "prediction": {"type": "content", "content": identity},
+        "unknown_metadata": identity,
+    }
     with test_logger.start_span(name="customer", input="customer content") as customer:
         factories = {
             "module": logger.start_span,
@@ -1269,7 +1277,11 @@ def test_provider_privacy_covers_all_span_factories(with_memory_logger, test_log
         token = provider_content_allowed.set(lambda: allowed)
         try:
             root = factories[factory](
-                name="provider", input="private root", internal={"instrumentation": "ai-sdk-auto"}
+                name="provider",
+                input="private root",
+                internal={"instrumentation": "ai-sdk-auto"},
+                metadata={"model": "example-model", "provider": "example-provider", **content_metadata},
+                metrics={"tokens": 5},
             )
         finally:
             provider_content_allowed.reset(token)
@@ -1280,7 +1292,11 @@ def test_provider_privacy_covers_all_span_factories(with_memory_logger, test_log
         grandchild = child.start_span(
             name="provider grandchild", output="private output", internal={"instrumentation": "ai-sdk-auto"}
         )
-        manual = root.start_span(name="customer child", input="customer child content")
+        # Cover sensitive-only incremental updates as well as the initial
+        # record that also contains safe model/provider attribution.
+        child.log(metadata=content_metadata)
+        grandchild.log(metadata=content_metadata)
+        manual = root.start_span(name="customer child", input="customer child content", metadata=content_metadata)
         allowed = False
         for span in (root, child, grandchild, manual):
             span.end()
@@ -1288,5 +1304,13 @@ def test_provider_privacy_covers_all_span_factories(with_memory_logger, test_log
     for span in (root, child, grandchild):
         row = next(row for row in rows if row["id"] == span.id)
         assert "input" not in row and "output" not in row
-    assert next(row for row in rows if row["id"] == manual.id)["input"] == "customer child content"
+        assert identity not in json.dumps(row)
+        if span is root:
+            assert row["metadata"] == {"model": "example-model", "provider": "example-provider"}
+            assert row["metrics"]["tokens"] == 5
+        else:
+            assert not row.get("metadata")
+    manual_row = next(row for row in rows if row["id"] == manual.id)
+    assert manual_row["input"] == "customer child content"
+    assert manual_row["metadata"] == content_metadata
     assert next(row for row in rows if row["id"] == customer.id)["input"] == "customer content"

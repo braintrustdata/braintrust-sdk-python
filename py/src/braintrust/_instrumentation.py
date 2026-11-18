@@ -16,6 +16,12 @@ class _ProviderPrivacyCustomizer(SpanCustomizer):
         if not self.policy():
             for field in ("input", "output", "error"):
                 data.pop(field, None)
+            # Tools, schemas, stop strings, and arbitrary provider settings can
+            # contain customer content. Retain only model attribution instead
+            # of maintaining a growing list of content-bearing metadata keys.
+            metadata = data.get("metadata")
+            if metadata is not None:
+                data["metadata"] = {key: metadata[key] for key in ("model", "provider") if key in metadata}
         return data
 
 
