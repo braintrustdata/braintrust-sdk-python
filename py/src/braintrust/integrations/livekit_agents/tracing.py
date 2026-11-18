@@ -137,6 +137,10 @@ class Session:
         self.user = None
         self.user_started = None
         self.pending_users = set()
+        self.eou_waits = {}
+        self.eou_active = {}
+        self.speech_ends = {}
+        self.native_users = {}
         self.user_speech = None
         self.user_selection = None
         self.user_start = None
@@ -316,6 +320,12 @@ class Session:
             return
         self.closed = True
         end = time.time()
+        from .eou import finish
+
+        for wait in list({id(wait): wait for wait in (*self.eou_waits.values(), *self.eou_active.values())}.values()):
+            finish(self, wait, end)
+        self.speech_ends.clear()
+        self.native_users.clear()
         for controller in self.realtime.values():
             controller.close()
         self.realtime.clear()
@@ -500,7 +510,10 @@ def continue_turn(wrapped, instance, args, kwargs):
 def ensure_user(wrapped, instance, args, kwargs):
     if (owner := state_for(instance)) is not None:
         owner.ensure_user(arguments(wrapped, args, kwargs).get("start_time"))
-    return wrapped(*args, **kwargs)
+    native = wrapped(*args, **kwargs)
+    if owner is not None:
+        owner.native_users[(instance, native)] = owner.user
+    return native
 
 
 def user_speech_start(wrapped, instance, args, kwargs):
@@ -581,18 +594,36 @@ def process_stt(wrapped, instance, args, kwargs):
             owner.log(span, output=[{"role": "user", "content": result.text}])
             if not getattr(result, "_braintrust_streaming_recognition", False):
                 span.end(interval[1] if interval else received_at)
-    return wrapped(*args, **kwargs)
+    result = wrapped(*args, **kwargs)
+    if owner is not None:
+        from .eou import stt_anchor
+
+        stt_anchor(instance, event, owner)
+    return result
 
 
 def end_of_turn(wrapped, instance, args, kwargs):
     owner = state_for(instance)
     info = args[0] if args else kwargs["info"]
     if owner is not None:
-        user = owner.ensure_user()
+        from .eou import SNAPSHOT_WAIT
+
+        snapshot_wait = SNAPSHOT_WAIT.get()
+        native_user = getattr(info, "user_turn_span", None)
+        user = (
+            snapshot_wait.parent
+            if snapshot_wait is not None
+            and state_for(snapshot_wait.recognition) is owner
+            and snapshot_wait.parent is not owner.span
+            else None
+        )
+        if user is None:
+            user = next((span for (_, native), span in owner.native_users.items() if native is native_user), None)
+        user = user or owner.ensure_user()
         setattr(info, "_braintrust_turn", user)
         setattr(info, "_braintrust_owner", owner)
         owner.log(user, input=[{"role": "user", "content": info.new_transcript}])
-        if owner.user_start is not None and owner.user_end is not None:
+        if user is owner.user and owner.user_start is not None and owner.user_end is not None:
             user.log(
                 metadata={
                     "audio.selections": {
@@ -608,27 +639,23 @@ def end_of_turn(wrapped, instance, args, kwargs):
         try:
             committed = wrapped(*args, **kwargs)
             if committed:
+                committed_at = time.time()
+                if snapshot_wait is not None and state_for(snapshot_wait.recognition) is owner:
+                    snapshot_wait.committed_at = committed_at
+                for wait in owner.eou_waits.values():
+                    if wait.parent is user:
+                        wait.committed_at = committed_at
                 timing = info.metrics
                 _log_native_diagnostics(
                     user, end_of_turn_delay=timing.end_of_turn_delay, transcription_delay=timing.transcription_delay
                 )
-                stopped, delay = timing.stopped_speaking_at, timing.end_of_turn_delay
-                if (
-                    type(stopped) in (int, float)
-                    and type(delay) in (int, float)
-                    and math.isfinite(stopped)
-                    and math.isfinite(delay)
-                    and stopped >= 0
-                    and delay >= 0
-                ):
-                    wait = _new(
-                        user, "livekit.eou_wait", start_time=stopped, metadata={"contrib.livekit.outcome": "committed"}
-                    )
-                    wait.end(stopped + delay)
-                owner.user = None
+                owner.native_users = {key: span for key, span in owner.native_users.items() if span is not user}
+                if owner.user is user:
+                    owner.user = None
                 if info.user_turn_span_adopted:
                     owner.pending_users.add(user)
                 else:
+                    owner.pending_users.discard(user)
                     user.end()
             return committed
         finally:
@@ -672,9 +699,17 @@ def recognition_end(wrapped, instance, args, kwargs):
         return wrapped(*args, **kwargs)
     finally:
         if owner is not None:
+            owner.speech_ends.pop(instance, None)
+            snapshots = {wait.parent for wait in owner.eou_waits.values() if wait.snapshot}
+            owner.native_users = {
+                key: span for key, span in owner.native_users.items() if key[0] is not instance or span in snapshots
+            }
             for field in ("stt", "user_speech", "user"):
                 span = getattr(owner, field)
                 if span is not None:
+                    if field == "user" and span in snapshots:
+                        owner.user = None
+                        continue
                     span.log(
                         metadata={"turn.incomplete": True} if field == "user" else {"contrib.livekit.incomplete": True}
                     )

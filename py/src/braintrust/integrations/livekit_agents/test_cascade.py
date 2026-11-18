@@ -15,21 +15,28 @@ def named(rows, name):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "preemptive,directions,provider_mode",
+    "preemptive,directions,provider_mode,manual",
     [
-        (False, "both", "enabled"),
-        (True, "both", "enabled"),
-        (False, "user", "enabled"),
-        (False, "both", "disabled"),
+        (False, "both", "enabled", False),
+        (True, "both", "enabled", False),
+        (False, "user", "enabled", False),
+        (False, "both", "disabled", False),
+        (False, "both", "enabled", True),
     ],
 )
 @pytest.mark.vcr(cassette_name="test_livekit_agents_e2e_parenting_under_custom_span")
 async def test_consumed_input_drives_real_cascade(
-    rooms, memory_logger, monkeypatch, preemptive, directions, provider_mode
+    rooms, memory_logger, monkeypatch, preemptive, directions, provider_mode, manual
 ):
     from livekit import rtc
     from livekit.agents import Agent, AgentSession
     from livekit.plugins import openai, silero
+
+    if manual:
+        from livekit.agents.voice.audio_recognition import AudioRecognition
+
+        if not hasattr(AudioRecognition, "_take_turn_snapshot"):
+            pytest.skip("Pending manual snapshots require LiveKit 1.8.12")
 
     monkeypatch.setenv("BRAINTRUST_LEGACY_IDS", "false")
     logger._state._reset_id_generator()
@@ -72,7 +79,13 @@ async def test_consumed_input_drives_real_cascade(
     )
 
     with logger.start_span(name="voice_call") as outer:
-        async with llm, tts, stt, AgentSession(vad=vad, stt=stt, tts=tts, preemptive_generation=preemptive) as session:
+        options = {"turn_detection": "manual", "min_endpointing_delay": 0.8} if manual else {}
+        async with (
+            llm,
+            tts,
+            stt,
+            AgentSession(vad=vad, stt=stt, tts=tts, preemptive_generation=preemptive, **options) as session,
+        ):
             frames = [chunk.frame async for chunk in tts.synthesize("hello there")]
             assert frames
 
@@ -89,6 +102,30 @@ async def test_consumed_input_drives_real_cascade(
                 Agent(instructions="Reply with exactly: hi there", llm=llm), room=rooms[0], record=False
             )
             owner = getattr(session, STATE_ATTR)
+            committed = None
+            if manual:
+                paused = asyncio.Event()
+                transcribed = asyncio.Event()
+
+                def user_state(event):
+                    if event.new_state == "listening":
+                        paused.set()
+
+                session.on("user_state_changed", user_state)
+
+                def transcript(event):
+                    if event.is_final:
+                        transcribed.set()
+
+                session.on("user_input_transcribed", transcript)
+
+                async def commit_and_clear():
+                    await paused.wait()
+                    await transcribed.wait()
+                    await session.commit_user_turn(transcript_timeout=0, stt_flush_duration=0)
+                    session.clear_user_turn()
+
+                committed = asyncio.create_task(commit_and_clear())
             try:
                 silence = rtc.AudioFrame(
                     data=bytes(2400 * 2), sample_rate=24000, num_channels=1, samples_per_channel=2400
@@ -100,9 +137,14 @@ async def test_consumed_input_drives_real_cascade(
                 for _ in range(15):
                     await input_source.capture_frame(silence)
                 await asyncio.wait_for(heard.wait(), 15)
+                if committed is not None:
+                    await committed
                 await session.drain()
                 assert owner.input_end is not None
             finally:
+                if committed is not None and not committed.done():
+                    committed.cancel()
+                    await asyncio.gather(committed, return_exceptions=True)
                 await input_source.aclose()
         assert logger.current_span() is outer
     memory_logger.flush()
@@ -152,7 +194,12 @@ async def test_consumed_input_drives_real_cascade(
         assert relationships[0]["attributes"] == {"braintrust.relationship.type": "generated_by"}
     user = next(row for row in named(rows, "user_turn") if row.get("input"))
     assert user["input"][0]["content"] == "Hello there."
-    assert user["metadata"]["audio.selections"]
+    if manual:
+        # clear_user_turn detaches the buffer before the pending snapshot commits.
+        # Speech retains its audio selection; the detached turn has no buffer selection.
+        assert all(row["metadata"]["audio.selections"] for row in named(rows, "user_speech"))
+    else:
+        assert user["metadata"]["audio.selections"]
     if not preemptive:
         assert len(eou_metrics) == 1
     if eou_metrics:
@@ -162,11 +209,21 @@ async def test_consumed_input_drives_real_cascade(
         assert (
             user["metadata"]["contrib.livekit.on_user_turn_completed_delay"] == reported.on_user_turn_completed_delay
         )
-    wait = named(rows, "livekit.eou_wait")[0]
+    (wait,) = named(rows, "eou_wait")
     assert wait["span_parents"] == [user["span_id"]]
     assert wait["span_attributes"]["type"] == "task"
+    assert wait["metadata"]["eou.outcome"] == "committed"
+    assert wait["metadata"]["eou.speech_end_source"] == "vad"
+    assert wait["metadata"]["turn.id"] == user["span_id"]
+    assert not named(rows, "livekit.eou_wait")
+    if manual:
+        assert wait["metrics"]["end"] - wait["metrics"]["start"] >= 0.8
+    if preemptive:
+        assert any(model["metrics"]["start"] < wait["metrics"]["end"] for model in models)
+    assert "eou.end_reason" not in wait["metadata"]
+    assert "eou.detection_methods" not in wait["metadata"]
     assert wait["metrics"]["end"] - wait["metrics"]["start"] == pytest.approx(
-        user["metadata"]["contrib.livekit.end_of_turn_delay"], abs=1e-6
+        user["metadata"]["contrib.livekit.end_of_turn_delay"], abs=0.02
     )
     for speech in named(rows, "user_speech"):
         assert speech["metadata"]["contrib.livekit.vad_silence_duration"] >= 0
@@ -189,6 +246,10 @@ async def test_consumed_input_drives_real_cascade(
         for segment in root["metadata"]["audio.segments"].values()
     )
     assert owner.native is None
+    assert not owner.eou_waits and not owner.eou_active
+    assert not owner.native_users and not owner.speech_ends
+    assert not owner.pending_users and not owner.requests and not owner.tool_results
+    assert owner.user is owner.user_speech is owner.stt is None
 
 
 @pytest.mark.asyncio

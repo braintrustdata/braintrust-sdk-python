@@ -211,6 +211,6 @@ def test_explicit_setup_survives_automatic_setup():
         tracing._OPTIONS = original
 
 
-def test_auto_instrument_livekit_agents_subprocess():
-    verify_autoinstrument_script("test_auto_livekit_agents.py")
-    verify_autoinstrument_script("test_auto_livekit_agents_before_import.py")
+def test_auto_instrument_livekit_agents_subprocess(livekit_server):
+    verify_autoinstrument_script("test_auto_livekit_agents.py", timeout=60)
+    verify_autoinstrument_script("test_auto_livekit_agents_before_import.py", timeout=60)

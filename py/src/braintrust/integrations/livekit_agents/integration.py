@@ -1,6 +1,6 @@
 from braintrust.integrations.base import BaseIntegration
 
-from .patchers import AgentSessionPatcher
+from .patchers import AgentSessionPatcher, EOUWaitPatcher
 
 
 class LiveKitAgentsIntegration(BaseIntegration):
@@ -8,4 +8,4 @@ class LiveKitAgentsIntegration(BaseIntegration):
     import_names = ("livekit.agents",)
     distribution_names = ("livekit-agents",)
     min_version = "1.8.9"
-    patchers = (AgentSessionPatcher,)
+    patchers = (AgentSessionPatcher, EOUWaitPatcher)
