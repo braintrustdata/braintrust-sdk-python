@@ -9155,6 +9155,10 @@
                   "data": {
                     "type": "array",
                     "items": {}
+                  },
+                  "source_dataset_id": {
+                    "type": "string",
+                    "description": "The saved dataset these rows came from. Its project scopes saved simulated-user references; the caller must have read access to the dataset and source project."
                   }
                 },
                 "required": [
@@ -9338,9 +9342,6 @@
               "null"
             ],
             "description": "Name of the AI provider secret to pin this run to."
-          },
-          "simulated_user": {
-            "$ref": "#/components/schemas/SimulatedUserReference"
           }
         },
         "required": [
@@ -9539,27 +9540,6 @@
           "name",
           "preview_name"
         ]
-      },
-      "SimulatedUserReference": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "simulated_user"
-            ]
-          },
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Unique identifier for the simulated user"
-          }
-        },
-        "required": [
-          "type",
-          "id"
-        ],
-        "description": "A saved simulated user in `project_id` to run every row of a conversation task against. Each row's input becomes the conversation scenario."
       },
       "SpanAttributes": {
         "type": [

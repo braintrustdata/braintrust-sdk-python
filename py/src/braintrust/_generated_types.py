@@ -2859,6 +2859,10 @@ class RunEvalData1(TypedDict):
 
 class RunEvalData2(TypedDict):
     data: Sequence[Any]
+    source_dataset_id: NotRequired[str | None]
+    """
+    The saved dataset these rows came from. Its project scopes saved simulated-user references; the caller must have read access to the dataset and source project.
+    """
 
 
 class RunEvalData3(TypedDict):
@@ -3082,14 +3086,6 @@ class ServiceToken(TypedDict):
     expires_at: NotRequired[str | None]
     """
     Date and time at which the service token expires. If null, the token never expires.
-    """
-
-
-class SimulatedUserReference(TypedDict):
-    type: Literal['simulated_user']
-    id: str
-    """
-    Unique identifier for the simulated user
     """
 
 
@@ -5312,7 +5308,6 @@ class RunEval(TypedDict):
     """
     Name of the AI provider secret to pin this run to.
     """
-    simulated_user: NotRequired[SimulatedUserReference | None]
 
 
 FunctionData: TypeAlias = (
