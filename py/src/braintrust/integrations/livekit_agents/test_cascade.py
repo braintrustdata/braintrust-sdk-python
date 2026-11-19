@@ -246,7 +246,7 @@ async def test_consumed_input_drives_real_cascade(
         for segment in root["metadata"]["audio.segments"].values()
     )
     assert owner.native is None
-    assert not owner.eou_waits and not owner.eou_active
+    assert not owner.eou_snapshots and not owner.eou_active
     assert not owner.native_users and not owner.speech_ends
     assert not owner.pending_users and not owner.requests and not owner.tool_results
     assert owner.user is owner.user_speech is owner.stt is None

@@ -17,8 +17,12 @@ from ._common import INSTRUMENTATION
 
 
 CONDITION: ContextVar[tuple[Any, str] | None] = ContextVar("braintrust_pipecat_eou_condition", default=None)
+SPEECH_TIMEOUT_STRATEGY = (
+    "pipecat.turns.user_stop.speech_timeout_user_turn_stop_strategy",
+    "SpeechTimeoutUserTurnStopStrategy",
+)
 _LOCAL_STRATEGIES = {
-    ("pipecat.turns.user_stop.speech_timeout_user_turn_stop_strategy", "SpeechTimeoutUserTurnStopStrategy"),
+    SPEECH_TIMEOUT_STRATEGY,
     ("pipecat.turns.user_stop.turn_analyzer_user_turn_stop_strategy", "TurnAnalyzerUserTurnStopStrategy"),
 }
 
@@ -63,11 +67,12 @@ class ControllerWait:
         if kind not in ("VADUserStartedSpeakingFrame", "VADUserStoppedSpeakingFrame"):
             return
         speech_at = speech_time(frame, "start_secs" if kind == "VADUserStartedSpeakingFrame" else "stop_secs")
-        strategies = stop_strategies(self.controller)
-        active = bool(getattr(self.controller, "_user_turn", False))
-        self.enqueue(lambda: self._observe(frame, strategies, active, speech_at))
+        strategies = ()
+        if kind == "VADUserStoppedSpeakingFrame" and getattr(self.controller, "_user_turn", False):
+            strategies = stop_strategies(self.controller)
+        self.enqueue(lambda: self._observe(frame, strategies, speech_at))
 
-    def _observe(self, frame, strategies, active, speech_at):
+    def _observe(self, frame, strategies, speech_at):
         kind = type(frame).__name__
         if kind == "VADUserStartedSpeakingFrame":
             resumed = speech_at
@@ -82,8 +87,6 @@ class ControllerWait:
                 stopped is None
                 or self.span is not None
                 or stopped == self.last_stop
-                or not strategies
-                or not active
                 or not any((type(s).__module__, type(s).__name__) in _LOCAL_STRATEGIES for s in strategies)
                 or not all(
                     (type(s).__module__, type(s).__name__) in _LOCAL_STRATEGIES | _AUXILIARY_STRATEGIES

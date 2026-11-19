@@ -1419,6 +1419,28 @@ async def test_eou_native_controller_lifecycle(memory_logger, tracker_observer, 
 
 
 @pytest.mark.asyncio
+async def test_eou_cleanup_continues_after_wait_close_fails(memory_logger, tracker_observer, monkeypatch):
+    from braintrust.integrations.pipecat.tracing._eou import ControllerWait
+
+    _instrument()
+    Strategies = _import("pipecat.turns.user_turn_strategies.UserTurnStrategies")
+    Timeout = _import("pipecat.turns.user_stop.SpeechTimeoutUserTurnStopStrategy")
+
+    def fail_close(_wait, _ended):
+        raise RuntimeError("wait cleanup failed")
+
+    async with _native_eou_controller(tracker_observer, Strategies(stop=[Timeout()])):
+        monkeypatch.setattr(ControllerWait, "close", fail_close)
+        await tracker_observer.cleanup()
+
+    assert not tracker_observer._controllers
+    rows = memory_logger.pop()
+    _single_span(rows, "session")
+    _single_span(rows, "user_turn")
+    _assert_all_ended(rows)
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("delayed", [False, True])
 async def test_eou_queued_observations_keep_turn_ownership(memory_logger, tracker_observer, monkeypatch, delayed):
     """Real WorkerObserver queue falls behind two real native controller turns."""

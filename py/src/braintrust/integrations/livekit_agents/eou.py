@@ -8,7 +8,7 @@ import contextlib
 import math
 import time
 from contextvars import ContextVar
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 from braintrust.logger import Span
@@ -16,7 +16,7 @@ from braintrust.logger import Span
 from .compat import arguments, state_for
 
 
-SNAPSHOT_WAIT: ContextVar["Wait | None"] = ContextVar("braintrust_livekit_snapshot_wait", default=None)
+SNAPSHOT_WAIT: ContextVar["tuple[Any, Wait] | None"] = ContextVar("braintrust_livekit_snapshot_wait", default=None)
 
 
 def observed_arguments(wrapped, args, kwargs):
@@ -40,13 +40,10 @@ def native_metadata(native):
 
 @dataclass
 class Wait:
-    recognition: Any
     parent: Span
     start: float
     span: Span
-    native_ids: set[tuple[Any, int]] = field(default_factory=set)
     committed_at: float | None = None
-    snapshot: bool = False
 
 
 def begin(owner, recognition, parent, anchor, source):
@@ -60,7 +57,7 @@ def begin(owner, recognition, parent, anchor, source):
             start_time=anchor,
             metadata={**owner.source_metadata("session-input"), "eou.speech_end_source": source},
         )
-        wait = Wait(recognition, parent, anchor, span)
+        wait = Wait(parent, anchor, span)
         owner.eou_active[recognition] = wait
     elif anchor != wait.start:
         wait.start = anchor
@@ -68,7 +65,7 @@ def begin(owner, recognition, parent, anchor, source):
     return wait
 
 
-def finish(owner, wait, end, outcome=None, native=None):
+def finish(wait, end, outcome=None, native=None):
     if not timestamp(end) or end < wait.start:
         # A backwards terminal stamp cannot describe a canonical interval.
         # Close at observation time, without asserting an outcome at that stamp.
@@ -80,10 +77,6 @@ def finish(owner, wait, end, outcome=None, native=None):
         metadata["contrib.livekit.native_end_time_ns"] = native.end_time
     wait.span.log(metadata=metadata)
     wait.span.end(end)
-    for key in wait.native_ids:
-        owner.eou_waits.pop(key, None)
-    if owner.eou_active.get(wait.recognition) is wait:
-        owner.eou_active.pop(wait.recognition)
 
 
 def ensure(wrapped, instance, args, kwargs):
@@ -99,12 +92,7 @@ def ensure(wrapped, instance, args, kwargs):
     if not timestamp(anchor) or anchor > time.time() or observed is None or anchor != observed[0]:
         return native
     parent = owner.native_users.get((instance, values.get("user_turn_span"))) or owner.span
-    wait = owner.eou_waits.get((instance, id(native))) or begin(owner, instance, parent, anchor, observed[1])
-    if anchor != wait.start and not wait.snapshot:
-        wait.start = anchor
-        wait.span.log(metrics={"start": anchor}, metadata={"eou.speech_end_source": observed[1]})
-    wait.native_ids.add((instance, id(native)))
-    owner.eou_waits[(instance, id(native))] = wait
+    wait = begin(owner, instance, parent, anchor, observed[1])
     wait.span.log(
         metadata={
             **native_metadata(native),
@@ -118,22 +106,16 @@ def ensure(wrapped, instance, args, kwargs):
 def snapshot(wrapped, instance, args, kwargs):
     result = wrapped(*args, **kwargs)
     owner = state_for(instance)
-    wait = owner.eou_waits.get((instance, id(result.eou_wait_span))) if owner is not None else None
+    wait = owner.eou_active.pop(instance, None) if owner is not None else None
     if wait is not None:
         # A manual commit owns this wait independently of the current buffer.
         # Retain it for the eventual snapshot terminal callback.
-        wait.snapshot = True
         # No-op OTel tracers can return the same native span for every turn.
         # Snapshot identity remains unique even when native span identity does not.
-        for key in wait.native_ids:
-            owner.eou_waits.pop(key, None)
-        wait.native_ids = {(instance, id(result))}
-        owner.eou_waits[(instance, id(result))] = wait
-        SNAPSHOT_WAIT.set(wait)
+        owner.eou_snapshots[(instance, id(result))] = wait
+        SNAPSHOT_WAIT.set((instance, wait))
         if wait.parent is not owner.span:
             owner.pending_users.add(wait.parent)
-        if owner.eou_active.get(instance) is wait:
-            owner.eou_active.pop(instance)
     return result
 
 
@@ -157,21 +139,19 @@ def end(wrapped, instance, args, kwargs):
     ended = time.time() if requested is None else requested
     result = wrapped(*args, **kwargs)
     owner = state_for(instance)
-    key = (instance, id(snapshot) if snapshot is not None else id(native))
-    wait = owner.eou_waits.get(key) if owner is not None else None
-    if wait is None and owner is not None and snapshot is None:
-        wait = owner.eou_active.get(instance)
-        # Only the pre-transcript wait has no native span yet. A detached
-        # snapshot must never be finalized by a reset of the current buffer.
-        if wait is not None and wait.native_ids:
-            wait = None
-    if owner is not None and wait is not None:
+    if owner is None:
+        return result
+    wait = (
+        owner.eou_active.pop(instance, None)
+        if snapshot is None
+        else owner.eou_snapshots.pop((instance, id(snapshot)), None)
+    )
+    if wait is not None:
         outcome = values.get("outcome")
         # Native labels teardown as dropped; shutdown itself proves no outcome.
         if owner.closing or ((closing := getattr(instance, "_closing", None)) is not None and closing.is_set()):
             outcome = None
         finish(
-            owner,
             wait,
             wait.committed_at if outcome == "committed" and wait.committed_at is not None else ended,
             outcome,
@@ -218,7 +198,7 @@ def stt_anchor(instance, event, owner):
 def detection(wrapped, instance, args, kwargs):
     native = args[0] if args else kwargs["span"]
     owner = state_for(instance)
-    wait = owner.eou_waits.get((instance, id(instance._eou_wait_span))) if owner is not None else None
+    wait = owner.eou_active.get(instance) if owner is not None else None
 
     @contextlib.contextmanager
     def context():

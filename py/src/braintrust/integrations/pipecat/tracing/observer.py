@@ -5,6 +5,7 @@ from collections.abc import Awaitable, Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import Enum
+from functools import partial
 from typing import TYPE_CHECKING, Any, ClassVar, Literal
 from weakref import WeakValueDictionary
 
@@ -387,17 +388,16 @@ class BraintrustPipecatObserver(BaseObserver):
         if session is None:
             return
         end_ms = session.clock.now_ms()
-        for controller in self._controllers.values():
-            # Use the same observed shutdown boundary as the session.
-            controller.close(ended=session.clock.wall(end_ms))
-        self._controllers.clear()
+        ended = session.clock.wall(end_ms)
+        controllers, self._controllers = self._controllers, {}
         self._controller_queue = None
         closers: tuple[Callable[[], None], ...] = (
+            *(partial(controller.close, ended) for controller in controllers.values()),
             lambda: session.live.close(end_ms) if session.live is not None else None,
             lambda: session.user.close(end_ms),
             lambda: session.agent.interrupt(interrupted=False, end_ms=end_ms),
             session.linker.clear,
-            lambda: session.span.end(end_time=session.clock.wall(end_ms)),
+            lambda: session.span.end(end_time=ended),
         )
         for close in closers:
             try:

@@ -135,21 +135,19 @@ class WorkerObserverProxyPatcher(FunctionWrapperPatcher):
 
 
 async def traced_controller_frame(wrapped, instance, args, kwargs):
-    from .tracing._eou import CONDITION, stop_strategies
+    from .tracing._eou import CONDITION, SPEECH_TIMEOUT_STRATEGY, stop_strategies
 
-    wait = None
-    frame = args[0] if args else kwargs["frame"]
     condition = None
     try:
         wait = _controller_wait(instance)
         if wait is not None:
+            frame = args[0] if args else kwargs["frame"]
             wait.observe(frame)
-            strategies = stop_strategies(instance)
-            if type(frame).__name__ == "TranscriptionFrame" and frame.finalized and len(strategies) == 1:
-                strategy = strategies[0]
+            if type(frame).__name__ == "TranscriptionFrame" and frame.finalized:
+                strategies = stop_strategies(instance)
+                strategy = strategies[0] if len(strategies) == 1 else None
                 if (
-                    type(strategy).__module__ == "pipecat.turns.user_stop.speech_timeout_user_turn_stop_strategy"
-                    and type(strategy).__name__ == "SpeechTimeoutUserTurnStopStrategy"
+                    (type(strategy).__module__, type(strategy).__name__) == SPEECH_TIMEOUT_STRATEGY
                     and strategy._user_speech_wait_done
                     and not strategy._stt_wait_done
                 ):

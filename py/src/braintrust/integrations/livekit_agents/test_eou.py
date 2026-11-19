@@ -129,7 +129,7 @@ async def test_eou_pause_resume_rearm_and_terminal(memory_logger, terminal):
                     recognition._end_eou_wait_span(terminal)
                 recognition._end_eou_wait_span(terminal)  # idempotent
             # Shutdown must not turn LiveKit's cleanup label into abandonment.
-        assert not owner.eou_waits
+        assert not owner.eou_active
     finally:
         traces.tracer.set_provider(original)
         provider.shutdown()
@@ -232,7 +232,7 @@ async def test_eou_waits_for_transcript_before_native_detector_exists(memory_log
         await vad(recognition, "start_of_speech", speech=0.005)
         await asyncio.sleep(0.01)
         await vad(recognition, "end_of_speech", silence=0.005)
-    assert not owner.eou_active and not owner.eou_waits
+    assert not owner.eou_active and not owner.eou_snapshots
     first, second = waits(memory_logger.pop())
     assert first["metadata"]["eou.outcome"] == "user_resumed"
     assert "eou.outcome" not in second["metadata"]
@@ -289,7 +289,7 @@ async def test_eou_pending_manual_snapshot_survives_buffer_clear(memory_logger, 
             await session.commit_user_turn(transcript_timeout=0, stt_flush_duration=0, skip_reply=True)
             await asyncio.wait_for(asyncio.shield(recognition._end_of_turn_task), 2)
             await asyncio.sleep(0)
-        assert not owner.eou_waits and not owner.eou_active
+        assert not owner.eou_snapshots and not owner.eou_active
     rows = memory_logger.pop()
     emitted = waits(rows)
     assert len(emitted) == (2 if second_turn else 1)
