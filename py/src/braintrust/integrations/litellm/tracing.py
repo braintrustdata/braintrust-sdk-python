@@ -171,6 +171,9 @@ def _handle_completion_streaming(
                     yield item
 
                 span.log(**_postprocess_completion_streaming_results(all_results))
+            except Exception as e:
+                span.log(error=e)
+                raise
             finally:
                 span.end()
 
@@ -191,6 +194,9 @@ def _handle_completion_streaming(
                     yield item
 
                 span.log(**_postprocess_completion_streaming_results(all_results))
+            except Exception as e:
+                span.log(error=e)
+                raise
             finally:
                 span.end()
 
@@ -217,6 +223,9 @@ def _handle_responses_streaming(
                     yield item
 
                 span.log(**_postprocess_responses_streaming_results(all_results))
+            except Exception as e:
+                span.log(error=e)
+                raise
             finally:
                 span.end()
 
@@ -237,6 +246,9 @@ def _handle_responses_streaming(
                     yield item
 
                 span.log(**_postprocess_responses_streaming_results(all_results))
+            except Exception as e:
+                span.log(error=e)
+                raise
             finally:
                 span.end()
 
@@ -273,6 +285,9 @@ def _completion_wrapper_impl(wrapped, args, kwargs, *, input_key: str):
             metadata=_service_tier_metadata(served=_get_field(completion_response, "service_tier")),
         )
         return completion_response
+    except Exception as e:
+        span.log(error=e)
+        raise
     finally:
         if should_end:
             span.end()
@@ -303,6 +318,9 @@ async def _acompletion_wrapper_impl(wrapped, args, kwargs, *, input_key: str):
             metadata=_service_tier_metadata(served=_get_field(completion_response, "service_tier")),
         )
         return completion_response
+    except Exception as e:
+        span.log(error=e)
+        raise
     finally:
         if should_end:
             span.end()
@@ -351,6 +369,9 @@ def _responses_wrapper(wrapped, instance, args, kwargs):
             metadata=_service_tier_metadata(served=_get_field(response, "service_tier")),
         )
         return response
+    except Exception as e:
+        span.log(error=e)
+        raise
     finally:
         if should_end:
             span.end()
@@ -383,6 +404,9 @@ async def _aresponses_wrapper_async(wrapped, instance, args, kwargs):
             metadata=_service_tier_metadata(served=_get_field(response, "service_tier")),
         )
         return response
+    except Exception as e:
+        span.log(error=e)
+        raise
     finally:
         if should_end:
             span.end()

@@ -751,6 +751,8 @@ def test_litellm_completion_error(memory_logger, is_async):
     assert log["metadata"]["model"] == fake_model
     # The requested tier is retained on a failed call; no served tier is fabricated.
     assert_service_tiers(log["metadata"], requested="flex")
+    # The failure must be recorded on the span, not only re-raised.
+    assert log.get("error")
 
 
 @pytest.mark.vcr
