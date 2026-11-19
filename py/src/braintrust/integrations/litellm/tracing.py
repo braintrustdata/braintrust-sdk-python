@@ -1,5 +1,6 @@
 """LiteLLM tracing helpers — spans, metadata extraction, stream handling."""
 
+import asyncio
 import logging
 import time
 from collections.abc import AsyncGenerator, Generator
@@ -171,7 +172,7 @@ def _handle_completion_streaming(
                     yield item
 
                 span.log(**_postprocess_completion_streaming_results(all_results))
-            except Exception as e:
+            except (Exception, asyncio.CancelledError) as e:
                 span.log(error=e)
                 raise
             finally:
@@ -223,7 +224,7 @@ def _handle_responses_streaming(
                     yield item
 
                 span.log(**_postprocess_responses_streaming_results(all_results))
-            except Exception as e:
+            except (Exception, asyncio.CancelledError) as e:
                 span.log(error=e)
                 raise
             finally:
@@ -318,7 +319,7 @@ async def _acompletion_wrapper_impl(wrapped, args, kwargs, *, input_key: str):
             metadata=_service_tier_metadata(served=_get_field(completion_response, "service_tier")),
         )
         return completion_response
-    except Exception as e:
+    except (Exception, asyncio.CancelledError) as e:
         span.log(error=e)
         raise
     finally:
@@ -404,7 +405,7 @@ async def _aresponses_wrapper_async(wrapped, instance, args, kwargs):
             metadata=_service_tier_metadata(served=_get_field(response, "service_tier")),
         )
         return response
-    except Exception as e:
+    except (Exception, asyncio.CancelledError) as e:
         span.log(error=e)
         raise
     finally:

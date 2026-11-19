@@ -755,6 +755,30 @@ def test_litellm_completion_error(memory_logger, is_async):
     assert log.get("error")
 
 
+def test_litellm_acompletion_cancelled_records_error(memory_logger):
+    """Cancelling an in-flight async call, e.g. an ``asyncio.wait_for`` timeout, records an error."""
+    assert not memory_logger.pop()
+
+    async def _call():
+        # mock_delay makes LiteLLM itself await, so the timeout cancels a real in-flight call.
+        await asyncio.wait_for(
+            litellm.acompletion(
+                model=f"openai/{TEST_MODEL}",
+                messages=[{"role": "user", "content": TEST_PROMPT}],
+                mock_response="24",
+                mock_delay=5,
+            ),
+            timeout=0.05,
+        )
+
+    with pytest.raises(asyncio.TimeoutError):
+        asyncio.run(_call())
+
+    logs = memory_logger.pop()
+    assert len(logs) == 1
+    assert logs[0].get("error")
+
+
 @pytest.mark.vcr
 def test_litellm_completion_service_tier(memory_logger):
     """A requested policy ("auto") and the served tier are recorded independently."""
