@@ -64,3 +64,8 @@ known-first-party = ["braintrust", "braintrust_adk"]
 [tool.pytest.ini_options]
 testpaths = ["src/tests"]
 python_files = ["test_*.py"]
+
+[tool.uv]
+# google-adk releases that still support Python 3.10 cap OpenTelemetry below
+# the patched release, so only lock the dev environment for Python 3.11+.
+environments = ["python_version >= '3.11'"]
