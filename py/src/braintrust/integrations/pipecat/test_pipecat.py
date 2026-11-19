@@ -17,17 +17,25 @@ import math
 import os
 import socket
 import tempfile
+import time
 import wave
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import TYPE_CHECKING
 from urllib.parse import urlsplit, urlunsplit
 
 import pytest
+import pytest_asyncio
 from braintrust import SpanCustomizer, logger, set_span_customizers
 from braintrust.integrations.pipecat import setup_pipecat, wrap_pipeline_worker
 from braintrust.integrations.test_utils import verify_autoinstrument_script
 from braintrust.test_helpers import init_test_logger
+
+
+if TYPE_CHECKING:
+    from .tracing._eou import ControllerWait
+    from .tracing.observer import BraintrustPipecatObserver, _Session
 
 
 TEST_MODEL = "gpt-6-luna"
@@ -145,7 +153,7 @@ def _make_worker(pipeline, **overrides):
 
 
 @asynccontextmanager
-async def _running(worker):
+async def _running(worker, *, cancel=False):
     """Run a worker; on exit, end it with an ``EndFrame`` and wait for shutdown."""
     WorkerRunner = _import("pipecat.workers.runner.WorkerRunner")
     kwargs = {"handle_sigint": False}
@@ -156,7 +164,10 @@ async def _running(worker):
     running = asyncio.create_task(runner.run())
     try:
         yield
-        await worker.queue_frame(_frames().EndFrame(reason="pipeline complete"))
+        if cancel:
+            await worker.cancel()
+        else:
+            await worker.queue_frame(_frames().EndFrame(reason="pipeline complete"))
         await asyncio.wait_for(running, 20)
     finally:
         if not running.done():
@@ -225,6 +236,14 @@ class _VoiceSession:
 
     system: str
     max_tokens: int = 20
+    speaking_frames: bool = True
+    inference_gate: bool = False
+    smart_turn: bool = False
+    delay_observer: bool = False
+    cancel: bool = False
+    observer: "BraintrustPipecatObserver | None" = field(init=False, default=None)
+    tracker: "_Session | None" = field(init=False, default=None)
+    controllers: "tuple[ControllerWait, ...]" = field(init=False, default=())
     assistant_turns: list = field(default_factory=list)
     played: bytearray = field(default_factory=bytearray)
 
@@ -238,6 +257,7 @@ class _VoiceSession:
         LLMUserAggregatorParams = _import(f"{universal}.LLMUserAggregatorParams")
         UserTurnStrategies = _import("pipecat.turns.user_turn_strategies.UserTurnStrategies")
         SpeechTimeout = _import("pipecat.turns.user_stop.SpeechTimeoutUserTurnStopStrategy")
+        VADStart = _import("pipecat.turns.user_start.VADUserTurnStartStrategy")
         SileroVADAnalyzer = _import("pipecat.audio.vad.silero.SileroVADAnalyzer")
         VADParams = _import("pipecat.audio.vad.vad_analyzer.VADParams")
         OpenAISTTService = _import("pipecat.services.openai.stt.OpenAISTTService")
@@ -264,11 +284,22 @@ class _VoiceSession:
         stt = OpenAISTTService(
             api_key=os.environ["OPENAI_API_KEY"], settings=OpenAISTTService.Settings(model="whisper-1")
         )
+        stop = [SpeechTimeout(user_speech_timeout=0.5, enable_user_speaking_frames=self.speaking_frames)]
+        if self.smart_turn:
+            Analyzer = _import("pipecat.audio.turn.smart_turn.local_smart_turn_v3.LocalSmartTurnAnalyzerV3")
+            AnalyzerStrategy = _import("pipecat.turns.user_stop.TurnAnalyzerUserTurnStopStrategy")
+            stop = [AnalyzerStrategy(turn_analyzer=Analyzer())]
+        if self.inference_gate:
+            Gate = _import("pipecat.turns.user_stop.LLMTurnCompletionUserTurnStopStrategy")
+            stop.append(Gate())
         aggregators = LLMContextAggregatorPair(
             LLMContext(messages=[{"role": "system", "content": self.system}]),
             user_params=LLMUserAggregatorParams(
                 vad_analyzer=SileroVADAnalyzer(params=VADParams(stop_secs=0.5)),
-                user_turn_strategies=UserTurnStrategies(stop=[SpeechTimeout(user_speech_timeout=0.5)]),
+                user_turn_strategies=UserTurnStrategies(
+                    start=None if self.speaking_frames else [VADStart(enable_user_speaking_frames=False)],
+                    stop=stop,
+                ),
             ),
         )
         worker = _make_worker(
@@ -286,6 +317,28 @@ class _VoiceSession:
             params=PipelineParams(enable_metrics=True, enable_usage_metrics=True),
         )
         ready, turn_stopped = asyncio.Event(), asyncio.Event()
+        self.observer = getattr(worker, "_braintrust_pipecat_observer")
+        release_observer = asyncio.Event()
+        if self.delay_observer:
+            on_push = self.observer.on_push_frame
+            started_turns = 0
+
+            @aggregators.user().event_handler("on_user_turn_started")
+            async def on_user_started(*_args):
+                nonlocal started_turns
+                started_turns += 1
+                # Hold first-turn observations through commitment and the next
+                # native turn's start, reproducing the ownership race through
+                # the real audio pipeline without changing turn-taking.
+                if started_turns == 2:
+                    release_observer.set()
+
+            async def delayed_push(data):
+                if isinstance(data.frame, frames.VADUserStartedSpeakingFrame):
+                    await release_observer.wait()
+                await on_push(data)
+
+            self.observer.on_push_frame = delayed_push
 
         @transport.event_handler("on_websocket_ready")
         async def on_ready(_transport):
@@ -300,8 +353,9 @@ class _VoiceSession:
             assert audio.getframerate() == INPUT_RATE
             pcm = audio.readframes(audio.getnframes())
 
-        async with _running(worker):
+        async with _running(worker, cancel=self.cancel):
             await asyncio.wait_for(ready.wait(), 10)
+            self.tracker = self.observer._session
             async with connect(f"ws://127.0.0.1:{port}") as websocket:
                 agent_audio = asyncio.Event()
 
@@ -321,6 +375,10 @@ class _VoiceSession:
                         await self._wait_for_turns(turn_stopped, index)
                     await self._speak(websocket, serializer, pcm)
                 await self._wait_for_turns(turn_stopped, utterances)
+                release_observer.set()
+                if self.observer._controller_queue is not None:
+                    await asyncio.wait_for(self.observer._controller_queue.join(), 5)
+                self.controllers = tuple(self.observer._controllers.values())
                 reading.cancel()
 
     async def _wait_for_turns(self, turn_stopped, count):
@@ -345,6 +403,24 @@ class _VoiceSession:
 # Setup
 
 
+@pytest.mark.parametrize("hook", range(4))
+@pytest.mark.parametrize("change", ["missing", "signature", "async"])
+def test_eou_optional_hooks_are_gated_together(monkeypatch, hook, change):
+    """Pure patch routing, independent of provider response payloads."""
+    from .patchers import EOUWaitPatcher
+
+    patcher = EOUWaitPatcher.sub_patchers[hook]
+    parent, name = patcher.target_path.rsplit(".", 1)
+    target = _import(f"{patcher.target_module}.{parent}")
+    method = getattr(target, name)
+    assert EOUWaitPatcher.applies(None, None)
+    replacement = None if change == "missing" else dict.get
+    if change == "async" and not inspect.iscoroutinefunction(method):
+        replacement = _import("pipecat.turns.user_turn_controller.UserTurnController").process_frame
+    monkeypatch.setattr(target, name, replacement)
+    assert not EOUWaitPatcher.applies(None, None)
+
+
 def test_setup_and_wrap_pipeline_worker_are_idempotent(memory_logger):
     PipelineWorker = _import("pipecat.pipeline.worker.PipelineWorker")
     Pipeline = _import("pipecat.pipeline.pipeline.Pipeline")
@@ -367,38 +443,84 @@ def test_setup_and_wrap_pipeline_worker_are_idempotent(memory_logger):
 
 @pytest.mark.vcr
 @pytest.mark.skipif(__import__("sys").version_info < (3, 11), reason="Pipecat AI 1.x requires Python 3.11+")
-def test_auto_instrument_pipecat_subprocess():
+@pytest.mark.parametrize("entrypoint", ["auto", "wrap"])
+def test_auto_instrument_pipecat_subprocess(monkeypatch, entrypoint):
     pytest.importorskip("pipecat")
+    monkeypatch.setenv("BRAINTRUST_TEST_PIPECAT_ENTRYPOINT", entrypoint)
     verify_autoinstrument_script("test_auto_pipecat.py")
 
 
 # Voice sessions
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(cassette_name="test_voice_session_traces_turns_speech_recognition_generation_and_playback")
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "speaking_frames,inference_gate,smart_turn,cancel",
+    [
+        (True, False, False, False),
+        (False, False, False, False),
+        (True, True, False, False),
+        (True, False, True, False),
+        (True, False, False, True),
+    ],
+)
 async def test_voice_session_traces_turns_speech_recognition_generation_and_playback(
-    memory_logger, attachment_uploads
+    memory_logger, attachment_uploads, speaking_frames, inference_gate, smart_turn, cancel
 ):
     from braintrust._audio.config import AudioEncoding, AudioRecordingOptions
+    from braintrust.integrations.versioning import detect_module_version, version_satisfies
 
+    pipecat = pytest.importorskip("pipecat")
+    if inference_gate and not version_satisfies(detect_module_version(pipecat, ("pipecat",)), ">=1.16.0"):
+        pytest.skip("ALL stop-strategy composition is qualified on Pipecat 1.16.0")
     _instrument(
         capture_audio_attachments=True,
         audio_recording_options=AudioRecordingOptions(encoding=AudioEncoding(codec="pcm", container="wav")),
     )
-    session = _VoiceSession(system="Reply with exactly: Hi.")
+    session = _VoiceSession(
+        system="Reply with exactly: Hi.",
+        speaking_frames=speaking_frames,
+        inference_gate=inference_gate,
+        smart_turn=smart_turn,
+        cancel=cancel,
+    )
     await session.run()
 
     logs = memory_logger.pop()
     root = _single_span(logs, "session")
-    assert root["metadata"]["audio.schema.version"] == "3.0.0"
-    assert root["metadata"]["contrib.pipecat.terminal_frame"] == "EndFrame"
-    assert root["metadata"]["contrib.pipecat.reason"] == "pipeline complete"
+    assert root["metadata"]["audio.schema.version"] == "3.1.0"
+    assert root["metadata"]["contrib.pipecat.terminal_frame"] == ("CancelFrame" if cancel else "EndFrame")
+    if not cancel:
+        assert root["metadata"]["contrib.pipecat.reason"] == "pipeline complete"
+    assert session.observer._controllers == {}
+    assert session.observer._controller_queue is None
+    assert session.tracker.user._last_speech is None
+    assert session.tracker.user._last_turn is None
+    assert not session.tracker.user._recognitions
+    assert not session.tracker.user._recognized_until
+    assert not session.tracker.linker.messages
+    assert not session.tracker.linker._submitted
+    assert not session.tracker.linker._transcripts
+    assert not session.tracker.linker._tool_results
+    for controller in session.controllers:
+        assert controller.span is None and controller.turn is None
+        assert controller.session is None and controller.controller is None
     user_turn = _single_span(logs, "user_turn")
     agent_turn = _single_span(logs, "agent_turn")
     speech = _single_span(logs, "user_speech")
+    wait = _single_span(logs, "eou_wait")
+    assert wait["metadata"]["eou.outcome"] == "committed"
+    assert wait["metadata"]["eou.speech_end_source"] == "vad"
+    assert wait["span_parents"] == [user_turn["span_id"]]
+    assert wait["metadata"]["turn.id"] == user_turn["span_id"]
+    assert wait["metrics"]["start"] == pytest.approx(speech["metrics"]["end"], abs=0.03)
+    assert "eou.detection_methods" not in wait["metadata"]
     recognition = _single_span(logs, "stt")
     model = _single_span(logs, "llm_response")
+    if inference_gate:
+        assert wait["metrics"]["start"] < model["metrics"]["start"] < wait["metrics"]["end"]
+        assert "eou.end_reason" not in wait["metadata"]
     synthesis = _single_span(logs, "tts")
     playback = _single_span(logs, "agent_speech")
 
@@ -417,7 +539,10 @@ async def test_voice_session_traces_turns_speech_recognition_generation_and_play
     assert user_turn["input"] == recognition["output"]
 
     # Agent side: the reply turn owns generation, synthesis and playback.
-    assert agent_turn["metadata"]["turn.reply_to"] == user_turn["span_id"]
+    if inference_gate:
+        assert "turn.reply_to" not in agent_turn["metadata"]
+    else:
+        assert agent_turn["metadata"]["turn.reply_to"] == user_turn["span_id"]
     assert agent_turn["metadata"]["turn.incomplete"] is False
     for operation in (model, synthesis, playback):
         assert operation["span_parents"] == [agent_turn["span_id"]]
@@ -427,7 +552,10 @@ async def test_voice_session_traces_turns_speech_recognition_generation_and_play
     assert model["metadata"]["model"] == TEST_MODEL
     assert model["metadata"]["provider"] == "openai"
     assert model["input"][-1] == recognition["output"][0]
-    assert model["input"][0] == {"role": "system", "content": session.system}
+    if inference_gate:
+        assert any(message.get("content") == session.system for message in model["input"])
+    else:
+        assert model["input"][0] == {"role": "system", "content": session.system}
     assert model["output"][0]["role"] == "assistant"
     assert model["output"][0]["content"].strip() == "Hi."
     assert set(model["output"][0]) == {"role", "content"}
@@ -461,9 +589,12 @@ async def test_voice_session_traces_turns_speech_recognition_generation_and_play
     _assert_all_ended(logs)
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(cassette_name="test_consecutive_voice_turns_reply_to_and_link_only_their_own_speech")
 @pytest.mark.asyncio
-async def test_consecutive_voice_turns_reply_to_and_link_only_their_own_speech(memory_logger, attachment_uploads):
+@pytest.mark.parametrize("delayed", [False, True])
+async def test_consecutive_voice_turns_reply_to_and_link_only_their_own_speech(
+    memory_logger, attachment_uploads, delayed
+):
     from braintrust._audio.config import AudioEncoding, AudioRecordingOptions
 
     # User audio only, configured when wrapping: agent playback is not recorded.
@@ -474,7 +605,7 @@ async def test_consecutive_voice_turns_reply_to_and_link_only_their_own_speech(m
         capture_agent_audio_attachments=False,
         audio_recording_options=AudioRecordingOptions(encoding=AudioEncoding(codec="pcm", container="wav")),
     ) is _import("pipecat.pipeline.worker.PipelineWorker")
-    await _VoiceSession(system="Reply with exactly one word: Okay.").run(utterances=2)
+    await _VoiceSession(system="Reply with exactly one word: Okay.", delay_observer=delayed).run(utterances=2)
 
     logs = memory_logger.pop()
     user_turns = _spans_named(logs, "user_turn")
@@ -482,6 +613,11 @@ async def test_consecutive_voice_turns_reply_to_and_link_only_their_own_speech(m
     speeches = _spans_named(logs, "user_speech")
     recognitions = _spans_named(logs, "stt")
     models = _spans_named(logs, "llm_response")
+    waits = _spans_named(logs, "eou_wait")
+    assert len(waits) == 2
+    for wait, turn in zip(waits, user_turns):
+        assert wait["span_parents"] == [turn["span_id"]]
+        assert wait["metadata"]["turn.id"] == turn["span_id"]
     for synthesis in _spans_named(logs, "tts"):
         assert synthesis["metrics"]["characters"] == len(synthesis["input"]["text"])
     assert len(user_turns) == len(agent_turns) == len(speeches) == len(recognitions) == len(models) == 2
@@ -782,6 +918,9 @@ async def test_live_observations(memory_logger, vcr_cassette_dir, boundary):
     ToolsSchema = _import("pipecat.adapters.llm.schemas.tools_schema.ToolsSchema")
     Pipeline = _import("pipecat.pipeline.pipeline.Pipeline")
     LLMContext = _import("pipecat.processors.aggregators.llm_context.LLMContext")
+    LLMContextAggregatorPair = _import(
+        "pipecat.processors.aggregators.llm_response_universal.LLMContextAggregatorPair"
+    )
     OpenAIResponsesLLMService = _import("pipecat.services.openai.responses.llm.OpenAIResponsesLLMService")
     WorkerRunner = _import("pipecat.workers.runner.WorkerRunner")
 
@@ -893,7 +1032,10 @@ async def test_live_observations(memory_logger, vcr_cassette_dir, boundary):
                     finally:
                         callback_cancelled.set()
 
-        worker = _make_worker(Pipeline([service]))
+        # Live's proposed turn frames also reach the universal user controller.
+        # Those callbacks must not create a second, cascade-owned user turn.
+        aggregators = LLMContextAggregatorPair(context)
+        worker = _make_worker(Pipeline([aggregators.user(), service, aggregators.assistant()]))
         runner = WorkerRunner(handle_sigint=False)
         await runner.add_workers(worker)
         running = asyncio.create_task(runner.run())
@@ -932,6 +1074,8 @@ async def test_live_observations(memory_logger, vcr_cassette_dir, boundary):
     by_id = {row["span_id"]: row for row in turns}
     received = _spans_named(logs, "transcript_received")
     assert turns and len(turns) == len(received)
+    assert not _spans_named(logs, "eou_wait")
+    assert all(row["metadata"].get("contrib.pipecat.live.grouping") == "pipecat_transcript_gap" for row in turns)
     for role in ("user", "assistant"):
         kind = "session.input_transcript.delta" if role == "user" else "session.output_transcript.delta"
         observed = "".join(e["delta"] for e in sent if e["type"] == kind)
@@ -1131,3 +1275,292 @@ async def test_provider_transcriptions_nest_under_their_stt_spans(memory_logger,
     for response, call in zip(_spans_named(logs, "llm_response"), _spans_named(logs, "Chat Completion")):
         assert call["span_parents"] == [response["span_id"]]
     assert all(row["metrics"].get("end") is not None for row in logs)
+
+
+@pytest_asyncio.fixture
+async def tracker_observer(memory_logger):
+    """Supplemental timestamp/layout cases; recorded pipelines cover behavior."""
+    _frames()
+    from braintrust.integrations.pipecat.tracing.observer import BraintrustPipecatObserver
+
+    observer = BraintrustPipecatObserver(capture_audio_attachments=False)
+    yield observer
+    await observer.cleanup()
+
+
+@asynccontextmanager
+async def _native_eou_controller(observer, strategies, *, observe_start=True, begin_turn=True):
+    """Synthetic native frames + real controller/strategies/timers, no provider IO."""
+    from braintrust.integrations.pipecat.patchers import _ACTIVE_OBSERVER
+
+    Controller = _import("pipecat.turns.user_turn_controller.UserTurnController")
+    TaskManager = _import("pipecat.utils.asyncio.task_manager.TaskManager")
+    TaskManagerParams = _import("pipecat.utils.asyncio.task_manager.TaskManagerParams")
+    controller = Controller(user_turn_strategies=strategies, user_turn_stop_timeout=30)
+    manager = TaskManager()
+    manager.setup(TaskManagerParams(loop=asyncio.get_running_loop()))
+    if "task_manager" in inspect.signature(controller.setup).parameters:
+        await controller.setup(manager)
+    else:
+        Setup = _import("pipecat.processors.frame_processor.FrameProcessorSetup")
+        Clock = _import("pipecat.clocks.system_clock.SystemClock")
+        Pipeline = _import("pipecat.pipeline.pipeline.Pipeline")
+        Identity = _import("pipecat.processors.filters.identity_filter.IdentityFilter")
+        await controller.setup(
+            Setup(clock=Clock(), task_manager=manager, pipeline_worker=_make_worker(Pipeline([Identity()])))
+        )
+    token = _ACTIVE_OBSERVER.set(observer if observe_start else None)
+    try:
+        if begin_turn:
+            await controller.process_frame(_frames().VADUserStartedSpeakingFrame())
+        await asyncio.sleep(0.02)
+        if not observe_start:
+            _ACTIVE_OBSERVER.reset(token)
+            token = _ACTIVE_OBSERVER.set(observer)
+        yield controller
+    finally:
+        await controller.cleanup()
+        _ACTIVE_OBSERVER.reset(token)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "mode",
+    [
+        "committed",
+        "resumed",
+        "transcript_late",
+        "shutdown",
+        "unassociated",
+        "multiple",
+        "audio_only",
+        "text_late",
+        "gate_changed",
+    ],
+)
+async def test_eou_native_controller_lifecycle(memory_logger, tracker_observer, mode):
+
+    _instrument()
+    frames = _frames()
+    Strategies = _import("pipecat.turns.user_turn_strategies.UserTurnStrategies")
+    SpeechTimeout = _import("pipecat.turns.user_stop.SpeechTimeoutUserTurnStopStrategy")
+    options = {}
+    if mode in ("audio_only", "gate_changed"):
+        if "wait_for_transcript" not in inspect.signature(SpeechTimeout).parameters:
+            pytest.skip("wait_for_transcript=False requires current Pipecat")
+        options["wait_for_transcript"] = False
+    strategies = [SpeechTimeout(user_speech_timeout=0.03, **options)]
+    if mode == "multiple":
+        strategies.append(SpeechTimeout(user_speech_timeout=0.06))
+    stopped = asyncio.Event()
+    async with _native_eou_controller(
+        tracker_observer, Strategies(stop=strategies), observe_start=mode != "unassociated"
+    ) as controller:
+
+        @controller.event_handler("on_user_turn_stopped")
+        async def on_stopped(*_args):
+            stopped.set()
+
+        await controller.process_frame(
+            frames.STTMetadataFrame(
+                service_name="local-test",
+                ttfs_p99_latency=0 if mode in ("audio_only", "text_late", "gate_changed") else 1.0,
+            )
+        )
+        pause = frames.VADUserStoppedSpeakingFrame(stop_secs=0.01)
+        await controller.process_frame(pause)
+        if mode == "gate_changed":
+            strategies[0].wait_for_transcript = True
+            await asyncio.sleep(0.06)
+            assert not stopped.is_set(), "The controller must still require text"
+        if mode == "resumed":
+            resume = frames.VADUserStartedSpeakingFrame(start_secs=0.001)
+            await controller.process_frame(resume)
+            await asyncio.sleep(0.02)
+            pause = frames.VADUserStoppedSpeakingFrame(stop_secs=0.01)
+            await controller.process_frame(pause)
+        # Multiple transcriptions/evaluations during this pause must not split it.
+        await controller.process_frame(frames.InterimTranscriptionFrame("Hi", "caller", "0"))
+        await controller.process_frame(pause)  # Re-evaluate/re-arm this same pause.
+        if mode in ("transcript_late", "text_late"):
+            await asyncio.sleep(0.06)
+        if mode != "shutdown":
+            if mode != "audio_only":
+                await controller.process_frame(frames.TranscriptionFrame("Hi", "caller", "0", finalized=True))
+            await asyncio.wait_for(stopped.wait(), 2)
+        else:
+            assert not stopped.is_set()
+    await tracker_observer.cleanup()
+    logs = memory_logger.pop()
+    emitted = _spans_named(logs, "eou_wait")
+    assert len(emitted) == (2 if mode == "resumed" else 1)
+    final = emitted[-1]
+    assert final["metrics"]["start"] == pause.timestamp - pause.stop_secs
+    assert final["metadata"]["contrib.pipecat.vad_timestamp"] == pause.timestamp
+    assert final["metadata"]["contrib.pipecat.vad_stop_secs"] == pause.stop_secs
+    assert len(final["metadata"]["contrib.pipecat.configured_stop_strategies"]) == len(strategies)
+    if mode == "shutdown":
+        assert "eou.outcome" not in final["metadata"]
+        assert "eou.end_reason" not in final["metadata"]
+    else:
+        assert final["metadata"]["eou.outcome"] == "committed"
+    if mode == "transcript_late":
+        assert final["metadata"]["eou.end_reason"] == "transcription_finalized"
+    if mode == "text_late":
+        assert "eou.end_reason" not in final["metadata"]
+    if mode == "resumed":
+        assert emitted[0]["metadata"]["eou.outcome"] == "user_resumed"
+        assert emitted[0]["metrics"]["end"] == resume.timestamp - resume.start_secs
+        assert "eou.end_reason" not in emitted[0]["metadata"]
+    if mode == "unassociated":
+        assert "turn.id" not in final["metadata"]
+        assert final["span_parents"] == [_single_span(logs, "session")["span_id"]]
+    else:
+        assert final["span_parents"] == [final["metadata"]["turn.id"]]
+    for wait in emitted:
+        assert wait["metadata"]["eou.speech_end_source"] == "vad"
+        if mode == "audio_only":
+            assert wait["metadata"]["eou.end_reason"] == "silence_timeout"
+        assert "eou.detection_methods" not in wait["metadata"]
+        assert wait["context"]["span_origin"]["instrumentation"]["name"] == "pipecat-auto"
+    _assert_all_ended(logs)
+
+
+@pytest.mark.asyncio
+async def test_eou_cleanup_continues_after_wait_close_fails(memory_logger, tracker_observer, monkeypatch):
+    from braintrust.integrations.pipecat.tracing._eou import ControllerWait
+
+    _instrument()
+    Strategies = _import("pipecat.turns.user_turn_strategies.UserTurnStrategies")
+    Timeout = _import("pipecat.turns.user_stop.SpeechTimeoutUserTurnStopStrategy")
+
+    def fail_close(_wait, _ended):
+        raise RuntimeError("wait cleanup failed")
+
+    async with _native_eou_controller(tracker_observer, Strategies(stop=[Timeout()])):
+        monkeypatch.setattr(ControllerWait, "close", fail_close)
+        await tracker_observer.cleanup()
+
+    assert not tracker_observer._controllers
+    rows = memory_logger.pop()
+    _single_span(rows, "session")
+    _single_span(rows, "user_turn")
+    _assert_all_ended(rows)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("delayed", [False, True])
+async def test_eou_queued_observations_keep_turn_ownership(memory_logger, tracker_observer, monkeypatch, delayed):
+    """Real WorkerObserver queue falls behind two real native controller turns."""
+    _instrument()
+    WorkerObserver = _import("pipecat.pipeline.worker_observer.WorkerObserver")
+    FramePushed = _import("pipecat.observers.base_observer.FramePushed")
+    Direction = _import("pipecat.processors.frame_processor.FrameDirection")
+    Identity = _import("pipecat.processors.filters.identity_filter.IdentityFilter")
+    Manager = _import("pipecat.utils.asyncio.task_manager.TaskManager")
+    Params = _import("pipecat.utils.asyncio.task_manager.TaskManagerParams")
+    Strategies = _import("pipecat.turns.user_turn_strategies.UserTurnStrategies")
+    Timeout = _import("pipecat.turns.user_stop.SpeechTimeoutUserTurnStopStrategy")
+    manager = Manager()
+    manager.setup(Params(loop=asyncio.get_running_loop()))
+    worker = WorkerObserver(observers=[tracker_observer])
+    release = asyncio.Event()
+    entered = asyncio.Event()
+    original = tracker_observer.on_push_frame
+
+    async def on_push(data):
+        if delayed and not entered.is_set():
+            entered.set()
+            await release.wait()
+        await original(data)
+
+    monkeypatch.setattr(tracker_observer, "on_push_frame", on_push)
+    await worker.setup(manager)
+    if hasattr(worker, "start"):
+        await worker.start()
+    source, destination = Identity(), Identity()
+    session = tracker_observer._start_session()
+    with session.clock.event(time.monotonic_ns()):
+        pass
+
+    async def push(frame):
+        await worker.on_push_frame(FramePushed(source, destination, frame, Direction.DOWNSTREAM, time.monotonic_ns()))
+
+    try:
+        async with _native_eou_controller(
+            tracker_observer, Strategies(stop=[Timeout(user_speech_timeout=0.03)]), begin_turn=False
+        ) as controller:
+            committed = asyncio.Queue()
+            committed_at = []
+
+            @controller.event_handler("on_user_turn_stopped")
+            async def on_stopped(*_args):
+                committed_at.append(time.time())
+                committed.put_nowait(True)
+
+            async def process(frame):
+                await push(frame)
+                await controller.process_frame(frame)
+
+            for index in range(2):
+                await process(_frames().VADUserStartedSpeakingFrame())
+                await asyncio.sleep(0.005)  # Speech must outlast the stop correction.
+                await process(_frames().VADUserStoppedSpeakingFrame(stop_secs=0.001))
+                await process(_frames().TranscriptionFrame(f"Turn {index}", "caller", "0", finalized=True))
+                await asyncio.wait_for(committed.get(), 2)
+            if delayed:
+                await asyncio.wait_for(entered.wait(), 2)
+            release.set()
+            await asyncio.wait_for(worker._proxies[tracker_observer].queue.join(), 2)
+    finally:
+        release.set()
+        if hasattr(worker, "stop"):
+            await worker.stop()
+        await worker.cleanup()
+    logs = memory_logger.pop()
+    turns = _spans_named(logs, "user_turn")
+    assert len(turns) == 2
+    for name in ("user_speech", "transcript_received", "eou_wait"):
+        rows = _spans_named(logs, name)
+        assert len(rows) == 2
+        for row, turn in zip(rows, turns):
+            assert row["span_parents"] == [turn["span_id"]], (name, row, turn)
+            assert row["metadata"]["turn.id"] == turn["span_id"]
+    for wait, turn, accepted_at in zip(_spans_named(logs, "eou_wait"), turns, committed_at):
+        assert wait["metrics"]["end"] <= accepted_at
+        assert turn["metrics"]["end"] == pytest.approx(wait["metrics"]["end"], abs=1e-6, rel=0)
+    _assert_all_ended(logs)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "stamp,correction", [(0, 0), (-1, 0), (float("nan"), 0), (float("inf"), 0), (None, 0), (None, -1)]
+)
+async def test_eou_omits_invalid_speech_timestamps(memory_logger, tracker_observer, stamp, correction):
+    _instrument()
+    Strategies = _import("pipecat.turns.user_turn_strategies.UserTurnStrategies")
+    SpeechTimeout = _import("pipecat.turns.user_stop.SpeechTimeoutUserTurnStopStrategy")
+    async with _native_eou_controller(
+        tracker_observer, Strategies(stop=[SpeechTimeout(user_speech_timeout=1)])
+    ) as controller:
+        frame = _frames().VADUserStoppedSpeakingFrame(timestamp=stamp, stop_secs=correction)
+        await controller.process_frame(frame)
+    await tracker_observer.cleanup()
+    assert not _spans_named(memory_logger.pop(), "eou_wait")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mode", ["external", "inactive"])
+async def test_eou_external_turns_do_not_make_a_wait_from_vad(memory_logger, tracker_observer, mode):
+    _instrument()
+    Strategies = _import("pipecat.turns.user_turn_strategies.ExternalUserTurnStrategies")
+    if mode == "external":
+        strategies = Strategies()
+    else:
+        Local = _import("pipecat.turns.user_turn_strategies.UserTurnStrategies")
+        Timeout = _import("pipecat.turns.user_stop.SpeechTimeoutUserTurnStopStrategy")
+        strategies = Local(stop=[Timeout()])
+    async with _native_eou_controller(tracker_observer, strategies, begin_turn=mode != "inactive") as controller:
+        await controller.process_frame(_frames().VADUserStoppedSpeakingFrame())
+    await tracker_observer.cleanup()
+    assert not _spans_named(memory_logger.pop(), "eou_wait")

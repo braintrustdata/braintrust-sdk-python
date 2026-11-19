@@ -9,7 +9,7 @@ from typing import Literal
 from braintrust.logger import NOOP_SPAN, Span
 
 
-SCHEMA_VERSION = "3.0.0"
+SCHEMA_VERSION = "3.1.0"
 
 # A turn records its own ID; every operation within it records the turn's ID.
 TURN_ID = "turn.id"

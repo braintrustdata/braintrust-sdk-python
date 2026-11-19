@@ -62,6 +62,16 @@ class ContextLinker:
             self._warn("transcript")
         self._transcripts.append((text, span))
 
+    def clear(self) -> None:
+        """Release routing payloads after all session work has been exported."""
+        self.messages = None
+        self.metadata.clear()
+        self._submitted = ()
+        self._consumed = 0
+        self._transcripts.clear()
+        self._tool_results.clear()
+        self._warned.clear()
+
     def add_tool_result(self, tool_call_id: str, span: Span) -> None:
         self._tool_results[tool_call_id] = span
         if len(self._tool_results) > MAX_PENDING:

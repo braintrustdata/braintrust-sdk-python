@@ -85,8 +85,8 @@ class SpanFactory:
             **kwargs,
         )
 
-    def turn(self, name: str) -> Span:
-        span = self.start(name)
+    def turn(self, name: str, *, start_ms: float | None = None) -> Span:
+        span = self.start(name, start_ms=start_ms)
         span.log(metadata={TURN_ID: span_id(span)})
         return span
 

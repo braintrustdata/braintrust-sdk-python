@@ -64,7 +64,7 @@ async def test_livekit_agents_function_tool_e2e(memory_logger, monkeypatch, lega
     assert len(named(rows, "session")) == 1
     root = named(rows, "session")[0]
     assert root["span_parents"] == [outer.span_id]
-    assert root["metadata"]["audio.schema.version"] == "3.0.0"
+    assert root["metadata"]["audio.schema.version"] == "3.1.0"
     assert isinstance(root["metadata"]["audio.timeline"]["origin_unix_ms"], int)
     for row in rows:
         if row["span_id"] != root["span_id"]:
@@ -153,7 +153,7 @@ async def test_livekit_agents_agent_speaking_e2e(memory_logger):
     outer, root = named(rows, "outer")[0], named(rows, "session")[0]
     assert root["span_parents"] == [outer["span_id"]]
     assert named(rows, "llm_response")[0]["output"][0]["content"] == "hi there"
-    assert root["metadata"]["audio.schema.version"] == "3.0.0"
+    assert root["metadata"]["audio.schema.version"] == "3.1.0"
     assert "audio.segments" not in root["metadata"]
     user = named(rows, "user_turn")[0]
     assert named(rows, "agent_turn")[0]["metadata"]["turn.reply_to"] == user["span_id"]
@@ -211,6 +211,6 @@ def test_explicit_setup_survives_automatic_setup():
         tracing._OPTIONS = original
 
 
-def test_auto_instrument_livekit_agents_subprocess():
-    verify_autoinstrument_script("test_auto_livekit_agents.py")
-    verify_autoinstrument_script("test_auto_livekit_agents_before_import.py")
+def test_auto_instrument_livekit_agents_subprocess(livekit_server):
+    verify_autoinstrument_script("test_auto_livekit_agents.py", timeout=60)
+    verify_autoinstrument_script("test_auto_livekit_agents_before_import.py", timeout=60)

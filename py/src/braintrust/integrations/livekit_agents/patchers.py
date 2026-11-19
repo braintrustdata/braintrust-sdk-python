@@ -1,8 +1,9 @@
+import inspect
 from typing import Any
 
 from braintrust.integrations.base import CompositeFunctionWrapperPatcher, FunctionWrapperPatcher
 
-from . import realtime, tracing
+from . import eou, realtime, tracing
 
 
 def _patcher(name, module, path, wrapper):
@@ -16,6 +17,52 @@ def _patcher(name, module, path, wrapper):
             "wrapper": staticmethod(wrapper),
         },
     )
+
+
+class EOUWaitPatcher(CompositeFunctionWrapperPatcher):
+    name = "eou_wait"
+    sub_patchers = (
+        _patcher("eou_ensure", "voice.audio_recognition", "AudioRecognition._ensure_eou_wait_span", eou.ensure),
+        _patcher("eou_end", "voice.audio_recognition", "AudioRecognition._end_eou_wait_span", eou.end),
+        _patcher("eou_snapshot", "voice.audio_recognition", "AudioRecognition._take_turn_snapshot", eou.snapshot),
+        _patcher(
+            "eou_run_detection", "voice.audio_recognition", "AudioRecognition._run_eou_detection", eou.run_detection
+        ),
+        _patcher("eou_vad", "voice.audio_recognition", "AudioRecognition._on_vad_event", eou.vad_event),
+        _patcher(
+            "eou_detection", "voice.audio_recognition", "AudioRecognition._track_eou_detection_span", eou.detection
+        ),
+    )
+
+    @classmethod
+    def applies(cls, module, version, *, target=None):
+        end = cls.sub_patchers[1].resolve_target(module, version, target=target)
+        try:
+            snapshot_required = "turn_snapshot" in inspect.signature(end).parameters
+        except (TypeError, ValueError):
+            return False
+        contracts = (
+            (False, {"user_turn_span": None, "trigger": "vad", "last_speaking_time": None, "endpointing_delay": 0}),
+            (
+                False,
+                {"outcome": "committed", "end_time": None, **({"turn_snapshot": None} if snapshot_required else {})},
+            ),
+            (False, {}),
+            (False, {"chat_ctx": None, "trigger": "vad", "skip_reply": False}),
+            (True, {"ev": None}),
+            (False, {"span": None}),
+        )
+        for index, (patcher, (asynchronous, arguments)) in enumerate(zip(cls.sub_patchers, contracts)):
+            method = patcher.resolve_target(module, version, target=target)
+            if index == 2 and method is None and not snapshot_required:
+                continue  # LiveKit 1.8.9 predates manual snapshots.
+            if not callable(method) or inspect.iscoroutinefunction(method) != asynchronous:
+                return False
+            try:
+                inspect.signature(method).bind(None, **arguments)
+            except (TypeError, ValueError):
+                return False
+        return super().applies(module, version, target=target)
 
 
 class AgentSessionPatcher(CompositeFunctionWrapperPatcher):

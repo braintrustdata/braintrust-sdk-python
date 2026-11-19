@@ -459,7 +459,7 @@ async def test_realtime_conversation(rooms, memory_logger, monkeypatch, vcr_cass
         parent = by_id[speech["span_parents"][0]]
         assert speech["metadata"]["turn.id"] == parent["span_id"]
     root = named(rows, "session")[0]
-    assert root["metadata"]["audio.schema.version"] == "3.0.0"
+    assert root["metadata"]["audio.schema.version"] == "3.1.0"
     assert all("audio.schema.version" not in row.get("metadata", {}) for row in rows if row is not root)
     assert not controller.listeners and not controller.inputs and not controller.responses
     assert controller.instructions is None and not controller.response_options

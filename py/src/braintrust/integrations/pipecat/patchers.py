@@ -115,6 +115,127 @@ async def traced_stt_process_generator(
         return await wrapped(*args, **kwargs)
 
 
+def _controller_wait(instance):
+    observer = _ACTIVE_OBSERVER.get()
+    return observer._controller(instance) if observer is not None else None
+
+
+def traced_observer_proxy(wrapped, instance, args, kwargs):
+    proxy = wrapped(*args, **kwargs)
+    if isinstance(proxy.observer, BraintrustPipecatObserver):
+        proxy.observer._controller_queue = proxy.queue
+    return proxy
+
+
+class WorkerObserverProxyPatcher(FunctionWrapperPatcher):
+    name = "worker_observer_proxy"
+    target_module = "pipecat.pipeline.worker_observer"
+    target_path = "WorkerObserver._create_proxy"
+    wrapper = staticmethod(traced_observer_proxy)
+
+
+async def traced_controller_frame(wrapped, instance, args, kwargs):
+    from .tracing._eou import CONDITION, SPEECH_TIMEOUT_STRATEGY, stop_strategies
+
+    condition = None
+    try:
+        wait = _controller_wait(instance)
+        if wait is not None:
+            frame = args[0] if args else kwargs["frame"]
+            wait.observe(frame)
+            if type(frame).__name__ == "TranscriptionFrame" and frame.finalized:
+                strategies = stop_strategies(instance)
+                strategy = strategies[0] if len(strategies) == 1 else None
+                if (
+                    (type(strategy).__module__, type(strategy).__name__) == SPEECH_TIMEOUT_STRATEGY
+                    and strategy._user_speech_wait_done
+                    and not strategy._stt_wait_done
+                ):
+                    condition = (strategy, "transcription_finalized")
+    except Exception:
+        from .tracing._common import LOG
+
+        LOG.warning("Unable to observe Pipecat turn wait", exc_info=True)
+    token = CONDITION.set(condition)
+    try:
+        return await wrapped(*args, **kwargs)
+    finally:
+        CONDITION.reset(token)
+
+
+async def traced_controller_event(wrapped, instance, args, kwargs):
+    name = args[0] if args else kwargs.get("event_name")
+    try:
+        if name in ("on_user_turn_started", "on_user_turn_stopped"):
+            wait = _controller_wait(instance)
+            if wait is not None:
+                wait.event(name, args[1:])
+    except Exception:
+        from .tracing._common import LOG
+
+        LOG.warning("Unable to observe Pipecat turn decision", exc_info=True)
+    return await wrapped(*args, **kwargs)
+
+
+async def traced_speech_timeout(wrapped, instance, args, kwargs):
+    from .tracing._eou import CONDITION
+
+    token = CONDITION.set((instance, "silence_timeout"))
+    try:
+        return await wrapped(*args, **kwargs)
+    finally:
+        CONDITION.reset(token)
+
+
+class UserTurnControllerFramePatcher(FunctionWrapperPatcher):
+    name = "user_turn_controller_frame"
+    target_module = "pipecat.turns.user_turn_controller"
+    target_path = "UserTurnController.process_frame"
+    wrapper = staticmethod(traced_controller_frame)
+
+
+class UserTurnControllerEventPatcher(FunctionWrapperPatcher):
+    name = "user_turn_controller_event"
+    target_module = "pipecat.turns.user_turn_controller"
+    target_path = "UserTurnController._call_event_handler"
+    wrapper = staticmethod(traced_controller_event)
+
+
+class SpeechTimeoutPatcher(FunctionWrapperPatcher):
+    name = "speech_timeout_eou_condition"
+    target_module = "pipecat.turns.user_stop.speech_timeout_user_turn_stop_strategy"
+    target_path = "SpeechTimeoutUserTurnStopStrategy._user_speech_timeout_handler"
+    wrapper = staticmethod(traced_speech_timeout)
+
+
+class EOUWaitPatcher(CompositeFunctionWrapperPatcher):
+    """Install queue routing, lifecycle and causal observations together."""
+
+    name = "eou_wait"
+    sub_patchers = (
+        WorkerObserverProxyPatcher,
+        UserTurnControllerFramePatcher,
+        UserTurnControllerEventPatcher,
+        SpeechTimeoutPatcher,
+    )
+
+    @classmethod
+    def applies(cls, module, version, *, target=None):
+        for patcher, asynchronous, arguments in zip(
+            cls.sub_patchers,
+            (False, True, True, True),
+            ({"observer": None}, {"frame": None}, {"event_name": "on_user_turn_stopped"}, {"timeout": 0}),
+        ):
+            method = patcher.resolve_target(module, version, target=target)
+            if not callable(method) or inspect.iscoroutinefunction(method) != asynchronous:
+                return False
+            try:
+                inspect.signature(method).bind(None, **arguments)
+            except (TypeError, ValueError):
+                return False
+        return super().applies(module, version, target=target)
+
+
 class PipelineWorkerInitPatcher(FunctionWrapperPatcher):
     """Patch ``PipelineWorker.__init__`` to add a Braintrust observer."""
 
@@ -254,6 +375,9 @@ def wrap_pipeline_worker(
     from pipecat.services.llm_service import LLMService  # pylint: disable=import-error
     from pipecat.services.stt_service import SegmentedSTTService, STTService  # pylint: disable=import-error
 
+    # The same gate and composite own global markers for every entrypoint.
+    if EOUWaitPatcher.applies(None, None):
+        EOUWaitPatcher.patch(None, None)
     LLMServicePushFramePatcher.wrap_target(LLMService)
     STTServiceProcessGeneratorPatcher.wrap_target(STTService)
     SegmentedSTTPushSegmentFramesPatcher.wrap_target(SegmentedSTTService)
