@@ -594,9 +594,12 @@ class LocalTrace(dict[str, Any]):
         """
         preprocessor = options.get("preprocessor") if options and options.get("preprocessor") else None
         cache_key = preprocessor or "project_default"
-        if cache_key not in self._thread_cache:
-            self._thread_cache[cache_key] = asyncio.create_task(self._fetch_thread(options))
-        return await self._thread_cache[cache_key]
+        task = self._thread_cache.get(cache_key)
+        # Share in-flight work and successful results, not a previous failed attempt.
+        if task is None or (task.done() and (task.cancelled() or task.exception() is not None)):
+            task = asyncio.create_task(self._fetch_thread(options))
+            self._thread_cache[cache_key] = task
+        return await task
 
     async def _fetch_thread(self, options: GetThreadOptions | None = None) -> list[Any]:
         """Fetch thread messages via preprocessor invocation."""

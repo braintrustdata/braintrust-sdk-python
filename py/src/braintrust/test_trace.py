@@ -1,5 +1,6 @@
 """Tests for Trace functionality."""
 
+import asyncio
 import os
 
 import braintrust
@@ -550,6 +551,36 @@ class TestLocalTraceGetThread:
         await trace.get_thread(options={"preprocessor": "custom_preprocessor"})
         assert calls[0]["global_function"] == "custom_preprocessor"
         assert calls[0]["function_type"] == "preprocessor"
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("failure", ["flush", "invoke"])
+    async def test_retries_failed_thread_fetch(self, monkeypatch, failure):
+        flushes = 0
+        invokes = 0
+        messages = [{"role": "user", "content": "retry succeeded"}]
+
+        async def flush():
+            nonlocal flushes
+            flushes += 1
+            if failure == "flush" and flushes == 1:
+                raise RuntimeError("transient flush failure")
+
+        def fake_invoke(**kwargs):
+            nonlocal invokes
+            invokes += 1
+            if failure == "invoke" and invokes == 1:
+                raise RuntimeError("transient invoke failure")
+            return messages
+
+        monkeypatch.setattr("braintrust.trace.invoke", fake_invoke)
+        trace = LocalTrace("experiment", "exp-123", "root-456", flush, _DummyState())
+        with pytest.raises(RuntimeError, match=f"transient {failure} failure"):
+            await trace.get_thread()
+
+        assert await asyncio.gather(trace.get_thread(), trace.get_thread()) == [messages, messages]
+        assert await trace.get_thread() == messages
+        assert flushes == (2 if failure == "flush" else 1)
+        assert invokes == (2 if failure == "invoke" else 1)
 
     @pytest.mark.asyncio
     async def test_caches_by_preprocessor(self, monkeypatch):
