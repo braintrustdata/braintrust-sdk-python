@@ -2380,6 +2380,9 @@ class ProjectSettingsPatternAlertDestinations2(TypedDict):
     """
 
 
+ProjectSettingsPatternExcludedCategory: TypeAlias = str
+
+
 ProjectSettingsSessionIdField: TypeAlias = str
 
 
@@ -2434,6 +2437,20 @@ class ProjectSettings(TypedDict):
     ]
     """
     Project-wide Slack, webhook, and PagerDuty destinations for new and reactivated Pattern alerts. An empty array disables alerts.
+    """
+    pattern_alert_min_severity: NotRequired[Literal['high', 'medium', 'low'] | None]
+    """
+    Lowest severity that sends Pattern alerts: `low`, `medium`, or `high`. New and reactivated Patterns below it don't send alerts, and raising an active Pattern's severity to it or above sends one. Patterns without a severity count as low. Informational Patterns follow `pattern_alert_informational` instead. Unset or null uses medium.
+    """
+    pattern_alert_informational: NotRequired[bool | None]
+    """
+    Whether new and reactivated informational Patterns send alerts, independent of `pattern_alert_min_severity`. Unset or null sends them.
+    """
+    pattern_excluded_categories: NotRequired[
+        Sequence[ProjectSettingsPatternExcludedCategory]
+    ]
+    """
+    Patterns rubric categories this project turned off. Patterns doesn't look for or assign them.
     """
     session_id_fields: NotRequired[Sequence[Sequence[ProjectSettingsSessionIdField]] | None]
     default_preprocessor: NotRequired[NullableSavedFunctionId | None]
