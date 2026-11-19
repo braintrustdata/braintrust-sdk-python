@@ -23,9 +23,9 @@ def answer_question(body: str) -> str:
     ]
 
     result = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gpt-6-luna",
         messages=prompt,
-        temperature=0.5,
+        reasoning_effort="none",
     )
     return result.choices[0].message.content
 

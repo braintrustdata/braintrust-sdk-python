@@ -59,7 +59,10 @@ with tracer.start_as_current_span("filtered.otel.example") as main_span:
     # Add a simple OpenAI call - this will be automatically traced by OpenTelemetry
     client = OpenAI()
     response = client.chat.completions.create(
-        model="gpt-4o-mini", messages=[{"role": "user", "content": "Hello, world!"}], max_tokens=10
+        model="gpt-6-luna",
+        messages=[{"role": "user", "content": "Hello, world!"}],
+        reasoning_effort="none",
+        max_completion_tokens=10,
     )
 
     main_span.set_attribute("openai_response", response.choices[0].message.content)
