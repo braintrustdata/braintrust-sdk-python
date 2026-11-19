@@ -2,6 +2,7 @@
 
 import inspect
 from collections import deque
+from contextlib import ExitStack
 from contextvars import ContextVar
 from dataclasses import dataclass, field
 from typing import Any
@@ -13,6 +14,7 @@ from braintrust.integrations.base import CompositeFunctionWrapperPatcher, Functi
 from .tracing import BraintrustPipecatObserver
 from .tracing._common import MAX_PENDING
 from .tracing._live import is_live_service
+from .tracing._model import client_covered
 
 
 _DEFAULT_OBSERVER_OPTIONS: dict[str, Any] = {
@@ -29,9 +31,8 @@ def set_default_observer_options(**options: Any) -> None:
 
 
 _OBSERVER_ATTR = "_braintrust_pipecat_observer"
-_RESPONSE_SPAN_ATTR = "_braintrust_pipecat_response_span"
-_RESPONSE_FRAME_ATTR = "_braintrust_pipecat_response_frame"
 _LLM_EXECUTION: ContextVar[Any] = ContextVar("braintrust_pipecat_llm_execution", default=None)
+_ASSISTANT_TURN: ContextVar[Any] = ContextVar("braintrust_pipecat_assistant_turn", default=None)
 # The observer of the running worker. Every processor task inherits it.
 _ACTIVE_OBSERVER: ContextVar[BraintrustPipecatObserver | None] = ContextVar(
     "braintrust_pipecat_observer", default=None
@@ -43,6 +44,8 @@ class _ResponseExecution:
     """Request evidence can precede the observer's queued start notification."""
 
     processor: Any
+    scope: ExitStack
+    covered: bool | None = None
     operation: Any = None
     request: Any = None
     metrics: Any = field(default_factory=lambda: deque(maxlen=MAX_PENDING))
@@ -81,8 +84,9 @@ def traced_pipeline_worker_init(wrapped: Any, instance: Any, args: tuple[Any, ..
     kwargs["observers"], observer = _with_braintrust_observer(kwargs.get("observers"))
     result = wrapped(*args, **kwargs)
     setattr(instance, _OBSERVER_ATTR, observer)
-    pipeline = args[0] if args else kwargs.get("pipeline")
     try:
+        pipeline = instance.pipeline
+        observer._terminal_processor = pipeline.processors[-1]
         _trace_processors(pipeline, observer)
     except Exception:
         from .tracing._common import LOG
@@ -106,13 +110,6 @@ async def traced_pipeline_worker_run(
         _ACTIVE_OBSERVER.reset(token)
 
 
-def _release_response_span(service: Any) -> None:
-    span = getattr(service, _RESPONSE_SPAN_ATTR, None)
-    if span is not None:
-        setattr(service, _RESPONSE_SPAN_ATTR, None)
-        span.unset_current()
-
-
 async def traced_llm_push_frame(wrapped: Any, instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
     """Make an LLM service's llm_response span current while it makes the call.
 
@@ -129,14 +126,21 @@ async def traced_llm_push_frame(wrapped: Any, instance: Any, args: tuple[Any, ..
         or is_live_service(instance)
     ):
         return await wrapped(*args, **kwargs)
-    _release_response_span(instance)
     if kind == "LLMFullResponseEndFrame":
         return await wrapped(*args, **kwargs)
-    setattr(instance, _RESPONSE_FRAME_ATTR, frame.id)
+    scope = _LLM_EXECUTION.get()
+    if scope is not None and scope.processor is instance:
+        scope.covered = client_covered(instance, "llm_response")
+        observer._response_executions[frame.id] = scope
+        if len(observer._response_executions) > MAX_PENDING:
+            observer._response_executions.popitem(last=False)
     result, span = await observer._response_span(frame, lambda: wrapped(*args, **kwargs))
-    if span is not None:
-        span.set_current()
-        setattr(instance, _RESPONSE_SPAN_ATTR, span)
+    response = observer._session.agent._response if observer._session is not None else None
+    if scope is not None and scope.processor is instance and span is not None:
+        operation = response.model if response is not None and response.span.id == span.id else None
+        if operation is not None:
+            scope.bind(observer, operation)
+        scope.scope.enter_context(observer._model_scope(operation, parent=span))
     return result
 
 
@@ -289,6 +293,7 @@ def _trace_processors(pipeline: Any, observer: BraintrustPipecatObserver, *, nat
         index
         for index, processor in enumerate(processors)
         if any(base.__name__ == "LLMAssistantAggregator" for base in type(processor).__mro__)
+        and AssistantTurnPatcher.applies(None, None, target=processor)
     ]
     for index, processor in enumerate(processors):
         member = native_turn or any(index < assistant for assistant in assistant_indices)
@@ -318,31 +323,28 @@ def _trace_processors(pipeline: Any, observer: BraintrustPipecatObserver, *, nat
             if UserAggregationPatcher.applies(None, None, target=processor):
                 UserAggregationPatcher.patch(None, None, target=processor)
         if any(base.__name__ == "LLMAssistantAggregator" for base in type(processor).__mro__):
-            if AssistantStoppedPatcher.applies(
-                None, None, target=processor
-            ) and not AssistantStoppedPatcher.is_patched(None, None, target=processor):
-                AssistantStoppedPatcher.patch(None, None, target=processor)
+            if AssistantTurnPatcher.applies(None, None, target=processor):
+                AssistantTurnPatcher.patch(None, None, target=processor)
+                observer._register_assistant(processor)
 
 
 async def _traced_response(wrapped: Any, instance: Any, args: tuple, kwargs: dict) -> Any:
+    """Keep scope through public frame processing, including late usage and exits."""
     active = _ACTIVE_OBSERVER.get()
     if active is None:
         return await wrapped(*args, **kwargs)
-    with active._model_execution(instance, "llm_response", args, kwargs) as operation:
-        execution = _ResponseExecution(instance)
-        if operation is not None:
-            execution.bind(active, operation)
-        elif (frame_id := getattr(instance, _RESPONSE_FRAME_ATTR, None)) is not None:
-            active._response_executions[frame_id] = execution
-            if len(active._response_executions) > MAX_PENDING:
-                active._response_executions.popitem(last=False)
+    with ExitStack() as scope:
+        execution = _ResponseExecution(instance, scope)
         token = _LLM_EXECUTION.set(execution)
         try:
             return await wrapped(*args, **kwargs)
         except BaseException as exc:
             execution.error = exc
-            if execution.operation is not None:
-                execution.operation.error = exc
+            operation = execution.operation
+            if operation is not None:
+                operation.error = exc
+                if operation.parent is not None:
+                    operation.parent.log(error=exc)
             raise
         finally:
             _LLM_EXECUTION.reset(token)
@@ -507,24 +509,49 @@ def traced_context_add_message(wrapped: Any, instance: Any, args: tuple, kwargs:
     return wrapped(*args, **kwargs)
 
 
-async def _traced_assistant_stopped(wrapped: Any, instance: Any, args: tuple, kwargs: dict) -> Any:
-    result = await wrapped(*args, **kwargs)
+async def _traced_assistant_frame(wrapped: Any, instance: Any, args: tuple, kwargs: dict) -> Any:
     observer = _ACTIVE_OBSERVER.get()
-    if observer is not None:
-        try:
-            timestamp = instance.get_clock().get_time()
+    if observer is None:
+        return await wrapped(*args, **kwargs)
+    frame = args[0] if args else kwargs.get("frame")
+    if type(frame).__name__ == "LLMFullResponseStartFrame":
+        # Associate by the native response frame, never whichever turn happens
+        # to be current when a delayed event handler eventually runs.
+        observer._assistant_turns[id(instance)] = frame.id
+    response_id = observer._assistant_turns.get(id(instance))
+    token = _ASSISTANT_TURN.set((observer, response_id))
+    try:
+        return await wrapped(*args, **kwargs)
+    finally:
+        _ASSISTANT_TURN.reset(token)
 
-            def complete():
-                if observer._session is not None:
-                    with observer._session.clock.event(timestamp):
-                        observer._assistant_stopped()
 
-            observer._enqueue_controller(complete)
-        except Exception:
-            from .tracing._common import LOG
+def traced_assistant_stopped(processor: Any, _message: Any, *_args: Any) -> None:
+    # A shared callback captures no observer/turn. Pipecat 1.3 has no public
+    # removal API, so it can remain registered safely if the processor is reused.
+    binding = _ASSISTANT_TURN.get()
+    if binding is None:
+        return
+    observer, response_id = binding
+    try:
+        timestamp = processor.get_clock().get_time()
 
-            LOG.warning("Unable to trace Pipecat assistant turn completion", exc_info=True)
-    return result
+        def complete():
+            session = observer._session
+            turn = observer._response_turns.get(response_id)
+            if session is not None and turn is not None and session.agent._turn is turn:
+                with session.clock.event(timestamp):
+                    session.agent.request_completion()
+
+        # Native callbacks can precede queued response observations. Preserve
+        # their FIFO order and resolve the originating frame's turn afterward.
+        observer._enqueue_controller(complete)
+        if observer._assistant_turns.get(id(processor)) == response_id:
+            observer._assistant_turns.pop(id(processor), None)
+    except Exception:
+        from .tracing._common import LOG
+
+        LOG.warning("Unable to trace Pipecat assistant completion", exc_info=True)
 
 
 class ServiceMetricsPatcher(FunctionWrapperPatcher):
@@ -535,7 +562,7 @@ class ServiceMetricsPatcher(FunctionWrapperPatcher):
 
 class ResponseExecutionPatcher(FunctionWrapperPatcher):
     name = "cascade_response_execution"
-    target_path = "_process_context"
+    target_path = "process_frame"
     wrapper = staticmethod(_traced_response)
 
 
@@ -580,7 +607,14 @@ class _ExecutionPatcher(CompositeFunctionWrapperPatcher):
                 return False
             arguments = (
                 (None, None)
-                if patcher in (ServiceMetricsPatcher, TTSExecutionFramePatcher, TTSRunPatcher)
+                if patcher
+                in (
+                    ServiceMetricsPatcher,
+                    TTSExecutionFramePatcher,
+                    ResponseExecutionPatcher,
+                    AssistantFramePatcher,
+                    TTSRunPatcher,
+                )
                 else (None,)
             )
             try:
@@ -668,10 +702,29 @@ class UserAggregationPatcher(CompositeFunctionWrapperPatcher):
         return super().applies(module, version, target=target)
 
 
-class AssistantStoppedPatcher(FunctionWrapperPatcher):
-    name = "cascade_assistant_stopped"
-    target_path = "_trigger_assistant_turn_stopped"
-    wrapper = staticmethod(_traced_assistant_stopped)
+class AssistantFramePatcher(FunctionWrapperPatcher):
+    name = "cascade_assistant_frame"
+    target_path = "process_frame"
+    wrapper = staticmethod(_traced_assistant_frame)
+
+
+class AssistantTurnPatcher(_ExecutionPatcher):
+    """Observe native turn events in their originating public frame scope."""
+
+    name = "cascade_assistant_turn"
+    sub_patchers = (AssistantFramePatcher,)
+
+    @classmethod
+    def applies(cls, module, version, *, target=None):
+        for name in ("add_event_handler",):
+            method = getattr(target, name, None)
+            if not callable(method):
+                return False
+            try:
+                inspect.signature(method).bind("on_assistant_turn_stopped", None)
+            except (ValueError, TypeError):
+                return False
+        return super().applies(module, version, target=target)
 
 
 class ContextAddMessagePatcher(FunctionWrapperPatcher):
@@ -727,20 +780,6 @@ class STTServiceProcessGeneratorPatcher(FunctionWrapperPatcher):
     name = "stt_service_process_generator"
     target_module = "pipecat.services.stt_service"
     target_path = "STTService.process_generator"
-    wrapper = staticmethod(traced_stt_process_generator)
-
-
-class SegmentedSTTPushSegmentFramesPatcher(FunctionWrapperPatcher):
-    """Scope segmented STT transcription spans under their Pipecat recognition.
-
-    Since Pipecat 1.16, ``SegmentedSTTService`` consumes ``run_stt`` in
-    ``_push_segment_frames`` instead of ``process_generator``. Older versions
-    lack the method, so the patcher skips them.
-    """
-
-    name = "segmented_stt_push_segment_frames"
-    target_module = "pipecat.services.stt_service"
-    target_path = "SegmentedSTTService._push_segment_frames"
     wrapper = staticmethod(traced_stt_process_generator)
 
 
@@ -832,7 +871,7 @@ def wrap_pipeline_worker(
     )
     from pipecat.processors.aggregators.llm_context import LLMContext  # pylint: disable=import-error
     from pipecat.services.llm_service import LLMService  # pylint: disable=import-error
-    from pipecat.services.stt_service import SegmentedSTTService, STTService  # pylint: disable=import-error
+    from pipecat.services.stt_service import STTService  # pylint: disable=import-error
 
     # The same gate and composite own global markers for every entrypoint.
     if EOUWaitPatcher.applies(None, None):
@@ -840,7 +879,6 @@ def wrap_pipeline_worker(
     ContextAddMessagePatcher.wrap_target(LLMContext)
     LLMServicePushFramePatcher.wrap_target(LLMService)
     STTServiceProcessGeneratorPatcher.wrap_target(STTService)
-    SegmentedSTTPushSegmentFramesPatcher.wrap_target(SegmentedSTTService)
     # Optional on older Pipecat versions; the patchers feature-detect the module.
     if OpenAILivePatcher.applies(None, None):
         OpenAILivePatcher.patch(None, None)
