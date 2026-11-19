@@ -583,6 +583,38 @@ class TestLocalTraceGetThread:
         assert invokes == (2 if failure == "invoke" else 1)
 
     @pytest.mark.asyncio
+    async def test_retries_after_cancellation_during_flush(self, monkeypatch):
+        flush_started = asyncio.Event()
+        flushes = 0
+        invokes = []
+
+        async def flush():
+            nonlocal flushes
+            flushes += 1
+            if flushes == 1:
+                flush_started.set()
+                await asyncio.Event().wait()
+
+        def fake_invoke(**kwargs):
+            invokes.append(kwargs)
+            return ["retried"]
+
+        monkeypatch.setattr("braintrust.trace.invoke", fake_invoke)
+        trace = LocalTrace("experiment", "exp-123", "root-456", flush, _DummyState())
+        first = asyncio.create_task(trace.get_thread())
+        await flush_started.wait()
+        first.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await first
+        assert flushes == 1
+        assert not invokes
+
+        assert await asyncio.gather(trace.get_thread(), trace.get_thread()) == [["retried"], ["retried"]]
+        assert await trace.get_thread() == ["retried"]
+        assert flushes == 2
+        assert len(invokes) == 1
+
+    @pytest.mark.asyncio
     async def test_caches_by_preprocessor(self, monkeypatch):
         call_count = 0
 

@@ -629,13 +629,13 @@ class LocalTrace(dict[str, Any]):
         """Flush pending spans so a fetch sees them, at most once per trace.
 
         Concurrent scorers share one in-flight flush rather than each triggering their own.
-        A failed flush clears that shared handle so the next caller can retry.
+        A failed or cancelled flush can be retried by the next caller.
         """
         ensure_spans_flushed = self._ensure_spans_flushed
         if self._spans_flushed or ensure_spans_flushed is None:
             return
 
-        if self._spans_flush_promise is None:
+        if self._spans_flush_promise is None or self._spans_flush_promise.cancelled():
 
             async def flush_and_mark() -> None:
                 try:
