@@ -127,6 +127,10 @@ class ControllerWait:
         self.enqueue(lambda: self._event(name, observed_at, end_reason))
 
     def _event(self, name, observed_at, end_reason):
+        # LiveTracker owns turns from the service's proposed speaking frames.
+        # Universal aggregator callbacks must not also update cascade turns.
+        if self.session.live_mode:
+            return
         if name == "on_user_turn_started":
             self.session.user.start_turn(self.session.clock.from_wall_ms(observed_at))
             self.turn = self.session.user.turn_span

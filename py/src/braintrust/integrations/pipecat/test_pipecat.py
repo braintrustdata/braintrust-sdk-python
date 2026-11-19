@@ -918,6 +918,9 @@ async def test_live_observations(memory_logger, vcr_cassette_dir, boundary):
     ToolsSchema = _import("pipecat.adapters.llm.schemas.tools_schema.ToolsSchema")
     Pipeline = _import("pipecat.pipeline.pipeline.Pipeline")
     LLMContext = _import("pipecat.processors.aggregators.llm_context.LLMContext")
+    LLMContextAggregatorPair = _import(
+        "pipecat.processors.aggregators.llm_response_universal.LLMContextAggregatorPair"
+    )
     OpenAIResponsesLLMService = _import("pipecat.services.openai.responses.llm.OpenAIResponsesLLMService")
     WorkerRunner = _import("pipecat.workers.runner.WorkerRunner")
 
@@ -1029,7 +1032,10 @@ async def test_live_observations(memory_logger, vcr_cassette_dir, boundary):
                     finally:
                         callback_cancelled.set()
 
-        worker = _make_worker(Pipeline([service]))
+        # Live's proposed turn frames also reach the universal user controller.
+        # Those callbacks must not create a second, cascade-owned user turn.
+        aggregators = LLMContextAggregatorPair(context)
+        worker = _make_worker(Pipeline([aggregators.user(), service, aggregators.assistant()]))
         runner = WorkerRunner(handle_sigint=False)
         await runner.add_workers(worker)
         running = asyncio.create_task(runner.run())
@@ -1068,6 +1074,8 @@ async def test_live_observations(memory_logger, vcr_cassette_dir, boundary):
     by_id = {row["span_id"]: row for row in turns}
     received = _spans_named(logs, "transcript_received")
     assert turns and len(turns) == len(received)
+    assert not _spans_named(logs, "eou_wait")
+    assert all(row["metadata"].get("contrib.pipecat.live.grouping") == "pipecat_transcript_gap" for row in turns)
     for role in ("user", "assistant"):
         kind = "session.input_transcript.delta" if role == "user" else "session.output_transcript.delta"
         observed = "".join(e["delta"] for e in sent if e["type"] == kind)
