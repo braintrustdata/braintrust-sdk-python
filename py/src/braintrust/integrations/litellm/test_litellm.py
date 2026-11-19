@@ -8,6 +8,7 @@ import uuid
 from pathlib import Path
 from types import SimpleNamespace
 
+import httpx
 import litellm
 import pytest
 from braintrust import Attachment, logger
@@ -28,6 +29,7 @@ from braintrust.integrations.test_utils import (
 )
 from braintrust.integrations.versioning import detect_module_version, version_satisfies
 from braintrust.test_helpers import assert_dict_matches, init_test_logger
+from openai import AsyncOpenAI
 
 
 TEST_ORG_ID = "test-org-litellm-py-tracing"
@@ -191,6 +193,8 @@ def test_litellm_image_input_materializes_attachment(memory_logger, is_async, st
     assert span["span_attributes"]["type"] == "llm"
     assert span["metadata"]["model"] == TEST_MODEL
     assert span["metadata"]["provider"] == "openai"
+    if not stream:
+        assert_service_tiers(span["metadata"], served="default")
     assert_metrics_are_valid(span["metrics"], start, end)
     assert span["metrics"]["time_to_first_token"] >= 0
     assert span["output"][0]["message"]["content"] == content
@@ -566,19 +570,26 @@ def test_litellm_systemone_metrics(memory_logger, is_async):
             stream,
             is_async,
             id=f"{'streaming' if stream else 'blocking'}-{'async' if is_async else 'sync'}",
-            marks=pytest.mark.vcr(
-                cassette_name=f"test_litellm_responses_{'streaming' if stream else 'metrics'}[{'async' if is_async else 'sync'}]"
-            ),
+            marks=pytest.mark.vcr(cassette_name=cassette_name),
         )
-        for stream in (False, True)
-        for is_async in (False, True)
+        for stream, is_async, cassette_name in (
+            (False, False, "test_litellm_responses_service_tier"),
+            (False, True, "test_litellm_responses_metrics[async]"),
+            (True, False, "test_litellm_responses_streaming[sync]"),
+            (True, True, "test_litellm_responses_streaming[async]"),
+        )
     ],
 )
 def test_litellm_responses(memory_logger, is_async, stream):
     """Reuse the existing blocking/streaming recordings for the Responses API."""
     run = _run_stream if stream else _run
-    params = {"stream": True} if stream else {"instructions": "Just the number please"}
-    params["reasoning"] = {"effort": "low"}
+    params = {"reasoning": {"effort": "low"}}
+    if stream:
+        params["stream"] = True
+    elif is_async:
+        params["instructions"] = "Just the number please"
+    else:
+        params["service_tier"] = "auto"
     start = time.time()
     response = run(
         is_async,
@@ -596,7 +607,9 @@ def test_litellm_responses(memory_logger, is_async, stream):
             chunk.delta for chunk in response if getattr(chunk, "type", None) == "response.output_text.delta"
         )
     else:
+        assert TEST_MODEL in response.model
         content = next(item for item in response.output if item.type == "message").content[0].text
+        assert response.service_tier == "default"
     assert "24" in content or "twenty-four" in content.lower()
 
     spans = memory_logger.pop()
@@ -610,7 +623,11 @@ def test_litellm_responses(memory_logger, is_async, stream):
     assert "24" in str(span["output"]) or "twenty-four" in str(span["output"]).lower()
     if stream:
         assert span["metadata"]["stream"] is True
-    assert_service_tiers(span["metadata"], served="default")
+    # Older LiteLLM drops the requested tier on Responses calls.
+    forwards_tier = "service_tier" in inspect.signature(litellm.responses).parameters
+    assert_service_tiers(
+        span["metadata"], requested=params.get("service_tier") if forwards_tier else None, served="default"
+    )
 
 
 @pytest.mark.vcr
@@ -734,7 +751,7 @@ def test_litellm_completion_error(memory_logger, is_async):
     # Use a non-existent model to force an error
     fake_model = "non-existent-model"
 
-    with pytest.raises(litellm.BadRequestError):
+    with pytest.raises(litellm.BadRequestError) as exc_info:
         _run(
             is_async,
             litellm.completion,
@@ -751,68 +768,51 @@ def test_litellm_completion_error(memory_logger, is_async):
     assert log["metadata"]["model"] == fake_model
     # The requested tier is retained on a failed call; no served tier is fabricated.
     assert_service_tiers(log["metadata"], requested="flex")
-    # The failure must be recorded on the span, not only re-raised.
-    assert log.get("error")
+    assert str(exc_info.value) in log["error"]
 
 
-def test_litellm_acompletion_cancelled_records_error(memory_logger):
-    """Cancelling an in-flight async call, e.g. an ``asyncio.wait_for`` timeout, records an error."""
-    assert not memory_logger.pop()
+@pytest.mark.vcr(
+    cassette_name="test_litellm_completion_service_tier",
+    allow_playback_repeats=True,
+    match_on=["method", "scheme", "host", "port", "path", "query", "body"],
+)
+@pytest.mark.asyncio
+async def test_litellm_acompletion_timeout_then_fallback(memory_logger):
+    response_received = asyncio.Event()
 
-    async def _call():
-        # mock_delay makes LiteLLM itself await, so the timeout cancels a real in-flight call.
-        await asyncio.wait_for(
-            litellm.acompletion(
-                model=f"openai/{TEST_MODEL}",
-                messages=[{"role": "user", "content": TEST_PROMPT}],
-                mock_response="24",
-                mock_delay=5,
-            ),
-            timeout=0.05,
-        )
+    async def pause_response(_response):
+        # Hold the first replayed response in the HTTP client until the caller times out.
+        response_received.set()
+        await asyncio.Future()
 
-    with pytest.raises(asyncio.TimeoutError):
-        asyncio.run(_call())
+    params = {
+        "model": TEST_MODEL,
+        "messages": [{"role": "user", "content": TEST_PROMPT}],
+        "service_tier": "auto",
+        "reasoning_effort": "none",
+        "allowed_openai_params": ["reasoning_effort"],
+    }
+    async with AsyncOpenAI(http_client=httpx.AsyncClient(event_hooks={"response": [pause_response]})) as client:
+        attempt = asyncio.create_task(litellm.acompletion(client=client, **params))
+        try:
+            await asyncio.wait_for(response_received.wait(), timeout=10)
+            with pytest.raises(asyncio.TimeoutError):
+                await asyncio.wait_for(attempt, timeout=0)
+        finally:
+            attempt.cancel()
+            await asyncio.gather(attempt, return_exceptions=True)
 
-    logs = memory_logger.pop()
-    assert len(logs) == 1
-    assert logs[0].get("error")
-
-
-@pytest.mark.vcr
-def test_litellm_completion_service_tier(memory_logger):
-    """A requested policy ("auto") and the served tier are recorded independently."""
-    assert not memory_logger.pop()
-
-    response = litellm.completion(
-        model=TEST_MODEL,
-        messages=[{"role": "user", "content": TEST_PROMPT}],
-        service_tier="auto",
-        reasoning_effort="none",
-        allowed_openai_params=["reasoning_effort"],
-    )
+    response = await litellm.acompletion(**params)
     assert TEST_MODEL in response.model
     assert response.service_tier == "default"
 
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    assert_service_tiers(spans[0]["metadata"], requested="auto", served="default")
-
-
-@pytest.mark.vcr
-def test_litellm_responses_service_tier(memory_logger):
-    # Older LiteLLM (e.g. 1.74.0) has no ``service_tier`` parameter on
-    # ``responses()`` and silently drops it, so no tier is requested there.
-    forwards_tier = "service_tier" in inspect.signature(litellm.responses).parameters
-    assert not memory_logger.pop()
-
-    response = litellm.responses(model=TEST_MODEL, input=TEST_PROMPT, service_tier="auto", reasoning={"effort": "low"})
-    assert TEST_MODEL in response.model
-    assert response.service_tier == "default"
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    assert_service_tiers(spans[0]["metadata"], requested="auto" if forwards_tier else None, served="default")
+    failed, fallback = memory_logger.pop()
+    assert "CancelledError" in failed["error"]
+    assert_service_tiers(failed["metadata"], requested="auto")
+    assert failed["metrics"]["end"] >= failed["metrics"]["start"]
+    assert not fallback.get("error")
+    assert fallback["output"][0]["message"]["content"] == response.choices[0].message.content
+    assert_service_tiers(fallback["metadata"], requested="auto", served="default")
 
 
 @pytest.mark.vcr

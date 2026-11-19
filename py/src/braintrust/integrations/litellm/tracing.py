@@ -26,7 +26,7 @@ from braintrust.integrations.utils import (
     _timing_metrics,
     _try_to_dict,
 )
-from braintrust.logger import Span
+from braintrust.logger import Span, log_exc_info_to_span
 from braintrust.logger import start_span as _bt_start_span
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.util import clean_nones, get_signature, is_numeric, merge_dicts
@@ -173,7 +173,7 @@ def _handle_completion_streaming(
 
                 span.log(**_postprocess_completion_streaming_results(all_results))
             except (Exception, asyncio.CancelledError) as e:
-                span.log(error=e)
+                log_exc_info_to_span(span, type(e), e, e.__traceback__)
                 raise
             finally:
                 span.end()
@@ -196,7 +196,7 @@ def _handle_completion_streaming(
 
                 span.log(**_postprocess_completion_streaming_results(all_results))
             except Exception as e:
-                span.log(error=e)
+                log_exc_info_to_span(span, type(e), e, e.__traceback__)
                 raise
             finally:
                 span.end()
@@ -225,7 +225,7 @@ def _handle_responses_streaming(
 
                 span.log(**_postprocess_responses_streaming_results(all_results))
             except (Exception, asyncio.CancelledError) as e:
-                span.log(error=e)
+                log_exc_info_to_span(span, type(e), e, e.__traceback__)
                 raise
             finally:
                 span.end()
@@ -248,7 +248,7 @@ def _handle_responses_streaming(
 
                 span.log(**_postprocess_responses_streaming_results(all_results))
             except Exception as e:
-                span.log(error=e)
+                log_exc_info_to_span(span, type(e), e, e.__traceback__)
                 raise
             finally:
                 span.end()
@@ -287,7 +287,7 @@ def _completion_wrapper_impl(wrapped, args, kwargs, *, input_key: str):
         )
         return completion_response
     except Exception as e:
-        span.log(error=e)
+        log_exc_info_to_span(span, type(e), e, e.__traceback__)
         raise
     finally:
         if should_end:
@@ -320,7 +320,7 @@ async def _acompletion_wrapper_impl(wrapped, args, kwargs, *, input_key: str):
         )
         return completion_response
     except (Exception, asyncio.CancelledError) as e:
-        span.log(error=e)
+        log_exc_info_to_span(span, type(e), e, e.__traceback__)
         raise
     finally:
         if should_end:
@@ -371,7 +371,7 @@ def _responses_wrapper(wrapped, instance, args, kwargs):
         )
         return response
     except Exception as e:
-        span.log(error=e)
+        log_exc_info_to_span(span, type(e), e, e.__traceback__)
         raise
     finally:
         if should_end:
@@ -406,7 +406,7 @@ async def _aresponses_wrapper_async(wrapped, instance, args, kwargs):
         )
         return response
     except (Exception, asyncio.CancelledError) as e:
-        span.log(error=e)
+        log_exc_info_to_span(span, type(e), e, e.__traceback__)
         raise
     finally:
         if should_end:
