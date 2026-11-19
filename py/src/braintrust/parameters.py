@@ -87,6 +87,8 @@ class RemoteEvalParameters(SerializableDataClass):
         )
 
     def validate(self, data: Any) -> bool:
+        if not isinstance(data, Mapping):
+            return False
         try:
             validate_json_schema(data, self.schema)
             return True
@@ -283,7 +285,7 @@ def _apply_defaults_to_json_schema_instance(instance: Any, schema: Mapping[str, 
     return instance
 
 
-def validate_json_schema(parameters: dict[str, Any], schema: ParametersSchema) -> dict[str, Any]:
+def validate_json_schema(parameters: Mapping[str, Any], schema: ParametersSchema) -> dict[str, Any]:
     candidate = dict(parameters)
     _apply_defaults_to_json_schema_instance(candidate, schema)
 

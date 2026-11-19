@@ -674,3 +674,19 @@ def test_serialize_eval_parameters_omits_description_when_absent():
     assert serialized["judge_model"]["type"] == "model"
     for name in ("template", "main", "judge_model"):
         assert "description" not in serialized[name]
+
+
+@pytest.mark.parametrize("value", [None, 5, True, "", [], [["limit", 2]]])
+def test_remote_parameters_validate_rejects_non_object_without_coercion(value):
+    parameters = RemoteEvalParameters(
+        id=None,
+        project_id=None,
+        name="test",
+        slug="test",
+        version=None,
+        schema={"type": "object", "properties": {"limit": {"type": "integer"}}},
+        data={},
+    )
+    assert parameters.validate(value) is False
+    assert parameters.validate({"limit": 2}) is True
+    assert parameters.validate({"limit": "wrong"}) is False
