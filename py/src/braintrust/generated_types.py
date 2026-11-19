@@ -1,4 +1,4 @@
-"""Auto-generated file (content hash bb32e608f908b891) -- do not modify"""
+"""Auto-generated file (content hash 27700e0e5ff653bc) -- do not modify"""
 
 from ._generated_types import (
     Acl,
@@ -102,6 +102,7 @@ from ._generated_types import (
     ScoreObject,
     ScoreResult,
     ServiceToken,
+    SimulatedUserReference,
     SpanAttributes,
     SpanIFrame,
     SpanScope,
@@ -233,6 +234,7 @@ __all__ = [
     "ScoreObject",
     "ScoreResult",
     "ServiceToken",
+    "SimulatedUserReference",
     "SpanAttributes",
     "SpanIFrame",
     "SpanScope",
