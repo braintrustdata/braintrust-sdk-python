@@ -3,6 +3,7 @@
 from braintrust.audio import AudioRecordingOptions
 from braintrust.logger import NOOP_SPAN, current_span, init_logger
 
+from ._model_clients import set_model_client
 from .integration import PipecatIntegration
 from .patchers import set_default_observer_options, wrap_pipeline_worker
 
@@ -10,6 +11,7 @@ from .patchers import set_default_observer_options, wrap_pipeline_worker
 __all__ = [
     "PipecatIntegration",
     "setup_pipecat",
+    "set_model_client",
     "wrap_pipeline_worker",
 ]
 
