@@ -161,7 +161,9 @@ test-litellm = [
 
 test-dspy = [
     # DSPy 2.6 requires Pillow to format image inputs but does not install it.
-    "pillow==12.3.0",
+    "pillow==13.0.0; python_version>='3.11'",
+    # Pillow 13 requires Python 3.11; 12.3.0 is the last 3.10 release.
+    "pillow==12.3.0; python_version<'3.11'",
 ]
 
 test-agno = [
