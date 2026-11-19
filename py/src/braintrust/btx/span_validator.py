@@ -26,6 +26,9 @@ from braintrust.logger import Attachment
 from .spec_loader import FnMatcher, LlmSpanSpec, OrMatcher, StartsWithMatcher
 
 
+_MISSING = object()
+
+
 # ---------------------------------------------------------------------------
 # Named predicates (mirror of is_* functions in framework.py / SpanValidator.java)
 # ---------------------------------------------------------------------------
@@ -65,6 +68,7 @@ _NAMED_MATCHERS: dict[str, Any] = {
     "is_positive_number": _is_positive_number,
     "is_non_empty_string": _is_non_empty_string,
     "is_reasoning_message": _is_reasoning_message,
+    "undefined_or_null": lambda value: value is _MISSING or value is None,
 }
 
 
@@ -122,6 +126,10 @@ def _validate_value(actual: Any, expected: Any, path: str, errors: list[str]) ->
         )
         return
 
+    if actual is _MISSING and not (isinstance(expected, FnMatcher) and expected.expr == "undefined_or_null"):
+        errors.append(f"{path}: key not found in actual span")
+        return
+
     # --- FnMatcher ---
     if isinstance(expected, FnMatcher):
         fn = _resolve_fn_matcher(expected)
@@ -150,10 +158,7 @@ def _validate_value(actual: Any, expected: Any, path: str, errors: list[str]) ->
             errors.append(f"{path}: expected dict, got {type(actual).__name__} ({actual!r})")
             return
         for key, exp_val in expected.items():
-            if key not in actual:
-                errors.append(f"{path}.{key}: key not found in actual span")
-            else:
-                _validate_value(actual[key], exp_val, f"{path}.{key}", errors)
+            _validate_value(actual.get(key, _MISSING), exp_val, f"{path}.{key}", errors)
         return
 
     # --- list: lenient length check, validate first N elements ---
@@ -222,10 +227,8 @@ def validate_spans(actual_spans: list[dict[str, Any]], spec: LlmSpanSpec) -> Non
                 children = [s for s in actual_spans if actual_span.get("span_id") in (s.get("span_parents") or [])]
                 children.sort(key=lambda s: s.get("span_attributes", {}).get("exec_counter", 0))
                 _validate_value(children, exp_val, f"span[{i}].child_spans", span_errors)
-            elif key not in actual_span:
-                span_errors.append(f"  span[{i}].{key}: key not found in actual span")
             else:
-                _validate_value(actual_span[key], exp_val, f"span[{i}].{key}", span_errors)
+                _validate_value(actual_span.get(key, _MISSING), exp_val, f"span[{i}].{key}", span_errors)
 
         if span_errors:
             all_errors.append(

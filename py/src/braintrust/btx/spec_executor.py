@@ -179,7 +179,20 @@ def _execute_responses(requests: list[dict[str, Any]], client: Any) -> None:
         if conversation_history:
             full_req["input"] = conversation_history + list(full_req.get("input", []))
 
-        response = client.responses.create(**full_req)
+        # Older OpenAI SDKs accept new wire fields through extra_body.
+        if "prompt_cache_options" in full_req:
+            full_req.setdefault("extra_body", {})["prompt_cache_options"] = full_req.pop("prompt_cache_options")
+
+        if full_req.get("stream"):
+            response = None
+            with client.responses.create(**full_req) as stream:
+                for event in stream:
+                    if event.type == "response.completed":
+                        response = event.response
+            if response is None:
+                raise RuntimeError("BTX Responses stream did not complete")
+        else:
+            response = client.responses.create(**full_req)
 
         conversation_history.extend(req.get("input", []))
         if hasattr(response, "output"):

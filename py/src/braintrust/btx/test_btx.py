@@ -44,7 +44,7 @@ def _resolve_providers() -> list[str]:
     return [provider.strip()]
 
 
-def _load_specs() -> list[LlmSpanSpec]:
+def _load_specs(*, live: bool = False) -> list[LlmSpanSpec]:
     spec_root_env = os.environ.get("BTX_SPEC_ROOT")
     if spec_root_env:
         spec_root = Path(spec_root_env)
@@ -68,19 +68,22 @@ def _load_specs() -> list[LlmSpanSpec]:
     obsolete_openai_specs = {"responses_array_input", "responses_string_input"}
     return [
         spec
-        for spec in load_specs(spec_root=spec_root, providers=providers)
+        for spec in load_specs(spec_root=spec_root, providers=providers, live=live)
         if not (spec.provider == "openai" and spec.name in obsolete_openai_specs)
     ]
 
 
-_all_specs: list[LlmSpanSpec] = _load_specs()
+def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
+    if "spec" not in metafunc.fixturenames:
+        return
+    specs = _load_specs(live=bool(metafunc.config.getoption("--disable-vcr", default=False)))
+    if not specs:
+        raise RuntimeError(
+            f"No BTX specs found for provider(s) {_resolve_providers()} under {os.environ.get('BTX_SPEC_ROOT')}. "
+            "Check that BTX_PROVIDER and the spec ref are correct."
+        )
+    metafunc.parametrize("spec", specs, ids=[spec.display_name for spec in specs])
 
-if not _all_specs:
-    providers = _resolve_providers()
-    raise RuntimeError(
-        f"No BTX specs found for provider(s) {providers} under {os.environ.get('BTX_SPEC_ROOT')}. "
-        "Check that BTX_PROVIDER and the spec ref are correct."
-    )
 
 # ---------------------------------------------------------------------------
 # Test
@@ -88,11 +91,6 @@ if not _all_specs:
 
 
 @pytest.mark.vcr
-@pytest.mark.parametrize(
-    "spec",
-    _all_specs,
-    ids=[f"{s.provider}/{s.name}" for s in _all_specs],
-)
 def test_btx_spec(
     spec: LlmSpanSpec,
     memory_logger: Any,
