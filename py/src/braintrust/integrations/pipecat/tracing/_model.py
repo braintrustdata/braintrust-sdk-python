@@ -1,140 +1,32 @@
 """Client ownership and operation-scoped model telemetry.
 
-Ownership is resolved before execution, from clients referenced by the actual
-service implementation. It never depends on setup state or observed children.
+Ownership is resolved before execution, from a known native execution route
+or an explicit application client binding. It never depends on setup state or observed children.
 """
 
-import dis
-import inspect
 import math
 import time
 from dataclasses import dataclass, field
-from functools import lru_cache
-from types import CodeType
 from typing import Any
 from weakref import WeakValueDictionary
 
 from braintrust.integrations.utils import _is_not_given, _parse_openai_usage_metrics, _pcm_to_wav
 from braintrust.logger import Attachment, Span, SpanTypeAttribute
 
+from .._model_clients import provider_client_expected
 from ._common import SpanFactory, metadata_from_processor
 
 
-# Known instrumented model entry points on actual client objects. Merely
-# reading an SDK client's configuration (or uploading a file) does not give
-# that SDK ownership of a model request made through another transport.
-_CLIENT_MODEL_PATHS = {
-    "openai": {
-        "llm_response": ("chat.completions.create", "chat.completions.parse", "responses.create", "responses.parse"),
-        "stt": ("audio.transcriptions.create", "audio.translations.create"),
-        "tts": ("audio.speech.create",),
-    },
-    "anthropic": {"llm_response": ("messages.create", "messages.stream")},
-    "google.genai": {"llm_response": ("models.generate_content", "models.generate_content_stream")},
-    "mistralai": {
-        "llm_response": ("chat.complete", "chat.complete_async", "chat.stream", "chat.stream_async"),
-        "stt": ("audio.transcriptions.complete", "audio.transcriptions.complete_async"),
-        "tts": ("audio.speech.complete", "audio.speech.complete_async"),
-    },
-    "cohere": {"llm_response": ("chat", "chat_stream"), "stt": ("audio.transcriptions.create",)},
-    "huggingface_hub": {"llm_response": ("chat_completion", "text_generation", "chat.completions.create")},
-}
-_OPERATION_METHODS = {"llm_response": "_process_context", "stt": "run_stt", "tts": "run_tts"}
+def client_covered(processor: Any, operation: str) -> bool:
+    """Resolve ownership before execution, independently of integration setup."""
+    try:
+        return provider_client_expected(processor, operation)
+    except Exception:
+        from ._common import LOG
 
-
-@lru_cache(maxsize=256)
-def _self_references(code: CodeType) -> frozenset[tuple[str, ...]]:
-    instructions = list(dis.get_instructions(code))
-    paths = set()
-    for index, instruction in enumerate(instructions):
-        if instruction.opname not in {"LOAD_FAST", "LOAD_DEREF"} or instruction.argval != "self":
-            continue
-        path = []
-        for following in instructions[index + 1 :]:
-            if following.opname not in {"LOAD_ATTR", "LOAD_METHOD"}:
-                break
-            path.append(following.argval)
-        if path:
-            paths.add(tuple(path))
-    for child in code.co_consts:
-        if isinstance(child, CodeType):
-            paths.update(_self_references(child))
-    return frozenset(paths)
-
-
-def _sdk_model_reference(client: Any, path: tuple[str, ...], operation: str) -> bool:
-    for cls in type(client).__mro__:
-        for namespace, operations in _CLIENT_MODEL_PATHS.items():
-            if cls.__module__ != namespace and not cls.__module__.startswith(namespace + "."):
-                continue
-            # A service may hold an SDK resource rather than the root client.
-            # OpenAI resource modules repeat the final segment, e.g.
-            # openai.resources.chat.completions.completions.AsyncCompletions.
-            prefix = cls.__module__.removeprefix(namespace + ".resources.")
-            resource = prefix.split(".") if prefix != cls.__module__ else []
-            parts = [*resource, *path]
-            normalized = []
-            for part in parts:
-                if part in {"beta", "aio", "v2", "with_raw_response", "with_streaming_response"}:
-                    continue
-                if not normalized or normalized[-1] != part:
-                    normalized.append(part)
-            if ".".join(normalized) in operations.get(operation, ()):
-                return True
-    return False
-
-
-def provider_client_expected(service: Any, operation: str) -> bool:
-    """Follow the service's bound execution methods to their client references.
-
-    Require a reference to a known model entry point on an actual SDK client.
-    References can be invoked directly or delegated to a service helper. Follow
-    service methods without evaluating arbitrary properties; configuration-only
-    reads and inherited unused clients do not establish model ownership.
-    """
-    pending = [getattr(service, _OPERATION_METHODS[operation], None)]
-    visited: set[Any] = set()
-    while pending:
-        method = inspect.unwrap(pending.pop())
-        function = getattr(method, "__func__", method)
-        code = getattr(function, "__code__", None)
-        if code is None or code in visited:
-            continue
-        visited.add(code)
-        if "super" in code.co_names:
-            # Resolve super() against the implementation's defining class,
-            # while ordinary self.method calls retain dynamic dispatch.
-            mro = type(service).__mro__
-            owner = next(
-                (
-                    index
-                    for index, cls in enumerate(mro)
-                    if getattr(inspect.unwrap(vars(cls).get(function.__name__)), "__code__", None) is code
-                ),
-                None,
-            )
-            if owner is not None:
-                for name in code.co_names:
-                    for base in mro[owner + 1 :]:
-                        candidate = vars(base).get(name)
-                        if inspect.isfunction(candidate):
-                            pending.append(candidate)
-                            break
-        for path in _self_references(code):
-            name = path[0]
-            client = vars(service).get(name)
-            if client is not None and _sdk_model_reference(client, path[1:], operation):
-                return True
-            # Avoid evaluating properties and following framework routing,
-            # metrics, or lifecycle methods back into unrelated model work.
-            if name in {"push_frame", "process_frame", "process_generator", "tts_process_generator"}:
-                continue
-            candidate = inspect.getattr_static(type(service), name, None)
-            if inspect.isfunction(candidate) and not candidate.__module__.startswith(
-                ("pipecat.processors.", "pipecat.services.ai_service")
-            ):
-                pending.append(candidate)
-    return False
+        LOG.warning("Unable to determine Pipecat client ownership", exc_info=True)
+        # Uncertain ownership must not create duplicate billable spans.
+        return True
 
 
 @dataclass
@@ -160,16 +52,19 @@ class ModelOperation:
     audio_frames: WeakValueDictionary = field(default_factory=WeakValueDictionary)
 
     @classmethod
-    def start(cls, spans: SpanFactory, parent: Span, processor: Any, operation: str, **kwargs: Any):
+    def start(
+        cls,
+        spans: SpanFactory,
+        parent: Span,
+        processor: Any,
+        operation: str,
+        *,
+        covered: bool | None = None,
+        **kwargs: Any,
+    ):
         span = None
-        try:
-            covered = provider_client_expected(processor, operation)
-        except Exception:
-            from ._common import LOG
-
-            LOG.warning("Unable to determine Pipecat client ownership", exc_info=True)
-            # Uncertain ownership must not create duplicate billable spans.
-            covered = True
+        if covered is None:
+            covered = client_covered(processor, operation)
         if not covered:
             span = spans.start(
                 "pipecat." + operation,
