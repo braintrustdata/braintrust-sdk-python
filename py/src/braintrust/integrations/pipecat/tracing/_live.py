@@ -22,12 +22,6 @@ from braintrust.logger import Span, SpanTypeAttribute
 from ._common import MAX_PENDING, SpanFactory, metadata_from_processor, tools_schema_to_openai_tools
 
 
-# Prototype pricing bridge until the backend prices duration-based models.
-# Public USD/minute rate verified 2026-11-16. Do not price unknown models.
-_LIVE_USD_PER_MINUTE = {"gpt-live-1": 0.05}
-_LIVE_PRICING_SOURCE = "https://developers.openai.com/api/docs/models/gpt-live-1"
-
-
 def is_live_service(processor: Any) -> bool:
     return any(base.__name__ == "OpenAILiveLLMService" for base in type(processor).__mro__)
 
@@ -160,7 +154,6 @@ class LiveTracker:
         self.inputs: list[Any] = []
         self.outputs: list[dict[str, str]] = []
         self.first_content = False
-        self.model_name: str | None = None
         self.model = self.spans.start(
             "pipecat.live",
             type=SpanTypeAttribute.LLM,
@@ -175,7 +168,6 @@ class LiveTracker:
         if kind == "session.started":
             self.origin_ms = self.clock.now_ms()
             resource = event.session
-            self.model_name = resource.model
             metadata = {
                 "provider": "openai",
                 "model": resource.model,
@@ -246,22 +238,10 @@ class LiveTracker:
     def _usage(self, seconds: float) -> None:
         if not math.isfinite(seconds) or seconds < 0:
             return
-        # Each provider update is cumulative: replace the estimate, never sum
+        # Each provider update is cumulative: replace the value, never sum
         # updates or substitute local wall time for the provider's billed time.
-        metadata: dict[str, Any] = {"contrib.pipecat.live.usage_seconds": seconds}
-        rate = _LIVE_USD_PER_MINUTE.get(self.model_name or "")
-        if rate is not None:
-            metadata.update(
-                {
-                    "contrib.pipecat.live.pricing": {
-                        "usd_per_minute": rate,
-                        "source": _LIVE_PRICING_SOURCE,
-                        "as_of": "2026-11-16",
-                    }
-                }
-            )
-            self.model.log(metrics={"estimated_cost": seconds * rate / 60})
-        self.model.log(metadata=metadata)
+        # Forward the provider's usage only; cost is priced server-side.
+        self.model.log(metadata={"contrib.pipecat.live.usage_seconds": seconds})
 
     def frame(self, frame: Any) -> None:
         if self.phase is _LivePhase.CLOSED:
