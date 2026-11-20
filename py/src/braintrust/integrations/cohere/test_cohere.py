@@ -839,6 +839,31 @@ def test_wrap_cohere_async_chat_cancellation_records_error(memory_logger):
     assert spans[0]["metrics"]["end"] >= spans[0]["metrics"]["start"]
 
 
+def test_wrap_cohere_async_chat_message_less_cancellation_records_error(memory_logger):
+    from unittest.mock import patch
+
+    from cohere.base_client import AsyncBaseCohere
+
+    assert not memory_logger.pop()
+
+    async def _cancelled_chat(*args, **kwargs):
+        raise asyncio.CancelledError
+
+    async def _run():
+        with patch.object(AsyncBaseCohere, "chat", _cancelled_chat):
+            client = wrap_cohere(_v1_async_client())
+            await client.chat(model=CHAT_MODEL, message="hello")
+
+    with pytest.raises(asyncio.CancelledError):
+        asyncio.run(_run())
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    # A cancellation raised without a message must still name what ended the span.
+    assert spans[0].get("error") == "CancelledError"
+    assert spans[0]["metrics"]["end"] >= spans[0]["metrics"]["start"]
+
+
 def test_wrap_cohere_async_chat_stream_cancellation_records_error(memory_logger):
     from unittest.mock import patch
 
