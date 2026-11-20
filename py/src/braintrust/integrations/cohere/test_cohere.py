@@ -520,6 +520,38 @@ def test_wrap_cohere_chat_stream_v1_sync(memory_logger):
     assert metrics.get("completion_tokens", 0) > 0
 
 
+# Same request as the exhaustive test above; only the consumption differs.
+@pytest.mark.vcr
+@pytest.mark.parametrize("vcr_cassette_name", ["test_wrap_cohere_chat_stream_v1_sync"], ids=["shared"])
+def test_wrap_cohere_chat_stream_v1_sync_close_finalizes_partially_read_stream(memory_logger, vcr_cassette_name):
+    assert not memory_logger.pop()
+    client = wrap_cohere(_v1_client())
+
+    stream = client.chat_stream(
+        model=CHAT_MODEL,
+        message="Say hi in one word.",
+        max_tokens=8,
+    )
+    first = next(stream)
+    assert first is not None
+    # Stop as soon as some text arrives, leaving the stream unfinished.
+    for event in stream:
+        if getattr(event, "event_type", None) == "text-generation":
+            break
+
+    stream.close()
+
+    # The explicit close finishes the span from the chunks read so far, without
+    # waiting for the stream to be exhausted.
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["span_attributes"]["name"] == "cohere.chat_stream"
+    assert not span.get("error")
+    assert span["metrics"]["start"] <= span["metrics"]["end"]
+    assert span["output"]
+
+
 @pytest.mark.vcr
 def test_wrap_cohere_chat_stream_v2_sync(memory_logger):
     assert not memory_logger.pop()
