@@ -548,6 +548,21 @@ def test_log_error_and_end_span_logs_error_then_ends():
     span.end.assert_called_once_with()
 
 
+def test_log_error_and_end_span_survives_an_unprintable_error():
+    class Unprintable(Exception):
+        def __str__(self):
+            raise RuntimeError("cannot render")
+
+    span = unittest.mock.Mock()
+
+    _log_error_and_end_span(span, Unprintable())
+
+    # The probe must not escape before the span is ended; the type name still says
+    # what ended it.
+    span.log.assert_called_once_with(error="Unprintable")
+    span.end.assert_called_once_with()
+
+
 def test_merge_timing_and_usage_metrics(monkeypatch):
     monkeypatch.setattr("braintrust.integrations.utils.time.time", lambda: 15.0)
 

@@ -826,7 +826,13 @@ def _log_error_and_end_span(span: Span, error: BaseException) -> None:
     ``str()`` of an exception raised without a message — a bare ``CancelledError``
     from ``Task.cancel()``, for example — is empty, which would export an empty
     ``error`` field. Fall back to the type name so the span still records what
-    ended it.
+    ended it. ``str()`` can also raise, for an exception with a broken
+    ``__str__``, and that must not stop the span from ending: the probe is
+    contained and the type name is used instead.
     """
-    span.log(error=error if str(error) else type(error).__name__)
+    try:
+        message = str(error)
+    except Exception:
+        message = ""
+    span.log(error=error if message else type(error).__name__)
     span.end()
