@@ -50,27 +50,56 @@ class TestSpanComponentsV3:
         assert imported.object_id == components.object_id
         assert imported.propagated_event == components.propagated_event
 
-    def test_otel_ids_fail_roundtrip(self):
-        """Test that V3 fails to preserve OTEL hex strings for 16-byte IDs (converts to UUID format)."""
+    def test_otel_ids_roundtrip_unchanged(self):
+        """V3 must preserve non-canonical IDs such as OTEL hex strings exactly.
+
+        Python's ``UUID()`` also parses 32-char hex, so V3 used to compress these
+        and decode them back in dashed form, silently changing the ID.
+        """
         otel_gen = OTELIDGenerator()
         trace_id = otel_gen.get_trace_id()  # 32-char hex (16 bytes)
         span_id = otel_gen.get_span_id()  # 16-char hex (8 bytes)
 
-        # Use 16-byte hex strings for object_id and root_span_id to see UUID conversion
         components = SpanComponentsV3(
             object_type=SpanObjectTypeV3.PROJECT_LOGS,
-            object_id=trace_id,  # 16-byte hex should get converted to UUID format
+            object_id=trace_id,
             row_id="test-row-id",
-            span_id=span_id,  # 8-byte hex might be preserved
-            root_span_id=trace_id,  # 16-byte hex should get converted to UUID format
+            span_id=span_id,
+            root_span_id=trace_id,
         )
 
-        exported = components.to_str()
-        imported = SpanComponentsV3.from_str(exported)
+        imported = SpanComponentsV3.from_str(components.to_str())
 
-        # V3 should convert 16-byte hex strings to UUID format (with dashes)
-        # Note: span_id (8 bytes) may or may not be converted depending on whether UUID parsing succeeds
-        assert imported.root_span_id != trace_id  # 16-byte should have dashes added
+        assert imported.object_id == trace_id
+        assert imported.span_id == span_id
+        assert imported.root_span_id == trace_id
+
+    @pytest.mark.parametrize(
+        "value_fn",
+        [
+            lambda u: u.upper(),
+            lambda u: "{" + u + "}",
+            lambda u: "urn:uuid:" + u,
+            lambda u: u.replace("-", ""),
+        ],
+        ids=["uppercase", "braced", "urn", "undashed"],
+    )
+    def test_non_canonical_uuid_strings_roundtrip_unchanged(self, value_fn):
+        """Alternate spellings of a UUID must round-trip verbatim, not be canonicalized."""
+        value = value_fn(str(uuid4()))
+        components = SpanComponentsV3(
+            object_type=SpanObjectTypeV3.PROJECT_LOGS,
+            object_id=str(uuid4()),
+            row_id=value,
+            span_id=value,
+            root_span_id=value,
+        )
+
+        imported = SpanComponentsV3.from_str(components.to_str())
+
+        assert imported.row_id == value
+        assert imported.span_id == value
+        assert imported.root_span_id == value
 
 
 class TestSpanComponentsV4:
