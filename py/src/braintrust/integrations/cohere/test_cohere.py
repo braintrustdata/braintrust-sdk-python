@@ -484,12 +484,14 @@ def test_wrap_cohere_chat_stream_v1_sync(memory_logger):
 
     start = time.time()
     events = []
-    for event in client.chat_stream(
+    stream = client.chat_stream(
         model=CHAT_MODEL,
         message="Say hi in one word.",
         max_tokens=8,
-    ):
+    )
+    for event in stream:
         events.append(event)
+    stream.close()
     end = time.time()
 
     assert events
@@ -574,9 +576,10 @@ def test_wrap_cohere_chat_stream_v2_sync_context_manager(memory_logger):
     ) as stream:
         for event in stream:
             events.append(event)
+            break
     end = time.time()
 
-    assert events
+    assert len(events) == 1
 
     spans = memory_logger.pop()
     assert len(spans) == 1
@@ -778,3 +781,128 @@ def test_cohere_integration_setup_patches_audio_transcriptions(memory_logger, cl
 class TestAutoInstrumentCohere:
     def test_auto_instrument_cohere(self):
         verify_autoinstrument_script("test_auto_cohere.py")
+
+
+def test_wrap_cohere_async_chat_cancellation_records_error(memory_logger):
+    from unittest.mock import patch
+
+    from cohere.base_client import AsyncBaseCohere
+
+    assert not memory_logger.pop()
+
+    async def _cancelled_chat(*args, **kwargs):
+        raise asyncio.CancelledError("request was cancelled")
+
+    async def _run():
+        with patch.object(AsyncBaseCohere, "chat", _cancelled_chat):
+            client = wrap_cohere(_v1_async_client())
+            await client.chat(model=CHAT_MODEL, message="hello")
+
+    with pytest.raises(asyncio.CancelledError):
+        asyncio.run(_run())
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    assert "request was cancelled" in spans[0].get("error", "")
+    assert spans[0]["metrics"]["end"] >= spans[0]["metrics"]["start"]
+
+
+def test_wrap_cohere_async_chat_stream_cancellation_records_error(memory_logger):
+    from unittest.mock import patch
+
+    from cohere.base_client import AsyncBaseCohere
+
+    assert not memory_logger.pop()
+
+    class _MockStream:
+        def __aiter__(self):
+            return self
+
+        async def __anext__(self):
+            raise asyncio.CancelledError("stream was cancelled")
+
+    async def _run():
+        with patch.object(AsyncBaseCohere, "chat_stream", lambda *a, **kw: _MockStream()):
+            client = wrap_cohere(_v1_async_client())
+            stream = await client.chat_stream(model=CHAT_MODEL, message="hello")
+            async for _ in stream:
+                pass
+
+    with pytest.raises(asyncio.CancelledError):
+        asyncio.run(_run())
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    assert "stream was cancelled" in spans[0].get("error", "")
+    assert spans[0]["metrics"]["end"] >= spans[0]["metrics"]["start"]
+
+
+def test_wrap_cohere_chat_stream_close_error_records_error(memory_logger):
+    from unittest.mock import patch
+
+    from cohere.base_client import BaseCohere
+
+    assert not memory_logger.pop()
+
+    class _MockSyncStream:
+        def __init__(self):
+            self.custom_attr = "custom_value"
+
+        def __iter__(self):
+            return self
+
+        def __next__(self):
+            return {"event_type": "text-generation", "text": "hello"}
+
+        def close(self):
+            raise RuntimeError("close failed")
+
+    with patch.object(BaseCohere, "chat_stream", lambda *a, **kw: _MockSyncStream()):
+        client = wrap_cohere(_v1_client())
+        stream = client.chat_stream(model=CHAT_MODEL, message="hello")
+        assert stream.custom_attr == "custom_value"
+        next(stream)
+        with pytest.raises(RuntimeError, match="close failed"):
+            stream.close()
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    assert "close failed" in spans[0].get("error", "")
+    assert spans[0]["metrics"]["end"] >= spans[0]["metrics"]["start"]
+
+
+def test_wrap_cohere_async_chat_stream_aclose_error_records_error(memory_logger):
+    from unittest.mock import patch
+
+    from cohere.base_client import AsyncBaseCohere
+
+    assert not memory_logger.pop()
+
+    class _MockAsyncStream:
+        def __init__(self):
+            self.custom_async_attr = "async_value"
+
+        def __aiter__(self):
+            return self
+
+        async def __anext__(self):
+            return {"event_type": "text-generation", "text": "hello"}
+
+        async def aclose(self):
+            raise asyncio.CancelledError("aclose was cancelled")
+
+    async def _run():
+        with patch.object(AsyncBaseCohere, "chat_stream", lambda *a, **kw: _MockAsyncStream()):
+            client = wrap_cohere(_v1_async_client())
+            stream = await client.chat_stream(model=CHAT_MODEL, message="hello")
+            assert stream.custom_async_attr == "async_value"
+            await stream.__anext__()
+            await stream.aclose()
+
+    with pytest.raises(asyncio.CancelledError):
+        asyncio.run(_run())
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    assert "aclose was cancelled" in spans[0].get("error", "")
+    assert spans[0]["metrics"]["end"] >= spans[0]["metrics"]["start"]
