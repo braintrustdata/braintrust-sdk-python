@@ -12,10 +12,16 @@ from .span_identifier_v2 import SpanComponentsV2
 
 
 def _try_make_uuid(s):
+    # Only compress canonical (lowercase, dashed) UUID strings. `UUID()` also
+    # accepts 32-char hex, braces, `urn:uuid:` and uppercase, but decoding always
+    # yields the canonical form, so compressing those would silently change the ID
+    # (e.g. a hex trace ID would come back with dashes). Anything else is stored
+    # verbatim in the JSON section.
     try:
-        ret = UUID(s).bytes
-        assert len(ret) == 16
-        return ret, True
+        u = UUID(s)
+        if str(u) != s:
+            return None, False
+        return u.bytes, True
     except Exception:
         return None, False
 
