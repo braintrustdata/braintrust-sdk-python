@@ -2380,6 +2380,18 @@ class ProjectSettingsPatternAlertDestinations2(TypedDict):
     """
 
 
+class ProjectSettingsPatternSource(TypedDict):
+    type: str
+    mcp_server_id: str
+    """
+    The project MCP server that reads this source.
+    """
+    instructions: NotRequired[str | None]
+    """
+    What the user wants Patterns to look for in this source, in their own words.
+    """
+
+
 ProjectSettingsPatternExcludedCategory: TypeAlias = str
 
 
@@ -2445,6 +2457,10 @@ class ProjectSettings(TypedDict):
     pattern_alert_informational: NotRequired[bool | None]
     """
     Whether new and reactivated informational Patterns send alerts, independent of `pattern_alert_min_severity`. Unset or null sends them.
+    """
+    pattern_sources: NotRequired[Sequence[ProjectSettingsPatternSource] | None]
+    """
+    Sources outside Braintrust that Patterns reads alongside this project's logs, each through a project MCP server.
     """
     pattern_excluded_categories: NotRequired[
         Sequence[ProjectSettingsPatternExcludedCategory]
@@ -2859,6 +2875,10 @@ class RunEvalData1(TypedDict):
 
 class RunEvalData2(TypedDict):
     data: Sequence[Any]
+    source_dataset_id: NotRequired[str | None]
+    """
+    The saved dataset these rows came from. Its project scopes saved simulated-user references; the caller must have read access to the dataset and source project.
+    """
 
 
 class RunEvalData3(TypedDict):
@@ -3025,6 +3045,32 @@ SavedFunctionId: TypeAlias = (
 )
 
 
+class SavedPreprocessorIdSavedPreprocessorId(TypedDict):
+    type: Literal['function']
+    id: str
+    version: NotRequired[str | None]
+    """
+    The version of the function
+    """
+
+
+class SavedPreprocessorIdSavedPreprocessorId1(TypedDict):
+    type: Literal['global']
+    name: str
+    function_type: NotRequired[Literal['preprocessor'] | None]
+    """
+    The type of global function. Defaults to 'preprocessor'.
+    """
+
+
+SavedPreprocessorId: TypeAlias = (
+    SavedPreprocessorIdSavedPreprocessorId | SavedPreprocessorIdSavedPreprocessorId1
+)
+"""
+Saved preprocessor that renders traces for the project's pattern questions. The project default when unset.
+"""
+
+
 class ScoreObject(TypedDict):
     name: NotRequired[str | None]
     """
@@ -3082,14 +3128,6 @@ class ServiceToken(TypedDict):
     expires_at: NotRequired[str | None]
     """
     Date and time at which the service token expires. If null, the token never expires.
-    """
-
-
-class SimulatedUserReference(TypedDict):
-    type: Literal['simulated_user']
-    id: str
-    """
-    Unique identifier for the simulated user
     """
 
 
@@ -3688,6 +3726,10 @@ class WindowedAutomationConfigLoop(TypedDict):
     """
 
 
+class WindowedAutomationConfigPatterns(TypedDict):
+    preprocessor: NotRequired[SavedPreprocessorId | None]
+
+
 class WindowedAutomationConfigActionsHeaders(TypedDict):
     name: str
     """
@@ -3795,6 +3837,10 @@ class WindowedAutomationConfig(TypedDict):
     loop: NotRequired[WindowedAutomationConfigLoop | None]
     """
     Optional Loop agent to run for each triggered window
+    """
+    patterns: NotRequired[WindowedAutomationConfigPatterns | None]
+    """
+    Settings of the Patterns automation
     """
     actions: NotRequired[
         Sequence[
@@ -5312,7 +5358,6 @@ class RunEval(TypedDict):
     """
     Name of the AI provider secret to pin this run to.
     """
-    simulated_user: NotRequired[SimulatedUserReference | None]
 
 
 FunctionData: TypeAlias = (
