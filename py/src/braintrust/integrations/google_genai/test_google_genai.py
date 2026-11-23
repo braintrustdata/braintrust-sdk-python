@@ -8,7 +8,9 @@ import google.genai as genai
 import pytest
 from braintrust import logger
 from braintrust.integrations.google_genai import setup_genai
+from braintrust.integrations.google_genai.tracing import _extract_interaction_usage_metrics
 from braintrust.integrations.test_utils import assert_service_tiers, verify_autoinstrument_script
+from braintrust.integrations.utils import _extract_google_usage_metadata_metrics
 from braintrust.integrations.versioning import detect_module_version
 from braintrust.logger import Attachment
 from braintrust.span_types import SpanTypeAttribute
@@ -541,6 +543,29 @@ def test_audio_input_usage(memory_logger):
     spans = memory_logger.pop()
     assert len(spans) == 1
     assert spans[0]["metrics"]["prompt_audio_tokens"] == expected_audio_tokens
+    assert "prompt_cached_audio_tokens" not in spans[0]["metrics"]
+
+
+@pytest.mark.parametrize("cached_audio", [None, 0, 5])
+def test_cached_audio_usage_metadata(cached_audio):
+    details = [types.ModalityTokenCount(modality="TEXT", token_count=3)]
+    if cached_audio is not None:
+        details.append(types.ModalityTokenCount(modality="AUDIO", token_count=cached_audio))
+    usage = types.GenerateContentResponseUsageMetadata(
+        prompt_token_count=20,
+        cached_content_token_count=3 + (cached_audio or 0),
+        prompt_tokens_details=[types.ModalityTokenCount(modality="AUDIO", token_count=10)],
+        cache_tokens_details=details,
+    )
+
+    metrics = _extract_google_usage_metadata_metrics(usage)
+
+    assert metrics == {
+        "prompt_tokens": 20,
+        "prompt_audio_tokens": 10,
+        "prompt_cached_tokens": 3 + (cached_audio or 0),
+        **({"prompt_cached_audio_tokens": cached_audio} if cached_audio is not None else {}),
+    }
 
 
 @pytest.mark.vcr
@@ -1289,6 +1314,30 @@ def test_cached_content_usage_metadata(memory_logger):
     spans = memory_logger.pop()
     assert len(spans) == 1
     assert spans[0]["metadata"]["usage_by_modality"]["cache_tokens_details"] == cache_details
+    assert "prompt_cached_audio_tokens" not in spans[0]["metrics"]
+
+
+@_needs_interactions
+@pytest.mark.parametrize("cached_audio", [None, 0, 5])
+def test_interaction_cached_audio_usage(cached_audio):
+    details = [interactions.ModalityTokens(modality="text", tokens=3)]
+    if cached_audio is not None:
+        details.append(interactions.ModalityTokens(modality="audio", tokens=cached_audio))
+    usage = interactions.Usage(
+        total_input_tokens=20,
+        total_cached_tokens=3 + (cached_audio or 0),
+        input_tokens_by_modality=[interactions.ModalityTokens(modality="audio", tokens=10)],
+        cached_tokens_by_modality=details,
+    )
+    metrics = {}
+
+    _extract_interaction_usage_metrics(usage, metrics)
+
+    assert metrics == {
+        "prompt_tokens": 20,
+        "prompt_cached_tokens": 3 + (cached_audio or 0),
+        **({"prompt_cached_audio_tokens": cached_audio} if cached_audio is not None else {}),
+    }
 
 
 def _interaction_function_tool():

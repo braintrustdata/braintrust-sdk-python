@@ -1163,6 +1163,44 @@ async def test_live_observations(memory_logger, vcr_cassette_dir, boundary):
             assert row["metrics"]["end"] <= parent["metrics"]["end"], row["span_attributes"]["name"]
 
 
+@pytest.mark.asyncio
+async def test_realtime_cached_audio_usage(memory_logger):
+    realtime = pytest.importorskip("pipecat.services.openai.realtime.llm")
+    from websockets.asyncio.server import serve
+
+    LLMContext = _import("pipecat.processors.aggregators.llm_context.LLMContext")
+    # Replay the same provider WebSocket payloads used by the LiveKit integration.
+    cassette = Path(__file__).parent.parent / "livekit_agents" / "cassettes" / "latest" / "realtime-conversation.json"
+    received = [entry["message"] for entry in json.loads(cassette.read_text()) if entry["direction"] == "receive"]
+    events = {
+        kind: next(event for event in received if event["type"] == kind)
+        for kind in ("session.created", "session.updated", "response.created", "response.done")
+    }
+    cached_audio_tokens = events["response.done"]["response"]["usage"]["input_token_details"]["cached_tokens_details"][
+        "audio_tokens"
+    ]
+
+    async def replay(websocket):
+        await websocket.send(json.dumps(events["session.created"]))
+        async for message in websocket:
+            kind = json.loads(message)["type"]
+            if kind == "session.update":
+                await websocket.send(json.dumps(events["session.updated"]))
+            elif kind == "response.create":
+                await websocket.send(json.dumps(events["response.created"]))
+                await websocket.send(json.dumps(events["response.done"]))
+
+    _instrument()
+    async with serve(replay, "127.0.0.1", 0) as server:
+        port = server.sockets[0].getsockname()[1]
+        service = realtime.OpenAIRealtimeLLMService(api_key="test", base_url=f"ws://127.0.0.1:{port}")
+        context = LLMContext(messages=[{"role": "user", "content": "Tell me about my order."}])
+        assert not await _run_text_pipeline([service], [context])
+
+    span = _single_span(memory_logger.pop(), "llm_response")
+    assert span["metrics"]["prompt_cached_audio_tokens"] == cached_audio_tokens
+
+
 # Keep provider tests last: enabling OpenAI patches the client for the process.
 @pytest.mark.vcr
 @pytest.mark.asyncio

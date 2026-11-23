@@ -291,6 +291,32 @@ def test_parse_openai_usage_metrics_handles_nested_token_details():
     }
 
 
+@pytest.mark.parametrize("key", ["input_token_details", "input_tokens_details"])
+@pytest.mark.parametrize("cached_audio", [None, 0, 5])
+def test_parse_openai_usage_metrics_cached_audio(key, cached_audio):
+    cached_details = {"text_tokens": 3}
+    if cached_audio is not None:
+        cached_details["audio_tokens"] = cached_audio
+    usage = {
+        "input_tokens": 20,
+        key: {
+            "audio_tokens": 10,
+            "cached_tokens": 3 + (cached_audio or 0),
+            "cached_tokens_details": cached_details,
+        },
+    }
+
+    metrics = _parse_openai_usage_metrics(
+        usage, token_name_map={"input_tokens": "prompt_tokens"}, token_prefix_map={"input": "prompt"}
+    )
+
+    assert metrics["prompt_tokens"] == 20
+    if cached_audio is None:
+        assert "prompt_cached_audio_tokens" not in metrics
+    else:
+        assert metrics["prompt_cached_audio_tokens"] == cached_audio
+
+
 def test_prettify_response_params_filters_not_given_without_mutating_input():
     original = {
         "model": "gpt-5",

@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from fractions import Fraction
 from typing import TYPE_CHECKING, Any
 
+from braintrust.integrations.utils import _extract_openai_cached_audio_tokens
 from braintrust.logger import Span
 
 
@@ -321,7 +322,12 @@ class Realtime:
             record = self.response(native["id"])
             record.status = native.get("status", "incomplete")
             record.ended = now
-            record.usage_present = isinstance(native.get("usage"), dict)
+            usage = native.get("usage")
+            record.usage_present = isinstance(usage, dict)
+            # LiveKit's OpenAI metrics default missing cache details to zero.
+            cached_audio_tokens = _extract_openai_cached_audio_tokens(usage)
+            if cached_audio_tokens is not None:
+                record.metrics["prompt_cached_audio_tokens"] = cached_audio_tokens
             details = native.get("status_details") or {}
             for name, value in (
                 ("type", details.get("type")),
@@ -445,10 +451,11 @@ class Realtime:
             record.metrics["time_to_first_token"] = event.ttft
             if record.modality == "audio":
                 record.metrics["time_to_first_audio"] = event.ttft
-        if event.input_token_details.cached_tokens_details is not None:
-            record.metadata["contrib.livekit.cached_tokens"] = (
-                event.input_token_details.cached_tokens_details.model_dump()
-            )
+        cached_details = event.input_token_details.cached_tokens_details
+        if cached_details is not None:
+            record.metadata["contrib.livekit.cached_tokens"] = cached_details.model_dump()
+            if not self.raw_events and "audio_tokens" in cached_details.model_fields_set:
+                record.metrics["prompt_cached_audio_tokens"] = cached_details.audio_tokens
         record.publish()
 
     def output(self, record, item, index, publish=True):

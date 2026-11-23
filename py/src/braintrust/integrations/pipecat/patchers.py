@@ -6,8 +6,10 @@ from typing import Any
 
 from braintrust._audio.config import AudioRecordingOptions
 from braintrust.integrations.base import CompositeFunctionWrapperPatcher, FunctionWrapperPatcher
+from braintrust.integrations.utils import _extract_openai_cached_audio_tokens
 
 from .tracing import BraintrustPipecatObserver
+from .tracing._common import LOG
 from .tracing._live import is_live_service
 
 
@@ -345,6 +347,32 @@ class OpenAILivePatcher(CompositeFunctionWrapperPatcher):
         return super().applies(module, version, target=target)
 
 
+async def traced_realtime_response_done(
+    wrapped: Any, instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]
+) -> Any:
+    span = getattr(instance, _RESPONSE_SPAN_ATTR, None) if _ACTIVE_OBSERVER.get() is not None else None
+    if span is not None:
+        count = None
+        try:
+            event = args[0] if args else kwargs.get("evt")
+            usage = event.response.usage
+            if usage is not None:
+                # The Pipecat usage frame may already have filled in an unreported zero.
+                count = _extract_openai_cached_audio_tokens(usage.model_dump(exclude_unset=True))
+        except Exception:
+            LOG.warning("Unable to extract Pipecat Realtime cached audio usage", exc_info=True)
+        if count is not None:
+            span.log(metrics={"prompt_cached_audio_tokens": count})
+    return await wrapped(*args, **kwargs)
+
+
+class OpenAIRealtimeResponseDonePatcher(FunctionWrapperPatcher):
+    name = "openai_realtime_response_done"
+    target_module = "pipecat.services.openai.realtime.llm"
+    target_path = "OpenAIRealtimeLLMService._handle_evt_response_done"
+    wrapper = staticmethod(traced_realtime_response_done)
+
+
 def wrap_pipeline_worker(
     PipelineWorker: Any,
     *,
@@ -384,4 +412,6 @@ def wrap_pipeline_worker(
     # Optional on older Pipecat versions; the patchers feature-detect the module.
     if OpenAILivePatcher.applies(None, None):
         OpenAILivePatcher.patch(None, None)
+    if not OpenAIRealtimeResponseDonePatcher.is_patched(None, None):
+        OpenAIRealtimeResponseDonePatcher.patch(None, None)
     return PipelineWorkerPatcher.wrap_target(PipelineWorker)
