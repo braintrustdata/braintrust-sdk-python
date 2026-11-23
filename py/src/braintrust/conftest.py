@@ -213,9 +213,12 @@ def sanitize_input_audio(request):
     body = request.body
     if not body:
         return request
+    if isinstance(body, (dict, list)):
+        _replace_input_audio_data(body)
+        return request
     try:
         payload = json.loads(body)
-    except (ValueError, UnicodeDecodeError):
+    except (TypeError, ValueError, UnicodeDecodeError):
         return request
     if _replace_input_audio_data(payload):
         encoded = json.dumps(payload, separators=(",", ":"))
