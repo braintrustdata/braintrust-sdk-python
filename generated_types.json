@@ -6065,7 +6065,7 @@
                                       "minLength": 1,
                                       "maxLength": 256,
                                       "pattern": "^[!#$%&'*+.^_`|~0-9A-Za-z-]+$",
-                                      "description": "The HTTP header name"
+                                      "description": "The HTTP header name. Connection, Content-Length, Content-Type, Expect, Host, Idempotency-Key, Keep-Alive, Transfer-Encoding, and Upgrade are reserved and can't be used."
                                     },
                                     "value": {
                                       "type": "string",
@@ -6088,12 +6088,12 @@
                                       "minLength": 1,
                                       "maxLength": 256,
                                       "pattern": "^[!#$%&'*+.^_`|~0-9A-Za-z-]+$",
-                                      "description": "The HTTP header name"
+                                      "description": "The HTTP header name. Connection, Content-Length, Content-Type, Expect, Host, Idempotency-Key, Keep-Alive, Transfer-Encoding, and Upgrade are reserved and can't be used."
                                     },
                                     "secret_name": {
                                       "type": "string",
                                       "format": "uuid",
-                                      "description": "The data-plane secret containing the header value, bound to the webhook URL it was saved for"
+                                      "description": "The data-plane secret that holds the header value. The secret only works with the webhook URL it was saved for."
                                     }
                                   },
                                   "required": [
@@ -6506,7 +6506,7 @@
                                       "minLength": 1,
                                       "maxLength": 256,
                                       "pattern": "^[!#$%&'*+.^_`|~0-9A-Za-z-]+$",
-                                      "description": "The HTTP header name"
+                                      "description": "The HTTP header name. Connection, Content-Length, Content-Type, Expect, Host, Idempotency-Key, Keep-Alive, Transfer-Encoding, and Upgrade are reserved and can't be used."
                                     },
                                     "value": {
                                       "type": "string",
@@ -6529,12 +6529,12 @@
                                       "minLength": 1,
                                       "maxLength": 256,
                                       "pattern": "^[!#$%&'*+.^_`|~0-9A-Za-z-]+$",
-                                      "description": "The HTTP header name"
+                                      "description": "The HTTP header name. Connection, Content-Length, Content-Type, Expect, Host, Idempotency-Key, Keep-Alive, Transfer-Encoding, and Upgrade are reserved and can't be used."
                                     },
                                     "secret_name": {
                                       "type": "string",
                                       "format": "uuid",
-                                      "description": "The data-plane secret containing the header value, bound to the webhook URL it was saved for"
+                                      "description": "The data-plane secret that holds the header value. The secret only works with the webhook URL it was saved for."
                                     }
                                   },
                                   "required": [
@@ -7566,7 +7566,7 @@
                                 "minLength": 1,
                                 "maxLength": 256,
                                 "pattern": "^[!#$%&'*+.^_`|~0-9A-Za-z-]+$",
-                                "description": "The HTTP header name"
+                                "description": "The HTTP header name. Connection, Content-Length, Content-Type, Expect, Host, Idempotency-Key, Keep-Alive, Transfer-Encoding, and Upgrade are reserved and can't be used."
                               },
                               "value": {
                                 "type": "string",
@@ -7589,12 +7589,12 @@
                                 "minLength": 1,
                                 "maxLength": 256,
                                 "pattern": "^[!#$%&'*+.^_`|~0-9A-Za-z-]+$",
-                                "description": "The HTTP header name"
+                                "description": "The HTTP header name. Connection, Content-Length, Content-Type, Expect, Host, Idempotency-Key, Keep-Alive, Transfer-Encoding, and Upgrade are reserved and can't be used."
                               },
                               "secret_name": {
                                 "type": "string",
                                 "format": "uuid",
-                                "description": "The data-plane secret containing the header value, bound to the webhook URL it was saved for"
+                                "description": "The data-plane secret that holds the header value. The secret only works with the webhook URL it was saved for."
                               }
                             },
                             "required": [
@@ -7715,7 +7715,7 @@
               "boolean",
               "null"
             ],
-            "description": "Whether new and reactivated informational Patterns send alerts, independent of `pattern_alert_min_severity`. Unset or null sends them."
+            "description": "Whether new and reactivated informational Patterns send alerts, independent of `pattern_alert_min_severity`. Unset or null sends alerts for informational Patterns."
           },
           "pattern_sources": {
             "type": [
@@ -7763,7 +7763,7 @@
               "maxLength": 64
             },
             "maxItems": 64,
-            "description": "Patterns rubric categories this project turned off. Patterns doesn't look for or assign them."
+            "description": "Patterns rubric categories that are turned off for this project. Patterns doesn't look for or assign them."
           },
           "session_id_fields": {
             "type": [
@@ -11385,7 +11385,7 @@
                                 "minLength": 1,
                                 "maxLength": 256,
                                 "pattern": "^[!#$%&'*+.^_`|~0-9A-Za-z-]+$",
-                                "description": "The HTTP header name"
+                                "description": "The HTTP header name. Connection, Content-Length, Content-Type, Expect, Host, Idempotency-Key, Keep-Alive, Transfer-Encoding, and Upgrade are reserved and can't be used."
                               },
                               "value": {
                                 "type": "string",
@@ -11408,12 +11408,12 @@
                                 "minLength": 1,
                                 "maxLength": 256,
                                 "pattern": "^[!#$%&'*+.^_`|~0-9A-Za-z-]+$",
-                                "description": "The HTTP header name"
+                                "description": "The HTTP header name. Connection, Content-Length, Content-Type, Expect, Host, Idempotency-Key, Keep-Alive, Transfer-Encoding, and Upgrade are reserved and can't be used."
                               },
                               "secret_name": {
                                 "type": "string",
                                 "format": "uuid",
-                                "description": "The data-plane secret containing the header value, bound to the webhook URL it was saved for"
+                                "description": "The data-plane secret that holds the header value. The secret only works with the webhook URL it was saved for."
                               }
                             },
                             "required": [
