@@ -1,5 +1,7 @@
 """Patchers for Cursor SDK agent runs and stream lifecycles."""
 
+from functools import partial
+
 from braintrust.integrations.base import CompositeFunctionWrapperPatcher, FunctionWrapperPatcher
 
 from .tracing import (
@@ -8,11 +10,13 @@ from .tracing import (
     _wrap_async_close,
     _wrap_async_observe,
     _wrap_async_send,
+    _wrap_async_steer,
     _wrap_async_wait,
     _wrap_sync_cancel,
     _wrap_sync_close,
     _wrap_sync_observe,
     _wrap_sync_send,
+    _wrap_sync_steer,
     _wrap_sync_wait,
     _wrap_tool_dispatch,
 )
@@ -30,6 +34,18 @@ class AsyncAgentSendPatcher(FunctionWrapperPatcher):
     wrapper = staticmethod(_wrap_async_send)
 
 
+class AgentSummarizePatcher(FunctionWrapperPatcher):
+    name = "cursor_sdk.agent.summarize"
+    target_path = "Agent.summarize"
+    wrapper = staticmethod(partial(_wrap_sync_send, default_message="/summarize"))
+
+
+class AsyncAgentSummarizePatcher(FunctionWrapperPatcher):
+    name = "cursor_sdk.async_agent.summarize"
+    target_path = "AsyncAgent.summarize"
+    wrapper = staticmethod(partial(_wrap_async_send, default_message="/summarize"))
+
+
 class AgentClosePatcher(FunctionWrapperPatcher):
     name = "cursor_sdk.agent.close"
     target_path = "Agent.close"
@@ -44,7 +60,14 @@ class AsyncAgentClosePatcher(FunctionWrapperPatcher):
 
 class AgentLifecyclePatcher(CompositeFunctionWrapperPatcher):
     name = "cursor_sdk.agent"
-    sub_patchers = (AgentSendPatcher, AsyncAgentSendPatcher, AgentClosePatcher, AsyncAgentClosePatcher)
+    sub_patchers = (
+        AgentSendPatcher,
+        AsyncAgentSendPatcher,
+        AgentSummarizePatcher,
+        AsyncAgentSummarizePatcher,
+        AgentClosePatcher,
+        AsyncAgentClosePatcher,
+    )
 
 
 class RunApplyEventStatePatcher(FunctionWrapperPatcher):
@@ -103,6 +126,20 @@ class AsyncRunCancelPatcher(FunctionWrapperPatcher):
     wrapper = staticmethod(_wrap_async_cancel)
 
 
+class RunSteerPatcher(FunctionWrapperPatcher):
+    name = "cursor_sdk.run.steer"
+    target_module = "cursor_sdk._run"
+    target_path = "Run.steer"
+    wrapper = staticmethod(_wrap_sync_steer)
+
+
+class AsyncRunSteerPatcher(FunctionWrapperPatcher):
+    name = "cursor_sdk.async_run.steer"
+    target_module = "cursor_sdk._async_run"
+    target_path = "AsyncRun.steer"
+    wrapper = staticmethod(_wrap_async_steer)
+
+
 class RunLifecyclePatcher(CompositeFunctionWrapperPatcher):
     name = "cursor_sdk.run"
     sub_patchers = (
@@ -113,6 +150,8 @@ class RunLifecyclePatcher(CompositeFunctionWrapperPatcher):
         AsyncRunObservePatcher,
         RunCancelPatcher,
         AsyncRunCancelPatcher,
+        RunSteerPatcher,
+        AsyncRunSteerPatcher,
     )
 
 

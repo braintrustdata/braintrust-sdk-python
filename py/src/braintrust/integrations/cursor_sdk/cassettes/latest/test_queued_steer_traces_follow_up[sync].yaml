@@ -1,0 +1,237 @@
+interactions:
+- request:
+    body: '{"options": {"model": {"id": "composer-2.5"}, "apiKey": "<REDACTED>", "cloud":
+      {"env": {"type": "CLOUD_ENVIRONMENT_TYPE_CLOUD"}}}, "idempotencyKey": "<IDEMPOTENCY_KEY>"}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connect-protocol-version:
+      - '1'
+      connection:
+      - keep-alive
+      content-length:
+      - '247'
+      content-type:
+      - application/json
+      user-agent:
+      - python-httpx/0.28.1
+    method: POST
+    uri: http://cursor-sdk-bridge/sdk.v1.SdkAgentService/CreateAgent
+  response:
+    body:
+      string: '{"agentId":"bc-b3eb2f49-9841-4f3f-bf52-6dbfd99c34d9","model":{"id":"composer-2.5"}}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '83'
+      content-type:
+      - application/json
+      date:
+      - Mon, 23 Nov 2026 23:15:35 GMT
+      keep-alive:
+      - timeout=5
+    status:
+      code: 200
+      message: OK
+- request:
+    body: !!binary |
+      AAAAAKd7ImFnZW50SWQiOiAiYmMtYjNlYjJmNDktOTg0MS00ZjNmLWJmNTItNmRiZmQ5OWMzNGQ5
+      IiwgIm1lc3NhZ2UiOiB7InRleHQiOiAiUmVwbHkgd2l0aCBleGFjdGx5OiBjdXJzb3IgaW5pdGlh
+      bCB0cmFjaW5nIGNvbXBsZXRlIn0sICJvcHRpb25zIjogeyJhcGlLZXkiOiAiPFJFREFDVEVEPiJ9
+      fQ==
+    headers:
+      accept:
+      - application/connect+json
+      accept-encoding:
+      - gzip, deflate
+      connect-protocol-version:
+      - '1'
+      connection:
+      - keep-alive
+      content-length:
+      - '231'
+      content-type:
+      - application/connect+json
+      user-agent:
+      - python-httpx/0.28.1
+    method: POST
+    uri: http://cursor-sdk-bridge/sdk.v1.SdkAgentService/Send
+  response:
+    body:
+      string: !!binary |
+        AAAAAMV7InNka01lc3NhZ2UiOnsidHlwZSI6InN0YXR1cyIsIm1lc3NhZ2UiOnsidHlwZSI6InN0
+        YXR1cyIsImFnZW50X2lkIjoiYmMtYjNlYjJmNDktOTg0MS00ZjNmLWJmNTItNmRiZmQ5OWMzNGQ5
+        IiwicnVuX2lkIjoicnVuLTk0NDBmYzYxLTgzODMtNGEwMS05N2Y2LTc0ZDdlZGFlNWE5NCIsInN0
+        YXR1cyI6IlJVTk5JTkcifX0sIm9mZnNldCI6IjEifQAAAADDeyJzZGtNZXNzYWdlIjp7InR5cGUi
+        OiJ0aGlua2luZyIsIm1lc3NhZ2UiOnsidHlwZSI6InRoaW5raW5nIiwiYWdlbnRfaWQiOiJiYy1i
+        M2ViMmY0OS05ODQxLTRmM2YtYmY1Mi02ZGJmZDk5YzM0ZDkiLCJydW5faWQiOiJydW4tOTQ0MGZj
+        NjEtODM4My00YTAxLTk3ZjYtNzRkN2VkYWU1YTk0IiwidGV4dCI6IlRoZSJ9fSwib2Zmc2V0Ijoi
+        MiJ9AAAAAMV7InNka01lc3NhZ2UiOnsidHlwZSI6InRoaW5raW5nIiwibWVzc2FnZSI6eyJ0eXBl
+        IjoidGhpbmtpbmciLCJhZ2VudF9pZCI6ImJjLWIzZWIyZjQ5LTk4NDEtNGYzZi1iZjUyLTZkYmZk
+        OTljMzRkOSIsInJ1bl9pZCI6InJ1bi05NDQwZmM2MS04MzgzLTRhMDEtOTdmNi03NGQ3ZWRhZTVh
+        OTQiLCJ0ZXh0IjoiIHVzZXIifX0sIm9mZnNldCI6IjMifQAAAAEEeyJzZGtNZXNzYWdlIjp7InR5
+        cGUiOiJ0aGlua2luZyIsIm1lc3NhZ2UiOnsidHlwZSI6InRoaW5raW5nIiwiYWdlbnRfaWQiOiJi
+        Yy1iM2ViMmY0OS05ODQxLTRmM2YtYmY1Mi02ZGJmZDk5YzM0ZDkiLCJydW5faWQiOiJydW4tOTQ0
+        MGZjNjEtODM4My00YTAxLTk3ZjYtNzRkN2VkYWU1YTk0IiwidGV4dCI6IiB3YW50cyBtZSB0byBy
+        ZXBseSB3aXRoIGV4YWN0bHk6IFwiY3Vyc29yIGluaXRpYWwgdHJhY2luZyBjb21wbGV0ZVwiIn19
+        LCJvZmZzZXQiOiI0In0AAAABA3sic2RrTWVzc2FnZSI6eyJ0eXBlIjoiYXNzaXN0YW50IiwibWVz
+        c2FnZSI6eyJ0eXBlIjoiYXNzaXN0YW50IiwiYWdlbnRfaWQiOiJiYy1iM2ViMmY0OS05ODQxLTRm
+        M2YtYmY1Mi02ZGJmZDk5YzM0ZDkiLCJydW5faWQiOiJydW4tOTQ0MGZjNjEtODM4My00YTAxLTk3
+        ZjYtNzRkN2VkYWU1YTk0IiwibWVzc2FnZSI6eyJyb2xlIjoiYXNzaXN0YW50IiwiY29udGVudCI6
+        W3sidHlwZSI6InRleHQiLCJ0ZXh0IjoiY3Vyc29yIn1dfX19LCJvZmZzZXQiOiI1In0AAAABBXsi
+        c2RrTWVzc2FnZSI6eyJ0eXBlIjoiYXNzaXN0YW50IiwibWVzc2FnZSI6eyJ0eXBlIjoiYXNzaXN0
+        YW50IiwiYWdlbnRfaWQiOiJiYy1iM2ViMmY0OS05ODQxLTRmM2YtYmY1Mi02ZGJmZDk5YzM0ZDki
+        LCJydW5faWQiOiJydW4tOTQ0MGZjNjEtODM4My00YTAxLTk3ZjYtNzRkN2VkYWU1YTk0IiwibWVz
+        c2FnZSI6eyJyb2xlIjoiYXNzaXN0YW50IiwiY29udGVudCI6W3sidHlwZSI6InRleHQiLCJ0ZXh0
+        IjoiIGluaXRpYWwifV19fX0sIm9mZnNldCI6IjYifQAAAAEFeyJzZGtNZXNzYWdlIjp7InR5cGUi
+        OiJhc3Npc3RhbnQiLCJtZXNzYWdlIjp7InR5cGUiOiJhc3Npc3RhbnQiLCJhZ2VudF9pZCI6ImJj
+        LWIzZWIyZjQ5LTk4NDEtNGYzZi1iZjUyLTZkYmZkOTljMzRkOSIsInJ1bl9pZCI6InJ1bi05NDQw
+        ZmM2MS04MzgzLTRhMDEtOTdmNi03NGQ3ZWRhZTVhOTQiLCJtZXNzYWdlIjp7InJvbGUiOiJhc3Np
+        c3RhbnQiLCJjb250ZW50IjpbeyJ0eXBlIjoidGV4dCIsInRleHQiOiIgdHJhY2luZyJ9XX19fSwi
+        b2Zmc2V0IjoiNyJ9AAAAAQZ7InNka01lc3NhZ2UiOnsidHlwZSI6ImFzc2lzdGFudCIsIm1lc3Nh
+        Z2UiOnsidHlwZSI6ImFzc2lzdGFudCIsImFnZW50X2lkIjoiYmMtYjNlYjJmNDktOTg0MS00ZjNm
+        LWJmNTItNmRiZmQ5OWMzNGQ5IiwicnVuX2lkIjoicnVuLTk0NDBmYzYxLTgzODMtNGEwMS05N2Y2
+        LTc0ZDdlZGFlNWE5NCIsIm1lc3NhZ2UiOnsicm9sZSI6ImFzc2lzdGFudCIsImNvbnRlbnQiOlt7
+        InR5cGUiOiJ0ZXh0IiwidGV4dCI6IiBjb21wbGV0ZSJ9XX19fSwib2Zmc2V0IjoiOCJ9AAAAAMZ7
+        InNka01lc3NhZ2UiOnsidHlwZSI6InN0YXR1cyIsIm1lc3NhZ2UiOnsidHlwZSI6InN0YXR1cyIs
+        ImFnZW50X2lkIjoiYmMtYjNlYjJmNDktOTg0MS00ZjNmLWJmNTItNmRiZmQ5OWMzNGQ5IiwicnVu
+        X2lkIjoicnVuLTk0NDBmYzYxLTgzODMtNGEwMS05N2Y2LTc0ZDdlZGFlNWE5NCIsInN0YXR1cyI6
+        IkZJTklTSEVEIn19LCJvZmZzZXQiOiI5In0AAAAByXsicmVzdWx0Ijp7ImFnZW50SWQiOiJiYy1i
+        M2ViMmY0OS05ODQxLTRmM2YtYmY1Mi02ZGJmZDk5YzM0ZDkiLCJydW5JZCI6InJ1bi05NDQwZmM2
+        MS04MzgzLTRhMDEtOTdmNi03NGQ3ZWRhZTVhOTQiLCJzdGF0dXMiOiJSVU5fTElGRUNZQ0xFX1NU
+        QVRVU19GSU5JU0hFRCIsInJlc3VsdCI6eyJydW5JZCI6InJ1bi05NDQwZmM2MS04MzgzLTRhMDEt
+        OTdmNi03NGQ3ZWRhZTVhOTQiLCJhZ2VudElkIjoiYmMtYjNlYjJmNDktOTg0MS00ZjNmLWJmNTIt
+        NmRiZmQ5OWMzNGQ5Iiwic3RhdHVzIjoiUlVOX0xJRkVDWUNMRV9TVEFUVVNfRklOSVNIRUQiLCJy
+        ZXN1bHQiOiJjdXJzb3IgaW5pdGlhbCB0cmFjaW5nIGNvbXBsZXRlIiwibW9kZWwiOnsiaWQiOiJj
+        b21wb3Nlci0yLjUifSwiZHVyYXRpb25NcyI6IjcwODciLCJjcmVhdGVkQXQiOiIyMDI2LTExLTIz
+        VDIzOjE1OjM2LjI2OVoifX0sIm9mZnNldCI6IjEwIn0AAAAAf3siZG9uZSI6eyJhZ2VudElkIjoi
+        YmMtYjNlYjJmNDktOTg0MS00ZjNmLWJmNTItNmRiZmQ5OWMzNGQ5IiwicnVuSWQiOiJydW4tOTQ0
+        MGZjNjEtODM4My00YTAxLTk3ZjYtNzRkN2VkYWU1YTk0In0sIm9mZnNldCI6IjExIn0CAAAAAnt9
+    headers:
+      connection:
+      - keep-alive
+      content-type:
+      - application/connect+json
+      date:
+      - Mon, 23 Nov 2026 23:15:43 GMT
+      keep-alive:
+      - timeout=5
+      transfer-encoding:
+      - chunked
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"runId": "run-9440fc61-8383-4a01-97f6-74d7edae5a94", "text": "Reply with
+      exactly: cursor steered tracing complete", "agentId": "bc-b3eb2f49-9841-4f3f-bf52-6dbfd99c34d9"}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connect-protocol-version:
+      - '1'
+      connection:
+      - keep-alive
+      content-length:
+      - '170'
+      content-type:
+      - application/json
+      user-agent:
+      - python-httpx/0.28.1
+    method: POST
+    uri: http://cursor-sdk-bridge/sdk.v1.SdkAgentService/SteerRun
+  response:
+    body:
+      string: '{"outcome":"OUTCOME_QUEUED","queuedRun":{"runId":"run-eb097ecf-9a11-4883-8ea1-617544b10849","agentId":"bc-b3eb2f49-9841-4f3f-bf52-6dbfd99c34d9","status":"RUN_LIFECYCLE_STATUS_RUNNING","createdAt":"2026-11-23T23:15:46.021Z"}}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '224'
+      content-type:
+      - application/json
+      date:
+      - Mon, 23 Nov 2026 23:15:46 GMT
+      keep-alive:
+      - timeout=5
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"runId": "run-eb097ecf-9a11-4883-8ea1-617544b10849"}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connect-protocol-version:
+      - '1'
+      connection:
+      - keep-alive
+      content-length:
+      - '53'
+      content-type:
+      - application/json
+      user-agent:
+      - python-httpx/0.28.1
+    method: POST
+    uri: http://cursor-sdk-bridge/sdk.v1.SdkAgentService/WaitLiveRun
+  response:
+    body:
+      string: '{"result":{"runId":"run-eb097ecf-9a11-4883-8ea1-617544b10849","agentId":"bc-b3eb2f49-9841-4f3f-bf52-6dbfd99c34d9","status":"RUN_LIFECYCLE_STATUS_FINISHED","result":"cursor
+        steered tracing complete","durationMs":"3055","createdAt":"2026-11-23T23:15:46.021Z"}}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '258'
+      content-type:
+      - application/json
+      date:
+      - Mon, 23 Nov 2026 23:15:50 GMT
+      keep-alive:
+      - timeout=5
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"agentId": "bc-b3eb2f49-9841-4f3f-bf52-6dbfd99c34d9"}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connect-protocol-version:
+      - '1'
+      connection:
+      - keep-alive
+      content-length:
+      - '54'
+      content-type:
+      - application/json
+      user-agent:
+      - python-httpx/0.28.1
+    method: POST
+    uri: http://cursor-sdk-bridge/sdk.v1.SdkAgentService/CloseAgent
+  response:
+    body:
+      string: '{}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '2'
+      content-type:
+      - application/json
+      date:
+      - Mon, 23 Nov 2026 23:15:50 GMT
+      keep-alive:
+      - timeout=5
+    status:
+      code: 200
+      message: OK
+version: 1
