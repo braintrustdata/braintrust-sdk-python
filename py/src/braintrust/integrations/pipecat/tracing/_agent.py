@@ -128,7 +128,8 @@ class AgentTracker:
 
     A tool result that runs the model opens follow-up work and withdraws any
     earlier completion; the next response consumes it. Interruption ends all
-    work as interrupted and the turn as incomplete. User turns are independent:
+    work as interrupted and the turn as incomplete; audio the transport still
+    plays from the interrupted reply opens no speech. User turns are independent:
     starting one does not imply an interruption.
     """
 
@@ -139,6 +140,9 @@ class AgentTracker:
         self._response: _ModelResponse | None = None
         self._last_response: Span | None = None
         self._playback: _Playback | None = None
+        # An interruption ended the agent turn and no agent work has started
+        # since. Audio the transport plays now is left over from that reply.
+        self._interrupted_reply = False
         # TTS context ID -> synthesis. Several IDs may alias one synthesis.
         self._synthesis: dict[str, _Synthesis] = {}
         self._latest_synthesis: _Synthesis | None = None
@@ -162,6 +166,7 @@ class AgentTracker:
         """
         if self._response is not None:
             return None
+        self._interrupted_reply = False
         turn = self._turn
         if turn is None:
             turn = self._turn = _AgentTurn(self._spans.turn("agent_turn"))
@@ -314,6 +319,7 @@ class AgentTracker:
     # Synthesis
 
     def start_tts(self, frame: "TTSStartedFrame", processor: "FrameProcessor | None") -> None:
+        self._interrupted_reply = False
         key = frame.context_id or _DEFAULT_CONTEXT
         existing = self._synthesis.get(key)
         if existing is not None and not existing.ended:
@@ -405,6 +411,12 @@ class AgentTracker:
 
     def start_playback(self) -> None:
         if self._playback is not None:
+            return
+        if self._interrupted_reply and self._turn is None:
+            # Pipecat keeps its audio task running through an interruption and
+            # still writes the chunk it had dequeued, restarting bot speech.
+            # That audio belongs to the interrupted reply, whose speech ended
+            # at the interruption; it must not become speech without a turn.
             return
         self._playback = _Playback()
         self._open(_PLAYBACK)
@@ -498,6 +510,7 @@ class AgentTracker:
         self._tools.clear()
         self._requesters.clear()
         if self._turn is not None:
+            self._interrupted_reply = interrupted
             self._finish_turn(self._turn, incomplete=True, end_ms=end_ms)
 
     def _open(self, work: _Work) -> None:
