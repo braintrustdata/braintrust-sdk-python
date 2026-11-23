@@ -190,6 +190,42 @@ def sanitize_generated_images(response):
     return response
 
 
+_SANITIZED_AUDIO = "<sanitized audio>"
+
+
+def _replace_input_audio_data(value) -> bool:
+    changed = False
+    if isinstance(value, dict):
+        audio = value.get("input_audio")
+        if isinstance(audio, dict) and isinstance(audio.get("data"), str) and audio["data"] != _SANITIZED_AUDIO:
+            audio["data"] = _SANITIZED_AUDIO
+            changed = True
+        for item in value.values():
+            changed = _replace_input_audio_data(item) or changed
+    elif isinstance(value, list):
+        for item in value:
+            changed = _replace_input_audio_data(item) or changed
+    return changed
+
+
+def sanitize_input_audio(request):
+    """Replace base64 ``input_audio.data`` in JSON request bodies with a placeholder."""
+    body = request.body
+    if not body:
+        return request
+    if isinstance(body, (dict, list)):
+        _replace_input_audio_data(body)
+        return request
+    try:
+        payload = json.loads(body)
+    except (TypeError, ValueError, UnicodeDecodeError):
+        return request
+    if _replace_input_audio_data(payload):
+        encoded = json.dumps(payload, separators=(",", ":"))
+        request.body = encoded.encode() if isinstance(body, bytes) else encoded
+    return request
+
+
 def get_vcr_config():
     """
     Get VCR configuration for recording/playing back HTTP interactions.
@@ -220,6 +256,7 @@ def get_vcr_config():
             "amz-sdk-request",
             "x-amzn-bedrock-api-key",
         ],
+        "before_record_request": sanitize_input_audio,
         "before_record_response": _scrub_sensitive_response_headers,
     }
 

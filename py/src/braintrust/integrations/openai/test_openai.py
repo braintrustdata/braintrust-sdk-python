@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import binascii
 import inspect
 import os
@@ -983,6 +984,38 @@ def test_openai_chat_streaming_sync_preserves_logprobs(memory_logger, monkeypatc
     assert output_choice["logprobs"]["content"]
     assert "OK" in "".join(entry["token"] for entry in output_choice["logprobs"]["content"])
     assert all("bytes" not in entry or entry["bytes"] is not None for entry in output_choice["logprobs"]["content"])
+
+
+@pytest.mark.vcr
+def test_openai_chat_audio_input_tokens(memory_logger):
+    assert not memory_logger.pop()
+
+    with open(TEST_AUDIO_FILE, "rb") as f:
+        audio_b64 = base64.b64encode(f.read()).decode()
+
+    client = wrap_openai(openai.OpenAI())
+    response = client.chat.completions.create(
+        model="gpt-audio-mini",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "Transcribe this audio."},
+                    {"type": "input_audio", "input_audio": {"data": audio_b64, "format": "wav"}},
+                ],
+            }
+        ],
+    )
+
+    prompt_details = response.usage.prompt_tokens_details
+    assert prompt_details.audio_tokens > 0
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    metrics = spans[0]["metrics"]
+    assert metrics["prompt_audio_tokens"] == prompt_details.audio_tokens
+    assert metrics["prompt_audio_tokens"] <= metrics["prompt_tokens"]
+    assert metrics["completion_audio_tokens"] == response.usage.completion_tokens_details.audio_tokens == 0
 
 
 @pytest.mark.parametrize("value", [None, "false", "invalid", "true"])

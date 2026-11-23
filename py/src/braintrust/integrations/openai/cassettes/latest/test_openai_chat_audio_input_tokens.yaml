@@ -1,0 +1,106 @@
+interactions:
+- request:
+    body: '{"model":"gpt-audio-mini","messages":[{"role":"user","content":[{"type":"text","text":"Transcribe
+      this audio."},{"type":"input_audio","input_audio":{"data":"<sanitized audio>","format":"wav"}}]}]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '110779'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - OpenAI/Python 3.51.0
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - Linux
+      x-stainless-package-version:
+      - 3.51.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-EnR1nhlLJljJGsPiWZcNPNKomN0CS\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1795450675,\n  \"model\": \"gpt-audio-mini-2025-12-15\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"Hello, this is a recording test for
+        BrainShare.\",\n        \"refusal\": null,\n        \"annotations\": []\n
+        \     },\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n
+        \   \"prompt_tokens\": 40,\n    \"completion_tokens\": 11,\n    \"total_tokens\":
+        51,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\": 0,\n      \"audio_tokens\":
+        24,\n      \"text_tokens\": 16,\n      \"image_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0,\n      \"text_tokens\": 11\n
+        \   }\n  },\n  \"service_tier\": \"default\",\n  \"system_fingerprint\": \"fp_efe60f5a98\"\n}\n"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a5f17c9c48205135-PDX
+      connection:
+      - keep-alive
+      content-length:
+      - '909'
+      content-type:
+      - application/json
+      date:
+      - Mon, 23 Nov 2026 16:17:56 GMT
+      openai-processing-ms:
+      - '566'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Origin
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '20000'
+      x-ratelimit-limit-tokens:
+      - '15000000'
+      x-ratelimit-remaining-requests:
+      - '19999'
+      x-ratelimit-remaining-tokens:
+      - '14999992'
+      x-ratelimit-reset-requests:
+      - 3ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_0a258564684248b0b40dd3720747c7c8
+    status:
+      code: 200
+      message: OK
+version: 1
