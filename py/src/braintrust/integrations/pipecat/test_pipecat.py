@@ -240,6 +240,7 @@ class _VoiceSession:
     inference_gate: bool = False
     smart_turn: bool = False
     delay_observer: bool = False
+    hold_inflight_audio: bool = False
     cancel: bool = False
     observer: "BraintrustPipecatObserver | None" = field(init=False, default=None)
     tracker: "_Session | None" = field(init=False, default=None)
@@ -356,6 +357,7 @@ class _VoiceSession:
         async with _running(worker, cancel=self.cancel):
             await asyncio.wait_for(ready.wait(), 10)
             self.tracker = self.observer._session
+            hold_audio = self._hold_inflight_audio(transport.output()) if self.hold_inflight_audio else None
             async with connect(f"ws://127.0.0.1:{port}") as websocket:
                 agent_audio = asyncio.Event()
 
@@ -371,6 +373,8 @@ class _VoiceSession:
                     if index and barge_in:
                         # Speak over the agent once its reply is audible.
                         await asyncio.wait_for(agent_audio.wait(), 30)
+                        if hold_audio is not None:
+                            hold_audio.set()
                     elif index:
                         await self._wait_for_turns(turn_stopped, index)
                     await self._speak(websocket, serializer, pcm)
@@ -380,6 +384,34 @@ class _VoiceSession:
                     await asyncio.wait_for(self.observer._controller_queue.join(), 5)
                 self.controllers = tuple(self.observer._controllers.values())
                 reading.cancel()
+
+    @staticmethod
+    def _hold_inflight_audio(output):
+        """Once armed, hold the next chunk the transport dequeues until it handles the interruption.
+
+        Current Pipecat keeps the output audio task running through an
+        interruption, so a chunk it already dequeued is still written and
+        restarts bot speech. A loaded runner hits that window by chance; this
+        reaches it on every run without replacing any Pipecat object.
+        """
+        OutputAudioRawFrame = _frames().OutputAudioRawFrame
+        sender = output._media_senders[None]
+        handle_frame, handle_interruptions = sender._handle_frame, sender.handle_interruptions
+        armed, interrupted = asyncio.Event(), asyncio.Event()
+
+        async def held_handle_frame(frame):
+            if armed.is_set() and not interrupted.is_set() and isinstance(frame, OutputAudioRawFrame):
+                await interrupted.wait()
+            await handle_frame(frame)
+
+        async def tracked_handle_interruptions(frame):
+            await handle_interruptions(frame)
+            if armed.is_set():
+                interrupted.set()
+
+        sender._handle_frame = held_handle_frame
+        sender.handle_interruptions = tracked_handle_interruptions
+        return armed
 
     async def _wait_for_turns(self, turn_stopped, count):
         while len(self.assistant_turns) < count:
@@ -649,6 +681,9 @@ async def test_user_barge_in_interrupts_agent_playback(memory_logger):
     session = _VoiceSession(
         system="Count from one to ten in words, then stop. If interrupted, reply exactly: Okay.",
         max_tokens=30,
+        # The transport still writes the chunk it dequeued before the
+        # interruption. That audio must not open speech without a turn.
+        hold_inflight_audio=True,
     )
     await session.run(utterances=2, barge_in=True)
 
@@ -659,8 +694,10 @@ async def test_user_barge_in_interrupts_agent_playback(memory_logger):
     # The interrupted reply ends incomplete, with its playback cut short.
     assert interrupted["metadata"]["turn.incomplete"] is True
     assert interrupted["metadata"]["turn.reply_to"] == user_turns[0]["span_id"]
-    cut = [row for row in _spans_named(logs, "agent_speech") if row["metadata"]["turn.id"] == interrupted["span_id"]]
-    assert cut and cut[-1]["metadata"]["contrib.pipecat.interrupted"] is True
+    speech = _spans_named(logs, "agent_speech")
+    assert [row["metadata"].get("turn.id") for row in speech] == [interrupted["span_id"], reply["span_id"]]
+    cut = speech[0]
+    assert cut["metadata"]["contrib.pipecat.interrupted"] is True
     assert interrupted["metrics"]["end"] <= user_turns[1]["metrics"]["end"]
     # The answer to the interruption is a separate, complete turn.
     assert reply["metadata"]["turn.incomplete"] is False
