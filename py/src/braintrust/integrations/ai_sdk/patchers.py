@@ -2,12 +2,16 @@
 
 from typing import Any, ClassVar
 
-from braintrust.integrations.base import CallbackPatcher
+from braintrust.integrations.base import CallbackPatcher, _import_first_available
 
 from .tracing import BraintrustAISDKAdapter
 
 
 _ADAPTER: BraintrustAISDKAdapter | None = None
+
+
+def _import_telemetry() -> Any | None:
+    return _import_first_available(("ai.telemetry", "ai.experimental_telemetry"))
 
 
 def _adapter_registered() -> bool:
@@ -19,10 +23,12 @@ def _register_adapter() -> bool:
     if _ADAPTER is not None:
         return True
 
-    from ai import experimental_telemetry  # pylint: disable=import-error
+    telemetry = _import_telemetry()
+    if telemetry is None:
+        return False
 
     adapter = BraintrustAISDKAdapter()
-    experimental_telemetry.register(adapter)
+    telemetry.register(adapter)
     _ADAPTER = adapter
     return True
 
@@ -33,11 +39,13 @@ def unregister_adapter() -> bool:
     if _ADAPTER is None:
         return True
 
-    from ai import experimental_telemetry  # pylint: disable=import-error
+    telemetry = _import_telemetry()
+    if telemetry is None:
+        return False
 
     adapter = _ADAPTER
     try:
-        experimental_telemetry.unregister(adapter)
+        telemetry.unregister(adapter)
     except ValueError:
         pass
     _ADAPTER = None
@@ -45,9 +53,9 @@ def unregister_adapter() -> bool:
 
 
 class TelemetryAdapterPatcher(CallbackPatcher):
-    """Register one Braintrust adapter with ``ai.experimental_telemetry``."""
+    """Register one Braintrust adapter with the AI SDK telemetry module."""
 
+    # Keep the existing patcher identifier across AI SDK versions.
     name: ClassVar[str] = "ai.experimental_telemetry.adapter"
-    target_module: ClassVar[str] = "ai.experimental_telemetry"
     callback: ClassVar[Any] = staticmethod(_register_adapter)
     state_getter: ClassVar[Any] = staticmethod(_adapter_registered)
