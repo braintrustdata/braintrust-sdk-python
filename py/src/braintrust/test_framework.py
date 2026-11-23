@@ -1,6 +1,7 @@
 import asyncio
 import copy
 import importlib.util
+import logging
 import re
 import sys
 import threading
@@ -8,7 +9,14 @@ from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import MagicMock, patch
 
 import pytest
-from braintrust.logger import BraintrustState, Dataset, ObjectMetadata, ProjectDatasetMetadata, parent_context
+from braintrust.logger import (
+    BraintrustState,
+    Dataset,
+    ObjectMetadata,
+    ProjectDatasetMetadata,
+    _internal_get_global_state,
+    parent_context,
+)
 from braintrust.util import LazyValue
 
 from .framework import (
@@ -28,6 +36,8 @@ from .framework import (
 )
 from .resource_manager import ResourceManager
 from .score import Classification, Score, Scorer
+from .span_identifier_v3 import SpanComponentsV3, SpanObjectTypeV3
+from .span_identifier_v4 import SpanComponentsV4
 from .test_helpers import init_test_exp, with_memory_logger, with_simulate_login  # noqa: F401
 
 
@@ -285,6 +295,87 @@ async def test_run_evaluator_basic():
     assert result.summary.project_name == "test-project"
     assert "exact_match" in result.summary.scores
     assert result.summary.scores["exact_match"].score == 1.0
+
+
+@pytest.mark.parametrize("components", [SpanComponentsV3, SpanComponentsV4], ids=["v3", "v4"])
+@pytest.mark.parametrize(
+    ("object_type", "expected_type"),
+    [(SpanObjectTypeV3.PROJECT_LOGS, "project_logs"), (SpanObjectTypeV3.PLAYGROUND_LOGS, "playground_logs")],
+    ids=["project_logs", "playground_logs"],
+)
+@pytest.mark.asyncio
+async def test_eval_trace_scorer_uses_parent_destination(components, object_type, expected_type, with_memory_logger):
+    parent = components(
+        object_type=object_type,
+        object_id="logs-object-id",
+        row_id="parent-row-id",
+        span_id="0123456789abcdef",
+        root_span_id="abcdef01-2345-6789-abcd-ef0123456789",
+    )
+    trace_configs = []
+
+    def trace_scorer(trace):
+        trace_configs.append(trace.get_configuration())
+        return 1.0
+
+    await EvalAsync(
+        "test-trace-scorer",
+        data=[EvalCase(input=1)],
+        task=lambda value: value,
+        scores=[trace_scorer],
+        parent=parent.to_str(),
+        state=_internal_get_global_state(),
+    )
+
+    assert trace_configs == [
+        {"object_type": expected_type, "object_id": parent.object_id, "root_span_id": parent.root_span_id}
+    ]
+
+
+@pytest.mark.parametrize(
+    ("parent", "expected_decode_failures"),
+    [
+        ("invalid-parent", [logging.DEBUG]),
+        ({"traceparent": "00-abcdef0123456789abcdef0123456789-0123456789abcdef-01"}, []),
+    ],
+    ids=["malformed-slug", "w3c-context"],
+)
+@pytest.mark.asyncio
+async def test_run_evaluator_trace_parent_fallback(
+    parent, expected_decode_failures, caplog, with_memory_logger, with_simulate_login
+):
+    experiment = init_test_exp("test-trace-scorer", "test-project")
+    trace_configs = []
+
+    def trace_scorer(trace):
+        trace_configs.append(trace.get_configuration())
+        return 1.0
+
+    evaluator = Evaluator(
+        project_name="test-project",
+        eval_name="test-trace-scorer",
+        data=[EvalCase(input=1)],
+        task=lambda value: value,
+        scores=[trace_scorer],
+        experiment_name=None,
+        metadata=None,
+        summarize_scores=False,
+    )
+    with (
+        parent_context(parent, experiment.state),
+        caplog.at_level(logging.DEBUG, logger="braintrust.framework"),
+    ):
+        await run_evaluator(experiment=experiment, evaluator=evaluator, position=None, filters=[])
+
+    assert len(trace_configs) == 1
+    assert trace_configs[0]["object_type"] == "experiment"
+    assert trace_configs[0]["object_id"] == experiment.id
+    decode_failures = [
+        level
+        for logger_name, level, message in caplog.record_tuples
+        if logger_name == "braintrust.framework" and message == "Failed to decode span parent for eval trace"
+    ]
+    assert decode_failures == expected_decode_failures
 
 
 @pytest.mark.parametrize("is_async", [False, True], ids=["Eval", "EvalAsync"])
