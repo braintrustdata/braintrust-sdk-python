@@ -1644,7 +1644,7 @@ def test_interactions_server_tool_span(memory_logger, tool_type):
         if tool_type == "tool_search":
             deferred_tool = _interaction_function_tool()
             deferred_tool.defer_loading = True
-            tools = [interactions.ToolSearch(), deferred_tool]
+            tools = [{"type": "tool_search"}, deferred_tool]
             prompt = "Use the deferred get_weather tool to look up the current weather in Paris."
         else:
             tools = [interactions.GoogleMaps()]
