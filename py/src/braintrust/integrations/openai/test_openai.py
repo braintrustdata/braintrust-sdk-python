@@ -1043,7 +1043,10 @@ def test_openai_chat_streaming_sync_preserves_audio_attachment(memory_logger, mo
 
     transcript = ""
     saw_audio_data = False
+    usage = None
     for chunk in stream:
+        if chunk.usage is not None:
+            usage = chunk.usage
         chunk_dict = chunk.model_dump()
         choices = chunk_dict.get("choices") or []
         if not choices:
@@ -1063,6 +1066,12 @@ def test_openai_chat_streaming_sync_preserves_audio_attachment(memory_logger, mo
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
+    assert usage is not None
+    assert usage.completion_tokens_details is not None
+    audio_tokens = usage.completion_tokens_details.audio_tokens
+    assert audio_tokens is not None and 0 < audio_tokens <= usage.completion_tokens
+    assert span["metrics"]["completion_audio_tokens"] == audio_tokens
+    assert span["metrics"]["completion_tokens"] == usage.completion_tokens
     output_choice = span["output"][0]
     message = output_choice["message"]
     assert message["role"] == "assistant"
