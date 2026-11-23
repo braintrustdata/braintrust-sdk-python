@@ -2,7 +2,8 @@ interactions:
 - request:
     body: '{"model":"gpt-6-luna","service_tier":"auto","messages":[{"content":"You
       are a helpful assistant. Be very concise.","role":"system"},{"role":"user","content":"What
-      is 2+2? Just the number."}],"prompt_cache_key":"agents-sdk:run:e8d23bbe41b44fed8aa9106e41597b12","reasoning_effort":"none","store":true}'
+      is 2+2? Just the number."}],"prompt_cache_key":"agents-sdk:run:7777b713e76b426aba2cc73ed768b602","reasoning_effort":"none","store":true,"tool_choice":"none","tools":[{"type":"function","function":{"name":"double","description":"Double
+      an integer.","parameters":{"properties":{"value":{"title":"Value","type":"integer"}},"required":["value"],"title":"double_args","type":"object","additionalProperties":false},"strict":true}}]}'
     headers:
       accept:
       - application/json
@@ -11,7 +12,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '299'
+      - '589'
       content-type:
       - application/json
       host:
@@ -40,13 +41,13 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EnPqmPiFHCylxiFimVizeJ4rJ8vAi\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1795446148,\n  \"model\": \"gpt-6-luna\",\n
+      string: "{\n  \"id\": \"chatcmpl-EnWxaCigo922TOoPcOmGKeYtAzYk7\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1795473478,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"4\",\n        \"refusal\": null,\n
         \       \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
-        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 31,\n    \"completion_tokens\":
-        4,\n    \"total_tokens\": 35,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 152,\n    \"completion_tokens\":
+        4,\n    \"total_tokens\": 156,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
         0,\n      \"cache_write_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n
         \   \"completion_tokens_details\": {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\":
         0,\n      \"accepted_prediction_tokens\": 0,\n      \"rejected_prediction_tokens\":
@@ -62,17 +63,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5f10e1adc9dac58-YYZ
+      - a5f3a95189ca880c-YYZ
       connection:
       - keep-alive
       content-length:
-      - '791'
+      - '793'
       content-type:
       - application/json
       date:
-      - Mon, 23 Nov 2026 15:02:29 GMT
+      - Mon, 23 Nov 2026 22:37:58 GMT
       openai-processing-ms:
-      - '759'
+      - '463'
       openai-version:
       - '2020-10-01'
       server:
@@ -94,13 +95,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '179999976'
+      - '179999979'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_648b3878128a41c5b7e0d4b1274e48fb
+      - req_8ca74ba6c5e040bc87b1fe663f3fa7f9
     status:
       code: 200
       message: OK
