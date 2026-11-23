@@ -944,6 +944,143 @@ async def test_tracing_failures_never_break_the_pipeline_or_session(memory_logge
     assert root["metadata"]["contrib.pipecat.terminal_frame"] == "EndFrame"
 
 
+LIVE_MODEL = "gpt-live-1"
+LIVE_BACKEND_MODEL = "gpt-5.4-mini"
+LIVE_INSTRUCTIONS = (
+    "Speak English. When the caller asks about an order, use lookup_order. "
+    "If it is unavailable, briefly say you cannot look it up right now."
+)
+LIVE_CALLER_PROMPT = "Hi, can you check the status of order demo 1042 for me?"
+LIVE_TOOL = {
+    "name": "lookup_order",
+    "description": "Look up a demo order.",
+    "parameters": {"type": "object", "properties": {"order_id": {"type": "string"}}, "required": ["order_id"]},
+}
+
+
+async def _record_live_capture(path):
+    """Capture a real GPT-Live session for ``test_live_observations``.
+
+    A local proxy forwards Pipecat's real ``OpenAILiveLLMService`` to the Live
+    API and logs every JSON event in order, dropping audio payloads. The caller
+    speaks a TTS-synthesized order question; Pipecat's real missing-tool handler
+    answers ``lookup_order``. Like VCR's ``once`` mode, this runs only when the
+    capture is missing, and never in CI.
+    """
+    from openai import AsyncOpenAI
+    from websockets.asyncio.client import connect
+    from websockets.asyncio.server import serve
+    from websockets.exceptions import ConnectionClosed
+
+    live = _import("pipecat.services.openai.live.llm")
+    FunctionSchema = _import("pipecat.adapters.llm.schemas.function_schema.FunctionSchema")
+    ToolsSchema = _import("pipecat.adapters.llm.schemas.tools_schema.ToolsSchema")
+    Pipeline = _import("pipecat.pipeline.pipeline.Pipeline")
+    LLMContext = _import("pipecat.processors.aggregators.llm_context.LLMContext")
+    LLMContextAggregatorPair = _import(
+        "pipecat.processors.aggregators.llm_response_universal.LLMContextAggregatorPair"
+    )
+    OpenAIResponsesLLMService = _import("pipecat.services.openai.responses.llm.OpenAIResponsesLLMService")
+    WorkerRunner = _import("pipecat.workers.runner.WorkerRunner")
+    frames = _frames()
+
+    api_key = os.environ["OPENAI_API_KEY"]
+    sample_rate = 24000
+    speech = await AsyncOpenAI(api_key=api_key).audio.speech.create(
+        model="tts-1", voice="alloy", input=LIVE_CALLER_PROMPT, response_format="pcm"
+    )
+    pcm = speech.content + b"\x00" * (sample_rate * 2 * 2)  # 2s of trailing silence ends the turn.
+
+    records = []
+    started, replied = asyncio.Event(), asyncio.Event()
+    last_output = [0.0]
+
+    def log(direction, raw):
+        event = json.loads(raw)
+        kind = event.get("type", "")
+        if kind == "session.started":
+            started.set()
+        if kind == "session.output_transcript.delta":
+            last_output[0] = time.monotonic()
+        if (
+            kind == "response.event"
+            and event["event"]["type"] == "response.completed"
+            and any(r["event"]["type"] == "response.create" for r in records)
+        ):
+            replied.set()
+        if "audio" not in kind:
+            records.append({"direction": direction, "event": event})
+
+    async def proxy(client):
+        upstream_url = "wss://api.openai.com/v1/live/sessions"
+        async with connect(upstream_url, additional_headers={"Authorization": f"Bearer {api_key}"}) as upstream:
+
+            async def pump(source, sink, direction):
+                try:
+                    async for raw in source:
+                        log(direction, raw)
+                        await sink.send(raw)
+                except ConnectionClosed:
+                    pass
+                finally:
+                    await sink.close()
+
+            await asyncio.gather(pump(client, upstream, "client"), pump(upstream, client, "server"))
+
+    async with serve(proxy, "127.0.0.1", 0) as server:
+        port = server.sockets[0].getsockname()[1]
+        service = live.OpenAILiveLLMService(
+            api_key="sent-by-the-proxy",
+            base_url=f"ws://127.0.0.1:{port}",
+            settings=live.OpenAILiveLLMService.Settings(model=LIVE_MODEL, system_instruction=LIVE_INSTRUCTIONS),
+            delegation=live.ResponsesDelegation(
+                settings=OpenAIResponsesLLMService.Settings(
+                    model=LIVE_BACKEND_MODEL, system_instruction=LIVE_INSTRUCTIONS
+                )
+            ),
+        )
+        context = LLMContext(
+            messages=[],
+            tools=ToolsSchema(
+                standard_tools=[
+                    FunctionSchema(
+                        name=LIVE_TOOL["name"],
+                        description=LIVE_TOOL["description"],
+                        properties=LIVE_TOOL["parameters"]["properties"],
+                        required=LIVE_TOOL["parameters"]["required"],
+                    )
+                ]
+            ),
+        )
+        aggregators = LLMContextAggregatorPair(context)
+        worker = _make_worker(Pipeline([aggregators.user(), service, aggregators.assistant()]))
+        runner = WorkerRunner(handle_sigint=False)
+        await runner.add_workers(worker)
+        running = asyncio.create_task(runner.run())
+        try:
+            await worker.queue_frame(frames.LLMContextFrame(context))
+            await asyncio.wait_for(started.wait(), 30)
+            chunk = int(sample_rate * CHUNK_SECONDS) * 2
+            for offset in range(0, len(pcm), chunk):
+                await worker.queue_frame(frames.InputAudioRawFrame(pcm[offset : offset + chunk], sample_rate, 1))
+                await asyncio.sleep(CHUNK_SECONDS)
+            await asyncio.wait_for(replied.wait(), 60)
+            # Let the spoken reply's transcript finish before closing.
+            while time.monotonic() - last_output[0] < 3:
+                await asyncio.sleep(0.25)
+            await worker.queue_frame(frames.EndFrame())
+            await asyncio.wait_for(running, 30)
+        finally:
+            if not running.done():
+                await worker.cancel()
+                await asyncio.wait_for(running, 10)
+
+    kinds = [r["event"]["type"] for r in records]
+    for required in ("session.start", "response.item.create", "response.create", "session.close", "session.closed"):
+        assert required in kinds, (required, kinds)
+    path.write_text("".join(json.dumps(r) + "\n" for r in records))
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("boundary", ["late_transcript", "cancel", "cancel_callback"])
 async def test_live_observations(memory_logger, vcr_cassette_dir, boundary):
@@ -962,10 +1099,13 @@ async def test_live_observations(memory_logger, vcr_cassette_dir, boundary):
     WorkerRunner = _import("pipecat.workers.runner.WorkerRunner")
 
     # Native WebSocket capture, including the real built-in missing-tool result.
-    # Audio payloads are omitted; shared recorder coverage lives in voice tests.
-    recording = [
-        json.loads(line) for line in (Path(vcr_cassette_dir) / "test_live_observations.jsonl").read_text().splitlines()
-    ]
+    # Audio payloads are omitted. A missing capture is recorded live, like VCR's
+    # default "once" mode; CI only replays.
+    capture = Path(vcr_cassette_dir) / "test_live_observations.jsonl"
+    if not capture.exists() and not os.environ.get("CI") and not os.environ.get("GITHUB_ACTIONS"):
+        capture.parent.mkdir(parents=True, exist_ok=True)
+        await _record_live_capture(capture)
+    recording = [json.loads(line) for line in capture.read_text().splitlines()]
     config = recording[0]["event"]["session"]
     backend = config["delegation"]["responses"]
     server_events = [r["event"] for r in recording if r["direction"] == "server"]
@@ -979,6 +1119,7 @@ async def test_live_observations(memory_logger, vcr_cassette_dir, boundary):
 
     async def replay(websocket):
         delayed_transcripts = []
+        tool_arguments_started = False
         try:
             for record in recording:
                 event = record["event"]
@@ -999,6 +1140,16 @@ async def test_live_observations(memory_logger, vcr_cassette_dir, boundary):
                     if event == late:
                         ready.set()
                         continue
+                    if (
+                        boundary == "cancel"
+                        and event["type"] == "session.output_transcript.delta"
+                        and not tool_arguments_started
+                    ):
+                        # Live speech is independent of the backend; captures
+                        # can interleave it before the tool call starts. Hold it
+                        # so cancellation always lands mid-function-call.
+                        delayed_transcripts.append(event)
+                        continue
                     if boundary == "cancel_callback" and event["type"] == "session.output_transcript.delta":
                         # Delay the independent speech stream until backend
                         # text has arrived, then cancel inside its public callback.
@@ -1015,6 +1166,15 @@ async def test_live_observations(memory_logger, vcr_cassette_dir, boundary):
                         return
                     await websocket.send(json.dumps(event))
                     sent.append(event)
+                    if event["type"] == "response.event" and event["event"]["type"] == (
+                        "response.function_call_arguments.delta"
+                    ):
+                        tool_arguments_started = True
+                        if boundary == "cancel" and delayed_transcripts:
+                            await websocket.send(json.dumps(delayed_transcripts[0]))
+                            sent.append(delayed_transcripts[0])
+                            await websocket.wait_closed()
+                            return
                     if boundary != "late_transcript" and event["type"] == "session.output_transcript.delta":
                         await websocket.wait_closed()
                         return

@@ -2,12 +2,12 @@ interactions:
 - request:
     body: '{"model":"gpt-6-luna","service_tier":"auto","messages":[{"content":"You
       are a helpful assistant. Be very concise.","role":"system"},{"role":"user","content":"What
-      is 2+2? Just the number."}],"prompt_cache_key":"agents-sdk:run:33061d20492e436c9e33933261051b52","reasoning_effort":"none","store":true}'
+      is 2+2? Just the number."}],"prompt_cache_key":"agents-sdk:run:e8d23bbe41b44fed8aa9106e41597b12","reasoning_effort":"none","store":true}'
     headers:
       accept:
       - application/json
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
@@ -17,7 +17,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - Agents/Python 0.24.0
+      - Agents/Python 0.25.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -27,7 +27,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.46.0
+      - 3.57.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -35,13 +35,13 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.13.16
+      - 3.14.7
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EijCBJi2BZiu81SduncpfQLX8IWDb\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1794328871,\n  \"model\": \"gpt-6-luna\",\n
+      string: "{\n  \"id\": \"chatcmpl-EnPqmPiFHCylxiFimVizeJ4rJ8vAi\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1795446148,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"4\",\n        \"refusal\": null,\n
         \       \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
@@ -62,7 +62,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a58680d2ce9ac8b1-YYZ
+      - a5f10e1adc9dac58-YYZ
       connection:
       - keep-alive
       content-length:
@@ -70,9 +70,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 16:41:12 GMT
+      - Mon, 23 Nov 2026 15:02:29 GMT
       openai-processing-ms:
-      - '1459'
+      - '759'
       openai-version:
       - '2020-10-01'
       server:
@@ -81,6 +81,8 @@ interactions:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
       - chunked
+      vary:
+      - Origin
       x-content-type-options:
       - nosniff
       x-openai-proxy-wasm:
@@ -92,13 +94,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '179999979'
+      - '179999976'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_6eded223f698421588b0442a42f1d43c
+      - req_648b3878128a41c5b7e0d4b1274e48fb
     status:
       code: 200
       message: OK

@@ -16,26 +16,26 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/3.7.0
+      - mistral-client-python/3.8.0
     method: POST
     uri: https://api.mistral.ai/v1/fim/completions#stream
   response:
     body:
-      string: 'data: {"id":"9848b42c3feb4a20b02a5ecd1732dff9","object":"chat.completion.chunk","created":1793627409,"model":"codestral-latest","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
+      string: 'data: {"id":"ce7663bd796a4918b0b7ae030a1c2096","object":"chat.completion.chunk","created":1795445955,"model":"codestral-latest","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
 
 
-        data: {"id":"9848b42c3feb4a20b02a5ecd1732dff9","object":"chat.completion.chunk","created":1793627409,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"a"},"finish_reason":null}],"p":"abcdefghijklmno"}
+        data: {"id":"ce7663bd796a4918b0b7ae030a1c2096","object":"chat.completion.chunk","created":1795445955,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"a"},"finish_reason":null}],"p":"abcdefghijklmnopqrstuvwxyz012345678"}
 
 
-        data: {"id":"9848b42c3feb4a20b02a5ecd1732dff9","object":"chat.completion.chunk","created":1793627409,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"
-        *"},"finish_reason":null}],"p":"abcdefghijklmnopq"}
+        data: {"id":"ce7663bd796a4918b0b7ae030a1c2096","object":"chat.completion.chunk","created":1795445955,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"
+        *"},"finish_reason":null}],"p":"abc"}
 
 
-        data: {"id":"9848b42c3feb4a20b02a5ecd1732dff9","object":"chat.completion.chunk","created":1793627409,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"
-        b"},"finish_reason":null}],"p":"abcdefghijklmnopqrstuvw"}
+        data: {"id":"ce7663bd796a4918b0b7ae030a1c2096","object":"chat.completion.chunk","created":1795445955,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"
+        b"},"finish_reason":null}],"p":"abcdefghijklmnopqrstuvwxyz01234"}
 
 
-        data: {"id":"9848b42c3feb4a20b02a5ecd1732dff9","object":"chat.completion.chunk","created":1793627409,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":""},"finish_reason":"stop"}],"usage":{"prompt_tokens":24,"total_tokens":28,"completion_tokens":4,"prompt_tokens_details":{"cached_tokens":0},"completion_tokens_details":{"reasoning_tokens":0},"service_tier":"standard"},"p":"abcdefghijklm"}
+        data: {"id":"ce7663bd796a4918b0b7ae030a1c2096","object":"chat.completion.chunk","created":1795445955,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":""},"finish_reason":"stop"}],"usage":{"prompt_tokens":24,"total_tokens":28,"completion_tokens":4,"prompt_tokens_details":{"cached_tokens":0},"completion_tokens_details":{"reasoning_tokens":0},"service_tier":"standard"},"p":"abcdefghijk"}
 
 
         data: [DONE]
@@ -50,15 +50,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5439b4e087eac63-YYZ
+      - a5f109652f861a24-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 02 Nov 2026 13:50:09 GMT
+      - Mon, 23 Nov 2026 14:59:15 GMT
       mistral-correlation-id:
-      - 01a19c86-4d01-7837-ae8d-82acc028af1e
+      - 01a208eb-1b78-72d2-9937-6aacc44b9153
       server:
       - cloudflare
       strict-transport-security:
@@ -68,13 +68,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '225'
+      - '150'
       x-kong-proxy-latency:
-      - '13'
+      - '12'
       x-kong-request-id:
-      - 01a19c86-4d01-7837-ae8d-82acc028af1e
+      - 01a208eb-1b78-72d2-9937-6aacc44b9153
       x-kong-upstream-latency:
-      - '227'
+      - '152'
       x-max-retry-attempts-reached:
       - 'false'
       x-ratelimit-limit-req-minute:

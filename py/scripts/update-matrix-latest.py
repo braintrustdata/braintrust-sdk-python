@@ -8,6 +8,10 @@ matching matrix sections.
 Usage:
     python scripts/update-matrix-latest.py          # apply updates in place
     python scripts/update-matrix-latest.py --dry-run
+
+A ``latest`` line whose trailing comment contains ``no-auto-update`` is left
+alone. Use it for pins that must stay compatible with another package, such as
+the botocore version that aiobotocore allows.
 """
 
 import argparse
@@ -26,6 +30,7 @@ _PYPROJECT = _PROJECT_DIR / "pyproject.toml"
 _MATRIX_SECTION_PREFIX = "[tool.braintrust.matrix."
 _LATEST_LINE_RE = re.compile(r'^(?P<indent>\s*)latest\s*=\s*"(?P<req>[^"]+)"(?P<suffix>\s*(?:#.*)?)$')
 _EXACT_REQ_RE = re.compile(r"^(?P<name>[A-Za-z0-9_.-]+)(?P<extras>\[[A-Za-z0-9_,.-]+\])?==(?P<version>[^\s]+)$")
+_NO_AUTO_UPDATE_MARKER = "no-auto-update"
 _USER_AGENT = "braintrust-sdk-python dependency updater"
 _TIMEOUT_SECS = 30
 
@@ -34,14 +39,33 @@ class UpdateError(RuntimeError):
     """Raised when the matrix latest pins cannot be updated safely."""
 
 
+def _no_auto_update_keys(text: str) -> set[str]:
+    """Return matrix keys whose ``latest`` line is marked ``no-auto-update``."""
+    keys: set[str] = set()
+    current_matrix_key: str | None = None
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("[") and stripped.endswith("]"):
+            current_matrix_key = None
+            if stripped.startswith(_MATRIX_SECTION_PREFIX):
+                current_matrix_key = stripped[len(_MATRIX_SECTION_PREFIX) : -1]
+            continue
+        match = _LATEST_LINE_RE.fullmatch(line)
+        if current_matrix_key and match and _NO_AUTO_UPDATE_MARKER in match.group("suffix"):
+            keys.add(current_matrix_key)
+    return keys
+
+
 def _load_matrix() -> dict[str, str]:
-    pyproject = tomllib.loads(_PYPROJECT.read_text())
+    text = _PYPROJECT.read_text()
+    pyproject = tomllib.loads(text)
+    skipped = _no_auto_update_keys(text)
     matrix = pyproject.get("tool", {}).get("braintrust", {}).get("matrix", {})
 
     latest_reqs: dict[str, str] = {}
     for key, versions in matrix.items():
         latest_req = versions.get("latest")
-        if latest_req:
+        if latest_req and key not in skipped:
             latest_reqs[key] = latest_req
     return latest_reqs
 

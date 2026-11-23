@@ -1,21 +1,21 @@
 interactions:
 - request:
-    body: '{"model":"gpt-6-luna","messages":[{"role":"user","content":"Say hello."}],"max_completion_tokens":1000,"temperature":0.5,"reasoning_effort":"none"}'
+    body: '{"model":"gpt-6-luna","messages":[{"role":"user","content":"Say hello."}],"temperature":0.5,"n":1,"reasoning_effort":"none"}'
     headers:
       accept:
       - application/json
       accept-encoding:
-      - gzip, deflate, zstd
+      - gzip, deflate
       connection:
       - keep-alive
       content-length:
-      - '147'
+      - '124'
       content-type:
       - application/json
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 3.51.0
+      - DSPy/3.5.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +25,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.51.0
+      - 3.57.0
       x-stainless-raw-response:
       - 'true'
       x-stainless-read-timeout:
@@ -40,8 +40,8 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EkuzXIoXjrU1tksa7qaqanOn4XoTG\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1794850871,\n  \"model\": \"gpt-6-luna\",\n
+      string: "{\n  \"id\": \"chatcmpl-EnQq0Kic7zI2DRUMlzWanzpVJNzfV\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1795449944,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"Hello!\",\n        \"refusal\": null,\n
         \       \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
@@ -62,7 +62,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5b848fa7e57ab03-YYZ
+      - a5f16ac3c94a1341-YYZ
       connection:
       - keep-alive
       content-length:
@@ -70,9 +70,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 16 Nov 2026 17:41:12 GMT
+      - Mon, 23 Nov 2026 16:05:44 GMT
       openai-processing-ms:
-      - '746'
+      - '927'
       openai-version:
       - '2020-10-01'
       server:
@@ -81,6 +81,8 @@ interactions:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
       - chunked
+      vary:
+      - Origin
       x-content-type-options:
       - nosniff
       x-openai-proxy-wasm:
@@ -98,7 +100,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_8f7d8428624e46a7bc4227c8f2997982
+      - req_c4648108efc94189be3280d323450b07
     status:
       code: 200
       message: OK

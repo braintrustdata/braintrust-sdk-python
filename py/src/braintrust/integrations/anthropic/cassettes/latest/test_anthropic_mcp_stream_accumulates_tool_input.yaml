@@ -24,7 +24,7 @@ interactions:
       host:
       - api.anthropic.com
       user-agent:
-      - Anthropic/Python 2.8.0
+      - Anthropic/Python 2.12.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -36,7 +36,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.8.0
+      - 2.12.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -53,931 +53,200 @@ interactions:
     uri: https://api.anthropic.com/v1/messages
   response:
     body:
-      string: 'event: message_start
-
-        data: {"type":"message_start","message":{"model":"claude-haiku-5-5","id":"msg_011Ch6rY7R7WpHD6MUrBjMbS","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":894,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":32,"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}           }
-
-
-        event: content_block_start
-
-        data: {"type":"content_block_start","index":0,"content_block":{"type":"mcp_tool_listing","mcp_server_name":"braintrust-test","tools":[{"name":"ask_wiki_question","description":"Ask
-        any question about a GitHub repository''s codebase and get an AI-powered answer\ngrounded
-        in its DeepWiki.","input_schema":{"type":"object","additionalProperties":false,"properties":{"repoName":{"anyOf":[{"type":"string"},{"items":{"type":"string"},"type":"array"}],"description":"GitHub
-        repository or list of repositories (max 10) in owner/repo format."},"question":{"description":"The
-        question to ask about the repository.","type":"string"}},"required":["repoName","question"]}},{"name":"read_wiki_contents","description":"View
-        documentation about a GitHub repository.","input_schema":{"type":"object","additionalProperties":false,"properties":{"repoName":{"description":"GitHub
-        repository in owner/repo format (e.g. \"facebook/react\").","type":"string"}},"required":["repoName"]}},{"name":"read_wiki_structure","description":"Get
-        a list of documentation topics for a GitHub repository.","input_schema":{"type":"object","additionalProperties":false,"properties":{"repoName":{"description":"GitHub
-        repository in owner/repo format (e.g. \"facebook/react\").","type":"string"}},"required":["repoName"]}}]}          }
-
-
-        event: content_block_stop
-
-        data: {"type":"content_block_stop","index":0              }
-
-
-        event: content_block_start
-
-        data: {"type":"content_block_start","index":1,"content_block":{"type":"mcp_tool_use","id":"mcptoolu_01JhXQ4o5SmxQF6FrvD7gRV2","name":"ask_wiki_question","input":{},"server_name":"braintrust-test"}
-        }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":""}     }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"{\"repoN"}   }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"ame\":
-        \""}  }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"braintr"}       }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"ustdata"}  }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"/braint"}     }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"rust-sd"}               }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"k-pytho"}        }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"n\""}    }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":",
-        \"ques"}   }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"tion\":
-        "}               }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"\"Give
-        a"}             }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"
-        detail"}              }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"ed
-        expl"}           }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"anation"}              }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"
-        of the"}         }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"
-        SDK''s "}      }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"primary"}    }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"
-        implem"}              }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"entatio"}
-        }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"n
-        langu"}   }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"age,
-        th"}  }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"e
-        packa"}       }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"ge
-        and "} }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"source
-        "}}
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"directo"}         }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"ry
-        wher"}    }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"e
-        it li"}  }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"ves,
-        an"}   }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"d
-        how a"} }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"
-        contri"}            }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"butor
-        w"}  }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"ould
-        ru"} }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"n
-        its f"}   }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"ocused
-        "}     }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"tests.
-        "}             }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"Include"}              }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"
-        enough"}         }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"
-        detail"}          }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"
-        to ful"}    }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"ly
-        answ"}            }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"er
-        each"}         }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"
-        part, "}              }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"and
-        the"} }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"n
-        brief"}     }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"ly
-        summ"}   }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"arize
-        t"}              }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"he
-        resu"}       }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"lt.\"}"}        }
-
-
-        event: content_block_stop
-
-        data: {"type":"content_block_stop","index":1      }
-
-
-        event: content_block_start
-
-        data: {"type":"content_block_start","index":2,"content_block":{"type":"mcp_tool_result","tool_use_id":"mcptoolu_01JhXQ4o5SmxQF6FrvD7gRV2","is_error":false,"content":[{"type":"text","text":"The
-        SDK discussed here is the Python SDK: its distribution package is named `braintrust`,
-        and its implementation lives under `py/src/braintrust`. You can run only the
-        core tests with `make test-core` from `py`, or target a specific integration
-        or test with the `nox` commands described below. \n\n## Language and package\n\n`py/setup.py`
-        identifies the project as the `braintrust` SDK and declares Python 3 as its
-        language, with Python 3.10 or later required. Setuptools maps packages from
-        the `src` directory, so the package source is in `py/src/braintrust` (for
-        example, `framework.py` imports other Python modules in that package). \n\n##
-        Running focused tests\n\nFrom the `py` directory, `make test-core` runs the
-        `test_core` Nox session; that session installs test dependencies and runs
-        core tests, excluding wrapper, contrib, and devserver directories. \n\nFor
-        a specific integration, list sessions with `nox -l`, then run the relevant
-        session, such as `nox -s \"test_openai(latest)\"`. To focus further on one
-        pytest test, pass `-k`, for example: `nox -s \"test_openai(latest)\" -- -k
-        \"test_chat_metrics\"`. \n\n## Summary\n\nThe SDK is implemented in Python,
-        distributed as `braintrust`, and sourced from `py/src/braintrust`; use `make
-        test-core` for focused core coverage, or a targeted Nox session with `-k`
-        for a specific integration test. \n\n## Notes\n\n`make test` runs all Nox
-        sessions, while `make test-core` is the narrower core-test target. \n\nWiki
-        pages you might want to explore:\n- [Development Guide (braintrustdata/braintrust-sdk-python)](/wiki/braintrustdata/braintrust-sdk-python#9)\n\nView
-        this search on DeepWiki: https://deepwiki.com/search/60c5c5e1-4e3d-416c-9e7b-a1692a2d66ab\n"}]}   }
-
-
-        event: content_block_stop
-
-        data: {"type":"content_block_stop","index":2  }
-
-
-        event: content_block_start
-
-        data: {"type":"content_block_start","index":3,"content_block":{"type":"thinking","thinking":"","signature":""}}
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":3,"delta":{"type":"thinking_delta","thinking":""}        }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":3,"delta":{"type":"signature_delta","signature":"CAQS7AYKEAgTGAI4AUIIdGhpbmtpbmcSDAVDwFa96L6XEzyr8BoMx+RVT+7b041SrR+aIjA3tEAC333u48o7/MxaFOuAoZSA7+c4GKSv/FObZUlITkBEGa2x2vH+L1O7KK3AQtQqiQYYKkpitJZShYCqBeATpzPTT3nbDs9Kjn6uLKljmEx5PUdLPDVXSndyTMSolgiWmr4WtMZd+cdYlUDaK/U0/cG8Z2wIEwKT1jqL9Ul3Xek2EJo+tjuImQ8Jgb02YLQeGFmX+wB3DtzdhFAYrxDaYuQ8c0RpWuU7qoTSKYcUHX6YXXlNK4c28PILd6jJbg8nInW1OYCdx4PmPvvwWG6+WmC1H7Oll1HUmluZ8eKX3ZqtPPIsTZY4fPtfCdOR/d+dM790bFxfeCAotFaHykfp2QJqFaXMpSllGM4KC2Pz6tT269PuPNwWK43+h+AfxiG6pXyV1cUzHSJXgoAVDt80PO0Qms98Qe6zNKSa+vuK6THMTFreFt16d4tW3OHmkrGrR8aOV2so4MApK43gHJUsLFSevGWP7WHFBtVpFsfHVfPfrGtXQ6E0Ob99BnNjsRRQBzLDtNe0EZz/iIiT/nwJxqscK2x8mN75eDXafFN5uRmDggAU0fbyLjpSalIoeDyHRTkF4CnzzBDCAIiVjqFQhtB+TleQzh0j4QW5rUs6LGnA519eQZev82yLYknJbVNiRfJAvfe/5gZ8x3uIxjTJDRnt2kmiu4c2ECpmMvKB1OoI7yrXRh8dlL+5TDNZb0sfGkxz9oFeOHeIxZdO6oeXIeCq4u+8N1F0+JC18U2l7F8u1X/Hc+rvXx+rY6K5dRS1HpC6mRmdHqp6cs3RNzesM+jNNry74ai3JkriJfcKYyfa1TmqI65K+Lcwo9faJ0WjFi3DKU9TEkv13AWw/l6AuDHmGqaEGGYhXmPmyGcJz/KRZqknY8A4kAhwFSBO1paX3tSllu7PWNW8WhTJF3/qHaFt5DNzbvtYHYRrl/KXeo10233TmcVKpm2/viMK/+lyhSR6YLjbEcgNgW7RDnt5Y799Rw6Cpp7IOmJKa9cTz31AguW+uMUnW3Cg83pi3cypFapeFQitM1dphTlIcijjn3qY1EaNknsIYVtDJS367iw31O+8mFgmXy6azVscIdP4SQlVRj2PW/0Gic8YAQ=="}         }
-
-
-        event: content_block_stop
-
-        data: {"type":"content_block_stop","index":3            }
-
-
-        event: content_block_start
-
-        data: {"type":"content_block_start","index":4,"content_block":{"type":"text","text":""}        }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"The"}            }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        w"}          }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"iki
-        answer says"}         }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        the Python SDK is impl"}     }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"emented
-        in Python, distribut"}   }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"ed
-        as `braintrust`"}   }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":",
-        and its source lives under `"}         }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"py/src/braintrust"}             }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"`.
-        A"}   }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        contributor can run focused core"}  }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        tests with"}           }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        `make test-core` from `"}            }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"py`"}
-        }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":",
-        or"}}
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        run a specific integration with"}           }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        a"}            }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        targeted Nox session."}          }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"\n\n**Language
-        and package**"}   }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"\n-
-        `py/setup.py"}    }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"`
-        identifies the project as the"}               }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        `braintrust` SD"}    }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"K,"}  }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        declares"}              }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        Python 3 as the"}   }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        language, and requires Python "}              }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"3.10
-        or later."}       }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"\n-
-        Setuptools maps"}}
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        packages from the"}   }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        `src` directory, so the"}               }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        package source is"}    }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        at"}            }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        `py/src/braintr"}         }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"ust`.
-        For"}   }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        example, `framework.py`"}         }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        imports other modules in that package"} }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":".\n\n**Running
-        focused t"}  }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"ests**\n-
-        From the `py"}   }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"`
-        directory, `make test-"}              }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"core`
-        runs the `test_"}     }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"core`
-        Nox session. That"}       }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        session installs test dependencies"}            }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        and runs the"}             }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        core tests, excluding the"}           }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        wrapper, contrib"}       }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":",
-        and devserver directories."} }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"\n-
-        To target"}    }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        an"}            }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        integration, run `nox -"}     }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"l`
-        to list sessions,"}     }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        then run one"}               }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        such"}    }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        as `nox -s \"test"}    }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"_openai(latest)\""}   }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"`.\n-
-        To narrow"}               }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        further"}               }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        to one p"}      }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"ytest
-        test, pass `-"}      }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"k`
-        after `"}              }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"--`,
-        for"}       }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        example:"}     }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        `nox -s \"test_"}   }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"openai(latest)\"
-        -"}      }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"-
-        -k \"test_chat"}         }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"_metrics\"`."}}
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"\n-
-        `make test` runs all"}            }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        Nox sessions."}     }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        `"}             }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"make
-        test-core` is the nar"}           }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"rower
-        target.\n\n**Summ"}          }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"ary:"}
-        }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"**
-        The S"}     }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"DK
-        is Python, distribut"}   }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"ed
-        as `braintrust`"}      }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":",
-        and"}     }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        sourced from `py/src"}       }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"/braintrust`."}             }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        Use `make test-core` for"}    }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        core coverage, or a targ"}           }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"eted
-        Nox session with `"}   }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"-k`
-        for a specific integ"}     }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"ration
-        test.\n\nThe answer com"}              }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"es
-        from DeepWiki"}}
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"''s"}             }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        summ"}        }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"ary
-        of"}}
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        the repository, and I did"} }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"n''t
-        check"}       }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        the commands against"}}
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"
-        the rep"} }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"o
-        my"}  }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":4,"delta":{"type":"text_delta","text":"self."}       }
-
-
-        event: content_block_stop
-
-        data: {"type":"content_block_stop","index":4             }
-
-
-        event: message_delta
-
-        data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":2577,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":777,"output_tokens_details":{"thinking_tokens":84},"server_tool_use":{"web_search_requests":0,"web_fetch_requests":0}}           }
-
-
-        event: message_stop
-
-        data: {"type":"message_stop"        }
-
-
-        '
+      string: "event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"model\":\"claude-haiku-5-5\",\"id\":\"msg_011ChL9PEigMUwVzsrpiKkau\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[],\"container\":null,\"stop_reason\":null,\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":894,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"output_tokens\":32,\"service_tier\":\"standard\",\"inference_geo\":\"global\",\"speed\":\"standard\"},\"diagnostics\":null}
+        \    }\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"mcp_tool_listing\",\"mcp_server_name\":\"braintrust-test\",\"tools\":[{\"name\":\"ask_wiki_question\",\"description\":\"Ask
+        any question about a GitHub repository's codebase and get an AI-powered answer\\ngrounded
+        in its DeepWiki.\",\"input_schema\":{\"type\":\"object\",\"additionalProperties\":false,\"properties\":{\"repoName\":{\"anyOf\":[{\"type\":\"string\"},{\"items\":{\"type\":\"string\"},\"type\":\"array\"}],\"description\":\"GitHub
+        repository or list of repositories (max 10) in owner/repo format.\"},\"question\":{\"description\":\"The
+        question to ask about the repository.\",\"type\":\"string\"}},\"required\":[\"repoName\",\"question\"]}},{\"name\":\"read_wiki_contents\",\"description\":\"View
+        documentation about a GitHub repository.\",\"input_schema\":{\"type\":\"object\",\"additionalProperties\":false,\"properties\":{\"repoName\":{\"description\":\"GitHub
+        repository in owner/repo format (e.g. \\\"facebook/react\\\").\",\"type\":\"string\"}},\"required\":[\"repoName\"]}},{\"name\":\"read_wiki_structure\",\"description\":\"Get
+        a list of documentation topics for a GitHub repository.\",\"input_schema\":{\"type\":\"object\",\"additionalProperties\":false,\"properties\":{\"repoName\":{\"description\":\"GitHub
+        repository in owner/repo format (e.g. \\\"facebook/react\\\").\",\"type\":\"string\"}},\"required\":[\"repoName\"]}}]}
+        \     }\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":0
+        \ }\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":1,\"content_block\":{\"type\":\"mcp_tool_use\",\"id\":\"mcptoolu_01EuS4x4jACJF4MPzQwZuZdk\",\"name\":\"ask_wiki_question\",\"input\":{},\"server_name\":\"braintrust-test\"}
+        }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"\"}
+        }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"{\\\"repoN\"}
+        \   }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"ame\\\":
+        \\\"\"} }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"braintr\"}
+        \      }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"ustdata\"}
+        \       }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"/braint\"}
+        \   }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"rust-sd\"}
+        \       }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"k-pytho\"}
+        \           }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"n\\\"\"}
+        \           }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\",
+        \\\"ques\"}             }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"tion\\\":
+        \"}         }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"\\\"Give
+        a\"}          }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"
+        detail\"}    }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"ed
+        expl\"}    }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"anation\"}
+        }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"
+        of the\"}  }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"
+        SDK's \"}            }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"primary\"}
+        \              }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"
+        implem\"}              }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"entatio\"}
+        \ }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"n
+        langu\"}             }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"age,
+        th\"}      }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"e
+        packa\"}      }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"ge
+        and \"}              }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"source
+        \"}  }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"directo\"}
+        \       }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"ry
+        wher\"}               }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"e
+        it li\"}       }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"ves,
+        an\"}  }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"d
+        how a\"}             }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"
+        contri\"}             }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"butor
+        w\"}  }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"ould
+        ru\"}        }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"n
+        its f\"} }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"ocused
+        \"}           }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"tests.
+        \"} }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"Include\"}}\n\nevent:
+        content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"
+        enough\"}     }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"
+        detail\"}          }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"
+        to ful\"}         }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"ly
+        answ\"}               }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"er
+        each\"}     }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"
+        part, \"}  }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"and
+        the\"} }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"n
+        brief\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"ly
+        summ\"}              }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"arize
+        t\"}     }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"he
+        resu\"}              }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"lt.\\\"}\"}}\n\nevent:
+        content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":1  }\n\nevent:
+        content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":2,\"content_block\":{\"type\":\"mcp_tool_result\",\"tool_use_id\":\"mcptoolu_01EuS4x4jACJF4MPzQwZuZdk\",\"is_error\":false,\"content\":[{\"type\":\"text\",\"text\":\"##
+        Answer\\n\\nThe SDK\u2019s primary implementation language is Python: `py/setup.py`
+        classifies the package as Python and sets Python 3.10 or later as the minimum
+        supported version. \\n\\nThe installable package is named `braintrust`, with
+        its source under `py/src/braintrust`; `py/setup.py` maps packages from `src`
+        and discovers them there, while `py/noxfile.py` uses `braintrust` as its core
+        test directory. \\n\\nFor focused core tests, run `cd py && make test-core`
+        (or `nox -s test_core` from `py/`); `test_core` installs the test dependencies
+        and runs the core tests while excluding wrappers, contrib, and devserver directories.
+        \\n\\nTo target an integration instead, use its dedicated nox session\u2014for
+        example, `nox -s \\\"test_openai(latest)\\\"`; `nox -l` lists sessions, and
+        `-k` can narrow a session to a matching test, as in `nox -s \\\"test_openai(latest)\\\"
+        -- -k \\\"test_chat_metrics\\\"`. \\n\\nIn short: this is a Python SDK packaged
+        as `braintrust` from `py/src/braintrust`, and contributors can run the core
+        suite with `cd py && make test-core` or focus further with a specific nox
+        session and pytest selector. \\n\\n## Notes\\n\\n`make test` runs all configured
+        nox sessions, whereas `make test-core` is the focused core-only target. \\n\\nWiki
+        pages you might want to explore:\\n- [Development Guide (braintrustdata/braintrust-sdk-python)](/wiki/braintrustdata/braintrust-sdk-python#9)\\n\\nView
+        this search on DeepWiki: https://deepwiki.com/search/9a0c1859-a602-4fd8-949e-04517b7efdc1\\n\"}]}
+        \          }\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":2
+        \ }\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":3,\"content_block\":{\"type\":\"thinking\",\"thinking\":\"\",\"signature\":\"\"}
+        \   }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":3,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"\"}
+        \           }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":3,\"delta\":{\"type\":\"signature_delta\",\"signature\":\"CAQS+gYKEAgUGAI4AUIIdGhpbmtpbmcSDB1BDH0PnHGFaQxs9BoM8XtcLOC+w+R4y0B9IjAjl9QcQxzcyHgHzvxs1AvHTgirshGo0vVccuqjXFB0FFrjr1ot61qhr875/xltBbkqlwZ5UDZ9wQStdJZKbiPPC6j9f0dQl6+rEcw5FXFogbHS4Y2KWp9MvbgS2iYE7X+Zsy6ddaWor8j/w6T4+ixr5CZJ6IcklRr87Psa5xj5U69ty8Y4xZcxcaDPsPtaG6u+27xtDK1QHg9miEJ7MNbTRncii66Qk3k7nCP5f3Ezzhiy3qwHSlVX9U8J1ZMTGODCAm4rhJ/H5vZoeU5PNTlph1q+Lgzt+c0vAebwNh9MlmY8b8q0W5pKI69LyTrcn97Pjfea9pp97sQtEpxXPMXMmkflbwXsMd44MlFDXwrGkPKQGbiZu8FBE/dmivItD0mRR2hkcMxgmLlTOiii9fEMTQZp983/+W+8s5K3112lThtYqssWS/HahUvVjV5Rl6oRzC+sOsqVY389J5E2hFUH4F1PD4mHlJYFC/9hmgL9qUCurYk9lSxAMRRt7yrZKnDvQ4ETXSuclsN+PShUPCockcX9hY3dkJFqh9SF9QvgImYT5xf+pWrIxV9akx9BXjtQD5idRFhS4J+ihYD6iMTcXpFPBciU4R7jzSqD1/4gPsQUD1sEX2DNQ8PMuJvkJK/cZcXMIshJeVB1z0ujYgmYHgRvrfgh6pGtdD/upl+wex6u2ez/cFOJIjGrmsHwO2GgWj2DiGoPo3ohK5i11+7mCScXi0d82w9nSRcl44SFt/tvRoi4d8czqzYCRIL+uvhQU+HiBjhgurKV5kLqzTfs4UhE2uIzcepZspxWhHKQ/sXOTqIJCCw5G7r+UN8bNswZH/CzXm024jHLdCO4aXp4BZF6/zk5sW0s5hp5FDdChs2/XttBAQpIQDyLAKB4h3JQpx9SXumaFfzk0FAMUm/GMRacjTKSSgBvdK9y9wIcX4W3G5AXqtFjvhfCQuV4xoUBRyo3sKv5N7+tcL3kuNFVL+xTo2VB/IxLDfgWIrxbOAx+2f1BCBzABTsZKhilvgsMY4Ab0vHyOYm2HCFppzPSZvk3r+chFzP2Hmd1UFIMNJPO/1B1l6vDHRwT91qA9xH1r7dAtU3j2nqq6FWCj2AFg4M18oRTUJMZVBgB\"}
+        \            }\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":3
+        }\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":4,\"content_block\":{\"type\":\"text\",\"text\":\"\"}
+        \            }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"I
+        as\"}     }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"ked
+        DeepWiki your\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        ex\"}          }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"act
+        question. Here is\"}             }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        its\"}  }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        answer,\"}     }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        l\"}       }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"ightly
+        reform\"} }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"atted.\\n\\n**Primary\"}
+        \  }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        implementation language:\"}   }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"**
+        Python. `py/set\"}             }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"up.py`
+        classifies the\"}             }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        package as Python and sets\"} }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        Python 3.10 or later\"}          }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        as the minimum supported version\"} }\n\nevent: content_block_delta\ndata:
+        {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\".\\n\\n**Package
+        and source direct\"}               }\n\nevent: content_block_delta\ndata:
+        {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"ory:**
+        The installable package is\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        named `braintrust`,\"}  }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        and its source lives under\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        `py/src/braintr\"}         }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"ust`.
+        `py/setup\"}   }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\".py`
+        maps packages from\"}      }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        `src` and discovers them\"}            }\n\nevent: content_block_delta\ndata:
+        {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        there. `py/noxf\"}        }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"ile.py`
+        uses `bra\"}             }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"intrust`
+        as its core test\"}            }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        directory.\\n\\n**Running\"}             }\n\nevent: content_block_delta\ndata:
+        {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        focused tests:**\"}               }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"\\n-
+        Core tests: run\"}             }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        `cd py && make test-\"}         }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"core`,
+        or `nox -\"}   }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"s
+        test_core` from `py\"} }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"/`.
+        This session installs the\"}               }\n\nevent: content_block_delta\ndata:
+        {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        test dependencies and runs\"}   }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        the core tests, excluding\"}      }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        the\"}           }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        wrappers, contrib\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\",
+        and devserver directories.\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"\\n-
+        A\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        spec\"}         }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"ific
+        integration: use its d\"}     }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"edicated
+        nox session,\"}  }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        for example `nox -s \\\"\"}            }\n\nevent: content_block_delta\ndata:
+        {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"test_openai(latest)\"}}\n\nevent:
+        content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"\\\"`.
+        `nox -l\"}  }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"`
+        lists all sessions.\"}    }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"\\n-
+        Narrowing further\"}   }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\":
+        p\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"ass
+        a\"}           }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        pytest selector through\"}             }\n\nevent: content_block_delta\ndata:
+        {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        n\"}   }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"ox,
+        for example `nox -\"}            }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"s
+        \\\"test_openai(lat\"}   }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"est)\\\"
+        -- -k \\\"\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"test_chat_metrics\"}
+        \            }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"\\\"`.\\n-
+        `\"}              }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"make
+        test` runs all\"}   }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        configured nox sessions.\"}           }\n\nevent: content_block_delta\ndata:
+        {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        `make test-core` is the\"}       }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        focused core-only target.\"}  }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"\\n\\n**Summary:**
+        This is\"}               }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        a Python SDK packa\"}       }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"ged
+        as `braintrust`\"}           }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        from `py/src/braint\"}             }\n\nevent: content_block_delta\ndata:
+        {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"rust`.
+        Contributors\"}            }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        can run the core suite with `\"}               }\n\nevent: content_block_delta\ndata:
+        {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"cd
+        py && make test-core\"}   }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"`,
+        then\"}       }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        narrow to\"}       }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        a specific integration session\"}    }\n\nevent: content_block_delta\ndata:
+        {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        and\"}              }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        pytest selector as needed\"}     }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\".\\n\\nThe
+        answer is A\"}           }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"I-generated
+        from the\"}      }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        repository's D\"}       }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"eepWiki,
+        so I\"}        }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        ha\"}  }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"ven't
+        checked these\"}    }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        commands against the repo\"}          }\n\nevent: content_block_delta\ndata:
+        {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        itself. The w\"}        }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"iki
+        also points\"}              }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        to a\"}        }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        Development Guide page (\"}              }\n\nevent: content_block_delta\ndata:
+        {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"`/\"}
+        \  }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"wiki/braintrust\"}
+        }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"data/braintrust-\"}
+        \     }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"sdk-python#9`\"}
+        \          }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\")
+        that may cover the test\"}       }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"ing
+        set\"}          }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"up
+        in more dep\"}       }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"th.\"}
+        \       }\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":4
+        \        }\n\nevent: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"stop_details\":null,\"container\":null},\"usage\":{\"input_tokens\":2511,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"output_tokens\":821,\"output_tokens_details\":{\"thinking_tokens\":88},\"server_tool_use\":{\"web_search_requests\":0,\"web_fetch_requests\":0}}
+        \ }\n\nevent: message_stop\ndata: {\"type\":\"message_stop\"             }\n\n"
     headers:
       anthropic-organization-id:
       - 27796668-7351-40ac-acc4-024aee8995a5
@@ -986,25 +255,25 @@ interactions:
       anthropic-ratelimit-input-tokens-remaining:
       - '10000000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-11-16T15:36:55Z'
+      - '2026-11-23T16:05:34Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-11-16T15:36:55Z'
+      - '2026-11-23T16:05:34Z'
       anthropic-ratelimit-requests-limit:
       - '45000'
       anthropic-ratelimit-requests-remaining:
       - '44999'
       anthropic-ratelimit-requests-reset:
-      - '2026-11-16T15:36:55Z'
+      - '2026-11-23T16:05:34Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
       - '12000000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-11-16T15:36:55Z'
+      - '2026-11-23T16:05:34Z'
       anthropic-workspace-id:
       - wrkspc_018bFG1FgNVWqx5pthtdGTzS
       cache-control:
@@ -1012,27 +281,27 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5b792f05f51a246-YYZ
+      - a5f16a887a94ab18-YYZ
       connection:
       - keep-alive
       content-length:
-      - '26173'
+      - '26070'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 16 Nov 2026 15:36:56 GMT
+      - Mon, 23 Nov 2026 16:05:35 GMT
       request-id:
-      - req_011Ch6rY7DCyznJnCAHyMN8C
+      - req_011ChL9PEbEokrQv78KL64L7
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=581
+      - x-originResponse;dur=637
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-2a20f976863685148dfd425f992e1fc2-adb47ddddc185d1b-01
+      - 00-a98c146bf265be1dda0487b28bad4645-cd1501169cd06ce9-01
       transfer-encoding:
       - chunked
       vary:

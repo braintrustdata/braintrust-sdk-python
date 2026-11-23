@@ -1,0 +1,109 @@
+interactions:
+- request:
+    body: '{"model":"gpt-6-luna","input":[{"role":"user","content":[{"type":"input_text","text":"Call
+      get_weather for Toronto."}]}],"instructions":"Be concise.","max_output_tokens":100,"reasoning":{"effort":"none"},"temperature":0.5,"tools":[{"type":"function","name":"get_weather","description":"Get
+      the weather for a city.","parameters":{"type":"object","properties":{"city":{"type":"string"}},"required":["city"]}}]}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '408'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - DSPy/3.5.0
+    method: POST
+    uri: https://api.openai.com/v1/responses
+  response:
+    body:
+      string: "{\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1795449959,\n  \"created_at\":
+        1795449958,\n  \"error\": null,\n  \"frequency_penalty\": 0.0,\n  \"id\":
+        \"resp_0dfe9585316ff503016b046466331887d2aae8c549478d9e7d\",\n  \"image\":
+        {\n    \"context_compression\": \"disabled\"\n  },\n  \"incomplete_details\":
+        null,\n  \"input_transformations\": [],\n  \"instructions\": \"Be concise.\",\n
+        \ \"max_output_tokens\": 100,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-6-luna\",\n
+        \ \"moderation\": null,\n  \"object\": \"response\",\n  \"output\": [\n    {\n
+        \     \"arguments\": \"{\\\"city\\\":\\\"Toronto\\\"}\",\n      \"call_id\":
+        \"call_b128e1b0d2e54f3ea3886179c3a6ac23\",\n      \"id\": \"fc_0dfe9585316ff503016b0464672f1087d2877d6544b2c0748d\",\n
+        \     \"name\": \"get_weather\",\n      \"status\": \"completed\",\n      \"type\":
+        \"function_call\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\":
+        0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
+        \"24h\",\n  \"reasoning\": {\n    \"context\": \"all_turns\",\n    \"effort\":
+        \"none\",\n    \"mode\": \"standard\",\n    \"summary\": null\n  },\n  \"safety_identifier\":
+        null,\n  \"service_tier\": \"default\",\n  \"status\": \"completed\",\n  \"store\":
+        false,\n  \"temperature\": 0.5,\n  \"text\": {\n    \"format\": {\n      \"type\":
+        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
+        \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\":
+        0,\n      \"input_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
+        0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
+        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
+        0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
+        \ \"tools\": [\n    {\n      \"description\": \"Get the weather for a city.\",\n
+        \     \"name\": \"get_weather\",\n      \"output_schema\": null,\n      \"parameters\":
+        {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"city\":
+        {\n            \"type\": \"string\"\n          }\n        },\n        \"required\":
+        [\n          \"city\"\n        ],\n        \"type\": \"object\"\n      },\n
+        \     \"strict\": true,\n      \"type\": \"function\"\n    }\n  ],\n  \"top_logprobs\":
+        0,\n  \"top_p\": 0.98,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n
+        \   \"input_tokens\": 56,\n    \"input_tokens_details\": {\n      \"cache_write_tokens\":
+        0,\n      \"cache_write_tokens_details\": {\n        \"ttl_12h_tokens\": 0,\n
+        \       \"ttl_30m_tokens\": 0\n      },\n      \"cached_tokens\": 0\n    },\n
+        \   \"output_tokens\": 18,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        0\n    },\n    \"total_tokens\": 74\n  },\n  \"user\": null,\n  \"metadata\":
+        {}\n}"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID, Server-Timing-Total, X-OpenAI-Inference-Capacity-Reason
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a5f16b1e1aaff2bc-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '2579'
+      content-type:
+      - application/json
+      date:
+      - Mon, 23 Nov 2026 16:05:59 GMT
+      openai-processing-ms:
+      - '1176'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '180000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '180000000'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_5e24af5a57d24ded80d63119599d2df5
+    status:
+      code: 200
+      message: OK
+version: 1

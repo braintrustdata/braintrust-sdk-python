@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - AsyncOpenAI/Python 3.51.0
+      - AsyncOpenAI/Python 3.57.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.51.0
+      - 3.57.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,19 +39,19 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: 'data: {"id":"chatcmpl-EktL9AlGCiiQ2o5bvRML19NsS20cb","object":"chat.completion.chunk","created":1794844523,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{"role":"assistant","content":"","refusal":null},"finish_reason":null}],"usage":null,"obfuscation":""}
+      string: 'data: {"id":"chatcmpl-EnPnZZst4cbnP1xRrrlcfUhKhDkdA","object":"chat.completion.chunk","created":1795445949,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{"role":"assistant","content":"","refusal":null},"finish_reason":null}],"usage":null,"obfuscation":""}
 
 
-        data: {"id":"chatcmpl-EktL9AlGCiiQ2o5bvRML19NsS20cb","object":"chat.completion.chunk","created":1794844523,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":"Fine"},"finish_reason":null}],"usage":null,"obfuscation":"859FP5bHS17LOc"}
+        data: {"id":"chatcmpl-EnPnZZst4cbnP1xRrrlcfUhKhDkdA","object":"chat.completion.chunk","created":1795445949,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":"Fine"},"finish_reason":null}],"usage":null,"obfuscation":"vvORorVbNZknhC"}
 
 
-        data: {"id":"chatcmpl-EktL9AlGCiiQ2o5bvRML19NsS20cb","object":"chat.completion.chunk","created":1794844523,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":"."},"finish_reason":null}],"usage":null,"obfuscation":"x"}
+        data: {"id":"chatcmpl-EnPnZZst4cbnP1xRrrlcfUhKhDkdA","object":"chat.completion.chunk","created":1795445949,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":"."},"finish_reason":null}],"usage":null,"obfuscation":"x"}
 
 
-        data: {"id":"chatcmpl-EktL9AlGCiiQ2o5bvRML19NsS20cb","object":"chat.completion.chunk","created":1794844523,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":null,"obfuscation":"rrMicX67BTLq"}
+        data: {"id":"chatcmpl-EnPnZZst4cbnP1xRrrlcfUhKhDkdA","object":"chat.completion.chunk","created":1795445949,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":null,"obfuscation":"F976hlwvd4Sz"}
 
 
-        data: {"id":"chatcmpl-EktL9AlGCiiQ2o5bvRML19NsS20cb","object":"chat.completion.chunk","created":1794844523,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[],"usage":{"prompt_tokens":12,"completion_tokens":5,"total_tokens":17,"prompt_tokens_details":{"cached_tokens":0,"cache_write_tokens":0,"audio_tokens":0},"completion_tokens_details":{"reasoning_tokens":0,"audio_tokens":0,"accepted_prediction_tokens":0,"rejected_prediction_tokens":0}},"obfuscation":"IxxvpLBJayJ"}
+        data: {"id":"chatcmpl-EnPnZZst4cbnP1xRrrlcfUhKhDkdA","object":"chat.completion.chunk","created":1795445949,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[],"usage":{"prompt_tokens":12,"completion_tokens":5,"total_tokens":17,"prompt_tokens_details":{"cached_tokens":0,"cache_write_tokens":0,"audio_tokens":0},"completion_tokens_details":{"reasoning_tokens":0,"audio_tokens":0,"accepted_prediction_tokens":0,"rejected_prediction_tokens":0}},"obfuscation":"135xngHDisF"}
 
 
         data: [DONE]
@@ -68,15 +68,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5b7adff8ead964a-YYZ
+      - a5f109406e0aab1c-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 16 Nov 2026 15:55:24 GMT
+      - Mon, 23 Nov 2026 14:59:09 GMT
       openai-processing-ms:
-      - '461'
+      - '409'
       openai-version:
       - '2020-10-01'
       server:
@@ -85,6 +85,8 @@ interactions:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
       - chunked
+      vary:
+      - Origin
       x-content-type-options:
       - nosniff
       x-openai-proxy-wasm:
@@ -102,7 +104,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_3ef51f1e5b8c487497c7d40f3ac15f55
+      - req_61ddd7aa2ade415087d65384dd304082
     status:
       code: 200
       message: OK

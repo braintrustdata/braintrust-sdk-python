@@ -2,7 +2,7 @@ interactions:
 - request:
     body: '{"model":"gpt-6-luna","include":[],"input":[{"content":"What is 2+2? Just
       the number.","role":"user"}],"instructions":"You are a helpful assistant. Be
-      very concise.","prompt_cache_key":"agents-sdk:run:5c8c2a4b4ee24a498fde22ca93abd692","tools":[]}'
+      very concise.","prompt_cache_key":"agents-sdk:run:03b8e59bd5cf472a94b65c615006049d","text":{"verbosity":"low"},"tools":[]}'
     headers:
       accept:
       - application/json
@@ -11,13 +11,13 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '246'
+      - '273'
       content-type:
       - application/json
       host:
       - api.openai.com
       user-agent:
-      - Agents/Python 0.24.0
+      - Agents/Python 0.25.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -27,7 +27,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.46.0
+      - 3.57.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -40,40 +40,44 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_01abd468fa3cb10f016af33c6b885087d2b5310ee2045c0007\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1794325611,\n  \"status\":
-        \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794325612,\n  \"error\":
-        null,\n  \"frequency_penalty\": 0.0,\n  \"image\": {\n    \"context_compression\":
-        \"disabled\"\n  },\n  \"incomplete_details\": null,\n  \"instructions\": \"You
-        are a helpful assistant. Be very concise.\",\n  \"max_output_tokens\": null,\n
-        \ \"max_tool_calls\": null,\n  \"model\": \"gpt-6-luna\",\n  \"moderation\":
-        null,\n  \"output\": [\n    {\n      \"id\": \"msg_01abd468fa3cb10f016af33c6c4a1087d2aa08de2c8f26e4bd\",\n
-        \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
-        [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"4\"\n        }\n      ],\n
-        \     \"phase\": \"final_answer\",\n      \"role\": \"assistant\"\n    }\n
-        \ ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\":
-        null,\n  \"prompt_cache_key\": \"agents-sdk:run:5c8c2a4b4ee24a498fde22ca93abd692\",\n
-        \ \"prompt_cache_retention\": \"24h\",\n  \"reasoning\": {\n    \"context\":
-        \"all_turns\",\n    \"effort\": \"medium\",\n    \"mode\": \"standard\",\n
-        \   \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
-        \"default\",\n  \"store\": false,\n  \"temperature\": 1.0,\n  \"text\": {\n
-        \   \"format\": {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n
-        \ },\n  \"tool_choice\": \"auto\",\n  \"tool_usage\": {\n    \"image_gen\":
-        {\n      \"input_tokens\": 0,\n      \"input_tokens_details\": {\n        \"image_tokens\":
-        0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
-        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
-        0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
-        \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 0.98,\n  \"truncation\":
-        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 31,\n    \"input_tokens_details\":
-        {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 5,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 36\n  },\n  \"user\": null,\n  \"metadata\":
-        {}\n}"
+      string: "{\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1795446151,\n  \"created_at\":
+        1795446150,\n  \"error\": null,\n  \"frequency_penalty\": 0.0,\n  \"id\":
+        \"resp_0078367818fb2fbc016b045586c16487d2ba9805e9eefaf1f0\",\n  \"image\":
+        {\n    \"context_compression\": \"disabled\"\n  },\n  \"incomplete_details\":
+        null,\n  \"input_transformations\": [],\n  \"instructions\": \"You are a helpful
+        assistant. Be very concise.\",\n  \"max_output_tokens\": null,\n  \"max_tool_calls\":
+        null,\n  \"model\": \"gpt-6-luna\",\n  \"moderation\": null,\n  \"object\":
+        \"response\",\n  \"output\": [\n    {\n      \"content\": [],\n      \"encrypted_content\":
+        \"gAAAAABrBFWHFD1jZ7qTa2AwmP4EgOyd6FCUv2FWVHXlHpeLBzvLcpZRLuvWfWZNrbQo-kkrEgFWHFElYvbj_WDcXPRxb65zvTebwdor6NMF9j_NUhG8-xqZ0s3UnSAuzjzePPzA8lpEyIKJPcuw69DSHe3QnnBRJKSRmdySW9gnA-EQFM_2xj1_zaK4uvJrGQnw02HFowq8g0facnRUMH_QsDsl8GDdNtUXkeojisGMqMGpisQVQeTXSSQhEzp8nQKtNIm6aZQguyDUL8VrJx8tZNLZEF11kGqv9xKDO_l0VKGI7PauicwRQEg-9l7BLch10-xIshvmgI8jmlABMbvF4XicrX2Z9h4gBuRKxb-6IMhTdYtvNsM56XAkJwC2EwIyNdP4chH3ZUqCaKY5RA-UWF_kZ_l0cV2r9vnwL8pv6j6Bzx_sawkJvoAqNOepauCueILpN5U0KynRePwavgEejfI1lk5eInc1CocMXCXNiUjZ3TRoDW5NRSpVU0ybhvEFFpFGLZpU14lhPoHb6tpGgY9oBS7dtezvQhKKSFHFlFNvakdOZzRtbfAdEiFKHL59Y6wwZieBZsp9bh8MldXxc-Y3qUrzADpgin_kSrL40OZJLBMPUJpTCe8LHyB60_zhnFNEidE90HQSjORloFxUeNYpQpgTRg5BMI2DRd8iJpyetIR7DPoddL6Yo9Fuq99V5aSLqpfff8L-w2VLq0drG-rGTsbuInIseN6t8KtAIpOJVF0xWLdzjpHFzaTxOJ_xAOpbuXkeuGc34R-f5zZRyFpeRimSYppXaqQqJ9L95PDVhEn-21tda52UtOCS9plOKuqwvbFhpBkUTFWbdLIVQ0dru6ZUJuoLz3LYXqM0Bx-NoKU6fMSl37YeqhEgILEROu_y5nKB8S4flvpNiJxMlmjLoRbEDCkWD2pHBzOPIYP-OFRpBsPGCn8EXbNvAoSbn_Wm5nfOSINY197pNeseg_5CAQoKkYJkvtomWxfRjjtRNEdx-ZOuIgif62-EPnDUWRYn_QwM-CpjeU4h7ZGl8GXVrNzUEUJcF3rshViufBh8XZRR3EFQWmYIN8mY7MipAUF4NmVZcWcTcfdi8kXHLlZRXvRFWdqChegayZTobQsgCus9Wu5rZLgovnFyFlv4Waf58ha2fE96DDuE98N-FwbKJrvqGAMbUsYwD5gMUmLUSrtDhx61zOsU_Hm2xYzSGW21pJxa3DYY2rraNmkLFIPYzA3E5--D-cXkJ8a-m2t4gh0PNxU1OBwW7iBRd-wtYiTJdb4TiCY51IEJfhk6tsbf_HWMaHSuE1HGxCJLMfNN8me15wkbNHUfcPV2OoEqVRm4g-nuLjkLnlkOjP14yZj0-FQjfW1hGsZVLYHkMhgtHxncLz1p-6B5233t-Nh99oKEJ_NBL2LgN5bepUumpqy878YjYNHdR46RVW0h_m71qbLcO5M2lHlcpiDAyJQLZaqIV_MpFVeX8S8Vq9aPeRUXjn-cjt6kMH1KGNjIOwnVxe8gm7r9EhATQ_5iglMQoQJMWkoKFQ1AcXGaFCtU6gy2LWh1nRXKcXRnu2mmnxM1ok-CzBowffAhuRd3bmY06orzLXKYj4-UciqyymZ3KnHnm_efHxmfxWos7uHCEZmU8X44J_kAC7UZQIufQs5DYgjn1_mzACk6gNtl4qcE7fP-6Glr6KSLIMwH6enlwZmXJjZn0D37LT0fF3Wl4u7wfC_0OQLP\",\n
+        \     \"id\": \"rs_0078367818fb2fbc016b0455873e7887d287c7703ee76b2408\",\n
+        \     \"summary\": [],\n      \"type\": \"reasoning\"\n    },\n    {\n      \"content\":
+        [\n        {\n          \"annotations\": [],\n          \"logprobs\": [],\n
+        \         \"text\": \"4\",\n          \"type\": \"output_text\"\n        }\n
+        \     ],\n      \"id\": \"msg_0078367818fb2fbc016b045587520487d28e7c27ba12dde31a\",\n
+        \     \"phase\": \"final_answer\",\n      \"role\": \"assistant\",\n      \"status\":
+        \"completed\",\n      \"type\": \"message\"\n    }\n  ],\n  \"parallel_tool_calls\":
+        true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
+        \"agents-sdk:run:03b8e59bd5cf472a94b65c615006049d\",\n  \"prompt_cache_retention\":
+        \"24h\",\n  \"reasoning\": {\n    \"context\": \"all_turns\",\n    \"effort\":
+        \"medium\",\n    \"mode\": \"standard\",\n    \"summary\": null\n  },\n  \"safety_identifier\":
+        null,\n  \"service_tier\": \"default\",\n  \"status\": \"completed\",\n  \"store\":
+        false,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
+        \"text\"\n    },\n    \"verbosity\": \"low\"\n  },\n  \"tool_choice\": \"auto\",\n
+        \ \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\": 0,\n      \"input_tokens_details\":
+        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\":
+        0,\n      \"output_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
+        0\n      },\n      \"total_tokens\": 0\n    },\n    \"web_search\": {\n      \"num_requests\":
+        0\n    }\n  },\n  \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 0.98,\n
+        \ \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 31,\n
+        \   \"input_tokens_details\": {\n      \"cache_write_tokens\": 0,\n      \"cache_write_tokens_details\":
+        {\n        \"ttl_12h_tokens\": 0,\n        \"ttl_30m_tokens\": 0\n      },\n
+        \     \"cached_tokens\": 0\n    },\n    \"output_tokens\": 17,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 10\n    },\n    \"total_tokens\": 48\n  },\n
+        \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
       access-control-expose-headers:
-      - X-Request-ID, Server-Timing-Total
+      - X-Request-ID, Server-Timing-Total, X-OpenAI-Inference-Capacity-Reason
       - CF-Ray
       - CF-Ray
       alt-svc:
@@ -81,17 +85,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a586313fad781693-YYZ
+      - a5f10e29beb21d7b-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2191'
+      - '4246'
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 15:46:52 GMT
+      - Mon, 23 Nov 2026 15:02:31 GMT
       openai-processing-ms:
-      - '927'
+      - '738'
       openai-version:
       - '2020-10-01'
       server:
@@ -115,7 +119,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_416e4b80d5c84ad1aee6235d80dac94c
+      - req_42d706b63b7b49a1b6b8878ae706cf46
     status:
       code: 200
       message: OK

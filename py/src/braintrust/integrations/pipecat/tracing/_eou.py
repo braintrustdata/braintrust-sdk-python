@@ -27,7 +27,13 @@ _LOCAL_STRATEGIES = {
 }
 
 _AUXILIARY_STRATEGIES = {
+    # Pipecat < 1.17.
     ("pipecat.turns.user_stop.llm_turn_completion_user_turn_stop_strategy", "LLMTurnCompletionUserTurnStopStrategy"),
+    # Pipecat >= 1.17 moved the class into a subpackage; the old module re-exports it.
+    (
+        "pipecat.turns.user_stop.llm_turn_completion.llm_turn_completion_user_turn_stop_strategy",
+        "LLMTurnCompletionUserTurnStopStrategy",
+    ),
 }
 
 

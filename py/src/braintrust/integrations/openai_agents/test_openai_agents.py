@@ -22,10 +22,17 @@ def memory_logger():
 
 
 @pytest.fixture(autouse=True)
-def isolate_openai_agents_tracing():
+def isolate_openai_agents_tracing(monkeypatch):
     pytest.importorskip("agents", reason="agents package not available")
 
     import agents
+    from agents.models import openai_provider
+
+    # OpenAIProvider shares one process-wide HTTP client. Each async test runs
+    # on its own event loop, so a pooled connection opened by an earlier test
+    # fails with "Event loop is closed" when recording. Start each test fresh.
+    if hasattr(openai_provider, "_http_client"):
+        monkeypatch.setattr(openai_provider, "_http_client", None)
 
     provider = agents.tracing.get_trace_provider()
     processors = tuple(getattr(getattr(provider, "_multi_processor", None), "_processors", ()))

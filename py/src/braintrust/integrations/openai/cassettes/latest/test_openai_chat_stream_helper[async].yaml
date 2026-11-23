@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - AsyncOpenAI/Python 3.51.0
+      - AsyncOpenAI/Python 3.57.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -28,7 +28,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.51.0
+      - 3.57.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -41,16 +41,16 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: 'data: {"id":"chatcmpl-Ekt3qIAWSt1Kp0gbPcHKbEdwyMDB6","object":"chat.completion.chunk","created":1794843450,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{"role":"assistant","content":"","refusal":null},"finish_reason":null}],"usage":null,"obfuscation":""}
+      string: 'data: {"id":"chatcmpl-EnPnasbdSzVdFltoxgNfr0Rj7YVA1","object":"chat.completion.chunk","created":1795445950,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{"role":"assistant","content":"","refusal":null},"finish_reason":null}],"usage":null,"obfuscation":""}
 
 
-        data: {"id":"chatcmpl-Ekt3qIAWSt1Kp0gbPcHKbEdwyMDB6","object":"chat.completion.chunk","created":1794843450,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":"24"},"finish_reason":null}],"usage":null,"obfuscation":""}
+        data: {"id":"chatcmpl-EnPnasbdSzVdFltoxgNfr0Rj7YVA1","object":"chat.completion.chunk","created":1795445950,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":"24"},"finish_reason":null}],"usage":null,"obfuscation":""}
 
 
-        data: {"id":"chatcmpl-Ekt3qIAWSt1Kp0gbPcHKbEdwyMDB6","object":"chat.completion.chunk","created":1794843450,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":null,"obfuscation":"PM9PF58YDwB6"}
+        data: {"id":"chatcmpl-EnPnasbdSzVdFltoxgNfr0Rj7YVA1","object":"chat.completion.chunk","created":1795445950,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":null,"obfuscation":"WNREaQoaZeun"}
 
 
-        data: {"id":"chatcmpl-Ekt3qIAWSt1Kp0gbPcHKbEdwyMDB6","object":"chat.completion.chunk","created":1794843450,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[],"usage":{"prompt_tokens":13,"completion_tokens":4,"total_tokens":17,"prompt_tokens_details":{"cached_tokens":0,"cache_write_tokens":0,"audio_tokens":0},"completion_tokens_details":{"reasoning_tokens":0,"audio_tokens":0,"accepted_prediction_tokens":0,"rejected_prediction_tokens":0}},"obfuscation":"bvhR0VioLdS"}
+        data: {"id":"chatcmpl-EnPnasbdSzVdFltoxgNfr0Rj7YVA1","object":"chat.completion.chunk","created":1795445950,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[],"usage":{"prompt_tokens":13,"completion_tokens":4,"total_tokens":17,"prompt_tokens_details":{"cached_tokens":0,"cache_write_tokens":0,"audio_tokens":0},"completion_tokens_details":{"reasoning_tokens":0,"audio_tokens":0,"accepted_prediction_tokens":0,"rejected_prediction_tokens":0}},"obfuscation":"xwJaOxKzJUt"}
 
 
         data: [DONE]
@@ -67,15 +67,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5b793c9f831aae8-YYZ
+      - a5f109424fe6ae18-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 16 Nov 2026 15:37:30 GMT
+      - Mon, 23 Nov 2026 14:59:10 GMT
       openai-processing-ms:
-      - '491'
+      - '609'
       openai-version:
       - '2020-10-01'
       server:
@@ -84,6 +84,8 @@ interactions:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
       - chunked
+      vary:
+      - Origin
       x-content-type-options:
       - nosniff
       x-openai-proxy-wasm:
@@ -101,7 +103,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_ce2b23c16c544a8b910e0d7369a42568
+      - req_ea5420201f0047dab135dce833c84554
     status:
       code: 200
       message: OK

@@ -16,49 +16,49 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/3.3.0 gl-python/3.14.7
+      - google-genai-sdk/3.6.1 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/3.3.0 gl-python/3.14.7
+      - google-genai-sdk/3.6.1 gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/interactions
   response:
     body:
-      string: '{"id": "v1_Chd5U1g3YW9xVk5ZT1B5dE1Qc082djRBNBIXeVNYN2FvcVZOWU9QeXRNUHNPNnY0QTQ",
-        "status": "completed", "usage": {"total_tokens": 1582, "total_input_tokens":
+      string: '{"id": "v1_ChdPVmNFYV91dU5xM1FpTE1QeDgzenFBMBIXT1ZjRWFfdXVOcTNRaUxNUHg4M3pxQTA",
+        "status": "completed", "usage": {"total_tokens": 1533, "total_input_tokens":
         27, "input_tokens_by_modality": [{"modality": "text", "tokens": 27}], "total_cached_tokens":
-        0, "total_output_tokens": 214, "total_tool_use_tokens": 1341, "tool_use_tokens_by_modality":
-        [{"modality": "image", "tokens": 1080}, {"modality": "text", "tokens": 261}],
-        "total_thought_tokens": 0, "initial_input_tokens": 27}, "created": "2026-11-16T15:48:28Z",
-        "updated": "2026-11-16T15:48:28Z", "service_tier": "standard", "steps": [{"signature":
-        "EmAKXgFpFH0Tqi0CvwLqbPLDALjzXUYMHOq7ClLSiIXPUIkOgfDJlQ4/I/q7sR/uFKWVuCwHWyNlJYrxKUDXeinb0ABtIyKbrLUf1mN0+IHjNiyoiAmgfgZyapEXCUA7s5c=",
-        "type": "thought"}, {"id": "call_3062967957380430883", "type": "code_execution_call",
-        "arguments": {"language": "python", "code": "import matplotlib.pyplot as plt\nimport
-        numpy as np\n\n# Generate x values from 0 to 10\nx = np.linspace(0, 10, 100)\n#
-        Calculate y values\ny = x**2\n\n# Plot the figure\nplt.figure(figsize=(8,
+        0, "total_output_tokens": 183, "total_tool_use_tokens": 1323, "tool_use_tokens_by_modality":
+        [{"modality": "text", "tokens": 231}, {"modality": "image", "tokens": 1092}],
+        "total_thought_tokens": 0, "initial_input_tokens": 27}, "created": "2026-11-23T15:09:47Z",
+        "updated": "2026-11-23T15:09:47Z", "service_tier": "standard", "steps": [{"signature":
+        "Eo4BCosBAWkUfRMC+olNSBKLocau2EUQIVMP2w/40rLzKcH9QBhMPDSv0rPTPmGFIbnimRDbCI91/zCdfMXMD34Vdfe9s3M0GRWs/D0Bfq4MtpweNKN27xit333aEuB7m0Ny+LZDMBH5IPrwrEJFpZP2XSBut/2v5DtdiOhoYGTP8JRATfHymmoBJquAgQ/9ww==",
+        "type": "thought"}, {"id": "call_2579890801607396437", "type": "code_execution_call",
+        "arguments": {"language": "python", "code": "import numpy as np\nimport matplotlib.pyplot
+        as plt\n\nx = np.linspace(0, 10, 100)\ny = x**2\n\nplt.figure(figsize=(8,
         5))\nplt.plot(x, y, label=''y = x^2'', color=''b'', linewidth=2)\nplt.title(''Plot
         of y = x^2'')\nplt.xlabel(''x'')\nplt.ylabel(''y'')\nplt.grid(True)\nplt.legend()\n\n#
-        Save the figure to be displayed if needed, or show it\nplt.savefig(''plot.png'',
-        bbox_inches=''tight'')\nprint(\"Plot generated successfully.\")\n"}}, {"call_id":
-        "call_3062967957380430883", "type": "code_execution_result", "is_error": false,
-        "result": "Plot generated successfully.\n"}, {"content": [{"data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==",
+        Save the figure to display it\nplt.savefig(''plot.png'')\nprint(\"Figure plotted
+        and saved successfully.\")\n"}}, {"call_id": "call_2579890801607396437", "type":
+        "code_execution_result", "is_error": false, "result": "Figure plotted and
+        saved successfully.\n"}, {"content": [{"data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==",
         "mime_type": "image/png", "type": "image"}], "type": "model_output"}, {"signature":
-        "EmAKXgFpFH0TbfNpKOJ4G9b3lYGwu5l4iZ79aa0QD+KxGpVstx7ZnitSBMYLCBMze5dZeF496FvSMONUf7sWb5SIkUuE92PdyGFA87MsiFKIegKHQydx+nqu9gG+O7klB/I=",
-        "type": "thought"}, {"content": [{"text": "I have generated and displayed
-        the plot of $y = x^2$ for $x$ ranging from 0 to 10 using `matplotlib`.", "type":
-        "text"}], "type": "model_output"}], "object": "interaction", "model": "gemini-3.5-flash-lite"}'
+        "Eo4BCosBAWkUfRPkIZz7cqq9RHgtMHJYOWywpLKb0eGFY3n7QI6gkMLu0AOAUJnkCeNULD6GoIbqvbgvciMcS4NHLdgO5rSGa0VO/NjdQVIYPk2XQvtYukni8mvMXLfgR4AyLV+zh8Vnfk1iQMPGcWFL+pNFzqG0t63wwic+R6OK/ip3nt1U4oIH0ke0j58nUg==",
+        "type": "thought"}, {"content": [{"text": "I have successfully generated and
+        displayed the plot for $y = x^2$ for $x$ ranging from 0 to 10 using `matplotlib`.",
+        "type": "text"}], "type": "model_output"}], "object": "interaction", "model":
+        "gemini-3.5-flash-lite"}'
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '30200'
+      - '30982'
       content-type:
       - application/json
       date:
-      - Mon, 16 Nov 2026 15:48:29 GMT
+      - Mon, 23 Nov 2026 15:09:48 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=3683
+      - gfet4t7; dur=2783
       transfer-encoding:
       - chunked
       vary:

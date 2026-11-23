@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 3.46.0
+      - OpenAI/Python 3.57.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.46.0
+      - 3.57.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,16 +39,16 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EiiLfTDGy5awe53OjEqZ05pRORCSd\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1794325615,\n  \"model\": \"gpt-6-luna\",\n
+      string: "{\n  \"id\": \"chatcmpl-EnPobfkHTLancwbISIXiZW8K1DdN7\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1795446013,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"The image is predominantly orange.
-        The PDF appears to be a simple color-swatch image, not a conventional text
-        document.\",\n        \"refusal\": null,\n        \"annotations\": []\n      },\n
-        \     \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        241,\n    \"completion_tokens\": 207,\n    \"total_tokens\": 448,\n    \"prompt_tokens_details\":
-        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 174,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        \"assistant\",\n        \"content\": \"The image is a light peach-pink color.
+        The document is a PDF containing a color swatch.\",\n        \"refusal\":
+        null,\n        \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 241,\n    \"completion_tokens\":
+        227,\n    \"total_tokens\": 468,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 197,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
         \"default\",\n  \"system_fingerprint\": null\n}\n"
     headers:
@@ -61,17 +61,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5863157ca87178c-YYZ
+      - a5f10ad1ba9b1185-YYZ
       connection:
       - keep-alive
       content-length:
-      - '884'
+      - '852'
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 15:46:58 GMT
+      - Mon, 23 Nov 2026 15:00:16 GMT
       openai-processing-ms:
-      - '3374'
+      - '2807'
       openai-version:
       - '2020-10-01'
       server:
@@ -80,6 +80,8 @@ interactions:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
       - chunked
+      vary:
+      - Origin
       x-content-type-options:
       - nosniff
       x-openai-proxy-wasm:
@@ -95,7 +97,7 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '179998455'
+      - '179998452'
       x-ratelimit-reset-input-images:
       - 1ms
       x-ratelimit-reset-requests:
@@ -103,7 +105,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_ff666d83aed14bab9435b205ffc67951
+      - req_66626fd4763841ba81922e8e3f4e7e2e
     status:
       code: 200
       message: OK
