@@ -20,17 +20,17 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-Ekt5TysEXWGUdrQKkJ0eMT2VRTeLB\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1794843551,\n  \"model\": \"gpt-6-luna\",\n
+      string: "{\n  \"id\": \"chatcmpl-EnPp4yihyJRWigbJ1LpiCYm3PUB5R\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1795446042,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"The attached PDF appears to be blank
-        or unreadable; I couldn\u2019t identify any content.\",\n        \"refusal\":
-        null,\n        \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
-        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 241,\n    \"completion_tokens\":
-        21,\n    \"total_tokens\": 262,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
-        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"assistant\",\n        \"content\": \"The attached PDF appears blank; no
+        readable text or images were detected.\",\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\":
+        {\n    \"prompt_tokens\": 241,\n    \"completion_tokens\": 17,\n    \"total_tokens\":
+        258,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\": 0,\n      \"audio_tokens\":
+        0\n    },\n    \"completion_tokens_details\": {\n      \"reasoning_tokens\":
+        0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\": 0,\n
+        \     \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
         \"default\",\n  \"system_fingerprint\": null\n}\n"
     headers:
       access-control-expose-headers:
@@ -40,13 +40,13 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '848'
+      - '835'
       content-type:
       - application/json
       date:
-      - Mon, 16 Nov 2026 15:39:11 GMT
+      - Mon, 23 Nov 2026 15:00:43 GMT
       openai-processing-ms:
-      - '1124'
+      - '1111'
       openai-version:
       - '2020-10-01'
       server:
@@ -55,6 +55,8 @@ interactions:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
       - chunked
+      vary:
+      - Origin
       x-content-type-options:
       - nosniff
       x-openai-proxy-wasm:

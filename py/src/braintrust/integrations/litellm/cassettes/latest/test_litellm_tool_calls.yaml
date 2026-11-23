@@ -18,7 +18,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 3.51.0
+      - OpenAI/Python 3.57.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -28,7 +28,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.51.0
+      - 3.57.0
       x-stainless-raw-response:
       - 'true'
       x-stainless-read-timeout:
@@ -43,11 +43,11 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EktJpsE6xDPXLOnQ3Kas1Zu7Jwrch\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1794844441,\n  \"model\": \"gpt-6-luna\",\n
+      string: "{\n  \"id\": \"chatcmpl-EnPngdC8syrDWtBj2S9he6pI2vNrW\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1795445956,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
-        \           \"id\": \"call_hLFDi1Sbes7JK8WmW7ySXuLE\",\n            \"type\":
+        \           \"id\": \"call_6lG416vR7hagCvKHR51DoZQr\",\n            \"type\":
         \"function\",\n            \"function\": {\n              \"name\": \"get_weather\",\n
         \             \"arguments\": \"{\\\"location\\\":\\\"New York\\\"}\"\n            }\n
         \         }\n        ],\n        \"refusal\": null,\n        \"annotations\":
@@ -68,7 +68,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5b7abfb1ba0180e-YYZ
+      - a5f10969bf5eac1b-YYZ
       connection:
       - keep-alive
       content-length:
@@ -76,9 +76,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 16 Nov 2026 15:54:01 GMT
+      - Mon, 23 Nov 2026 14:59:16 GMT
       openai-processing-ms:
-      - '656'
+      - '733'
       openai-version:
       - '2020-10-01'
       server:
@@ -87,6 +87,8 @@ interactions:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
       - chunked
+      vary:
+      - Origin
       x-content-type-options:
       - nosniff
       x-openai-proxy-wasm:
@@ -98,13 +100,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '179999988'
+      - '179999991'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_3a3d621d58194fbb88ca6f51087d6788
+      - req_ade60491249f47e29b7f6ee2629ed6eb
     status:
       code: 200
       message: OK

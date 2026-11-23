@@ -16,14 +16,14 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/3.7.0
+      - mistral-client-python/3.8.0
     method: POST
     uri: https://api.mistral.ai/v1/conversations
   response:
     body:
-      string: '{"object":"conversation.response","conversation_id":"conv_01a19c860394746bab4b645aff924422","outputs":[{"object":"entry","type":"tool.execution","created_at":"2026-11-02T13:49:52.003006Z","completed_at":"2026-11-02T13:49:53.845170Z","model":"mistral-small-latest","id":"tool_exec_01a19c86080272fabbf59601924d463a","name":"code_interpreter","arguments":"{\"code\":
-        \"21 * 2\"}","function":"code_interpreter","info":{"result":[{"type":"text","text":"42\n"}],"code":"21
-        * 2","code_output":"42\n"}},{"object":"entry","type":"message.output","created_at":"2026-11-02T13:49:53.998098Z","completed_at":"2026-11-02T13:49:54.012573Z","model":"mistral-small-latest","id":"msg_01a19c860fcd73349d96c86c06d877fe","role":"assistant","content":"42"}],"usage":{"prompt_tokens":240,"completion_tokens":19,"total_tokens":264,"connector_tokens":5,"connectors":{"code_interpreter":1}},"guardrails":null}'
+      string: '{"object":"conversation.response","conversation_id":"conv_01a208ead9307377bdceaeeb596d9c48","outputs":[{"object":"entry","type":"tool.execution","created_at":"2026-11-23T14:58:59.370692Z","completed_at":"2026-11-23T14:59:01.548003Z","model":"mistral-small-latest","id":"tool_exec_01a208eadcaa748c87f41857039e025c","name":"code_interpreter","arguments":"{\"code\":
+        \"# Calculate the product of 21 and 2\\nresult = 21 * 2\\nresult\"}","function":"code_interpreter","info":{"result":[{"type":"text","text":"42\n"}],"code":"#
+        Calculate the product of 21 and 2\nresult = 21 * 2\nresult","code_output":"42\n"}},{"object":"entry","type":"message.output","created_at":"2026-11-23T14:59:01.722254Z","completed_at":"2026-11-23T14:59:01.740057Z","model":"mistral-small-latest","id":"msg_01a208eae5da73e9aa79a1c21f3bb3e2","role":"assistant","content":"42"}],"usage":{"prompt_tokens":252,"completion_tokens":35,"total_tokens":292,"connector_tokens":5,"connectors":{"code_interpreter":1}},"guardrails":null}'
     headers:
       access-control-allow-origin:
       - '*'
@@ -32,17 +32,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5439ad84d60ac2d-YYZ
+      - a5f108face11ac00-YYZ
       connection:
       - keep-alive
       content-length:
-      - '883'
+      - '993'
       content-type:
       - application/json
       date:
-      - Mon, 02 Nov 2026 13:49:54 GMT
+      - Mon, 23 Nov 2026 14:59:01 GMT
       mistral-correlation-id:
-      - 01a19c86-0367-766c-9f99-9b21f6cece52
+      - 01a208ea-d8f7-7f46-976a-fdf4d0848d91
       server:
       - cloudflare
       strict-transport-security:
@@ -52,13 +52,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '3220'
+      - '3331'
       x-kong-proxy-latency:
-      - '20'
+      - '27'
       x-kong-request-id:
-      - 01a19c86-0367-766c-9f99-9b21f6cece52
+      - 01a208ea-d8f7-7f46-976a-fdf4d0848d91
       x-kong-upstream-latency:
-      - '3223'
+      - '3340'
       x-ratelimit-limit-code-interpreter-day:
       - '10000'
       x-ratelimit-limit-code-interpreter-minute:
@@ -70,7 +70,7 @@ interactions:
       x-ratelimit-remaining-code-interpreter-minute:
       - '19'
       x-ratelimit-remaining-tokens-minute:
-      - '99534'
+      - '99708'
     status:
       code: 200
       message: OK

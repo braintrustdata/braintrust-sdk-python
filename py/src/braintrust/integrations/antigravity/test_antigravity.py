@@ -115,6 +115,11 @@ async def test_stream_cleanup(memory_logger, tmp_path, exit_path):
     with cassette_transport("chat"):
         async with Agent(agent_config(tmp_path)) as agent:
             response = await agent.chat(PROMPT)
+            # google-antigravity >= 0.1.24 keeps the latest response on the
+            # conversation and drains it at the next turn, so dropping our
+            # reference no longer ends the span. Agent exit or the next turn does.
+            retained = getattr(agent.conversation, "_active_response", None) is response
+            stays_open = retained and exit_path in ("drop", "partial")
             before = current_span()
             if exit_path == "partial":
                 async for _ in response:
@@ -128,12 +133,15 @@ async def test_stream_cleanup(memory_logger, tmp_path, exit_path):
                 for _ in range(5):
                     gc.collect()
                     await asyncio.sleep(0)
-                spans = memory_logger.pop()
-                assert any(s["span_attributes"]["name"] == "antigravity.chat" and "end" in s["metrics"] for s in spans)
+                if not stays_open:
+                    spans = memory_logger.pop()
+                    assert any(
+                        s["span_attributes"]["name"] == "antigravity.chat" and "end" in s["metrics"] for s in spans
+                    )
             assert current_span() is before
     gc.collect()
     remaining = memory_logger.pop()
-    if exit_path != "disconnect":
+    if exit_path != "disconnect" and not stays_open:
         assert remaining == []
     else:
         spans = remaining

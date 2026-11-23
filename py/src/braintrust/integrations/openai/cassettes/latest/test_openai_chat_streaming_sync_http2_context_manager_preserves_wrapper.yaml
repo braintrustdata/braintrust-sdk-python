@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 3.51.0
+      - OpenAI/Python 3.57.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.51.0
+      - 3.57.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,16 +39,16 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: 'data: {"id":"chatcmpl-Ekt5C8yehjlXnz3wMXR7kMR4JcxMb","object":"chat.completion.chunk","created":1794843534,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{"role":"assistant","content":"","refusal":null},"finish_reason":null}],"usage":null,"obfuscation":""}
+      string: 'data: {"id":"chatcmpl-EnPon4QSkSNkAjHq9fbcjzA3S7iEV","object":"chat.completion.chunk","created":1795446025,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{"role":"assistant","content":"","refusal":null},"finish_reason":null}],"usage":null,"obfuscation":""}
 
 
-        data: {"id":"chatcmpl-Ekt5C8yehjlXnz3wMXR7kMR4JcxMb","object":"chat.completion.chunk","created":1794843534,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":"24"},"finish_reason":null}],"usage":null,"obfuscation":""}
+        data: {"id":"chatcmpl-EnPon4QSkSNkAjHq9fbcjzA3S7iEV","object":"chat.completion.chunk","created":1795446025,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":"24"},"finish_reason":null}],"usage":null,"obfuscation":""}
 
 
-        data: {"id":"chatcmpl-Ekt5C8yehjlXnz3wMXR7kMR4JcxMb","object":"chat.completion.chunk","created":1794843534,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":null,"obfuscation":"PgQN4OMpkrS7"}
+        data: {"id":"chatcmpl-EnPon4QSkSNkAjHq9fbcjzA3S7iEV","object":"chat.completion.chunk","created":1795446025,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":null,"obfuscation":"xvbsNrKAvOHT"}
 
 
-        data: {"id":"chatcmpl-Ekt5C8yehjlXnz3wMXR7kMR4JcxMb","object":"chat.completion.chunk","created":1794843534,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[],"usage":{"prompt_tokens":13,"completion_tokens":15,"total_tokens":28,"prompt_tokens_details":{"cached_tokens":0,"cache_write_tokens":0,"audio_tokens":0},"completion_tokens_details":{"reasoning_tokens":5,"audio_tokens":0,"accepted_prediction_tokens":0,"rejected_prediction_tokens":0}},"obfuscation":"Ju8qkXxEMP"}
+        data: {"id":"chatcmpl-EnPon4QSkSNkAjHq9fbcjzA3S7iEV","object":"chat.completion.chunk","created":1795446025,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[],"usage":{"prompt_tokens":13,"completion_tokens":15,"total_tokens":28,"prompt_tokens_details":{"cached_tokens":0,"cache_write_tokens":0,"audio_tokens":0},"completion_tokens_details":{"reasoning_tokens":5,"audio_tokens":0,"accepted_prediction_tokens":0,"rejected_prediction_tokens":0}},"obfuscation":"UA1jXRvIo1"}
 
 
         data: [DONE]
@@ -65,19 +65,21 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5b795d6de9fe403-YYZ
+      - a5f10b17ebf036fb-YYZ
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 16 Nov 2026 15:38:54 GMT
+      - Mon, 23 Nov 2026 15:00:27 GMT
       openai-processing-ms:
-      - '563'
+      - '2070'
       openai-version:
       - '2020-10-01'
       server:
       - cloudflare
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
+      vary:
+      - Origin
       x-content-type-options:
       - nosniff
       x-openai-proxy-wasm:
@@ -95,7 +97,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_45a915a1c9094e728ad42d99228ddb7e
+      - req_37d747aca65e4ac4ab4d08ab8009010f
     status:
       code: 200
       message: OK

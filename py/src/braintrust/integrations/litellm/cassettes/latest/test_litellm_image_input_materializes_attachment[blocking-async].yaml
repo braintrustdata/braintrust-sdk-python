@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - AsyncOpenAI/Python 3.51.0
+      - AsyncOpenAI/Python 3.57.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.51.0
+      - 3.57.0
       x-stainless-raw-response:
       - 'true'
       x-stainless-read-timeout:
@@ -41,16 +41,17 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EktJFUHc8kXpyUB7VzBWnmX5ryvQS\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1794844405,\n  \"model\": \"gpt-6-luna\",\n
+      string: "{\n  \"id\": \"chatcmpl-EnPn86LwJsSghnim4hCDhXazHIHqy\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1795445922,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"The image appears to be a solid orange
-        color.\",\n        \"refusal\": null,\n        \"annotations\": []\n      },\n
-        \     \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        13,\n    \"completion_tokens\": 13,\n    \"total_tokens\": 26,\n    \"prompt_tokens_details\":
-        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"assistant\",\n        \"content\": \"The image is orange-red, with a thin
+        yellow strip along the bottom.\",\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\":
+        {\n    \"prompt_tokens\": 13,\n    \"completion_tokens\": 18,\n    \"total_tokens\":
+        31,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\": 0,\n      \"audio_tokens\":
+        0\n    },\n    \"completion_tokens_details\": {\n      \"reasoning_tokens\":
+        0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\": 0,\n
+        \     \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
         \"default\",\n  \"system_fingerprint\": null\n}\n"
     headers:
       Access-Control-Expose-Headers:
@@ -62,27 +63,29 @@ interactions:
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - a5b7ab1ebadcaabd-YYZ
+      - a5f108943a1e880c-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Mon, 16 Nov 2026 15:53:27 GMT
+      - Mon, 23 Nov 2026 14:58:43 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
       - max-age=31536000; includeSubDomains; preload
       Transfer-Encoding:
       - chunked
+      Vary:
+      - Origin
       X-Content-Type-Options:
       - nosniff
       X-Request-ID:
-      - req_7054efd968db4d35ae252f5d5f7cfb81
+      - req_3f085f5d9f824c9cb56f641f57c8dba5
       content-length:
-      - '805'
+      - '827'
       openai-processing-ms:
-      - '1384'
+      - '1382'
       openai-version:
       - '2020-10-01'
       x-openai-proxy-wasm:

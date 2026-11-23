@@ -16,17 +16,17 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 3.51.0
+      - AsyncOpenAI/Python 3.57.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
-      - 'false'
+      - async:asyncio
       x-stainless-lang:
       - python
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.51.0
+      - 3.57.0
       x-stainless-raw-response:
       - 'true'
       x-stainless-read-timeout:
@@ -41,8 +41,8 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EktJly1DAvyfaD2zXk57InmDiQ53B\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1794844437,\n  \"model\": \"gpt-6-luna\",\n
+      string: "{\n  \"id\": \"chatcmpl-EnPnd9sbkfssmXd74qJWXPeXWp4Yw\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1795445953,\n  \"model\": \"gpt-6-luna\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"24\",\n        \"refusal\": null,\n
         \       \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
@@ -63,7 +63,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5b7abe4dbb3180e-YYZ
+      - a5f10956390d36a1-YYZ
       connection:
       - keep-alive
       content-length:
@@ -71,9 +71,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 16 Nov 2026 15:53:58 GMT
+      - Mon, 23 Nov 2026 14:59:13 GMT
       openai-processing-ms:
-      - '681'
+      - '611'
       openai-version:
       - '2020-10-01'
       server:
@@ -82,6 +82,8 @@ interactions:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
       - chunked
+      vary:
+      - Origin
       x-content-type-options:
       - nosniff
       x-openai-proxy-wasm:
@@ -99,7 +101,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_0e701dea050341fc952f8967fc96cc8d
+      - req_952de42ce6e6459cbaec6894bbf0861f
     status:
       code: 200
       message: OK

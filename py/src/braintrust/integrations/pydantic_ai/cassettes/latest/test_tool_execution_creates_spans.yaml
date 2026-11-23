@@ -17,7 +17,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.68.0
+      - pydantic-ai/2.71.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -27,7 +27,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.51.0
+      - 3.57.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -40,41 +40,41 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_009840059ad2c3ff016afb232b61c487d2a8df6478ca3fb0e5\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1794843435,\n  \"status\":
-        \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794843436,\n  \"error\":
-        null,\n  \"frequency_penalty\": 0.0,\n  \"image\": {\n    \"context_compression\":
-        \"disabled\"\n  },\n  \"incomplete_details\": null,\n  \"input_transformations\":
-        [],\n  \"instructions\": null,\n  \"max_output_tokens\": 500,\n  \"max_tool_calls\":
-        null,\n  \"model\": \"gpt-6-luna\",\n  \"moderation\": null,\n  \"output\":
-        [\n    {\n      \"id\": \"fc_009840059ad2c3ff016afb232c00c487d2ab949311773d4a10\",\n
-        \     \"type\": \"function_call\",\n      \"status\": \"completed\",\n      \"arguments\":
+      string: "{\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1795445948,\n  \"created_at\":
+        1795445948,\n  \"error\": null,\n  \"frequency_penalty\": 0.0,\n  \"id\":
+        \"resp_0fa58515cbbd590a016b0454bc0e4487d28a8bbb070b650195\",\n  \"image\":
+        {\n    \"context_compression\": \"disabled\"\n  },\n  \"incomplete_details\":
+        null,\n  \"input_transformations\": [],\n  \"instructions\": null,\n  \"max_output_tokens\":
+        500,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-6-luna\",\n  \"moderation\":
+        null,\n  \"object\": \"response\",\n  \"output\": [\n    {\n      \"arguments\":
         \"{\\\"operation\\\":\\\"multiply\\\",\\\"a\\\":127,\\\"b\\\":49}\",\n      \"call_id\":
-        \"call_Lxz6j2AL0pBkjIXdfOQrov5D\",\n      \"name\": \"calculate\"\n    }\n
-        \ ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\":
-        null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\": \"24h\",\n
-        \ \"reasoning\": {\n    \"context\": \"all_turns\",\n    \"effort\": \"none\",\n
-        \   \"mode\": \"standard\",\n    \"summary\": null\n  },\n  \"safety_identifier\":
-        null,\n  \"service_tier\": \"default\",\n  \"store\": false,\n  \"temperature\":
-        1.0,\n  \"text\": {\n    \"format\": {\n      \"type\": \"text\"\n    },\n
-        \   \"verbosity\": \"medium\"\n  },\n  \"tool_choice\": \"auto\",\n  \"tool_usage\":
-        {\n    \"image_gen\": {\n      \"input_tokens\": 0,\n      \"input_tokens_details\":
-        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\":
-        0,\n      \"output_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
-        0\n      },\n      \"total_tokens\": 0\n    },\n    \"web_search\": {\n      \"num_requests\":
-        0\n    }\n  },\n  \"tools\": [\n    {\n      \"type\": \"function\",\n      \"description\":
-        \"Perform a mathematical calculation.\",\n      \"name\": \"calculate\",\n
-        \     \"output_schema\": null,\n      \"parameters\": {\n        \"additionalProperties\":
-        false,\n        \"properties\": {\n          \"operation\": {\n            \"type\":
-        \"string\"\n          },\n          \"a\": {\n            \"type\": \"number\"\n
-        \         },\n          \"b\": {\n            \"type\": \"number\"\n          }\n
-        \       },\n        \"required\": [\n          \"operation\",\n          \"a\",\n
-        \         \"b\"\n        ],\n        \"type\": \"object\"\n      },\n      \"strict\":
-        true\n    }\n  ],\n  \"top_logprobs\": 0,\n  \"top_p\": 0.98,\n  \"truncation\":
-        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 57,\n    \"input_tokens_details\":
-        {\n      \"cache_write_tokens\": 0,\n      \"cache_write_tokens_details\":
-        {\n        \"ttl_12h_tokens\": 0,\n        \"ttl_30m_tokens\": 0\n      },\n
+        \"call_4efb1cbafa3a454c8fbc4c6b132716b4\",\n      \"id\": \"fc_0fa58515cbbd590a016b0454bc74a487d2b2d218463dc566a0\",\n
+        \     \"name\": \"calculate\",\n      \"status\": \"completed\",\n      \"type\":
+        \"function_call\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\":
+        0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
+        \"24h\",\n  \"reasoning\": {\n    \"context\": \"all_turns\",\n    \"effort\":
+        \"none\",\n    \"mode\": \"standard\",\n    \"summary\": null\n  },\n  \"safety_identifier\":
+        null,\n  \"service_tier\": \"default\",\n  \"status\": \"completed\",\n  \"store\":
+        false,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
+        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
+        \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\":
+        0,\n      \"input_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
+        0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
+        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
+        0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
+        \ \"tools\": [\n    {\n      \"description\": \"Perform a mathematical calculation.\",\n
+        \     \"name\": \"calculate\",\n      \"output_schema\": null,\n      \"parameters\":
+        {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"a\":
+        {\n            \"type\": \"number\"\n          },\n          \"b\": {\n            \"type\":
+        \"number\"\n          },\n          \"operation\": {\n            \"type\":
+        \"string\"\n          }\n        },\n        \"required\": [\n          \"operation\",\n
+        \         \"a\",\n          \"b\"\n        ],\n        \"type\": \"object\"\n
+        \     },\n      \"strict\": true,\n      \"type\": \"function\"\n    }\n  ],\n
+        \ \"top_logprobs\": 0,\n  \"top_p\": 0.98,\n  \"truncation\": \"disabled\",\n
+        \ \"usage\": {\n    \"input_tokens\": 57,\n    \"input_tokens_details\": {\n
+        \     \"cache_write_tokens\": 0,\n      \"cache_write_tokens_details\": {\n
+        \       \"ttl_12h_tokens\": 0,\n        \"ttl_30m_tokens\": 0\n      },\n
         \     \"cached_tokens\": 0\n    },\n    \"output_tokens\": 25,\n    \"output_tokens_details\":
         {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 82\n  },\n
         \ \"user\": null,\n  \"metadata\": {}\n}"
@@ -88,17 +88,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5b7936e9def982f-YYZ
+      - a5f10936dc45ac3c-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2749'
+      - '2757'
       content-type:
       - application/json
       date:
-      - Mon, 16 Nov 2026 15:37:16 GMT
+      - Mon, 23 Nov 2026 14:59:08 GMT
       openai-processing-ms:
-      - '928'
+      - '596'
       openai-version:
       - '2020-10-01'
       server:
@@ -122,13 +122,13 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_57cb5d2de7254369ad5218722854b212
+      - req_96f290fb3e3b43fbaefe12afa88bb1f9
     status:
       code: 200
       message: OK
 - request:
     body: '{"model":"gpt-6-luna","stream":false,"include":["reasoning.encrypted_content"],"input":[{"role":"user","content":"What
-      is 127 multiplied by 49?"},{"name":"calculate","arguments":"{\"operation\":\"multiply\",\"a\":127,\"b\":49}","call_id":"call_Lxz6j2AL0pBkjIXdfOQrov5D","type":"function_call","id":"fc_009840059ad2c3ff016afb232c00c487d2ab949311773d4a10"},{"type":"function_call_output","call_id":"call_Lxz6j2AL0pBkjIXdfOQrov5D","output":"6223.0"}],"max_output_tokens":500,"prompt_cache_options":{"comparison_response_id":"resp_009840059ad2c3ff016afb232b61c487d2a8df6478ca3fb0e5"},"reasoning":{"effort":"none","context":"all_turns"},"tool_choice":"auto","tools":[{"name":"calculate","parameters":{"additionalProperties":false,"properties":{"operation":{"type":"string"},"a":{"type":"number"},"b":{"type":"number"}},"required":["operation","a","b"],"type":"object"},"type":"function","description":"Perform
+      is 127 multiplied by 49?"},{"name":"calculate","arguments":"{\"operation\":\"multiply\",\"a\":127,\"b\":49}","call_id":"call_4efb1cbafa3a454c8fbc4c6b132716b4","type":"function_call","id":"fc_0fa58515cbbd590a016b0454bc74a487d2b2d218463dc566a0"},{"type":"function_call_output","call_id":"call_4efb1cbafa3a454c8fbc4c6b132716b4","output":"6223.0"}],"max_output_tokens":500,"prompt_cache_options":{"comparison_response_id":"resp_0fa58515cbbd590a016b0454bc0e4487d28a8bbb070b650195"},"reasoning":{"effort":"none","context":"all_turns"},"tool_choice":"auto","tools":[{"name":"calculate","parameters":{"additionalProperties":false,"properties":{"operation":{"type":"string"},"a":{"type":"number"},"b":{"type":"number"}},"required":["operation","a","b"],"type":"object"},"type":"function","description":"Perform
       a mathematical calculation.","strict":true}]}'
     headers:
       accept:
@@ -138,13 +138,13 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '950'
+      - '966'
       content-type:
       - application/json
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.68.0
+      - pydantic-ai/2.71.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -154,7 +154,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.51.0
+      - 3.57.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -167,47 +167,47 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_009840059ad2c3ff016afb232c6d4c87d29b7ba92af6adb5c9\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1794843436,\n  \"status\":
-        \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794843437,\n  \"error\":
-        null,\n  \"frequency_penalty\": 0.0,\n  \"image\": {\n    \"context_compression\":
-        \"disabled\"\n  },\n  \"incomplete_details\": null,\n  \"input_transformations\":
-        [],\n  \"instructions\": null,\n  \"max_output_tokens\": 500,\n  \"max_tool_calls\":
-        null,\n  \"model\": \"gpt-6-luna\",\n  \"moderation\": null,\n  \"output\":
-        [\n    {\n      \"id\": \"msg_009840059ad2c3ff016afb232cf82087d2902493e88a2bd751\",\n
-        \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
-        [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"127 \\u00d7 49 = **6,223**.\"\n
-        \       }\n      ],\n      \"phase\": \"final_answer\",\n      \"role\": \"assistant\"\n
-        \   }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n
-        \ \"previous_response_id\": null,\n  \"prompt_cache_diagnostics\": {\n    \"type\":
-        \"cache_hit\"\n  },\n  \"prompt_cache_key\": null,\n  \"prompt_cache_options\":
-        {\n    \"comparison_response_id\": \"resp_009840059ad2c3ff016afb232b61c487d2a8df6478ca3fb0e5\",\n
+      string: "{\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1795445949,\n  \"created_at\":
+        1795445948,\n  \"error\": null,\n  \"frequency_penalty\": 0.0,\n  \"id\":
+        \"resp_0fa58515cbbd590a016b0454bcc6d487d2b528d81087a6d1c4\",\n  \"image\":
+        {\n    \"context_compression\": \"disabled\"\n  },\n  \"incomplete_details\":
+        null,\n  \"input_transformations\": [],\n  \"instructions\": null,\n  \"max_output_tokens\":
+        500,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-6-luna\",\n  \"moderation\":
+        null,\n  \"object\": \"response\",\n  \"output\": [\n    {\n      \"content\":
+        [\n        {\n          \"annotations\": [],\n          \"logprobs\": [],\n
+        \         \"text\": \"127 \xD7 49 = 6,223.\",\n          \"type\": \"output_text\"\n
+        \       }\n      ],\n      \"id\": \"msg_0fa58515cbbd590a016b0454bd2d9887d284819be5d98773bc\",\n
+        \     \"phase\": \"final_answer\",\n      \"role\": \"assistant\",\n      \"status\":
+        \"completed\",\n      \"type\": \"message\"\n    }\n  ],\n  \"parallel_tool_calls\":
+        true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_diagnostics\":
+        {\n    \"type\": \"cache_hit\"\n  },\n  \"prompt_cache_key\": null,\n  \"prompt_cache_options\":
+        {\n    \"comparison_response_id\": \"resp_0fa58515cbbd590a016b0454bc0e4487d28a8bbb070b650195\",\n
         \   \"mode\": \"implicit\",\n    \"ttl\": \"30m\"\n  },\n  \"prompt_cache_retention\":
         \"24h\",\n  \"reasoning\": {\n    \"context\": \"all_turns\",\n    \"effort\":
         \"none\",\n    \"mode\": \"standard\",\n    \"summary\": null\n  },\n  \"safety_identifier\":
-        null,\n  \"service_tier\": \"default\",\n  \"store\": false,\n  \"temperature\":
-        1.0,\n  \"text\": {\n    \"format\": {\n      \"type\": \"text\"\n    },\n
-        \   \"verbosity\": \"medium\"\n  },\n  \"tool_choice\": \"auto\",\n  \"tool_usage\":
-        {\n    \"image_gen\": {\n      \"input_tokens\": 0,\n      \"input_tokens_details\":
-        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\":
-        0,\n      \"output_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
-        0\n      },\n      \"total_tokens\": 0\n    },\n    \"web_search\": {\n      \"num_requests\":
-        0\n    }\n  },\n  \"tools\": [\n    {\n      \"type\": \"function\",\n      \"description\":
-        \"Perform a mathematical calculation.\",\n      \"name\": \"calculate\",\n
-        \     \"output_schema\": null,\n      \"parameters\": {\n        \"additionalProperties\":
-        false,\n        \"properties\": {\n          \"operation\": {\n            \"type\":
-        \"string\"\n          },\n          \"a\": {\n            \"type\": \"number\"\n
-        \         },\n          \"b\": {\n            \"type\": \"number\"\n          }\n
-        \       },\n        \"required\": [\n          \"operation\",\n          \"a\",\n
-        \         \"b\"\n        ],\n        \"type\": \"object\"\n      },\n      \"strict\":
-        true\n    }\n  ],\n  \"top_logprobs\": 0,\n  \"top_p\": 0.98,\n  \"truncation\":
-        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 96,\n    \"input_tokens_details\":
-        {\n      \"cache_write_tokens\": 0,\n      \"cache_write_tokens_details\":
-        {\n        \"ttl_12h_tokens\": 0,\n        \"ttl_30m_tokens\": 0\n      },\n
-        \     \"cached_tokens\": 0\n    },\n    \"output_tokens\": 15,\n    \"output_tokens_details\":
-        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 111\n  },\n
+        null,\n  \"service_tier\": \"default\",\n  \"status\": \"completed\",\n  \"store\":
+        false,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
+        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
+        \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\":
+        0,\n      \"input_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
+        0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
+        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
+        0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
+        \ \"tools\": [\n    {\n      \"description\": \"Perform a mathematical calculation.\",\n
+        \     \"name\": \"calculate\",\n      \"output_schema\": null,\n      \"parameters\":
+        {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"a\":
+        {\n            \"type\": \"number\"\n          },\n          \"b\": {\n            \"type\":
+        \"number\"\n          },\n          \"operation\": {\n            \"type\":
+        \"string\"\n          }\n        },\n        \"required\": [\n          \"operation\",\n
+        \         \"a\",\n          \"b\"\n        ],\n        \"type\": \"object\"\n
+        \     },\n      \"strict\": true,\n      \"type\": \"function\"\n    }\n  ],\n
+        \ \"top_logprobs\": 0,\n  \"top_p\": 0.98,\n  \"truncation\": \"disabled\",\n
+        \ \"usage\": {\n    \"input_tokens\": 96,\n    \"input_tokens_details\": {\n
+        \     \"cache_write_tokens\": 0,\n      \"cache_write_tokens_details\": {\n
+        \       \"ttl_12h_tokens\": 0,\n        \"ttl_30m_tokens\": 0\n      },\n
+        \     \"cached_tokens\": 0\n    },\n    \"output_tokens\": 14,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 110\n  },\n
         \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
       access-control-expose-headers:
@@ -219,17 +219,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5b793752b5d982f-YYZ
+      - a5f1093b3a7fac3c-YYZ
       connection:
       - keep-alive
       content-length:
-      - '3063'
+      - '3055'
       content-type:
       - application/json
       date:
-      - Mon, 16 Nov 2026 15:37:17 GMT
+      - Mon, 23 Nov 2026 14:59:09 GMT
       openai-processing-ms:
-      - '782'
+      - '879'
       openai-version:
       - '2020-10-01'
       server:
@@ -253,7 +253,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_438fdfb11d034dd7af4f6d43004a8c8e
+      - req_879b2b33e7e7489ea202dab90ed33d76
     status:
       code: 200
       message: OK

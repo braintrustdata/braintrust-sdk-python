@@ -1,7 +1,7 @@
 interactions:
 - request:
-    body: '{"model":"gpt-6-luna","include":[],"input":[{"content":"What''s your name?","role":"user"}],"instructions":"You
-      are agent A. Just respond with ''A'' and nothing else.","prompt_cache_key":"agents-sdk:run:e448463799ce48eba1af1a61d3dfdad8","tools":[]}'
+    body: '{"model":"gpt-6-luna","include":[],"input":[{"content":"Who are you?","role":"user"}],"instructions":"You
+      are agent B. Just respond with ''B'' and nothing else.","prompt_cache_key":"agents-sdk:run:3132a5bc88e8434dbe5da1478f09dd7f","text":{"verbosity":"low"},"tools":[]}'
     headers:
       accept:
       - application/json
@@ -10,13 +10,13 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '245'
+      - '267'
       content-type:
       - application/json
       host:
       - api.openai.com
       user-agent:
-      - Agents/Python 0.24.0
+      - Agents/Python 0.25.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.46.0
+      - 3.57.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,40 +39,41 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0a51ebd82782dff3016af33c687af887d2b3438c3f112a6c9c\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1794325608,\n  \"status\":
-        \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794325609,\n  \"error\":
-        null,\n  \"frequency_penalty\": 0.0,\n  \"image\": {\n    \"context_compression\":
-        \"disabled\"\n  },\n  \"incomplete_details\": null,\n  \"instructions\": \"You
-        are agent A. Just respond with 'A' and nothing else.\",\n  \"max_output_tokens\":
-        null,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-6-luna\",\n  \"moderation\":
-        null,\n  \"output\": [\n    {\n      \"id\": \"msg_0a51ebd82782dff3016af33c699e2087d2b8f646143fc107f8\",\n
-        \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
-        [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"A\"\n        }\n      ],\n
-        \     \"phase\": \"final_answer\",\n      \"role\": \"assistant\"\n    }\n
-        \ ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\":
-        null,\n  \"prompt_cache_key\": \"agents-sdk:run:e448463799ce48eba1af1a61d3dfdad8\",\n
-        \ \"prompt_cache_retention\": \"24h\",\n  \"reasoning\": {\n    \"context\":
-        \"all_turns\",\n    \"effort\": \"medium\",\n    \"mode\": \"standard\",\n
-        \   \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
-        \"default\",\n  \"store\": false,\n  \"temperature\": 1.0,\n  \"text\": {\n
-        \   \"format\": {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n
-        \ },\n  \"tool_choice\": \"auto\",\n  \"tool_usage\": {\n    \"image_gen\":
-        {\n      \"input_tokens\": 0,\n      \"input_tokens_details\": {\n        \"image_tokens\":
-        0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
-        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
-        0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
-        \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 0.98,\n  \"truncation\":
-        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 29,\n    \"input_tokens_details\":
-        {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 5,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 34\n  },\n  \"user\": null,\n  \"metadata\":
-        {}\n}"
+      string: "{\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1795446147,\n  \"created_at\":
+        1795446146,\n  \"error\": null,\n  \"frequency_penalty\": 0.0,\n  \"id\":
+        \"resp_08d255fcdb4bb51b016b045582e26087d29188124c5d3c11f5\",\n  \"image\":
+        {\n    \"context_compression\": \"disabled\"\n  },\n  \"incomplete_details\":
+        null,\n  \"input_transformations\": [],\n  \"instructions\": \"You are agent
+        B. Just respond with 'B' and nothing else.\",\n  \"max_output_tokens\": null,\n
+        \ \"max_tool_calls\": null,\n  \"model\": \"gpt-6-luna\",\n  \"moderation\":
+        null,\n  \"object\": \"response\",\n  \"output\": [\n    {\n      \"content\":
+        [\n        {\n          \"annotations\": [],\n          \"logprobs\": [],\n
+        \         \"text\": \"B\",\n          \"type\": \"output_text\"\n        }\n
+        \     ],\n      \"id\": \"msg_08d255fcdb4bb51b016b0455833bfc87d2ac2a0bbbfbc0371a\",\n
+        \     \"phase\": \"final_answer\",\n      \"role\": \"assistant\",\n      \"status\":
+        \"completed\",\n      \"type\": \"message\"\n    }\n  ],\n  \"parallel_tool_calls\":
+        true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
+        \"agents-sdk:run:3132a5bc88e8434dbe5da1478f09dd7f\",\n  \"prompt_cache_retention\":
+        \"24h\",\n  \"reasoning\": {\n    \"context\": \"all_turns\",\n    \"effort\":
+        \"medium\",\n    \"mode\": \"standard\",\n    \"summary\": null\n  },\n  \"safety_identifier\":
+        null,\n  \"service_tier\": \"default\",\n  \"status\": \"completed\",\n  \"store\":
+        false,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
+        \"text\"\n    },\n    \"verbosity\": \"low\"\n  },\n  \"tool_choice\": \"auto\",\n
+        \ \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\": 0,\n      \"input_tokens_details\":
+        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\":
+        0,\n      \"output_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
+        0\n      },\n      \"total_tokens\": 0\n    },\n    \"web_search\": {\n      \"num_requests\":
+        0\n    }\n  },\n  \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 0.98,\n
+        \ \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 29,\n
+        \   \"input_tokens_details\": {\n      \"cache_write_tokens\": 0,\n      \"cache_write_tokens_details\":
+        {\n        \"ttl_12h_tokens\": 0,\n        \"ttl_30m_tokens\": 0\n      },\n
+        \     \"cached_tokens\": 0\n    },\n    \"output_tokens\": 5,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 34\n  },\n
+        \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
       access-control-expose-headers:
-      - X-Request-ID, Server-Timing-Total
+      - X-Request-ID, Server-Timing-Total, X-OpenAI-Inference-Capacity-Reason
       - CF-Ray
       - CF-Ray
       alt-svc:
@@ -80,17 +81,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a586312c6c6fb0a3-YYZ
+      - a5f10e110a8f36a3-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2202'
+      - '2334'
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 15:46:49 GMT
+      - Mon, 23 Nov 2026 15:02:27 GMT
       openai-processing-ms:
-      - '1254'
+      - '498'
       openai-version:
       - '2020-10-01'
       server:
@@ -114,13 +115,13 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_29e382fc1f4e4d7194b85636272d2975
+      - req_039cced37481432e912746bfae386e55
     status:
       code: 200
       message: OK
 - request:
-    body: '{"model":"gpt-6-luna","include":[],"input":[{"content":"Who are you?","role":"user"}],"instructions":"You
-      are agent B. Just respond with ''B'' and nothing else.","prompt_cache_key":"agents-sdk:run:bc34596d6a6644d3b61c9b1a091bb455","tools":[]}'
+    body: '{"model":"gpt-6-luna","include":[],"input":[{"content":"What''s your name?","role":"user"}],"instructions":"You
+      are agent A. Just respond with ''A'' and nothing else.","prompt_cache_key":"agents-sdk:run:70be32d1c2c24f17a6f1970fd36b1f1c","text":{"verbosity":"low"},"tools":[]}'
     headers:
       accept:
       - application/json
@@ -129,13 +130,13 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '240'
+      - '272'
       content-type:
       - application/json
       host:
       - api.openai.com
       user-agent:
-      - Agents/Python 0.24.0
+      - Agents/Python 0.25.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -145,7 +146,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.46.0
+      - 3.57.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -158,40 +159,44 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0b3879a3b89e95bf016af33c6878c087d29495f2540cc59902\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1794325608,\n  \"status\":
-        \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794325609,\n  \"error\":
-        null,\n  \"frequency_penalty\": 0.0,\n  \"image\": {\n    \"context_compression\":
-        \"disabled\"\n  },\n  \"incomplete_details\": null,\n  \"instructions\": \"You
-        are agent B. Just respond with 'B' and nothing else.\",\n  \"max_output_tokens\":
-        null,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-6-luna\",\n  \"moderation\":
-        null,\n  \"output\": [\n    {\n      \"id\": \"msg_0b3879a3b89e95bf016af33c69c49887d2b2d46d1a09cfbff3\",\n
-        \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
-        [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"B\"\n        }\n      ],\n
-        \     \"phase\": \"final_answer\",\n      \"role\": \"assistant\"\n    }\n
-        \ ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\":
-        null,\n  \"prompt_cache_key\": \"agents-sdk:run:bc34596d6a6644d3b61c9b1a091bb455\",\n
-        \ \"prompt_cache_retention\": \"24h\",\n  \"reasoning\": {\n    \"context\":
-        \"all_turns\",\n    \"effort\": \"medium\",\n    \"mode\": \"standard\",\n
-        \   \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
-        \"default\",\n  \"store\": false,\n  \"temperature\": 1.0,\n  \"text\": {\n
-        \   \"format\": {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n
-        \ },\n  \"tool_choice\": \"auto\",\n  \"tool_usage\": {\n    \"image_gen\":
-        {\n      \"input_tokens\": 0,\n      \"input_tokens_details\": {\n        \"image_tokens\":
-        0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
-        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
-        0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
-        \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 0.98,\n  \"truncation\":
-        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 29,\n    \"input_tokens_details\":
-        {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 5,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 34\n  },\n  \"user\": null,\n  \"metadata\":
-        {}\n}"
+      string: "{\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1795446147,\n  \"created_at\":
+        1795446147,\n  \"error\": null,\n  \"frequency_penalty\": 0.0,\n  \"id\":
+        \"resp_01327e5d0209e34f016b045582d16887d2ac35625d6e1667eb\",\n  \"image\":
+        {\n    \"context_compression\": \"disabled\"\n  },\n  \"incomplete_details\":
+        null,\n  \"input_transformations\": [],\n  \"instructions\": \"You are agent
+        A. Just respond with 'A' and nothing else.\",\n  \"max_output_tokens\": null,\n
+        \ \"max_tool_calls\": null,\n  \"model\": \"gpt-6-luna\",\n  \"moderation\":
+        null,\n  \"object\": \"response\",\n  \"output\": [\n    {\n      \"content\":
+        [],\n      \"encrypted_content\": \"gAAAAABrBFWDMfk6f3_KT_FXBS8Kt7ui7qxBRSx3c7z6YaDDhwz56KCIR9LfIn0DiMS2KkTQKWlUZI1rs1RlfhIxiOJPS9DZ8c5jmVB4TYXv-ldN-4n7500KksJPGhEuVuDbBsdl-M1lq25F3OAlwt4I76BKtCIY_kmv0ze1AIeloc5MIhrJtq6q77nIw1vdmNJ1JY8lbRoSs8q48iLIlvWvVdOX4n59_7rO3UiO0AYOpuLLSqqs804AaDE83yYxVso-uPrNPqJT6bW3iMXZNDfRTN6xNKHNyk7MARELIx12NiahkojQGSGkxaX6PCAMGz0LObGvYrfAW0BFDoR24uo75icCUNE82Sb2bWijfUTucHs_UlvRokdvOiWvAKe4QkuO5oWwSQc07lGZhHIsKLB6ZOUuM2WApeoulF6hwPyfoKeQPnClXwnboCo1GtkCPTBzZRahARNNkPwhdCOcQx2LL78ZoPYyoOO-HPMcRGM2cX6w5Sf7q6eDyvlnGDxVKDY5h3XPN4i118spnpSMvBZFk9yjxSNnQDvSrhwQj01Xx6rH-raCLI6_pCuDc4lagtfnqQQpftXw3zamcOz1FU34bqEDwrdC2yc54uLZdXQ3rWv7WMs0u9FJU54T42E64x0rQ-t16CGtXHapvvONseTq92nEeR5uF4kk5hgzfufKq8GLRuKhAwWP_q4ywUz7fTfmR7BslFx-BPuW6G5Td9R3em1wl9HEWQh61IM0qr42fgyTitjz4pRakrn92_NcG7mUF6aTgEkVh_wWremBB6mIiXyItsHrCIpwg2Vp26bHIg0pJcXlF39Fpw7sf5FfWk6Pb9XWCt0Loh4PBZFr5fl6NnSqq4_SgdUBBfxo8-RxoDTHJL480-IPXqLZpb1m2eEXTcYoCP0iBBcWBSHxidEkfeBzK6n0lRjRLVlGsvc8od7NgBAhCn5kao2xPIQLMM_QMkrdjri_o1cJFwGfb2xpN1L3pt4EgTA1VZMDB8ExZCkQAoBxUefrGqLDYW1xVtJtAr8z-ZiwXjh3oTZKX5DisJesaLkmJL6uIDwOGMAHkaZgpKSqZ26hpATKCd9dDsaL3M-iiXdgpCoCaYF2QuF-7jUY0uwwiYwtVFXu0csPNdBUC_gvDznWHCazBBosRVbspzwkgwVkSncBk5SrfuLssyVVgzlJg1yokCs7K_wYjC6VOefQxoQhi09OdfaYsZWMDEGya02jt23-4WkW95zOry6Uw-m-MoTY3x-ahBq6SnKSJk9V8rbzESE_z6vzE5nbgliDkxXcy4A0FhaAg-0O0RfLg8jUJK4jswkJUy3oHdWZbbmsPEVGZSCu4SMfxVJaZtMd16efWuQrxmiYv0xGdoilRcuO-L9se6uCDc_wAgxCd6-__Liw_Zci9Kjewr66i3t9Bj0YochVBrpoOOhlWn_nUpdxtNwO39nX_XaSecqR0oL-uTVk1IzPhXRmVlIReadP5os6OePw8m5Yz-SQx-NXNaDZXXyLjmEr4Nxaev9RGFU-ohvXCyCfgp2r83uVo7_7Zz8KWZVhMDrHtijwoiYVoXofy9BoWAV3iQj-PZ6x6qPaMmEk4Uy1V8EX7JTYRlwz4rNggrZ-pY9STzGhZi1WhuaYus_QucMOlIm6pX8cspo9EbbPh6be6ZFF2NwXhDksoTgToOlC3EUoVmkW5NfpO-7apHZdI1eM9sOcArhfctQSpbi9y9-uATDBvra7zLaC3G8120FgCo2ebFRXxqsItwDK0To7DKNlFCbu9lHWb0-rV09zS4av9AwBWsJUbZ18VVKZA6S3tspm1FrJ396wkjEB7ZgkOqarghZ8itXhjPEDbeL-lM_NMiAxjFrAkx442OZJ\",\n
+        \     \"id\": \"rs_01327e5d0209e34f016b0455837e6487d28d747596fc12ba40\",\n
+        \     \"summary\": [],\n      \"type\": \"reasoning\"\n    },\n    {\n      \"content\":
+        [\n        {\n          \"annotations\": [],\n          \"logprobs\": [],\n
+        \         \"text\": \"A\",\n          \"type\": \"output_text\"\n        }\n
+        \     ],\n      \"id\": \"msg_01327e5d0209e34f016b0455838ddc87d2a39c9bf34a0f490c\",\n
+        \     \"phase\": \"final_answer\",\n      \"role\": \"assistant\",\n      \"status\":
+        \"completed\",\n      \"type\": \"message\"\n    }\n  ],\n  \"parallel_tool_calls\":
+        true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
+        \"agents-sdk:run:70be32d1c2c24f17a6f1970fd36b1f1c\",\n  \"prompt_cache_retention\":
+        \"24h\",\n  \"reasoning\": {\n    \"context\": \"all_turns\",\n    \"effort\":
+        \"medium\",\n    \"mode\": \"standard\",\n    \"summary\": null\n  },\n  \"safety_identifier\":
+        null,\n  \"service_tier\": \"default\",\n  \"status\": \"completed\",\n  \"store\":
+        false,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
+        \"text\"\n    },\n    \"verbosity\": \"low\"\n  },\n  \"tool_choice\": \"auto\",\n
+        \ \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\": 0,\n      \"input_tokens_details\":
+        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\":
+        0,\n      \"output_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
+        0\n      },\n      \"total_tokens\": 0\n    },\n    \"web_search\": {\n      \"num_requests\":
+        0\n    }\n  },\n  \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 0.98,\n
+        \ \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 29,\n
+        \   \"input_tokens_details\": {\n      \"cache_write_tokens\": 0,\n      \"cache_write_tokens_details\":
+        {\n        \"ttl_12h_tokens\": 0,\n        \"ttl_30m_tokens\": 0\n      },\n
+        \     \"cached_tokens\": 0\n    },\n    \"output_tokens\": 28,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 21\n    },\n    \"total_tokens\": 57\n  },\n
+        \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
       access-control-expose-headers:
-      - X-Request-ID, Server-Timing-Total
+      - X-Request-ID, Server-Timing-Total, X-OpenAI-Inference-Capacity-Reason
       - CF-Ray
       - CF-Ray
       alt-svc:
@@ -199,17 +204,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a586312c7daaabf7-YYZ
+      - a5f10e111b51713b-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2202'
+      - '4385'
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 15:46:49 GMT
+      - Mon, 23 Nov 2026 15:02:27 GMT
       openai-processing-ms:
-      - '1436'
+      - '981'
       openai-version:
       - '2020-10-01'
       server:
@@ -233,7 +238,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_b6f3352849ba457e9615d5fe3bcbbbe2
+      - req_b4c85f59e5d64d9898d3e5dda26ef8ea
     status:
       code: 200
       message: OK

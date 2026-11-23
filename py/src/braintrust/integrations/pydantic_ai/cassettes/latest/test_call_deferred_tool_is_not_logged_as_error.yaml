@@ -17,7 +17,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.68.0
+      - pydantic-ai/2.71.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -27,7 +27,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.51.0
+      - 3.57.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -40,38 +40,38 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0bed4839a747b6be016afb232d656887d286b7eb6e27c4b24c\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1794843437,\n  \"status\":
-        \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794843438,\n  \"error\":
-        null,\n  \"frequency_penalty\": 0.0,\n  \"image\": {\n    \"context_compression\":
-        \"disabled\"\n  },\n  \"incomplete_details\": null,\n  \"input_transformations\":
-        [],\n  \"instructions\": null,\n  \"max_output_tokens\": 200,\n  \"max_tool_calls\":
-        null,\n  \"model\": \"gpt-6-luna\",\n  \"moderation\": null,\n  \"output\":
-        [\n    {\n      \"id\": \"fc_0bed4839a747b6be016afb232de99c87d29dc2df76b2e19d7e\",\n
-        \     \"type\": \"function_call\",\n      \"status\": \"completed\",\n      \"arguments\":
-        \"{\\\"job_name\\\":\\\"nightly-report\\\"}\",\n      \"call_id\": \"call_EFgTXsfUhjL8AkRZxLv1byNp\",\n
-        \     \"name\": \"run_long_job\"\n    }\n  ],\n  \"parallel_tool_calls\":
-        true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
-        null,\n  \"prompt_cache_retention\": \"24h\",\n  \"reasoning\": {\n    \"context\":
-        \"all_turns\",\n    \"effort\": \"none\",\n    \"mode\": \"standard\",\n    \"summary\":
-        null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n
-        \ \"store\": false,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\":
-        {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n
-        \ \"tool_choice\": \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n
-        \     \"input_tokens\": 0,\n      \"input_tokens_details\": {\n        \"image_tokens\":
-        0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
+      string: "{\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1795445950,\n  \"created_at\":
+        1795445950,\n  \"error\": null,\n  \"frequency_penalty\": 0.0,\n  \"id\":
+        \"resp_01d2e93c471ee56e016b0454bde52c87d2b8d9eeac78de93cf\",\n  \"image\":
+        {\n    \"context_compression\": \"disabled\"\n  },\n  \"incomplete_details\":
+        null,\n  \"input_transformations\": [],\n  \"instructions\": null,\n  \"max_output_tokens\":
+        200,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-6-luna\",\n  \"moderation\":
+        null,\n  \"object\": \"response\",\n  \"output\": [\n    {\n      \"arguments\":
+        \"{\\\"job_name\\\":\\\"nightly-report\\\"}\",\n      \"call_id\": \"call_0773d984326f4185872cc879c5d1dee7\",\n
+        \     \"id\": \"fc_01d2e93c471ee56e016b0454be71d087d28f7e4af0e4d20c21\",\n
+        \     \"name\": \"run_long_job\",\n      \"status\": \"completed\",\n      \"type\":
+        \"function_call\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\":
+        0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
+        \"24h\",\n  \"reasoning\": {\n    \"context\": \"all_turns\",\n    \"effort\":
+        \"none\",\n    \"mode\": \"standard\",\n    \"summary\": null\n  },\n  \"safety_identifier\":
+        null,\n  \"service_tier\": \"default\",\n  \"status\": \"completed\",\n  \"store\":
+        false,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
+        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
+        \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\":
+        0,\n      \"input_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
+        0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
         {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
         0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
-        \ \"tools\": [\n    {\n      \"type\": \"function\",\n      \"description\":
-        \"Start a long-running background job by name.\",\n      \"name\": \"run_long_job\",\n
-        \     \"output_schema\": null,\n      \"parameters\": {\n        \"additionalProperties\":
-        false,\n        \"properties\": {\n          \"job_name\": {\n            \"type\":
+        \ \"tools\": [\n    {\n      \"description\": \"Start a long-running background
+        job by name.\",\n      \"name\": \"run_long_job\",\n      \"output_schema\":
+        null,\n      \"parameters\": {\n        \"additionalProperties\": false,\n
+        \       \"properties\": {\n          \"job_name\": {\n            \"type\":
         \"string\"\n          }\n        },\n        \"required\": [\n          \"job_name\"\n
-        \       ],\n        \"type\": \"object\"\n      },\n      \"strict\": true\n
-        \   }\n  ],\n  \"top_logprobs\": 0,\n  \"top_p\": 0.98,\n  \"truncation\":
-        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 57,\n    \"input_tokens_details\":
-        {\n      \"cache_write_tokens\": 0,\n      \"cache_write_tokens_details\":
+        \       ],\n        \"type\": \"object\"\n      },\n      \"strict\": true,\n
+        \     \"type\": \"function\"\n    }\n  ],\n  \"top_logprobs\": 0,\n  \"top_p\":
+        0.98,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\":
+        57,\n    \"input_tokens_details\": {\n      \"cache_write_tokens\": 0,\n      \"cache_write_tokens_details\":
         {\n        \"ttl_12h_tokens\": 0,\n        \"ttl_30m_tokens\": 0\n      },\n
         \     \"cached_tokens\": 0\n    },\n    \"output_tokens\": 22,\n    \"output_tokens_details\":
         {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 79\n  },\n
@@ -86,17 +86,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5b7937b2c90f41f-YYZ
+      - a5f109425b38c0f6-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2600'
+      - '2608'
       content-type:
       - application/json
       date:
-      - Mon, 16 Nov 2026 15:37:18 GMT
+      - Mon, 23 Nov 2026 14:59:10 GMT
       openai-processing-ms:
-      - '858'
+      - '933'
       openai-version:
       - '2020-10-01'
       server:
@@ -120,7 +120,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_21ccce0cd10f4f46bdf0f89975271797
+      - req_ed26251c95324d7b84b755354e7bd70b
     status:
       code: 200
       message: OK

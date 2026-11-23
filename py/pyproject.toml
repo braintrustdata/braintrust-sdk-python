@@ -501,7 +501,7 @@ latest = "litellm==1.110.2"
 "1.74.0" = "litellm==1.74.0"
 
 [tool.braintrust.matrix.livekit-agents]
-latest = "livekit-agents==1.8.13"
+latest = "livekit-agents==1.8.12"
 "1.8.9" = "livekit-agents==1.8.9"
 
 [tool.braintrust.matrix.pipecat-ai]
@@ -671,9 +671,12 @@ latest = "boto3==1.44.9"
 latest = "aiobotocore[httpx]==3.10.0"
 "2.13.1" = "aiobotocore==2.13.1"
 
-# aiobotocore supports a narrower botocore range than boto3.
+# aiobotocore supports a narrower botocore range than boto3. Pick the newest
+# botocore that the aiobotocore latest pin allows (aiobotocore 3.10.0 requires
+# botocore>=1.43.115,<1.43.118), and update it by hand whenever aiobotocore
+# moves; update-matrix-latest.py skips lines marked no-auto-update.
 [tool.braintrust.matrix.aiobotocore-botocore]
-latest = "botocore==1.44.9"
+latest = "botocore==1.43.117"  # no-auto-update
 "2.13.1" = "botocore==1.34.116"
 
 [tool.braintrust.matrix.botocore]

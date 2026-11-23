@@ -459,9 +459,11 @@ _SPAN_STATES = {
     "loop_turn": _SpanState(_loop_turn_start),
     "ai_stream": _SpanState(_stream_start, _stream_end),
     "ai_generate": _SpanState(_generate_start, _generate_end),
+    # ai < 0.10 emits "evaluate"; ai >= 0.10 renamed the operation to "decide".
     "evaluate": _model_operation_state(
         "evaluate", request_fields=("question_count",), response_fields=("answer_count",)
     ),
+    "decide": _model_operation_state("decide", request_fields=("question_count",), response_fields=("answer_count",)),
     "tool_execution": _SpanState(_tool_start, _tool_end),
     "hook": _SpanState(_hook_start, _hook_end),
     "custom": _SpanState(_custom_start, _custom_end),

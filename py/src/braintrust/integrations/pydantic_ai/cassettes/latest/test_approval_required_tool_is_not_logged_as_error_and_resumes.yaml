@@ -17,7 +17,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.68.0
+      - pydantic-ai/2.71.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -27,7 +27,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.51.0
+      - 3.57.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -40,35 +40,35 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_07598901a6c273ed016afb232e668487d293f53b01a3288dcf\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1794843438,\n  \"status\":
-        \"completed\",\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
-        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1794843439,\n  \"error\":
-        null,\n  \"frequency_penalty\": 0.0,\n  \"image\": {\n    \"context_compression\":
-        \"disabled\"\n  },\n  \"incomplete_details\": null,\n  \"input_transformations\":
-        [],\n  \"instructions\": null,\n  \"max_output_tokens\": 200,\n  \"max_tool_calls\":
-        null,\n  \"model\": \"gpt-6-luna\",\n  \"moderation\": null,\n  \"output\":
-        [\n    {\n      \"id\": \"fc_07598901a6c273ed016afb232f0d5887d299c1523287373c73\",\n
-        \     \"type\": \"function_call\",\n      \"status\": \"completed\",\n      \"arguments\":
-        \"{\\\"path\\\":\\\"/tmp/report.txt\\\"}\",\n      \"call_id\": \"call_l7RDVf8hqaZTOQWEzYqinG6U\",\n
-        \     \"name\": \"delete_file\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n
-        \ \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
-        null,\n  \"prompt_cache_retention\": \"24h\",\n  \"reasoning\": {\n    \"context\":
-        \"all_turns\",\n    \"effort\": \"none\",\n    \"mode\": \"standard\",\n    \"summary\":
-        null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n
-        \ \"store\": false,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\":
-        {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n
-        \ \"tool_choice\": \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n
-        \     \"input_tokens\": 0,\n      \"input_tokens_details\": {\n        \"image_tokens\":
-        0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
+      string: "{\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1795445951,\n  \"created_at\":
+        1795445951,\n  \"error\": null,\n  \"frequency_penalty\": 0.0,\n  \"id\":
+        \"resp_071a44a1a9ca81ea016b0454bf0fb087d29c4e29c172bb0486\",\n  \"image\":
+        {\n    \"context_compression\": \"disabled\"\n  },\n  \"incomplete_details\":
+        null,\n  \"input_transformations\": [],\n  \"instructions\": null,\n  \"max_output_tokens\":
+        200,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-6-luna\",\n  \"moderation\":
+        null,\n  \"object\": \"response\",\n  \"output\": [\n    {\n      \"arguments\":
+        \"{\\\"path\\\":\\\"/tmp/report.txt\\\"}\",\n      \"call_id\": \"call_c5d6605f7c6f4b66b9bb1584084be2a3\",\n
+        \     \"id\": \"fc_071a44a1a9ca81ea016b0454bf82bc87d285cbf52600acd391\",\n
+        \     \"name\": \"delete_file\",\n      \"status\": \"completed\",\n      \"type\":
+        \"function_call\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\":
+        0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
+        \"24h\",\n  \"reasoning\": {\n    \"context\": \"all_turns\",\n    \"effort\":
+        \"none\",\n    \"mode\": \"standard\",\n    \"summary\": null\n  },\n  \"safety_identifier\":
+        null,\n  \"service_tier\": \"default\",\n  \"status\": \"completed\",\n  \"store\":
+        false,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
+        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
+        \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\":
+        0,\n      \"input_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
+        0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
         {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
         0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
-        \ \"tools\": [\n    {\n      \"type\": \"function\",\n      \"description\":
-        \"Delete the file at the given path.\",\n      \"name\": \"delete_file\",\n
-        \     \"output_schema\": null,\n      \"parameters\": {\n        \"additionalProperties\":
-        false,\n        \"properties\": {\n          \"path\": {\n            \"type\":
-        \"string\"\n          }\n        },\n        \"required\": [\n          \"path\"\n
-        \       ],\n        \"type\": \"object\"\n      },\n      \"strict\": true\n
+        \ \"tools\": [\n    {\n      \"description\": \"Delete the file at the given
+        path.\",\n      \"name\": \"delete_file\",\n      \"output_schema\": null,\n
+        \     \"parameters\": {\n        \"additionalProperties\": false,\n        \"properties\":
+        {\n          \"path\": {\n            \"type\": \"string\"\n          }\n
+        \       },\n        \"required\": [\n          \"path\"\n        ],\n        \"type\":
+        \"object\"\n      },\n      \"strict\": true,\n      \"type\": \"function\"\n
         \   }\n  ],\n  \"top_logprobs\": 0,\n  \"top_p\": 0.98,\n  \"truncation\":
         \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 53,\n    \"input_tokens_details\":
         {\n      \"cache_write_tokens\": 0,\n      \"cache_write_tokens_details\":
@@ -86,17 +86,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5b7938198201707-YYZ
+      - a5f109496c6ea228-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2577'
+      - '2585'
       content-type:
       - application/json
       date:
-      - Mon, 16 Nov 2026 15:37:19 GMT
+      - Mon, 23 Nov 2026 14:59:11 GMT
       openai-processing-ms:
-      - '1058'
+      - '795'
       openai-version:
       - '2020-10-01'
       server:
@@ -120,14 +120,14 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_98bf6d9a717240408196d7f386ef5688
+      - req_569d6626f8de4b36a516c9265929abdb
     status:
       code: 200
       message: OK
 - request:
     body: '{"model":"gpt-6-luna","stream":false,"include":["reasoning.encrypted_content"],"input":[{"role":"user","content":"Delete
-      the file at /tmp/report.txt."},{"name":"delete_file","arguments":"{\"path\":\"/tmp/report.txt\"}","call_id":"call_l7RDVf8hqaZTOQWEzYqinG6U","type":"function_call","id":"fc_07598901a6c273ed016afb232f0d5887d299c1523287373c73"},{"type":"function_call_output","call_id":"call_l7RDVf8hqaZTOQWEzYqinG6U","output":"Deleted
-      /tmp/report.txt"}],"max_output_tokens":200,"prompt_cache_options":{"comparison_response_id":"resp_07598901a6c273ed016afb232e668487d293f53b01a3288dcf"},"reasoning":{"effort":"none","context":"all_turns"},"tool_choice":"auto","tools":[{"name":"delete_file","parameters":{"additionalProperties":false,"properties":{"path":{"type":"string"}},"required":["path"],"type":"object"},"type":"function","description":"Delete
+      the file at /tmp/report.txt."},{"name":"delete_file","arguments":"{\"path\":\"/tmp/report.txt\"}","call_id":"call_c5d6605f7c6f4b66b9bb1584084be2a3","type":"function_call","id":"fc_071a44a1a9ca81ea016b0454bf82bc87d285cbf52600acd391"},{"type":"function_call_output","call_id":"call_c5d6605f7c6f4b66b9bb1584084be2a3","output":"Deleted
+      /tmp/report.txt"}],"max_output_tokens":200,"prompt_cache_options":{"comparison_response_id":"resp_071a44a1a9ca81ea016b0454bf0fb087d29c4e29c172bb0486"},"reasoning":{"effort":"none","context":"all_turns"},"tool_choice":"auto","tools":[{"name":"delete_file","parameters":{"additionalProperties":false,"properties":{"path":{"type":"string"}},"required":["path"],"type":"object"},"type":"function","description":"Delete
       the file at the given path.","strict":true}]}'
     headers:
       accept:
@@ -137,13 +137,13 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '897'
+      - '913'
       content-type:
       - application/json
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.68.0
+      - pydantic-ai/2.71.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -153,7 +153,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.51.0
+      - 3.57.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -166,9 +166,46 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: '{"input_transformations":[],"id":"resp_07598901a6c273ed016afb232f91fc87d2ae127d8dad6b7287","object":"response","created_at":1794843439,"completed_at":1794843440,"status":"completed","background":false,"billing":{"payer":"developer"},"frequency_penalty":0.0,"presence_penalty":0.0,"moderation":null,"model":"gpt-6-luna","access_programs":null,"previous_response_id":null,"instructions":null,"output":[{"type":"message","id":"msg_07598901a6c273ed016afb2330ab1487d28d12a55b33d0bbb8","role":"assistant","status":"completed","content":[{"type":"output_text","text":"Deleted
-        `/tmp/report.txt`.","annotations":[],"logprobs":[]}],"phase":"final_answer"}],"error":null,"incomplete_details":null,"tools":[{"type":"function","name":"delete_file","description":"Delete
-        the file at the given path.","parameters":{"additionalProperties":false,"properties":{"path":{"type":"string"}},"required":["path"],"type":"object"},"output_schema":null,"strict":true}],"tool_choice":"auto","parallel_tool_calls":true,"prompt_cache_key":null,"prompt_cache_retention":"24h","prompt_cache_options":{"ttl":"30m","mode":"implicit","comparison_response_id":"resp_07598901a6c273ed016afb232e668487d293f53b01a3288dcf"},"prompt_cache_diagnostics":{"type":"cache_hit"},"text":{"format":{"type":"text"},"verbosity":"medium"},"top_p":0.98,"top_logprobs":0,"temperature":1.0,"reasoning":{"effort":"none","context":"all_turns","summary":null,"mode":"standard"},"user":null,"usage":{"input_tokens":90,"input_tokens_details":{"cached_tokens":0,"cache_write_tokens":0,"cache_write_tokens_details":{"ttl_30m_tokens":0,"ttl_12h_tokens":0}},"output_tokens":10,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":100},"tool_usage":{"image_gen":{"input_tokens":0,"output_tokens":0,"total_tokens":0,"input_tokens_details":{"text_tokens":0,"image_tokens":0},"output_tokens_details":{"image_tokens":0,"text_tokens":0}},"web_search":{"num_requests":0}},"safety_identifier":null,"store":false,"metadata":{},"max_output_tokens":200,"max_tool_calls":null,"service_tier":"default","truncation":"disabled","image":{"context_compression":"disabled"}}'
+      string: "{\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1795445952,\n  \"created_at\":
+        1795445952,\n  \"error\": null,\n  \"frequency_penalty\": 0.0,\n  \"id\":
+        \"resp_071a44a1a9ca81ea016b0454c0023087d2bfb0b5eb72cd008a\",\n  \"image\":
+        {\n    \"context_compression\": \"disabled\"\n  },\n  \"incomplete_details\":
+        null,\n  \"input_transformations\": [],\n  \"instructions\": null,\n  \"max_output_tokens\":
+        200,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-6-luna\",\n  \"moderation\":
+        null,\n  \"object\": \"response\",\n  \"output\": [\n    {\n      \"content\":
+        [\n        {\n          \"annotations\": [],\n          \"logprobs\": [],\n
+        \         \"text\": \"Deleted `/tmp/report.txt`.\",\n          \"type\": \"output_text\"\n
+        \       }\n      ],\n      \"id\": \"msg_071a44a1a9ca81ea016b0454c0570487d2871358a0120dad88\",\n
+        \     \"phase\": \"final_answer\",\n      \"role\": \"assistant\",\n      \"status\":
+        \"completed\",\n      \"type\": \"message\"\n    }\n  ],\n  \"parallel_tool_calls\":
+        true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_diagnostics\":
+        {\n    \"type\": \"cache_hit\"\n  },\n  \"prompt_cache_key\": null,\n  \"prompt_cache_options\":
+        {\n    \"comparison_response_id\": \"resp_071a44a1a9ca81ea016b0454bf0fb087d29c4e29c172bb0486\",\n
+        \   \"mode\": \"implicit\",\n    \"ttl\": \"30m\"\n  },\n  \"prompt_cache_retention\":
+        \"24h\",\n  \"reasoning\": {\n    \"context\": \"all_turns\",\n    \"effort\":
+        \"none\",\n    \"mode\": \"standard\",\n    \"summary\": null\n  },\n  \"safety_identifier\":
+        null,\n  \"service_tier\": \"default\",\n  \"status\": \"completed\",\n  \"store\":
+        false,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
+        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
+        \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\":
+        0,\n      \"input_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
+        0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
+        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
+        0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
+        \ \"tools\": [\n    {\n      \"description\": \"Delete the file at the given
+        path.\",\n      \"name\": \"delete_file\",\n      \"output_schema\": null,\n
+        \     \"parameters\": {\n        \"additionalProperties\": false,\n        \"properties\":
+        {\n          \"path\": {\n            \"type\": \"string\"\n          }\n
+        \       },\n        \"required\": [\n          \"path\"\n        ],\n        \"type\":
+        \"object\"\n      },\n      \"strict\": true,\n      \"type\": \"function\"\n
+        \   }\n  ],\n  \"top_logprobs\": 0,\n  \"top_p\": 0.98,\n  \"truncation\":
+        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 90,\n    \"input_tokens_details\":
+        {\n      \"cache_write_tokens\": 0,\n      \"cache_write_tokens_details\":
+        {\n        \"ttl_12h_tokens\": 0,\n        \"ttl_30m_tokens\": 0\n      },\n
+        \     \"cached_tokens\": 0\n    },\n    \"output_tokens\": 10,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 100\n  },\n
+        \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
       access-control-expose-headers:
       - X-Request-ID, Server-Timing-Total, X-OpenAI-Inference-Capacity-Reason
@@ -179,17 +216,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5b79388ce831707-YYZ
+      - a5f1094f5a58a228-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2101'
+      - '2906'
       content-type:
       - application/json
       date:
-      - Mon, 16 Nov 2026 15:37:20 GMT
+      - Mon, 23 Nov 2026 14:59:12 GMT
       openai-processing-ms:
-      - '1394'
+      - '752'
       openai-version:
       - '2020-10-01'
       server:
@@ -213,7 +250,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_73d4011389d94072bd4b1f86fde7c978
+      - req_6093d458015644bbbf0b77ad50441233
     status:
       code: 200
       message: OK

@@ -265,9 +265,9 @@ def test_dspy_images_materialize_attachments(memory_logger, model_kind):
     assert "serializer-hidden-value" not in serialized
 
 
-@pytest.mark.vcr(
-    cassette_name="test_dspy_lm_usage", match_on=["method", "scheme", "host", "port", "path", "query", "body"]
-)
+# One cassette per case: the cases send different bodies, and a shared
+# body-matched cassette cannot be filled in `once` record mode.
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "query", "body"])
 @pytest.mark.parametrize("asynchronous", [False, True], ids=["sync", "async"])
 @pytest.mark.parametrize("prompt_kind", ["string", "request"])
 @pytest.mark.parametrize("model_type", ["chat", "responses"])

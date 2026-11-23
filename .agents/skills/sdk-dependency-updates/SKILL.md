@@ -54,6 +54,7 @@ Helper scripts (run from the repo root; each takes `--help`):
 - Do not trust the PR label blindly; verify the actual diff in `py/pyproject.toml` and `py/uv.lock`.
 - Re-record only affected `latest` cassettes. Do not churn older version directories unless older pins changed or the user asked.
 - Review the cassette diff itself, not just pass/fail status.
+- Report every failure (playback sweep, recording, validation) to the user, with its root cause and a proposed fix, and discuss it before acting. Do not silently restore a cassette, skip a test, or hold a pin to make a failure go away. Fix a failure only after the user approves; the default proposal is to fix the root cause (SDK, test, or recording setup), not to work around it.
 
 ## Workflow
 
@@ -142,6 +143,7 @@ Automated PRs are opened with `GITHUB_TOKEN`, which does not trigger CI. Until s
 - Run with `CI=true` (forces `record_mode="none"`) and with `BRAINTRUST_API_KEY` unset, as CI does.
 - Sessions can run in parallel; give each a separate log. Don't run two sessions that share an external service at once. For example, livekit tests use one local LiveKit server.
 - For every failure, re-run the same session on a clean `origin/main` worktree. Use the same env and its own `.nox` directory. A failure there too comes from local env or was already broken; a pass on `main` is a regression from the bump.
+- Report each failure with that comparison, its root cause and a proposed fix (see Core Rules), and wait for approval before fixing.
 
 Sessions that skip on the default interpreter need a nox install under an older Python. Check `max_python_exclusive` in `py/nox_session_constraints.py`; for example, sessions capped below 3.14 skip on 3.14:
 
@@ -212,7 +214,7 @@ Classify each package's findings:
 - **Recommended**: new surfaces or fields worth tracing.
 - **Nothing needed**: say what was checked.
 
-Decide what to do with required findings:
+Report required findings to the user and agree on the approach before changing anything:
 
 - **Small and contained** (a new patcher target, a version-gated test assertion, a removed cap): fix it in the dependency PR, with the failing test as the reproduction. Validate on `latest` and on every older matrix pin for that key.
 - **Large** (an integration rework): keep the previous `latest` pin in the PR. Open an issue with the findings and fix plan, and link it from the PR description. Expect the weekly job to bump the pin again until the fix lands.
@@ -259,15 +261,17 @@ Groups of sessions that write to different directories can record in parallel. S
 
 Provider API keys are expected to exist in this local environment. If a session fails fast with an auth error, stop and ask the user instead of fabricating cassettes.
 
-#### Restore cassettes from failed recordings
+#### Handle failed recordings
 
-A test that fails while recording still writes its cassette, holding the failed run. For each recording failure, decide whether the failure comes from the bump:
+A test that fails while recording still writes its cassette, holding the failed run. Never keep that cassette. Report every recording failure to the user with its root cause and a proposed fix, and fix it once the user approves. Diagnose whether it comes from the bump:
 
-- **Not from the bump:** restore the committed cassette with `git checkout -- <file>`, and confirm it still plays back against the new pin. Typical causes:
-  - nondeterministic model output that a test asserts on;
-  - upstream latency, such as a test that polls a long-running job past its deadline;
-  - auth or quota errors.
-- **From the bump:** keep the new recording only once the SDK or test fix makes the test pass. Otherwise hold the pin (see step 7).
+- **Not from the bump:** the test or recording setup is fragile. Propose a fix to the test so it records reliably, then delete its cassette and re-record. Typical causes and fixes:
+  - nondeterministic model output that a test asserts on: make the input unambiguous and constrain the output (for example a `Literal` schema field, or a larger test image instead of a 1x1 pixel);
+  - state shared across tests, such as a process-wide HTTP client reused on a closed event loop: isolate it in a fixture;
+  - upstream latency, such as a test that polls a long-running job past its deadline.
+- **From the bump:** fix the SDK or test so the test passes, then keep the new recording.
+
+Restoring the committed cassette with `git checkout -- <file>` or holding the pin (see step 7) is a fallback, not the default. Use it only when the user chooses it, for example when a fix needs credentials or quota that aren't available.
 
 #### Tests that need a real Braintrust org
 
@@ -361,5 +365,5 @@ Always report:
 6. whether you found and removed pollution
 7. any pins that raise `Requires-Python` above CI's lowest Python, and how they were gated
 8. for each minor or major bump: the required SDK changes (fixed in the PR, or held back with an issue link), the recommended follow-ups, or "nothing needed"
-9. playback-sweep failures, and whether each also fails on `main`
+9. every playback-sweep, recording and validation failure: whether it also fails on `main`, its root cause, the fix proposed, and what the user decided
 10. the final playback or validation result

@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.68.0
+      - pydantic-ai/2.71.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.51.0
+      - 3.57.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,11 +39,9 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"error\": {\n    \"message\": \"The image data you provided does
-        not represent a valid image. Please check your input and try again with one
-        of the supported image formats: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].\",\n
-        \   \"type\": \"invalid_request_error\",\n    \"param\": \"input\",\n    \"code\":
-        \"invalid_value\"\n  }\n}"
+      string: "{\n  \"error\": {\n    \"code\": null,\n    \"message\": \"input_image
+        image_url unsupported image format: unknown\",\n    \"param\": null,\n    \"type\":
+        \"invalid_request_error\"\n  }\n}"
     headers:
       access-control-expose-headers:
       - X-Request-ID, Server-Timing-Total, X-OpenAI-Inference-Capacity-Reason
@@ -54,17 +52,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5b794264866ebb6-YYZ
+      - a5f109cdebde813d-YYZ
       connection:
       - keep-alive
       content-length:
-      - '322'
+      - '167'
       content-type:
       - application/json
       date:
-      - Mon, 16 Nov 2026 15:37:44 GMT
+      - Mon, 23 Nov 2026 14:59:32 GMT
       openai-processing-ms:
-      - '84'
+      - '47'
       openai-version:
       - '2020-10-01'
       server:
@@ -74,7 +72,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-id:
-      - req_17cd58794515420491e5a9dce3039cfe
+      - req_25ea2194284746cda4edec03dc90c464
     status:
       code: 400
       message: Bad Request

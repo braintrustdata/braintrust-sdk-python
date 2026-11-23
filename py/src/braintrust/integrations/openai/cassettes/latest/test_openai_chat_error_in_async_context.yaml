@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - AsyncOpenAI/Python 3.51.0
+      - AsyncOpenAI/Python 3.57.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.51.0
+      - 3.57.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,13 +39,13 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: 'data: {"id":"chatcmpl-Ekt3x6OeRy5KA9iNo4xQinDgTUoiG","object":"chat.completion.chunk","created":1794843457,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{"role":"assistant","content":"","refusal":null},"finish_reason":null}],"obfuscation":"hmfGnlyJ7PBe3"}
+      string: 'data: {"id":"chatcmpl-EnPnhBKsur3gAk5HumBIYO3Dg58eX","object":"chat.completion.chunk","created":1795445957,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{"role":"assistant","content":"","refusal":null},"finish_reason":null}],"obfuscation":"tZbGzYy7l9ujn"}
 
 
-        data: {"id":"chatcmpl-Ekt3x6OeRy5KA9iNo4xQinDgTUoiG","object":"chat.completion.chunk","created":1794843457,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":"24"},"finish_reason":null}],"obfuscation":"M8l6go0Wb7q7Q"}
+        data: {"id":"chatcmpl-EnPnhBKsur3gAk5HumBIYO3Dg58eX","object":"chat.completion.chunk","created":1795445957,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":"24"},"finish_reason":null}],"obfuscation":"HDdz2uiYjlttB"}
 
 
-        data: {"id":"chatcmpl-Ekt3x6OeRy5KA9iNo4xQinDgTUoiG","object":"chat.completion.chunk","created":1794843457,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"obfuscation":"4PCU9CGbc"}
+        data: {"id":"chatcmpl-EnPnhBKsur3gAk5HumBIYO3Dg58eX","object":"chat.completion.chunk","created":1795445957,"model":"gpt-6-luna","service_tier":"default","system_fingerprint":null,"choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"obfuscation":"thFCcQion"}
 
 
         data: [DONE]
@@ -62,15 +62,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5b793f6a82328db-YYZ
+      - a5f1096fa85aab12-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 16 Nov 2026 15:37:37 GMT
+      - Mon, 23 Nov 2026 14:59:17 GMT
       openai-processing-ms:
-      - '474'
+      - '537'
       openai-version:
       - '2020-10-01'
       server:
@@ -79,6 +79,8 @@ interactions:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
       - chunked
+      vary:
+      - Origin
       x-content-type-options:
       - nosniff
       x-openai-proxy-wasm:
@@ -96,7 +98,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_d6edb21932ed4ed5b7ea6d52a15a26e2
+      - req_099fc431b5704c1792117ae4522fd4d4
     status:
       code: 200
       message: OK

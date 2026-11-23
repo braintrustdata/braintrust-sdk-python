@@ -3,10 +3,12 @@
 # pyright: reportUnknownMemberType=false
 # pyright: reportUnknownVariableType=false
 import asyncio
-import base64
 import contextlib
 import contextvars
 import random
+import struct
+import zlib
+from typing import Literal
 
 import ai
 import pytest
@@ -43,9 +45,20 @@ def _model_params():
     return params
 
 
-_RED_PIXEL_PNG = base64.b64decode(
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC"
-)
+def _solid_png(rgb: tuple[int, int, int], size: int = 64) -> bytes:
+    """Build a solid-color RGB PNG. A 1x1 image is too small to classify reliably."""
+
+    def chunk(kind: bytes, data: bytes) -> bytes:
+        return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data))
+
+    row = b"\x00" + bytes(rgb) * size
+    header = struct.pack(">IIBBBBB", size, size, 8, 2, 0, 0, 0)
+    return (
+        b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header) + chunk(b"IDAT", zlib.compress(row * size)) + chunk(b"IEND", b"")
+    )
+
+
+_RED_PNG = _solid_png((255, 0, 0))
 
 
 @ai.tool
@@ -62,7 +75,7 @@ def _temperature_messages():
 
 
 class ImageAnswer(BaseModel):
-    color: str
+    color: Literal["red", "green", "blue"]
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -116,8 +129,8 @@ async def test_stream_structured_multimodal_response(memory_logger):
     messages = [
         ai.system_message("Return the requested value exactly."),
         ai.user_message(
-            "What is the dominant color of this image?",
-            ai.file_part(_RED_PIXEL_PNG, media_type="image/png", filename="red.png"),
+            "What is the color of this image: red, green, or blue?",
+            ai.file_part(_RED_PNG, media_type="image/png", filename="image.png"),
         ),
     ]
 
@@ -128,7 +141,7 @@ async def test_stream_structured_multimodal_response(memory_logger):
                 chunks.append(event.chunk)
 
     assert chunks
-    assert stream.output.color.lower() == "red"
+    assert stream.output.color == "red"
 
     spans = memory_logger.pop()
     assert len(spans) == 1
@@ -352,19 +365,26 @@ async def test_typesafe_provider_evaluate_nests_typesafe_span(memory_logger):
     from braintrust.integrations.typesafe import setup_typesafe
 
     assert setup_typesafe()
+    experimental = ai.ops.experimental
+    # ai 0.10 renamed evaluate/NoulQuestion to decide/PredicateQuestion and the
+    # span kind from "evaluate" to "decide".
+    if hasattr(experimental, "PredicateQuestion"):
+        operation, decide, question = "decide", experimental.decide, experimental.PredicateQuestion
+    else:
+        operation, decide, question = "evaluate", experimental.evaluate, experimental.NoulQuestion
     provider = typesafe_provider.TypeSafeProvider()
     try:
-        await ai.ops.experimental.evaluate(
+        await decide(
             ai.Model(id="jev-latest", provider=provider),
             "The package arrived intact and on time.",
-            {"positive": ai.ops.experimental.NoulQuestion(instructions="Is this feedback positive?")},
+            {"positive": question(instructions="Is this feedback positive?")},
         )
     finally:
         await provider.aclose()
 
     spans = memory_logger.pop()
     assert len(spans) == 2
-    evaluate_span = _span_named(spans, "ai.evaluate")
+    evaluate_span = _span_named(spans, f"ai.{operation}")
     typesafe_span = _span_named(spans, "typesafe.systemOne")
 
     assert evaluate_span["span_attributes"]["type"] == SpanTypeAttribute.TASK
