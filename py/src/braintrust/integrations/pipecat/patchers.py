@@ -6,8 +6,10 @@ from typing import Any
 
 from braintrust._audio.config import AudioRecordingOptions
 from braintrust.integrations.base import CompositeFunctionWrapperPatcher, FunctionWrapperPatcher
+from braintrust.integrations.openai.tracing import _parse_metrics_from_usage
 
 from .tracing import BraintrustPipecatObserver
+from .tracing._common import LOG
 from .tracing._live import is_live_service
 
 
@@ -345,6 +347,36 @@ class OpenAILivePatcher(CompositeFunctionWrapperPatcher):
         return super().applies(module, version, target=target)
 
 
+async def traced_realtime_response_done(
+    wrapped: Any, instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]
+) -> Any:
+    observer = _ACTIVE_OBSERVER.get()
+    parent = getattr(instance, _RESPONSE_SPAN_ATTR, None)
+    if observer is not None and parent is not None:
+        try:
+            event = args[0] if args else kwargs.get("evt")
+            response = event.response.model_dump(exclude_unset=True)
+            usage = response.get("usage") or {}
+            for prefix, names in (
+                ("input", ("audio_tokens", "cached_tokens", "cached_tokens_details")),
+                ("output", ("audio_tokens", "image_tokens", "reasoning_tokens")),
+            ):
+                details = usage.pop(f"{prefix}_token_details", None)
+                if details is not None:
+                    usage[f"{prefix}_tokens_details"] = {name: details[name] for name in names if name in details}
+            observer._finish_realtime_response(parent, _parse_metrics_from_usage(usage), response.get("output"))
+        except Exception:
+            LOG.warning("Unable to trace Pipecat Realtime response", exc_info=True)
+    return await wrapped(*args, **kwargs)
+
+
+class OpenAIRealtimeResponseDonePatcher(FunctionWrapperPatcher):
+    name = "openai_realtime_response_done"
+    target_module = "pipecat.services.openai.realtime.llm"
+    target_path = "OpenAIRealtimeLLMService._handle_evt_response_done"
+    wrapper = staticmethod(traced_realtime_response_done)
+
+
 def wrap_pipeline_worker(
     PipelineWorker: Any,
     *,
@@ -384,4 +416,6 @@ def wrap_pipeline_worker(
     # Optional on older Pipecat versions; the patchers feature-detect the module.
     if OpenAILivePatcher.applies(None, None):
         OpenAILivePatcher.patch(None, None)
+    if not OpenAIRealtimeResponseDonePatcher.is_patched(None, None):
+        OpenAIRealtimeResponseDonePatcher.patch(None, None)
     return PipelineWorkerPatcher.wrap_target(PipelineWorker)

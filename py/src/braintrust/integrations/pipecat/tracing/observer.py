@@ -260,6 +260,10 @@ class BraintrustPipecatObserver(BaseObserver):
         except Exception:
             LOG.warning("Unable to trace Pipecat Live client event", exc_info=True)
 
+    def _finish_realtime_response(self, parent: Span, metrics: dict[str, Any], output: Any) -> None:
+        if self._phase is _SessionPhase.RUNNING and self._session is not None:
+            self._session.agent.finish_realtime_response(parent, metrics, output)
+
     async def _response_span(self, frame: "Frame", push: Callable[[], Awaitable[Any]]) -> tuple[Any, Span | None]:
         """Push a service's response start frame, then return its span.
 

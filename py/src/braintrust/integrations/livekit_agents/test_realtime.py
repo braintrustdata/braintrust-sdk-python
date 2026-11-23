@@ -389,6 +389,11 @@ async def test_realtime_conversation(rooms, memory_logger, monkeypatch, vcr_cass
         assert leaf["metrics"]["prompt_audio_tokens"] == native["usage"]["input_token_details"]["audio_tokens"]
         assert leaf["metrics"]["completion_audio_tokens"] == native["usage"]["output_token_details"]["audio_tokens"]
         assert leaf["metrics"]["prompt_cached_tokens"] == native["usage"]["input_token_details"]["cached_tokens"]
+        cached_details = native["usage"]["input_token_details"].get("cached_tokens_details") or {}
+        if "audio_tokens" in cached_details:
+            assert leaf["metrics"]["prompt_cached_audio_tokens"] == cached_details["audio_tokens"]
+        else:
+            assert "prompt_cached_audio_tokens" not in leaf["metrics"]
         assert "cache_read_input_tokens" not in leaf["metrics"]
         assert leaf["metrics"]["start"] == pytest.approx(native_metrics[native["id"]].timestamp, abs=1e-6)
         assert leaf["metrics"]["end"] == pytest.approx(
