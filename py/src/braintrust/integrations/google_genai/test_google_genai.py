@@ -1,6 +1,7 @@
 import gzip
 import json
 import os
+import subprocess
 import time
 from pathlib import Path
 
@@ -11,11 +12,12 @@ from braintrust.integrations.google_genai import setup_genai
 from braintrust.integrations.google_genai.tracing import _extract_interaction_usage_metrics
 from braintrust.integrations.test_utils import assert_service_tiers, verify_autoinstrument_script
 from braintrust.integrations.utils import _extract_google_usage_metadata_metrics
-from braintrust.integrations.versioning import detect_module_version
+from braintrust.integrations.versioning import detect_module_version, version_satisfies
 from braintrust.logger import Attachment
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import find_span_by_name, find_spans_by_type, init_test_logger
 from google.genai import types
+from google.oauth2.credentials import Credentials
 
 
 try:
@@ -31,6 +33,8 @@ from google.genai.client import Client
 
 
 PROJECT_NAME = "test-genai-app"
+VERTEX_RECORDING_PROJECT_ENV = "BRAINTRUST_GOOGLE_GENAI_VERTEX_PROJECT"
+VERTEX_CASSETTE_PROJECT = "test-project"
 MODEL = "gemini-2.5-flash-lite"
 EMBEDDING_MODEL = "gemini-embedding-001"
 REASONING_MODEL = "gemini-3.5-flash-lite"
@@ -55,9 +59,12 @@ def _v1beta_client():
     return Client(http_options=types.HttpOptions(api_version="v1beta"))
 
 
+_GENAI_VERSION = detect_module_version(genai, ("google.genai",))
+_needs_genai_3_4 = pytest.mark.skipif(
+    not version_satisfies(_GENAI_VERSION, ">=3.4"), reason="requires google-genai 3.4+"
+)
 # ``types.ServiceTier`` / ``GenerateContentConfig.service_tier`` were added
 # after google-genai 1.30.0; older SDKs cannot request a tier.
-_GENAI_VERSION = detect_module_version(genai, ("google.genai",))
 _HAS_GENERATE_CONTENT_SERVICE_TIER = hasattr(types, "ServiceTier")
 NEEDS_GENERATE_CONTENT_SERVICE_TIER = pytest.mark.skipif(
     not _HAS_GENERATE_CONTENT_SERVICE_TIER,
@@ -134,11 +141,14 @@ def _sanitize_media_response(response):
 def vcr_config():
     """Google-specific VCR config - needs to uppercase HTTP methods."""
     record_mode = "none" if (os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS")) else "once"
+    vertex_project = os.environ.get(VERTEX_RECORDING_PROJECT_ENV)
 
     def before_record_request(request):
         # Normalize HTTP method to uppercase for consistency (Google API quirk)
         request.method = request.method.upper()
         request.body = _sanitize_media_payload(request.body)
+        if vertex_project and request.uri.startswith("https://aiplatform.googleapis.com/"):
+            request.uri = request.uri.replace(f"/projects/{vertex_project}/", f"/projects/{VERTEX_CASSETTE_PROJECT}/")
         return request
 
     def before_record_response(response):
@@ -152,6 +162,7 @@ def vcr_config():
             "Authorization",
             "x-api-key",
             "x-goog-api-key",
+            "x-goog-user-project",
         ],
         "before_record_request": before_record_request,
         "before_record_response": before_record_response,
@@ -473,6 +484,60 @@ async def test_embed_content(memory_logger, mode):
     spans = memory_logger.pop()
     assert len(spans) == 1
     _assert_embed_span(spans[0], start, end)
+
+
+@pytest.fixture
+def batch_embedding_client(request, vertex):
+    client_options = {}
+    if vertex:
+        project = VERTEX_CASSETTE_PROJECT
+        token = "vcr-playback-token"
+        if request.config.getoption("--vcr-record") == "all":
+            project = os.environ[VERTEX_RECORDING_PROJECT_ENV]
+            # Refresh outside the recorded request so authentication traffic stays out of the cassette.
+            token = subprocess.check_output(
+                ["gcloud", "auth", "application-default", "print-access-token"], text=True
+            ).strip()
+        client_options = {
+            "vertexai": True,
+            "credentials": Credentials(token=token),
+            "project": project,
+            "location": "global",
+            "http_options": types.HttpOptions(api_version="v1"),
+        }
+    with Client(**client_options) as client:
+        yield client
+
+
+@_needs_genai_3_4
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mode", ["sync", "async"])
+@pytest.mark.parametrize(
+    "vertex",
+    [
+        pytest.param(False, id="developer", marks=pytest.mark.vcr(cassette_name="test_embed_content_batch_usage")),
+        pytest.param(True, id="vertex", marks=pytest.mark.vcr(cassette_name="test_embed_content_batch_usage_vertex")),
+    ],
+)
+async def test_embed_content_batch_usage(memory_logger, mode, batch_embedding_client):
+    kwargs = {
+        "model": "gemini-embedding-2",
+        "contents": [types.Content(parts=[types.Part(text=text)]) for text in ("This is a test", "Another test")],
+        "config": types.EmbedContentConfig(output_dimensionality=32),
+    }
+    if mode == "async":
+        async with batch_embedding_client.aio as async_client:
+            response = await async_client.models.embed_content(**kwargs)
+    else:
+        response = batch_embedding_client.models.embed_content(**kwargs)
+
+    assert len(response.embeddings) == 2
+    assert all(embedding.statistics is None for embedding in response.embeddings)
+    assert response.usage_metadata.prompt_token_count > 0
+
+    (span,) = find_spans_by_type(memory_logger.pop(), SpanTypeAttribute.LLM)
+    assert span["metrics"]["prompt_tokens"] == response.usage_metadata.prompt_token_count
+    assert span["metrics"]["tokens"] == response.usage_metadata.prompt_token_count
 
 
 @pytest.mark.vcr
@@ -1569,6 +1634,48 @@ def test_interactions_code_execution_tool_span(memory_logger):
     for image in images:
         assert isinstance(image["data"], Attachment)
         assert image["image_url"]["url"] is image["data"]
+
+
+@_needs_interactions
+@pytest.mark.parametrize("tool_type", ["google_maps", pytest.param("tool_search", marks=_needs_genai_3_4)])
+@pytest.mark.vcr
+def test_interactions_server_tool_span(memory_logger, tool_type):
+    with _v1beta_client() as client:
+        if tool_type == "tool_search":
+            deferred_tool = _interaction_function_tool()
+            deferred_tool.defer_loading = True
+            tools = [interactions.ToolSearch(), deferred_tool]
+            prompt = "Use the deferred get_weather tool to look up the current weather in Paris."
+        else:
+            tools = [interactions.GoogleMaps()]
+            prompt = "Use Google Maps to find the street address of the Art Gallery of Ontario in Toronto."
+
+        response = client.interactions.create(model="gemini-3.8-flash", input=prompt, tools=tools)
+        outputs = _interaction_outputs(response)
+        if response.status == "requires_action":
+            function_call = next(step for step in outputs if step.type == "function_call")
+            client.interactions.create(
+                model="gemini-3.8-flash",
+                previous_interaction_id=response.id,
+                input=[_function_result_content(call_id=function_call.id, name=function_call.name, result="Sunny")],
+                tools=tools,
+            )
+
+    call = next(step for step in outputs if step.type == f"{tool_type}_call")
+    result = next(step for step in outputs if step.type == f"{tool_type}_result")
+    assert result.call_id == call.id
+
+    spans = memory_logger.pop()
+    llm_span = next(
+        span
+        for span in find_spans_by_type(spans, SpanTypeAttribute.LLM)
+        if span["metadata"]["interaction_id"] == response.id
+    )
+    tool_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.TOOL), call.type)
+    assert tool_span["span_parents"] == [llm_span["span_id"]]
+    assert tool_span["metadata"]["call_id"] == call.id
+    assert tool_span["input"] == call.arguments.model_dump(exclude_none=True)
+    assert tool_span["output"] == [item.model_dump(exclude_none=True) for item in result.result]
 
 
 @_needs_interactions
