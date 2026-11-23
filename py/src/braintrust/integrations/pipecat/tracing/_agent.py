@@ -82,6 +82,7 @@ class _ModelResponse:
     span: Span
     metadata: dict[str, Any]
     processor: "FrameProcessor | None"
+    start_ms: float
     text: list[str] = field(default_factory=list)
     tool_calls: list[_ToolCall] = field(default_factory=list)
     metrics: dict[str, int | float] = field(default_factory=dict)
@@ -181,15 +182,32 @@ class AgentTracker:
             # Service settings are separate from LLMContext in current Pipecat.
             # Keep the linker's context/cursor untouched when adding them.
             messages = [{"role": "system", "content": instruction}, *(messages or [])]
+        start_ms = self._clock.now_ms()
         span = self._spans.start(
-            "llm_response", turn=turn.span, input=messages, metadata=metadata, can_set_current=True
+            "llm_response", turn=turn.span, input=messages, metadata=metadata, can_set_current=True, start_ms=start_ms
         )
         links = linker.consume()
         if links:
             set_links(span, links)
-        self._response = _ModelResponse(span, metadata, processor)
+        self._response = _ModelResponse(span, metadata, processor, start_ms)
         turn.work.add(_RESPONSE)
         return span
+
+    def finish_realtime_response(self, parent: Span, metrics: dict[str, Any], output: Any) -> None:
+        response, turn = self._response, self._turn
+        if response is None or response.span is not parent or turn is None:
+            return
+        span = self._spans.start(
+            "pipecat.realtime.response",
+            parent=parent,
+            turn=turn.span,
+            type=SpanTypeAttribute.LLM,
+            start_ms=response.start_ms,
+            metadata=metadata_from_processor(response.processor),
+            metrics=metrics,
+            output=output,
+        )
+        span.end(end_time=self._clock.wall())
 
     def response_text(self, text: str) -> None:
         if self._response is not None:

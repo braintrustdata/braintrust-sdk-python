@@ -1176,9 +1176,10 @@ async def test_realtime_cached_audio_usage(memory_logger):
         kind: next(event for event in received if event["type"] == kind)
         for kind in ("session.created", "session.updated", "response.created", "response.done")
     }
-    cached_audio_tokens = events["response.done"]["response"]["usage"]["input_token_details"]["cached_tokens_details"][
-        "audio_tokens"
-    ]
+    usage = events["response.done"]["response"]["usage"]
+    input_details = usage["input_token_details"]
+    output_details = usage["output_token_details"]
+    cached_audio_tokens = input_details["cached_tokens_details"]["audio_tokens"]
 
     async def replay(websocket):
         await websocket.send(json.dumps(events["session.created"]))
@@ -1197,8 +1198,28 @@ async def test_realtime_cached_audio_usage(memory_logger):
         context = LLMContext(messages=[{"role": "user", "content": "Tell me about my order."}])
         assert not await _run_text_pipeline([service], [context])
 
-    span = _single_span(memory_logger.pop(), "llm_response")
-    assert span["metrics"]["prompt_cached_audio_tokens"] == cached_audio_tokens
+    logs = memory_logger.pop()
+    task = _single_span(logs, "llm_response")
+    span = _single_span(logs, "pipecat.realtime.response")
+    assert task["span_attributes"]["type"] == "task"
+    assert span["span_attributes"]["type"] == "llm"
+    assert span["span_parents"] == [task["span_id"]]
+    assert span["metadata"]["provider"] == "openai"
+    assert span["metadata"]["model"]
+    assert span["context"]["span_origin"]["instrumentation"]["name"] == "pipecat-auto"
+    assert span["output"][0]["role"] == "assistant"
+    assert task["metrics"]["start"] <= span["metrics"]["start"] <= span["metrics"]["end"] <= task["metrics"]["end"]
+    expected = {
+        "tokens": usage["total_tokens"],
+        "prompt_tokens": usage["input_tokens"],
+        "completion_tokens": usage["output_tokens"],
+        "prompt_audio_tokens": input_details["audio_tokens"],
+        "completion_audio_tokens": output_details["audio_tokens"],
+        "prompt_cached_tokens": input_details["cached_tokens"],
+        "prompt_cached_audio_tokens": cached_audio_tokens,
+    }
+    assert not expected.keys() & task["metrics"].keys()
+    assert {key: span["metrics"][key] for key in expected} == expected
 
 
 # Keep provider tests last: enabling OpenAI patches the client for the process.
