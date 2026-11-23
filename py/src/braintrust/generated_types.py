@@ -1,4 +1,4 @@
-"""Auto-generated file (content hash 27700e0e5ff653bc) -- do not modify"""
+"""Auto-generated file (content hash 771d6dc8c81f3b48) -- do not modify"""
 
 from ._generated_types import (
     Acl,
@@ -99,10 +99,10 @@ from ._generated_types import (
     Role,
     RunEval,
     SavedFunctionId,
+    SavedPreprocessorId,
     ScoreObject,
     ScoreResult,
     ServiceToken,
-    SimulatedUserReference,
     SpanAttributes,
     SpanIFrame,
     SpanScope,
@@ -231,10 +231,10 @@ __all__ = [
     "SSEConsoleEventData",
     "SSEProgressEventData",
     "SavedFunctionId",
+    "SavedPreprocessorId",
     "ScoreObject",
     "ScoreResult",
     "ServiceToken",
-    "SimulatedUserReference",
     "SpanAttributes",
     "SpanIFrame",
     "SpanScope",
