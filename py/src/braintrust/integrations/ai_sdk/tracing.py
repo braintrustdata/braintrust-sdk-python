@@ -498,7 +498,7 @@ def _end_fields(upstream_span: Any, data: Any, state: _SpanState) -> dict[str, A
 
 
 class BraintrustAISDKAdapter:
-    """Adapter for ``ai.experimental_telemetry``'s callback protocol."""
+    """Adapter for the AI SDK telemetry callback protocol."""
 
     def __init__(self) -> None:
         self._active: dict[str, _ActiveSpan] = {}
