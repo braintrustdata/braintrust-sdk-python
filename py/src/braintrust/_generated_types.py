@@ -1839,7 +1839,7 @@ For prompt-backed functions: the saved, global, or inline preprocessor to use fo
 class ProjectAutomationConfigActionHeaders(TypedDict):
     name: str
     """
-    The HTTP header name
+    The HTTP header name. Connection, Content-Length, Content-Type, Expect, Host, Idempotency-Key, Keep-Alive, Transfer-Encoding, and Upgrade are reserved and can't be used.
     """
     value: str
     """
@@ -1850,11 +1850,11 @@ class ProjectAutomationConfigActionHeaders(TypedDict):
 class ProjectAutomationConfigActionHeaders1(TypedDict):
     name: str
     """
-    The HTTP header name
+    The HTTP header name. Connection, Content-Length, Content-Type, Expect, Host, Idempotency-Key, Keep-Alive, Transfer-Encoding, and Upgrade are reserved and can't be used.
     """
     secret_name: str
     """
-    The data-plane secret containing the header value, bound to the webhook URL it was saved for
+    The data-plane secret that holds the header value. The secret only works with the webhook URL it was saved for.
     """
 
 
@@ -2019,7 +2019,7 @@ class ProjectAutomationConfig2(TypedDict):
 class ProjectAutomationConfig4ActionHeaders(TypedDict):
     name: str
     """
-    The HTTP header name
+    The HTTP header name. Connection, Content-Length, Content-Type, Expect, Host, Idempotency-Key, Keep-Alive, Transfer-Encoding, and Upgrade are reserved and can't be used.
     """
     value: str
     """
@@ -2030,11 +2030,11 @@ class ProjectAutomationConfig4ActionHeaders(TypedDict):
 class ProjectAutomationConfig4ActionHeaders1(TypedDict):
     name: str
     """
-    The HTTP header name
+    The HTTP header name. Connection, Content-Length, Content-Type, Expect, Host, Idempotency-Key, Keep-Alive, Transfer-Encoding, and Upgrade are reserved and can't be used.
     """
     secret_name: str
     """
-    The data-plane secret containing the header value, bound to the webhook URL it was saved for
+    The data-plane secret that holds the header value. The secret only works with the webhook URL it was saved for.
     """
 
 
@@ -2298,7 +2298,7 @@ class ProjectSettingsPatternAlertMention(TypedDict):
 class ProjectSettingsPatternAlertDestinationsHeaders(TypedDict):
     name: str
     """
-    The HTTP header name
+    The HTTP header name. Connection, Content-Length, Content-Type, Expect, Host, Idempotency-Key, Keep-Alive, Transfer-Encoding, and Upgrade are reserved and can't be used.
     """
     value: str
     """
@@ -2309,11 +2309,11 @@ class ProjectSettingsPatternAlertDestinationsHeaders(TypedDict):
 class ProjectSettingsPatternAlertDestinationsHeaders1(TypedDict):
     name: str
     """
-    The HTTP header name
+    The HTTP header name. Connection, Content-Length, Content-Type, Expect, Host, Idempotency-Key, Keep-Alive, Transfer-Encoding, and Upgrade are reserved and can't be used.
     """
     secret_name: str
     """
-    The data-plane secret containing the header value, bound to the webhook URL it was saved for
+    The data-plane secret that holds the header value. The secret only works with the webhook URL it was saved for.
     """
 
 
@@ -2456,7 +2456,7 @@ class ProjectSettings(TypedDict):
     """
     pattern_alert_informational: NotRequired[bool | None]
     """
-    Whether new and reactivated informational Patterns send alerts, independent of `pattern_alert_min_severity`. Unset or null sends them.
+    Whether new and reactivated informational Patterns send alerts, independent of `pattern_alert_min_severity`. Unset or null sends alerts for informational Patterns.
     """
     pattern_sources: NotRequired[Sequence[ProjectSettingsPatternSource] | None]
     """
@@ -2466,7 +2466,7 @@ class ProjectSettings(TypedDict):
         Sequence[ProjectSettingsPatternExcludedCategory]
     ]
     """
-    Patterns rubric categories this project turned off. Patterns doesn't look for or assign them.
+    Patterns rubric categories that are turned off for this project. Patterns doesn't look for or assign them.
     """
     session_id_fields: NotRequired[Sequence[Sequence[ProjectSettingsSessionIdField]] | None]
     default_preprocessor: NotRequired[NullableSavedFunctionId | None]
@@ -3733,7 +3733,7 @@ class WindowedAutomationConfigPatterns(TypedDict):
 class WindowedAutomationConfigActionsHeaders(TypedDict):
     name: str
     """
-    The HTTP header name
+    The HTTP header name. Connection, Content-Length, Content-Type, Expect, Host, Idempotency-Key, Keep-Alive, Transfer-Encoding, and Upgrade are reserved and can't be used.
     """
     value: str
     """
@@ -3744,11 +3744,11 @@ class WindowedAutomationConfigActionsHeaders(TypedDict):
 class WindowedAutomationConfigActionsHeaders1(TypedDict):
     name: str
     """
-    The HTTP header name
+    The HTTP header name. Connection, Content-Length, Content-Type, Expect, Host, Idempotency-Key, Keep-Alive, Transfer-Encoding, and Upgrade are reserved and can't be used.
     """
     secret_name: str
     """
-    The data-plane secret containing the header value, bound to the webhook URL it was saved for
+    The data-plane secret that holds the header value. The secret only works with the webhook URL it was saved for.
     """
 
 
