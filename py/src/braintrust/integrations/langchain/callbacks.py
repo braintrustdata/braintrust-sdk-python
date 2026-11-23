@@ -727,9 +727,16 @@ def _get_metrics_from_response(response: LLMResult):
             )
         )
 
+        output_token_details = usage_metadata.get("output_token_details")
+        if isinstance(output_token_details, dict) and output_token_details.get("audio") is not None:
+            metrics["completion_audio_tokens"] = output_token_details["audio"]
+
         input_token_details = usage_metadata.get("input_token_details")
         if not (input_token_details and isinstance(input_token_details, dict)):
             continue
+
+        if input_token_details.get("audio") is not None:
+            metrics["prompt_audio_tokens"] = input_token_details["audio"]
 
         cache_read = input_token_details.get("cache_read")
         cache_creation = input_token_details.get("cache_creation")

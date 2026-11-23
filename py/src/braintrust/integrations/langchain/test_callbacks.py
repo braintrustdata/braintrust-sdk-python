@@ -1031,6 +1031,41 @@ def test_image_input(logger_memory_logger):
 
 
 @pytest.mark.vcr
+def test_audio_input_tokens(logger_memory_logger):
+    test_logger, memory_logger = logger_memory_logger
+    assert not memory_logger.pop()
+
+    handler = BraintrustCallbackHandler(logger=test_logger)
+
+    fixtures_dir = Path(__file__).parent.parent.parent / "fixtures"
+    audio_b64 = base64.b64encode((fixtures_dir / "test_speech.wav").read_bytes()).decode()
+    messages = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "Transcribe this audio."},
+                {"type": "input_audio", "input_audio": {"data": audio_b64, "format": "wav"}},
+            ]
+        )
+    ]
+
+    model = ChatOpenAI(model="gpt-audio-mini")
+    result = model.invoke(messages, config={"callbacks": [cast(BaseCallbackHandler, handler)]})
+
+    spans = memory_logger.pop()
+    llm_spans = find_spans_by_attributes(spans, name="ChatOpenAI", type="llm")
+    assert len(llm_spans) == 1
+    metrics = llm_spans[0]["metrics"]
+
+    assert result.usage_metadata is not None
+    input_details = result.usage_metadata["input_token_details"]
+    output_details = result.usage_metadata["output_token_details"]
+    assert input_details["audio"] > 0
+    assert metrics["prompt_audio_tokens"] == input_details["audio"]
+    assert metrics["prompt_audio_tokens"] <= metrics["prompt_tokens"]
+    assert metrics["completion_audio_tokens"] == output_details["audio"] == 0
+
+
+@pytest.mark.vcr
 def test_tool_use_with_result(logger_memory_logger):
     test_logger, memory_logger = logger_memory_logger
     assert not memory_logger.pop()
