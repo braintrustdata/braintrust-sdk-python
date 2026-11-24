@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import gc
 import inspect
 import os
 import re
@@ -29,7 +30,7 @@ from braintrust.integrations.test_utils import (
 )
 from braintrust.integrations.versioning import detect_module_version, version_satisfies
 from braintrust.test_helpers import assert_dict_matches, init_test_logger
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, AsyncStream, Stream
 
 
 TEST_ORG_ID = "test-org-litellm-py-tracing"
@@ -742,6 +743,110 @@ def test_litellm_transcription(memory_logger, is_async):
     assert span["input"]["file"].reference["filename"] == Path(TEST_TRANSCRIPTION_FILE).name
     assert span["input"]["file"].reference["content_type"] in ("audio/x-wav", "audio/wav")  # OS-dependent
     assert span["output"] == response.text
+    if "languages" in inspect.signature(litellm.transcription).parameters:
+        assert span["metadata"]["languages"] == [{"code": "en"}]
+
+
+@pytest.mark.vcr(
+    cassette_name="test_litellm_transcription_streaming", filter_post_data_parameters=[("file", "<audio>")]
+)
+@sync_async
+@pytest.mark.parametrize("consumption", ["exhaust", "context_exit", "close", "drop", "drop_unstarted"])
+def test_litellm_transcription_streaming(memory_logger, is_async, consumption):
+    if "stream" not in inspect.signature(litellm.transcription).parameters:
+        pytest.skip("LiteLLM does not support streaming transcription")
+
+    caller_span = logger.current_span()
+    abandoning = consumption in {"drop", "drop_unstarted"}
+
+    def read_span():
+        if abandoning:
+            gc.collect()
+        assert logger.current_span() is caller_span
+        (span,) = memory_logger.pop()
+        return span
+
+    start = time.time()
+    with open(TEST_TRANSCRIPTION_FILE, "rb") as f:
+        request = dict(
+            model="gpt-transcribe",
+            file=f,
+            response_format="json",
+            stream=True,
+        )
+        if is_async:
+
+            async def consume():
+                stream = await litellm.atranscription(**request)
+                assert isinstance(stream, AsyncStream)
+                assert logger.current_span() is caller_span
+                if consumption == "exhaust":
+                    events = [event async for event in stream]
+                elif consumption == "context_exit":
+                    async with stream as entered:
+                        events = [await anext(entered)]
+                elif consumption == "close":
+                    await stream.close()
+                    events = []
+                else:
+                    events = [await anext(stream)] if consumption == "drop" else []
+                    stream = None
+                # Inspect the span before asyncio.run() shuts down async generators.
+                return stream, events, read_span()
+
+            stream, events, span = asyncio.run(consume())
+        else:
+            stream = litellm.transcription(**request)
+            assert isinstance(stream, Stream)
+            assert logger.current_span() is caller_span
+            if consumption == "exhaust":
+                events = list(stream)
+            elif consumption == "context_exit":
+                with stream as entered:
+                    events = [next(entered)]
+                del entered
+            elif consumption == "close":
+                stream.close()
+                events = []
+            else:
+                events = [next(stream)] if consumption == "drop" else []
+                stream = None
+            span = read_span()
+    end = time.time()
+
+    assert "error" not in span
+    assert span["span_attributes"]["name"] == "Transcription"
+    assert span["span_attributes"]["type"] == "llm"
+    assert span["metadata"]["model"] == "gpt-transcribe"
+    assert span["metadata"]["provider"] == "openai"
+    assert span["metadata"]["stream"] is True
+    assert isinstance(span["input"]["file"], Attachment)
+    assert span["context"]["span_origin"]["instrumentation"]["name"] == "litellm-auto"
+    metrics = span["metrics"]
+    assert start <= metrics["start"] <= metrics["end"] <= end
+    if events:
+        assert events[0].type == "transcript.text.delta"
+        assert 0 <= metrics["time_to_first_token"] <= metrics["end"] - metrics["start"]
+    else:
+        assert "output" not in span
+        assert "time_to_first_token" not in metrics
+
+    if consumption == "exhaust":
+        done = events[-1]
+        assert done.type == "transcript.text.done"
+        assert "braintrust" in done.text.lower()
+        assert span["output"] == done.text
+        assert metrics["seconds"] == done.usage.seconds > 0
+        assert span["metadata"]["languages"] == [{"code": "en"}]
+    else:
+        if events:
+            assert span["output"] == events[0].delta
+        assert "seconds" not in metrics
+        assert "languages" not in span["metadata"]
+
+    del stream
+    gc.collect()
+    assert not memory_logger.pop()
 
 
 @sync_async

@@ -1,0 +1,101 @@
+interactions:
+- request:
+    body: "--6f0b62152013f093ca18855a17efdbe1\r\nContent-Disposition: form-data; name=\"model\"\r\n\r\ngpt-transcribe\r\n--6f0b62152013f093ca18855a17efdbe1\r\nContent-Disposition:
+      form-data; name=\"response_format\"\r\n\r\njson\r\n--6f0b62152013f093ca18855a17efdbe1\r\nContent-Disposition:
+      form-data; name=\"stream\"\r\n\r\ntrue\r\n--6f0b62152013f093ca18855a17efdbe1\r\nContent-Disposition:
+      form-data; name=\"file\"; filename=\"test_speech.wav\"\r\nContent-Type: audio/x-wav\r\n\r\n<audio>\r\n--6f0b62152013f093ca18855a17efdbe1--\r\n"
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '83419'
+      content-type:
+      - multipart/form-data; boundary=6f0b62152013f093ca18855a17efdbe1
+      host:
+      - api.openai.com
+      user-agent:
+      - OpenAI/Python 3.57.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 3.57.0
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+    method: POST
+    uri: https://api.openai.com/v1/audio/transcriptions
+  response:
+    body:
+      string: "data: {\"type\":\"transcript.text.delta\",\"delta\":\"Hello\"}\r\n\r\ndata:
+        {\"type\":\"transcript.text.delta\",\"delta\":\",\"}\r\n\r\ndata: {\"type\":\"transcript.text.delta\",\"delta\":\"
+        this\"}\r\n\r\ndata: {\"type\":\"transcript.text.delta\",\"delta\":\" is\"}\r\n\r\ndata:
+        {\"type\":\"transcript.text.delta\",\"delta\":\" a\"}\r\n\r\ndata: {\"type\":\"transcript.text.delta\",\"delta\":\"
+        recording\"}\r\n\r\ndata: {\"type\":\"transcript.text.delta\",\"delta\":\"
+        test\"}\r\n\r\ndata: {\"type\":\"transcript.text.delta\",\"delta\":\" for\"}\r\n\r\ndata:
+        {\"type\":\"transcript.text.delta\",\"delta\":\" Brain\"}\r\n\r\ndata: {\"type\":\"transcript.text.delta\",\"delta\":\"trust\"}\r\n\r\ndata:
+        {\"type\":\"transcript.text.delta\",\"delta\":\".\"}\r\n\r\ndata: {\"type\":\"transcript.text.done\",\"text\":\"Hello,
+        this is a recording test for Braintrust.\",\"usage\":{\"type\":\"duration\",\"seconds\":3},\"languages\":[{\"code\":\"en\"}]}\r\n\r\ndata:
+        [DONE]\r\n\r\n"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cache-control:
+      - no-store
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a5f3df988a4f1341-YYZ
+      connection:
+      - keep-alive
+      content-type:
+      - text/event-stream; charset=utf-8
+      date:
+      - Mon, 23 Nov 2026 23:15:01 GMT
+      openai-processing-ms:
+      - '278'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Origin
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-request-id:
+      - req_58b3a014d72d4c829da6b6a51b6b1319
+    status:
+      code: 200
+      message: OK
+version: 1
