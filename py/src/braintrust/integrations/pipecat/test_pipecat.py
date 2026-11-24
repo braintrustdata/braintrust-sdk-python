@@ -3,12 +3,15 @@
 
 Every test instruments Pipecat with ``setup_pipecat`` and runs a real
 ``PipelineWorker`` with real Pipecat processors and
-OpenAI services replayed from cassettes. Voice tests stream a speech fixture
+OpenAI, ElevenLabs and Bedrock services replayed from cassettes; websocket
+services replay through ``_WebsocketCassette``. Voice tests stream a speech fixture
 from a websocket client through Silero VAD, exactly as a caller would. Tests
 assert only on exported trace rows.
 """
 
 import asyncio
+import base64
+import functools
 import importlib
 import inspect
 import json
@@ -41,13 +44,17 @@ if TYPE_CHECKING:
 TEST_MODEL = "gpt-6-luna"
 PROJECT = "test-project-pipecat-py-tracing"
 SPEECH = Path(__file__).parents[2] / "fixtures/test_speech.wav"
-# Recorded "Reply with exactly: Private words." generation and synthesis.
-PRIVATE_WORDS_CASSETTE = "test_synthesis_without_output_transport_is_not_playback_and_respects_customizers.yaml"
 INPUT_RATE = 16000
 CHUNK_SECONDS = 0.02
 
 
 def _scrub_recording_upload(request):
+    # aiohttp names some headers with its own str subclass, which YAML rejects,
+    # and keeps multipart uploads (here, input audio) as writer objects. Replay
+    # matches method and URL only, so the upload body need not be retained.
+    request.headers = {str(name): value for name, value in request.headers.items()}
+    if request.body is not None and not isinstance(request.body, (bytes, str)):
+        request.body = b""
     url = urlsplit(request.uri)
     if request.method == "PUT" and ".amazonaws.com" in (url.hostname or ""):
         # Outbound session PCM varies with wall-clock latency. Playback checks
@@ -64,6 +71,7 @@ def vcr_config(vcr_config):
 
     def scrub_audio_response(response):
         response = scrub_response(response)
+        response["headers"] = {str(name): value for name, value in response.get("headers", {}).items()}
         body = response.get("body", {}).get("string")
         if body:
             try:
@@ -141,6 +149,11 @@ def _link_targets(span, relationship):
     ]
 
 
+def _assert_no_errors(logs):
+    # A recorded provider error (quota, plan, auth) must not pass as a recording.
+    assert not [row["span_attributes"]["name"] for row in logs if row.get("error")]
+
+
 def _assert_all_ended(logs):
     for row in logs:
         assert row["metrics"].get("end") is not None, row
@@ -193,6 +206,13 @@ def _openai_llm(max_tokens=20, model=TEST_MODEL, **settings):
             max_completion_tokens=max_tokens,
             **settings,
         ),
+    )
+
+
+def _openai_stt():
+    OpenAISTTService = _import("pipecat.services.openai.stt.OpenAISTTService")
+    return OpenAISTTService(
+        api_key=os.environ["OPENAI_API_KEY"], settings=OpenAISTTService.Settings(model="whisper-1")
     )
 
 
@@ -328,10 +348,7 @@ class _VoiceSession:
         VADStart = _import("pipecat.turns.user_start.VADUserTurnStartStrategy")
         SileroVADAnalyzer = _import("pipecat.audio.vad.silero.SileroVADAnalyzer")
         VADParams = _import("pipecat.audio.vad.vad_analyzer.VADParams")
-        OpenAISTTService = _import("pipecat.services.openai.stt.OpenAISTTService")
-        llm_factory, tts_factory = _openai_llm, _openai_tts
-        if services is not None:
-            OpenAISTTService, llm_factory, tts_factory = services
+        stt_factory, llm_factory, tts_factory = services or (_openai_stt, _openai_llm, _openai_tts)
         WebsocketServerTransport = _import("pipecat.transports.websocket.server.WebsocketServerTransport")
         WebsocketServerParams = _import("pipecat.transports.websocket.server.WebsocketServerParams")
         ProtobufFrameSerializer = _import("pipecat.serializers.protobuf.ProtobufFrameSerializer")
@@ -352,9 +369,7 @@ class _VoiceSession:
                 serializer=serializer,
             ),
         )
-        stt = OpenAISTTService(
-            api_key=os.environ["OPENAI_API_KEY"], settings=OpenAISTTService.Settings(model="whisper-1")
-        )
+        stt = stt_factory()
         stop = [SpeechTimeout(user_speech_timeout=0.5, enable_user_speaking_frames=self.speaking_frames)]
         if self.smart_turn:
             Analyzer = _import("pipecat.audio.turn.smart_turn.local_smart_turn_v3.LocalSmartTurnAnalyzerV3")
@@ -794,7 +809,7 @@ async def test_user_barge_in_interrupts_agent_playback(memory_logger):
 # Text pipelines
 
 
-@pytest.mark.vcr(cassette_name="test_responses_without_playback_or_assistant_aggregator_are_separate_turns")
+@pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_responses_without_assistant_aggregator_remain_under_session(memory_logger):
     LLMContext = _import("pipecat.processors.aggregators.llm_context.LLMContext")
@@ -815,7 +830,7 @@ async def test_responses_without_assistant_aggregator_remain_under_session(memor
     _assert_all_ended(logs)
 
 
-@pytest.mark.vcr(cassette_name="test_context_edited_in_place_links_the_transcripts_it_now_includes")
+@pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_unrelated_transcript_text_does_not_establish_context_provenance(memory_logger):
     frames = _frames()
@@ -871,8 +886,9 @@ async def test_synthesis_without_output_transport_is_not_playback_and_respects_c
     _assert_all_ended(logs)
 
 
+@pytest.mark.vcr
 @pytest.mark.asyncio
-async def test_failed_transport_writes_do_not_emit_agent_speech(memory_logger, vcr):
+async def test_failed_transport_writes_do_not_emit_agent_speech(memory_logger):
     WebsocketServerTransport = _import("pipecat.transports.websocket.server.WebsocketServerTransport")
     WebsocketServerParams = _import("pipecat.transports.websocket.server.WebsocketServerParams")
     ProtobufFrameSerializer = _import("pipecat.serializers.protobuf.ProtobufFrameSerializer")
@@ -890,15 +906,14 @@ async def test_failed_transport_writes_do_not_emit_agent_speech(memory_logger, v
     )
     context = _private_words_context()
     # No client connects: the real transport rejects every write after Pipecat
-    # has emitted BotStartedSpeakingFrame. Reuse the same provider calls as the
-    # synthesis-only test; no replacement transport or write method is needed.
+    # has emitted BotStartedSpeakingFrame. No replacement transport or write
+    # method is needed.
     _instrument(capture_agent_audio_attachments=True)
-    with vcr.use_cassette(PRIVATE_WORDS_CASSETTE):
-        await _run_text_pipeline(
-            [transport.input(), _openai_llm(), _openai_tts(), transport.output()],
-            [context],
-            until="TTSStoppedFrame",
-        )
+    await _run_text_pipeline(
+        [transport.input(), _openai_llm(), _openai_tts(), transport.output()],
+        [context],
+        until="TTSStoppedFrame",
+    )
     logs = memory_logger.pop()
     assert _spans_named(logs, "llm_response")
     assert _spans_named(logs, "tts")
@@ -1701,22 +1716,22 @@ async def test_eou_native_controller_lifecycle(memory_logger, tracker_observer, 
     _assert_all_ended(logs)
 
 
-def _http_services(*, sdk_configuration=False, remove_followup_tools=False):
-    """Real custom services using OpenAI's HTTP APIs without the OpenAI client.
+def _http_llm(*, sdk_configuration=False, remove_followup_tools=False, max_tokens=20):
+    """An LLM service whose model call no provider integration covers.
 
-    Native Pipecat parsing/aggregation is retained. API responses are recorded,
-    parsed into the provider's actual response classes, and streamed normally.
-    The inherited SDK clients deliberately remain unused: ownership must follow
-    the overridden execution path rather than a service label or attribute.
+    Every Pipecat LLM service in the test environment calls through an SDK the
+    provider integrations cover, so this is the one hand-written stand-in: the
+    real OpenAI service with its request sent over httpx instead of the SDK.
+    Native Pipecat parsing/aggregation is retained, and the provider traffic is
+    recorded and parsed into OpenAI's actual response classes. The inherited SDK
+    client deliberately remains unused: ownership must follow the overridden
+    execution path rather than a service label or attribute.
     """
     httpx = importlib.import_module("httpx2" if importlib.util.find_spec("httpx2") else "httpx")
     from openai._utils import strip_not_given
-    from openai.types.audio import Transcription
     from openai.types.chat import ChatCompletionChunk
 
     OpenAILLM = _import("pipecat.services.openai.llm.OpenAILLMService")
-    OpenAISTT = _import("pipecat.services.openai.stt.OpenAISTTService")
-    OpenAITTS = _import("pipecat.services.openai.tts.OpenAITTSService")
 
     class HTTPCompletions(OpenAILLM):
         def build_chat_completion_params(self, invocation):
@@ -1727,20 +1742,6 @@ def _http_services(*, sdk_configuration=False, remove_followup_tools=False):
                 params["tools"] = []
                 params["tool_choice"] = "none"
             return params
-
-        async def _process_context(self, context):
-            await super()._process_context(context)
-            # Some custom services enqueue completion before reporting their
-            # final usage. Repeat the real provider snapshot to catch summing
-            # and association with a subsequent response.
-            usage = getattr(self, "_http_usage", None)
-            if usage is not None:
-                await self.push_frame(_frames().LLMFullResponseEndFrame())
-                await asyncio.sleep(0)
-                from pipecat.metrics.metrics import LLMTokenUsage  # pylint: disable=import-error
-
-                for _ in range(2):
-                    await self.start_llm_usage_metrics(LLMTokenUsage.model_validate(usage.model_dump()))
 
         async def get_chat_completions(self, context):
             invocation = self.get_llm_adapter().get_llm_invocation_params(
@@ -1765,10 +1766,7 @@ def _http_services(*, sdk_configuration=False, remove_followup_tools=False):
                         response.raise_for_status()
                         async for line in response.aiter_lines():
                             if line.startswith("data: ") and line != "data: [DONE]":
-                                chunk = ChatCompletionChunk.model_validate_json(line[6:])
-                                if chunk.usage is not None:
-                                    self._http_usage = chunk.usage
-                                yield chunk
+                                yield ChatCompletionChunk.model_validate_json(line[6:])
 
             return chunks()
 
@@ -1778,75 +1776,204 @@ def _http_services(*, sdk_configuration=False, remove_followup_tools=False):
             self._http_base_url = str(self._client.base_url)
             return await super().get_chat_completions(context)
 
-    class HTTPTranscription(OpenAISTT):
-        async def _transcribe(self, audio):
-            async with httpx.AsyncClient() as client:
-                response = await client.post(
-                    "https://api.openai.com/v1/audio/transcriptions",
-                    headers={"Authorization": "Bearer " + os.environ["OPENAI_API_KEY"]},
-                    data={"model": self._settings.model},
-                    files={"file": ("audio.wav", audio, "audio/wav")},
-                )
-                response.raise_for_status()
-                return Transcription.model_validate(response.json())
-
-    class HTTPSpeech(OpenAITTS):
-        async def run_tts(self, text, context_id):
-            async with httpx.AsyncClient() as client:
-                async with client.stream(
-                    "POST",
-                    "https://api.openai.com/v1/audio/speech",
-                    headers={"Authorization": "Bearer " + os.environ["OPENAI_API_KEY"]},
-                    json={
-                        "model": self._settings.model,
-                        "voice": self._settings.voice,
-                        "input": text,
-                        "response_format": "pcm",
-                    },
-                ) as response:
-                    response.raise_for_status()
-                    await self.start_tts_usage_metrics(text)
-                    async for chunk in response.aiter_bytes(self.chunk_size):
-                        if chunk:
-                            await self.stop_ttfb_metrics()
-                            yield _frames().TTSAudioRawFrame(chunk, self.sample_rate, 1, context_id=context_id)
-
-    def llm(max_tokens=20):
-        service = ConfiguredHTTPCompletions if sdk_configuration else HTTPCompletions
-        return service(
-            api_key=os.environ["OPENAI_API_KEY"],
-            settings=HTTPCompletions.Settings(
-                model=TEST_MODEL,
-                temperature=1.0,
-                extra={"reasoning_effort": "none"},
-                max_completion_tokens=max_tokens,
-            ),
-        )
-
-    def tts():
-        return HTTPSpeech(
-            api_key=os.environ["OPENAI_API_KEY"], settings=HTTPSpeech.Settings(model="tts-1", voice="alloy")
-        )
-
-    return HTTPTranscription, llm, tts
+    service = ConfiguredHTTPCompletions if sdk_configuration else HTTPCompletions
+    return service(
+        api_key=os.environ["OPENAI_API_KEY"],
+        settings=HTTPCompletions.Settings(
+            model=TEST_MODEL,
+            temperature=1.0,
+            extra={"reasoning_effort": "none"},
+            max_completion_tokens=max_tokens,
+        ),
+    )
 
 
-@pytest.mark.vcr(cassette_name="test_consecutive_voice_turns_reply_to_and_link_only_their_own_speech")
+# ElevenLabs services call their API over aiohttp, which no provider
+# integration covers: real services that own their pipecat.<op> model child.
+# A premade voice: free accounts cannot use library voices through the API.
+ELEVENLABS_VOICE = "EXAVITQu4vr4xnSDxMaL"
+
+
+def _elevenlabs_stt(http):
+    Service = _import("pipecat.services.elevenlabs.stt.ElevenLabsSTTService")
+    return Service(
+        api_key=os.environ["ELEVENLABS_API_KEY"], aiohttp_session=http, settings=Service.Settings(model="scribe_v2")
+    )
+
+
+def _elevenlabs_tts(http):
+    Service = _import("pipecat.services.elevenlabs.tts.ElevenLabsHttpTTSService")
+    return Service(
+        api_key=os.environ["ELEVENLABS_API_KEY"],
+        aiohttp_session=http,
+        settings=Service.Settings(model="eleven_flash_v2_5", voice=ELEVENLABS_VOICE),
+    )
+
+
+class _WebsocketCassette:
+    """Record a provider's websocket sessions once, then replay them locally.
+
+    VCR does not record websockets. Pipecat's websocket services keep their
+    real protocol code; only their connection is routed to a local server. When
+    recording (cassette missing, outside CI) the server proxies to the provider
+    and stores what it received. On replay it sends each recorded message once
+    the client has sent as many messages as it had at that point. Client
+    messages are not stored, so audio and keys stay out of the file; only the
+    IDs a client chooses (``context_id``) are kept, so replay can map the
+    recorded IDs in server messages to the live client's IDs.
+    """
+
+    _CONNECT_MODULES = (
+        "pipecat.services.websocket_service",
+        "pipecat.services.elevenlabs.stt",
+        "pipecat.services.elevenlabs.tts",
+    )
+
+    def __init__(self, path, monkeypatch, *, upstream="wss://api.elevenlabs.io", headers=("xi-api-key",)):
+        self.path, self.monkeypatch, self.upstream, self.headers = path, monkeypatch, upstream, headers
+        self.record = not path.exists()
+        if self.record and os.environ.get("CI"):
+            raise AssertionError(f"Missing websocket cassette {path.name}; record it locally.")
+        self.sessions = [] if self.record else json.loads(path.read_text())
+        self._replayed = 0
+
+    async def __aenter__(self):
+        from websockets.asyncio.server import serve
+
+        self._server = await serve(self._handle, "127.0.0.1", 0, max_size=None)
+        local = "ws://127.0.0.1:%d" % self._server.sockets[0].getsockname()[1]
+        for name in self._CONNECT_MODULES:
+            module = importlib.import_module(name)
+            original = getattr(module, "websocket_connect", None)
+            if original is not None:
+                routed = functools.partial(self._connect, original, local)
+                self.monkeypatch.setattr(module, "websocket_connect", routed)
+        return self
+
+    async def __aexit__(self, *exc_info):
+        self._server.close()
+        await self._server.wait_closed()
+        if self.record and exc_info[0] is None:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            self.path.write_text(json.dumps(self.sessions, indent=1) + "\n")
+
+    def _connect(self, original, local, uri, *args, **kwargs):
+        return original(uri.replace(self.upstream, local, 1), *args, **kwargs)
+
+    async def _handle(self, websocket):
+        if self.record:
+            await self._proxy(websocket)
+        else:
+            await self._replay(websocket, self.sessions[self._replayed])
+
+    async def _proxy(self, websocket):
+        from websockets.asyncio.client import connect
+
+        events: list[dict] = []
+        self.sessions.append(events)
+        headers = {name: websocket.request.headers[name] for name in self.headers if name in websocket.request.headers}
+        async with connect(
+            self.upstream + websocket.request.path, additional_headers=headers, max_size=None
+        ) as upstream:
+
+            async def forward(source, target, direction):
+                async for message in source:
+                    if direction == "send":
+                        events.append({"direction": "send", **_client_ids(message)})
+                    elif isinstance(message, bytes):
+                        events.append({"direction": "receive", "binary": base64.b64encode(message).decode()})
+                    else:
+                        events.append({"direction": "receive", "text": message})
+                    await target.send(message)
+                await target.close()
+
+            await asyncio.gather(
+                forward(websocket, upstream, "send"), forward(upstream, websocket, "receive"), return_exceptions=True
+            )
+
+    async def _replay(self, websocket, events):
+        self._replayed += 1
+        sent, changed = 0, asyncio.Condition()
+        recorded = [event for event in events if event["direction"] == "send"]
+        ids: dict[str, str] = {}
+
+        async def count():
+            nonlocal sent
+            async for message in websocket:
+                async with changed:
+                    if sent < len(recorded):
+                        for key, live in _client_ids(message).items():
+                            if key in recorded[sent]:
+                                ids[recorded[sent][key]] = live
+                    sent += 1
+                    changed.notify_all()
+
+        counting = asyncio.create_task(count())
+        expected = 0
+        try:
+            for event in events:
+                if event["direction"] == "send":
+                    expected += 1
+                    continue
+                async with changed:
+                    await changed.wait_for(lambda: sent >= expected or counting.done())
+                if counting.done():
+                    return
+                if "binary" in event:
+                    await websocket.send(base64.b64decode(event["binary"]))
+                    continue
+                text = event["text"]
+                for old, live in ids.items():
+                    text = text.replace(old, live)
+                await websocket.send(text)
+            await counting
+        finally:
+            counting.cancel()
+
+
+def _client_ids(message):
+    """The IDs a websocket client chose in one message, for replay mapping."""
+    try:
+        data = json.loads(message)
+    except (TypeError, ValueError):
+        return {}
+    return {key: data[key] for key in ("context_id",) if isinstance(data, dict) and isinstance(data.get(key), str)}
+
+
+def _elevenlabs_realtime_stt():
+    Service = _import("pipecat.services.elevenlabs.stt.ElevenLabsRealtimeSTTService")
+    return Service(api_key=os.environ["ELEVENLABS_API_KEY"], settings=Service.Settings(model="scribe_v2_realtime"))
+
+
+def _elevenlabs_websocket_tts():
+    Service = _import("pipecat.services.elevenlabs.tts.ElevenLabsTTSService")
+    return Service(
+        api_key=os.environ["ELEVENLABS_API_KEY"],
+        settings=Service.Settings(model="eleven_flash_v2_5", voice=ELEVENLABS_VOICE),
+    )
+
+
+@pytest.mark.vcr
 @pytest.mark.asyncio
 # capture and sdk_configuration are independent; two cases cover both branches.
 @pytest.mark.parametrize("capture,sdk_configuration", [(False, False), (True, True)])
-async def test_uncovered_http_clients_own_model_children_and_usage(
+async def test_uncovered_clients_own_model_children_and_usage(
     memory_logger, attachment_uploads, capture, sdk_configuration
 ):
+    import aiohttp
     from braintrust.audio import AudioEncoding, AudioRecordingOptions
 
     _instrument(
         capture_audio_attachments=capture,
         audio_recording_options=AudioRecordingOptions(encoding=AudioEncoding(codec="pcm", container="wav")),
     )
-    await _VoiceSession(system="Reply with exactly one word: Okay.").run(
-        utterances=2, services=_http_services(sdk_configuration=sdk_configuration)
-    )
+    async with aiohttp.ClientSession() as http:
+        services = (
+            lambda: _elevenlabs_stt(http),
+            lambda max_tokens: _http_llm(sdk_configuration=sdk_configuration, max_tokens=max_tokens),
+            lambda: _elevenlabs_tts(http),
+        )
+        await _VoiceSession(system="Reply with exactly one word: Okay.").run(utterances=2, services=services)
     logs = memory_logger.pop()
     for wrapper, child in (("llm_response", "pipecat.llm_response"), ("stt", "pipecat.stt"), ("tts", "pipecat.tts")):
         parents, children = _spans_named(logs, wrapper), _spans_named(logs, child)
@@ -1854,7 +1981,7 @@ async def test_uncovered_http_clients_own_model_children_and_usage(
         for parent, model in zip(parents, children):
             assert model["span_attributes"]["type"] == "llm"
             assert model["span_parents"] == [parent["span_id"]]
-            assert model["metadata"]["provider"] == "openai"
+            assert model["metadata"]["provider"] == ("openai" if wrapper == "llm_response" else "elevenlabs")
             assert model["metadata"]["model"]
             assert set(parent["metrics"]) == {"start", "end"}
             assert "characters" not in model["metrics"]
@@ -1889,6 +2016,7 @@ async def test_uncovered_http_clients_own_model_children_and_usage(
                     assert model["output"] == {"content": []}
                 assert "tokens" not in model["metrics"]
     assert not any(row["context"]["span_origin"]["instrumentation"]["name"] == "openai-auto" for row in logs)
+    _assert_no_errors(logs)
     _assert_all_ended(logs)
 
 
@@ -1930,18 +2058,15 @@ async def _exercise_speech_stream(tts, mode):
         raise failures[0]
 
 
+@pytest.mark.vcr(cassette_name="test_provider_speech_stream_cleanup_and_simultaneous_sessions")
 @pytest.mark.asyncio
 @pytest.mark.parametrize("mode", ["full", "close", "error", "cancel"])
-async def test_provider_speech_stream_cleanup_and_simultaneous_sessions(memory_logger, vcr, mode):
+async def test_provider_speech_stream_cleanup_and_simultaneous_sessions(memory_logger, mode):
     from braintrust.integrations.openai import OpenAIIntegration
 
     _instrument(capture_audio_attachments=False)
     OpenAIIntegration.setup()
-    with vcr.use_cassette(
-        PRIVATE_WORDS_CASSETTE,
-        allow_playback_repeats=True,
-    ):
-        await asyncio.gather(*(_exercise_speech_stream(_openai_tts(), mode) for _ in range(2)))
+    await asyncio.gather(*(_exercise_speech_stream(_openai_tts(), mode) for _ in range(2)))
     logs = memory_logger.pop()
     sessions, wrappers, models = (_spans_named(logs, name) for name in ("session", "tts", "Speech"))
     assert len(sessions) == len(wrappers) == len(models) == 2
@@ -1959,35 +2084,39 @@ async def test_provider_speech_stream_cleanup_and_simultaneous_sessions(memory_l
     _assert_all_ended(logs)
 
 
+@pytest.mark.vcr
 @pytest.mark.asyncio
-async def test_native_tts_transform_is_captured_at_the_model_boundary(memory_logger, vcr):
+async def test_native_tts_transform_is_captured_at_the_model_boundary(memory_logger):
+    import aiohttp
+
     _instrument(capture_audio_attachments=False)
-    _, _, tts_factory = _http_services()
-    tts = tts_factory()
+    http = aiohttp.ClientSession()
+    tts = _elevenlabs_tts(http)
 
     async def spoken_text(_text, _aggregation_type):
         return "Private words."
 
     tts.add_text_transformer(spoken_text)
     context = _private_words_context()
-    with vcr.use_cassette(
-        PRIVATE_WORDS_CASSETTE,
-        allow_playback_repeats=True,
-    ):
+    try:
         await _run_text_pipeline(
             [_openai_llm(), tts],
             [context, lambda: [_frames().TTSSpeakFrame("placeholder")]],
             until="TTSStoppedFrame",
         )
+    finally:
+        await http.close()
     logs = memory_logger.pop()
     models, wrappers = _spans_named(logs, "pipecat.tts"), _spans_named(logs, "tts")
     assert len(models) == len(wrappers) == 2
+    # The model receives the transformed text. The task's text follows the
+    # service's TTSTextFrames, which for ElevenLabs are its spoken words.
     assert all(model["input"]["prompt"] == "Private words." for model in models)
-    assert wrappers[1]["input"] == {"text": "placeholder"}
     assert _link_targets(wrappers[0], "generated_by") == [_single_span(logs, "llm_response")["span_id"]]
     # Independent application speech does not consume the previous response.
     assert not _link_targets(wrappers[1], "generated_by")
     assert not _spans_named(logs, "agent_speech")
+    _assert_no_errors(logs)
     _assert_all_ended(logs)
 
 
@@ -2013,12 +2142,12 @@ def _observe_response_end(monkeypatch, *, delay_start):
     return observed
 
 
+@pytest.mark.vcr(cassette_name="test_fallback_llm_input_observes_native_adapter_transform")
 @pytest.mark.asyncio
 @pytest.mark.parametrize("delayed_observer", [False, True])
-async def test_fallback_llm_input_observes_native_adapter_transform(memory_logger, vcr, monkeypatch, delayed_observer):
+async def test_fallback_llm_input_observes_native_adapter_transform(memory_logger, monkeypatch, delayed_observer):
     _instrument(capture_audio_attachments=False)
-    _, llm_factory, _ = _http_services()
-    llm = llm_factory()
+    llm = _http_llm()
     llm.supports_developer_role = False
     context = _import("pipecat.processors.aggregators.llm_context.LLMContext")(
         messages=[{"role": "developer", "content": "Reply with exactly: Private words."}]
@@ -2029,8 +2158,7 @@ async def test_fallback_llm_input_observes_native_adapter_transform(memory_logge
         await send(_frames().LLMContextFrame(context), until=_frames().LLMFullResponseEndFrame)
         await asyncio.wait_for(processed.wait(), 5)
 
-    with vcr.use_cassette(PRIVATE_WORDS_CASSETTE):
-        await _run_frame_sequence([llm], converse, metrics=True)
+    await _run_frame_sequence([llm], converse, metrics=True)
     logs = memory_logger.pop()
     assert _single_span(logs, "llm_response")["input"][0]["content"] == "Reply with exactly: Private words."
     assert _single_span(logs, "pipecat.llm_response")["input"] == [
@@ -2040,43 +2168,28 @@ async def test_fallback_llm_input_observes_native_adapter_transform(memory_logge
     _assert_all_ended(logs)
 
 
+@pytest.mark.vcr
 @pytest.mark.asyncio
-async def test_streaming_stt_silence_after_a_transcript_opens_no_recognition(memory_logger):
-    """Streaming STT receives every input frame, including silence between turns."""
+async def test_streaming_stt_silence_after_a_transcript_opens_no_recognition(
+    memory_logger, vcr_cassette_dir, monkeypatch
+):
+    """Streaming STT receives every input frame, including silence after each turn."""
     _instrument(capture_user_audio_attachments=True)
-    frames = _frames()
-    STTService = _import("pipecat.services.stt_service.STTService")
-    speech, silence = b"\x01\x00" * 320, b"\x00\x00" * 320
-
-    class StreamingSTT(STTService):
-        # A local streaming service without a model client, so it owns a
-        # pipecat.stt child. The bug is local buffering, not a response shape.
-        async def run_stt(self, audio):
-            if audio == speech:
-                yield frames.TranscriptionFrame("hello", "caller", "final", finalized=True)
-            else:
-                yield None
-
-    async def conversation(send):
-        await send(frames.UserStartedSpeakingFrame())
-        await send(frames.VADUserStartedSpeakingFrame())
-        await send(frames.InputAudioRawFrame(silence, 16000, 1), wait=False)
-        await send(frames.InputAudioRawFrame(speech, 16000, 1), until=frames.TranscriptionFrame)
-        await send(frames.VADUserStoppedSpeakingFrame())
-        await send(frames.UserStoppedSpeakingFrame())
-        # Idle silence after the turn must neither open a recognition nor buffer.
-        for _ in range(20):
-            await send(frames.InputAudioRawFrame(silence, 16000, 1), wait=False)
-        await send(frames.UserStartedSpeakingFrame())
-
-    await _run_frame_sequence([StreamingSTT()], conversation)
+    path = Path(vcr_cassette_dir) / "test_streaming_stt_silence_after_a_transcript_opens_no_recognition.ws.json"
+    async with _WebsocketCassette(path, monkeypatch):
+        await _VoiceSession(system="Reply with exactly one word: Okay.").run(
+            utterances=2, services=(_elevenlabs_realtime_stt, _openai_llm, _openai_tts)
+        )
     logs = memory_logger.pop()
-    recognition = _single_span(logs, "stt")
-    assert recognition["output"] == [{"role": "user", "content": "hello"}]
-    model = _single_span(logs, "pipecat.stt")
-    assert model["span_parents"] == [recognition["span_id"]]
-    # The first turn's two frames only: 44-byte header plus 2 x 640 bytes.
-    assert model["input"]["content"][0]["file"]["byte_size"] == 44 + 2 * 640
+    # One recognition per utterance: trailing silence opens no other recognition.
+    recognitions, models = _spans_named(logs, "stt"), _spans_named(logs, "pipecat.stt")
+    assert len(recognitions) == len(models) == len(_spans_named(logs, "user_turn")) == 2
+    for recognition, model in zip(recognitions, models):
+        assert recognition["output"][0]["content"]
+        assert model["span_parents"] == [recognition["span_id"]]
+        assert model["metadata"]["provider"] == "elevenlabs"
+        assert model["input"]["content"][0]["file"]["byte_size"] > 44
+    _assert_no_errors(logs)
     _assert_all_ended(logs)
 
 
@@ -2194,9 +2307,10 @@ async def test_eou_queued_observations_keep_turn_ownership(memory_logger, tracke
     _assert_all_ended(logs)
 
 
+@pytest.mark.vcr(cassette_name="test_native_user_boundaries_and_delayed_receipts_through_pipeline")
 @pytest.mark.asyncio
 @pytest.mark.parametrize("new_turn", [False, True])
-async def test_native_user_boundaries_and_delayed_receipts_through_pipeline(memory_logger, vcr, new_turn):
+async def test_native_user_boundaries_and_delayed_receipts_through_pipeline(memory_logger, new_turn):
     _instrument(capture_audio_attachments=False)
     frames = _frames()
     context = _private_words_context()
@@ -2217,8 +2331,7 @@ async def test_native_user_boundaries_and_delayed_receipts_through_pipeline(memo
         await send(frames.TranscriptionFrame("yes", "caller", "delayed"))
         await send(frames.LLMContextFrame(context), until=frames.LLMFullResponseEndFrame)
 
-    with vcr.use_cassette(PRIVATE_WORDS_CASSETTE):
-        await _run_frame_sequence([_openai_llm()], conversation)
+    await _run_frame_sequence([_openai_llm()], conversation)
     logs = memory_logger.pop()
     turns = _spans_named(logs, "user_turn")
     speech = _spans_named(logs, "user_speech")
@@ -2276,11 +2389,11 @@ async def test_eou_external_turns_do_not_make_a_wait_from_vad(memory_logger, tra
     assert not _spans_named(memory_logger.pop(), "eou_wait")
 
 
+@pytest.mark.vcr
 @pytest.mark.asyncio
-async def test_shutdown_during_native_playback_keeps_interruption_unknown(memory_logger, vcr):
+async def test_shutdown_during_native_playback_keeps_interruption_unknown(memory_logger):
     _instrument(capture_audio_attachments=False)
-    with vcr.use_cassette("test_voice_session_traces_turns_speech_recognition_generation_and_playback.yaml"):
-        await _VoiceSession(system="Reply with exactly: Hi.").run(shutdown_during_playback=True)
+    await _VoiceSession(system="Reply with exactly: Hi.").run(shutdown_during_playback=True)
     logs = memory_logger.pop()
     playback = _single_span(logs, "agent_speech")
     assert playback["metadata"]["contrib.pipecat.incomplete"] is True
@@ -2302,10 +2415,11 @@ def test_tts_execution_hooks_require_compatible_complete_surface(monkeypatch, mi
     assert not TTSExecutionPatcher.is_patched(None, None, target=service)
 
 
+@pytest.mark.vcr
 @pytest.mark.asyncio
 @pytest.mark.parametrize("expressive,ignored_transcript", [(False, False), (False, True), (True, False)])
 async def test_native_formatted_context_retains_observed_transcript_provenance(
-    memory_logger, vcr, expressive, ignored_transcript
+    memory_logger, expressive, ignored_transcript
 ):
     perception = pytest.importorskip("pipecat.expressive.perception") if expressive else None
     _instrument(capture_audio_attachments=False)
@@ -2352,8 +2466,7 @@ async def test_native_formatted_context_retains_observed_transcript_provenance(
             until=frames.LLMFullResponseEndFrame,
         )
 
-    with vcr.use_cassette(PRIVATE_WORDS_CASSETTE):
-        await _run_frame_sequence([pair.user(), _openai_llm()], conversation, expressive=expressive)
+    await _run_frame_sequence([pair.user(), _openai_llm()], conversation, expressive=expressive)
     logs = memory_logger.pop()
     receipts = _spans_named(logs, "transcript_received")
     receipt = next(row for row in receipts if row["output"][0]["content"].strip())
@@ -2366,7 +2479,7 @@ async def test_native_formatted_context_retains_observed_transcript_provenance(
     _assert_all_ended(logs)
 
 
-@pytest.mark.vcr(cassette_name="test_tool_request_result_and_followup_use_native_missing_tool_handler")
+@pytest.mark.vcr
 @pytest.mark.asyncio
 @pytest.mark.parametrize("transport", ["sdk", "http"])
 async def test_tool_request_result_and_followup_use_native_missing_tool_handler(memory_logger, transport):
@@ -2396,7 +2509,9 @@ async def test_tool_request_result_and_followup_use_native_missing_tool_handler(
         ),
         tool_choice="auto",
     )
-    llm = (_openai_llm if transport == "sdk" else _http_services(remove_followup_tools=True)[1])(max_tokens=60)
+    llm = (_openai_llm if transport == "sdk" else functools.partial(_http_llm, remove_followup_tools=True))(
+        max_tokens=60
+    )
     aggregator = LLMAssistantAggregator(context)
     Pipeline = _import("pipecat.pipeline.pipeline.Pipeline")
     PipelineParams = _import("pipecat.pipeline.worker.PipelineParams")
@@ -2458,60 +2573,42 @@ async def test_tool_request_result_and_followup_use_native_missing_tool_handler(
     _assert_all_ended(logs)
 
 
+@pytest.mark.vcr
 @pytest.mark.asyncio
-@pytest.mark.parametrize("context_id", [None, "reused-context"])
-async def test_deferred_speech_with_reused_context_captures_each_operation(memory_logger, vcr, context_id):
-    """A custom HTTP service delivers recorded audio after run_tts returns."""
+async def test_deferred_websocket_speech_captures_each_operation(memory_logger, vcr_cassette_dir, monkeypatch):
+    """Websocket TTS delivers a reply's audio after run_tts returns, in one context."""
+    from braintrust.integrations.versioning import detect_module_version, version_satisfies
+
+    pipecat = pytest.importorskip("pipecat")
+    if not version_satisfies(detect_module_version(pipecat, ("pipecat",)), ">=1.16.0"):
+        # Without tracing or the recorder, Pipecat 1.3.0's ElevenLabs websocket
+        # TTS never lets the EndFrame finish in a pipeline without a transport.
+        pytest.skip("ElevenLabs websocket TTS shutdown is qualified on Pipecat 1.16.0")
     _instrument(capture_agent_audio_attachments=True)
-    _, _, factory = _http_services()
-    HTTPService = type(factory())
-    frames = _frames()
-
-    class DeferredSpeech(HTTPService):
-        async def process_frame(self, frame, direction):
-            if isinstance(frame, frames.TTSSpeakFrame):
-                await self.process_generator(self.run_tts(frame.text, context_id))
-            else:
-                await super().process_frame(frame, direction)
-
-        async def run_tts(self, text, context_id):
-            async def produce():
-                await self.push_frame(frames.TTSStartedFrame(context_id=context_id))
-                async for frame in super(DeferredSpeech, self).run_tts(text, context_id):
-                    await self.push_frame(frame)
-                await self.push_frame(frames.TTSStoppedFrame(context_id=context_id))
-
-            self.create_task(produce())
-            yield None
-
-    service = DeferredSpeech(
-        api_key=os.environ["OPENAI_API_KEY"], settings=HTTPService.Settings(model="tts-1", voice="alloy")
+    context = _import("pipecat.processors.aggregators.llm_context.LLMContext")(
+        messages=[{"role": "user", "content": "Reply with exactly: Private words. More words."}]
     )
-
-    async def converse(send):
-        for _ in range(2):
-            await send(frames.TTSSpeakFrame("Private words."), until=frames.TTSStoppedFrame)
-
-    with vcr.use_cassette(
-        PRIVATE_WORDS_CASSETTE,
-        allow_playback_repeats=True,
-    ):
-        await _run_frame_sequence([service], converse)
+    path = Path(vcr_cassette_dir) / "test_deferred_websocket_speech_captures_each_operation.ws.json"
+    async with _WebsocketCassette(path, monkeypatch):
+        await _run_text_pipeline([_openai_llm(), _elevenlabs_websocket_tts()], [context], until="TTSStoppedFrame")
     logs = memory_logger.pop()
-    wrappers, models = _spans_named(logs, "tts"), _spans_named(logs, "pipecat.tts")
-    assert len(wrappers) == len(models) == 2
-    for wrapper, model in zip(wrappers, models):
-        assert model["span_parents"] == [wrapper["span_id"]]
-        assert wrapper["metrics"]["start"] <= model["metrics"]["start"] <= model["metrics"]["end"]
-        assert model["output"]["content"][0]["file"]["byte_size"] > 44
-        assert model["input"]["prompt"] == "Private words."
+    # Both sentences stream into the reply's one ElevenLabs context, whose audio
+    # is a single generation: one model child with all text sent and its audio.
+    synthesis, model = _single_span(logs, "tts"), _single_span(logs, "pipecat.tts")
+    assert model["span_parents"] == [synthesis["span_id"]]
+    assert model["metadata"]["provider"] == "elevenlabs"
+    assert "Private words." in model["input"]["prompt"] and "More words." in model["input"]["prompt"]
+    assert synthesis["metrics"]["start"] <= model["metrics"]["start"] <= model["metrics"]["end"]
+    assert model["output"]["content"][0]["file"]["byte_size"] > 44
     assert not _spans_named(logs, "agent_speech")
+    _assert_no_errors(logs)
     _assert_all_ended(logs)
 
 
+@pytest.mark.vcr
 @pytest.mark.asyncio
 @pytest.mark.parametrize("layout", ["bare", "native_turn", "nested_native_turn"])
-async def test_provider_response_parent_survives_delayed_observation(memory_logger, vcr, monkeypatch, layout):
+async def test_provider_response_parent_survives_delayed_observation(memory_logger, monkeypatch, layout):
     from braintrust.integrations.openai import OpenAIIntegration
 
     _instrument(capture_audio_attachments=False)
@@ -2538,8 +2635,7 @@ async def test_provider_response_parent_survives_delayed_observation(memory_logg
         )
         await asyncio.wait_for(observed.wait(), 5)
 
-    with vcr.use_cassette(PRIVATE_WORDS_CASSETTE):
-        await _run_frame_sequence(processors, converse)
+    await _run_frame_sequence(processors, converse)
     logs = memory_logger.pop()
     wrapper, model = _single_span(logs, "llm_response"), _single_span(logs, "Chat Completion")
     assert model["span_parents"] == [wrapper["span_id"]]
@@ -2549,4 +2645,35 @@ async def test_provider_response_parent_survives_delayed_observation(memory_logg
     assert wrapper["span_parents"] == [parent["span_id"]]
     if native_turn:
         assert parent["metadata"]["turn.incomplete"] is False
+    _assert_all_ended(logs)
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_bedrock_llm_is_owned_by_the_bedrock_integration(memory_logger, monkeypatch):
+    """Pipecat's Bedrock service calls aiobotocore, which the Bedrock integration traces."""
+    from braintrust.integrations.bedrock_runtime import BedrockRuntimeIntegration
+
+    # Pipecat 1.3.0's Bedrock service uses aioboto3, which this session does not install.
+    bedrock = pytest.importorskip("pipecat.services.aws.llm", exc_type=ImportError)
+    monkeypatch.setenv("AWS_EC2_METADATA_DISABLED", "true")
+    monkeypatch.setenv("AWS_REGION", os.environ.get("AWS_REGION", "us-east-1"))
+    if os.environ.get("CI") or not os.environ.get("AWS_BEARER_TOKEN_BEDROCK"):
+        # Playback signs requests with placeholder credentials; nothing is sent.
+        for name in ("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN"):
+            monkeypatch.setenv(name, "testing")
+    _instrument(capture_audio_attachments=False)
+    BedrockRuntimeIntegration.setup()
+    Service = bedrock.AWSBedrockLLMService
+    llm = Service(settings=Service.Settings(model="us.amazon.nova-lite-v1:0", max_tokens=20))
+    await _run_text_pipeline([llm], [_private_words_context()])
+
+    logs = memory_logger.pop()
+    response = _single_span(logs, "llm_response")
+    models = [row for row in logs if row["span_attributes"].get("type") == "llm"]
+    # Exactly one model span, the provider integration's; no Pipecat duplicate.
+    assert len(models) == 1 and models[0]["span_parents"] == [response["span_id"]]
+    assert models[0]["context"]["span_origin"]["instrumentation"]["name"] != "pipecat-auto"
+    assert models[0]["metrics"]["prompt_tokens"] > 0
+    _assert_no_errors(logs)
     _assert_all_ended(logs)

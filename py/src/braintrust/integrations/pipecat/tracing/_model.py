@@ -39,6 +39,12 @@ _CLIENT_MODEL_PATHS = {
     },
     "cohere": {"llm_response": ("chat", "chat_stream"), "stt": ("audio.transcriptions.create",)},
     "huggingface_hub": {"llm_response": ("chat_completion", "text_generation", "chat.completions.create")},
+    # Bedrock services create their runtime client per request from a session;
+    # the Bedrock integration traces clients made by those factories.
+    "aiobotocore": {"llm_response": ("create_client",)},
+    "aioboto3": {"llm_response": ("client",)},
+    "botocore": {"llm_response": ("create_client",)},
+    "boto3": {"llm_response": ("client",)},
 }
 # Operation identity follows the executing task, including metrics emitted
 # before queued start events and after queued completion events.
@@ -199,6 +205,8 @@ class ModelOperation:
     deferred: bool = False
     complete: bool = False
     error: Any = None
+    # TTS text sent for this operation, in order.
+    prompt: str | None = None
     input_audio: bytearray = field(default_factory=bytearray)
     input_rate: int = 16000
     audio_frames: WeakValueDictionary = field(default_factory=WeakValueDictionary)

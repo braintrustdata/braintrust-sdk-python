@@ -372,18 +372,29 @@ class BraintrustPipecatObserver(BaseObserver):
                     parameters = {
                         key: value for key, value in parameters.items() if isinstance(value, (str, int, float))
                     }
-                    operation = ModelOperation.start(
-                        session.agent._spans,
-                        parent,
-                        processor,
-                        kind,
-                        input={
-                            "operation": "speech",
-                            "prompt": text,
-                            **({"parameters": parameters} if parameters else {}),
-                        },
+                    # A streaming (websocket) context is one provider generation:
+                    # its audio arrives after run_tts returns and is not split by
+                    # call. Later text in that context joins the open operation.
+                    operation = next(
+                        (
+                            model
+                            for model in synthesis.models
+                            if model.deferred and not model.ended and model.processor is processor
+                        ),
+                        None,
                     )
-                    synthesis.models.append(operation)
+                    if operation is None:
+                        operation = ModelOperation.start(session.agent._spans, parent, processor, kind)
+                        synthesis.models.append(operation)
+                    operation.prompt = (operation.prompt or "") + str(text)
+                    if operation.span is not None:
+                        operation.span.log(
+                            input={
+                                "operation": "speech",
+                                "prompt": operation.prompt,
+                                **({"parameters": parameters} if parameters else {}),
+                            }
+                        )
                 else:
                     operation = session.user.model_operation(processor)
                     parent = operation.parent

@@ -172,6 +172,7 @@ def provider_from_name(name: str) -> str | None:
         "bedrock": "bedrock",
         "aws": "bedrock",
         "openrouter": "openrouter",
+        "elevenlabs": "elevenlabs",
     }
     for needle, provider in providers.items():
         if needle in lowered:
