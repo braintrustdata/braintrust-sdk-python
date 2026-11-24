@@ -137,6 +137,15 @@ def provider_client_expected(service: Any, operation: str) -> bool:
     return False
 
 
+def request_metadata(params: dict[str, Any]) -> dict[str, Any]:
+    """The request settings a model child records; the rest of the request is not kept."""
+    return {
+        key: value
+        for key in ("tools", "tool_choice", "parallel_tool_calls", "max_tool_calls")
+        if (value := params.get(key)) is not None and not _is_not_given(value) and (key != "tools" or value)
+    }
+
+
 @dataclass
 class ModelOperation:
     """One optional model child; also the identity carried by queued metrics."""
@@ -153,7 +162,6 @@ class ModelOperation:
     audio_format: tuple[int, int] | None = None
     deferred: bool = False
     complete: bool = False
-    texts: list[str] = field(default_factory=list)
     error: Any = None
     input_audio: bytearray = field(default_factory=bytearray)
     input_rate: int = 16000
@@ -188,11 +196,7 @@ class ModelOperation:
             return
         # Each observation is a complete request snapshot. Defer metadata until
         # completion so a later request builder can remove/replace adapter tools.
-        self.request_metadata = {
-            key: value
-            for key in ("tools", "tool_choice", "parallel_tool_calls", "max_tool_calls")
-            if (value := params.get(key)) is not None and not _is_not_given(value) and (key != "tools" or value)
-        }
+        self.request_metadata = request_metadata(params)
 
     def content(self) -> None:
         if self.span is not None and not self.first_content:
@@ -252,11 +256,10 @@ class ModelOperation:
             return
         self.ended = True
         if self.span is None:
-            self.texts.clear()
             return
         if self.audio and self.audio_format and self.complete and error is None:
             rate, channels = self.audio_format
-            data = _pcm_to_wav(bytes(self.audio), sample_rate=rate, num_channels=channels)
+            data = _pcm_to_wav(self.audio, sample_rate=rate, num_channels=channels)
             output = {
                 "content": [
                     {
@@ -270,9 +273,12 @@ class ModelOperation:
                 ]
             }
         if self.input_audio:
-            data = bytes(self.input_audio)
-            if not data.startswith(b"RIFF"):
-                data = _pcm_to_wav(data, sample_rate=self.input_rate, num_channels=1)
+            audio = self.input_audio
+            data = (
+                bytes(audio)
+                if audio.startswith(b"RIFF")
+                else _pcm_to_wav(audio, sample_rate=self.input_rate, num_channels=1)
+            )
             self.span.log(
                 input={
                     "operation": "transcribe",
@@ -300,4 +306,3 @@ class ModelOperation:
             self.span.log(error=error)
         self.span.end(end_time=end_time)
         self.audio.clear()
-        self.texts.clear()

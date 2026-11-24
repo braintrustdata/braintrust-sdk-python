@@ -450,7 +450,6 @@ class BraintrustPipecatObserver(BaseObserver):
                 operation.audio_chunk(frame, capture=self.capture_agent_audio_attachments)
             elif kind == "stt" and isinstance(frame, frames.TranscriptionFrame):
                 operation.content()
-                operation.texts.append(frame.text)
         except Exception:
             LOG.warning("Unable to trace Pipecat model output", exc_info=True)
 

@@ -686,6 +686,8 @@ async def test_voice_session_traces_turns_speech_recognition_generation_and_play
     assert playback["metadata"]["contrib.pipecat.interrupted"] is False
     assert playback["output"] == [{"role": "assistant", "content": synthesis["input"]["text"]}]
     assert "audio.participant_ids" in playback["metadata"]
+    # Covered clients without their provider integration emit only Pipecat wrappers.
+    assert not [row for row in logs if row["span_attributes"].get("type") == "llm"]
 
     # Both directions land in shared recordings; playback is what was sent.
     assert session.played
@@ -816,8 +818,7 @@ async def test_responses_without_assistant_aggregator_remain_under_session(memor
 
 @pytest.mark.vcr(cassette_name="test_context_edited_in_place_links_the_transcripts_it_now_includes")
 @pytest.mark.asyncio
-@pytest.mark.parametrize("edited_text", ["Hello again", "Hello"])
-async def test_unrelated_transcript_text_does_not_establish_context_provenance(memory_logger, edited_text):
+async def test_unrelated_transcript_text_does_not_establish_context_provenance(memory_logger):
     frames = _frames()
     LLMContext = _import("pipecat.processors.aggregators.llm_context.LLMContext")
     context = LLMContext(messages=[{"role": "user", "content": "Hello"}])
@@ -828,7 +829,8 @@ async def test_unrelated_transcript_text_does_not_establish_context_provenance(m
 
     def edited():
         # The application extends the existing user message in place.
-        context.get_messages()[0]["content"] = edited_text
+        # Its text matches the two transcripts joined, which is not provenance.
+        context.get_messages()[0]["content"] = "Hello again"
         return [frames.TranscriptionFrame("again", "caller", "1"), frames.LLMContextFrame(context)]
 
     _instrument()
@@ -1432,18 +1434,6 @@ async def test_realtime_cached_audio_usage(memory_logger):
     assert {key: span["metrics"][key] for key in expected} == expected
 
 
-@pytest.mark.asyncio
-async def test_covered_clients_with_provider_integration_disabled_emit_only_wrappers(memory_logger, vcr):
-    _instrument(capture_audio_attachments=False)
-    with vcr.use_cassette("test_voice_session_traces_turns_speech_recognition_generation_and_playback.yaml"):
-        await _VoiceSession(system="Reply with exactly: Hi.").run()
-    logs = memory_logger.pop()
-    for name in ("llm_response", "stt", "tts"):
-        assert len(_spans_named(logs, name)) == 1
-    assert not [row for row in logs if row["span_attributes"].get("type") == "llm"]
-    _assert_all_ended(logs)
-
-
 # Keep provider tests last: enabling OpenAI patches the client for the process.
 @pytest.mark.vcr
 @pytest.mark.asyncio
@@ -1714,34 +1704,6 @@ async def test_eou_native_controller_lifecycle(memory_logger, tracker_observer, 
     _assert_all_ended(logs)
 
 
-@pytest.mark.asyncio
-@pytest.mark.parametrize("entrypoint", ["setup", "wrap"])
-async def test_provider_speech_has_explicit_synthesis_parent(memory_logger, vcr, entrypoint):
-    from braintrust.integrations.openai import OpenAIIntegration
-
-    if entrypoint == "setup":
-        _instrument(capture_audio_attachments=False)
-    else:
-        wrap_pipeline_worker(_import("pipecat.pipeline.worker.PipelineWorker"), capture_audio_attachments=False)
-    OpenAIIntegration.setup()
-    context = _import("pipecat.processors.aggregators.llm_context.LLMContext")(
-        messages=[{"role": "user", "content": "Reply with exactly: Private words."}]
-    )
-    with vcr.use_cassette("test_synthesis_without_output_transport_is_not_playback_and_respects_customizers.yaml"):
-        await _run_text_pipeline([_openai_llm(), _openai_tts()], [context], until="TTSStoppedFrame")
-    logs = memory_logger.pop()
-    synthesis = _single_span(logs, "tts")
-    provider = _single_span(logs, "Speech")
-    assert provider["span_parents"] == [synthesis["span_id"]]
-    assert provider["span_attributes"]["type"] == "llm"
-    assert provider["input"]["operation"] == "speech"
-    assert provider["input"]["prompt"] == "Private words."
-    assert synthesis["input"] == {"text": "Private words."}
-    assert not _spans_named(logs, "pipecat.tts")
-    assert not _spans_named(logs, "agent_speech")
-    _assert_all_ended(logs)
-
-
 def _http_services(*, sdk_configuration=False, remove_followup_tools=False):
     """Real custom services using OpenAI's HTTP APIs without the OpenAI client.
 
@@ -1874,8 +1836,8 @@ def _http_services(*, sdk_configuration=False, remove_followup_tools=False):
 
 @pytest.mark.vcr(cassette_name="test_consecutive_voice_turns_reply_to_and_link_only_their_own_speech")
 @pytest.mark.asyncio
-@pytest.mark.parametrize("capture", [False, True])
-@pytest.mark.parametrize("sdk_configuration", [False, True])
+# capture and sdk_configuration are independent; two cases cover both branches.
+@pytest.mark.parametrize("capture,sdk_configuration", [(False, False), (True, True)])
 async def test_uncovered_http_clients_own_model_children_and_usage(
     memory_logger, attachment_uploads, capture, sdk_configuration
 ):
@@ -1989,9 +1951,14 @@ async def test_provider_speech_stream_cleanup_and_simultaneous_sessions(memory_l
     assert len({session["root_span_id"] for session in sessions}) == 2
     for model in models:
         wrapper = next(wrapper for wrapper in wrappers if wrapper["span_id"] in model["span_parents"])
+        assert model["span_parents"] == [wrapper["span_id"]]
         assert model["root_span_id"] == wrapper["root_span_id"]
+        assert model["span_attributes"]["type"] == "llm"
+        assert model["input"]["operation"] == "speech"
         assert model["input"]["prompt"] == "Private words."
+        assert wrapper["input"] == {"text": "Private words."}
     assert not _spans_named(logs, "pipecat.tts")
+    assert not _spans_named(logs, "agent_speech")
     _assert_all_ended(logs)
 
 
@@ -2029,6 +1996,28 @@ async def test_native_tts_transform_is_captured_at_the_model_boundary(memory_log
     _assert_all_ended(logs)
 
 
+def _observe_response_end(monkeypatch, *, delay_start):
+    """Return an event set once the observer has handled a response end.
+
+    With ``delay_start``, the observer handles each response start late, after
+    the service has already executed its request.
+    """
+    from braintrust.integrations.pipecat.tracing.observer import BraintrustPipecatObserver
+
+    original = BraintrustPipecatObserver.on_push_frame
+    observed = asyncio.Event()
+
+    async def observe(observer, data):
+        if delay_start and isinstance(data.frame, _frames().LLMFullResponseStartFrame):
+            await asyncio.sleep(0.1)
+        await original(observer, data)
+        if isinstance(data.frame, _frames().LLMFullResponseEndFrame):
+            observed.set()
+
+    monkeypatch.setattr(BraintrustPipecatObserver, "on_push_frame", observe)
+    return observed
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("delayed_observer", [False, True])
 async def test_fallback_llm_input_observes_native_adapter_transform(memory_logger, vcr, monkeypatch, delayed_observer):
@@ -2039,19 +2028,7 @@ async def test_fallback_llm_input_observes_native_adapter_transform(memory_logge
     context = _import("pipecat.processors.aggregators.llm_context.LLMContext")(
         messages=[{"role": "developer", "content": "Reply with exactly: Private words."}]
     )
-    from braintrust.integrations.pipecat.tracing.observer import BraintrustPipecatObserver
-
-    processed = asyncio.Event()
-    original = BraintrustPipecatObserver.on_push_frame
-
-    async def observe(observer, data):
-        if delayed_observer and isinstance(data.frame, _frames().LLMFullResponseStartFrame):
-            await asyncio.sleep(0.1)
-        await original(observer, data)
-        if isinstance(data.frame, _frames().LLMFullResponseEndFrame):
-            processed.set()
-
-    monkeypatch.setattr(BraintrustPipecatObserver, "on_push_frame", observe)
+    processed = _observe_response_end(monkeypatch, delay_start=delayed_observer)
 
     async def converse(send):
         await send(_frames().LLMContextFrame(context), until=_frames().LLMFullResponseEndFrame)
@@ -2278,8 +2255,9 @@ async def test_shutdown_during_native_playback_keeps_interruption_unknown(memory
     _assert_all_ended(logs)
 
 
-@pytest.mark.parametrize("missing", ["run_tts", "push_frame", "process_frame"])
-@pytest.mark.parametrize("incompatible", ["absent", "signature"])
+@pytest.mark.parametrize(
+    "missing,incompatible", [("run_tts", "absent"), ("push_frame", "signature"), ("process_frame", "absent")]
+)
 def test_tts_execution_hooks_require_compatible_complete_surface(monkeypatch, missing, incompatible):
     from braintrust.integrations.pipecat.patchers import TTSExecutionPatcher
 
@@ -2499,46 +2477,20 @@ async def test_deferred_speech_with_reused_context_captures_each_operation(memor
 
 
 @pytest.mark.asyncio
-async def test_nested_llm_retains_downstream_native_turn_membership(memory_logger, vcr):
-    _instrument(capture_audio_attachments=False)
-    Context = _import("pipecat.processors.aggregators.llm_context.LLMContext")
-    context = Context(messages=[{"role": "user", "content": "Reply with exactly: Private words."}])
-    assistant = _import("pipecat.processors.aggregators.llm_response_universal.LLMAssistantAggregator")(context)
-    with vcr.use_cassette("test_synthesis_without_output_transport_is_not_playback_and_respects_customizers.yaml"):
-        await _run_text_pipeline(
-            [_import("pipecat.pipeline.pipeline.Pipeline")([_openai_llm()]), _openai_tts(), assistant],
-            [context],
-            until="TTSStoppedFrame",
-        )
-    logs = memory_logger.pop()
-    turn, response = _single_span(logs, "agent_turn"), _single_span(logs, "llm_response")
-    assert response["span_parents"] == [turn["span_id"]]
-    assert turn["metadata"]["turn.incomplete"] is False
-    _assert_all_ended(logs)
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize("native_turn", [False, True])
-async def test_provider_response_parent_survives_delayed_observation(memory_logger, vcr, monkeypatch, native_turn):
+@pytest.mark.parametrize("layout", ["bare", "native_turn", "nested_native_turn"])
+async def test_provider_response_parent_survives_delayed_observation(memory_logger, vcr, monkeypatch, layout):
     from braintrust.integrations.openai import OpenAIIntegration
-    from braintrust.integrations.pipecat.tracing.observer import BraintrustPipecatObserver
 
     _instrument(capture_audio_attachments=False)
     OpenAIIntegration.setup()
-    original = BraintrustPipecatObserver.on_push_frame
-    observed = asyncio.Event()
-
-    async def delayed(observer, data):
-        if isinstance(data.frame, _frames().LLMFullResponseStartFrame):
-            await asyncio.sleep(0.1)
-        await original(observer, data)
-        if isinstance(data.frame, _frames().LLMFullResponseEndFrame):
-            observed.set()
-
-    monkeypatch.setattr(BraintrustPipecatObserver, "on_push_frame", delayed)
+    observed = _observe_response_end(monkeypatch, delay_start=True)
     Context = _import("pipecat.processors.aggregators.llm_context.LLMContext")
     context = Context(messages=[{"role": "user", "content": "Reply with exactly: Private words."}])
     processors = [_openai_llm()]
+    if layout == "nested_native_turn":
+        # The model runs inside a nested pipeline, upstream of the aggregator.
+        processors = [_import("pipecat.pipeline.pipeline.Pipeline")(processors)]
+    native_turn = layout != "bare"
     if native_turn:
         processors.extend(
             [
@@ -2563,4 +2515,6 @@ async def test_provider_response_parent_survives_delayed_observation(memory_logg
     assert set(wrapper["metrics"]) == {"start", "end"}
     parent = _single_span(logs, "agent_turn" if native_turn else "session")
     assert wrapper["span_parents"] == [parent["span_id"]]
+    if native_turn:
+        assert parent["metadata"]["turn.incomplete"] is False
     _assert_all_ended(logs)

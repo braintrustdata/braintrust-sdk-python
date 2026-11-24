@@ -14,6 +14,7 @@ from braintrust.integrations.openai.tracing import _parse_metrics_from_usage
 from .tracing import BraintrustPipecatObserver
 from .tracing._common import LOG, MAX_PENDING
 from .tracing._live import is_live_service
+from .tracing._model import request_metadata
 
 
 _DEFAULT_OBSERVER_OPTIONS: dict[str, Any] = {
@@ -394,7 +395,8 @@ def _traced_model_prompt(wrapped: Any, instance: Any, args: tuple, kwargs: dict)
                 if operation is not None:
                     operation.request(params)
                 else:
-                    execution.request = bt_safe_deep_copy((normalized, params))
+                    # Keep only what bind() logs, not the whole request.
+                    execution.request = bt_safe_deep_copy((normalized, request_metadata(params)))
             except Exception:
                 from .tracing._common import LOG
 
