@@ -1,6 +1,6 @@
 ---
 name: sdk-dependency-updates
-description: "Review and refresh Braintrust Python SDK dependency update PRs, especially automated `chore(deps): weekly dependency update` PRs. Use when Codex needs to inspect `py/pyproject.toml` and `py/uv.lock`, reproduce the workflow's label decision, decide whether provider `latest` cassettes need re-recording, check that bumped pins still install on CI's lowest Python, research whether minor/major bumps need SDK changes, run the exact nox sessions, and validate playback before merge."
+description: "Review and refresh Braintrust Python SDK dependency update PRs, especially automated `chore(deps): weekly dependency update` PRs. Use when Codex needs to inspect `py/pyproject.toml` and `py/uv.lock`, reproduce the workflow's label decision, decide whether provider `latest` cassettes need re-recording, check that bumped pins still install on CI's lowest Python, research whether minor/major bumps need SDK changes, run the exact nox sessions, validate playback before merge, and open a follow-up issue listing the SDK gaps the bumps exposed."
 ---
 
 # SDK Dependency Updates
@@ -219,7 +219,7 @@ Report required findings to the user and agree on the approach before changing a
 - **Small and contained** (a new patcher target, a version-gated test assertion, a removed cap): fix it in the dependency PR, with the failing test as the reproduction. Validate on `latest` and on every older matrix pin for that key.
 - **Large** (an integration rework): keep the previous `latest` pin in the PR. Open an issue with the findings and fix plan, and link it from the PR description. Expect the weekly job to bump the pin again until the fix lands.
 
-Treat recommended findings as follow-ups. Do not expand the dependency PR for them.
+Treat recommended findings as follow-ups. Do not expand the dependency PR for them; they go in the follow-up issue (step 13). Keep each finding's file paths, upstream evidence and proposed fix as you go, since the issue needs them.
 
 ### 8. Decide the minimum validation scope
 
@@ -350,8 +350,40 @@ Update the PR description to cover:
 - cassette dispositions: re-recorded, recorded against a real org, kept as committed (and why)
 - SDK and test changes made for the new pins, plus any Python-floor gating
 - the sessions validated locally and how they ran (replay-only, no Braintrust key)
+- a `## Follow-ups` section linking the follow-up issue from step 13, or saying the research found nothing
 
 Held-back pins come back: the weekly job bumps every `latest` pin again on its next run. Revert held pins on each new weekly PR until the linked fix lands.
+
+### 13. Open a follow-up issue for SDK gaps
+
+After the PR is updated, open one GitHub issue that collects the gaps the bumps exposed: new upstream surfaces, parameters and fields the SDK doesn't trace yet, and silent data loss that wasn't fixed in the PR. This is the list of SDK work to do next. Example: #1170 (for PR #1162). Earlier ones: #858, #1001, #1088.
+
+Check for an existing follow-up issue for this PR first (`gh issue list --search "Follow-ups from" --state all`). Skip the issue if step 7 found nothing to follow up, and say so in the PR.
+
+Title: `Follow-ups from the <YYYY-MM-DD> dependency bumps: new upstream surfaces to trace`. Use the date of the weekly PR.
+
+Body:
+
+- An opening paragraph: these came out of research on the minor/major bumps in the `<date>` weekly dependency update (#<pr>); say whether any of them blocks that PR; and note that each fix must keep the older matrix pins working, so prefer feature detection.
+- One `### <package> <new version>` section per package with findings, in the order of the PR's bump table.
+- Under each section, one `- [ ]` task per gap, which can be fixed in its own PR:
+  - **a bold one-line summary of the fix** (for example "Log `background_options`.")
+  - what changed upstream, with the upstream file path (for example `openai/types/responses/response_create_params.py`)
+  - where the SDK misses it, with the SDK path and function (for example `_RESPONSES_METADATA_PARAMS` in `py/src/braintrust/integrations/openai/tracing.py`)
+  - the proposed fix, including any version gate or fallback for older pins
+  - whether it needs a new or re-recorded cassette, or the wire shape is unconfirmed and needs a recording
+- Items that aren't tasks go in plain bullets in the same section: things to watch for when re-recording next time, and `Optional:` surfaces that are low priority or experimental.
+- Put gaps you held a pin back for (step 7, **Large**) in their own issue, not this one; this issue can link to it.
+
+Create it with the `python` label, then link it from the PR's `## Follow-ups` section:
+
+```bash
+gh issue create --repo braintrustdata/braintrust-sdk-python --label python \
+  --title "Follow-ups from the <date> dependency bumps: new upstream surfaces to trace" \
+  --body-file <scratch>/followups.md
+```
+
+When a later PR fixes an item, tick its box and append `(Merged in #<pr>.)`.
 
 ## Report Back
 
@@ -367,3 +399,4 @@ Always report:
 8. for each minor or major bump: the required SDK changes (fixed in the PR, or held back with an issue link), the recommended follow-ups, or "nothing needed"
 9. every playback-sweep, recording and validation failure: whether it also fails on `main`, its root cause, the fix proposed, and what the user decided
 10. the final playback or validation result
+11. the follow-up issue link (step 13), or why none was opened
