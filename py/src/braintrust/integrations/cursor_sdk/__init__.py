@@ -6,7 +6,14 @@ from typing import Any
 from braintrust.logger import NOOP_SPAN, current_span, init_logger
 
 from .integration import CursorSDKIntegration
-from .patchers import AgentClosePatcher, AgentSendPatcher, AsyncAgentClosePatcher, AsyncAgentSendPatcher
+from .patchers import (
+    AgentClosePatcher,
+    AgentSendPatcher,
+    AgentSummarizePatcher,
+    AsyncAgentClosePatcher,
+    AsyncAgentSendPatcher,
+    AsyncAgentSummarizePatcher,
+)
 
 
 __all__ = ["CursorSDKIntegration", "setup_cursor_sdk", "wrap_cursor_sdk_agent"]
@@ -30,11 +37,15 @@ def wrap_cursor_sdk_agent(agent_class: Any) -> Any:
     the full integration setup to patch the run lifecycle.
     """
     CursorSDKIntegration.setup()
-    # Both flavors spell these methods `send`/`close`, so the composite
-    # patcher cannot tell them apart when wrapping a class directly.
+    # Both flavors use the same method names when wrapping a class directly.
     is_async = inspect.iscoroutinefunction(getattr(agent_class, "send", None))
-    send_patcher = AsyncAgentSendPatcher if is_async else AgentSendPatcher
-    close_patcher = AsyncAgentClosePatcher if is_async else AgentClosePatcher
-    send_patcher.wrap_target(agent_class)
-    close_patcher.wrap_target(agent_class)
+    patchers = (
+        (AsyncAgentSendPatcher, AsyncAgentSummarizePatcher, AsyncAgentClosePatcher)
+        if is_async
+        else (AgentSendPatcher, AgentSummarizePatcher, AgentClosePatcher)
+    )
+    for patcher in patchers:
+        method_name = patcher.target_path.rsplit(".", 1)[-1]
+        if not patcher.has_patch_marker(getattr(agent_class, method_name, None)):
+            patcher.wrap_target(agent_class)
     return agent_class
