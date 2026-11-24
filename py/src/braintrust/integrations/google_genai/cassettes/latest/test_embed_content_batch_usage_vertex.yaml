@@ -1,0 +1,74 @@
+interactions:
+- request:
+    body: '{"requests": [{"content": {"parts": [{"text": "This is a test"}]}, "embedContentConfig":
+      {"outputDimensionality": 32}}, {"content": {"parts": [{"text": "Another test"}]},
+      "embedContentConfig": {"outputDimensionality": 32}}]}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '224'
+      content-type:
+      - application/json
+      host:
+      - aiplatform.googleapis.com
+      user-agent:
+      - google-genai-sdk/3.6.1 gl-python/3.14.7
+      x-goog-api-client:
+      - google-genai-sdk/3.6.1 gl-python/3.14.7
+    method: POST
+    uri: https://aiplatform.googleapis.com/v1/projects/test-project/locations/global/publishers/google/models/gemini-embedding-2:batchEmbedContents
+  response:
+    body:
+      string: "{\n  \"embeddings\": [\n    {\n      \"values\": [\n        -0.12523268,\n
+        \       0.01388079,\n        0.16278051,\n        0.05807151,\n        0.029088827,\n
+        \       0.024313252,\n        -0.05402883,\n        -0.069700174,\n        0.11711448,\n
+        \       -0.33109766,\n        0.04840763,\n        -0.060100585,\n        -0.052658048,\n
+        \       0.03608244,\n        0.00533871,\n        0.02483696,\n        0.10574285,\n
+        \       -0.020709893,\n        -0.001817655,\n        0.10768753,\n        -0.024068335,\n
+        \       0.03608155,\n        0.028778348,\n        0.0811889,\n        -0.07989606,\n
+        \       -0.042030495,\n        0.056788735,\n        -0.13653105,\n        0.06480982,\n
+        \       0.8621931,\n        -0.007059174,\n        0.029474057\n      ]\n
+        \   },\n    {\n      \"values\": [\n        -0.07244148,\n        0.016123561,\n
+        \       0.20757243,\n        -0.033785667,\n        0.13469997,\n        0.052977383,\n
+        \       -0.078062356,\n        0.023042332,\n        0.1522927,\n        -0.32129216,\n
+        \       0.056725547,\n        0.044802926,\n        -0.03830904,\n        0.028088264,\n
+        \       0.026954595,\n        0.04935569,\n        0.09000031,\n        -0.0904247,\n
+        \       -0.04333585,\n        0.09952442,\n        -0.0233907,\n        -0.053802818,\n
+        \       0.11210745,\n        0.040495705,\n        0.015678637,\n        0.041205566,\n
+        \       -0.012560614,\n        -0.073418535,\n        -0.046333697,\n        0.85332185,\n
+        \       -0.041026145,\n        -0.020826796\n      ]\n    }\n  ],\n  \"usageMetadata\":
+        {\n    \"promptTokenCount\": 6,\n    \"totalTokenCount\": 6,\n    \"trafficType\":
+        \"ON_DEMAND\",\n    \"promptTokensDetails\": [\n      {\n        \"modality\":
+        \"TEXT\",\n        \"tokenCount\": 6\n      }\n    ]\n  }\n}\n"
+    headers:
+      alt-svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      content-length:
+      - '1648'
+      content-type:
+      - application/json; charset=UTF-8
+      date:
+      - Mon, 23 Nov 2026 23:25:26 GMT
+      server:
+      - scaffolding on HTTPServer2
+      transfer-encoding:
+      - chunked
+      vary:
+      - Origin
+      - X-Origin
+      - Referer
+      x-content-type-options:
+      - nosniff
+      x-frame-options:
+      - SAMEORIGIN
+      x-xss-protection:
+      - '0'
+    status:
+      code: 200
+      message: OK
+version: 1
