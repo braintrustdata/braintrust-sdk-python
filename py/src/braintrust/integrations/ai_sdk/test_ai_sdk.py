@@ -14,12 +14,15 @@ import ai
 import pytest
 from braintrust import Attachment, logger, setup_ai_sdk
 from braintrust.integrations.ai_sdk import patch_ai_sdk, unpatch_ai_sdk
+from braintrust.integrations.ai_sdk.patchers import _import_telemetry
 from braintrust.integrations.ai_sdk.tracing import _shape_input_messages
 from braintrust.integrations.test_utils import verify_autoinstrument_script
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import init_test_logger
 from pydantic import BaseModel
 
+
+pytestmark = pytest.mark.filterwarnings(r"error:ai\.experimental_telemetry is deprecated:DeprecationWarning")
 
 TEST_MODEL = "gpt-6-luna"
 
@@ -265,7 +268,8 @@ class _DurableEngine:
 
 async def _durable_llm_step(model_data, messages_data, tools_data, parent_data):
     """Model call activity: collect its spans and return them with the message."""
-    telemetry = ai.experimental_telemetry
+    telemetry = _import_telemetry()
+    assert telemetry is not None
     model = ai.Model.model_validate(model_data)
     messages = [ai.messages.Message.model_validate(message) for message in messages_data]
     tools = [ai.Tool.model_validate(tool) for tool in tools_data]
@@ -283,7 +287,8 @@ async def _durable_llm_step(model_data, messages_data, tools_data, parent_data):
 
 
 async def _run_durable_workflow(engine, *, crash_before_step=None):
-    telemetry = ai.experimental_telemetry
+    telemetry = _import_telemetry()
+    assert telemetry is not None
     engine.start_execution(crash_before_step=crash_before_step)
     sink = telemetry.DictSink()
 
@@ -406,16 +411,18 @@ async def test_typesafe_provider_evaluate_nests_typesafe_span(memory_logger):
 
 @pytest.mark.asyncio
 async def test_custom_and_hook_spans_preserve_attributes(memory_logger):
-    async with ai.experimental_telemetry.span("retrieve_context") as custom_span:
+    telemetry = _import_telemetry()
+    assert telemetry is not None
+    async with telemetry.span("retrieve_context") as custom_span:
         custom_span.set_attrs(query="Paris", count=2)
 
-    hook_data = ai.experimental_telemetry.HookSpanData(
+    hook_data = telemetry.HookSpanData(
         label="approve_call_1",
         hook_type="approval",
         metadata={"tool": "send_email"},
         tool_call_id="call_1",
     )
-    async with ai.experimental_telemetry.span(hook_data):
+    async with telemetry.span(hook_data):
         hook_data.status = "resolved"
         hook_data.resolution = {"granted": True}
 

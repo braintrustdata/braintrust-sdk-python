@@ -3,21 +3,26 @@
 import asyncio
 import logging
 import time
-from collections.abc import AsyncGenerator, Generator
+import weakref
+from collections.abc import AsyncGenerator, AsyncIterable, Callable, Generator, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import lru_cache
 from types import TracebackType
 from typing import Any
 
 from braintrust.integrations.openai.tracing import (
+    _AsyncTracedStream,
     _decisions_input,
     _decisions_output,
     _process_attachments_in_input,
     _responses_event_served_tier,
+    _TracedStream,
 )
 from braintrust.integrations.utils import (
     _extract_audio_output,
     _image_attachment_from_base64,
+    _log_and_end_span,
     _materialize_attachment,
     _parse_openai_usage_metrics,
     _prettify_response_params,
@@ -254,6 +259,86 @@ def _handle_responses_streaming(
                 span.end()
 
         return sync_gen()
+
+
+class _TracedTranscriptionStream(_TracedStream):
+    @property
+    def __class__(self):
+        return self._wrapped.__class__
+
+
+class _AsyncTracedTranscriptionStream(_AsyncTracedStream):
+    # LiteLLM's async transcription stream exposes an awaitable close().
+    close = _AsyncTracedStream.aclose
+
+    @property
+    def __class__(self):
+        return self._wrapped.__class__
+
+
+def _handle_transcription_streaming(raw_response: Any, span: Span, start: float, *, is_async: bool) -> Any:
+    deltas: list[str] = []
+    done_text: str | None = None
+    metrics: dict[str, Any] = {}
+    metadata: dict[str, Any] = {"stream": True}
+
+    def observe(event: Any) -> None:
+        nonlocal done_text
+        event_type = _get_field(event, "type")
+        if event_type == "transcript.text.delta":
+            text = _get_field(event, "delta")
+            if isinstance(text, str):
+                deltas.append(text)
+        elif event_type == "transcript.text.done":
+            text = _extract_transcription_text(event)
+            if isinstance(text, str):
+                done_text = text
+                deltas.clear()
+            metrics.update(_parse_transcription_usage(_get_field(event, "usage")))
+            metadata.update(_transcription_response_metadata(event))
+        else:
+            return
+
+        if isinstance(text, str) and text and "time_to_first_token" not in metrics:
+            metrics["time_to_first_token"] = time.time() - start
+
+    def finish() -> None:
+        output = done_text if done_text is not None else "".join(deltas) or None
+        _log_and_end_span(span, output=output, metrics=metrics, metadata=metadata)
+
+    def sync_gen():
+        try:
+            for event in raw_response:
+                observe(event)
+                yield event
+        except Exception as error:
+            log_exc_info_to_span(span, type(error), error, error.__traceback__)
+            raise
+        finally:
+            finalize()
+
+    async def async_gen():
+        try:
+            async for event in raw_response:
+                observe(event)
+                yield event
+        except (Exception, asyncio.CancelledError) as error:
+            # Event-loop shutdown can cancel cleanup after GC has ended the span.
+            if finalize.alive:
+                log_exc_info_to_span(span, type(error), error, error.__traceback__)
+            raise
+        finally:
+            finalize()
+
+    if is_async:
+        stream = _AsyncTracedTranscriptionStream(raw_response, async_gen(), on_close=lambda: finalize())
+    else:
+        stream = _TracedTranscriptionStream(raw_response, sync_gen(), on_close=lambda: finalize())
+
+    # The callback only holds span data, so an abandoned stream can be collected.
+    finalize = weakref.finalize(stream, finish)
+    finalize.atexit = False
+    return stream
 
 
 # ---------------------------------------------------------------------------
@@ -690,34 +775,53 @@ async def _arerank_wrapper_async(wrapped, instance, args, kwargs):
         return rerank_response
 
 
-def _transcription_wrapper(wrapped, instance, args, kwargs):
-    updated_span_payload = _update_audio_span_payload_from_params(kwargs)
-    with start_span(
+@contextmanager
+def _trace_transcription(args, kwargs) -> Iterator[Callable[[Any], Any]]:
+    params = dict(zip(("model", "file"), args)) | kwargs
+    updated_span_payload = _update_audio_span_payload_from_params(params)
+    span = start_span(
         **merge_dicts(
             dict(name="Transcription", span_attributes={"type": SpanTypeAttribute.LLM}), updated_span_payload
         )
-    ) as span:
-        transcription_response = wrapped(*args, **kwargs)
+    )
+    stream_owns_span = False
+
+    def trace_response(response: Any) -> Any:
+        nonlocal stream_owns_span
+        is_async_stream = isinstance(response, AsyncIterable)
+        if is_async_stream or isinstance(response, Iterator):
+            stream = _handle_transcription_streaming(response, span, start, is_async=is_async_stream)
+            stream_owns_span = True
+            return stream
+
         span.log(
-            metrics=_parse_metrics_from_usage(_get_field(transcription_response, "usage")),
-            output=_extract_transcription_text(transcription_response),
+            metrics=_parse_transcription_usage(_get_field(response, "usage")),
+            output=_extract_transcription_text(response),
+            metadata=_transcription_response_metadata(response),
         )
-        return transcription_response
+        return response
+
+    span.set_current()
+    try:
+        start = time.time()
+        yield trace_response
+    except BaseException as error:
+        log_exc_info_to_span(span, type(error), error, error.__traceback__)
+        raise
+    finally:
+        span.unset_current()
+        if not stream_owns_span:
+            span.end()
+
+
+def _transcription_wrapper(wrapped, instance, args, kwargs):
+    with _trace_transcription(args, kwargs) as trace_response:
+        return trace_response(wrapped(*args, **kwargs))
 
 
 async def _atranscription_wrapper_async(wrapped, instance, args, kwargs):
-    updated_span_payload = _update_audio_span_payload_from_params(kwargs)
-    with start_span(
-        **merge_dicts(
-            dict(name="Transcription", span_attributes={"type": SpanTypeAttribute.LLM}), updated_span_payload
-        )
-    ) as span:
-        transcription_response = await wrapped(*args, **kwargs)
-        span.log(
-            metrics=_parse_metrics_from_usage(_get_field(transcription_response, "usage")),
-            output=_extract_transcription_text(transcription_response),
-        )
-        return transcription_response
+    with _trace_transcription(args, kwargs) as trace_response:
+        return trace_response(await wrapped(*args, **kwargs))
 
 
 # ---------------------------------------------------------------------------
@@ -1077,6 +1181,21 @@ def _extract_transcription_text(response: Any) -> str | None:
     if isinstance(response, str):
         return response.strip()
     return _get_field(response, "text")
+
+
+def _transcription_response_metadata(response: Any) -> dict[str, Any]:
+    languages = _get_field(response, "languages")
+    if isinstance(languages, (list, tuple)):
+        return {"languages": [_try_to_dict(language) for language in languages]}
+    return {}
+
+
+def _parse_transcription_usage(usage: Any) -> dict[str, Any]:
+    metrics = _parse_metrics_from_usage(usage)
+    audio_tokens = _get_field(_get_field(usage, "input_token_details"), "audio_tokens")
+    if is_numeric(audio_tokens):
+        metrics["prompt_audio_tokens"] = audio_tokens
+    return metrics
 
 
 def _parse_metrics_from_usage(usage: Any) -> dict[str, Any]:

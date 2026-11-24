@@ -26,8 +26,9 @@ with autoinstrument_test_context("test_auto_openrouter", integration="openrouter
     spans = memory_logger.pop()
     assert len(spans) == 1, f"Expected 1 span, got {len(spans)}"
     span = spans[0]
-    assert span["metadata"]["provider"] == "openai"
-    assert span["metadata"]["model"] == "gpt-6-luna"
+    assert span["metadata"]["provider"] == "openrouter"
+    assert span["metadata"]["model"] == "openai/gpt-6-luna"
+    assert span["metrics"].get("estimated_cost") == getattr(response.usage, "cost", None)
     assert "4" in span["output"][0]["message"]["content"]
 
 with autoinstrument_test_context(
@@ -48,9 +49,10 @@ with autoinstrument_test_context(
     span = spans[0]
     assert span["span_attributes"]["name"] == "openrouter.beta.responses.send"
     assert span["input"] == "Say one short sentence about observability."
-    assert span["metadata"]["model"] == "gpt-6-luna"
-    assert span["metadata"]["provider"] == "openai"
+    assert span["metadata"]["model"] == "openai/gpt-6-luna"
+    assert span["metadata"]["provider"] == "openrouter"
     assert span["output"][0]["type"] == "message"
     assert span["metrics"]["tokens"] > 0
+    assert span["metrics"]["estimated_cost"] == response.usage.cost
 
 print("SUCCESS")
