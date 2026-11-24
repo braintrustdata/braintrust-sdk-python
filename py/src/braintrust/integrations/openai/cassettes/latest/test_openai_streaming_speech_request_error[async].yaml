@@ -1,0 +1,93 @@
+interactions:
+- request:
+    body: '{"model":"tts-1","input":"Hi.","voice":"not-a-voice","response_format":"wav"}'
+    headers:
+      accept:
+      - application/octet-stream
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '77'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 3.51.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 3.51.0
+      x-stainless-raw-response:
+      - stream
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+    method: POST
+    uri: https://api.openai.com/v1/audio/speech
+  response:
+    body:
+      string: "{\n  \"error\": {\n    \"message\": \"[{'type': 'enum', 'loc': ('body',
+        'voice'), 'msg': \\\"Input should be 'nova', 'shimmer', 'echo', 'onyx', 'fable',
+        'alloy', 'ash', 'sage' or 'coral'\\\", 'ctx': {'expected': \\\"'nova', 'shimmer',
+        'echo', 'onyx', 'fable', 'alloy', 'ash', 'sage' or 'coral'\\\"}}]\",\n    \"type\":
+        \"invalid_request_error\",\n    \"param\": null,\n    \"code\": null\n  }\n}"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a5fa2b6eff7f5577-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '366'
+      content-type:
+      - application/json
+      date:
+      - Tue, 24 Nov 2026 17:35:21 GMT
+      openai-processing-ms:
+      - '49'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      vary:
+      - Origin
+      via:
+      - envoy-router-766b86cd44-k64lx
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '10000'
+      x-ratelimit-remaining-requests:
+      - '9999'
+      x-ratelimit-reset-requests:
+      - 6ms
+      x-request-id:
+      - req_613cd4ce1b1e4a54b8c854545cad55ce
+    status:
+      code: 400
+      message: Bad Request
+version: 1
