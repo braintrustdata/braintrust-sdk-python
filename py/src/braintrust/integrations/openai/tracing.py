@@ -28,6 +28,8 @@ from braintrust.integrations.utils import (
 from braintrust.logger import Span
 from braintrust.logger import start_span as _bt_start_span
 
+from ._speech import speech_filename, speech_input, speech_mime_type, speech_output, trace_stream
+
 
 _INSTRUMENTATION = "openai-auto"
 _log = logging.getLogger(__name__)
@@ -136,15 +138,6 @@ _EMBEDDING_METADATA_PARAMS = (
 )
 
 _MODERATION_METADATA_PARAMS = ("model",)
-
-_SPEECH_METADATA_PARAMS = (
-    "model",
-    "voice",
-    "response_format",
-    "speed",
-    "instructions",
-    "stream_format",
-)
 
 _AUDIO_FILE_METADATA_PARAMS = (
     "model",
@@ -265,18 +258,25 @@ def _extract_moderation_metadata(response: Any) -> dict[str, Any]:
     return {"moderation": moderation} if moderation is not None else {}
 
 
-def _raw_response_requested(kwargs: dict[str, Any]) -> bool:
+def _raw_response_mode(kwargs: dict[str, Any]) -> str | None:
+    """Return ``"stream"`` (with_streaming_response), ``"raw"`` (with_raw_response),
+    or ``None`` when the raw-response header is absent or falsy."""
     extra_headers = kwargs.get("extra_headers")
     if not isinstance(extra_headers, dict):
-        return False
+        return None
 
     for key, value in extra_headers.items():
         if isinstance(key, str) and key.lower() == RAW_RESPONSE_HEADER:
             if isinstance(value, str):
-                return value.lower() in {"true", "stream"}
-            return bool(value)
+                value = value.lower()
+                return "stream" if value == "stream" else ("raw" if value == "true" else None)
+            return "raw" if value else None
 
-    return False
+    return None
+
+
+def _raw_response_requested(kwargs: dict[str, Any]) -> bool:
+    return _raw_response_mode(kwargs) is not None
 
 
 def _materialize_logged_file_input(value: Any) -> Any:
@@ -2324,21 +2324,15 @@ class ModerationWrapper(BaseWrapper):
 
 
 class SpeechWrapper(BaseWrapper):
-    _metadata_params = _SPEECH_METADATA_PARAMS
-
     def __init__(self, create_fn: Callable[..., Any] | None, acreate_fn: Callable[..., Any] | None):
         super().__init__(create_fn, acreate_fn, "Speech")
 
     def process_output(self, response: Any, span: Span):
-        from ._speech import speech_filename, speech_output
-
         data = getattr(response, "content", b"")
-        span.log(output=speech_output(data, _infer_audio_mime_type(response), speech_filename(response)))
+        span.log(output=speech_output(data, speech_mime_type(response), speech_filename(response)))
 
     @classmethod
     def _parse_params(cls, params: dict[str, Any]) -> dict[str, Any]:
-        from ._speech import speech_input
-
         return merge_dicts(
             params.pop("span_info", {}),
             {
@@ -2569,12 +2563,13 @@ class TranslationWrapper(_AudioFileWrapper):
         span.log(output=self._extract_text(response))
 
 
-def _audio_speech_create_wrapper(wrapped, instance, args, kwargs):
-    # The streaming-response API sets this header before invoking create.
-    headers = kwargs.get("extra_headers") or {}
-    if any(str(key).lower() == RAW_RESPONSE_HEADER and value == "stream" for key, value in headers.items()):
-        from ._speech import trace_stream
+_audio_speech_base_wrapper = _make_base_wrapper_callback(SpeechWrapper)
 
+
+def _audio_speech_create_wrapper(wrapped, instance, args, kwargs):
+    # with_streaming_response sets this header before invoking create; trace it
+    # here instead of letting the base callback skip raw-response calls.
+    if _raw_response_mode(kwargs) == "stream":
         return trace_stream(
             wrapped,
             args,
@@ -2584,7 +2579,7 @@ def _audio_speech_create_wrapper(wrapped, instance, args, kwargs):
             log_headers=log_headers,
             params=SpeechWrapper._parse_params(kwargs),
         )
-    return _make_base_wrapper_callback(SpeechWrapper)(wrapped, instance, args, kwargs)
+    return _audio_speech_base_wrapper(wrapped, instance, args, kwargs)
 
 
 _audio_transcription_create_wrapper = _make_base_wrapper_callback(TranscriptionWrapper)

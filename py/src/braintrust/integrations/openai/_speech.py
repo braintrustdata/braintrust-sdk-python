@@ -6,7 +6,12 @@ from email.message import Message
 from typing import Any
 
 from braintrust.env import BraintrustEnv
-from braintrust.integrations.utils import _infer_audio_mime_type, _is_not_given, _materialize_attachment
+from braintrust.integrations.utils import (
+    _infer_audio_mime_type,
+    _is_not_given,
+    _log_error_and_end_span,
+    _materialize_attachment,
+)
 from braintrust.logger import NOOP_SPAN
 from wrapt import ObjectProxy
 
@@ -30,12 +35,35 @@ def speech_input(params: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def speech_filename(response: Any) -> str | None:
+# Default attachment extensions for OpenAI speech response formats. Kept local
+# because mimetypes lacks wav/pcm on some platforms.
+_SPEECH_EXTENSIONS = {
+    "audio/wav": "wav",
+    "audio/mpeg": "mp3",
+    "audio/pcm": "pcm",
+    "audio/opus": "opus",
+    "audio/aac": "aac",
+    "audio/flac": "flac",
+}
+
+
+def _response_headers(response: Any) -> Any:
     # Streaming APIResponse exposes headers directly; the non-streaming
     # HttpxBinaryResponseContent keeps them on its httpx response.
     headers = getattr(response, "headers", None)
-    if headers is None:
-        headers = getattr(getattr(response, "response", None), "headers", None)
+    return headers if headers is not None else getattr(getattr(response, "response", None), "headers", None)
+
+
+def speech_mime_type(response: Any, response_format: Any = None) -> str:
+    headers = _response_headers(response)
+    content_type = headers.get("content-type") if headers is not None else None
+    if isinstance(content_type, str) and content_type:
+        return content_type.split(";", 1)[0].strip()
+    return _infer_audio_mime_type(None, response_format)
+
+
+def speech_filename(response: Any) -> str | None:
+    headers = _response_headers(response)
     disposition = headers.get("content-disposition") if headers is not None else None
     if not disposition:
         return None
@@ -49,16 +77,7 @@ def speech_output(data: bytes, mime_type: str, filename: str | None = None) -> d
         resolved = _materialize_attachment(
             data,
             mime_type=mime_type,
-            filename=filename
-            or "speech."
-            + {
-                "audio/wav": "wav",
-                "audio/mpeg": "mp3",
-                "audio/pcm": "pcm",
-                "audio/opus": "opus",
-                "audio/aac": "aac",
-                "audio/flac": "flac",
-            }.get(mime_type, "bin"),
+            filename=filename or f"speech.{_SPEECH_EXTENSIONS.get(mime_type, 'bin')}",
         )
         if resolved is not None:
             return {
@@ -79,41 +98,52 @@ def speech_output(data: bytes, mime_type: str, filename: str | None = None) -> d
 class _SpeechTrace:
     def __init__(self, span, response, response_format, started):
         self.span = span
-        content_type = response.headers.get("content-type")
-        self.mime_type = (
-            content_type.split(";", 1)[0].strip()
-            if isinstance(content_type, str) and content_type
-            else _infer_audio_mime_type(response, response_format)
-        )
+        self.mime_type = speech_mime_type(response, response_format)
         self.filename = speech_filename(response)
         self.started = started
         self.first_content = False
         self.finished = False
-        self.audio = bytearray()
+        # Chunks are kept by reference and joined once at EOF.
+        self.chunks: list[bytes] = []
         self.capture = span is not NOOP_SPAN and BraintrustEnv.CAPTURE_AGENT_AUDIO_ATTACHMENTS.get(False)
+
+    def _mark_first_content(self):
+        if not self.first_content:
+            self.first_content = True
+            self.span.log(metrics={"time_to_first_token": time.monotonic() - self.started})
 
     def observe(self, chunk, *, audio=True):
         """Record a consumed chunk; ``audio=False`` marks decoded text chunks,
         which count toward timing but cannot be captured as audio bytes."""
         if self.finished or not chunk:
             return
-        if not self.first_content:
-            self.first_content = True
-            self.span.log(metrics={"time_to_first_token": time.monotonic() - self.started})
+        self._mark_first_content()
         if not audio:
             self.capture = False
-            self.audio.clear()
+            self.chunks.clear()
         elif self.capture:
-            self.audio.extend(chunk)
+            self.chunks.append(chunk)
 
-    def finish(self, error=None, *, complete=False):
+    def complete(self, data):
+        """Finish from a whole-body read, logging ``data`` without buffering it."""
+        if self.finished:
+            return
+        if data:
+            self._mark_first_content()
+        self.finish(complete=True, data=data if self.capture else b"")
+
+    def finish(self, error=None, *, complete=False, data=None):
         if self.finished:
             return
         self.finished = True
         if error is not None and not isinstance(error, GeneratorExit):
             self.span.log(error=error)
-        self.span.log(output=speech_output(bytes(self.audio) if complete else b"", self.mime_type, self.filename))
-        self.audio.clear()
+        if not complete:
+            data = b""
+        elif data is None:
+            data = b"".join(self.chunks)
+        self.span.log(output=speech_output(data, self.mime_type, self.filename))
+        self.chunks.clear()
         self.span.end()
 
 
@@ -163,8 +193,7 @@ class SpeechResponse(ObjectProxy):
         except BaseException as exc:
             self._self_trace.finish(exc)
             raise
-        self._self_trace.observe(data)
-        self._self_trace.finish(complete=True)
+        self._self_trace.complete(data)
         return data
 
     # Run these SDK methods with this proxy as self, so their internal
@@ -210,8 +239,7 @@ class AsyncSpeechResponse(ObjectProxy):
         except BaseException as exc:
             self._self_trace.finish(exc)
             raise
-        self._self_trace.observe(data)
-        self._self_trace.finish(complete=True)
+        self._self_trace.complete(data)
         return data
 
     async def parse(self, *args, **kwargs):
@@ -239,14 +267,18 @@ def trace_stream(wrapped, args, kwargs, *, is_async, start_span, log_headers, pa
     The sync SDK calls this only when the response context is entered. The async
     SDK calls it when ``create()`` is called, but the returned coroutine only runs
     on ``__aenter__``, so the async span is started inside that coroutine.
+
+    ``tracing`` passes its ``start_span`` (which tags the OpenAI instrumentation)
+    and ``log_headers``; importing them here would be circular.
     """
+    response_format = kwargs.get("response_format")
 
     def start():
         return start_span(**{"name": "Speech", "type": "llm", "set_current": False, **params}), time.monotonic()
 
     def traced(span, response, started):
         log_headers(response, span)
-        return _SpeechTrace(span, response, kwargs.get("response_format"), started)
+        return _SpeechTrace(span, response, response_format, started)
 
     if is_async:
 
@@ -255,8 +287,7 @@ def trace_stream(wrapped, args, kwargs, *, is_async, start_span, log_headers, pa
             try:
                 response = await wrapped(*args, **kwargs)
             except BaseException as exc:
-                span.log(error=exc)
-                span.end()
+                _log_error_and_end_span(span, exc)
                 raise
             return AsyncSpeechResponse(response, traced(span, response, started))
 
@@ -265,7 +296,6 @@ def trace_stream(wrapped, args, kwargs, *, is_async, start_span, log_headers, pa
     try:
         response = wrapped(*args, **kwargs)
     except BaseException as exc:
-        span.log(error=exc)
-        span.end()
+        _log_error_and_end_span(span, exc)
         raise
     return SpeechResponse(response, traced(span, response, started))

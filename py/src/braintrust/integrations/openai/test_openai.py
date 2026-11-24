@@ -2230,54 +2230,28 @@ async def test_openai_audio_speech_capture(memory_logger, monkeypatch, is_async,
         assert not memory_logger.upload_attempts
 
 
-def _consume_speech_sync(response, consumption, tmp_path):
-    if consumption == "read":
-        return response.read()
-    if consumption == "parse":
-        return response.parse()
+async def _consume_speech(is_async, response, consumption, tmp_path):
+    """Read a streamed speech response one way and return the audio bytes seen."""
+    if consumption in {"read", "parse"}:
+        return await _call(is_async, getattr(response, consumption))
     if consumption == "text":
-        response.text()
+        await _call(is_async, response.text)
         return response.http_response.content
     if consumption == "stream_to_file":
         path = tmp_path / "speech.wav"
-        response.stream_to_file(path, chunk_size=128)
+        await _call(is_async, response.stream_to_file, path, chunk_size=128)
         return path.read_bytes()
     if consumption in {"iter_text", "iter_lines"}:
         chunks = response.iter_text(128) if consumption == "iter_text" else response.iter_lines()
-        text = "".join(chunks)
-        return b"RIFF" if text.startswith("RIFF") else b""
-    audio = bytearray()
-    if consumption != "empty":
-        for chunk in response.iter_bytes(128):
-            audio.extend(chunk)
-            if consumption == "partial":
-                break
-    return bytes(audio)
-
-
-async def _consume_speech_async(response, consumption, tmp_path):
-    if consumption == "read":
-        return await response.read()
-    if consumption == "parse":
-        return await response.parse()
-    if consumption == "text":
-        await response.text()
-        return response.http_response.content
-    if consumption == "stream_to_file":
-        path = tmp_path / "speech.wav"
-        await response.stream_to_file(path, chunk_size=128)
-        return path.read_bytes()
-    if consumption in {"iter_text", "iter_lines"}:
-        chunks = response.iter_text(128) if consumption == "iter_text" else response.iter_lines()
-        text = "".join([chunk async for chunk in chunks])
-        return b"RIFF" if text.startswith("RIFF") else b""
-    audio = bytearray()
-    if consumption != "empty":
-        async for chunk in response.iter_bytes(128):
-            audio.extend(chunk)
-            if consumption == "partial":
-                break
-    return bytes(audio)
+        return b"RIFF" if "".join(await _drain(is_async, chunks)).startswith("RIFF") else b""
+    if consumption == "partial":
+        stream = response.iter_bytes(128)
+        chunk = await anext(stream) if is_async else next(stream)
+        await stream.aclose() if is_async else stream.close()
+        return chunk
+    if consumption == "full":
+        return b"".join(await _drain(is_async, response.iter_bytes(128)))
+    return b""
 
 
 @sync_async
@@ -2323,10 +2297,10 @@ async def test_openai_streaming_speech_preserves_consumption_and_parent(
     with logger.start_span(name="tts", type="task") as parent:
         if is_async:
             async with manager as response:
-                audio.extend(await _consume_speech_async(response, consumption, tmp_path))
+                audio.extend(await _consume_speech(is_async, response, consumption, tmp_path))
         else:
             with manager as response:
-                audio.extend(_consume_speech_sync(response, consumption, tmp_path))
+                audio.extend(await _consume_speech(is_async, response, consumption, tmp_path))
         assert logger.current_span() is parent
     memory_logger.flush()
     spans = memory_logger.pop()
