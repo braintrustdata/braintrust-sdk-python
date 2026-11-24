@@ -329,6 +329,9 @@ class _VoiceSession:
     delay_observer: bool = False
     hold_inflight_audio: bool = False
     cancel: bool = False
+    # Without Pipecat's assistant aggregator there are no agent turns; a reply
+    # is done once its response reaches the sink, or once it is interrupted.
+    assistant_aggregator: bool = True
     observer: "BraintrustPipecatObserver | None" = field(init=False, default=None)
     tracker: "_Session | None" = field(init=False, default=None)
     controllers: "tuple[ControllerWait, ...]" = field(init=False, default=())
@@ -397,7 +400,7 @@ class _VoiceSession:
                     llm_factory(self.max_tokens),
                     tts_factory(),
                     transport.output(),
-                    aggregators.assistant(),
+                    *([aggregators.assistant()] if self.assistant_aggregator else []),
                 ]
             ),
             params=PipelineParams(enable_metrics=True, enable_usage_metrics=True),
@@ -435,10 +438,29 @@ class _VoiceSession:
         async def on_ready(_transport):
             ready.set()
 
-        @aggregators.assistant().event_handler("on_assistant_turn_stopped")
-        async def on_stopped(_aggregator, message, *_args):
-            self.assistant_turns.append(message)
-            turn_stopped.set()
+        if self.assistant_aggregator:
+
+            @aggregators.assistant().event_handler("on_assistant_turn_stopped")
+            async def on_stopped(_aggregator, message, *_args):
+                self.assistant_turns.append(message)
+                turn_stopped.set()
+
+        else:
+            worker.set_reached_downstream_filter(
+                (frames.LLMFullResponseStartFrame, frames.LLMFullResponseEndFrame, frames.InterruptionFrame)
+            )
+            responding = False
+
+            @worker.event_handler("on_frame_reached_downstream")
+            async def on_reply_done(_worker, frame):
+                nonlocal responding
+                if isinstance(frame, frames.LLMFullResponseStartFrame):
+                    responding = True
+                elif responding:
+                    # The interrupted reply's end frame is dropped with it.
+                    responding = False
+                    self.assistant_turns.append(frame)
+                    turn_stopped.set()
 
         with wave.open(str(SPEECH)) as audio:
             assert audio.getframerate() == INPUT_RATE
@@ -803,6 +825,29 @@ async def test_user_barge_in_interrupts_agent_playback(memory_logger):
     # The answer to the interruption is a separate, complete turn.
     assert reply["metadata"]["turn.incomplete"] is False
     assert reply["metrics"]["start"] >= interrupted["metrics"]["end"]
+    _assert_all_ended(logs)
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_barge_in_without_assistant_aggregator_opens_no_leftover_speech(memory_logger):
+    _instrument(capture_audio_attachments=False)
+    session = _VoiceSession(
+        system="Count from one to ten in words, then stop. If interrupted, reply exactly: Okay.",
+        max_tokens=30,
+        hold_inflight_audio=True,
+        assistant_aggregator=False,
+    )
+    await session.run(utterances=2, barge_in=True)
+
+    logs = memory_logger.pop()
+    assert not _spans_named(logs, "agent_turn")
+    # The interrupted reply's speech, then the answer's. The chunk the transport
+    # still writes after the interruption must not open a third.
+    cut, answer = _spans_named(logs, "agent_speech")
+    assert cut["metadata"]["contrib.pipecat.interrupted"] is True
+    assert answer["metadata"]["contrib.pipecat.interrupted"] is False
+    assert answer["metrics"]["start"] >= cut["metrics"]["end"]
     _assert_all_ended(logs)
 
 

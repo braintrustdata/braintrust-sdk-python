@@ -447,6 +447,16 @@ class AgentTracker:
         """End all agent work: interrupted by the user, or incomplete at shutdown."""
         status = "contrib.pipecat.interrupted" if interrupted else "contrib.pipecat.incomplete"
         end_time = self._clock.wall(end_ms)
+        # Without an assistant aggregator a reply has no turn, but the transport
+        # still writes its dequeued audio after an interruption just the same.
+        ended_reply = (
+            self._turn is not None
+            or self._playback is not None
+            or self._response is not None
+            or any(not synthesis.ended for synthesis in self._synthesis.values())
+        )
+        if ended_reply:
+            self._interrupted_reply = interrupted
         if self._playback is not None:
             if self._playback.span is not None:
                 self._playback.span.log(metadata={status: True})
@@ -468,7 +478,6 @@ class AgentTracker:
         self._requesters.clear()
         self._finished_tools.clear()
         if self._turn is not None:
-            self._interrupted_reply = interrupted
             self._finish_turn(self._turn, incomplete=True, end_ms=end_ms)
 
     def _open(self, work: _Work) -> None:
