@@ -75,7 +75,6 @@ class _ModelResponse:
     span: Span
     metadata: dict[str, Any]
     processor: "FrameProcessor | None"
-    start_ms: float
     text: list[str] = field(default_factory=list)
     tool_calls: list[_ToolCall] = field(default_factory=list)
     model: ModelOperation | None = None
@@ -168,14 +167,12 @@ class AgentTracker:
             # Service settings are separate from LLMContext in current Pipecat.
             # Keep the linker's context/cursor untouched when adding them.
             messages = [{"role": "system", "content": instruction}, *(messages or [])]
-        start_ms = self._clock.now_ms()
         span = self._spans.start(
             "llm_response",
             turn=turn.span if turn else None,
             input=messages,
             metadata=metadata,
             can_set_current=True,
-            start_ms=start_ms,
             **({"id": pending_span.id, "internal": {"span_id": span_id(pending_span)}} if pending_span else {}),
         )
         links = linker.consume()
@@ -185,25 +182,15 @@ class AgentTracker:
             set_links(span, links)
         model = ModelOperation.start(self._spans, span, processor, "llm_response", input=messages)
         model.request(linker.metadata)
-        self._response = _ModelResponse(span, metadata, processor, start_ms, model=model)
+        self._response = _ModelResponse(span, metadata, processor, model=model)
         self._open(_RESPONSE)
         return span
 
-    def finish_realtime_response(self, parent: Span, metrics: dict[str, Any], output: Any) -> None:
-        response, turn = self._response, self._turn
-        if response is None or response.span is not parent:
-            return
-        span = self._spans.start(
-            "pipecat.realtime.response",
-            parent=parent,
-            turn=turn.span if turn else None,
-            type=SpanTypeAttribute.LLM,
-            start_ms=response.start_ms,
-            metadata=metadata_from_processor(response.processor),
-            metrics=metrics,
-            output=output,
-        )
-        span.end(end_time=self._clock.wall())
+    def report_usage(self, parent: Span, usage: dict[str, int | float]) -> None:
+        """Usage a provider event reports for the active response's model child."""
+        response = self._response
+        if response is not None and response.span is parent and response.model is not None:
+            response.model.report_usage(usage)
 
     def response_text(self, text: str) -> None:
         if self._response is not None:
@@ -233,15 +220,11 @@ class AgentTracker:
             self._requesters[call.tool_call_id] = response.span
             self._open(("tool", call.tool_call_id))
 
-    def end_response(self, *, completes_turn: bool) -> None:
+    def end_response(self) -> None:
         response = self._response
         if response is None:
-            if completes_turn:
-                self.request_completion()
             return
         self._end_response(response)
-        if completes_turn:
-            self.request_completion()
         self._close(_RESPONSE)
 
     # Tools
@@ -368,12 +351,8 @@ class AgentTracker:
 
     def _resolve_synthesis(self, frame: "Frame") -> _Synthesis | None:
         """Resolve only an observed native context, including the no-ID context."""
-        context_id = getattr(frame, "context_id", None)
-        key = context_id or _DEFAULT_CONTEXT
-        if key in self._synthesis:
-            synthesis = self._synthesis[key]
-            return None if synthesis.ended else synthesis
-        return None
+        synthesis = self._synthesis.get(getattr(frame, "context_id", None) or _DEFAULT_CONTEXT)
+        return synthesis if synthesis is not None and not synthesis.ended else None
 
     # Playback
 

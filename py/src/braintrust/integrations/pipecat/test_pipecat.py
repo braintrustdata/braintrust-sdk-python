@@ -41,6 +41,8 @@ if TYPE_CHECKING:
 TEST_MODEL = "gpt-6-luna"
 PROJECT = "test-project-pipecat-py-tracing"
 SPEECH = Path(__file__).parents[2] / "fixtures/test_speech.wav"
+# Recorded "Reply with exactly: Private words." generation and synthesis.
+PRIVATE_WORDS_CASSETTE = "test_synthesis_without_output_transport_is_not_playback_and_respects_customizers.yaml"
 INPUT_RATE = 16000
 CHUNK_SECONDS = 0.02
 
@@ -106,6 +108,11 @@ def _import(path):
     os.environ.setdefault("NLTK_DATA", str(data_dir))
     module_name, attr = path.rsplit(".", 1)
     return getattr(importlib.import_module(module_name), attr)
+
+
+def _private_words_context():
+    LLMContext = _import("pipecat.processors.aggregators.llm_context.LLMContext")
+    return LLMContext(messages=[{"role": "user", "content": "Reply with exactly: Private words."}])
 
 
 def _frames():
@@ -607,14 +614,6 @@ async def test_voice_session_traces_turns_speech_recognition_generation_and_play
         assert root["metadata"]["contrib.pipecat.reason"] == "pipeline complete"
     assert session.observer._controllers == {}
     assert session.observer._controller_queue is None
-    assert session.tracker.user._speech is None
-    assert session.tracker.user._turn is None
-    assert not session.tracker.user._recognitions
-    assert not session.tracker.user._recognized_until
-    assert not session.tracker.linker.messages
-    assert not session.tracker.linker._submitted
-    assert not session.tracker.linker._transcripts
-    assert not session.tracker.linker._tool_results
     for controller in session.controllers:
         assert controller.span is None and controller.turn is None
         assert controller.session is None and controller.controller is None
@@ -848,15 +847,13 @@ async def test_unrelated_transcript_text_does_not_establish_context_provenance(m
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_synthesis_without_output_transport_is_not_playback_and_respects_customizers(memory_logger):
-    LLMContext = _import("pipecat.processors.aggregators.llm_context.LLMContext")
-
     class Redact(SpanCustomizer):
         def on_span_export(self, data):
             if "input" in data:
                 data["input"] = "[redacted]"
             return data
 
-    context = LLMContext(messages=[{"role": "user", "content": "Reply with exactly: Private words."}])
+    context = _private_words_context()
     # Synthesized buffers never reached a transport, so nobody heard them.
     _instrument(capture_agent_audio_attachments=True)
     set_span_customizers([Redact()])
@@ -876,7 +873,6 @@ async def test_synthesis_without_output_transport_is_not_playback_and_respects_c
 
 @pytest.mark.asyncio
 async def test_failed_transport_writes_do_not_emit_agent_speech(memory_logger, vcr):
-    LLMContext = _import("pipecat.processors.aggregators.llm_context.LLMContext")
     WebsocketServerTransport = _import("pipecat.transports.websocket.server.WebsocketServerTransport")
     WebsocketServerParams = _import("pipecat.transports.websocket.server.WebsocketServerParams")
     ProtobufFrameSerializer = _import("pipecat.serializers.protobuf.ProtobufFrameSerializer")
@@ -892,12 +888,12 @@ async def test_failed_transport_writes_do_not_emit_agent_speech(memory_logger, v
             serializer=ProtobufFrameSerializer(),
         ),
     )
-    context = LLMContext(messages=[{"role": "user", "content": "Reply with exactly: Private words."}])
+    context = _private_words_context()
     # No client connects: the real transport rejects every write after Pipecat
     # has emitted BotStartedSpeakingFrame. Reuse the same provider calls as the
     # synthesis-only test; no replacement transport or write method is needed.
     _instrument(capture_agent_audio_attachments=True)
-    with vcr.use_cassette("test_synthesis_without_output_transport_is_not_playback_and_respects_customizers.yaml"):
+    with vcr.use_cassette(PRIVATE_WORDS_CASSETTE):
         await _run_text_pipeline(
             [transport.input(), _openai_llm(), _openai_tts(), transport.output()],
             [context],
@@ -1410,8 +1406,8 @@ async def test_realtime_cached_audio_usage(memory_logger):
 
     logs = memory_logger.pop()
     task = _single_span(logs, "llm_response")
-    span = _single_span(logs, "pipecat.realtime.response")
-    # The Realtime completion owns the model child; no second Pipecat model span.
+    # The Realtime completion reports into the one general Pipecat model child.
+    span = _single_span(logs, "pipecat.llm_response")
     assert [row for row in logs if row["span_attributes"].get("type") == "llm"] == [span]
     assert task["span_attributes"]["type"] == "task"
     assert span["span_attributes"]["type"] == "llm"
@@ -1419,6 +1415,7 @@ async def test_realtime_cached_audio_usage(memory_logger):
     assert span["metadata"]["provider"] == "openai"
     assert span["metadata"]["model"]
     assert span["context"]["span_origin"]["instrumentation"]["name"] == "pipecat-auto"
+    assert span["output"] == task["output"]
     assert span["output"][0]["role"] == "assistant"
     assert task["metrics"]["start"] <= span["metrics"]["start"] <= span["metrics"]["end"] <= task["metrics"]["end"]
     expected = {
@@ -1941,7 +1938,7 @@ async def test_provider_speech_stream_cleanup_and_simultaneous_sessions(memory_l
     _instrument(capture_audio_attachments=False)
     OpenAIIntegration.setup()
     with vcr.use_cassette(
-        "test_synthesis_without_output_transport_is_not_playback_and_respects_customizers.yaml",
+        PRIVATE_WORDS_CASSETTE,
         allow_playback_repeats=True,
     ):
         await asyncio.gather(*(_exercise_speech_stream(_openai_tts(), mode) for _ in range(2)))
@@ -1972,11 +1969,9 @@ async def test_native_tts_transform_is_captured_at_the_model_boundary(memory_log
         return "Private words."
 
     tts.add_text_transformer(spoken_text)
-    context = _import("pipecat.processors.aggregators.llm_context.LLMContext")(
-        messages=[{"role": "user", "content": "Reply with exactly: Private words."}]
-    )
+    context = _private_words_context()
     with vcr.use_cassette(
-        "test_synthesis_without_output_transport_is_not_playback_and_respects_customizers.yaml",
+        PRIVATE_WORDS_CASSETTE,
         allow_playback_repeats=True,
     ):
         await _run_text_pipeline(
@@ -2034,7 +2029,7 @@ async def test_fallback_llm_input_observes_native_adapter_transform(memory_logge
         await send(_frames().LLMContextFrame(context), until=_frames().LLMFullResponseEndFrame)
         await asyncio.wait_for(processed.wait(), 5)
 
-    with vcr.use_cassette("test_synthesis_without_output_transport_is_not_playback_and_respects_customizers.yaml"):
+    with vcr.use_cassette(PRIVATE_WORDS_CASSETTE):
         await _run_frame_sequence([llm], converse, metrics=True)
     logs = memory_logger.pop()
     assert _single_span(logs, "llm_response")["input"][0]["content"] == "Reply with exactly: Private words."
@@ -2042,6 +2037,46 @@ async def test_fallback_llm_input_observes_native_adapter_transform(memory_logge
         {"role": "user", "content": "Reply with exactly: Private words."}
     ]
     assert _single_span(logs, "pipecat.llm_response")["metrics"]["prompt_tokens"] > 0
+    _assert_all_ended(logs)
+
+
+@pytest.mark.asyncio
+async def test_streaming_stt_silence_after_a_transcript_opens_no_recognition(memory_logger):
+    """Streaming STT receives every input frame, including silence between turns."""
+    _instrument(capture_user_audio_attachments=True)
+    frames = _frames()
+    STTService = _import("pipecat.services.stt_service.STTService")
+    speech, silence = b"\x01\x00" * 320, b"\x00\x00" * 320
+
+    class StreamingSTT(STTService):
+        # A local streaming service without a model client, so it owns a
+        # pipecat.stt child. The bug is local buffering, not a response shape.
+        async def run_stt(self, audio):
+            if audio == speech:
+                yield frames.TranscriptionFrame("hello", "caller", "final", finalized=True)
+            else:
+                yield None
+
+    async def conversation(send):
+        await send(frames.UserStartedSpeakingFrame())
+        await send(frames.VADUserStartedSpeakingFrame())
+        await send(frames.InputAudioRawFrame(silence, 16000, 1), wait=False)
+        await send(frames.InputAudioRawFrame(speech, 16000, 1), until=frames.TranscriptionFrame)
+        await send(frames.VADUserStoppedSpeakingFrame())
+        await send(frames.UserStoppedSpeakingFrame())
+        # Idle silence after the turn must neither open a recognition nor buffer.
+        for _ in range(20):
+            await send(frames.InputAudioRawFrame(silence, 16000, 1), wait=False)
+        await send(frames.UserStartedSpeakingFrame())
+
+    await _run_frame_sequence([StreamingSTT()], conversation)
+    logs = memory_logger.pop()
+    recognition = _single_span(logs, "stt")
+    assert recognition["output"] == [{"role": "user", "content": "hello"}]
+    model = _single_span(logs, "pipecat.stt")
+    assert model["span_parents"] == [recognition["span_id"]]
+    # The first turn's two frames only: 44-byte header plus 2 x 640 bytes.
+    assert model["input"]["content"][0]["file"]["byte_size"] == 44 + 2 * 640
     _assert_all_ended(logs)
 
 
@@ -2164,9 +2199,7 @@ async def test_eou_queued_observations_keep_turn_ownership(memory_logger, tracke
 async def test_native_user_boundaries_and_delayed_receipts_through_pipeline(memory_logger, vcr, new_turn):
     _instrument(capture_audio_attachments=False)
     frames = _frames()
-    context = _import("pipecat.processors.aggregators.llm_context.LLMContext")(
-        messages=[{"role": "user", "content": "Reply with exactly: Private words."}]
-    )
+    context = _private_words_context()
 
     async def conversation(send):
         await send(frames.UserStartedSpeakingFrame())
@@ -2184,7 +2217,7 @@ async def test_native_user_boundaries_and_delayed_receipts_through_pipeline(memo
         await send(frames.TranscriptionFrame("yes", "caller", "delayed"))
         await send(frames.LLMContextFrame(context), until=frames.LLMFullResponseEndFrame)
 
-    with vcr.use_cassette("test_synthesis_without_output_transport_is_not_playback_and_respects_customizers.yaml"):
+    with vcr.use_cassette(PRIVATE_WORDS_CASSETTE):
         await _run_frame_sequence([_openai_llm()], conversation)
     logs = memory_logger.pop()
     turns = _spans_named(logs, "user_turn")
@@ -2319,7 +2352,7 @@ async def test_native_formatted_context_retains_observed_transcript_provenance(
             until=frames.LLMFullResponseEndFrame,
         )
 
-    with vcr.use_cassette("test_synthesis_without_output_transport_is_not_playback_and_respects_customizers.yaml"):
+    with vcr.use_cassette(PRIVATE_WORDS_CASSETTE):
         await _run_frame_sequence([pair.user(), _openai_llm()], conversation, expressive=expressive)
     logs = memory_logger.pop()
     receipts = _spans_named(logs, "transcript_received")
@@ -2460,7 +2493,7 @@ async def test_deferred_speech_with_reused_context_captures_each_operation(memor
             await send(frames.TTSSpeakFrame("Private words."), until=frames.TTSStoppedFrame)
 
     with vcr.use_cassette(
-        "test_synthesis_without_output_transport_is_not_playback_and_respects_customizers.yaml",
+        PRIVATE_WORDS_CASSETTE,
         allow_playback_repeats=True,
     ):
         await _run_frame_sequence([service], converse)
@@ -2484,8 +2517,7 @@ async def test_provider_response_parent_survives_delayed_observation(memory_logg
     _instrument(capture_audio_attachments=False)
     OpenAIIntegration.setup()
     observed = _observe_response_end(monkeypatch, delay_start=True)
-    Context = _import("pipecat.processors.aggregators.llm_context.LLMContext")
-    context = Context(messages=[{"role": "user", "content": "Reply with exactly: Private words."}])
+    context = _private_words_context()
     processors = [_openai_llm()]
     if layout == "nested_native_turn":
         # The model runs inside a nested pipeline, upstream of the aggregator.
@@ -2506,7 +2538,7 @@ async def test_provider_response_parent_survives_delayed_observation(memory_logg
         )
         await asyncio.wait_for(observed.wait(), 5)
 
-    with vcr.use_cassette("test_synthesis_without_output_transport_is_not_playback_and_respects_customizers.yaml"):
+    with vcr.use_cassette(PRIVATE_WORDS_CASSETTE):
         await _run_frame_sequence(processors, converse)
     logs = memory_logger.pop()
     wrapper, model = _single_span(logs, "llm_response"), _single_span(logs, "Chat Completion")

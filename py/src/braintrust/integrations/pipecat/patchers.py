@@ -10,11 +10,12 @@ from braintrust._audio.config import AudioRecordingOptions
 from braintrust.bt_json import bt_safe_deep_copy
 from braintrust.integrations.base import CompositeFunctionWrapperPatcher, FunctionWrapperPatcher
 from braintrust.integrations.openai.tracing import _parse_metrics_from_usage
+from braintrust.integrations.utils import _normalize_chat_messages
 
 from .tracing import BraintrustPipecatObserver
-from .tracing._common import LOG, MAX_PENDING
+from .tracing._common import LOG, MAX_PENDING, processor_kind
 from .tracing._live import is_live_service
-from .tracing._model import request_metadata
+from .tracing._model import _ACTIVE_MODEL, request_metadata
 
 
 _DEFAULT_OBSERVER_OPTIONS: dict[str, Any] = {
@@ -87,8 +88,6 @@ def traced_pipeline_worker_init(wrapped: Any, instance: Any, args: tuple[Any, ..
     try:
         _trace_processors(pipeline, observer)
     except Exception:
-        from .tracing._common import LOG
-
         LOG.warning("Unable to install Pipecat execution hooks", exc_info=True)
     return result
 
@@ -197,8 +196,6 @@ async def traced_controller_frame(wrapped, instance, args, kwargs):
                 ):
                     condition = (strategy, "transcription_finalized")
     except Exception:
-        from .tracing._common import LOG
-
         LOG.warning("Unable to observe Pipecat turn wait", exc_info=True)
     token = CONDITION.set(condition)
     try:
@@ -215,8 +212,6 @@ async def traced_controller_event(wrapped, instance, args, kwargs):
             if wait is not None:
                 wait.event(name, args[1:])
     except Exception:
-        from .tracing._common import LOG
-
         LOG.warning("Unable to observe Pipecat turn decision", exc_info=True)
     return await wrapped(*args, **kwargs)
 
@@ -280,19 +275,17 @@ class EOUWaitPatcher(CompositeFunctionWrapperPatcher):
         return super().applies(module, version, target=target)
 
 
-# Operation identity follows the executing task, including metrics emitted
-# before queued start events and after queued completion events.
-_ACTIVE_MODEL: ContextVar[Any] = ContextVar("braintrust_pipecat_model", default=None)
 _AGGREGATION: ContextVar[Any] = ContextVar("braintrust_pipecat_aggregation", default=None)
+
+
+def _has_base(obj: Any, name: str) -> bool:
+    return any(base.__name__ == name for base in type(obj).__mro__)
 
 
 def _trace_processors(pipeline: Any, observer: BraintrustPipecatObserver, *, native_turn: bool = False) -> None:
     processors = list(getattr(pipeline, "processors", ()))
-    assistant_indices = [
-        index
-        for index, processor in enumerate(processors)
-        if any(base.__name__ == "LLMAssistantAggregator" for base in type(processor).__mro__)
-    ]
+    assistants = [_has_base(processor, "LLMAssistantAggregator") for processor in processors]
+    assistant_indices = [index for index, assistant in enumerate(assistants) if assistant]
     for index, processor in enumerate(processors):
         member = native_turn or any(index < assistant for assistant in assistant_indices)
         if getattr(processor, "processors", ()):
@@ -303,28 +296,22 @@ def _trace_processors(pipeline: Any, observer: BraintrustPipecatObserver, *, nat
             observer._native_turn_processors.add(id(processor))
         if is_live_service(processor):
             continue
-        from .tracing._common import processor_kind
-
         kind = processor_kind(type(processor))
         patcher = {"llm": LLMExecutionPatcher, "stt": STTExecutionPatcher, "tts": TTSExecutionPatcher}.get(kind)
+        # Composite patch() skips the composite's own applies() gate.
         if patcher is not None and patcher.applies(None, None, target=processor):
             patcher.patch(None, None, target=processor)
-        if kind == "llm" and ModelRequestPatcher.applies(None, None, target=processor):
+        # FunctionWrapperPatcher.patch() checks applies() itself.
+        if kind == "llm":
             ModelRequestPatcher.patch(None, None, target=processor)
-        if kind == "llm" and hasattr(processor, "get_llm_adapter"):
-            adapter = processor.get_llm_adapter()
-            if ModelPromptPatcher.applies(None, None, target=adapter) and not ModelPromptPatcher.is_patched(
-                None, None, target=adapter
-            ):
-                ModelPromptPatcher.patch(None, None, target=adapter)
-        if any(base.__name__ == "LLMUserAggregator" for base in type(processor).__mro__):
-            if UserAggregationPatcher.applies(None, None, target=processor):
-                UserAggregationPatcher.patch(None, None, target=processor)
-        if any(base.__name__ == "LLMAssistantAggregator" for base in type(processor).__mro__):
-            if AssistantStoppedPatcher.applies(
-                None, None, target=processor
-            ) and not AssistantStoppedPatcher.is_patched(None, None, target=processor):
-                AssistantStoppedPatcher.patch(None, None, target=processor)
+            if hasattr(processor, "get_llm_adapter"):
+                adapter = processor.get_llm_adapter()
+                if not ModelPromptPatcher.is_patched(None, None, target=adapter):
+                    ModelPromptPatcher.patch(None, None, target=adapter)
+        if _has_base(processor, "LLMUserAggregator") and UserAggregationPatcher.applies(None, None, target=processor):
+            UserAggregationPatcher.patch(None, None, target=processor)
+        if assistants[index] and not AssistantStoppedPatcher.is_patched(None, None, target=processor):
+            AssistantStoppedPatcher.patch(None, None, target=processor)
 
 
 async def _traced_response(wrapped: Any, instance: Any, args: tuple, kwargs: dict) -> Any:
@@ -375,16 +362,17 @@ async def _traced_media(wrapped: Any, instance: Any, args: tuple, kwargs: dict, 
                 await stream.aclose()
 
 
-def _traced_model_prompt(wrapped: Any, instance: Any, args: tuple, kwargs: dict) -> Any:
-    import inspect
+def _current_operation() -> tuple[Any, Any]:
+    """The executing LLM request and its model operation, if either is known yet."""
+    execution = _LLM_EXECUTION.get()
+    return execution, _ACTIVE_MODEL.get() or (execution.operation if execution is not None else None)
 
+
+def _traced_model_prompt(wrapped: Any, instance: Any, args: tuple, kwargs: dict) -> Any:
     def observe(params):
-        execution = _LLM_EXECUTION.get()
-        operation = _ACTIVE_MODEL.get() or (execution.operation if execution is not None else None)
+        execution, operation = _current_operation()
         if (operation is not None and operation.span is not None) or (execution is not None and operation is None):
             try:
-                from braintrust.integrations.utils import _normalize_chat_messages
-
                 messages = params.get("messages")
                 if not isinstance(messages, list):
                     return params
@@ -398,8 +386,6 @@ def _traced_model_prompt(wrapped: Any, instance: Any, args: tuple, kwargs: dict)
                     # Keep only what bind() logs, not the whole request.
                     execution.request = bt_safe_deep_copy((normalized, request_metadata(params)))
             except Exception:
-                from .tracing._common import LOG
-
                 LOG.warning("Unable to trace Pipecat model prompt", exc_info=True)
                 return params
             if operation is not None:
@@ -420,16 +406,13 @@ async def _traced_service_push(wrapped: Any, instance: Any, args: tuple, kwargs:
     observer = _ACTIVE_OBSERVER.get()
     frame = args[0] if args else kwargs.get("frame")
     if observer is not None and type(frame).__name__ == "MetricsFrame":
-        execution = _LLM_EXECUTION.get()
-        operation = _ACTIVE_MODEL.get() or (execution.operation if execution is not None else None)
+        execution, operation = _current_operation()
         if execution is not None and execution.processor is instance and operation is None:
             execution.metrics.append(frame)
         elif operation is not None and operation.processor is instance:
             try:
                 observer._execution_metrics(operation, frame)
             except Exception:
-                from .tracing._common import LOG
-
                 LOG.warning("Unable to trace Pipecat model metrics", exc_info=True)
     return await wrapped(*args, **kwargs)
 
@@ -465,13 +448,9 @@ async def _traced_aggregate_transcript(wrapped: Any, instance: Any, args: tuple,
             and instance._aggregation[-1] is not previous
         ):
             observer._aggregation_parts[id(instance._aggregation[-1])] = (instance._aggregation[-1], frame.id)
-            from .tracing._common import MAX_PENDING
-
             if len(observer._aggregation_parts) > MAX_PENDING:
                 observer._aggregation_parts.popitem(last=False)
     except Exception:
-        from .tracing._common import LOG
-
         LOG.warning("Unable to trace Pipecat transcript lineage", exc_info=True)
     return result
 
@@ -486,8 +465,6 @@ async def _traced_push_aggregation(wrapped: Any, instance: Any, args: tuple, kwa
                 if evidence is not None and evidence[0] is part:
                     frame_ids.append(evidence[1])
     except Exception:
-        from .tracing._common import LOG
-
         LOG.warning("Unable to trace Pipecat aggregation lineage", exc_info=True)
         frame_ids.clear()
     token = _AGGREGATION.set(tuple(frame_ids))
@@ -505,8 +482,6 @@ def traced_context_add_message(wrapped: Any, instance: Any, args: tuple, kwargs:
         try:
             observer._associate_message(message, frame_ids)
         except Exception:
-            from .tracing._common import LOG
-
             LOG.warning("Unable to trace Pipecat context provenance", exc_info=True)
     return wrapped(*args, **kwargs)
 
@@ -525,8 +500,6 @@ async def _traced_assistant_stopped(wrapped: Any, instance: Any, args: tuple, kw
 
             observer._enqueue_controller(complete)
         except Exception:
-            from .tracing._common import LOG
-
             LOG.warning("Unable to trace Pipecat assistant turn completion", exc_info=True)
     return result
 
@@ -567,6 +540,18 @@ class STTRunPatcher(FunctionWrapperPatcher):
         return _traced_media(wrapped, instance, args, kwargs, kind="stt")
 
 
+def _accepts(method: Any, target: Any, arguments: tuple) -> bool:
+    """Whether a hooked method accepts the call our wrapper forwards to it."""
+    try:
+        signature = inspect.signature(method)
+        if next(iter(signature.parameters), None) in {"self", "cls"}:
+            arguments = (target, *arguments)
+        signature.bind(*arguments)
+    except (TypeError, ValueError):
+        return False
+    return True
+
+
 class _ExecutionPatcher(CompositeFunctionWrapperPatcher):
     """Require the complete execution/metrics surface before installing hooks."""
 
@@ -580,19 +565,12 @@ class _ExecutionPatcher(CompositeFunctionWrapperPatcher):
                 valid = inspect.isasyncgenfunction(inspect.unwrap(method))
             else:
                 valid = inspect.iscoroutinefunction(method)
-            if not valid:
-                return False
             arguments = (
                 (None, None)
                 if patcher in (ServiceMetricsPatcher, TTSExecutionFramePatcher, TTSRunPatcher)
                 else (None,)
             )
-            try:
-                signature = inspect.signature(method)
-                if next(iter(signature.parameters), None) in {"self", "cls"}:
-                    arguments = (target, *arguments)
-                signature.bind(*arguments)
-            except (TypeError, ValueError):
+            if not valid or not _accepts(method, target, arguments):
                 return False
         return super().applies(module, version, target=target)
 
@@ -660,14 +638,7 @@ class UserAggregationPatcher(CompositeFunctionWrapperPatcher):
         )
         for patcher, arguments in ((AggregateTranscriptPatcher, (None,)), (push, ())):
             method = patcher.resolve_target(module, version, target=target)
-            if not inspect.iscoroutinefunction(method):
-                return False
-            try:
-                signature = inspect.signature(method)
-                if next(iter(signature.parameters), None) in {"self", "cls"}:
-                    arguments = (target, *arguments)
-                signature.bind(*arguments)
-            except (TypeError, ValueError):
+            if not inspect.iscoroutinefunction(method) or not _accepts(method, target, arguments):
                 return False
         return super().applies(module, version, target=target)
 
@@ -815,8 +786,8 @@ async def traced_realtime_response_done(
     if observer is not None and parent is not None:
         try:
             event = args[0] if args else kwargs.get("evt")
-            response = event.response.model_dump(exclude_unset=True)
-            usage = response.get("usage") or {}
+            reported = getattr(event.response, "usage", None)
+            usage = reported.model_dump(exclude_unset=True) if reported is not None else {}
             for prefix, names in (
                 ("input", ("audio_tokens", "cached_tokens", "cached_tokens_details")),
                 ("output", ("audio_tokens", "image_tokens", "reasoning_tokens")),
@@ -824,7 +795,8 @@ async def traced_realtime_response_done(
                 details = usage.pop(f"{prefix}_token_details", None)
                 if details is not None:
                     usage[f"{prefix}_tokens_details"] = {name: details[name] for name in names if name in details}
-            observer._finish_realtime_response(parent, _parse_metrics_from_usage(usage), response.get("output"))
+            # Usage only: the response's model child records output and timing.
+            observer._report_response_usage(parent, _parse_metrics_from_usage(usage))
         except Exception:
             LOG.warning("Unable to trace Pipecat Realtime response", exc_info=True)
     return await wrapped(*args, **kwargs)

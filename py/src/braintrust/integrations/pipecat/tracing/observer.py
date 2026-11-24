@@ -31,7 +31,7 @@ from ._common import (
 )
 from ._context import ContextLinker
 from ._live import LiveTracker, is_live_service
-from ._model import ModelOperation
+from ._model import _ACTIVE_MODEL, ModelOperation
 from ._user import UserTracker
 
 
@@ -97,8 +97,6 @@ class _Session:
     linker: ContextLinker
     user: UserTracker
     agent: AgentTracker
-    # Without playback, a model response end is the agent completion boundary.
-    has_output_transport: bool = False
     live: LiveTracker | None = None
     live_mode: bool = False
 
@@ -203,8 +201,6 @@ class BraintrustPipecatObserver(BaseObserver):
             frame, processor = data.frame, data.processor
             session = self._start_session()
             kind = processor_kind(type(processor))
-            if kind == "output":
-                session.has_output_transport = True
             # Recognition starts when STT consumes audio, not when its transcript
             # arrives; the sink alone sees terminal frames after all services.
             stt_audio = kind == "stt" and isinstance(frame, frames.InputAudioRawFrame)
@@ -228,10 +224,7 @@ class BraintrustPipecatObserver(BaseObserver):
             if upstream and type(frame).__name__ in _UPSTREAM_IGNORED_FRAME_TYPES:
                 return
             session = self._start_session()
-            output = processor_kind(type(data.source)) == "output"
-            if output:
-                session.has_output_transport = True
-            played = output and not upstream
+            played = processor_kind(type(data.source)) == "output" and not upstream
             with session.clock.event(data.timestamp):
                 # A transport can forward a previously observed generated frame:
                 # capture playback before admission, once it has been sent.
@@ -279,9 +272,9 @@ class BraintrustPipecatObserver(BaseObserver):
         except Exception:
             LOG.warning("Unable to trace Pipecat Live client event", exc_info=True)
 
-    def _finish_realtime_response(self, parent: Span, metrics: dict[str, Any], output: Any) -> None:
+    def _report_response_usage(self, parent: Span, usage: dict[str, int | float]) -> None:
         if self._phase is _SessionPhase.RUNNING and self._session is not None:
-            self._session.agent.finish_realtime_response(parent, metrics, output)
+            self._session.agent.report_usage(parent, usage)
 
     async def _response_span(self, frame: "Frame", push: Callable[[], Awaitable[Any]]) -> tuple[Any, Span | None]:
         """Push a service's response start frame, then return its span.
@@ -374,10 +367,8 @@ class BraintrustPipecatObserver(BaseObserver):
                     )
                     parent = synthesis.span
                     parent.log(input={"text": text})
-                    parameters = {
-                        name: getattr(settings_from_processor(processor), name, None)
-                        for name in ("voice", "speed", "language")
-                    }
+                    settings = settings_from_processor(processor)
+                    parameters = {name: getattr(settings, name, None) for name in ("voice", "speed", "language")}
                     parameters = {
                         key: value for key, value in parameters.items() if isinstance(value, (str, int, float))
                     }
@@ -421,8 +412,6 @@ class BraintrustPipecatObserver(BaseObserver):
 
     @contextmanager
     def _model_scope(self, operation: ModelOperation | None) -> Iterator[None]:
-        from ..patchers import _ACTIVE_MODEL
-
         parent = operation.parent if operation is not None else None
         manager = getattr(getattr(parent, "state", None), "context_manager", None)
         # Keep the token local: a shared synthesis wrapper may be entered by
@@ -759,7 +748,7 @@ class BraintrustPipecatObserver(BaseObserver):
     def _on_response_stopped(self, s: _Session, _f: "Frame", _p: "FrameProcessor | None", _played: bool) -> None:
         # A response boundary closes the operation. Native assistant
         # aggregation controls the optional conversational group.
-        s.agent.end_response(completes_turn=False)
+        s.agent.end_response()
 
     def _on_tool_started(
         self, s: _Session, frame: "frames.FunctionCallInProgressFrame", _p: "FrameProcessor | None", _played: bool
@@ -796,7 +785,6 @@ class BraintrustPipecatObserver(BaseObserver):
             s.agent.stop_tts(frame)
 
     def _on_playback_started(self, s: _Session, _f: "Frame", _p: "FrameProcessor | None", _played: bool) -> None:
-        s.has_output_transport = True
         s.agent.start_playback()
 
     def _on_playback_stopped(self, s: _Session, _f: "Frame", _p: "FrameProcessor | None", _played: bool) -> None:
@@ -807,13 +795,6 @@ class BraintrustPipecatObserver(BaseObserver):
 
     def _on_interruption(self, s: _Session, _f: "Frame", _p: "FrameProcessor | None", _played: bool) -> None:
         s.agent.interrupt()
-
-    def _on_metrics(
-        self, s: _Session, frame: "frames.MetricsFrame", processor: "FrameProcessor | None", _played: bool
-    ) -> None:
-        # Execution hooks consume metrics in their originating operation's
-        # task. An uncorrelated report must not be assigned to the next response.
-        pass
 
     # Frame names preserve compatibility with version-specific Pipecat frames.
     _FRAME_ACTIONS: ClassVar[dict[str, _FrameAction]] = {
@@ -847,5 +828,7 @@ class BraintrustPipecatObserver(BaseObserver):
         "InterruptionFrame": _on_interruption,
         "UserTurnResponseCancelFrame": _on_interruption,
         "EagerEndOfTurnCancelFrame": _on_interruption,
-        "MetricsFrame": _on_metrics,
+        # MetricsFrame is unmapped: execution hooks consume metrics in their
+        # originating operation's task, so an uncorrelated report is never
+        # assigned to the next response.
     }

@@ -94,10 +94,6 @@ class UserTracker:
         return self._turn.span if self._turn is not None else None
 
     @property
-    def _context_turn(self) -> Span | None:
-        return self._turn_span
-
-    @property
     def turn_span(self) -> Span | None:
         return self._turn_span
 
@@ -122,7 +118,7 @@ class UserTracker:
         self._finish_turn(incomplete=False, end_ms=end_ms)
 
     def log_input(self, message: dict[str, Any]) -> None:
-        turn = self._context_turn
+        turn = self._turn_span
         if turn is not None:
             turn.log(input=[message])
 
@@ -199,6 +195,10 @@ class UserTracker:
 
     def model_operation(self, processor: "FrameProcessor") -> ModelOperation:
         recognition = self._recognitions.get(id(processor))
+        if recognition is None and self._speech is None and self._vad_seen:
+            # Streaming STT also executes on silence. Like consume_audio, observed
+            # VAD silence starts no recognition, span, or audio buffer.
+            return ModelOperation(None, processor)
         if recognition is None:
             recognition = _Recognition(processor, self._clock.now_ms(), None, self._turn_index)
             self._recognitions[id(processor)] = recognition

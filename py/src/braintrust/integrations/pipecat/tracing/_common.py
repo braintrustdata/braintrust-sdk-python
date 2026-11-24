@@ -91,18 +91,6 @@ class SpanFactory:
         return span
 
 
-def message_text(content: Any) -> str:
-    if isinstance(content, str):
-        return content
-    if isinstance(content, list):
-        return " ".join(
-            part["text"]
-            for part in content
-            if isinstance(part, dict) and part.get("type") == "text" and isinstance(part.get("text"), str)
-        )
-    return ""
-
-
 @cache
 def processor_kind(cls: type) -> ProcessorKind | None:
     kinds: dict[str, ProcessorKind] = {

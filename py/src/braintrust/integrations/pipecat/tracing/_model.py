@@ -8,16 +8,17 @@ import dis
 import inspect
 import math
 import time
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from functools import lru_cache
 from types import CodeType
 from typing import Any
-from weakref import WeakValueDictionary
+from weakref import WeakKeyDictionary, WeakValueDictionary
 
 from braintrust.integrations.utils import _is_not_given, _parse_openai_usage_metrics, _pcm_to_wav
 from braintrust.logger import Attachment, Span, SpanTypeAttribute
 
-from ._common import SpanFactory, metadata_from_processor
+from ._common import LOG, SpanFactory, metadata_from_processor
 
 
 # Known instrumented model entry points on actual client objects. Merely
@@ -38,6 +39,20 @@ _CLIENT_MODEL_PATHS = {
     },
     "cohere": {"llm_response": ("chat", "chat_stream"), "stt": ("audio.transcriptions.create",)},
     "huggingface_hub": {"llm_response": ("chat_completion", "text_generation", "chat.completions.create")},
+}
+# Operation identity follows the executing task, including metrics emitted
+# before queued start events and after queued completion events.
+_ACTIVE_MODEL: ContextVar[Any] = ContextVar("braintrust_pipecat_model", default=None)
+# Pipecat LLMTokenUsage field -> Braintrust metric.
+_USAGE_METRIC_NAMES = {
+    "prompt_tokens": "prompt_tokens",
+    "completion_tokens": "completion_tokens",
+    "total_tokens": "tokens",
+    "cache_read_input_tokens": "prompt_cached_tokens",
+    "cache_creation_input_tokens": "prompt_cache_creation_tokens",
+    "reasoning_tokens": "completion_reasoning_tokens",
+    "input_audio_tokens": "prompt_audio_tokens",
+    "output_audio_tokens": "completion_audio_tokens",
 }
 _OPERATION_METHODS = {"llm_response": "_process_context", "stt": "run_stt", "tts": "run_tts"}
 
@@ -146,6 +161,27 @@ def request_metadata(params: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+# Service -> operation -> covered. Ownership follows the service's code and
+# clients, which are fixed once it executes; walk them once per service.
+_COVERED: "WeakKeyDictionary[Any, dict[str, bool]]" = WeakKeyDictionary()
+
+
+def _client_covered(service: Any, operation: str) -> bool:
+    try:
+        cached = _COVERED.setdefault(service, {})
+    except TypeError:  # Not weak-referenceable or hashable: do not cache.
+        cached = {}
+    covered = cached.get(operation)
+    if covered is None:
+        covered = cached[operation] = provider_client_expected(service, operation)
+    return covered
+
+
+def _wav_part(data: bytes, filename: str) -> dict[str, Any]:
+    attachment = Attachment(data=data, filename=filename, content_type="audio/wav")
+    return {"type": "file", "file": {"filename": filename, "file_data": attachment, "byte_size": len(data)}}
+
+
 @dataclass
 class ModelOperation:
     """One optional model child; also the identity carried by queued metrics."""
@@ -171,13 +207,8 @@ class ModelOperation:
     def start(cls, spans: SpanFactory, parent: Span, processor: Any, operation: str, **kwargs: Any):
         span = None
         try:
-            # OpenAI Realtime completion events own that service's model child.
-            covered = any(
-                base.__name__ == "OpenAIRealtimeLLMService" for base in type(processor).__mro__
-            ) or provider_client_expected(processor, operation)
+            covered = _client_covered(processor, operation)
         except Exception:
-            from ._common import LOG
-
             LOG.warning("Unable to determine Pipecat client ownership", exc_info=True)
             # Uncertain ownership must not create duplicate billable spans.
             covered = True
@@ -212,31 +243,26 @@ class ModelOperation:
             if metric.processor != self.processor.name:
                 continue
             if isinstance(metric, LLMUsageMetricsData):
-                names = {
-                    "prompt_tokens": "prompt_tokens",
-                    "completion_tokens": "completion_tokens",
-                    "total_tokens": "tokens",
-                    "cache_read_input_tokens": "prompt_cached_tokens",
-                    "cache_creation_input_tokens": "prompt_cache_creation_tokens",
-                    "reasoning_tokens": "completion_reasoning_tokens",
-                    "input_audio_tokens": "prompt_audio_tokens",
-                    "output_audio_tokens": "completion_audio_tokens",
-                }
+                names = _USAGE_METRIC_NAMES
                 values = {name: getattr(metric.value, name, None) for name in names}
                 # Pipecat defines total_tokens as gross of prompt-cache usage,
                 # while prompt_tokens can be net (Anthropic) or gross (OpenAI).
                 total, completion = values["total_tokens"], values["completion_tokens"]
                 if total is not None and completion is not None and total >= completion:
                     values["prompt_tokens"] = total - completion
-                parsed = _parse_openai_usage_metrics(values, token_name_map=names, token_prefix_map={})
-                # Reports are snapshots. Repeated reports replace, never sum.
-                self.usage.update({key: value for key, value in parsed.items() if value >= 0})
-                self.span.log(metrics=self.usage)
+                self.report_usage(_parse_openai_usage_metrics(values, token_name_map=names, token_prefix_map={}))
                 if metric.model:
                     self.span.log(metadata={"model": metric.model})
             elif isinstance(metric, TTFBMetricsData) and math.isfinite(metric.value) and metric.value >= 0:
                 self.span.log(metrics={"time_to_first_token": metric.value})
             # TTS character counts are not a standardized media metric.
+
+    def report_usage(self, usage: dict[str, int | float]) -> None:
+        if self.span is None:
+            return
+        # Reports are snapshots. Repeated reports replace, never sum.
+        self.usage.update({key: value for key, value in usage.items() if value >= 0})
+        self.span.log(metrics=self.usage)
 
     def audio_chunk(self, frame: Any, *, capture: bool) -> None:
         if frame.id in self.audio_frames:
@@ -260,18 +286,7 @@ class ModelOperation:
         if self.audio and self.audio_format and self.complete and error is None:
             rate, channels = self.audio_format
             data = _pcm_to_wav(self.audio, sample_rate=rate, num_channels=channels)
-            output = {
-                "content": [
-                    {
-                        "type": "file",
-                        "file": {
-                            "filename": "synthesized.wav",
-                            "file_data": Attachment(data=data, filename="synthesized.wav", content_type="audio/wav"),
-                            "byte_size": len(data),
-                        },
-                    }
-                ]
-            }
+            output = {"content": [_wav_part(data, "synthesized.wav")]}
         if self.input_audio:
             audio = self.input_audio
             data = (
@@ -279,23 +294,7 @@ class ModelOperation:
                 if audio.startswith(b"RIFF")
                 else _pcm_to_wav(audio, sample_rate=self.input_rate, num_channels=1)
             )
-            self.span.log(
-                input={
-                    "operation": "transcribe",
-                    "content": [
-                        {
-                            "type": "file",
-                            "file": {
-                                "filename": "recognition.wav",
-                                "file_data": Attachment(
-                                    data=data, filename="recognition.wav", content_type="audio/wav"
-                                ),
-                                "byte_size": len(data),
-                            },
-                        }
-                    ],
-                }
-            )
+            self.span.log(input={"operation": "transcribe", "content": [_wav_part(data, "recognition.wav")]})
             self.input_audio.clear()
         if self.request_metadata:
             self.span.log(metadata=self.request_metadata)
