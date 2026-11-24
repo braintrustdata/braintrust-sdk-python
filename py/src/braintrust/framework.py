@@ -7,6 +7,7 @@ import contextvars
 import dataclasses
 import inspect
 import json
+import logging
 import os
 import re
 import sys
@@ -68,10 +69,14 @@ from .score import (
     is_scorer,
 )
 from .serializable_data_class import SerializableDataClass
+from .span_identifier_v3 import span_object_type_v3_to_typed_string
+from .span_identifier_v4 import SpanComponentsV4
 from .span_types import SpanTypeAttribute
 from .types._eval import EvalCaseDict, EvalCaseDictNoOutput, ExperimentDatasetEvent
 from .util import bt_iscoroutinefunction, eprint, get_signature, merge_dicts
 
+
+_logger = logging.getLogger(__name__)
 
 Input = TypeVar("Input")
 Output = TypeVar("Output")
@@ -1848,25 +1853,17 @@ async def _run_evaluator_internal_impl(
                     # The Span interface doesn't expose this but SpanImpl has it
                     root_span_id_value = getattr(root_span, "root_span_id", root_span.id)
 
-                    # Check if there's a parent in the context to determine object_type and object_id
-                    from braintrust.span_identifier_v3 import SpanComponentsV3, span_object_type_v3_to_typed_string
-
-                    parent_str = trace_state.current_parent.get()
-                    parent_components = None
-                    if parent_str:
+                    trace_object_type = "experiment"
+                    trace_object_id = experiment_id or ""
+                    parent = trace_state.current_parent.get()
+                    if isinstance(parent, str) and parent:
                         try:
-                            parent_components = SpanComponentsV3.from_str(parent_str)
+                            parent_components = SpanComponentsV4.from_str(parent)
                         except Exception:
-                            # If parsing fails, parent_components stays None
-                            pass
-
-                    # Determine object_type and object_id based on parent or experiment
-                    if parent_components:
-                        trace_object_type = span_object_type_v3_to_typed_string(parent_components.object_type)
-                        trace_object_id = parent_components.object_id or ""
-                    else:
-                        trace_object_type = "experiment"
-                        trace_object_id = experiment_id or ""
+                            _logger.debug("Failed to decode span parent for eval trace", exc_info=True)
+                        else:
+                            trace_object_type = span_object_type_v3_to_typed_string(parent_components.object_type)
+                            trace_object_id = parent_components.object_id or ""
 
                     trace = LocalTrace(
                         object_type=trace_object_type,
