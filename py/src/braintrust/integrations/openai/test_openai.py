@@ -20,6 +20,7 @@ from braintrust.integrations.openai.tracing import (
     ModerationWrapper,
     ResponseWrapper,
     _materialize_logged_file_input,
+    _parse_metrics_from_usage,
     _process_attachments_in_chat_output,
 )
 from braintrust.integrations.test_decisions import (
@@ -330,6 +331,72 @@ async def test_openai_decisions_image(memory_logger, is_async):
         questions=DECISIONS_QUESTIONS[:1],
     )
     assert_decisions_image_span(memory_logger.pop(), response, messages)
+
+
+@pytest.mark.parametrize("api", ["chat", "responses"])
+@pytest.mark.parametrize("as_model", [False, True], ids=["dict", "sdk-model"])
+@pytest.mark.parametrize(
+    "details, expected_cache_metrics",
+    [
+        (
+            {
+                "cached_tokens": 2048,
+                "cache_write_tokens": 9600,
+                "cache_write_tokens_details": {"ttl_30m_tokens": 1600, "ttl_12h_tokens": 8000},
+            },
+            {
+                "prompt_cached_tokens": 2048,
+                "prompt_cache_creation_30m_tokens": 1600,
+                "prompt_cache_creation_12h_tokens": 8000,
+            },
+        ),
+        (
+            {
+                "cached_tokens": 0,
+                "cache_write_tokens": 0,
+                "cache_write_tokens_details": {"ttl_30m_tokens": 0, "ttl_12h_tokens": 0},
+            },
+            {"prompt_cached_tokens": 0, "prompt_cache_creation_30m_tokens": 0, "prompt_cache_creation_12h_tokens": 0},
+        ),
+        (
+            {
+                "cache_write_tokens": 1600,
+                "cache_write_tokens_details": {"ttl_30m_tokens": 1600, "ttl_12h_tokens": None},
+            },
+            {"prompt_cache_creation_30m_tokens": 1600},
+        ),
+        (
+            {"cache_write_tokens": 1600, "cache_write_tokens_details": None},
+            {"prompt_cache_creation_tokens": 1600},
+        ),
+        ({"cache_write_tokens": 0}, {"prompt_cache_creation_tokens": 0}),
+        ({"cached_tokens": 2048}, {"prompt_cached_tokens": 2048}),
+        ({"cached_tokens": None, "cache_write_tokens": None}, {}),
+        (None, {}),
+    ],
+    ids=["mixed", "zero", "partial", "aggregate", "zero-aggregate", "legacy", "null", "missing"],
+)
+def test_openai_cache_metrics(api, as_model, details, expected_cache_metrics):
+    if api == "chat":
+        usage = {"prompt_tokens": 12500, "completion_tokens": 420, "total_tokens": 12920}
+        if details is not None:
+            usage["prompt_tokens_details"] = details
+        if as_model:
+            usage = openai.types.CompletionUsage.model_validate(usage)
+    else:
+        usage = {"input_tokens": 12500, "output_tokens": 420, "total_tokens": 12920}
+        if details is not None:
+            usage["input_tokens_details"] = details
+        if as_model:
+            # construct() also represents SDK responses whose optional usage fields are missing.
+            usage = openai.types.responses.ResponseUsage.model_construct(**usage)
+
+    assert _parse_metrics_from_usage(usage) == {
+        "prompt_tokens": 12500,
+        "completion_tokens": 420,
+        "tokens": 12920,
+        **expected_cache_metrics,
+    }
 
 
 @sync_async

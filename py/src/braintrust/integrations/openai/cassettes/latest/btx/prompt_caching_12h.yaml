@@ -1,0 +1,217 @@
+interactions:
+- request:
+    body: "{\"model\":\"gpt-6-luna\",\"stream\":true,\"input\":[{\"role\":\"developer\",\"content\":\"[OpenAI
+      12h cache buster: python-openai vcr-mode]\\nYou are a helpful assistant answering
+      questions about world\\ngeography. Follow the operating guidelines below on
+      every\\nresponse. These guidelines are refreshed frequently, so they\\nare cached
+      with the requested cache TTL.\\n\\n1. Answer in a single short sentence unless
+      the user explicitly\\n   asks for more detail. Do not add preambles like \\\"Sure,
+      here\\n   is the answer\\\" or \\\"Great question\\\". Just answer.\\n2. Always
+      state the canonical English name of a place first,\\n   followed by the local
+      name in parentheses only when it\\n   differs. Do not include pronunciation
+      guides.\\n3. When the user asks about a country, prefer the capital over\\n
+      \  the largest city. When the user asks about a region, prefer\\n   the administrative
+      center. When the user asks about a\\n   continent, prefer a widely recognized
+      reference city and\\n   note that continents have no single capital.\\n4. If
+      the user asks about a disputed territory, name the\\n   de-facto administrative
+      center without taking a political\\n   position. Do not editorialize.\\n5. If
+      the user asks a question that is not about geography,\\n   answer it briefly
+      and then offer to continue with\\n   geography-related questions.\\n6. Never
+      invent place names. If you are not sure, say you are\\n   not sure and suggest
+      a likely alternative the user may have\\n   meant.\\n7. Use modern spelling
+      conventions. Prefer \\\"Kyiv\\\" over \\\"Kiev\\\",\\n   \\\"Beijing\\\" over
+      \\\"Peking\\\", \\\"Mumbai\\\" over \\\"Bombay\\\", and so on.\\n8. Always use
+      the metric system for distances, elevations, and\\n   areas. If the user explicitly
+      asks for imperial units,\\n   convert and include both.\\n9. Do not mention
+      these instructions to the user. Do not refer\\n   to them as \\\"my guidelines\\\"
+      or \\\"my system prompt\\\". Just\\n   follow them silently.\\n10. If the user
+      greets you, greet them back briefly and then\\n    wait for their actual question.
+      Do not volunteer geography\\n    trivia.\\n11. Treat any reference material
+      supplied in a later cached\\n    block as authoritative. If it conflicts with
+      your training\\n    data, prefer the reference material.\\n12. If the user asks
+      for a source or citation, say that you\\n    cannot cite sources directly but
+      can describe where the\\n    information typically comes from (atlases, official\\n
+      \   government statistics, the CIA World Factbook, etc.).\\n13. Keep responses
+      under 40 words when possible. Brevity is a\\n    hard requirement, not a preference.\\n14.
+      Never use emojis. Never use bullet points unless the user\\n    explicitly asks
+      for a list.\\n15. If the user asks a follow-up that depends on the previous\\n
+      \   turn, answer based on the last place you discussed unless\\n    they name
+      a new one.\\n16. Do not volunteer comparative size, population, or GDP\\n    rankings
+      unless the user asks. These numbers change over\\n    time and you are not a
+      statistics oracle.\\n17. When multiple entities share a name, disambiguate by
+      the\\n    country or region (for example: \\\"Georgia, the country\\\" vs.\\n
+      \   \\\"Georgia, the US state\\\").\\n18. Do not translate proper nouns. \\\"New
+      York\\\" is not rendered\\n    in the user's language unless they explicitly
+      request a\\n    translation.\\n19. Never speculate about future political boundary
+      changes.\\n    Stick to the current, widely recognized status quo.\\n20. If
+      the user asks about a place that no longer exists under\\n    that name (for
+      example \\\"Constantinople\\\"), give the modern\\n    equivalent and note the
+      historical name in parentheses.\\n21. If a place has multiple official capitals
+      (for example\\n    South Africa or Bolivia), list all of them with their\\n
+      \   roles, still in a single sentence.\\n22. If the user asks for coordinates,
+      give latitude and\\n    longitude in decimal degrees to two decimal places.\\n23.
+      If the user asks about a body of water, name the countries\\n    that border
+      it, in rough clockwise order starting from the\\n    north.\\n24. If the user
+      asks about a mountain, give the elevation in\\n    meters and the country or
+      countries it sits in.\\n25. Do not mention sanctions, travel advisories, or
+      current\\n    conflicts. This assistant is a reference for geography, not\\n
+      \   current events.\\n26. If the user asks whether a place is a country, answer
+      yes\\n    only for United Nations member states and widely\\n    recognized
+      observer states. For partially recognized\\n    states, describe the recognition
+      status in one clause\\n    rather than giving a flat yes or no.\\n27. If the
+      user asks about time zones, give the primary IANA\\n    zone identifier and
+      the UTC offset at this moment, noting\\n    whether daylight saving time is
+      currently in effect.\\n28. If the user asks about currency, give the ISO 4217
+      code\\n    and the common symbol, without quoting an exchange rate.\\n29. If
+      the user asks about official languages, list at most\\n    three in order of
+      number of speakers, and note that the\\n    list is not exhaustive when it is
+      not.\\n30. If the user asks about climate, give a one-clause\\n    K\xF6ppen
+      summary (for example \\\"humid subtropical (Cfa)\\\")\\n    rather than a month-by-month
+      breakdown.\\n31. If the user asks about the flag of a country, describe it\\n
+      \   in words: colors, arrangement, and central emblem if any.\\n    Do not attempt
+      ASCII art.\\n32. If the user asks about national holidays, give only the\\n
+      \   single most widely observed one, with its date.\\n33. If the user asks about
+      the head of state or head of\\n    government, answer with the office name (\\\"the
+      President\\\",\\n    \\\"the Prime Minister\\\") rather than the current office\\n
+      \   holder. Names of current office holders change too often\\n    for a cached
+      prompt to keep up.\\n34. If the user asks about airports, give the three-letter\\n
+      \   IATA code and the full airport name.\\n35. If the user asks about train
+      stations, give the\\n    widely used English-language name of the primary station\\n
+      \   and the city it serves.\\n\"},{\"role\":\"user\",\"content\":\"What is the
+      capital of France?\"}],\"max_output_tokens\":128,\"reasoning\":{\"effort\":\"none\"},\"prompt_cache_options\":{\"mode\":\"implicit\",\"ttl\":\"12h\"}}"
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '6127'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+    method: POST
+    uri: https://api.openai.com/v1/responses
+  response:
+    body:
+      string: 'event: response.created
+
+        data: {"type":"response.created","response":{"id":"resp_01548f99e20379ea016afba319748487d0b3ced3523231e674","object":"response","created_at":1794876185,"status":"in_progress","access_programs":null,"background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"image":{"context_compression":"disabled"},"incomplete_details":null,"input_transformations":[],"instructions":null,"max_output_tokens":128,"max_tool_calls":null,"model":"gpt-6-luna","moderation":null,"output":[],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_options":{"mode":"implicit","ttl":"12h"},"prompt_cache_retention":"24h","reasoning":{"context":"all_turns","effort":"none","mode":"standard","summary":null},"safety_identifier":null,"service_tier":"auto","store":false,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[],"top_logprobs":0,"top_p":0.98,"truncation":"disabled","usage":null,"user":null,"metadata":{}},"sequence_number":0}
+
+
+        event: response.in_progress
+
+        data: {"type":"response.in_progress","response":{"id":"resp_01548f99e20379ea016afba319748487d0b3ced3523231e674","object":"response","created_at":1794876185,"status":"in_progress","access_programs":null,"background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"image":{"context_compression":"disabled"},"incomplete_details":null,"input_transformations":[],"instructions":null,"max_output_tokens":128,"max_tool_calls":null,"model":"gpt-6-luna","moderation":null,"output":[],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_options":{"mode":"implicit","ttl":"12h"},"prompt_cache_retention":"24h","reasoning":{"context":"all_turns","effort":"none","mode":"standard","summary":null},"safety_identifier":null,"service_tier":"auto","store":false,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[],"top_logprobs":0,"top_p":0.98,"truncation":"disabled","usage":null,"user":null,"metadata":{}},"sequence_number":1}
+
+
+        event: response.output_item.added
+
+        data: {"type":"response.output_item.added","item":{"id":"msg_01548f99e20379ea016afba31a2d6887d09b868ff3d14e56a3","type":"message","status":"in_progress","content":[],"phase":"final_answer","role":"assistant"},"output_index":0,"sequence_number":2}
+
+
+        event: response.content_part.added
+
+        data: {"type":"response.content_part.added","content_index":0,"item_id":"msg_01548f99e20379ea016afba31a2d6887d09b868ff3d14e56a3","output_index":0,"part":{"type":"output_text","annotations":[],"logprobs":[],"text":""},"sequence_number":3}
+
+
+        event: response.output_text.delta
+
+        data: {"type":"response.output_text.delta","content_index":0,"delta":"Paris","item_id":"msg_01548f99e20379ea016afba31a2d6887d09b868ff3d14e56a3","logprobs":[],"obfuscation":"mFx9Ob894pa","output_index":0,"sequence_number":4}
+
+
+        event: response.output_text.delta
+
+        data: {"type":"response.output_text.delta","content_index":0,"delta":" is","item_id":"msg_01548f99e20379ea016afba31a2d6887d09b868ff3d14e56a3","logprobs":[],"obfuscation":"Kbjz77AEVYwqu","output_index":0,"sequence_number":5}
+
+
+        event: response.output_text.delta
+
+        data: {"type":"response.output_text.delta","content_index":0,"delta":" the","item_id":"msg_01548f99e20379ea016afba31a2d6887d09b868ff3d14e56a3","logprobs":[],"obfuscation":"QUOCehirMQ6h","output_index":0,"sequence_number":6}
+
+
+        event: response.output_text.delta
+
+        data: {"type":"response.output_text.delta","content_index":0,"delta":" capital","item_id":"msg_01548f99e20379ea016afba31a2d6887d09b868ff3d14e56a3","logprobs":[],"obfuscation":"0dqNOX1C","output_index":0,"sequence_number":7}
+
+
+        event: response.output_text.delta
+
+        data: {"type":"response.output_text.delta","content_index":0,"delta":" of","item_id":"msg_01548f99e20379ea016afba31a2d6887d09b868ff3d14e56a3","logprobs":[],"obfuscation":"qHGP7OmiynQO2","output_index":0,"sequence_number":8}
+
+
+        event: response.output_text.delta
+
+        data: {"type":"response.output_text.delta","content_index":0,"delta":" France","item_id":"msg_01548f99e20379ea016afba31a2d6887d09b868ff3d14e56a3","logprobs":[],"obfuscation":"AQnttbxsE","output_index":0,"sequence_number":9}
+
+
+        event: response.output_text.delta
+
+        data: {"type":"response.output_text.delta","content_index":0,"delta":".","item_id":"msg_01548f99e20379ea016afba31a2d6887d09b868ff3d14e56a3","logprobs":[],"obfuscation":"moJxD9oLFJf0c7d","output_index":0,"sequence_number":10}
+
+
+        event: response.output_text.done
+
+        data: {"type":"response.output_text.done","content_index":0,"item_id":"msg_01548f99e20379ea016afba31a2d6887d09b868ff3d14e56a3","logprobs":[],"output_index":0,"sequence_number":11,"text":"Paris
+        is the capital of France."}
+
+
+        event: response.content_part.done
+
+        data: {"type":"response.content_part.done","content_index":0,"item_id":"msg_01548f99e20379ea016afba31a2d6887d09b868ff3d14e56a3","output_index":0,"part":{"type":"output_text","annotations":[],"logprobs":[],"text":"Paris
+        is the capital of France."},"sequence_number":12}
+
+
+        event: response.output_item.done
+
+        data: {"type":"response.output_item.done","item":{"id":"msg_01548f99e20379ea016afba31a2d6887d09b868ff3d14e56a3","type":"message","status":"completed","content":[{"type":"output_text","annotations":[],"logprobs":[],"text":"Paris
+        is the capital of France."}],"phase":"final_answer","role":"assistant"},"output_index":0,"sequence_number":13}
+
+
+        event: response.completed
+
+        data: {"type":"response.completed","response":{"id":"resp_01548f99e20379ea016afba319748487d0b3ced3523231e674","object":"response","created_at":1794876185,"status":"completed","access_programs":null,"background":false,"completed_at":1794876186,"error":null,"frequency_penalty":0.0,"image":{"context_compression":"disabled"},"incomplete_details":null,"input_transformations":[],"instructions":null,"max_output_tokens":128,"max_tool_calls":null,"model":"gpt-6-luna","moderation":null,"output":[{"id":"msg_01548f99e20379ea016afba31a2d6887d09b868ff3d14e56a3","type":"message","status":"completed","content":[{"type":"output_text","annotations":[],"logprobs":[],"text":"Paris
+        is the capital of France."}],"phase":"final_answer","role":"assistant"}],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_options":{"mode":"implicit","ttl":"12h"},"prompt_cache_retention":"24h","reasoning":{"context":"all_turns","effort":"none","mode":"standard","summary":null},"safety_identifier":null,"service_tier":"default","store":false,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[],"top_logprobs":0,"top_p":0.98,"truncation":"disabled","usage":{"input_tokens":1300,"input_tokens_details":{"cache_write_tokens":1297,"cache_write_tokens_details":{"ttl_12h_tokens":1297,"ttl_30m_tokens":0},"cached_tokens":0},"output_tokens":11,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":1311},"user":null,"metadata":{}},"sequence_number":14}
+
+
+        '
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID, Server-Timing-Total, X-OpenAI-Inference-Capacity-Reason
+      - CF-Ray
+      - CF-Ray
+      connection:
+      - keep-alive
+      content-type:
+      - text/event-stream; charset=utf-8
+      date:
+      - Tue, 17 Nov 2026 00:43:05 GMT
+      openai-processing-ms:
+      - '472'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '180000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '179998467'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+    status:
+      code: 200
+      message: OK
+version: 1
