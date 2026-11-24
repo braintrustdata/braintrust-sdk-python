@@ -2581,6 +2581,7 @@ def _audio_speech_create_wrapper(wrapped, instance, args, kwargs):
             kwargs,
             is_async=_is_async_callable(wrapped),
             start_span=start_span,
+            log_headers=log_headers,
             params=SpeechWrapper._parse_params(kwargs),
         )
     return _make_base_wrapper_callback(SpeechWrapper)(wrapped, instance, args, kwargs)

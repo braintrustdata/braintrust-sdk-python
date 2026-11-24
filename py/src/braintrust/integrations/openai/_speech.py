@@ -31,7 +31,11 @@ def speech_input(params: dict[str, Any]) -> dict[str, Any]:
 
 
 def speech_filename(response: Any) -> str | None:
+    # Streaming APIResponse exposes headers directly; the non-streaming
+    # HttpxBinaryResponseContent keeps them on its httpx response.
     headers = getattr(response, "headers", None)
+    if headers is None:
+        headers = getattr(getattr(response, "response", None), "headers", None)
     disposition = headers.get("content-disposition") if headers is not None else None
     if not disposition:
         return None
@@ -75,8 +79,6 @@ def speech_output(data: bytes, mime_type: str, filename: str | None = None) -> d
 class _SpeechTrace:
     def __init__(self, span, response, response_format, started):
         self.span = span
-        # APIResponse exposes headers directly; the shared helper also supports
-        # the non-streaming HttpxBinaryResponseContent.response representation.
         content_type = response.headers.get("content-type")
         self.mime_type = (
             content_type.split(";", 1)[0].strip()
@@ -90,13 +92,18 @@ class _SpeechTrace:
         self.audio = bytearray()
         self.capture = span is not NOOP_SPAN and BraintrustEnv.CAPTURE_AGENT_AUDIO_ATTACHMENTS.get(False)
 
-    def observe(self, chunk):
+    def observe(self, chunk, *, audio=True):
+        """Record a consumed chunk; ``audio=False`` marks decoded text chunks,
+        which count toward timing but cannot be captured as audio bytes."""
         if self.finished or not chunk:
             return
         if not self.first_content:
             self.first_content = True
             self.span.log(metrics={"time_to_first_token": time.monotonic() - self.started})
-        if self.capture and BraintrustEnv.CAPTURE_AGENT_AUDIO_ATTACHMENTS.get(False):
+        if not audio:
+            self.capture = False
+            self.audio.clear()
+        elif self.capture:
             self.audio.extend(chunk)
 
     def finish(self, error=None, *, complete=False):
@@ -110,6 +117,30 @@ class _SpeechTrace:
         self.span.end()
 
 
+def _observe_iter(trace, iterator, *, audio=True):
+    try:
+        for chunk in iterator:
+            trace.observe(chunk, audio=audio)
+            yield chunk
+    except BaseException as exc:
+        trace.finish(exc)
+        raise
+    else:
+        trace.finish(complete=True)
+
+
+async def _aobserve_iter(trace, iterator, *, audio=True):
+    try:
+        async for chunk in iterator:
+            trace.observe(chunk, audio=audio)
+            yield chunk
+    except BaseException as exc:
+        trace.finish(exc)
+        raise
+    else:
+        trace.finish(complete=True)
+
+
 class SpeechResponse(ObjectProxy):
     def __init__(self, response, trace):
         super().__init__(response)
@@ -118,15 +149,13 @@ class SpeechResponse(ObjectProxy):
         weakref.finalize(self, trace.finish)
 
     def iter_bytes(self, *args, **kwargs):
-        try:
-            for chunk in self.__wrapped__.iter_bytes(*args, **kwargs):
-                self._self_trace.observe(chunk)
-                yield chunk
-        except BaseException as exc:
-            self._self_trace.finish(exc)
-            raise
-        else:
-            self._self_trace.finish(complete=True)
+        return _observe_iter(self._self_trace, self.__wrapped__.iter_bytes(*args, **kwargs))
+
+    def iter_text(self, *args, **kwargs):
+        return _observe_iter(self._self_trace, self.__wrapped__.iter_text(*args, **kwargs), audio=False)
+
+    def iter_lines(self, *args, **kwargs):
+        return _observe_iter(self._self_trace, self.__wrapped__.iter_lines(*args, **kwargs), audio=False)
 
     def read(self):
         try:
@@ -138,10 +167,17 @@ class SpeechResponse(ObjectProxy):
         self._self_trace.finish(complete=True)
         return data
 
+    # Run these SDK methods with this proxy as self, so their internal
+    # read()/iter_bytes() calls go through the observation above while the
+    # provider's type and cache behavior is preserved.
     def parse(self, *args, **kwargs):
-        # Execute SDK parsing with this proxy as self, so its read goes through
-        # the observation above. Preserve the provider's type/cache behavior.
         return type(self.__wrapped__).parse(self, *args, **kwargs)
+
+    def text(self, *args, **kwargs):
+        return type(self.__wrapped__).text(self, *args, **kwargs)
+
+    def json(self, *args, **kwargs):
+        return type(self.__wrapped__).json(self, *args, **kwargs)
 
     def stream_to_file(self, *args, **kwargs):
         return type(self.__wrapped__).stream_to_file(self, *args, **kwargs)
@@ -159,16 +195,14 @@ class AsyncSpeechResponse(ObjectProxy):
         self._self_trace = trace
         weakref.finalize(self, trace.finish)
 
-    async def iter_bytes(self, *args, **kwargs):
-        try:
-            async for chunk in self.__wrapped__.iter_bytes(*args, **kwargs):
-                self._self_trace.observe(chunk)
-                yield chunk
-        except BaseException as exc:
-            self._self_trace.finish(exc)
-            raise
-        else:
-            self._self_trace.finish(complete=True)
+    def iter_bytes(self, *args, **kwargs):
+        return _aobserve_iter(self._self_trace, self.__wrapped__.iter_bytes(*args, **kwargs))
+
+    def iter_text(self, *args, **kwargs):
+        return _aobserve_iter(self._self_trace, self.__wrapped__.iter_text(*args, **kwargs), audio=False)
+
+    def iter_lines(self, *args, **kwargs):
+        return _aobserve_iter(self._self_trace, self.__wrapped__.iter_lines(*args, **kwargs), audio=False)
 
     async def read(self):
         try:
@@ -183,6 +217,12 @@ class AsyncSpeechResponse(ObjectProxy):
     async def parse(self, *args, **kwargs):
         return await type(self.__wrapped__).parse(self, *args, **kwargs)
 
+    async def text(self, *args, **kwargs):
+        return await type(self.__wrapped__).text(self, *args, **kwargs)
+
+    async def json(self, *args, **kwargs):
+        return await type(self.__wrapped__).json(self, *args, **kwargs)
+
     async def stream_to_file(self, *args, **kwargs):
         return await type(self.__wrapped__).stream_to_file(self, *args, **kwargs)
 
@@ -193,26 +233,39 @@ class AsyncSpeechResponse(ObjectProxy):
             self._self_trace.finish()
 
 
-def trace_stream(wrapped, args, kwargs, *, is_async, start_span, params):
-    """The SDK invokes this request only when its response context is entered."""
-    span = start_span(**{"name": "Speech", "type": "llm", "set_current": False, **params})
-    started = time.monotonic()
+def trace_stream(wrapped, args, kwargs, *, is_async, start_span, log_headers, params):
+    """Trace a ``with_streaming_response`` speech request until its body is consumed.
+
+    The sync SDK calls this only when the response context is entered. The async
+    SDK calls it when ``create()`` is called, but the returned coroutine only runs
+    on ``__aenter__``, so the async span is started inside that coroutine.
+    """
+
+    def start():
+        return start_span(**{"name": "Speech", "type": "llm", "set_current": False, **params}), time.monotonic()
+
+    def traced(span, response, started):
+        log_headers(response, span)
+        return _SpeechTrace(span, response, kwargs.get("response_format"), started)
+
     if is_async:
 
         async def call():
+            span, started = start()
             try:
                 response = await wrapped(*args, **kwargs)
             except BaseException as exc:
                 span.log(error=exc)
                 span.end()
                 raise
-            return AsyncSpeechResponse(response, _SpeechTrace(span, response, kwargs.get("response_format"), started))
+            return AsyncSpeechResponse(response, traced(span, response, started))
 
         return call()
+    span, started = start()
     try:
         response = wrapped(*args, **kwargs)
     except BaseException as exc:
         span.log(error=exc)
         span.end()
         raise
-    return SpeechResponse(response, _SpeechTrace(span, response, kwargs.get("response_format"), started))
+    return SpeechResponse(response, traced(span, response, started))
