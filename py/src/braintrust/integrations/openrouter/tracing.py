@@ -4,6 +4,7 @@ import functools
 import importlib.util
 import inspect
 import logging
+import math
 import time
 from collections.abc import AsyncIterator, Iterator
 from typing import Any
@@ -35,7 +36,7 @@ def start_span(*args, **kwargs):
 
 logger = logging.getLogger(__name__)
 
-_TOKEN_NAME_MAP = {
+_USAGE_METRIC_NAME_MAP = {
     "promptTokens": "prompt_tokens",
     "inputTokens": "prompt_tokens",
     "completionTokens": "completion_tokens",
@@ -46,6 +47,7 @@ _TOKEN_NAME_MAP = {
     "completion_tokens": "completion_tokens",
     "output_tokens": "completion_tokens",
     "total_tokens": "tokens",
+    "cost": "estimated_cost",
 }
 _TOKEN_DETAIL_PREFIX_MAP = {
     "promptTokensDetails": "prompt",
@@ -172,25 +174,11 @@ def _get_field(obj: Any, key: str, default: Any = None) -> Any:
     return getattr(obj, key, default)
 
 
-def _parse_openrouter_model_string(model: Any) -> tuple[Any, str | None]:
-    if not isinstance(model, str):
-        return model, None
-    slash = model.find("/")
-    if 0 < slash < len(model) - 1:
-        return model[slash + 1 :], model[:slash]
-    return model, None
-
-
-def _stamp_model_and_provider(metadata: dict[str, Any], raw_model: Any, routing: Any) -> Any:
-    """Set model / provider / provider_routing on ``metadata``. Returns the parsed model."""
-    model, provider = _parse_openrouter_model_string(raw_model)
+def _stamp_model_and_routing(metadata: dict[str, Any], model: Any, routing: Any) -> None:
     if model is not None:
         metadata["model"] = model
-    if provider is not None:
-        metadata["provider"] = provider
     if routing is not None:
         metadata["provider_routing"] = routing
-    return model
 
 
 @functools.lru_cache(maxsize=32)
@@ -211,10 +199,11 @@ def _build_request_metadata(
     kwargs: dict[str, Any], keys: tuple[str, ...], *, embedding: bool = False, wrapped: Any = None
 ) -> dict[str, Any]:
     metadata = {key: kwargs[key] for key in keys if key in kwargs and kwargs[key] is not None}
-    model = _stamp_model_and_provider(metadata, kwargs.get("model"), kwargs.get("provider"))
-    metadata.setdefault("provider", "openrouter")
+    model = kwargs.get("model")
+    _stamp_model_and_routing(metadata, model, kwargs.get("provider"))
+    metadata["provider"] = "openrouter"
     if embedding and isinstance(model, str):
-        metadata["embedding_model"] = model
+        metadata["embedding_model"] = model.split("/", 1)[-1]
     if "service_tier" in keys:
         requested = (
             kwargs["service_tier"]
@@ -235,15 +224,25 @@ def _pick_response_metadata(response: Any, keys: tuple[str, ...]) -> dict[str, A
         if value is not None:
             picked[key] = value
 
-    _stamp_model_and_provider(picked, _get_field(response, "model"), _get_field(response, "provider"))
+    _stamp_model_and_routing(picked, _get_field(response, "model"), _get_field(response, "provider"))
     return picked
 
 
-def _usage_metadata(usage: Any) -> dict[str, Any]:
+def _merge_metadata(request: dict[str, Any], response: dict[str, Any], usage: Any) -> dict[str, Any]:
+    metadata = {**request, **response}
+    requested_model = request.get("model")
+    if isinstance(requested_model, str):
+        _, separator, model_name = requested_model.partition("/")
+        # Some endpoints return only the model name even for a qualified request.
+        if separator and response.get("model") == model_name:
+            metadata["model"] = requested_model
+
     is_byok = _get_field(usage, "is_byok")
     if is_byok is None:
         is_byok = _get_field(usage, "isByok")
-    return {"is_byok": is_byok} if isinstance(is_byok, bool) else {}
+    if isinstance(is_byok, bool):
+        metadata["is_byok"] = is_byok
+    return metadata
 
 
 def _parse_openrouter_metrics_from_usage(usage: Any) -> dict[str, float]:
@@ -254,7 +253,10 @@ def _parse_openrouter_metrics_from_usage(usage: Any) -> dict[str, float]:
     metrics: dict[str, float] = {}
     for name, value in usage_dict.items():
         if _is_supported_metric_value(value):
-            metrics[_TOKEN_NAME_MAP.get(name, _camel_to_snake(name))] = float(value)
+            metric_name = _USAGE_METRIC_NAME_MAP.get(name, _camel_to_snake(name))
+            numeric_value = float(value)
+            if metric_name != "estimated_cost" or math.isfinite(numeric_value):
+                metrics[metric_name] = numeric_value
             continue
         prefix = _TOKEN_DETAIL_PREFIX_MAP.get(name)
         if prefix is None or not isinstance(value, dict):
@@ -423,7 +425,7 @@ def _finalize_stream(
         output, usage, response_metadata = _aggregate_chat_stream(items)
     else:
         output, usage, response_metadata = _aggregate_responses_stream(items)
-    metadata = {**request_metadata, **response_metadata, **_usage_metadata(usage)}
+    metadata = _merge_metadata(request_metadata, response_metadata, usage)
 
     _log_and_end_span(
         span,
@@ -456,7 +458,7 @@ def _chunk_has_output(item: Any) -> bool:
 def _aggregate_chat_stream(chunks: list[Any]) -> tuple[list[dict[str, Any]], Any, dict[str, Any]]:
     choices: dict[int, dict[str, Any]] = {}
     usage = None
-    response_metadata: dict[str, Any] = {}
+    response_metadata = _pick_response_metadata(chunks[-1], ()) if chunks else {}
 
     for chunk in chunks:
         chunk_usage = getattr(chunk, "usage", None)
@@ -566,11 +568,7 @@ def _finalize_response(
     response_keys: tuple[str, ...],
 ) -> None:
     usage = _get_field(result, "usage")
-    metadata = {
-        **request_metadata,
-        **_pick_response_metadata(result, response_keys),
-        **_usage_metadata(usage),
-    }
+    metadata = _merge_metadata(request_metadata, _pick_response_metadata(result, response_keys), usage)
     if "service_tier" in response_keys:
         metadata.update(_service_tier_metadata(served=_get_field(result, "service_tier")))
     _log_and_end_span(
