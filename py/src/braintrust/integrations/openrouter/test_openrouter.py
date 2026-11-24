@@ -49,30 +49,50 @@ def _skip_without_chat_service_tier():
         pytest.skip("Chat service_tier is unavailable in this OpenRouter version")
 
 
-@pytest.mark.vcr
-def test_wrap_openrouter_chat_send_sync(memory_logger):
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("async_send", "prompt", "answer"),
+    [
+        pytest.param(
+            False,
+            "What is 2+2? Reply with just the number.",
+            "4",
+            id="sync",
+            marks=pytest.mark.vcr(cassette_name="test_wrap_openrouter_chat_send_sync"),
+        ),
+        pytest.param(
+            True,
+            "What is 3+3? Reply with just the number.",
+            "6",
+            id="async",
+            marks=pytest.mark.vcr(cassette_name="test_wrap_openrouter_chat_send_async"),
+        ),
+    ],
+)
+async def test_wrap_openrouter_chat_send(memory_logger, async_send, prompt, answer):
     assert not memory_logger.pop()
 
     client = wrap_openrouter(_get_client())
+    messages = [{"role": "user", "content": prompt}]
+    kwargs = dict(model=CHAT_MODEL, messages=messages, max_tokens=10, **CHAT_OPTIONS)
     start = time.time()
-    response = client.chat.send(
-        model=CHAT_MODEL,
-        **CHAT_OPTIONS,
-        messages=[{"role": "user", "content": "What is 2+2? Reply with just the number."}],
-        max_tokens=10,
-    )
+    response = await client.chat.send_async(**kwargs) if async_send else client.chat.send(**kwargs)
     end = time.time()
 
-    assert "4" in response.choices[0].message.content
+    assert answer in response.choices[0].message.content
 
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
+    # OpenRouter 0.6.0 does not expose the chat response's cost.
+    assert span["metrics"].get("estimated_cost") == getattr(response.usage, "cost", None)
+    assert "cost" not in span["metrics"]
     assert span["context"]["span_origin"]["instrumentation"]["name"] == "openrouter-auto"
-    assert span["input"] == [{"role": "user", "content": "What is 2+2? Reply with just the number."}]
-    assert span["metadata"]["provider"] == "openai"
-    assert span["metadata"]["model"] == "gpt-6-luna"
-    assert "4" in span["output"][0]["message"]["content"]
+    assert span["input"] == messages
+    assert span["metadata"]["provider"] == "openrouter"
+    assert span["metadata"]["model"] == response.model == CHAT_MODEL
+    assert span["metadata"].get("provider_routing") == getattr(response, "provider", None)
+    assert answer in span["output"][0]["message"]["content"]
     assert_metrics_are_valid(span["metrics"], start, end)
 
 
@@ -104,39 +124,15 @@ def test_wrap_openrouter_chat_send_stream_sync(memory_logger):
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
-    assert span["metadata"]["provider"] == "openai"
-    assert span["metadata"]["model"] == "gpt-6-luna"
+    usage_chunk = next(chunk for chunk in reversed(chunks) if chunk.usage is not None)
+    assert span["metadata"]["provider"] == "openrouter"
+    assert span["metadata"]["model"] == usage_chunk.model == CHAT_MODEL
+    assert span["metrics"].get("estimated_cost") == getattr(usage_chunk.usage, "cost", None)
     assert span["metrics"]["time_to_first_token"] >= 0
     assert_service_tiers(
         span["metadata"], served=_last_tier([getattr(chunk, "service_tier", None) for chunk in chunks])
     )
     assert "10" in span["output"][0]["message"]["content"]
-    assert_metrics_are_valid(span["metrics"], start, end)
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_wrap_openrouter_chat_send_async(memory_logger):
-    assert not memory_logger.pop()
-
-    client = wrap_openrouter(_get_client())
-    start = time.time()
-    response = await client.chat.send_async(
-        model=CHAT_MODEL,
-        **CHAT_OPTIONS,
-        messages=[{"role": "user", "content": "What is 3+3? Reply with just the number."}],
-        max_tokens=10,
-    )
-    end = time.time()
-
-    assert "6" in response.choices[0].message.content
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span["metadata"]["provider"] == "openai"
-    assert span["metadata"]["model"] == "gpt-6-luna"
-    assert "6" in span["output"][0]["message"]["content"]
     assert_metrics_are_valid(span["metrics"], start, end)
 
 
@@ -160,28 +156,48 @@ def test_wrap_openrouter_embeddings_generate(memory_logger):
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
-    # The response model field from the embeddings API is "text-embedding-3-small"
-    # (without the "openai/" prefix), so the provider falls back to "openrouter".
-    assert span["metadata"]["provider"] in ("openai", "openrouter")
-    assert span["metadata"]["model"] == "text-embedding-3-small"
+    assert response.model == "text-embedding-3-small"
+    assert span["metadata"]["provider"] == "openrouter"
+    assert span["metadata"]["model"] == EMBEDDING_MODEL
     assert span["metadata"]["embedding_model"] == "text-embedding-3-small"
     assert span["metadata"]["input_type"] == "query"
     assert span["output"]["embedding_length"] == embedding_length
     assert span["output"]["embeddings_count"] == 1
     assert span["metrics"]["prompt_tokens"] > 0
     assert span["metrics"]["tokens"] > 0
+    assert span["metrics"]["estimated_cost"] == response.usage.cost
     # Embeddings don't have completion_tokens, so we check duration directly
     # instead of using assert_metrics_are_valid (which expects completion_tokens).
     assert start <= span["metrics"]["start"] <= span["metrics"]["end"] <= end + 1
 
 
-@pytest.mark.vcr
-def test_wrap_openrouter_beta_responses_send(memory_logger):
+@pytest.mark.parametrize(
+    ("beta", "span_name"),
+    [
+        pytest.param(
+            True,
+            "openrouter.beta.responses.send",
+            id="beta",
+            marks=pytest.mark.vcr(cassette_name="test_wrap_openrouter_beta_responses_send"),
+        ),
+        pytest.param(
+            False,
+            "openrouter.responses.send",
+            id="ga",
+            marks=pytest.mark.vcr(cassette_name="test_wrap_openrouter_responses_send"),
+        ),
+    ],
+)
+def test_wrap_openrouter_responses_send(memory_logger, beta, span_name):
+    client = _get_client()
+    if not beta and not hasattr(client, "responses"):
+        pytest.skip("GA Responses is unavailable in this OpenRouter version")
     assert not memory_logger.pop()
 
-    client = wrap_openrouter(_get_client())
+    wrap_openrouter(client)
+    responses = client.beta.responses if beta else client.responses
     start = time.time()
-    response = client.beta.responses.send(
+    response = responses.send(
         model=CHAT_MODEL,
         **CHAT_OPTIONS,
         input="Say one short sentence about observability.",
@@ -197,47 +213,19 @@ def test_wrap_openrouter_beta_responses_send(memory_logger):
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
+    assert span["span_attributes"]["name"] == span_name
+    assert span["span_attributes"]["type"] == "llm"
     assert span["input"] == "Say one short sentence about observability."
-    assert span["metadata"]["provider"] == "openai"
-    assert span["metadata"]["model"] == "gpt-6-luna"
+    assert span["metadata"]["provider"] == "openrouter"
+    assert span["metadata"]["model"] == response.model == CHAT_MODEL
     assert span["metadata"]["status"] == "completed"
     assert span["metadata"]["id"]
     # The SDK sends its ``service_tier="auto"`` default on every Responses request.
     assert_service_tiers(span["metadata"], requested="auto", served=_normalize_service_tier(response.service_tier))
-    assert span["metrics"]["prompt_tokens"] > 0
-    assert span["metrics"]["completion_tokens"] > 0
-    assert span["metrics"]["tokens"] > 0
+    assert span["metrics"]["estimated_cost"] == response.usage.cost
     assert span["output"][0]["type"] == "message"
-    assert_metrics_are_valid(span["metrics"], start, end)
-
-
-@pytest.mark.vcr
-def test_wrap_openrouter_responses_send(memory_logger):
-    client = _get_client()
-    if not hasattr(client, "responses"):
-        pytest.skip("GA Responses is unavailable in this OpenRouter version")
-
-    wrap_openrouter(client)
-    response = client.responses.send(
-        model=CHAT_MODEL,
-        **CHAT_OPTIONS,
-        input="Say one short sentence about observability.",
-        max_output_tokens=64,
-        temperature=0,
-    )
-    assert response.output
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span["span_attributes"]["name"] == "openrouter.responses.send"
-    assert span["span_attributes"]["type"] == "llm"
-    assert span["input"] == "Say one short sentence about observability."
-    assert span["metadata"]["model"] == "gpt-6-luna"
-    assert span["metadata"]["provider"] == "openai"
-    assert span["output"][0]["type"] == "message"
-    assert span["metrics"]["tokens"] > 0
     assert span["context"]["span_origin"]["instrumentation"]["name"] == "openrouter-auto"
+    assert_metrics_are_valid(span["metrics"], start, end)
 
 
 @pytest.mark.vcr
@@ -264,12 +252,14 @@ async def test_wrap_openrouter_responses_send_async_stream(memory_logger):
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
-    assert span["metadata"]["provider"] == "openai"
-    assert span["metadata"]["model"] == "gpt-6-luna"
+    response = next(item.response for item in items if item.type == "response.completed")
+    assert span["metadata"]["provider"] == "openrouter"
+    assert span["metadata"]["model"] == response.model == CHAT_MODEL
     assert span["metadata"]["status"] == "completed"
     assert span["metrics"]["prompt_tokens"] > 0
     assert span["metrics"]["completion_tokens"] > 0
     assert span["metrics"]["tokens"] > 0
+    assert span["metrics"]["estimated_cost"] == response.usage.cost
     assert span["metrics"]["time_to_first_token"] >= 0
     # The final lifecycle event's tier wins (latest: "auto" events, then "default" on completion).
     lifecycle_tiers = [item.response.service_tier for item in items if getattr(item, "response", None) is not None]

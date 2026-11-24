@@ -203,25 +203,28 @@ class BraintrustTracingProcessor(tracing.TracingProcessor):
         data = {}
         if span.span_data.input is not None:
             data["input"] = span.span_data.input
-        if span.span_data.response is not None:
-            data["output"] = span.span_data.response.output
-        if span.span_data.response is not None:
-            data["metadata"] = dict(span.span_data.response.metadata or {})
+        response = span.span_data.response
+        if response is not None:
+            data["output"] = response.output
+            data["metadata"] = dict(response.metadata or {})
             data["metadata"].update(
-                span.span_data.response.model_dump(exclude={"input", "output", "metadata", "usage"}, exclude_none=True)
+                response.model_dump(exclude={"input", "output", "metadata", "usage"}, exclude_none=True)
             )
             # The Responses API reports the tier that actually served the call.
-            data["metadata"].update(
-                _service_tier_metadata(served=getattr(span.span_data.response, "service_tier", None))
-            )
+            data["metadata"].update(_service_tier_metadata(served=getattr(response, "service_tier", None)))
 
-        data["metrics"] = {}
+        if response is not None and response.usage is not None:
+            metrics = _usage_to_metrics(response.usage.model_dump())
+        else:
+            metrics = _usage_to_metrics(getattr(span.span_data, "usage", None) or {})
+            cache_write_tokens = metrics.pop("prompt_cache_write_tokens", None)
+            if cache_write_tokens is not None:
+                metrics.setdefault("prompt_cache_creation_tokens", cache_write_tokens)
+
         ttft = _maybe_timestamp_elapsed(span.ended_at, span.started_at)
         if ttft is not None:
-            data["metrics"]["time_to_first_token"] = ttft
-        if span.span_data.response is not None and span.span_data.response.usage is not None:
-            usage_dict = span.span_data.response.usage.model_dump()
-            data["metrics"].update(_usage_to_metrics(usage_dict))
+            metrics["time_to_first_token"] = ttft
+        data["metrics"] = metrics
 
         return data
 
@@ -252,14 +255,19 @@ class BraintrustTracingProcessor(tracing.TracingProcessor):
         if ttft is not None:
             metrics["time_to_first_token"] = ttft
 
+        metadata = {
+            "model": span.span_data.model,
+            "model_config": span.span_data.model_config,
+            **_service_tier_metadata(requested=_requested_service_tier(span.span_data.model_config)),
+        }
+        tools = getattr(span.span_data, "tools", None)
+        if tools:
+            metadata["tools"] = tools
+
         return {
             "input": span.span_data.input,
             "output": span.span_data.output,
-            "metadata": {
-                "model": span.span_data.model,
-                "model_config": span.span_data.model_config,
-                **_service_tier_metadata(requested=_requested_service_tier(span.span_data.model_config)),
-            },
+            "metadata": metadata,
             "metrics": metrics,
         }
 

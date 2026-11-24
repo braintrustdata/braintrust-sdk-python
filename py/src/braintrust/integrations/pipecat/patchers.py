@@ -145,7 +145,8 @@ async def traced_controller_frame(wrapped, instance, args, kwargs):
         if wait is not None:
             frame = args[0] if args else kwargs["frame"]
             wait.observe(frame)
-            if type(frame).__name__ == "TranscriptionFrame" and frame.finalized:
+            frame_name = type(frame).__name__
+            if frame_name == "TranscriptionFinalizedFrame" or (frame_name == "TranscriptionFrame" and frame.finalized):
                 strategies = stop_strategies(instance)
                 strategy = strategies[0] if len(strategies) == 1 else None
                 if (

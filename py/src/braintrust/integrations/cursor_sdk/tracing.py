@@ -6,6 +6,7 @@ import json
 import time
 import weakref
 from collections.abc import Callable, Mapping
+from threading import Lock
 from typing import Any
 
 from braintrust.integrations.utils import (
@@ -34,15 +35,6 @@ _PENDING_TRACKER: contextvars.ContextVar[Any] = contextvars.ContextVar("braintru
 # Every access below is a single dict/set operation, so no lock is needed.
 _AGENTS_BY_ID: "weakref.WeakValueDictionary[str, Any]" = weakref.WeakValueDictionary()
 _AGENT_TRACKERS_ATTR = "_braintrust_cursor_trackers"
-
-
-def _agent_trackers(agent: Any) -> set[Any]:
-    """Return the agent's live tracker set, creating it on first send.
-
-    The set lives on the agent so it is collected with it, and `setdefault` on
-    the instance dict keeps concurrent first sends from racing.
-    """
-    return agent.__dict__.setdefault(_AGENT_TRACKERS_ATTR, set())
 
 
 def start_span(*args: Any, **kwargs: Any) -> Any:
@@ -206,7 +198,9 @@ class CursorRunTracker:
         )
         self.root_export = self.root_span.export()
         self.run: Any = None
-        self.agent_trackers: set[Any] = set()
+        self.agent_trackers: set[Any] | None = None
+        self._steering: list[dict[str, str]] = []
+        self._steering_lock = Lock()
         self.llm_span: Any = None
         self.llm_text = ""
         self.reasoning_text = ""
@@ -227,18 +221,25 @@ class CursorRunTracker:
         if resolved:
             self.model = resolved
 
-    def attach(self, run: Any, agent: Any) -> None:
+    def attach(self, run: Any, agent_trackers: set[Any] | None) -> None:
         self.run = run
         setattr(run, "_braintrust_cursor_tracker", self)
         self._update_model(getattr(run, "model", None))
-        self.agent_trackers = _agent_trackers(agent)
-        self.agent_trackers.add(self)
+        self.agent_trackers = agent_trackers
+        if agent_trackers is not None and not self.finished:
+            agent_trackers.add(self)
+
+    def attach_to_agent(self, run: Any, agent: Any) -> None:
+        # setdefault keeps concurrent first sends on the same agent's tracker set.
+        self.attach(run, agent.__dict__.setdefault(_AGENT_TRACKERS_ATTR, set()))
         agent_id = str(getattr(run, "agent_id", "") or "")
         if agent_id:
             _AGENTS_BY_ID[agent_id] = agent
-        # Nothing to replay: the run primes its stream inside `send()`, so any
-        # event it has already buffered reached the tracker through
-        # `_apply_event_state` while `_PENDING_TRACKER` was still set.
+
+    def record_steer(self, text: str, outcome: str) -> None:
+        with self._steering_lock:
+            self._steering.append({"text": text, "outcome": outcome})
+            self.root_span.log(metadata={"steering": self._steering})
 
     def _start_llm(self, now: float) -> None:
         if self.llm_span is not None:
@@ -423,7 +424,8 @@ class CursorRunTracker:
             self.root_span.log(**event)
         self.root_span.end()
         self.finished = True
-        self.agent_trackers.discard(self)
+        if self.agent_trackers is not None:
+            self.agent_trackers.discard(self)
 
     def fail(self, error: BaseException) -> None:
         if self.finished:
@@ -439,8 +441,8 @@ def _tracker_for_run(run: Any) -> CursorRunTracker | None:
     return tracker
 
 
-def _wrap_sync_send(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
-    message = args[0] if args else kwargs.get("message")
+def _wrap_sync_send(wrapped: Any, instance: Any, args: Any, kwargs: Any, *, default_message: Any = None) -> Any:
+    message = args[0] if args else kwargs.get("message", default_message)
     tracker = CursorRunTracker(message=message, model=_send_model(instance, args, kwargs))
     token = _PENDING_TRACKER.set(tracker)
     try:
@@ -450,12 +452,12 @@ def _wrap_sync_send(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
         raise
     finally:
         _PENDING_TRACKER.reset(token)
-    tracker.attach(run, instance)
+    tracker.attach_to_agent(run, instance)
     return run
 
 
-async def _wrap_async_send(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
-    message = args[0] if args else kwargs.get("message")
+async def _wrap_async_send(wrapped: Any, instance: Any, args: Any, kwargs: Any, *, default_message: Any = None) -> Any:
+    message = args[0] if args else kwargs.get("message", default_message)
     tracker = CursorRunTracker(message=message, model=_send_model(instance, args, kwargs))
     token = _PENDING_TRACKER.set(tracker)
     try:
@@ -465,8 +467,34 @@ async def _wrap_async_send(wrapped: Any, instance: Any, args: Any, kwargs: Any) 
         raise
     finally:
         _PENDING_TRACKER.reset(token)
-    tracker.attach(run, instance)
+    tracker.attach_to_agent(run, instance)
     return run
+
+
+def _trace_steer(run: Any, text: str, result: Any) -> None:
+    outcome, queued_run = (result, None) if isinstance(result, str) else (result.outcome, result.run)
+    tracker = getattr(run, "_braintrust_cursor_tracker", None)
+    if tracker is not None:
+        tracker.record_steer(text, outcome)
+
+    # A queued follow-up starts a distinct run and returns a snapshot, so
+    # there are no stream events to catch before the new tracker is attached.
+    if queued_run is not None:
+        model = tracker.model if tracker is not None else _model_id(run.model)
+        follow_up = CursorRunTracker(message=text, model=model)
+        follow_up.attach(queued_run, tracker.agent_trackers if tracker is not None else None)
+
+
+def _wrap_sync_steer(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
+    result = wrapped(*args, **kwargs)
+    _trace_steer(instance, args[0] if args else kwargs["text"], result)
+    return result
+
+
+async def _wrap_async_steer(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
+    result = await wrapped(*args, **kwargs)
+    _trace_steer(instance, args[0] if args else kwargs["text"], result)
+    return result
 
 
 def _run_lifecycle_hooks(

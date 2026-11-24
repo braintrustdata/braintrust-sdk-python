@@ -1586,6 +1586,7 @@ async def _native_eou_controller(observer, strategies, *, observe_start=True, be
         "committed",
         "resumed",
         "transcript_late",
+        "finalization_frame",
         "shutdown",
         "unassociated",
         "multiple",
@@ -1598,6 +1599,8 @@ async def test_eou_native_controller_lifecycle(memory_logger, tracker_observer, 
 
     _instrument()
     frames = _frames()
+    if mode == "finalization_frame" and not hasattr(frames, "TranscriptionFinalizedFrame"):
+        pytest.skip("Pipecat does not support a separate transcription finalization frame")
     Strategies = _import("pipecat.turns.user_turn_strategies.UserTurnStrategies")
     SpeechTimeout = _import("pipecat.turns.user_stop.SpeechTimeoutUserTurnStopStrategy")
     options = {}
@@ -1638,10 +1641,14 @@ async def test_eou_native_controller_lifecycle(memory_logger, tracker_observer, 
         # Multiple transcriptions/evaluations during this pause must not split it.
         await controller.process_frame(frames.InterimTranscriptionFrame("Hi", "caller", "0"))
         await controller.process_frame(pause)  # Re-evaluate/re-arm this same pause.
-        if mode in ("transcript_late", "text_late"):
+        if mode in ("transcript_late", "text_late", "finalization_frame"):
             await asyncio.sleep(0.06)
         if mode != "shutdown":
-            if mode != "audio_only":
+            if mode == "finalization_frame":
+                await controller.process_frame(frames.TranscriptionFrame("Hi", "caller", "0"))
+                assert not stopped.is_set()
+                await controller.process_frame(frames.TranscriptionFinalizedFrame())
+            elif mode != "audio_only":
                 await controller.process_frame(frames.TranscriptionFrame("Hi", "caller", "0", finalized=True))
             await asyncio.wait_for(stopped.wait(), 2)
         else:
@@ -1660,7 +1667,7 @@ async def test_eou_native_controller_lifecycle(memory_logger, tracker_observer, 
         assert "eou.end_reason" not in final["metadata"]
     else:
         assert final["metadata"]["eou.outcome"] == "committed"
-    if mode == "transcript_late":
+    if mode in ("transcript_late", "finalization_frame"):
         assert final["metadata"]["eou.end_reason"] == "transcription_finalized"
     if mode == "text_late":
         assert "eou.end_reason" not in final["metadata"]

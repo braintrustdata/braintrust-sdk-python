@@ -11,8 +11,9 @@ import pytest
 import requests
 from braintrust import Attachment, logger
 from braintrust.integrations.anthropic import AnthropicIntegration
-from braintrust.integrations.cursor_sdk import CursorSDKIntegration, setup_cursor_sdk
+from braintrust.integrations.cursor_sdk import CursorSDKIntegration, setup_cursor_sdk, wrap_cursor_sdk_agent
 from braintrust.integrations.cursor_sdk._test_vcr import cursor_vcr_config
+from braintrust.integrations.cursor_sdk.tracing import _AGENTS_BY_ID
 from braintrust.integrations.openai import OpenAIIntegration
 from braintrust.integrations.test_utils import verify_autoinstrument_script
 from braintrust.span_types import SpanTypeAttribute
@@ -25,6 +26,7 @@ _REQUIRES_SYNC_BRIDGE = pytest.mark.skipif(
     os.name == "nt",
     reason="cursor-sdk's sync bridge uses os.get_blocking(), which is unavailable on Windows",
 )
+_BRIDGE_MODES = [pytest.param(False, id="sync", marks=_REQUIRES_SYNC_BRIDGE), pytest.param(True, id="async")]
 
 
 @pytest.fixture
@@ -123,12 +125,11 @@ def test_sync_wait_traces_cursor_owned_model_turn(memory_logger, tmp_path):
         assert span["context"]["span_origin"]["instrumentation"]["name"] == "cursor-sdk-auto"
     for metric in ("prompt_tokens", "completion_tokens", "tokens", "prompt_cached_tokens"):
         assert llm_span["metrics"][metric] >= 0
-        assert task_span["metrics"][metric] == llm_span["metrics"][metric]
     assert llm_span["metrics"]["tokens"] == (
         llm_span["metrics"]["prompt_tokens"] + llm_span["metrics"]["completion_tokens"]
     )
-    # Cursor's reported total can exclude cache tokens; Braintrust's total
-    # includes them even when the provider's total does not.
+    # Terminal usage can include model calls from a turn with no usage event.
+    # Braintrust's total also includes cache tokens omitted from Cursor's total.
     usage = result.usage
     assert usage is not None
     assert task_span["metrics"]["prompt_tokens"] == (
@@ -137,6 +138,8 @@ def test_sync_wait_traces_cursor_owned_model_turn(memory_logger, tmp_path):
     assert task_span["metrics"]["tokens"] == (
         usage.input_tokens + usage.output_tokens + usage.cache_read_tokens + usage.cache_write_tokens
     )
+    assert task_span["metrics"]["completion_tokens"] == usage.output_tokens
+    assert task_span["metrics"]["prompt_cached_tokens"] == usage.cache_read_tokens
     assert llm_span["metrics"]["time_to_first_token"] >= 0
     allowed_metrics = {
         "start",
@@ -189,6 +192,94 @@ def test_summary_compaction_is_traced(request, tmp_path):
     assert summary_span["metadata"] == {"status": "completed", "fallback": summaries[-1].fallback}
     assert summary_span["metrics"]["end"] >= summary_span["metrics"]["start"]
     assert summary_span["context"]["span_origin"]["instrumentation"]["name"] == "cursor-sdk-auto"
+
+
+@pytest.mark.parametrize("async_agent", _BRIDGE_MODES)
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_explicit_summary_traces_run(memory_logger, tmp_path, async_agent):
+    import cursor_sdk
+
+    agent_class = cursor_sdk.AsyncAgent if async_agent else cursor_sdk.Agent
+    if not hasattr(agent_class, "summarize"):
+        pytest.skip("Cursor SDK does not expose summarize")
+    assert wrap_cursor_sdk_agent(agent_class) is agent_class
+    workspace = str(_workspace(tmp_path))
+    options = {"model": TEST_MODEL, "api_key": _api_key(), "local": cursor_sdk.LocalAgentOptions(cwd=workspace)}
+    prompt = "Remember that the project codename is Greenfield. Reply only OK."
+    if async_agent:
+        async with await cursor_sdk.AsyncClient.launch_bridge(workspace=workspace) as client:
+            async with await client.agents.create(**options) as agent:
+                seed_run = await agent.send(prompt)
+                assert (await seed_run.wait()).status == "finished"
+                summary_run = await agent.summarize()
+                result = await summary_run.wait()
+    else:
+        with cursor_sdk.CursorClient.launch_bridge(workspace=workspace) as client:
+            with client.agents.create(**options) as agent:
+                assert agent.send(prompt).wait().status == "finished"
+                result = agent.summarize().wait()
+
+    assert result.status == "finished"
+    assert result.result
+    seed, root, summary = find_spans_by_type(memory_logger.pop(), SpanTypeAttribute.TASK)
+    assert seed["input"] == [{"role": "user", "content": prompt}]
+    assert root["span_attributes"]["name"] == "Cursor Agent"
+    assert root["input"] == [{"role": "user", "content": "/summarize"}]
+    assert root["output"] == result.result
+    assert summary["span_attributes"]["name"] == "Cursor Context Summary"
+    assert summary["span_parents"] == [root["span_id"]]
+    assert summary["metadata"]["status"] == "completed"
+    assert all(
+        span["context"]["span_origin"]["instrumentation"]["name"] == "cursor-sdk-auto" for span in (root, summary)
+    )
+
+
+@pytest.mark.parametrize("async_agent", _BRIDGE_MODES)
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_queued_steer_traces_follow_up(memory_logger, tmp_path, async_agent, monkeypatch):
+    import cursor_sdk
+
+    run_class = cursor_sdk.AsyncRun if async_agent else cursor_sdk.Run
+    if not hasattr(run_class, "steer"):
+        pytest.skip("Cursor SDK does not expose steer")
+    assert CursorSDKIntegration.setup()
+    workspace = str(_workspace(tmp_path))
+    prompt = "Reply with exactly: cursor initial tracing complete"
+    steer_text = "Reply with exactly: cursor steered tracing complete"
+    options = {
+        "model": TEST_MODEL,
+        "api_key": _api_key(),
+        "cloud": cursor_sdk.CloudAgentOptions(env=cursor_sdk.CloudEnvironment(type="cloud")),
+    }
+    if async_agent:
+        async with await cursor_sdk.AsyncClient.launch_bridge(workspace=workspace) as client:
+            async with await client.agents.create(**options) as agent:
+                run = await agent.send(prompt)
+                assert (await run.wait()).status == "finished"
+                # The weak callback registry can lose an entry when another handle is collected.
+                monkeypatch.delitem(_AGENTS_BY_ID, agent.agent_id)
+                queued = await run.steer(text=steer_text)
+                assert isinstance(queued, cursor_sdk.SteerQueued) and queued.run is not None
+                assert queued.run._braintrust_cursor_tracker in agent._braintrust_cursor_trackers
+                result = await queued.run.wait()
+    else:
+        with cursor_sdk.CursorClient.launch_bridge(workspace=workspace) as client:
+            with client.agents.create(**options) as agent:
+                run = agent.send(prompt)
+                assert run.wait().status == "finished"
+                queued = run.steer(steer_text)
+                assert isinstance(queued, cursor_sdk.SteerQueued) and queued.run is not None
+                result = queued.run.wait()
+
+    assert result.status == "finished"
+    original, follow_up = find_spans_by_type(memory_logger.pop(), SpanTypeAttribute.TASK)
+    assert original["input"] == [{"role": "user", "content": prompt}]
+    assert original["metadata"]["steering"] == [{"text": steer_text, "outcome": "queued"}]
+    assert follow_up["input"] == [{"role": "user", "content": steer_text}]
+    assert follow_up["output"] == result.result
+    assert follow_up["context"]["span_origin"]["instrumentation"]["name"] == "cursor-sdk-auto"
 
 
 @_REQUIRES_SYNC_BRIDGE
