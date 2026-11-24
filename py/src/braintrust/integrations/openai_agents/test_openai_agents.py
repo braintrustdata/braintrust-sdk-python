@@ -320,33 +320,48 @@ async def test_braintrust_tracing_processor_concurrency_bug(memory_logger):
 @pytest.mark.vcr
 async def test_openai_agents_chat_completions_requested_service_tier(memory_logger):
     import agents
-    from agents import Agent, ModelSettings, OpenAIChatCompletionsModel
+    from agents import Agent, ModelSettings, OpenAIChatCompletionsModel, function_tool
     from agents.run import AgentRunner
     from openai import AsyncOpenAI
     from openai.types.shared import Reasoning
 
-    assert not memory_logger.pop()
-
-    processor = BraintrustTracingProcessor()
     agents.set_tracing_disabled(False)
-    agents.add_trace_processor(processor)
+    agents.set_trace_processors([BraintrustTracingProcessor()])
 
-    try:
-        agent = Agent(
-            name="test-agent",
-            model=OpenAIChatCompletionsModel(model=TEST_MODEL, openai_client=AsyncOpenAI()),
-            instructions=TEST_AGENT_INSTRUCTIONS,
-            model_settings=ModelSettings(reasoning=Reasoning(effort="none"), extra_args={"service_tier": "auto"}),
-        )
-        result = await AgentRunner().run(agent, TEST_PROMPT)
-        assert result.final_output
-    finally:
-        processor.shutdown()
+    @function_tool
+    def double(value: int) -> int:
+        """Double an integer."""
+        return 2 * value
+
+    traces_tools = hasattr(agents.tracing.GenerationSpanData, "tools")
+
+    agent = Agent(
+        name="test-agent",
+        model=OpenAIChatCompletionsModel(model=TEST_MODEL, openai_client=AsyncOpenAI()),
+        instructions=TEST_AGENT_INSTRUCTIONS,
+        tools=[double] if traces_tools else [],
+        model_settings=ModelSettings(
+            reasoning=Reasoning(effort="none"),
+            extra_args={"service_tier": "auto"},
+            tool_choice="none" if traces_tools else None,
+        ),
+    )
+    result = await AgentRunner().run(agent, TEST_PROMPT)
+    assert result.final_output
 
     spans = memory_logger.pop()
     generation_spans = [s for s in spans if s.get("span_attributes", {}).get("name") == "Generation"]
     assert len(generation_spans) == 1
     metadata = generation_spans[0]["metadata"]
+    if traces_tools:
+        (tool,) = metadata["tools"]
+        assert tool["type"] == "function"
+        assert tool["function"]["name"] == "double"
+        parameters = tool["function"]["parameters"]
+        assert parameters["properties"]["value"]["type"] == "integer"
+        assert parameters["required"] == ["value"]
+    else:
+        assert "tools" not in metadata
     # Generation spans carry no response tier, so only the requested tier can be recorded.
     assert "served_service_tier" not in metadata
     # openai-agents >= 0.14 no longer traces ``extra_args``, so the requested tier is unavailable.
@@ -354,6 +369,47 @@ async def test_openai_agents_chat_completions_requested_service_tier(memory_logg
         assert metadata["requested_service_tier"] == "auto"
     else:
         assert "requested_service_tier" not in metadata
+
+
+@pytest.mark.asyncio
+@pytest.mark.vcr
+async def test_openai_agents_incomplete_response_usage(memory_logger):
+    import agents
+    from agents import Agent, ModelSettings
+    from agents.exceptions import ModelBehaviorError
+    from agents.run import AgentRunner
+    from openai.types.shared import Reasoning
+
+    if not hasattr(agents.tracing.ResponseSpanData, "usage"):
+        pytest.skip("This OpenAI Agents version does not trace usage for incomplete responses")
+
+    agents.set_tracing_disabled(False)
+    agents.set_trace_processors([BraintrustTracingProcessor()])
+    agent = Agent(
+        name="test-agent",
+        model=TEST_MODEL,
+        model_settings=ModelSettings(max_tokens=16, reasoning=Reasoning(effort="low")),
+    )
+    result = AgentRunner().run_streamed(agent, "Write a long essay about the history of mathematics.")
+
+    usage = None
+    with pytest.raises(ModelBehaviorError, match="max_output_tokens"):
+        async for event in result.stream_events():
+            if event.type == "raw_response_event" and event.data.type == "response.incomplete":
+                usage = event.data.response.usage
+
+    assert usage is not None
+    (response_span,) = [span for span in memory_logger.pop() if span["span_attributes"]["name"] == "Response"]
+    assert response_span["error"]
+    assert response_span.get("output") is None
+    metrics = response_span["metrics"]
+    assert metrics["prompt_tokens"] == usage.input_tokens
+    assert metrics["completion_tokens"] == usage.output_tokens
+    assert metrics["tokens"] == usage.total_tokens
+    assert metrics["prompt_cached_tokens"] == usage.input_tokens_details.cached_tokens
+    assert metrics["prompt_cache_creation_tokens"] == usage.input_tokens_details.cache_write_tokens
+    assert "prompt_cache_write_tokens" not in metrics
+    assert metrics["completion_reasoning_tokens"] == usage.output_tokens_details.reasoning_tokens
 
 
 class TestAutoInstrumentOpenAIAgents:
