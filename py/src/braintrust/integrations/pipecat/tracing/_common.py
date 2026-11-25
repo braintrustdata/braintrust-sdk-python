@@ -102,13 +102,6 @@ def processor_kind(cls: type) -> ProcessorKind | None:
     return next((kinds[base.__name__] for base in cls.__mro__ if base.__name__ in kinds), None)
 
 
-def is_pipeline_sink(processor: "FrameProcessor | None") -> bool:
-    # Nested Pipeline sinks can see EndFrame before downstream services finish.
-    handler = getattr(processor, "_downstream_push_frame", None)
-    owner = getattr(handler, "__self__", None)
-    return any(base.__name__ == "PipelineWorker" for base in type(owner).__mro__)
-
-
 def settings_from_processor(processor: Any) -> Any:
     """Prefer the public settings view; Pipecat 1.3 has only the legacy store."""
     settings = getattr(processor, "settings", None)

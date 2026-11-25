@@ -139,7 +139,12 @@ class AgentTracker:
     # Model responses
 
     def start_response(
-        self, processor: "FrameProcessor | None", linker: ContextLinker, *, pending_span: Span | None = None
+        self,
+        processor: "FrameProcessor | None",
+        linker: ContextLinker,
+        *,
+        covered: bool | None = None,
+        pending_span: Span | None = None,
     ) -> Span | None:
         """Start a model response; return its span, or None if one is active.
 
@@ -180,7 +185,7 @@ class AgentTracker:
             turn.span.log(metadata={TURN_REPLY_TO: span_id(linker.reply_to)})
         if links:
             set_links(span, links)
-        model = ModelOperation.start(self._spans, span, processor, "llm_response", input=messages)
+        model = ModelOperation.start(self._spans, span, processor, "llm_response", covered=covered, input=messages)
         model.request(linker.metadata)
         self._response = _ModelResponse(span, metadata, processor, model=model)
         self._open(_RESPONSE)

@@ -9,7 +9,6 @@ from .patchers import (
     OpenAILivePatcher,
     OpenAIRealtimeResponseDonePatcher,
     PipelineWorkerPatcher,
-    SegmentedSTTPushSegmentFramesPatcher,
     STTServiceProcessGeneratorPatcher,
 )
 
@@ -27,7 +26,6 @@ class PipecatIntegration(BaseIntegration):
         ContextAddMessagePatcher,
         LLMServicePushFramePatcher,
         STTServiceProcessGeneratorPatcher,
-        SegmentedSTTPushSegmentFramesPatcher,
         OpenAILivePatcher,
         OpenAIRealtimeResponseDonePatcher,
     )

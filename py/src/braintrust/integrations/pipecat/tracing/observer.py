@@ -24,7 +24,6 @@ from ._common import (
     LOG,
     MAX_PENDING,
     SpanFactory,
-    is_pipeline_sink,
     processor_kind,
     settings_from_processor,
     start_span,
@@ -179,7 +178,11 @@ class BraintrustPipecatObserver(BaseObserver):
         # Response start frame ID -> its llm_response span, for the service.
         self._response_waiters: dict[int, asyncio.Future[Span | None]] = {}
         self._pending_response_spans: OrderedDict[int, tuple[Span, float]] = OrderedDict()
+        self._terminal_processor: Any = None
+        self._response_turns: OrderedDict[int, Any] = OrderedDict()
         self._response_executions: OrderedDict[int, Any] = OrderedDict()
+        self._assistant_turns: dict[int, Any] = {}
+        self._assistant_handlers: list[tuple[Any, Any]] = []
         self._native_turn_processors: set[int] = set()
         self._response_frames: OrderedDict[int, Span] = OrderedDict()
         self._aggregation_parts: OrderedDict[int, tuple[Any, int]] = OrderedDict()
@@ -204,7 +207,7 @@ class BraintrustPipecatObserver(BaseObserver):
             # Recognition starts when STT consumes audio, not when its transcript
             # arrives; the sink alone sees terminal frames after all services.
             stt_audio = kind == "stt" and isinstance(frame, frames.InputAudioRawFrame)
-            terminal = type(frame).__name__ in _TERMINAL_FRAME_TYPES and is_pipeline_sink(processor)
+            terminal = type(frame).__name__ in _TERMINAL_FRAME_TYPES and processor is self._terminal_processor
             if self._admission.native and not (stt_audio or terminal):
                 return
             with session.clock.event(data.timestamp):
@@ -332,9 +335,15 @@ class BraintrustPipecatObserver(BaseObserver):
             # The native aggregator writes its message before publishing context.
             session.linker.associate(message, frame_ids)
 
-    def _assistant_stopped(self) -> None:
-        if self._session is not None:
-            self._session.agent.request_completion()
+    def _register_assistant(self, processor: Any) -> None:
+        from ..patchers import traced_assistant_stopped
+
+        if any(existing is processor for existing, _ in self._assistant_handlers):
+            return
+        if not getattr(processor, "_braintrust_assistant_handler", False):
+            processor.add_event_handler("on_assistant_turn_stopped", traced_assistant_stopped)
+            processor._braintrust_assistant_handler = True
+        self._assistant_handlers.append((processor, traced_assistant_stopped))
 
     def _execution_metrics(self, operation: ModelOperation, frame: "Frame") -> None:
         if frame.id not in self._handled_metrics:
@@ -352,11 +361,7 @@ class BraintrustPipecatObserver(BaseObserver):
         session = self._session
         try:
             if session is not None and self._phase is _SessionPhase.RUNNING:
-                if kind == "llm_response":
-                    response = session.agent._response
-                    if response is not None and response.processor is processor:
-                        operation, parent = response.model, response.span
-                elif kind == "tts":
+                if kind == "tts":
                     text = args[0] if args else kwargs.get("text")
                     context_id = args[1] if len(args) > 1 else kwargs.get("context_id")
                     synthesis = session.agent.start_tts(
@@ -422,8 +427,8 @@ class BraintrustPipecatObserver(BaseObserver):
                     session.agent._close(synthesis.work)
 
     @contextmanager
-    def _model_scope(self, operation: ModelOperation | None) -> Iterator[None]:
-        parent = operation.parent if operation is not None else None
+    def _model_scope(self, operation: ModelOperation | None, *, parent: Span | None = None) -> Iterator[None]:
+        parent = parent or (operation.parent if operation is not None else None)
         manager = getattr(getattr(parent, "state", None), "context_manager", None)
         # Keep the token local: a shared synthesis wrapper may be entered by
         # more than one service task. Span.set_current stores a single token.
@@ -577,7 +582,19 @@ class BraintrustPipecatObserver(BaseObserver):
                 LOG.warning("Unable to close Pipecat trace", exc_info=True)
         self._admission.clear()
         self._response_frames.clear()
+        self._response_turns.clear()
         self._response_executions.clear()
+        self._assistant_turns.clear()
+        self._terminal_processor = None
+        for processor, handler in self._assistant_handlers:
+            remove = getattr(processor, "remove_event_handler", None)
+            if callable(remove):
+                try:
+                    remove("on_assistant_turn_stopped", handler)
+                    processor._braintrust_assistant_handler = False
+                except Exception:
+                    LOG.warning("Unable to remove Pipecat turn handler", exc_info=True)
+        self._assistant_handlers.clear()
         self._aggregation_parts.clear()
         self._handled_metrics.clear()
         self._native_turn_processors.clear()
@@ -624,7 +641,7 @@ class BraintrustPipecatObserver(BaseObserver):
         }:
             return
         action = self._FRAME_ACTIONS.get(kind)
-        if action is None or (kind in _TERMINAL_FRAME_TYPES and not is_pipeline_sink(processor)):
+        if action is None or (kind in _TERMINAL_FRAME_TYPES and processor is not self._terminal_processor):
             return
         if not self._admission.admit(frame):
             return
@@ -736,14 +753,22 @@ class BraintrustPipecatObserver(BaseObserver):
         # Emit transcripts still waiting for a user turn before linking them.
         s.user.flush_transcribed()
         pending = self._pending_response_spans.pop(frame.id, None)
-        span = s.agent.start_response(processor, s.linker, pending_span=pending[0] if pending else None)
+        execution = self._response_executions.get(frame.id)
+        span = s.agent.start_response(
+            processor,
+            s.linker,
+            covered=execution.covered if execution is not None else None,
+            pending_span=pending[0] if pending else None,
+        )
         if span is not None:
             self._response_frames[frame.id] = span
+            self._response_turns[frame.id] = s.agent._turn
             execution = self._response_executions.pop(frame.id, None)
             if execution is not None:
                 execution.bind(self, s.agent._response.model)
             if len(self._response_frames) > MAX_PENDING:
                 self._response_frames.popitem(last=False)
+                self._response_turns.popitem(last=False)
         self._resolve_response(frame, span)
 
     def _on_response_text(
@@ -801,9 +826,6 @@ class BraintrustPipecatObserver(BaseObserver):
     def _on_playback_stopped(self, s: _Session, _f: "Frame", _p: "FrameProcessor | None", _played: bool) -> None:
         s.agent.stop_playback()
 
-    def _on_agent_turn_stopped(self, s: _Session, _f: "Frame", _p: "FrameProcessor | None", _played: bool) -> None:
-        s.agent.request_completion()
-
     def _on_interruption(self, s: _Session, _f: "Frame", _p: "FrameProcessor | None", _played: bool) -> None:
         s.agent.interrupt()
 
@@ -835,7 +857,6 @@ class BraintrustPipecatObserver(BaseObserver):
         "TTSStoppedFrame": _on_tts_stopped,
         "BotStartedSpeakingFrame": _on_playback_started,
         "BotStoppedSpeakingFrame": _on_playback_stopped,
-        "LLMContextAssistantTurnFrame": _on_agent_turn_stopped,
         "InterruptionFrame": _on_interruption,
         "UserTurnResponseCancelFrame": _on_interruption,
         "EagerEndOfTurnCancelFrame": _on_interruption,
