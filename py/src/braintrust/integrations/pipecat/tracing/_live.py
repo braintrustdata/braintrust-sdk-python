@@ -7,7 +7,6 @@ intentionally supports one Live service per pipeline and hosted Responses
 delegation first.
 """
 
-import math
 from collections import OrderedDict
 from copy import deepcopy
 from dataclasses import dataclass, field
@@ -17,6 +16,7 @@ from typing import Any, Literal
 from braintrust._audio.clock import SessionClock
 from braintrust._audio.schema import SOURCE_ID
 from braintrust.integrations.openai.tracing import _parse_metrics_from_usage
+from braintrust.integrations.utils import _metered_duration_metrics
 from braintrust.logger import Span, SpanTypeAttribute
 
 from ._common import MAX_PENDING, SpanFactory, metadata_from_processor, tools_schema_to_openai_tools
@@ -82,9 +82,13 @@ class _Response:
     def finish_inference(self, kind: str, snapshot: dict[str, Any], end_time: float) -> None:
         if self.phase is not _ResponsePhase.STREAMING:
             return
+        metadata = {}
         if snapshot.get("model"):
-            self.llm.log(metadata={"model": snapshot["model"]})
-        self.llm.log(metrics=_parse_metrics_from_usage(snapshot.get("usage")))
+            metadata["model"] = snapshot["model"]
+        usage = snapshot.get("usage")
+        if isinstance(usage, dict):
+            metadata["contrib.pipecat.live.response_usage"] = usage
+        self.llm.log(metadata=metadata, metrics=_parse_metrics_from_usage(usage))
         if kind != "response.completed":
             error = snapshot.get("error") or snapshot.get("incomplete_details") or {"status": kind}
             self.llm.log(error=error)
@@ -151,6 +155,7 @@ class LiveTracker:
         self.delegations: OrderedDict[str, _Delegation] = OrderedDict()
         self.tools: dict[str, _PendingTool] = {}
         self.phase = _LivePhase.ACTIVE
+        self.session_id: str | None = None
         self.inputs: list[Any] = []
         self.outputs: list[dict[str, str]] = []
         self.first_content = False
@@ -168,6 +173,7 @@ class LiveTracker:
         if kind == "session.started":
             self.origin_ms = self.clock.now_ms()
             resource = event.session
+            self.session_id = resource.id
             metadata = {
                 "provider": "openai",
                 "model": resource.model,
@@ -201,8 +207,14 @@ class LiveTracker:
             self._response(event)
         elif kind in ("session.usage.updated", "session.closed"):
             usage = getattr(event, "usage", None)
-            if usage is not None and usage.seconds is not None:
-                self._usage(usage.seconds)
+            if usage is not None:
+                native_usage = usage.model_dump(exclude_unset=True)
+                metadata = {"contrib.pipecat.live.usage": native_usage}
+                # Each provider update replaces the previous cumulative total.
+                metrics = _metered_duration_metrics(usage.seconds, standby_seconds=native_usage.get("paused_seconds"))
+                if "usage_seconds" in metrics:
+                    metadata["contrib.pipecat.live.usage_seconds"] = usage.seconds
+                self.model.log(metadata=metadata, metrics=metrics)
             if kind == "session.closed":
                 self.model.log(metadata={"contrib.pipecat.live.close_reason": event.reason})
                 # Frame observations are queued separately. Closing the remote
@@ -234,14 +246,6 @@ class LiveTracker:
         if not self.first_content:
             self.first_content = True
             self.model.log(metrics={"time_to_first_token": (self.clock.now_ms() - self.origin_ms) / 1000})
-
-    def _usage(self, seconds: float) -> None:
-        if not math.isfinite(seconds) or seconds < 0:
-            return
-        # Each provider update is cumulative: replace the value, never sum
-        # updates or substitute local wall time for the provider's billed time.
-        # Forward the provider's usage only; cost is priced server-side.
-        self.model.log(metadata={"contrib.pipecat.live.usage_seconds": seconds})
 
     def frame(self, frame: Any) -> None:
         if self.phase is _LivePhase.CLOSED:
@@ -353,6 +357,8 @@ class LiveTracker:
             }
             if snapshot.get("previous_response_id"):
                 metadata["contrib.pipecat.live.previous_response_id"] = snapshot["previous_response_id"]
+            if self.session_id:
+                metadata["contrib.pipecat.live.session_id"] = self.session_id
             if delegation.offset_ms is not None:
                 # This locates delegation creation on the provider's session
                 # timeline, including for subsequent responses in that delegation.

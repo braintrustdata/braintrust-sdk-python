@@ -9,12 +9,15 @@ from typing import Any
 
 from braintrust.integrations.utils import (
     _camel_to_snake,
+    _extract_openai_cached_audio_tokens,
     _infer_audio_mime_type,
     _is_supported_metric_value,
     _log_and_end_span,
     _log_error_and_end_span,
     _materialize_attachment,
     _merge_timing_and_usage_metrics,
+    _metered_duration_metrics,
+    _timing_metrics,
 )
 from braintrust.logger import start_span as _bt_start_span
 
@@ -465,6 +468,32 @@ def _merge_metrics(start_time: float, usage: Any, first_token_time: float | None
     )
 
 
+def _audio_usage(usage: Any) -> tuple[dict[str, float], dict[str, Any]]:
+    if not isinstance(usage, dict) and hasattr(usage, "model_dump"):
+        usage = usage.model_dump(by_alias=True, exclude_unset=True)
+    if not isinstance(usage, dict):
+        return {}, {}
+
+    metrics = _parse_usage_metrics(usage)
+    metrics.pop("prompt_audio_seconds", None)
+    metrics.update(_metered_duration_metrics(usage.get("prompt_audio_seconds")))
+    if (cached_audio := _extract_openai_cached_audio_tokens(usage)) is not None:
+        metrics["prompt_cached_audio_tokens"] = cached_audio
+    # Voxtral can report text-only prompt tokens alongside the audio tokens.
+    prompt = metrics.get("prompt_tokens")
+    completion = metrics.get("completion_tokens")
+    total = metrics.get("tokens")
+    if prompt is not None and completion is not None and total is not None and total > prompt + completion:
+        metrics["prompt_tokens"] = total - completion
+    return metrics, {"contrib.mistral.usage": usage}
+
+
+def _audio_stream_request_metadata(stream: Any) -> dict[str, str]:
+    headers = getattr(getattr(stream, "response", None), "headers", None)
+    request_id = headers.get("x-kong-request-id") if headers is not None else None
+    return {"contrib.mistral.request_id": request_id} if isinstance(request_id, str) and request_id else {}
+
+
 def _parse_ocr_usage_metrics(usage: Any) -> dict[str, float]:
     usage_data = _normalized_mistral_dict(usage)
     if usage_data is None:
@@ -539,6 +568,8 @@ def _embeddings_output(response: Any) -> dict[str, Any]:
 
 def _transcription_response_to_metadata(response: Any) -> dict[str, Any]:
     metadata = _response_to_metadata(response)
+    if identifier := metadata.get("id"):
+        metadata["contrib.mistral.response_id"] = identifier
     language = _get_value(response, "language")
     finish_reason = _get_value(response, "finish_reason")
     segments = _get_value(response, "segments")
@@ -1131,22 +1162,36 @@ def _finalize_ocr_response(span: Any, request_metadata: dict[str, Any], response
     )
 
 
-def _finalize_transcription_response(span: Any, request_metadata: dict[str, Any], response: Any, start_time: float):
+def _finalize_transcription_response(
+    span: Any,
+    request_metadata: dict[str, Any],
+    response: Any,
+    start_time: float,
+    first_token_time: float | None = None,
+):
     response_metadata = _transcription_response_to_metadata(response)
+    usage_metrics, usage_metadata = _audio_usage(_get_value(response, "usage"))
     _log_and_end_span(
         span,
         output=_get_value(response, "text"),
-        metrics=_merge_metrics(start_time, _get_value(response, "usage")),
-        metadata={**request_metadata, **response_metadata},
+        metrics={**_timing_metrics(start_time, time.time(), first_token_time), **usage_metrics},
+        metadata={**request_metadata, **response_metadata, **usage_metadata},
     )
 
 
-def _finalize_speech_response(span: Any, request_metadata: dict[str, Any], response: Any, start_time: float):
+def _finalize_speech_response(
+    span: Any,
+    request_metadata: dict[str, Any],
+    response: Any,
+    start_time: float,
+    first_token_time: float | None = None,
+):
+    usage_metrics, usage_metadata = _audio_usage(_get_value(response, "usage"))
     _log_and_end_span(
         span,
         output=_speech_output(response, response_format=request_metadata.get("response_format")),
-        metrics=_merge_metrics(start_time, _get_value(response, "usage")),
-        metadata=request_metadata,
+        metrics={**_timing_metrics(start_time, time.time(), first_token_time), **usage_metrics},
+        metadata={**request_metadata, **usage_metadata},
     )
 
 
@@ -1192,12 +1237,7 @@ def _finalize_transcription_stream(
     first_token_time: float | None,
 ):
     response = _aggregate_transcription_events(items)
-    _log_and_end_span(
-        span,
-        output=response.get("text"),
-        metrics=_merge_metrics(start_time, response.get("usage"), first_token_time),
-        metadata={**metadata, **_transcription_response_to_metadata(response)},
-    )
+    _finalize_transcription_response(span, metadata, response, start_time, first_token_time)
 
 
 def _finalize_speech_stream(
@@ -1208,12 +1248,7 @@ def _finalize_speech_stream(
     first_token_time: float | None,
 ):
     response = _aggregate_speech_events(items)
-    _log_and_end_span(
-        span,
-        output=_speech_output(response, response_format=metadata.get("response_format")),
-        metrics=_merge_metrics(start_time, response.get("usage"), first_token_time),
-        metadata=metadata,
-    )
+    _finalize_speech_response(span, metadata, response, start_time, first_token_time)
 
 
 class _TracedMistralSyncStream:
@@ -1775,7 +1810,7 @@ def _transcriptions_stream_wrapper(wrapped, instance, args, kwargs):
     return _TracedMistralSyncStream(
         result,
         span,
-        request_metadata,
+        {**request_metadata, **_audio_stream_request_metadata(result)},
         start_time,
         chunk_has_output=_transcription_chunk_has_output,
         finalize_stream=_finalize_transcription_stream,
@@ -1791,7 +1826,7 @@ async def _transcriptions_stream_async_wrapper(wrapped, instance, args, kwargs):
     return _TracedMistralAsyncStream(
         result,
         span,
-        request_metadata,
+        {**request_metadata, **_audio_stream_request_metadata(result)},
         start_time,
         chunk_has_output=_transcription_chunk_has_output,
         finalize_stream=_finalize_transcription_stream,
@@ -1808,7 +1843,7 @@ def _speech_complete_wrapper(wrapped, instance, args, kwargs):
         return _TracedMistralSyncStream(
             result,
             span,
-            request_metadata,
+            {**request_metadata, **_audio_stream_request_metadata(result)},
             start_time,
             chunk_has_output=_speech_chunk_has_output,
             finalize_stream=_finalize_speech_stream,
@@ -1828,7 +1863,7 @@ async def _speech_complete_async_wrapper(wrapped, instance, args, kwargs):
         return _TracedMistralAsyncStream(
             result,
             span,
-            request_metadata,
+            {**request_metadata, **_audio_stream_request_metadata(result)},
             start_time,
             chunk_has_output=_speech_chunk_has_output,
             finalize_stream=_finalize_speech_stream,

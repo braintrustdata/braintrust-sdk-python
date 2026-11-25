@@ -12,6 +12,7 @@ _try_to_dict``).
 import base64
 import binascii
 import io
+import math
 import mimetypes
 import os
 import re
@@ -751,15 +752,54 @@ def _extract_google_usage_metadata_provider_metadata(usage_metadata: Any) -> dic
 def _extract_openai_cached_audio_tokens(usage: Any) -> int | None:
     if not isinstance(usage, dict):
         return None
-    for key in ("input_token_details", "input_tokens_details"):
+    for key in ("input_token_details", "input_tokens_details", "prompt_tokens_details"):
         details = usage.get(key)
         if isinstance(details, dict):
             cached_details = details.get("cached_tokens_details")
             if isinstance(cached_details, dict):
                 count = cached_details.get("audio_tokens")
-                if isinstance(count, int) and not isinstance(count, bool):
+                if isinstance(count, int) and not isinstance(count, bool) and count >= 0:
                     return count
     return None
+
+
+def _metered_duration_metrics(seconds: Any, *, standby_seconds: Any = None) -> dict[str, int | float]:
+    return {
+        name: value
+        for name, value in (("usage_seconds", seconds), ("usage_standby_seconds", standby_seconds))
+        if isinstance(value, (int, float)) and not isinstance(value, bool) and 0 <= value < math.inf
+    }
+
+
+def _parse_openai_audio_usage_metrics(usage: dict[str, Any]) -> dict[str, int | float]:
+    input_details = (
+        usage.get("input_token_details") or usage.get("input_tokens_details") or usage.get("prompt_tokens_details")
+    )
+    output_details = (
+        usage.get("output_token_details")
+        or usage.get("output_tokens_details")
+        or usage.get("completion_tokens_details")
+    )
+    input_details = input_details if isinstance(input_details, dict) else {}
+    output_details = output_details if isinstance(output_details, dict) else {}
+    counts = {
+        "prompt_tokens": usage.get("input_tokens", usage.get("prompt_tokens")),
+        "completion_tokens": usage.get("output_tokens", usage.get("completion_tokens")),
+        "tokens": usage.get("total_tokens", usage.get("tokens")),
+        "prompt_audio_tokens": input_details.get("audio_tokens"),
+        "prompt_cached_tokens": input_details.get("cached_tokens"),
+        "prompt_cached_audio_tokens": _extract_openai_cached_audio_tokens(usage),
+        "prompt_cache_creation_tokens": usage.get(
+            "prompt_cache_creation_tokens", input_details.get("cache_write_tokens")
+        ),
+        "completion_audio_tokens": output_details.get("audio_tokens"),
+        "completion_image_tokens": output_details.get("image_tokens"),
+        "completion_reasoning_tokens": output_details.get("reasoning_tokens"),
+    }
+    return {
+        **{key: value for key, value in counts.items() if type(value) is int and value >= 0},
+        **_metered_duration_metrics(usage.get("seconds")),
+    }
 
 
 def _parse_openai_usage_metrics(

@@ -11,7 +11,12 @@ from dataclasses import dataclass, field
 from typing import Any
 from weakref import WeakValueDictionary
 
-from braintrust.integrations.utils import _is_not_given, _parse_openai_usage_metrics, _pcm_to_wav
+from braintrust.integrations.utils import (
+    _is_not_given,
+    _parse_openai_audio_usage_metrics,
+    _parse_openai_usage_metrics,
+    _pcm_to_wav,
+)
 from braintrust.logger import Attachment, Span, SpanTypeAttribute
 
 from .._model_clients import provider_client_expected
@@ -21,6 +26,7 @@ from ._common import LOG, SpanFactory, metadata_from_processor
 # Operation identity follows the executing task, including metrics emitted
 # before queued start events and after queued completion events.
 _ACTIVE_MODEL: ContextVar[Any] = ContextVar("braintrust_pipecat_model", default=None)
+_REALTIME_USAGE_ATTR = "_braintrust_pipecat_realtime_usage"
 # Pipecat LLMTokenUsage field -> Braintrust metric.
 _USAGE_METRIC_NAMES = {
     "prompt_tokens": "prompt_tokens",
@@ -30,6 +36,7 @@ _USAGE_METRIC_NAMES = {
     "cache_creation_input_tokens": "prompt_cache_creation_tokens",
     "reasoning_tokens": "completion_reasoning_tokens",
     "input_audio_tokens": "prompt_audio_tokens",
+    "cache_read_input_audio_tokens": "prompt_cached_audio_tokens",
     "output_audio_tokens": "completion_audio_tokens",
 }
 
@@ -69,6 +76,8 @@ class ModelOperation:
     ended: bool = False
     first_content: bool = False
     usage: dict[str, int | float] = field(default_factory=dict)
+    native_response_usage: bool = False
+    speech_usage: dict[str, list[Any]] = field(default_factory=dict)
     request_metadata: dict[str, Any] = field(default_factory=dict)
     audio: bytearray = field(default_factory=bytearray)
     audio_format: tuple[int, int] | None = None
@@ -120,12 +129,16 @@ class ModelOperation:
     def metrics(self, frame: Any) -> None:
         if self.span is None:
             return
-        from pipecat.metrics.metrics import LLMUsageMetricsData, TTFBMetricsData  # pylint: disable=import-error
+        from pipecat.metrics import metrics  # pylint: disable=import-error
 
         for metric in frame.data or []:
             if metric.processor != self.processor.name:
                 continue
-            if isinstance(metric, LLMUsageMetricsData):
+            if isinstance(metric, metrics.LLMUsageMetricsData):
+                # The OpenAI Realtime handler observed the original report.
+                # Pipecat can fill in missing counts with zero in this frame.
+                if self.native_response_usage:
+                    continue
                 names = _USAGE_METRIC_NAMES
                 values = {name: getattr(metric.value, name, None) for name in names}
                 # Pipecat defines total_tokens as gross of prompt-cache usage,
@@ -133,19 +146,36 @@ class ModelOperation:
                 total, completion = values["total_tokens"], values["completion_tokens"]
                 if total is not None and completion is not None and total >= completion:
                     values["prompt_tokens"] = total - completion
-                self.report_usage(_parse_openai_usage_metrics(values, token_name_map=names, token_prefix_map={}))
+                metadata = {"contrib.pipecat.llm_token_usage": metric.value.model_dump(exclude_unset=True)}
                 if metric.model:
-                    self.span.log(metadata={"model": metric.model})
-            elif isinstance(metric, TTFBMetricsData) and math.isfinite(metric.value) and metric.value >= 0:
+                    metadata["model"] = metric.model
+                self.report_usage(
+                    _parse_openai_usage_metrics(values, token_name_map=names, token_prefix_map={}), metadata=metadata
+                )
+            elif isinstance(metric, metrics.TTFBMetricsData) and math.isfinite(metric.value) and metric.value >= 0:
                 self.span.log(metrics={"time_to_first_token": metric.value})
-            # TTS character counts are not a standardized media metric.
+            elif isinstance(metric, metrics.TTSUsageMetricsData):
+                self._record_speech_usage("contrib.pipecat.tts_usage", metric.value)
+            elif isinstance(metric, getattr(metrics, "STTUsageMetricsData", ())):
+                # Pipecat reports client-measured audio as incremental usage.
+                self._record_speech_usage("contrib.pipecat.stt_usage", metric.value.model_dump(exclude_unset=True))
 
-    def report_usage(self, usage: dict[str, int | float]) -> None:
+    def _record_speech_usage(self, key: str, value: Any) -> None:
+        reports = self.speech_usage.setdefault(key, [])
+        reports.append(value)
+        # Late frames still belong to this operation after its span ends.
+        if self.ended and self.span is not None:
+            self.span.log(metadata={key: reports})
+
+    def report_usage(
+        self, usage: dict[str, int | float], *, metadata: dict[str, Any], native_response: bool = False
+    ) -> None:
         if self.span is None:
             return
+        self.native_response_usage |= native_response
         # Reports are snapshots. Repeated reports replace, never sum.
         self.usage.update({key: value for key, value in usage.items() if value >= 0})
-        self.span.log(metrics=self.usage)
+        self.span.log(metrics=self.usage, metadata=metadata)
 
     def audio_chunk(self, frame: Any, *, capture: bool) -> None:
         if frame.id in self.audio_frames:
@@ -179,8 +209,8 @@ class ModelOperation:
             )
             self.span.log(input={"operation": "transcribe", "content": [_wav_part(data, "recognition.wav")]})
             self.input_audio.clear()
-        if self.request_metadata:
-            self.span.log(metadata=self.request_metadata)
+        if self.request_metadata or self.speech_usage:
+            self.span.log(metadata={**self.request_metadata, **self.speech_usage})
             self.request_metadata.clear()
         if output is not None:
             self.span.log(output=output)
@@ -188,3 +218,34 @@ class ModelOperation:
             self.span.log(error=error)
         self.span.end(end_time=end_time)
         self.audio.clear()
+
+
+@dataclass
+class RealtimeUsage:
+    """The provider lifetime can extend past the framework response span."""
+
+    model: ModelOperation | None = None
+    response_id: str | None = None
+    session_metadata: dict[str, str] = field(default_factory=dict)
+
+    def model_started(self, model: ModelOperation) -> None:
+        # Realtime permits one active provider response per connection. Keep
+        # its model through local interruption until the terminal event.
+        if self.response_id is None or self.model is None:
+            self.model = model
+
+    def response_done(self, response_id: str | None, usage: Any) -> None:
+        if self.response_id is not None and self.response_id != response_id:
+            return
+        model, self.model = self.model, None
+        self.response_id = None
+        if model is None:
+            return
+        metadata: dict[str, Any] = dict(self.session_metadata)
+        if response_id is not None:
+            metadata["contrib.pipecat.response_id"] = response_id
+        metrics = {}
+        if isinstance(usage, dict):
+            metadata["contrib.pipecat.usage"] = usage
+            metrics = _parse_openai_audio_usage_metrics(usage)
+        model.report_usage(metrics, metadata=metadata, native_response=True)

@@ -383,6 +383,11 @@ async def test_realtime_conversation(rooms, memory_logger, monkeypatch, vcr_cass
         assert [message for message in model["input"] if message["role"] == "system"] == [model["input"][0]]
         assert model["metadata"]["model"] == "gpt-realtime"
         assert model["metadata"]["contrib.livekit.response_status"] == native["status"]
+        assert leaf["metadata"]["contrib.livekit.usage"] == native["usage"]
+        assert "contrib.livekit.usage" not in model["metadata"]
+        assert leaf["metadata"]["contrib.livekit.session_id"] == next(
+            event["session"]["id"] for event in server if event["type"] == "session.created"
+        )
         assert leaf["metrics"]["tokens"] == native["usage"]["total_tokens"]
         assert leaf["metrics"]["prompt_tokens"] == native["usage"]["input_tokens"]
         assert leaf["metrics"]["completion_tokens"] == native["usage"]["output_tokens"]
@@ -464,7 +469,7 @@ async def test_realtime_conversation(rooms, memory_logger, monkeypatch, vcr_cass
         parent = by_id[speech["span_parents"][0]]
         assert speech["metadata"]["turn.id"] == parent["span_id"]
     root = named(rows, "session")[0]
-    assert root["metadata"]["audio.schema.version"] == "3.1.0"
+    assert root["metadata"]["audio.schema.version"] == "3.2.0"
     assert all("audio.schema.version" not in row.get("metadata", {}) for row in rows if row is not root)
     assert not controller.listeners and not controller.inputs and not controller.responses
     assert controller.instructions is None and not controller.response_options

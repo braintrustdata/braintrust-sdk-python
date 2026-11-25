@@ -9,6 +9,7 @@ import re
 import time
 import weakref
 from contextvars import ContextVar
+from dataclasses import asdict
 from fractions import Fraction
 
 from braintrust._audio.config import AudioRecordingOptions
@@ -750,6 +751,7 @@ async def llm_operation(wrapped, instance, args, kwargs):
     if owner.permits():
         owner.log(span, input=chat_messages(values["chat_ctx"]))
     data, node, usage, handle = values["data"], values["node"], None, _HANDLE.get()
+    request_id = None
     fallback = None
     if not provider_llm_expected(node):
         fallback = _new(
@@ -777,9 +779,11 @@ async def llm_operation(wrapped, instance, args, kwargs):
             return result
 
         async def chunks():
-            nonlocal usage
+            nonlocal usage, request_id
             try:
                 async for chunk in result:
+                    if (chunk_id := getattr(chunk, "id", None)) and fallback is not None:
+                        request_id = chunk_id
                     if getattr(chunk, "usage", None) is not None:
                         usage = chunk.usage
                     delta = getattr(chunk, "delta", None)
@@ -861,7 +865,12 @@ async def llm_operation(wrapped, instance, args, kwargs):
                     }
                 ],
             )
-            fallback.log(metrics=metrics)
+            metadata = {}
+            if usage is not None:
+                metadata["contrib.livekit.usage"] = usage.model_dump(exclude_unset=True)
+            if request_id:
+                metadata["contrib.livekit.request_id"] = request_id
+            fallback.log(metrics=metrics, metadata=metadata)
             fallback.end()
         span.end()
 
@@ -1094,6 +1103,8 @@ def _wrap_stt_node(pipeline):
             started = time.perf_counter()
             first_text = None
             usage = None
+            recognition_usage = []
+            request_ids = {}
             result = None
             pcm = bytearray()
             audio_format = {}
@@ -1138,6 +1149,10 @@ def _wrap_stt_node(pipeline):
                         if event.type.value == "final_transcript" and event.alternatives and owner.permits():
                             transcripts.append(event.alternatives[0].text)
                         reported = event.recognition_usage
+                        if event.request_id:
+                            request_ids[event.request_id] = None
+                        if reported is not None:
+                            recognition_usage.append(asdict(reported))
                         # RecognitionUsage's dataclass zero defaults also mean
                         # "duration only". LiveKit cannot distinguish measured
                         # zero usage, so leave ambiguous all-zero reports absent.
@@ -1185,6 +1200,10 @@ def _wrap_stt_node(pipeline):
                         child.log(metrics={"time_to_first_token": first_text})
                     if usage is not None:
                         child.log(metrics={**usage, "tokens": sum(usage.values())})
+                    if recognition_usage:
+                        child.log(metadata={"contrib.livekit.recognition_usage": recognition_usage})
+                    if request_ids:
+                        child.log(metadata={"contrib.livekit.request_ids": list(request_ids)})
                     child.end()
                     span.end()
 

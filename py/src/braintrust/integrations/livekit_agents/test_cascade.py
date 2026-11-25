@@ -235,7 +235,7 @@ async def test_consumed_input_drives_real_cascade(
     assert any(row["metadata"].get("turn.reply_to") == user["span_id"] for row in named(rows, "agent_turn"))
     root = named(rows, "session")[0]
     assert root["span_parents"] == [outer.span_id]
-    assert root["metadata"]["audio.schema.version"] == "3.1.0"
+    assert root["metadata"]["audio.schema.version"] == "3.2.0"
     assert isinstance(root["metadata"]["audio.timeline"]["origin_unix_ms"], int)
     for row in rows:
         if row["span_id"] != root["span_id"]:
@@ -366,6 +366,11 @@ async def test_native_streaming_stt_owns_model_child(
     assert child["context"]["span_origin"]["instrumentation"]["name"] == "livekit-agents-auto"
     assert child["metadata"]["model"] == stt.model
     assert child["metadata"]["provider"] == stt.provider
+    reports = child["metadata"]["contrib.livekit.recognition_usage"]
+    assert sum(report["audio_duration"] for report in reports) == pytest.approx(
+        sum(event.audio_duration for event in measurements)
+    )
+    assert "usage_seconds" not in child["metrics"]
     assert child["output"]["content"] == [{"type": "text", "text": text} for text in transcripts]
     if backend == "openai":
         assert child["metrics"]["prompt_tokens"] == sum(event.input_tokens for event in measurements)

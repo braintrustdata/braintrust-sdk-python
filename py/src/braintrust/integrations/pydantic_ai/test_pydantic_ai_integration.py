@@ -186,35 +186,6 @@ def test_extract_response_metrics_leaf_fields():
     # pylint: enable=unsupported-membership-test,unsubscriptable-object
 
 
-def test_audio_seconds_is_recorded_as_metadata():
-    """Keep Pydantic AI's nonstandard audio duration out of canonical metrics."""
-    from braintrust.integrations.pydantic_ai.tracing import _extract_response_metadata, _extract_response_metrics
-    from pydantic_ai.messages import ModelResponse, TextPart
-    from pydantic_ai.usage import RequestUsage
-
-    usage = RequestUsage(input_tokens=10, input_audio_tokens=7)
-    supports_audio_seconds = hasattr(usage, "audio_seconds")
-    if supports_audio_seconds:
-        setattr(usage, "audio_seconds", 2.5)
-
-    response = ModelResponse(
-        parts=[TextPart(content="spoken response")],
-        usage=usage,
-    )
-    metrics = _extract_response_metrics(response, start_time=1.0, end_time=2.0)
-    metadata = _extract_response_metadata(response)
-
-    assert metrics is not None
-    # pylint: disable=unsupported-membership-test,unsubscriptable-object
-    assert "audio_seconds" not in metrics
-    assert metrics["prompt_audio_tokens"] == 7
-    if supports_audio_seconds:
-        assert metadata == {"pydantic_ai_usage": {"audio_seconds": 2.5}}
-    else:
-        assert metadata is None
-    # pylint: enable=unsupported-membership-test,unsubscriptable-object
-
-
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "agent_kind",
@@ -267,6 +238,7 @@ async def test_agent_run_async(memory_logger, agent_kind):
         assert span["metadata"]["provider"] == "openai"
         assert span["context"]["span_origin"]["instrumentation"]["name"] == "pydantic-ai-auto"
         _assert_metrics_are_valid(span["metrics"], start, end)
+        assert "usage_seconds" not in span["metrics"]
 
     # Only the leaf LLM owns token metrics; parents would double-count rollups.
     for token_key in ("prompt_tokens", "completion_tokens", "tokens", "prompt_cached_tokens"):

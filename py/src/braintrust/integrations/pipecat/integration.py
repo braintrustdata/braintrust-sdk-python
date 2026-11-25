@@ -7,7 +7,7 @@ from .patchers import (
     EOUWaitPatcher,
     LLMServicePushFramePatcher,
     OpenAILivePatcher,
-    OpenAIRealtimeResponseDonePatcher,
+    OpenAIRealtimePatcher,
     PipelineWorkerPatcher,
     STTServiceProcessGeneratorPatcher,
 )
@@ -27,5 +27,5 @@ class PipecatIntegration(BaseIntegration):
         LLMServicePushFramePatcher,
         STTServiceProcessGeneratorPatcher,
         OpenAILivePatcher,
-        OpenAIRealtimeResponseDonePatcher,
+        OpenAIRealtimePatcher,
     )
