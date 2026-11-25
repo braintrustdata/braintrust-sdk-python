@@ -3820,7 +3820,9 @@ class WindowedAutomationConfig(TypedDict):
     """
     The type of automation.
     """
-    product_origin: NotRequired[Literal['patterns', 'dashboard', 'digest'] | None]
+    product_origin: NotRequired[
+        Literal['patterns', 'dashboard', 'digest', 'pattern_alerts']
+    ]
     """
     The product surface that created and manages the automation
     """
