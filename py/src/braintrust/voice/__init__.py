@@ -10,6 +10,5 @@ from ._livekit import livekit_agent as livekit_agent
 from ._session import VoiceSession as VoiceSession
 from ._session import connect as connect
 from ._types import LiveKitAgent as LiveKitAgent
-from ._types import SimulatedUserRef as SimulatedUserRef
 from ._types import VoiceCall as VoiceCall
 from ._types import VoiceCallResult as VoiceCallResult

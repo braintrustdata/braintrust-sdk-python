@@ -4,7 +4,7 @@ import json
 import pytest
 from braintrust import Eval, EvalAsync, logger
 from braintrust.api._transport import HTTPConnection
-from braintrust.voice import SimulatedUserRef, _call, connect, voice_task
+from braintrust.voice import _call, connect, voice_task
 from braintrust.voice.test_session import simulator, terminal
 from braintrust.voice.test_session import tracing as tracing
 
@@ -15,8 +15,7 @@ aiohttp = pytest.importorskip("aiohttp")
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("remote", [False, True])
-@pytest.mark.parametrize("caller_kind", ["id", "name"])
-async def test_eval_local_and_remote_calls_template_from_dataset_input(tracing, remote, caller_kind):
+async def test_eval_local_and_remote_calls_template_from_dataset_input(tracing, remote):
     # Eval must reuse a saved user and send only input, including across a real HTTP receiver.
     requests = []
 
@@ -38,10 +37,6 @@ async def test_eval_local_and_remote_calls_template_from_dataset_input(tracing, 
             async def version(_request):
                 return web.json_response({"ff_version": 149})
 
-            async def saved(request):
-                assert request.query == {"simulated_user_name": "Caller", "limit": "2"}
-                return web.json_response({"objects": [{"id": "saved-caller"}]})
-
             async def create(request):
                 assert request.match_info["project_id"] == ("project" if remote else "voice-test")
                 assert request.match_info["id"] == "saved-caller"
@@ -57,7 +52,6 @@ async def test_eval_local_and_remote_calls_template_from_dataset_input(tracing, 
 
             app = web.Application()
             app.router.add_get("/version", version)
-            app.router.add_get("/v1/project/{project_id}/simulated_user", saved)
             app.router.add_post("/v1/project/{project_id}/simulated_user/{id}/session", create)
             app.router.add_post("/run-eval-call", receiver)
             runner = web.AppRunner(app)
@@ -79,10 +73,6 @@ async def test_eval_local_and_remote_calls_template_from_dataset_input(tracing, 
                             response.raise_for_status()
                             return await response.json()
 
-                    caller = (
-                        SimulatedUserRef(id="saved-caller") if caller_kind == "id" else SimulatedUserRef(name="Caller")
-                    )
-
                     def transferred(output, expected):
                         return float(output["agent_output"]["transferred_to"] == expected)
 
@@ -91,7 +81,7 @@ async def test_eval_local_and_remote_calls_template_from_dataset_input(tracing, 
                         parent=parent.export(),
                         data=[{"input": {"request": "Ask for billing"}, "expected": "billing"}],
                         task=voice_task(
-                            agent=connector, simulated_user=caller, project_id="project" if remote else None
+                            agent=connector, simulated_user_id="saved-caller", project_id="project" if remote else None
                         ),
                         scores=[transferred],
                         state=state,
@@ -122,6 +112,6 @@ async def test_wrong_connector_result_never_logs_session_credentials(tracing, mo
         return context
 
     with pytest.raises(ValueError, match="completed session.result") as error:
-        await _call.run_voice_call(agent=connector, simulated_user=SimulatedUserRef(id="saved-caller"), input={})
+        await _call.run_voice_call(agent=connector, simulated_user_id="saved-caller", input={})
     assert token not in str(error.value)
     assert token not in json.dumps(tracing.pop())

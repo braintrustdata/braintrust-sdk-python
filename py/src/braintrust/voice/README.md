@@ -2,7 +2,7 @@
 
 `voice_task` runs a fresh voice call for each eval row. The SDK manages the simulator connection, audio pacing, interruptions, tracing, recordings, and cleanup. It supports a Pipecat agent in the eval process or another service, and a built-in LiveKit connector.
 
-Simulated users are saved, long-lived objects reused across calls and evals. Set up your simulated user ahead of time through the existing UI or API, then reference it by ID or name. These SDK helpers only start calls with existing users; they do not create or update simulated users.
+Simulated users are saved, long-lived objects reused across calls and evals. Set up your simulated user ahead of time through the existing UI or API, then pass its ID. These SDK helpers only start calls with existing users; they do not create or update simulated users.
 
 Saved-user instructions are templated from each dataset row's `input`, just as in existing conversation evals. `voice_task` passes that input to the same backend template renderer automatically; no additional configuration is needed. The existing low-level session API calls this payload `scenario`.
 
@@ -26,11 +26,13 @@ async def run_eval_call(call):
 
 `run_agent` is your application's existing pipeline runner. Place `transport.input()` and `transport.output()` at the pipeline's input and output, enable your normal Braintrust Pipecat instrumentation, and return your application's observed result. Neither audio frames nor playback acknowledgements belong in the eval script.
 
-Use that handler directly for a local agent. This example assumes a saved simulated user named `Billing caller` whose instructions reference `{{request}}`, supplied by each dataset row's `input.request`:
+Use that handler directly for a local agent. This example reads your saved simulated user's ID from `SIMULATED_USER_ID`. Its instructions reference `{{request}}`, supplied by each dataset row's `input.request`:
 
 ```python
+import os
+
 from braintrust import Eval
-from braintrust.voice import SimulatedUserRef, voice_task
+from braintrust.voice import voice_task
 
 
 def transferred_correctly(output, expected):
@@ -47,7 +49,7 @@ Eval(
     ],
     task=voice_task(
         agent=run_eval_call,
-        simulated_user=SimulatedUserRef(name="Billing caller"),
+        simulated_user_id=os.environ["SIMULATED_USER_ID"],
     ),
     scores=[transferred_correctly],
     max_concurrency=1,
@@ -97,8 +99,8 @@ async def handle_call(ctx):
 
 `session.result()` returns `agent_output`, `caller_transcript`, `recording`, `reason`, `session_id`, and `span_id`. `agent_output` is `None` unless the application supplies a result. The transcript contains only simulated caller speech. The recording contains both participants, with attachment references and timeline metadata in the existing segmented audio schema.
 
-Use `SimulatedUserRef(id=...)` to select a saved user directly, or `SimulatedUserRef(name=...)` to look one up in the eval's project. A name must resolve to exactly one user; a missing or ambiguous name fails the call. Each call snapshots the saved user's configuration and renders its instructions from the row's `input` using the existing conversation template renderer.
+Both helpers require `simulated_user_id`. Each call snapshots the saved user's configuration and renders its instructions from the row's `input` using the existing conversation template renderer.
 
-Use `await run_voice_call(agent=..., simulated_user=..., input=input)` inside a custom task. Both helpers infer the project and tracing parent from the active SDK context. Outside an eval or project logger, supply `project_id`. Only `input` is used to template the saved user's instructions; expected output stays with the eval's scorers.
+Use `await run_voice_call(agent=..., simulated_user_id=..., input=input)` inside a custom task. Both helpers infer the project and tracing parent from the active SDK context. Outside an eval or project logger, supply `project_id`. Only `input` is used to template the saved user's instructions; expected output stays with the eval's scorers.
 
 Timeouts, missing terminal events, agent failures, recording failures, and unexpected disconnects fail the call. Established calls are never reconnected or replayed automatically.

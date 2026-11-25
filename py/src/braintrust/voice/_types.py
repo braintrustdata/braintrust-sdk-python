@@ -91,18 +91,6 @@ def parse_result(value: object) -> VoiceCallResult:
 
 
 @dataclasses.dataclass(frozen=True)
-class SimulatedUserRef:
-    """Reference to an existing, reusable simulated user. Never creates or updates it."""
-
-    id: str | None = None
-    name: str | None = None
-
-    def __post_init__(self):
-        if bool(self.id) == bool(self.name):
-            raise ValueError("Specify exactly one simulated user ID or name")
-
-
-@dataclasses.dataclass(frozen=True)
 class LiveKitAgent:
     server_url: str
     agent_name: str

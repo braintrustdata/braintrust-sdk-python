@@ -16,7 +16,6 @@ from ._types import (
     Initiator,
     JSONValue,
     LiveKitAgent,
-    SimulatedUserRef,
     VoiceCall,
     VoiceCallResult,
     parse_result,
@@ -44,7 +43,7 @@ def _project_id(parent: str, project_id: str | None, state: logger.BraintrustSta
 
 
 def _create_call(
-    caller: SimulatedUserRef,
+    simulated_user_id: str,
     input: dict[str, JSONValue],
     initiator: Initiator,
     timeout: int,
@@ -63,18 +62,8 @@ def _create_call(
             components, object_id=metadata.project.id, compute_object_metadata_args=None
         ).to_str()
     project_id = _project_id(parent, project_id, state)
-    caller_id = caller.id
-    if caller_id is None:
-        response = state.api_conn().get_json(
-            f"v1/project/{quote(project_id, safe='')}/simulated_user",
-            {"simulated_user_name": caller.name, "limit": 2},
-        )
-        matches = response.get("objects")
-        if not isinstance(matches, list) or len(matches) != 1:
-            raise ValueError(f"Expected exactly one simulated user named {caller.name!r}; use an ID to disambiguate")
-        caller_id = matches[0]["id"]
     response = state.api_conn().post(
-        f"v1/project/{quote(project_id, safe='')}/simulated_user/{quote(caller_id, safe='')}/session",
+        f"v1/project/{quote(project_id, safe='')}/simulated_user/{quote(simulated_user_id, safe='')}/session",
         json={
             "scenario": input,
             "initiator": initiator,
@@ -99,7 +88,7 @@ def _create_call(
 async def run_voice_call(
     *,
     agent: AgentConnector | LiveKitAgent,
-    simulated_user: SimulatedUserRef,
+    simulated_user_id: str,
     input: dict[str, JSONValue],
     initiator: Initiator = "agent",
     timeout: int = 600,
@@ -126,7 +115,7 @@ async def run_voice_call(
         parent = logger.init_logger(project_id=project_id, state=state, set_current=False).export()
     with logger.start_span(name="Voice call", type=SpanTypeAttribute.TASK, parent=parent, state=state) as span:
         call = await asyncio.to_thread(
-            _create_call, simulated_user, input, initiator, timeout, project_id, span.export(), state
+            _create_call, simulated_user_id, input, initiator, timeout, project_id, span.export(), state
         )
         span.log(input=input, metadata={"voice_session_id": call["session_id"], "simulator_span_id": call["span_id"]})
         if isinstance(agent, LiveKitAgent):
@@ -152,7 +141,7 @@ async def run_voice_call(
 def voice_task(
     *,
     agent: AgentConnector | LiveKitAgent,
-    simulated_user: SimulatedUserRef,
+    simulated_user_id: str,
     initiator: Initiator = "agent",
     timeout: int = 600,
     project_id: str | None = None,
@@ -162,7 +151,7 @@ def voice_task(
     async def task(input: dict[str, JSONValue]) -> VoiceCallResult:
         return await run_voice_call(
             agent=agent,
-            simulated_user=simulated_user,
+            simulated_user_id=simulated_user_id,
             input=input,
             initiator=initiator,
             timeout=timeout,
