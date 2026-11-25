@@ -64,3 +64,20 @@ The SDK owns the WebSocket handshake, pacing, playback acknowledgements, interru
 Use `await run_voice_call(agent=..., simulated_user_id=..., input=input)` in a custom eval task. Both helpers require an active eval task; the project is inferred from its experiment, or supplied explicitly as `project_id`. Expected output and scorer configuration stay in the eval.
 
 Calls retain the backend's ten-minute limit. Missing terminal events, agent or recording errors, cancellation, and unexpected disconnects fail the call. Established calls are never reconnected or replayed automatically.
+
+## Pipecat
+
+Install your supported `pipecat-ai` version alongside `braintrust[voice]`, then pass the native transport to your existing pipeline runner:
+
+```python
+from braintrust import voice
+from braintrust.voice.pipecat import PipecatTransport
+
+
+async def run_eval_call(call):
+    async with voice.connect(call) as session:
+        output = await run_agent(transport=PipecatTransport(session))
+    return session.result(agent_output=output)
+```
+
+Place `transport.input()` and `transport.output()` at the pipeline's input and output. Construct the pipeline inside `voice.connect` and enable your normal Braintrust Pipecat instrumentation. The transport connects audio, handles interrupted playback, signals `EndFrame` on call completion, and propagates `ErrorFrame` failures through the awaited runner. Application code supplies its existing agent runner and observed output.
