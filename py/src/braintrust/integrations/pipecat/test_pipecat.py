@@ -51,6 +51,10 @@ CHUNK_SECONDS = 0.02
 # Speech-to-text uploads; replay matches method and URL only, so their audio
 # bodies are never read back and need not be stored.
 _AUDIO_UPLOAD_PATHS = ("/v1/audio/transcriptions", "/v1/audio/translations", "/v1/speech-to-text")
+# Synthesized PCM kept per response: 1.5s at 24kHz 16-bit mono. Barge-in needs
+# the agent still audible when VAD detects the user (~0.25s in); nothing else
+# depends on its length.
+_MAX_RECORDED_SPEECH_BYTES = 72_000
 
 
 def _scrub_recording_upload(request, sanitize=lambda request: request):
@@ -80,6 +84,13 @@ def vcr_config(vcr_config):
         response = scrub_response(response)
         response["headers"] = {str(name): value for name, value in response.get("headers", {}).items()}
         body = response.get("body", {}).get("string")
+        content_type = next(
+            (values for name, values in response["headers"].items() if name.lower() == "content-type"), ""
+        )
+        content_type = str(content_type[0] if isinstance(content_type, list) and content_type else content_type)
+        if body and content_type.startswith("audio/pcm") and len(body) > _MAX_RECORDED_SPEECH_BYTES:
+            response["body"]["string"] = body[:_MAX_RECORDED_SPEECH_BYTES]
+            return response
         if body:
             try:
                 data = json.loads(body)
