@@ -1,9 +1,12 @@
 import asyncio
 import json
+from uuid import uuid4
 
 import pytest
 from braintrust import Eval, EvalAsync, logger
 from braintrust.api._transport import HTTPConnection
+from braintrust.span_identifier_v3 import SpanObjectTypeV3
+from braintrust.span_identifier_v4 import SpanComponentsV4
 from braintrust.voice import _call, connect, voice_task
 from braintrust.voice.test_session import simulator, terminal
 from braintrust.voice.test_session import tracing as tracing
@@ -31,27 +34,32 @@ async def test_eval_local_and_remote_calls_template_from_dataset_input(tracing, 
                 agent_output = {"transferred_to": "billing"}
         return session.result(agent_output=agent_output)
 
-    with logger.start_span(name="Eval parent") as parent:
+    with logger.start_span(
+        name="Eval parent",
+        parent=SpanComponentsV4(object_type=SpanObjectTypeV3.EXPERIMENT, object_id=str(uuid4())).to_str(),
+    ) as parent:
         async with simulator(handler, parent.export()) as handle:
 
             async def version(_request):
                 return web.json_response({"ff_version": 149})
 
+            async def experiment(_request):
+                return web.json_response({"project_id": "project"})
+
             async def create(request):
-                assert request.match_info["project_id"] == ("project" if remote else "voice-test")
+                assert request.match_info["project_id"] == "project"
                 assert request.match_info["id"] == "saved-caller"
                 body = await request.json()
                 requests.append(body)
                 handle["parent"] = body["parent"]
-                return web.json_response(
-                    {k: v for k, v in handle.items() if k not in ("parent", "timeout_seconds")}, status=201
-                )
+                return web.json_response({k: v for k, v in handle.items() if k not in ("parent",)}, status=201)
 
             async def receiver(request):
                 return web.json_response(await run_agent(await request.json()))
 
             app = web.Application()
             app.router.add_get("/version", version)
+            app.router.add_get("/v1/experiment/{id}", experiment)
             app.router.add_post("/v1/project/{project_id}/simulated_user/{id}/session", create)
             app.router.add_post("/run-eval-call", receiver)
             runner = web.AppRunner(app)
@@ -97,7 +105,7 @@ async def test_eval_local_and_remote_calls_template_from_dataset_input(tracing, 
                 await runner.cleanup()
     assert len(requests) == 1
     assert requests[0]["scenario"] == {"request": "Ask for billing"}
-    assert set(requests[0]) == {"scenario", "initiator", "parent", "timeout_seconds"}
+    assert set(requests[0]) == {"scenario", "initiator", "parent"}
     assert "expected" not in json.dumps(requests[0])
 
 
@@ -111,7 +119,23 @@ async def test_wrong_connector_result_never_logs_session_credentials(tracing, mo
     async def connector(context):
         return context
 
-    with pytest.raises(ValueError, match="completed session.result") as error:
+    with (
+        logger.start_span(
+            name="Eval task",
+            parent=SpanComponentsV4(object_type=SpanObjectTypeV3.EXPERIMENT, object_id=str(uuid4())).to_str(),
+        ),
+        pytest.raises(ValueError, match="completed session.result") as error,
+    ):
         await _call.run_voice_call(agent=connector, simulated_user_id="saved-caller", input={})
     assert token not in str(error.value)
     assert token not in json.dumps(tracing.pop())
+
+
+@pytest.mark.asyncio
+async def test_voice_call_requires_an_eval_task(tracing):
+    # An unscoped call must fail before creating a standalone logger or reserving a simulator session.
+    async def connector(_call):
+        pytest.fail("An unscoped call must not launch an agent")
+
+    with pytest.raises(ValueError, match="Eval task"):
+        await _call.run_voice_call(agent=connector, simulated_user_id="saved-caller", input={})

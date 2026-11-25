@@ -45,7 +45,6 @@ async def simulator(handler, parent, **options):
             "session_id": str(uuid4()),
             "span_id": "simulator-span",
             "parent": parent,
-            "timeout_seconds": 15,
         }
 
 
@@ -101,12 +100,12 @@ async def test_consumption_interruptions_resampling_and_trace_scope(tracing):
             async with connect(call) as session:
                 assert logger.current_span().span_id != task.span_id
                 assert "test-session-token" not in repr(session)
-                session._set_sink(consume, clear=noop, ended=noop)
+                session.set_audio_sink(consume, clear=noop, ended=noop)
                 await asyncio.sleep(0.04)
                 assert acknowledgements == []
                 release.set()
                 await asyncio.wait_for(heard.wait(), 2)
-                await session._write_audio(struct.pack("<320h", *([300] * 320)), 16000, 1)
+                await session.send_audio(struct.pack("<320h", *([300] * 320)), 16000, 1)
             result = session.result(agent_output={"transferred_to": "billing"})
             assert logger.current_span() is task
     assert [ack["played_samples"] for ack in acknowledgements[:2]] == [480, 480]

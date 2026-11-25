@@ -10,37 +10,22 @@ import jsonschema
 
 from .. import logger
 from ..span_types import SpanTypeAttribute
-from ._types import JSONValue, SimulatorOutput, VoiceCall, VoiceCallResult, parse_output, parse_result
+from ._types import JSONValue, SimulatorOutput, VoiceCall, VoiceCallResult, parse_output
 
 
 if TYPE_CHECKING:
     from websockets.asyncio.client import ClientConnection
 
-    from ._pipecat import PipecatTransport
-
 
 _RATE = 24000
 _FRAME_BYTES = 960
 _SILENCE = bytes(_FRAME_BYTES)
+_CALL_TIMEOUT_SECONDS = 600
 _FINALIZE_TIMEOUT = 120
 _CALL_SCHEMA = {
     "type": "object",
-    "required": [
-        "connection_url",
-        "session_token",
-        "expires_at",
-        "session_id",
-        "span_id",
-        "parent",
-        "timeout_seconds",
-    ],
-    "properties": {
-        **{
-            key: {"type": "string", "minLength": 1}
-            for key in ["connection_url", "session_token", "expires_at", "session_id", "span_id", "parent"]
-        },
-        "timeout_seconds": {"type": "integer", "minimum": 15, "maximum": 600},
-    },
+    "required": list(VoiceCall.__required_keys__),
+    "properties": {key: {"type": "string", "minLength": 1} for key in VoiceCall.__required_keys__},
     "additionalProperties": False,
 }
 
@@ -72,7 +57,6 @@ class VoiceSession:
         self._deadline: asyncio.Task[None] | None = None
         self._clear: Callable[[], Awaitable[None]] | None = None
         self._on_end: Callable[[], Awaitable[None]] | None = None
-        self._transport: PipecatTransport | None = None
         self._write_lock = asyncio.Lock()
         self._remainder = b""
         self._resampler = None
@@ -127,10 +111,11 @@ class VoiceSession:
         self._deadline = asyncio.create_task(self._expire())
 
     async def _expire(self):
-        await asyncio.sleep(self.call["timeout_seconds"])
-        await self._fail(TimeoutError("Voice call exceeded its configured timeout"))
+        await asyncio.sleep(_CALL_TIMEOUT_SECONDS)
+        await self.fail(TimeoutError("Voice call exceeded its configured timeout"))
 
-    async def _fail(self, error: Exception):
+    async def fail(self, error: Exception):
+        """Report a transport failure and stop the agent through the end callback."""
         self._error = self._error or error
         self._done.set()
         if self._on_end:
@@ -180,7 +165,7 @@ class VoiceSession:
                     raise RuntimeError(f"Unexpected voice session event: {kind!r}")
             raise RuntimeError("Voice WebSocket disconnected without ended")
         except Exception as error:
-            await self._fail(error)
+            await self.fail(error)
 
     async def _send(self):
         assert self._socket is not None
@@ -197,15 +182,16 @@ class VoiceSession:
                 if audio is not None:
                     self._outgoing.task_done()
         except Exception as error:
-            await self._fail(error)
+            await self.fail(error)
 
-    def _set_sink(
+    def set_audio_sink(
         self,
         consume: Callable[[bytes], Awaitable[None]],
         *,
         clear: Callable[[], Awaitable[None]],
         ended: Callable[[], Awaitable[None]],
     ):
+        """Attach playback callbacks. consume must await actual audio consumption."""
         if self._consumer:
             raise RuntimeError("A voice session can have only one audio transport")
         self._clear, self._on_end = clear, ended
@@ -229,9 +215,10 @@ class VoiceSession:
                         json.dumps({"type": "playback.ack", "epoch": epoch, "played_samples": self._played})
                     )
         except Exception as error:
-            await self._fail(error)
+            await self.fail(error)
 
-    async def _write_audio(self, audio: bytes, sample_rate: int, channels: int):
+    async def send_audio(self, audio: bytes, sample_rate: int, channels: int):
+        """Send agent PCM audio to the simulator, converting and pacing it."""
         if channels not in (1, 2) or sample_rate <= 0:
             raise ValueError("Agent audio must be mono or stereo signed 16-bit PCM")
         if not audio or len(audio) % (2 * channels):
@@ -240,8 +227,6 @@ class VoiceSession:
             if (sample_rate, channels) != (_RATE, 1):
                 import av
 
-                if channels not in (1, 2) or sample_rate <= 0:
-                    raise ValueError("Agent audio must be mono or stereo signed 16-bit PCM")
                 if self._resampler is None or self._format != (sample_rate, channels):
                     self._resampler = av.AudioResampler(format="s16", layout="mono", rate=_RATE)
                     self._format = (sample_rate, channels)
@@ -259,8 +244,9 @@ class VoiceSession:
                     return
                 await asyncio.wait_for(self._outgoing.put(audio[start : start + _FRAME_BYTES]), 5)
             self._remainder = audio[end:]
+            await asyncio.wait_for(self._outgoing.join(), 5)
 
-    def _clear_output(self):
+    def clear_output(self):
         self._remainder = b""
         self._resampler = None
         self._format = None
@@ -303,41 +289,31 @@ class VoiceSession:
             if self._socket is not None:
                 await self._socket.close()
 
-    def pipecat_transport(self) -> "PipecatTransport":
-        """Return a native Pipecat transport with input() and output() processors."""
-        if self._transport is None:
-            from ._pipecat import PipecatTransport
-
-            self._transport = PipecatTransport(self)
-        return self._transport
-
     def result(self, *, agent_output: JSONValue = None) -> VoiceCallResult:
         """Return call evidence after leaving connect(), alongside the application's actual result."""
         self._raise_error()
         if not self._finished or self._output is None:
             raise RuntimeError("Call result is available only after connect() has finished")
         output = self._output
-        return parse_result(
-            {
-                "agent_output": agent_output,
-                "caller_transcript": output["transcript"],
-                "recording": output["recording"],
-                "reason": output["reason"],
-                "session_id": self.call["session_id"],
-                "span_id": self.call["span_id"],
-            }
+        return VoiceCallResult(
+            agent_output=agent_output,
+            caller_transcript=output["transcript"],
+            recording=output["recording"],
+            reason=output["reason"],
+            session_id=self.call["session_id"],
+            span_id=self.call["span_id"],
         )
 
 
 @asynccontextmanager
-async def connect(call: VoiceCall, *, state: logger.BraintrustState | None = None) -> AsyncGenerator[VoiceSession]:
+async def connect(call: VoiceCall) -> AsyncGenerator[VoiceSession]:
     """Connect in the agent process and activate its parent before constructing the agent.
 
     Use this context around the entire pipeline run. The application forwards
     the call context unchanged and returns session.result() after context exit.
     """
     session = VoiceSession(call)
-    span = logger.start_span(name="Agent session", type=SpanTypeAttribute.TASK, parent=call["parent"], state=state)
+    span = logger.start_span(name="Agent session", type=SpanTypeAttribute.TASK, parent=call["parent"])
     try:
         with span:
             await session._open()

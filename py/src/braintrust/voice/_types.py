@@ -1,4 +1,3 @@
-import dataclasses
 import json
 from collections.abc import Awaitable, Callable
 from typing import Literal, TypedDict, Union, cast
@@ -18,7 +17,6 @@ class VoiceCall(TypedDict):
     session_id: str
     span_id: str
     parent: str
-    timeout_seconds: int
 
 
 class CallerTurn(TypedDict):
@@ -88,18 +86,6 @@ def parse_result(value: object) -> VoiceCallResult:
         },
     )
     return cast(VoiceCallResult, value)
-
-
-@dataclasses.dataclass(frozen=True)
-class LiveKitAgent:
-    server_url: str
-    agent_name: str
-    api_key: str | None = dataclasses.field(default=None, repr=False)
-    api_secret: str | None = dataclasses.field(default=None, repr=False)
-
-    def __post_init__(self):
-        if not self.server_url.strip() or not self.agent_name.strip():
-            raise ValueError("LiveKitAgent requires a server URL and agent name")
 
 
 AgentConnector = Callable[[VoiceCall], Awaitable[VoiceCallResult]]

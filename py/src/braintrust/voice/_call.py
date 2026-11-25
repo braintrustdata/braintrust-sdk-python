@@ -1,6 +1,4 @@
 import asyncio
-import dataclasses
-import importlib
 from collections.abc import Awaitable, Callable
 from urllib.parse import quote
 
@@ -11,11 +9,11 @@ from ..span_identifier_v3 import SpanObjectTypeV3
 from ..span_identifier_v4 import SpanComponentsV4
 from ..span_types import SpanTypeAttribute
 from ..util import response_raise_for_status
+from ._session import _CALL_TIMEOUT_SECONDS, _FINALIZE_TIMEOUT
 from ._types import (
     AgentConnector,
     Initiator,
     JSONValue,
-    LiveKitAgent,
     VoiceCall,
     VoiceCallResult,
     parse_result,
@@ -26,27 +24,22 @@ MIN_FF_VERSION = 149
 
 
 def _project_id(parent: str, project_id: str | None, state: logger.BraintrustState) -> str:
+    components = SpanComponentsV4.from_str(parent)
+    if not components.object_id:
+        raise ValueError("Run voice calls inside an Eval task")
     if project_id:
         return project_id
-    components = SpanComponentsV4.from_str(parent)
-    if components.object_type == SpanObjectTypeV3.PROJECT_LOGS and components.object_id:
-        return components.object_id
-    if components.object_type == SpanObjectTypeV3.EXPERIMENT and components.object_id:
-        experiment = state.current_experiment
-        if experiment is not None and experiment.id == components.object_id:
-            return experiment.project.id
-        response = state.api_conn().get_json(f"v1/experiment/{quote(components.object_id, safe='')}")
-        value = response.get("project_id")
-        if isinstance(value, str):
-            return value
-    raise ValueError("Pass project_id or run the voice call inside an Eval or project logger")
+    response = state.api_conn().get_json(f"v1/experiment/{quote(components.object_id, safe='')}")
+    value = response.get("project_id")
+    if not isinstance(value, str):
+        raise ValueError("The eval experiment has no project ID")
+    return value
 
 
 def _create_call(
     simulated_user_id: str,
     input: dict[str, JSONValue],
     initiator: Initiator,
-    timeout: int,
     project_id: str | None,
     parent: str,
     state: logger.BraintrustState,
@@ -55,12 +48,6 @@ def _create_call(
     version = state.api_conn().get_json("version").get("ff_version")
     if not isinstance(version, int) or version < MIN_FF_VERSION:
         raise RuntimeError(f"Voice eval helpers require data plane feature version {MIN_FF_VERSION} or later")
-    components = SpanComponentsV4.from_str(parent)
-    if components.compute_object_metadata_args and components.object_type == SpanObjectTypeV3.PROJECT_LOGS:
-        metadata = logger._compute_logger_metadata(state=state, **components.compute_object_metadata_args)
-        parent = dataclasses.replace(
-            components, object_id=metadata.project.id, compute_object_metadata_args=None
-        ).to_str()
     project_id = _project_id(parent, project_id, state)
     response = state.api_conn().post(
         f"v1/project/{quote(project_id, safe='')}/simulated_user/{quote(simulated_user_id, safe='')}/session",
@@ -68,7 +55,6 @@ def _create_call(
             "scenario": input,
             "initiator": initiator,
             "parent": parent,
-            "timeout_seconds": timeout,
         },
         timeout=60,
     )
@@ -81,49 +67,33 @@ def _create_call(
         session_id=handle["session_id"],
         span_id=handle["span_id"],
         parent=parent,
-        timeout_seconds=timeout,
     )
 
 
 async def run_voice_call(
     *,
-    agent: AgentConnector | LiveKitAgent,
+    agent: AgentConnector,
     simulated_user_id: str,
     input: dict[str, JSONValue],
     initiator: Initiator = "agent",
-    timeout: int = 600,
     project_id: str | None = None,
-    parent: str | None = None,
-    state: logger.BraintrustState | None = None,
 ) -> VoiceCallResult:
     """Run a fresh call with a saved user. The connector awaits completion and returns session.result()."""
-    if type(timeout) is not int or not 15 <= timeout <= 600:
-        raise ValueError("timeout must be an integer between 15 and 600 seconds")
+    parent = logger.current_span().export()
+    if not parent:
+        raise ValueError("Run voice calls inside an Eval task")
+    components = SpanComponentsV4.from_str(parent)
+    if components.object_type != SpanObjectTypeV3.EXPERIMENT:
+        raise ValueError("Run voice calls inside an Eval task")
     if initiator not in ("agent", "simulated_user"):
         raise ValueError("initiator must be agent or simulated_user")
-    if isinstance(agent, LiveKitAgent):
-        from ._livekit import credentials
-
-        importlib.import_module("livekit.api")
-        importlib.import_module("livekit.rtc")
-        credentials(agent)
-    elif not callable(agent):
-        raise TypeError("agent must be an async call connector or LiveKitAgent")
-    if state is None:
-        state = logger._internal_get_global_state()
-    if parent is None and project_id and not logger.get_span_parent_object(state=state).export():
-        parent = logger.init_logger(project_id=project_id, state=state, set_current=False).export()
+    state = logger._internal_get_global_state()
     with logger.start_span(name="Voice call", type=SpanTypeAttribute.TASK, parent=parent, state=state) as span:
         call = await asyncio.to_thread(
-            _create_call, simulated_user_id, input, initiator, timeout, project_id, span.export(), state
+            _create_call, simulated_user_id, input, initiator, project_id, span.export(), state
         )
         span.log(input=input, metadata={"voice_session_id": call["session_id"], "simulator_span_id": call["span_id"]})
-        if isinstance(agent, LiveKitAgent):
-            from ._livekit import run_livekit
-
-            result = await asyncio.wait_for(run_livekit(call, agent), timeout + 150)
-        else:
-            result = await asyncio.wait_for(agent(call), timeout + 150)
+        result = await asyncio.wait_for(agent(call), _CALL_TIMEOUT_SECONDS + _FINALIZE_TIMEOUT + 30)
         try:
             result = parse_result(result)
         except (jsonschema.ValidationError, TypeError, ValueError):
@@ -140,10 +110,9 @@ async def run_voice_call(
 
 def voice_task(
     *,
-    agent: AgentConnector | LiveKitAgent,
+    agent: AgentConnector,
     simulated_user_id: str,
     initiator: Initiator = "agent",
-    timeout: int = 600,
     project_id: str | None = None,
 ) -> Callable[[dict[str, JSONValue]], Awaitable[VoiceCallResult]]:
     """Create an Eval task reusing a saved user, whose instructions are templated from row input."""
@@ -154,7 +123,6 @@ def voice_task(
             simulated_user_id=simulated_user_id,
             input=input,
             initiator=initiator,
-            timeout=timeout,
             project_id=project_id,
         )
 

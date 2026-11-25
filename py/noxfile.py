@@ -539,7 +539,6 @@ def test_livekit_agents(session, version):
     group = "test-livekit-agents" if version == LATEST else f"test-livekit-agents-{version.replace('.', '-')}"
     _install_group_locked(session, group)
     _install_matrix_dep(session, "livekit-agents", version)
-    _session_install(session, "-e", ".[voice]")
     livekit_server_dir = _ensure_livekit_server(session)
     env = {
         "LIVEKIT_URL": os.environ.get("LIVEKIT_URL", "ws://localhost:7880"),
@@ -547,9 +546,7 @@ def test_livekit_agents(session, version):
         "LIVEKIT_API_SECRET": os.environ.get("LIVEKIT_API_SECRET", "secret"),
         "PATH": f"{livekit_server_dir}{os.pathsep}{os.environ.get('PATH', '')}",
     }
-    _run_tests(
-        session, [f"{INTEGRATION_DIR}/livekit_agents", f"{SRC_DIR}/voice/test_livekit.py"], version=version, env=env
-    )
+    _run_tests(session, f"{INTEGRATION_DIR}/livekit_agents", version=version, env=env)
 
 
 PIPECAT_VERSIONS = _get_matrix_versions("pipecat-ai")
@@ -566,7 +563,7 @@ def test_pipecat(session, version):
     # loaded from Nox's virtualenv when it is beneath the current directory.
     _run_tests(
         session,
-        [f"{INTEGRATION_DIR}/pipecat/test_pipecat.py", f"{SRC_DIR}/voice/test_pipecat.py"],
+        f"{INTEGRATION_DIR}/pipecat/test_pipecat.py",
         version=version,
         run_from_temp_dir=True,
     )
