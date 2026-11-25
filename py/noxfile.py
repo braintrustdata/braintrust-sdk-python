@@ -563,7 +563,7 @@ def test_pipecat(session, version):
     # loaded from Nox's virtualenv when it is beneath the current directory.
     _run_tests(
         session,
-        f"{INTEGRATION_DIR}/pipecat/test_pipecat.py",
+        [f"{INTEGRATION_DIR}/pipecat/test_pipecat.py", f"{SRC_DIR}/voice/test_pipecat.py"],
         version=version,
         run_from_temp_dir=True,
     )
