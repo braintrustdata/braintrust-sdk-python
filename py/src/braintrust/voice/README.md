@@ -2,6 +2,8 @@
 
 Install `braintrust[voice]` and configure normal Braintrust credentials. The helpers require data plane feature version 149 and an enabled voice session service.
 
+Audio conversion uses PyAV, included in the extra on Python 3.12 and later. On earlier Python versions, install PyAV separately or supply 24 kHz mono PCM.
+
 Create your simulated user ahead of time in the existing UI or API and pass its ID. `voice_task` runs a fresh call for each dataset row, templating the saved user's instructions from the row's `input` through the existing backend renderer. The low-level API names that input `scenario`.
 
 ```python
