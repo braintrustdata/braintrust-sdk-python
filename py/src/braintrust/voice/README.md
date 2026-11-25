@@ -2,6 +2,8 @@
 
 `voice_task` runs a fresh voice call for each eval row. The SDK manages the simulator connection, audio pacing, interruptions, tracing, recordings, and cleanup. It supports a Pipecat agent in the eval process or another service, and a built-in LiveKit connector.
 
+Simulated users are saved, long-lived objects reused across calls and evals. Set up your simulated user ahead of time through the existing UI or API, then reference it by ID or name. These SDK helpers only start calls with existing users; they do not create or update simulated users.
+
 Install `braintrust[voice]` and your agent framework. Audio conversion uses PyAV, included in the extra on Python 3.12 and later. Configure the normal Braintrust credentials and deployment URL. The helpers require data plane feature version 149 and an enabled voice session service.
 
 ## Pipecat
@@ -22,11 +24,11 @@ async def run_eval_call(call):
 
 `run_agent` is your application's existing pipeline runner. Place `transport.input()` and `transport.output()` at the pipeline's input and output, enable your normal Braintrust Pipecat instrumentation, and return your application's observed result. Neither audio frames nor playback acknowledgements belong in the eval script.
 
-Use that handler directly for a local agent:
+Use that handler directly for a local agent. This example assumes a saved simulated user named `Billing caller` whose instructions include the `{{request}}` scenario variable:
 
 ```python
 from braintrust import Eval
-from braintrust.voice import SimulatedUser, voice_task
+from braintrust.voice import SimulatedUserRef, voice_task
 
 
 def transferred_correctly(output, expected):
@@ -43,10 +45,7 @@ Eval(
     ],
     task=voice_task(
         agent=run_eval_call,
-        simulated_user=SimulatedUser(
-            name="Billing caller",
-            instructions="You are calling support. {{request}}. Finish after the transfer.",
-        ),
+        simulated_user=SimulatedUserRef(name="Billing caller"),
     ),
     scores=[transferred_correctly],
     max_concurrency=1,
@@ -96,7 +95,7 @@ async def handle_call(ctx):
 
 `session.result()` returns `agent_output`, `caller_transcript`, `recording`, `reason`, `session_id`, and `span_id`. `agent_output` is `None` unless the application supplies a result. The transcript contains only simulated caller speech. The recording contains both participants, with attachment references and timeline metadata in the existing segmented audio schema.
 
-Use `SimulatedUserRef(id=...)` or `SimulatedUserRef(name=...)` to reuse a saved caller. A name must resolve to exactly one caller. Inline definitions do not create saved callers.
+Use `SimulatedUserRef(id=...)` to select a saved user directly, or `SimulatedUserRef(name=...)` to look one up in the eval's project. A name must resolve to exactly one user; a missing or ambiguous name fails the call. Each call snapshots the saved user's configuration and renders its instructions with the row's scenario values.
 
 Use `await run_voice_call(agent=..., simulated_user=..., scenario=input)` inside a custom task. Both helpers infer the project and tracing parent from the active SDK context. Outside an eval or project logger, supply `project_id`. Only the scenario is sent to the caller; expected output stays with the eval's scorers.
 

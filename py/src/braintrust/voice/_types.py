@@ -91,18 +91,9 @@ def parse_result(value: object) -> VoiceCallResult:
 
 
 @dataclasses.dataclass(frozen=True)
-class SimulatedUser:
-    name: str
-    instructions: str
-    voice: dict[str, JSONValue] | None = None
-
-    def __post_init__(self):
-        if not self.name.strip() or not self.instructions.strip():
-            raise ValueError("SimulatedUser requires a name and instructions")
-
-
-@dataclasses.dataclass(frozen=True)
 class SimulatedUserRef:
+    """Reference to an existing, reusable simulated user. Never creates or updates it."""
+
     id: str | None = None
     name: str | None = None
 
@@ -124,5 +115,4 @@ class LiveKitAgent:
 
 
 AgentConnector = Callable[[VoiceCall], Awaitable[VoiceCallResult]]
-Caller = Union[SimulatedUser, SimulatedUserRef]
 Initiator = Literal["agent", "simulated_user"]

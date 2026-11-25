@@ -13,11 +13,10 @@ from ..span_types import SpanTypeAttribute
 from ..util import response_raise_for_status
 from ._types import (
     AgentConnector,
-    Caller,
     Initiator,
     JSONValue,
     LiveKitAgent,
-    SimulatedUser,
+    SimulatedUserRef,
     VoiceCall,
     VoiceCallResult,
     parse_result,
@@ -45,7 +44,7 @@ def _project_id(parent: str, project_id: str | None, state: logger.BraintrustSta
 
 
 def _create_call(
-    caller: Caller,
+    caller: SimulatedUserRef,
     scenario: dict[str, JSONValue],
     initiator: Initiator,
     timeout: int,
@@ -64,26 +63,19 @@ def _create_call(
             components, object_id=metadata.project.id, compute_object_metadata_args=None
         ).to_str()
     project_id = _project_id(parent, project_id, state)
-    if isinstance(caller, SimulatedUser):
-        definition = {k: v for k, v in dataclasses.asdict(caller).items() if v is not None}
-    else:
-        caller_id = caller.id
-        if caller_id is None:
-            response = state.api_conn().get_json(
-                f"v1/project/{quote(project_id, safe='')}/simulated_user",
-                {"simulated_user_name": caller.name, "limit": 2},
-            )
-            matches = response.get("objects")
-            if not isinstance(matches, list) or len(matches) != 1:
-                raise ValueError(
-                    f"Expected exactly one simulated user named {caller.name!r}; use an ID to disambiguate"
-                )
-            caller_id = matches[0]["id"]
-        definition = {"id": caller_id}
+    caller_id = caller.id
+    if caller_id is None:
+        response = state.api_conn().get_json(
+            f"v1/project/{quote(project_id, safe='')}/simulated_user",
+            {"simulated_user_name": caller.name, "limit": 2},
+        )
+        matches = response.get("objects")
+        if not isinstance(matches, list) or len(matches) != 1:
+            raise ValueError(f"Expected exactly one simulated user named {caller.name!r}; use an ID to disambiguate")
+        caller_id = matches[0]["id"]
     response = state.api_conn().post(
-        f"v1/project/{quote(project_id, safe='')}/voice_session",
+        f"v1/project/{quote(project_id, safe='')}/simulated_user/{quote(caller_id, safe='')}/session",
         json={
-            "simulated_user": definition,
             "scenario": scenario,
             "initiator": initiator,
             "parent": parent,
@@ -107,7 +99,7 @@ def _create_call(
 async def run_voice_call(
     *,
     agent: AgentConnector | LiveKitAgent,
-    simulated_user: Caller,
+    simulated_user: SimulatedUserRef,
     scenario: dict[str, JSONValue],
     initiator: Initiator = "agent",
     timeout: int = 600,
@@ -115,7 +107,7 @@ async def run_voice_call(
     parent: str | None = None,
     state: logger.BraintrustState | None = None,
 ) -> VoiceCallResult:
-    """Run one fresh call. The connector must await completion and return session.result()."""
+    """Run a fresh call with a saved user. The connector awaits completion and returns session.result()."""
     if type(timeout) is not int or not 15 <= timeout <= 600:
         raise ValueError("timeout must be an integer between 15 and 600 seconds")
     if initiator not in ("agent", "simulated_user"):
@@ -162,12 +154,12 @@ async def run_voice_call(
 def voice_task(
     *,
     agent: AgentConnector | LiveKitAgent,
-    simulated_user: Caller,
+    simulated_user: SimulatedUserRef,
     initiator: Initiator = "agent",
     timeout: int = 600,
     project_id: str | None = None,
 ) -> Callable[[dict[str, JSONValue]], Awaitable[VoiceCallResult]]:
-    """Create an async task for Eval or EvalAsync. Only input becomes the caller's scenario."""
+    """Create an Eval task reusing a saved user. Only input becomes the caller's scenario."""
 
     async def task(input: dict[str, JSONValue]) -> VoiceCallResult:
         return await run_voice_call(

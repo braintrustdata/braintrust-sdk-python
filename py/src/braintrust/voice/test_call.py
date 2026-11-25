@@ -4,7 +4,7 @@ import json
 import pytest
 from braintrust import Eval, EvalAsync, logger
 from braintrust.api._transport import HTTPConnection
-from braintrust.voice import SimulatedUser, SimulatedUserRef, _call, connect, voice_task
+from braintrust.voice import SimulatedUserRef, _call, connect, voice_task
 from braintrust.voice.test_session import simulator, terminal
 from braintrust.voice.test_session import tracing as tracing
 
@@ -15,9 +15,9 @@ aiohttp = pytest.importorskip("aiohttp")
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("remote", [False, True])
-@pytest.mark.parametrize("caller_kind", ["inline", "id", "name"])
+@pytest.mark.parametrize("caller_kind", ["id", "name"])
 async def test_eval_local_and_remote_calls_keep_expected_out_of_scenario(tracing, remote, caller_kind):
-    # Ordinary Eval APIs must run fresh calls and send only input, including across a real HTTP receiver.
+    # Eval must reuse a saved user and send only input, including across a real HTTP receiver.
     requests = []
 
     async def handler(socket):
@@ -38,11 +38,13 @@ async def test_eval_local_and_remote_calls_keep_expected_out_of_scenario(tracing
             async def version(_request):
                 return web.json_response({"ff_version": 149})
 
-            async def saved(_request):
+            async def saved(request):
+                assert request.query == {"simulated_user_name": "Caller", "limit": "2"}
                 return web.json_response({"objects": [{"id": "saved-caller"}]})
 
             async def create(request):
                 assert request.match_info["project_id"] == ("project" if remote else "voice-test")
+                assert request.match_info["id"] == "saved-caller"
                 body = await request.json()
                 requests.append(body)
                 handle["parent"] = body["parent"]
@@ -56,7 +58,7 @@ async def test_eval_local_and_remote_calls_keep_expected_out_of_scenario(tracing
             app = web.Application()
             app.router.add_get("/version", version)
             app.router.add_get("/v1/project/{project_id}/simulated_user", saved)
-            app.router.add_post("/v1/project/{project_id}/voice_session", create)
+            app.router.add_post("/v1/project/{project_id}/simulated_user/{id}/session", create)
             app.router.add_post("/run-eval-call", receiver)
             runner = web.AppRunner(app)
             await runner.setup()
@@ -78,11 +80,7 @@ async def test_eval_local_and_remote_calls_keep_expected_out_of_scenario(tracing
                             return await response.json()
 
                     caller = (
-                        SimulatedUser("Caller", "{{request}}")
-                        if caller_kind == "inline"
-                        else SimulatedUserRef(id="saved-caller")
-                        if caller_kind == "id"
-                        else SimulatedUserRef(name="Caller")
+                        SimulatedUserRef(id="saved-caller") if caller_kind == "id" else SimulatedUserRef(name="Caller")
                     )
 
                     def transferred(output, expected):
@@ -109,7 +107,7 @@ async def test_eval_local_and_remote_calls_keep_expected_out_of_scenario(tracing
                 await runner.cleanup()
     assert len(requests) == 1
     assert requests[0]["scenario"] == {"request": "Ask for billing"}
-    assert set(requests[0]) == {"simulated_user", "scenario", "initiator", "parent", "timeout_seconds"}
+    assert set(requests[0]) == {"scenario", "initiator", "parent", "timeout_seconds"}
     assert "expected" not in json.dumps(requests[0])
 
 
@@ -124,6 +122,6 @@ async def test_wrong_connector_result_never_logs_session_credentials(tracing, mo
         return context
 
     with pytest.raises(ValueError, match="completed session.result") as error:
-        await _call.run_voice_call(agent=connector, simulated_user=SimulatedUser("Caller", "Hello"), scenario={})
+        await _call.run_voice_call(agent=connector, simulated_user=SimulatedUserRef(id="saved-caller"), scenario={})
     assert token not in str(error.value)
     assert token not in json.dumps(tracing.pop())
