@@ -26,11 +26,11 @@ from ._common import (
     SpanFactory,
     SpeechText,
     metadata_from_processor,
-    processor_kind,
-    provider_from_name,
     request_settings_from_processor,
+    settings_from_processor,
 )
 from ._context import ContextLinker
+from ._model import ModelOperation
 
 
 if TYPE_CHECKING:
@@ -39,17 +39,10 @@ if TYPE_CHECKING:
         Frame,
         FunctionCallInProgressFrame,
         FunctionCallResultFrame,
-        MetricsFrame,
         TTSStartedFrame,
         TTSTextFrame,
     )
-    from pipecat.metrics import metrics
     from pipecat.processors.frame_processor import FrameProcessor
-else:
-    try:
-        from pipecat.metrics import metrics
-    except ImportError:  # pragma: no cover - Pipecat is an optional dependency.
-        metrics = None
 
 
 class _FunctionCall(TypedDict):
@@ -82,10 +75,9 @@ class _ModelResponse:
     span: Span
     metadata: dict[str, Any]
     processor: "FrameProcessor | None"
-    start_ms: float
     text: list[str] = field(default_factory=list)
     tool_calls: list[_ToolCall] = field(default_factory=list)
-    metrics: dict[str, int | float] = field(default_factory=dict)
+    model: ModelOperation | None = None
 
 
 @dataclass
@@ -94,8 +86,9 @@ class _Synthesis:
     speaker_ids: list[str]
     processor: "FrameProcessor | None"
     text: SpeechText = field(default_factory=SpeechText)
-    characters: int = 0
     ended: bool = False
+    start_observed: bool = False
+    models: list[ModelOperation] = field(default_factory=list)
 
     @property
     def work(self) -> _Work:
@@ -117,38 +110,27 @@ _DEFAULT_CONTEXT = "__default__"
 
 
 class AgentTracker:
-    """One agent turn at a time, owning all concurrent agent work.
+    """Group work on routes with a native Pipecat assistant aggregator.
 
-    A turn opens with its first model response. Each response, tool call,
-    synthesis and playback opens work on the turn and closes it on completion.
-    The turn ends once its work has drained after a native completion boundary:
-
-    - assistant context completion (``LLMContextAssistantTurnFrame``),
-    - playback stop (``BotStoppedSpeakingFrame``), or
-    - a model response end, in a pipeline without an output transport.
-
-    A tool result that runs the model opens follow-up work and withdraws any
-    earlier completion; the next response consumes it. Interruption ends all
-    work as interrupted and the turn as incomplete; audio the transport still
-    plays from the interrupted reply opens no speech. User turns are independent:
-    starting one does not imply an interruption.
+    That aggregator groups full-response frames and publishes completion.
+    Outstanding tools/followups and synthesis/playback keep their established
+    group open. Bare response boundaries never invent conversational turns.
+    Interruption ends all work as interrupted and the turn as incomplete; audio
+    the transport still plays from the interrupted reply opens no speech.
     """
 
     def __init__(self, spans: SpanFactory, clock: SessionClock, recorder: AudioSessionRecorder) -> None:
         self._spans, self._clock, self._recorder = spans, clock, recorder
         self.report_uninterrupted_playback = True
         self._turn: _AgentTurn | None = None
+        self.native_turn_processors: set[int] = set()
         self._response: _ModelResponse | None = None
-        self._last_response: Span | None = None
         self._playback: _Playback | None = None
         # An interruption ended the agent turn and no agent work has started
         # since. Audio the transport plays now is left over from that reply.
         self._interrupted_reply = False
         # TTS context ID -> synthesis. Several IDs may alias one synthesis.
         self._synthesis: dict[str, _Synthesis] = {}
-        self._latest_synthesis: _Synthesis | None = None
-        # TTS service -> characters it reported before its synthesis started.
-        self._pending_characters: dict[int, int] = {}
         self._tools: dict[str, Span] = {}
         self._requesters: dict[str, Span] = {}
         # Pipecat broadcasts tool frames; ignore copies of finished calls.
@@ -157,66 +139,64 @@ class AgentTracker:
     # Model responses
 
     def start_response(
-        self, processor: "FrameProcessor | None", linker: ContextLinker, reply_to: Span | None
+        self, processor: "FrameProcessor | None", linker: ContextLinker, *, pending_span: Span | None = None
     ) -> Span | None:
         """Start a model response; return its span, or None if one is active.
 
-        The span is a task: the provider integration's span nests under it as
-        the only LLM span and owns token usage, so trace totals count each
-        model call, its tokens and its duration once.
+        The task contains either a provider-owned model span or an uncovered
+        client's Pipecat model span. Model telemetry belongs to that child.
         """
         if self._response is not None:
             return None
         self._interrupted_reply = False
         turn = self._turn
-        if turn is None:
+        if turn is None and id(processor) in self.native_turn_processors:
             turn = self._turn = _AgentTurn(self._spans.turn("agent_turn"))
-            if reply_to is not None:
-                turn.span.log(metadata={TURN_REPLY_TO: span_id(reply_to)})
         # A response supersedes completion from an earlier utterance in a tool loop.
-        turn.completion_requested = False
-        turn.work.discard(_FOLLOWUP)
+        if turn is not None:
+            turn.completion_requested = False
+            turn.work.discard(_FOLLOWUP)
         metadata = {
             **linker.metadata,
             **request_settings_from_processor(processor),
             **metadata_from_processor(processor),
         }
         messages = linker.messages
-        instruction = getattr(getattr(processor, "_settings", None), "system_instruction", None)
+        instruction = getattr(settings_from_processor(processor), "system_instruction", None)
         if isinstance(instruction, str) and instruction:
             # Service settings are separate from LLMContext in current Pipecat.
             # Keep the linker's context/cursor untouched when adding them.
             messages = [{"role": "system", "content": instruction}, *(messages or [])]
-        start_ms = self._clock.now_ms()
         span = self._spans.start(
-            "llm_response", turn=turn.span, input=messages, metadata=metadata, can_set_current=True, start_ms=start_ms
+            "llm_response",
+            turn=turn.span if turn else None,
+            input=messages,
+            metadata=metadata,
+            can_set_current=True,
+            **({"id": pending_span.id, "internal": {"span_id": span_id(pending_span)}} if pending_span else {}),
         )
         links = linker.consume()
+        if turn is not None and linker.reply_to is not None:
+            turn.span.log(metadata={TURN_REPLY_TO: span_id(linker.reply_to)})
         if links:
             set_links(span, links)
-        self._response = _ModelResponse(span, metadata, processor, start_ms)
-        turn.work.add(_RESPONSE)
+        model = ModelOperation.start(self._spans, span, processor, "llm_response", input=messages)
+        model.request(linker.metadata)
+        self._response = _ModelResponse(span, metadata, processor, model=model)
+        self._open(_RESPONSE)
         return span
 
-    def finish_realtime_response(self, parent: Span, metrics: dict[str, Any], output: Any) -> None:
-        response, turn = self._response, self._turn
-        if response is None or response.span is not parent or turn is None:
-            return
-        span = self._spans.start(
-            "pipecat.realtime.response",
-            parent=parent,
-            turn=turn.span,
-            type=SpanTypeAttribute.LLM,
-            start_ms=response.start_ms,
-            metadata=metadata_from_processor(response.processor),
-            metrics=metrics,
-            output=output,
-        )
-        span.end(end_time=self._clock.wall())
+    def report_usage(self, parent: Span, usage: dict[str, int | float]) -> None:
+        """Usage a provider event reports for the active response's model child."""
+        response = self._response
+        if response is not None and response.span is parent and response.model is not None:
+            response.model.report_usage(usage)
 
     def response_text(self, text: str) -> None:
         if self._response is not None:
             self._response.text.append(text)
+            if self._response.model is not None:
+                self._response.model.content()
 
     def request_tools(self, calls: list[Any]) -> None:
         response = self._response
@@ -240,38 +220,12 @@ class AgentTracker:
             self._requesters[call.tool_call_id] = response.span
             self._open(("tool", call.tool_call_id))
 
-    def end_response(self, *, completes_turn: bool) -> None:
+    def end_response(self) -> None:
         response = self._response
         if response is None:
-            if completes_turn:
-                self.request_completion()
             return
         self._end_response(response)
-        if completes_turn:
-            self.request_completion()
         self._close(_RESPONSE)
-
-    def record_metrics(self, frame: "MetricsFrame", processor: "FrameProcessor | None") -> None:
-        if processor_kind(type(processor)) == "tts":
-            self._record_synthesis_usage(frame, processor)
-            return
-        response = self._response
-        if response is None or processor_kind(type(processor)) != "llm" or response.processor is not processor:
-            return
-        for metric in frame.data or []:
-            if getattr(metric, "processor", None) != processor.name:
-                continue
-            if isinstance(metric, metrics.LLMUsageMetricsData):
-                # Token usage belongs to the provider span nested under this
-                # one; logging it here would double count trace totals.
-                if metric.model is not None:
-                    response.metadata["model"] = metric.model
-                provider = provider_from_name(metric.processor)
-                if provider is not None:
-                    response.metadata["provider"] = provider
-            elif isinstance(metric, metrics.TTFBMetricsData):
-                response.metrics["time_to_first_token"] = metric.value
-        response.metadata.update(metadata_from_processor(processor))
 
     # Tools
 
@@ -336,33 +290,52 @@ class AgentTracker:
 
     # Synthesis
 
-    def start_tts(self, frame: "TTSStartedFrame", processor: "FrameProcessor | None") -> None:
+    def start_tts(
+        self,
+        frame: "TTSStartedFrame",
+        processor: "FrameProcessor | None",
+        *,
+        generator: Span | None = None,
+        observed: bool = True,
+    ) -> _Synthesis:
         self._interrupted_reply = False
         key = frame.context_id or _DEFAULT_CONTEXT
         existing = self._synthesis.get(key)
-        if existing is not None and not existing.ended:
-            return
+        if existing is not None and (not existing.ended or (observed and not existing.start_observed)):
+            # The queued start can arrive after the executing service has
+            # completed. Consume that observation once, without reopening it.
+            existing.start_observed |= observed
+            return existing
         metadata = {**metadata_from_processor(processor), "contrib.pipecat.context_id": frame.context_id}
-        voice = getattr(getattr(processor, "_settings", None), "voice", None)
+        voice = getattr(settings_from_processor(processor), "voice", None)
         speaker_ids: list[str] = []
         if isinstance(voice, str):
             speaker = self._recorder.speaker("agent-output", voice, {"type": "agent", "label": voice})
             if speaker is not None:
                 speaker_ids.append(speaker)
                 metadata[SPEAKER_IDS] = speaker_ids
-        span = self._spans.start("tts", turn=self._turn.span if self._turn else None, metadata=metadata)
-        generator = self._response.span if self._response is not None else self._last_response
+        span = self._spans.start(
+            "tts", turn=self._turn.span if self._turn else None, metadata=metadata, can_set_current=True
+        )
         if generator is not None:
             set_links(span, [("generated_by", generator)])
-        synthesis = _Synthesis(span, speaker_ids, processor)
-        self._synthesis[key] = self._latest_synthesis = synthesis
+        synthesis = _Synthesis(span, speaker_ids, processor, start_observed=observed)
+        self._synthesis[key] = synthesis
+        # Bare pipelines have no native turn completion at which to prune.
+        # Keep active work and the current playback's observed associations;
+        # only completed routing history is bounded.
+        if len(self._synthesis) > MAX_PENDING:
+            playing = self._playback.generators if self._playback is not None else {}
+            for old_key, old in list(self._synthesis.items()):
+                if len(self._synthesis) <= MAX_PENDING:
+                    break
+                if old.ended and span_id(old.span) not in playing:
+                    del self._synthesis[old_key]
         self._open(synthesis.work)
-        pending = self._pending_characters.pop(id(processor), 0)
-        if pending:
-            self._add_characters(synthesis, pending)
+        return synthesis
 
     def tts_text(self, frame: "TTSTextFrame") -> None:
-        synthesis = self._resolve_synthesis(frame, adopt=True)
+        synthesis = self._resolve_synthesis(frame)
         if synthesis is not None:
             synthesis.text.append(frame)
             synthesis.span.log(input={"text": str(synthesis.text)})
@@ -370,60 +343,16 @@ class AgentTracker:
     def stop_tts(self, frame: "Frame") -> None:
         synthesis = self._resolve_synthesis(frame)
         if synthesis is not None:
+            for model in synthesis.models:
+                if model.deferred:
+                    model.complete = model.error is None
             self._end_synthesis(synthesis)
             self._close(synthesis.work)
 
-    def _record_synthesis_usage(self, frame: "MetricsFrame", processor: "FrameProcessor | None") -> None:
-        """Count the characters a TTS service reports for its active synthesis.
-
-        Services report usage per chunk of text they synthesize, so counts
-        accumulate. Pipecat queues a synthesis's start frame behind its audio,
-        so usage can arrive first; it then waits for the service's next
-        synthesis. No provider integration traces speech synthesis, so this
-        span is the only place the usage is recorded.
-        """
-        name = getattr(processor, "name", None)
-        characters = sum(
-            metric.value
-            for metric in frame.data or []
-            if isinstance(metric, metrics.TTSUsageMetricsData)
-            and getattr(metric, "processor", None) == name
-            and isinstance(metric.value, int)
-            and not isinstance(metric.value, bool)
-        )
-        if not characters:
-            return
-        active = [item for item in self._synthesis.values() if not item.ended and item.processor is processor]
-        if not active:
-            self._pending_characters[id(processor)] = self._pending_characters.get(id(processor), 0) + characters
-            return
-        self._add_characters(active[-1], characters)
-
-    def _add_characters(self, synthesis: _Synthesis, characters: int) -> None:
-        synthesis.characters += characters
-        synthesis.span.log(metrics={"characters": synthesis.characters})
-
-    def _resolve_synthesis(self, frame: "Frame", *, adopt: bool = False) -> _Synthesis | None:
-        """Resolve a frame's synthesis; a known but ended context never falls back.
-
-        Some services tag only part of a synthesis's frames with a context ID.
-        An untagged frame resolves to the sole active synthesis; with ``adopt``,
-        an unknown ID is bound to the sole active synthesis for later frames.
-        """
-        context_id = getattr(frame, "context_id", None)
-        key = context_id or _DEFAULT_CONTEXT
-        if key in self._synthesis:
-            synthesis = self._synthesis[key]
-            return None if synthesis.ended else synthesis
-        if context_id and not adopt:
-            return None
-        active = {id(item): item for item in self._synthesis.values() if not item.ended}
-        if len(active) != 1:
-            return None
-        synthesis = next(iter(active.values()))
-        if context_id:
-            self._synthesis[context_id] = synthesis
-        return synthesis
+    def _resolve_synthesis(self, frame: "Frame") -> _Synthesis | None:
+        """Resolve only an observed native context, including the no-ID context."""
+        synthesis = self._synthesis.get(getattr(frame, "context_id", None) or _DEFAULT_CONTEXT)
+        return synthesis if synthesis is not None and not synthesis.ended else None
 
     # Playback
 
@@ -462,8 +391,12 @@ class AgentTracker:
                 metadata=metadata,
             )
         context_id = getattr(frame, "context_id", None)
-        synthesis = self._synthesis.get(context_id) if context_id else self._latest_synthesis
-        if synthesis is None or span_id(synthesis.span) in playback.generators:
+        synthesis = self._synthesis.get(context_id) if context_id else None
+        self._link_playback_synthesis(playback, synthesis)
+
+    def _link_playback_synthesis(self, playback: _Playback, synthesis: _Synthesis | None) -> None:
+        span = playback.span
+        if span is None or synthesis is None or span_id(synthesis.span) in playback.generators:
             return
         playback.generators[span_id(synthesis.span)] = synthesis
         speakers = sorted({speaker for item in playback.generators.values() for speaker in item.speaker_ids})
@@ -475,11 +408,13 @@ class AgentTracker:
     def played_text(self, frame: "TTSTextFrame") -> None:
         if self._playback is not None:
             self._playback.text.append(frame)
+            # The transport forwards the context-tagged text only as it plays
+            # that context. Its rechunked audio can have lost the original ID.
+            self._link_playback_synthesis(self._playback, self._synthesis.get(getattr(frame, "context_id", None)))
 
     def stop_playback(self) -> None:
         if self._playback is not None:
             self._end_playback(self._playback, interrupted=False)
-        self.request_completion()
         self._close(_PLAYBACK)
 
     # Turn completion
@@ -493,12 +428,16 @@ class AgentTracker:
         response = self._response
         if kind == "llm" and response is not None and response.processor is processor:
             response.span.log(error=error)
+            if response.model is not None:
+                response.model.error = error
             self._end_response(response)
             self._close(_RESPONSE)
         elif kind == "tts":
             for synthesis in {id(item): item for item in self._synthesis.values()}.values():
                 if not synthesis.ended and synthesis.processor is processor:
                     synthesis.span.log(error=error)
+                    for model in synthesis.models:
+                        model.error = error
                     self._end_synthesis(synthesis)
                     self._close(synthesis.work)
         elif kind == "output" and self._playback is not None and self._playback.span is not None:
@@ -508,10 +447,22 @@ class AgentTracker:
         """End all agent work: interrupted by the user, or incomplete at shutdown."""
         status = "contrib.pipecat.interrupted" if interrupted else "contrib.pipecat.incomplete"
         end_time = self._clock.wall(end_ms)
+        # Without an assistant aggregator a reply has no turn, but the transport
+        # still writes its dequeued audio after an interruption just the same.
+        ended_reply = (
+            self._turn is not None
+            or self._playback is not None
+            or self._response is not None
+            or any(not synthesis.ended for synthesis in self._synthesis.values())
+        )
+        if ended_reply:
+            self._interrupted_reply = interrupted
         if self._playback is not None:
             if self._playback.span is not None:
                 self._playback.span.log(metadata={status: True})
-            self._end_playback(self._playback, interrupted=interrupted, end_ms=end_ms, shutdown=not interrupted)
+            self._end_playback(
+                self._playback, interrupted=True if interrupted else None, end_ms=end_ms, shutdown=not interrupted
+            )
         if self._response is not None:
             self._response.span.log(metadata={status: True})
             self._end_response(self._response, end_ms=end_ms)
@@ -520,15 +471,13 @@ class AgentTracker:
                 synthesis.span.log(metadata={status: True})
                 self._end_synthesis(synthesis, end_ms=end_ms)
         self._synthesis.clear()
-        self._latest_synthesis = None
-        self._pending_characters.clear()
         for span in self._tools.values():
             span.log(metadata={status: True})
             span.end(end_time=end_time)
         self._tools.clear()
         self._requesters.clear()
+        self._finished_tools.clear()
         if self._turn is not None:
-            self._interrupted_reply = interrupted
             self._finish_turn(self._turn, incomplete=True, end_ms=end_ms)
 
     def _open(self, work: _Work) -> None:
@@ -549,10 +498,7 @@ class AgentTracker:
         turn.span.log(metadata={TURN_INCOMPLETE: incomplete})
         turn.span.end(end_time=self._clock.wall(end_ms))
         self._turn = None
-        self._last_response = None
         self._synthesis = {key: item for key, item in self._synthesis.items() if not item.ended}
-        if self._latest_synthesis is not None and self._latest_synthesis.ended:
-            self._latest_synthesis = None
 
     def _end_response(self, response: _ModelResponse, *, end_ms: float | None = None) -> None:
         message: dict[str, Any] = {"role": "assistant", "content": "".join(response.text) or None}
@@ -561,18 +507,21 @@ class AgentTracker:
         response.span.log(
             output=[message],
             metadata=response.metadata,
-            metrics=response.metrics,
         )
+        if response.model is not None:
+            response.model.finish(end_time=self._clock.wall(end_ms), output=[message], error=response.model.error)
         response.span.end(end_time=self._clock.wall(end_ms))
-        self._last_response, self._response = response.span, None
+        self._response = None
 
     def _end_synthesis(self, synthesis: _Synthesis, *, end_ms: float | None = None) -> None:
+        for model in synthesis.models:
+            model.finish(end_time=self._clock.wall(end_ms), output={"content": []}, error=model.error)
         synthesis.span.end(end_time=self._clock.wall(end_ms))
         synthesis.ended = True
         synthesis.text.parts.clear()
 
     def _end_playback(
-        self, playback: _Playback, *, interrupted: bool, end_ms: float | None = None, shutdown: bool = False
+        self, playback: _Playback, *, interrupted: bool | None, end_ms: float | None = None, shutdown: bool = False
     ) -> None:
         if playback.span is None:
             self._playback = None
@@ -584,7 +533,7 @@ class AgentTracker:
         metadata: dict[str, Any] = {SELECTIONS: {"selection-0": selection(playback.start_ms, selection_end)}}
         # Live handles automatic interruption remotely without notifying
         # Pipecat. An explicit local interruption is still observable.
-        if interrupted or self.report_uninterrupted_playback:
+        if interrupted is not None and (interrupted or self.report_uninterrupted_playback):
             metadata["contrib.pipecat.interrupted"] = interrupted
         playback.span.log(metadata=metadata)
         if playback.text.parts:

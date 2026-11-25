@@ -559,6 +559,9 @@ def test_pipecat(session, version):
     _install_test_deps(session)
     _install_group_locked(session, "test-pipecat")
     _install_matrix_dep(session, "pipecat-ai", version)
+    # Pipecat's Bedrock LLM service runs on aiobotocore (the pipecat-ai[aws] extra).
+    _install_matrix_dep(session, "aiobotocore", LATEST)
+    _install_matrix_dep(session, "aiobotocore-botocore", LATEST)
     # Pipecat imports NLTK, whose safe-import finder rejects dependencies
     # loaded from Nox's virtualenv when it is beneath the current directory.
     _run_tests(

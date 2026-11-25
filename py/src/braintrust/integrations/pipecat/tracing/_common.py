@@ -91,18 +91,6 @@ class SpanFactory:
         return span
 
 
-def message_text(content: Any) -> str:
-    if isinstance(content, str):
-        return content
-    if isinstance(content, list):
-        return " ".join(
-            part["text"]
-            for part in content
-            if isinstance(part, dict) and part.get("type") == "text" and isinstance(part.get("text"), str)
-        )
-    return ""
-
-
 @cache
 def processor_kind(cls: type) -> ProcessorKind | None:
     kinds: dict[str, ProcessorKind] = {
@@ -121,9 +109,15 @@ def is_pipeline_sink(processor: "FrameProcessor | None") -> bool:
     return any(base.__name__ == "PipelineWorker" for base in type(owner).__mro__)
 
 
+def settings_from_processor(processor: Any) -> Any:
+    """Prefer the public settings view; Pipecat 1.3 has only the legacy store."""
+    settings = getattr(processor, "settings", None)
+    return settings if settings is not None else getattr(processor, "_settings", None)
+
+
 def metadata_from_processor(processor: "FrameProcessor | None") -> dict[str, Any]:
     metadata: dict[str, Any] = {}
-    settings = getattr(processor, "_settings", None)
+    settings = settings_from_processor(processor)
     model = getattr(settings, "model", None) or getattr(processor, "model", None)
     if isinstance(model, str):
         metadata["model"] = model
@@ -158,7 +152,7 @@ _REQUEST_SETTINGS = (
 
 
 def request_settings_from_processor(processor: "FrameProcessor | None") -> dict[str, Any]:
-    settings = getattr(processor, "_settings", None)
+    settings = settings_from_processor(processor)
     candidates = {name: getattr(settings, name, None) for name in _REQUEST_SETTINGS}
     extra = getattr(settings, "extra", None)
     if isinstance(extra, dict):
@@ -178,6 +172,7 @@ def provider_from_name(name: str) -> str | None:
         "bedrock": "bedrock",
         "aws": "bedrock",
         "openrouter": "openrouter",
+        "elevenlabs": "elevenlabs",
     }
     for needle, provider in providers.items():
         if needle in lowered:

@@ -13,6 +13,7 @@ from braintrust.logger import Span
 
 from ._common import MAX_PENDING, SpanFactory, metadata_from_processor
 from ._context import ContextLinker
+from ._model import ModelOperation
 
 
 if TYPE_CHECKING:
@@ -49,6 +50,8 @@ class _Recognition:
     phase: _RecognitionPhase = _RecognitionPhase.AWAITING_TURN
     span: Span | None = None
     transcript: "tuple[TranscriptionFrame, float] | None" = None
+    model: ModelOperation | None = None
+    turn: Span | None = None
 
 
 class UserTracker:
@@ -78,8 +81,6 @@ class UserTracker:
         self._spans, self._clock, self._recorder, self._linker = spans, clock, recorder, linker
         self._turn: _UserTurn | None = None
         self._speech: _UserSpeech | None = None
-        self._last_turn: Span | None = None
-        self._last_speech: Span | None = None
         self._last_speech_participants: list[str] = []
         self._turn_index = 0
         self._vad_seen = False
@@ -89,17 +90,8 @@ class UserTracker:
         self._recognized_until: dict[int, tuple[_UserSpeech | None, float]] = {}
 
     @property
-    def reply_target(self) -> Span | None:
-        """The user turn an agent response replies to; ambiguous while one is open."""
-        return self._last_turn if self._turn is None else None
-
-    @property
     def _turn_span(self) -> Span | None:
         return self._turn.span if self._turn is not None else None
-
-    @property
-    def _context_turn(self) -> Span | None:
-        return self._turn_span or self._last_turn
 
     @property
     def turn_span(self) -> Span | None:
@@ -126,7 +118,7 @@ class UserTracker:
         self._finish_turn(incomplete=False, end_ms=end_ms)
 
     def log_input(self, message: dict[str, Any]) -> None:
-        turn = self._context_turn
+        turn = self._turn_span
         if turn is not None:
             turn.log(input=[message])
 
@@ -150,7 +142,7 @@ class UserTracker:
         if self._turn is not None:
             self._turn.selections.append(interval)
         self._last_speech_participants = sorted(speech.participants)
-        self._last_speech, self._speech = span, None
+        self._speech = None
 
     def identify(self, frame: "Frame", span: Span | None = None) -> None:
         user_id = getattr(frame, "user_id", None)
@@ -201,6 +193,22 @@ class UserTracker:
             return
         self._emit(frame, recognition, end_ms)
 
+    def model_operation(self, processor: "FrameProcessor") -> ModelOperation:
+        recognition = self._recognitions.get(id(processor))
+        if recognition is None and self._speech is None and self._vad_seen:
+            # Streaming STT also executes on silence. Like consume_audio, observed
+            # VAD silence starts no recognition, span, or audio buffer.
+            return ModelOperation(None, processor)
+        if recognition is None:
+            recognition = _Recognition(processor, self._clock.now_ms(), None, self._turn_index)
+            self._recognitions[id(processor)] = recognition
+        span = self._open(recognition)
+        if recognition.model is None:
+            recognition.model = ModelOperation.start(
+                self._spans, span, processor, "stt", input={"operation": "transcribe"}
+            )
+        return recognition.model
+
     def recognition_span(self, processor: "FrameProcessor") -> Span | None:
         """The observed recognition whose provider work is about to execute."""
         recognition = self._recognitions.get(id(processor))
@@ -218,6 +226,8 @@ class UserTracker:
         if recognition is not None:
             span = self._open(recognition)
             span.log(error=error)
+            if recognition.model is not None:
+                recognition.model.finish(end_time=self._clock.wall(), error=error)
             span.end(end_time=self._clock.wall())
 
     def close(self, end_ms: float) -> None:
@@ -226,26 +236,27 @@ class UserTracker:
         for recognition in self._recognitions.values():
             span = self._open(recognition)
             span.log(metadata={"contrib.pipecat.incomplete": True})
+            if recognition.model is not None:
+                recognition.model.finish(end_time=self._clock.wall(end_ms), error=recognition.model.error)
             span.end(end_time=self._clock.wall(end_ms))
         self._recognitions.clear()
         self._recognized_until.clear()
         self._finish_turn(incomplete=True, end_ms=end_ms)
-        self._last_turn = self._last_speech = None
         self._last_speech_participants.clear()
 
     def _finish_turn(self, *, incomplete: bool, end_ms: float | None = None) -> None:
         turn = self._turn
         if turn is None:
             return
-        turn.span.log(
-            metadata={
-                SELECTIONS: {f"selection-{index}": item for index, item in enumerate(turn.selections)},
-                TURN_INCOMPLETE: incomplete,
+        metadata: dict[str, Any] = {TURN_INCOMPLETE: incomplete}
+        if turn.selections:
+            metadata[SELECTIONS] = {
+                "selection-0": selection(turn.selections[0]["start_offset_ms"], turn.selections[-1]["end_offset_ms"])
             }
-        )
+        turn.span.log(metadata=metadata)
         turn.span.end(end_time=self._clock.wall(end_ms))
         self._last_speech_participants = []
-        self._last_turn, self._turn = turn.span, None
+        self._turn = None
         self._turn_index += 1
 
     def _resolve_recognitions(self) -> None:
@@ -265,9 +276,17 @@ class UserTracker:
 
     def _open(self, recognition: _Recognition) -> Span:
         if recognition.span is None:
+            recognition.turn = (
+                self._turn_span
+                if (
+                    recognition.turn_index == self._turn_index
+                    and recognition.phase is not _RecognitionPhase.TRANSCRIBED
+                )
+                else None
+            )
             recognition.span = self._spans.start(
                 "stt",
-                turn=self._turn_span,
+                turn=recognition.turn,
                 start_ms=recognition.start_ms,
                 metadata={SOURCE_ID: "session-input", **metadata_from_processor(recognition.processor)},
                 can_set_current=True,
@@ -279,6 +298,8 @@ class UserTracker:
         self._recognitions.pop(id(recognition.processor), None)
         if recognition.span is not None:
             recognition.span.log(metadata={"contrib.pipecat.incomplete": True})
+            if recognition.model is not None:
+                recognition.model.finish(end_time=self._clock.wall(end_ms), error=recognition.model.error)
             recognition.span.end(end_time=self._clock.wall(end_ms))
 
     def _emit(self, frame: "TranscriptionFrame", recognition: _Recognition | None, end_ms: float) -> None:
@@ -287,10 +308,8 @@ class UserTracker:
             span = self._open(recognition)
             speech = self._speech_span(recognition.speech) if recognition.speech is not None else None
         else:
-            span = self._spans.start(
-                "transcript_received", turn=self._context_turn, metadata={SOURCE_ID: "session-input"}
-            )
-            speech = self._speech_span(self._speech) if self._speech is not None else self._last_speech
+            span = self._spans.start("transcript_received", metadata={SOURCE_ID: "session-input"})
+            speech = None
         metadata = {
             f"contrib.pipecat.{key}": getattr(frame, key, None)
             for key in ("user_id", "timestamp", "language", "finalized")
@@ -302,5 +321,9 @@ class UserTracker:
         )
         if speech is not None:
             set_links(span, [("transcribes", speech)])
+        if recognition is not None and recognition.model is not None:
+            recognition.model.finish(
+                end_time=self._clock.wall(end_ms), output={"content": [{"type": "text", "text": frame.text}]}
+            )
         span.end(end_time=self._clock.wall(end_ms))
-        self._linker.add_transcript(frame.text, span)
+        self._linker.add_transcript(frame.id, span, recognition.turn if recognition is not None else None)

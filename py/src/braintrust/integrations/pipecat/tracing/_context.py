@@ -1,24 +1,17 @@
 """Correlation between model requests and the operations whose output they use."""
 
-from collections import OrderedDict, deque
+from collections import OrderedDict
 from typing import Any
 
 from braintrust._audio.schema import Relationship
 from braintrust.integrations.utils import _is_not_given, _normalize_chat_messages
 from braintrust.logger import Span
 
-from ._common import LOG, MAX_PENDING, message_text, tools_schema_to_openai_tools
+from ._common import LOG, MAX_PENDING, tools_schema_to_openai_tools
 
 
 class ContextLinker:
-    """Tracks the latest model context and what its new messages consume.
-
-    Transcripts and tool results wait here until a model request includes
-    them. Only messages added since the previous request are linked: the user
-    aggregator may join several transcripts into one message, so transcripts
-    match in arrival order as substrings. Unmatched transcripts older than a
-    match were dropped from context and are retired; newer ones stay pending.
-    """
+    """Correlate native message identities and tool IDs, never transcript text."""
 
     def __init__(self) -> None:
         self.messages: Any = None
@@ -28,7 +21,10 @@ class ContextLinker:
         # multimodal parts, so neither identity nor normalized output can.
         self._submitted: tuple[Any, ...] = ()
         self._consumed = 0
-        self._transcripts: deque[tuple[str, Span]] = deque(maxlen=MAX_PENDING)
+        self._transcripts: OrderedDict[int, tuple[Span, Span | None]] = OrderedDict()
+        self._provenance: OrderedDict[int, tuple[Any, Any, tuple[int, ...]]] = OrderedDict()
+        self._raw: list[Any] = []
+        self.reply_to: Span | None = None
         self._tool_results: OrderedDict[str, Span] = OrderedDict()
         self._warned: set[str] = set()
 
@@ -53,24 +49,22 @@ class ContextLinker:
                 break
             consumed += 1
         self._submitted, self._consumed = submitted, consumed
+        self._raw = raw
         self.messages, self.metadata = _normalize_chat_messages(raw), metadata
         last = self.messages[-1] if self.messages else None
         return last if isinstance(last, dict) and last.get("role") == "user" else None
 
-    def add_transcript(self, text: str, span: Span) -> None:
-        if len(self._transcripts) == MAX_PENDING:
-            self._warn("transcript")
-        self._transcripts.append((text, span))
+    def add_transcript(self, frame_id: int, span: Span, turn: Span | None = None) -> None:
+        self._transcripts[frame_id] = (span, turn)
+        if len(self._transcripts) > MAX_PENDING:
+            self._transcripts.popitem(last=False)
 
-    def clear(self) -> None:
-        """Release routing payloads after all session work has been exported."""
-        self.messages = None
-        self.metadata.clear()
-        self._submitted = ()
-        self._consumed = 0
-        self._transcripts.clear()
-        self._tool_results.clear()
-        self._warned.clear()
+    def associate(self, message: Any, frame_ids: tuple[int, ...]) -> None:
+        # Holding the message prevents id reuse. An application edit invalidates
+        # this evidence; native transformations made before insertion retain it.
+        self._provenance[id(message)] = (message, _snapshot(message), frame_ids)
+        if len(self._provenance) > MAX_PENDING:
+            self._provenance.popitem(last=False)
 
     def add_tool_result(self, tool_call_id: str, span: Span) -> None:
         self._tool_results[tool_call_id] = span
@@ -82,24 +76,27 @@ class ContextLinker:
         """Link the messages added since the previous request, and retire them."""
         links: list[tuple[Relationship, Span]] = []
         messages = self.messages if isinstance(self.messages, list) else []
-        pending = list(self._transcripts)
-        matched = -1
-        for message in messages[self._consumed :]:
+        turns: dict[str, Span] = {}
+        unknown_turn = False
+        for raw, message in zip(self._raw[self._consumed :], messages[self._consumed :]):
             if not isinstance(message, dict):
                 continue
-            role = message.get("role")
-            if role == "user":
-                text, position = message_text(message.get("content")), 0
-                for index in range(matched + 1, len(pending)):
-                    transcript = pending[index][0].strip()
-                    found = text.find(transcript, position) if transcript else -1
-                    if found >= 0:
-                        links.append(("uses_context", pending[index][1]))
-                        matched, position = index, found + len(transcript)
-            elif role == "tool" and message.get("tool_call_id") in self._tool_results:
+            evidence = self._provenance.get(id(raw))
+            if evidence is not None and evidence[0] is raw and evidence[1] == _snapshot(raw):
+                for frame_id in evidence[2]:
+                    transcript = self._transcripts.pop(frame_id, None)
+                    if transcript is not None:
+                        source, turn = transcript
+                        links.append(("uses_context", source))
+                        if turn is not None:
+                            turns[turn.id] = turn
+                        else:
+                            unknown_turn = True
+                    else:
+                        unknown_turn = True
+            if message.get("role") == "tool" and message.get("tool_call_id") in self._tool_results:
                 links.append(("consumes_tool_result", self._tool_results.pop(message["tool_call_id"])))
-        if matched >= 0:
-            self._transcripts = deque(pending[matched + 1 :], maxlen=MAX_PENDING)
+        self.reply_to = next(iter(turns.values())) if len(turns) == 1 and not unknown_turn else None
         self._consumed = len(messages)
         return links
 
@@ -107,6 +104,19 @@ class ContextLinker:
         if kind not in self._warned:
             self._warned.add(kind)
             LOG.warning("Pipecat pending %s links exceeded the retention limit; retiring the oldest links", kind)
+
+    def clear(self) -> None:
+        """Release routing payloads after all session work has been exported."""
+        self.messages = None
+        self.metadata.clear()
+        self._submitted = ()
+        self._consumed = 0
+        self._raw.clear()
+        self._transcripts.clear()
+        self._provenance.clear()
+        self._tool_results.clear()
+        self._warned.clear()
+        self.reply_to = None
 
 
 def _snapshot(value: Any) -> Any:
