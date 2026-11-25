@@ -48,14 +48,21 @@ INPUT_RATE = 16000
 CHUNK_SECONDS = 0.02
 
 
-def _scrub_recording_upload(request):
+# Speech-to-text uploads; replay matches method and URL only, so their audio
+# bodies are never read back and need not be stored.
+_AUDIO_UPLOAD_PATHS = ("/v1/audio/transcriptions", "/v1/audio/translations", "/v1/speech-to-text")
+
+
+def _scrub_recording_upload(request, sanitize=lambda request: request):
     # aiohttp names some headers with its own str subclass, which YAML rejects,
-    # and keeps multipart uploads (here, input audio) as writer objects. Replay
-    # matches method and URL only, so the upload body need not be retained.
+    # and keeps multipart uploads as writer objects.
     request.headers = {str(name): value for name, value in request.headers.items()}
+    url = urlsplit(request.uri)
     if request.body is not None and not isinstance(request.body, (bytes, str)):
         request.body = b""
-    url = urlsplit(request.uri)
+    if request.method == "POST" and url.path.endswith(_AUDIO_UPLOAD_PATHS):
+        request.body = b""
+    request = sanitize(request)
     if request.method == "PUT" and ".amazonaws.com" in (url.hostname or ""):
         # Outbound session PCM varies with wall-clock latency. Playback checks
         # its placement and metadata; the upload body need not be retained.
@@ -83,7 +90,10 @@ def vcr_config(vcr_config):
                 response["body"]["string"] = json.dumps(data).encode()
         return response
 
-    config.update(before_record_request=_scrub_recording_upload, before_record_response=scrub_audio_response)
+    config.update(
+        before_record_request=functools.partial(_scrub_recording_upload, sanitize=config["before_record_request"]),
+        before_record_response=scrub_audio_response,
+    )
     return config
 
 
