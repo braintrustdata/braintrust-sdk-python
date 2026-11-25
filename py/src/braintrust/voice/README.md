@@ -4,6 +4,8 @@
 
 Simulated users are saved, long-lived objects reused across calls and evals. Set up your simulated user ahead of time through the existing UI or API, then reference it by ID or name. These SDK helpers only start calls with existing users; they do not create or update simulated users.
 
+Saved-user instructions are templated from each dataset row's `input`, just as in existing conversation evals. `voice_task` passes that input to the same backend template renderer automatically; no additional configuration is needed. The existing low-level session API calls this payload `scenario`.
+
 Install `braintrust[voice]` and your agent framework. Audio conversion uses PyAV, included in the extra on Python 3.12 and later. Configure the normal Braintrust credentials and deployment URL. The helpers require data plane feature version 149 and an enabled voice session service.
 
 ## Pipecat
@@ -24,7 +26,7 @@ async def run_eval_call(call):
 
 `run_agent` is your application's existing pipeline runner. Place `transport.input()` and `transport.output()` at the pipeline's input and output, enable your normal Braintrust Pipecat instrumentation, and return your application's observed result. Neither audio frames nor playback acknowledgements belong in the eval script.
 
-Use that handler directly for a local agent. This example assumes a saved simulated user named `Billing caller` whose instructions include the `{{request}}` scenario variable:
+Use that handler directly for a local agent. This example assumes a saved simulated user named `Billing caller` whose instructions reference `{{request}}`, supplied by each dataset row's `input.request`:
 
 ```python
 from braintrust import Eval
@@ -95,8 +97,8 @@ async def handle_call(ctx):
 
 `session.result()` returns `agent_output`, `caller_transcript`, `recording`, `reason`, `session_id`, and `span_id`. `agent_output` is `None` unless the application supplies a result. The transcript contains only simulated caller speech. The recording contains both participants, with attachment references and timeline metadata in the existing segmented audio schema.
 
-Use `SimulatedUserRef(id=...)` to select a saved user directly, or `SimulatedUserRef(name=...)` to look one up in the eval's project. A name must resolve to exactly one user; a missing or ambiguous name fails the call. Each call snapshots the saved user's configuration and renders its instructions with the row's scenario values.
+Use `SimulatedUserRef(id=...)` to select a saved user directly, or `SimulatedUserRef(name=...)` to look one up in the eval's project. A name must resolve to exactly one user; a missing or ambiguous name fails the call. Each call snapshots the saved user's configuration and renders its instructions from the row's `input` using the existing conversation template renderer.
 
-Use `await run_voice_call(agent=..., simulated_user=..., scenario=input)` inside a custom task. Both helpers infer the project and tracing parent from the active SDK context. Outside an eval or project logger, supply `project_id`. Only the scenario is sent to the caller; expected output stays with the eval's scorers.
+Use `await run_voice_call(agent=..., simulated_user=..., input=input)` inside a custom task. Both helpers infer the project and tracing parent from the active SDK context. Outside an eval or project logger, supply `project_id`. Only `input` is used to template the saved user's instructions; expected output stays with the eval's scorers.
 
 Timeouts, missing terminal events, agent failures, recording failures, and unexpected disconnects fail the call. Established calls are never reconnected or replayed automatically.

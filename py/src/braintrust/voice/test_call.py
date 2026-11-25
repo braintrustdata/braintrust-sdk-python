@@ -16,7 +16,7 @@ aiohttp = pytest.importorskip("aiohttp")
 @pytest.mark.asyncio
 @pytest.mark.parametrize("remote", [False, True])
 @pytest.mark.parametrize("caller_kind", ["id", "name"])
-async def test_eval_local_and_remote_calls_keep_expected_out_of_scenario(tracing, remote, caller_kind):
+async def test_eval_local_and_remote_calls_template_from_dataset_input(tracing, remote, caller_kind):
     # Eval must reuse a saved user and send only input, including across a real HTTP receiver.
     requests = []
 
@@ -122,6 +122,6 @@ async def test_wrong_connector_result_never_logs_session_credentials(tracing, mo
         return context
 
     with pytest.raises(ValueError, match="completed session.result") as error:
-        await _call.run_voice_call(agent=connector, simulated_user=SimulatedUserRef(id="saved-caller"), scenario={})
+        await _call.run_voice_call(agent=connector, simulated_user=SimulatedUserRef(id="saved-caller"), input={})
     assert token not in str(error.value)
     assert token not in json.dumps(tracing.pop())

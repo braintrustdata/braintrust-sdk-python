@@ -45,7 +45,7 @@ def _project_id(parent: str, project_id: str | None, state: logger.BraintrustSta
 
 def _create_call(
     caller: SimulatedUserRef,
-    scenario: dict[str, JSONValue],
+    input: dict[str, JSONValue],
     initiator: Initiator,
     timeout: int,
     project_id: str | None,
@@ -76,7 +76,7 @@ def _create_call(
     response = state.api_conn().post(
         f"v1/project/{quote(project_id, safe='')}/simulated_user/{quote(caller_id, safe='')}/session",
         json={
-            "scenario": scenario,
+            "scenario": input,
             "initiator": initiator,
             "parent": parent,
             "timeout_seconds": timeout,
@@ -100,7 +100,7 @@ async def run_voice_call(
     *,
     agent: AgentConnector | LiveKitAgent,
     simulated_user: SimulatedUserRef,
-    scenario: dict[str, JSONValue],
+    input: dict[str, JSONValue],
     initiator: Initiator = "agent",
     timeout: int = 600,
     project_id: str | None = None,
@@ -126,11 +126,9 @@ async def run_voice_call(
         parent = logger.init_logger(project_id=project_id, state=state, set_current=False).export()
     with logger.start_span(name="Voice call", type=SpanTypeAttribute.TASK, parent=parent, state=state) as span:
         call = await asyncio.to_thread(
-            _create_call, simulated_user, scenario, initiator, timeout, project_id, span.export(), state
+            _create_call, simulated_user, input, initiator, timeout, project_id, span.export(), state
         )
-        span.log(
-            input=scenario, metadata={"voice_session_id": call["session_id"], "simulator_span_id": call["span_id"]}
-        )
+        span.log(input=input, metadata={"voice_session_id": call["session_id"], "simulator_span_id": call["span_id"]})
         if isinstance(agent, LiveKitAgent):
             from ._livekit import run_livekit
 
@@ -159,13 +157,13 @@ def voice_task(
     timeout: int = 600,
     project_id: str | None = None,
 ) -> Callable[[dict[str, JSONValue]], Awaitable[VoiceCallResult]]:
-    """Create an Eval task reusing a saved user. Only input becomes the caller's scenario."""
+    """Create an Eval task reusing a saved user, whose instructions are templated from row input."""
 
     async def task(input: dict[str, JSONValue]) -> VoiceCallResult:
         return await run_voice_call(
             agent=agent,
             simulated_user=simulated_user,
-            scenario=input,
+            input=input,
             initiator=initiator,
             timeout=timeout,
             project_id=project_id,
