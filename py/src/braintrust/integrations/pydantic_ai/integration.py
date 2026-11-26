@@ -13,6 +13,7 @@ from .patchers import (
     RetryModelPatcher,
     StreamedResponseSyncStartProducerPatcher,
     SyncStreamBridgeInitPatcher,
+    ToolCallClassificationPatcher,
     ToolManagerFunctionToolPatcher,
 )
 
@@ -35,4 +36,5 @@ class PydanticAIIntegration(BaseIntegration):
         DirectModelRequestStreamSyncPatcher,
         ToolManagerFunctionToolPatcher,
         StepPersistencePatcher,
+        ToolCallClassificationPatcher,
     )

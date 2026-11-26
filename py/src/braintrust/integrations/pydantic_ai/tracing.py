@@ -5,8 +5,8 @@ import logging
 import sys
 import time
 from collections.abc import Mapping
-from contextlib import AbstractAsyncContextManager, asynccontextmanager
-from dataclasses import dataclass
+from contextlib import AbstractAsyncContextManager, aclosing, asynccontextmanager
+from dataclasses import dataclass, field
 from typing import Any
 
 from braintrust.integrations.utils import _materialize_attachment, _metered_duration_metrics, _timing_metrics
@@ -37,6 +37,7 @@ logger = logging.getLogger(__name__)
 class _ToolTraceState:
     agent_span: Any
     emitted: bool = False
+    non_execution_call_ids: set[str] = field(default_factory=set)
 
 
 @dataclass
@@ -237,7 +238,7 @@ def _agent_iter_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
             input=input_data if input_data else None,
             metadata=metadata,
         ) as agent_span:
-            tool_trace_token = _start_tool_trace_capture()
+            tool_trace_token = _start_tool_trace_capture(agent_span)
             start_time = time.time()
             run = None
             try:
@@ -1129,22 +1130,68 @@ def _extract_tool_call(call_or_validated: Any) -> Any:
     return call_or_validated
 
 
+def _tool_call_input(call: Any) -> Any:
+    try:
+        return call.args_as_dict()
+    except Exception:
+        return getattr(call, "args", None)
+
+
+async def _process_tool_calls_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+    from pydantic_ai.messages import FunctionToolResultEvent, ToolReturnPart
+
+    state = _tool_trace_state.get()
+    calls_by_id = {}
+    if state is not None:
+        try:
+            tool_manager = args[0] if args else kwargs["tool_manager"]
+            calls = args[1] if len(args) > 1 else kwargs["tool_calls"]
+            for call in calls:
+                calls_by_id[call.tool_call_id] = call
+                definition = tool_manager.get_tool_def(call.tool_name)
+                if definition is not None and definition.kind in ("output", "external"):
+                    state.non_execution_call_ids.add(call.tool_call_id)
+        except Exception as e:
+            logger.debug(f"Failed to classify tool calls for tracing: {e}")
+
+    async with aclosing(wrapped(*args, **kwargs)) as events:
+        async for event in events:
+            if state is not None and isinstance(event, FunctionToolResultEvent):
+                part = event.part
+                if isinstance(part, ToolReturnPart) and getattr(part, "outcome", None) == "denied":
+                    call = calls_by_id.get(part.tool_call_id)
+                    if call is not None and call.tool_name == part.tool_name:
+                        state.non_execution_call_ids.add(part.tool_call_id)
+                        with start_span(
+                            name=call.tool_name,
+                            type=SpanTypeAttribute.TOOL,
+                            input=_tool_call_input(call),
+                            metadata={"tool_call_id": part.tool_call_id, "tool_approval": "denied"},
+                        ):
+                            pass
+            yield event
+
+
 async def _trace_tool_execution(wrapped: Any, args: Any, kwargs: Any):
-    call = _extract_tool_call(args[0] if args else kwargs.get("validated") or kwargs.get("call"))
+    call_or_validated = args[0] if args else kwargs.get("validated") or kwargs.get("call")
+    call = _extract_tool_call(call_or_validated)
     if call is None:
+        return await wrapped(*args, **kwargs)
+
+    from pydantic_ai.exceptions import ApprovalRequired, CallDeferred
+
+    if isinstance(getattr(call_or_validated, "deferral", None), (ApprovalRequired, CallDeferred)):
         return await wrapped(*args, **kwargs)
 
     tool_name = getattr(call, "tool_name", None) or "unknown_tool"
     tool_call_id = getattr(call, "tool_call_id", None)
 
-    try:
-        input_data = call.args_as_dict()
-    except Exception:
-        input_data = getattr(call, "args", None)
-
-    metadata = {"tool_call_id": tool_call_id} if tool_call_id else None
-
-    from pydantic_ai.exceptions import ApprovalRequired, CallDeferred
+    input_data = _tool_call_input(call)
+    metadata = {"tool_call_id": tool_call_id} if tool_call_id else {}
+    if getattr(call_or_validated, "args_valid", True):
+        metadata["tool_outcome"] = "executed"
+    if getattr(getattr(call_or_validated, "ctx", None), "tool_call_approved", False):
+        metadata["tool_approval"] = "approved"
 
     _mark_tool_span_emitted()
     deferral: CallDeferred | ApprovalRequired | None = None
@@ -1161,11 +1208,11 @@ async def _trace_tool_execution(wrapped: Any, args: Any, kwargs: Any):
         if deferral is None:
             tool_span.log(output=result, metrics=metrics)
         else:
-            # Same kind names pydantic_ai uses for deferred tool calls.
-            deferred_metadata = {"deferred": "unapproved" if isinstance(deferral, ApprovalRequired) else "external"}
-            if getattr(deferral, "metadata", None):
-                deferred_metadata["deferred_metadata"] = deferral.metadata
-            tool_span.log(metadata=deferred_metadata, metrics=metrics)
+            if isinstance(deferral, ApprovalRequired):
+                kind = "unapproved"
+            else:
+                kind = "question" if getattr(deferral, "kind", None) == "question" else "external"
+            tool_span.log(metadata={"tool_outcome": "deferred", "deferred": kind}, metrics=metrics)
     if deferral is not None:
         try:
             raise deferral
@@ -1195,58 +1242,62 @@ def _create_tool_spans_from_messages(result: Any) -> None:
 def _create_tool_spans_from_messages_impl(result: Any) -> None:
     from pydantic_ai.messages import ToolCallPart, ToolReturnPart
 
-    messages = result.new_messages()
+    try:
+        from pydantic_ai._tool_status import TOOL_STATUS_TEXTS
+    except ImportError:
+        TOOL_STATUS_TEXTS = {"Final result processed.", "Tool not executed - a final result was already processed."}
 
-    returns_by_id: dict[str, tuple[Any, float | None]] = {}
-    for msg in messages:
+    state = _tool_trace_state.get()
+    pending_calls: dict[tuple[str, str], tuple[Any, float | None]] = {}
+    for msg in result.new_messages():
         if not hasattr(msg, "parts"):
             continue
         msg_ts = _msg_timestamp(msg)
         for part in msg.parts:
-            if isinstance(part, ToolReturnPart) and hasattr(part, "tool_call_id"):
-                returns_by_id[part.tool_call_id] = (part, msg_ts)
-
-    for msg in messages:
-        if not hasattr(msg, "parts"):
-            continue
-        call_ts = _msg_timestamp(msg)
-        for part in msg.parts:
-            if not isinstance(part, ToolCallPart):
+            if not isinstance(part, (ToolCallPart, ToolReturnPart)) or not part.tool_call_id:
                 continue
 
-            tool_name = getattr(part, "tool_name", None) or "unknown_tool"
-            tool_call_id = getattr(part, "tool_call_id", None)
+            tool_name, tool_call_id = part.tool_name, part.tool_call_id
+            if state is not None and tool_call_id in state.non_execution_call_ids:
+                continue
+            key = (tool_name, tool_call_id)
+            if isinstance(part, ToolCallPart):
+                pending_calls[key] = (part, msg_ts)
+                continue
+            matched_call = pending_calls.pop(key, None)
+            if matched_call is None:
+                continue
 
-            try:
-                input_data = part.args_as_dict()
-            except Exception:
-                input_data = getattr(part, "args", None)
+            outcome = getattr(part, "outcome", "success")
+            if outcome not in ("success", "denied"):
+                continue
+            if outcome == "success" and isinstance(part.content, str) and part.content in TOOL_STATUS_TEXTS:
+                continue
 
-            output_data = None
-            return_ts: float | None = None
-            if tool_call_id and tool_call_id in returns_by_id:
-                return_part, return_ts = returns_by_id[tool_call_id]
-                output_data = getattr(return_part, "content", None)
-            metadata = {}
-            if tool_call_id:
-                metadata["tool_call_id"] = tool_call_id
+            call, call_ts = matched_call
+            metadata = {"tool_outcome": "reconstructed", "tool_call_id": tool_call_id}
+            if outcome == "denied":
+                metadata["tool_approval"] = "denied"
 
             with start_span(
                 name=tool_name,
                 type=SpanTypeAttribute.TOOL,
-                input=input_data,
+                input=_tool_call_input(call),
                 start_time=call_ts,
-                metadata=metadata if metadata else None,
+                metadata=metadata,
             ) as tool_span:
                 metrics = {}
                 if call_ts is not None:
                     metrics["start"] = call_ts
-                if return_ts is not None:
-                    metrics["end"] = return_ts
-                if call_ts is not None and return_ts is not None:
-                    metrics["duration"] = return_ts - call_ts
-                tool_span.log(output=output_data, metrics=metrics if metrics else None)
-                tool_span.end(end_time=return_ts)
+                if msg_ts is not None:
+                    metrics["end"] = msg_ts
+                if call_ts is not None and msg_ts is not None:
+                    metrics["duration"] = max(0, msg_ts - call_ts)
+                if outcome == "success":
+                    tool_span.log(output=part.content)
+                if metrics:
+                    tool_span.log(metrics=metrics)
+                tool_span.end(end_time=msg_ts)
 
 
 def _msg_timestamp(msg: Any) -> float | None:

@@ -720,6 +720,8 @@ async def test_agent_structured_output(memory_logger):
     spans = memory_logger.pop()
     assert len(spans) >= 2, f"Expected at least 2 spans (agent_run + chat), got {len(spans)}"
 
+    assert not [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.TOOL]
+
     # Find agent_run and chat spans
     agent_span = _find_agent_span(spans)
     chat_span = next((s for s in spans if "chat" in s["span_attributes"]["name"]), None)
@@ -1663,6 +1665,7 @@ def test_tool_execution_creates_spans(memory_logger, monkeypatch, trace_tool_exe
         f"Expected one TOOL span per tool call ({tool_call_count}), got {len(tool_spans)}"
     )
     calc_tool_span = _single_tool_span(tool_spans, "calculate")
+    assert calc_tool_span["metadata"]["tool_outcome"] == ("executed" if trace_tool_execution else "reconstructed")
     assert calc_tool_span["input"] is not None, "tool span should have input"
     assert calc_tool_span["output"] is not None, "tool span should have output"
     assert agent_span["span_parents"] == [sync_span["span_id"]]
@@ -1681,6 +1684,7 @@ def _assert_deferred_tool_span(span, tool_call_id, kind):
     assert span.get("output") is None
     assert span["metadata"]["tool_call_id"] == tool_call_id
     assert span["metadata"]["deferred"] == kind
+    assert span["metadata"]["tool_outcome"] == "deferred"
     assert span["metrics"]["duration"] >= 0
 
 
@@ -1714,8 +1718,7 @@ async def test_call_deferred_tool_is_not_logged_as_error(memory_logger):
 
     tool_span = _single_tool_span(memory_logger.pop(), "run_long_job")
     _assert_deferred_tool_span(tool_span, result.output.calls[0].tool_call_id, "external")
-    if supports_metadata:
-        assert tool_span["metadata"]["deferred_metadata"] == {"job_id": "job-123"}
+    assert "deferred_metadata" not in tool_span["metadata"]
 
 
 @pytest.mark.vcr
@@ -1757,6 +1760,7 @@ async def test_approval_required_tool_is_not_logged_as_error_and_resumes(memory_
     assert approved_span.get("error") is None
     assert approved_span["output"] == "Deleted /tmp/report.txt"
     assert approved_span["metadata"]["tool_call_id"] == tool_call_id
+    assert approved_span["metadata"]["tool_approval"] == "approved"
     assert "deferred" not in approved_span["metadata"]
 
 
@@ -1779,6 +1783,7 @@ async def test_tool_exception_is_logged_as_error(memory_logger):
     tool_span = _single_tool_span(memory_logger.pop(), "publish_flow")
     assert "publish failed" in tool_span["error"]
     assert "deferred" not in tool_span["metadata"]
+    assert tool_span["metadata"]["tool_outcome"] == "executed"
 
 
 def test_agent_tool_metadata_extraction(memory_logger):
@@ -2018,6 +2023,7 @@ async def test_agent_run_stream_structured_output(memory_logger):
     # Check spans
     spans = memory_logger.pop()
     assert len(spans) >= 2, f"Expected at least 2 spans (agent_run_stream + chat), got {len(spans)}"
+    assert not [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.TOOL]
 
     # Find agent_run_stream and chat spans
     agent_span = next((s for s in spans if "agent_run_stream" in s["span_attributes"]["name"]), None)
