@@ -1,6 +1,8 @@
 import unittest
 from dataclasses import dataclass
 
+from .prompt import FunctionCall, PromptChatBlock, PromptMessage
+from .prompt import PromptData as RealPromptData
 from .serializable_data_class import SerializableDataClass
 
 
@@ -55,6 +57,40 @@ class TestSerializableDataClass(unittest.TestCase):
         # Verify round-trip serialization works.
         round_trip = PromptSchema.from_dict_deep(prompt.as_dict())
         self.assertEqual(round_trip.as_dict(), test_dict)
+
+
+class TestUnionDeserializationScalars(unittest.TestCase):
+    def test_from_dict_deep_preserves_function_call_union_members(self):
+        cases = [
+            ("legacy_fn", "legacy_fn"),
+            (None, None),
+            (
+                {"name": "lookup", "arguments": '{"q": 1}'},
+                FunctionCall(name="lookup", arguments='{"q": 1}'),
+            ),
+            (
+                FunctionCall(name="lookup", arguments='{"q": 1}'),
+                FunctionCall(name="lookup", arguments='{"q": 1}'),
+            ),
+        ]
+        for function_call, expected in cases:
+            with self.subTest(function_call=function_call):
+                message = PromptMessage(content="hi", role="user", function_call=function_call)
+                restored = PromptMessage.from_dict_deep(message.as_dict())
+                self.assertEqual(restored.function_call, expected)
+                self.assertEqual(restored, PromptMessage(content="hi", role="user", function_call=expected))
+
+    def test_from_dict_deep_accepts_raw_legacy_function_call(self):
+        restored = PromptMessage.from_dict_deep({"content": "hi", "role": "user", "function_call": "legacy_fn"})
+        self.assertEqual(restored.function_call, "legacy_fn")
+
+    def test_prompt_data_preserves_legacy_function_call_in_nested_message(self):
+        prompt_data = RealPromptData(
+            prompt=PromptChatBlock(messages=[PromptMessage(content="hi", role="user", function_call="legacy_fn")])
+        )
+        restored = RealPromptData.from_dict_deep(prompt_data.as_dict())
+        self.assertEqual(restored, prompt_data)
+        self.assertEqual(restored.prompt.messages[0].function_call, "legacy_fn")
 
 
 if __name__ == "__main__":
