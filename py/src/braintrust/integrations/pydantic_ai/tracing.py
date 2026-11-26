@@ -238,7 +238,7 @@ def _agent_iter_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
             input=input_data if input_data else None,
             metadata=metadata,
         ) as agent_span:
-            tool_trace_token = _start_tool_trace_capture()
+            tool_trace_token = _start_tool_trace_capture(agent_span)
             start_time = time.time()
             run = None
             try:
