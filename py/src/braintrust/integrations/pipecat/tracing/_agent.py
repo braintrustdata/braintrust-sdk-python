@@ -191,12 +191,6 @@ class AgentTracker:
         self._open(_RESPONSE)
         return span
 
-    def report_usage(self, parent: Span, usage: dict[str, int | float]) -> None:
-        """Usage a provider event reports for the active response's model child."""
-        response = self._response
-        if response is not None and response.span is parent and response.model is not None:
-            response.model.report_usage(usage)
-
     def response_text(self, text: str) -> None:
         if self._response is not None:
             self._response.text.append(text)

@@ -83,6 +83,18 @@ def _assert_speech_output_attachment(span):
     assert attachment.reference["content_type"] == "audio/mpeg"
 
 
+def _assert_transcription_usage(span):
+    metrics = span["metrics"]
+    assert "prompt_audio_seconds" not in metrics
+    assert metrics["usage_seconds"] == span["metadata"]["contrib.mistral.usage"]["prompt_audio_seconds"] == 1
+    assert metrics["tokens"] == metrics["prompt_tokens"] + metrics["completion_tokens"]
+    details = span["metadata"]["contrib.mistral.usage"]["prompt_tokens_details"]
+    if "audio_tokens" in details:
+        assert metrics["prompt_audio_tokens"] == details["audio_tokens"] <= metrics["prompt_tokens"]
+    else:
+        assert "prompt_audio_tokens" not in metrics
+
+
 def _assert_transcription_complete_span(span, response_text, start, end):
     assert isinstance(span["input"]["file"], Attachment)
     assert span["input"]["file"].reference["filename"] == TEST_AUDIO_FILE.name
@@ -90,7 +102,7 @@ def _assert_transcription_complete_span(span, response_text, start, end):
     assert span["metadata"]["provider"] == "mistral"
     assert span["metadata"]["model"] in AUDIO_TRANSCRIPTION_RESPONSE_MODELS
     assert span["output"] == response_text
-    assert span["metrics"]["prompt_audio_seconds"] > 0
+    _assert_transcription_usage(span)
     assert span["metrics"]["tokens"] > 0
     assert_metrics_are_valid(span["metrics"], start, end)
 
@@ -996,8 +1008,9 @@ def test_wrap_mistral_audio_transcriptions_stream_sync(memory_logger):
     assert span["metadata"]["provider"] == "mistral"
     assert span["metadata"]["model"] in AUDIO_TRANSCRIPTION_RESPONSE_MODELS
     assert span["metadata"]["stream"] == True
+    assert span["metadata"]["contrib.mistral.request_id"] == stream.response.headers["x-kong-request-id"]
     assert span["output"] == final_text
-    assert span["metrics"]["prompt_audio_seconds"] > 0
+    _assert_transcription_usage(span)
     if final_text:
         assert span["metrics"]["time_to_first_token"] >= 0
     assert_metrics_are_valid(span["metrics"], start, end)

@@ -667,7 +667,7 @@ async def test_voice_session_traces_turns_speech_recognition_generation_and_play
 
     logs = memory_logger.pop()
     root = _single_span(logs, "session")
-    assert root["metadata"]["audio.schema.version"] == "3.1.0"
+    assert root["metadata"]["audio.schema.version"] == "3.2.0"
     assert root["metadata"]["contrib.pipecat.terminal_frame"] == ("CancelFrame" if cancel else "EndFrame")
     if not cancel:
         assert root["metadata"]["contrib.pipecat.reason"] == "pipeline complete"
@@ -1383,6 +1383,8 @@ async def test_live_observations(memory_logger, vcr_cassette_dir, boundary):
     assert all("turn.id" not in row.get("metadata", {}) for row in logs if row not in turns + received)
     responses = _spans_named(logs, "llm_response")
     assert all(row["span_attributes"]["type"] == "task" and "tokens" not in row["metrics"] for row in responses)
+    assert all({"usage_seconds", "usage_standby_seconds"}.isdisjoint(row["metrics"]) for row in [session, *responses])
+    assert "tokens" not in model["metrics"]
     assert all(not _link_targets(row, "consumes_tool_result") for row in responses)
     llms = _spans_named(logs, "pipecat.live.backend_response")
     if boundary == "late_transcript":
@@ -1407,6 +1409,11 @@ async def test_live_observations(memory_logger, vcr_cassette_dir, boundary):
             if e["type"] == "response.event" and e["event"]["type"] == "response.completed"
         ]
         assert [r["metrics"]["tokens"] for r in llms] == [r["usage"]["total_tokens"] for r in completions]
+        assert [r["metadata"]["model"] for r in llms] == [r["model"] for r in completions]
+        assert [r["metadata"]["contrib.pipecat.live.response_usage"] for r in llms] == [
+            r["usage"] for r in completions
+        ]
+        assert all({"usage_seconds", "usage_standby_seconds"}.isdisjoint(row["metrics"]) for row in llms)
         assert [r["metrics"]["prompt_cache_creation_tokens"] for r in llms] == [
             r["usage"]["input_tokens_details"]["cache_write_tokens"] for r in completions
         ]
@@ -1417,8 +1424,17 @@ async def test_live_observations(memory_logger, vcr_cassette_dir, boundary):
         ]
         assert [r["output"] for r in llms] == [[item] for item in completed_items]
         closed = next(e for e in server_events if e["type"] == "session.closed")
+        reported_standby = closed["usage"].get("paused_seconds")
+        if reported_standby is None:
+            assert "usage_standby_seconds" not in model["metrics"]
+        else:
+            assert model["metrics"]["usage_standby_seconds"] == reported_standby
         assert model["metadata"]["contrib.pipecat.live.usage_seconds"] == closed["usage"]["seconds"]
+        assert model["metadata"]["contrib.pipecat.live.usage"] == closed["usage"]
+        assert model["metrics"]["usage_seconds"] == closed["usage"]["seconds"]
+        assert "usage_seconds" not in model["metadata"]
     else:
+        assert "usage_seconds" not in model["metrics"]
         assert responses[-1]["metadata"].get("contrib.pipecat.incomplete")
         assert llms[-1]["metadata"].get("contrib.pipecat.incomplete")
         events = [e["event"] for e in sent if e["type"] == "response.event"]
@@ -1435,6 +1451,9 @@ async def test_live_observations(memory_logger, vcr_cassette_dir, boundary):
             expected = {**item, "content": [{**part, "text": text}]}
         assert llms[-1]["output"] == responses[-1]["output"] == [expected]
     started = next(e for e in server_events if e["type"] == "session.started")
+    assert model["metadata"]["model"] == started["session"]["model"]
+    assert model["metadata"]["provider"] == "openai"
+    assert all(row["metadata"]["contrib.pipecat.live.session_id"] == started["session"]["id"] for row in llms)
     assert [message for message in model["input"] if message.get("role") == "system"] == [
         {"role": "system", "content": started["session"]["instructions"]}
     ]
@@ -1452,7 +1471,8 @@ async def test_live_observations(memory_logger, vcr_cassette_dir, boundary):
 
 
 @pytest.mark.asyncio
-async def test_realtime_cached_audio_usage(memory_logger):
+@pytest.mark.parametrize("interrupt", [False, True])
+async def test_realtime_cached_audio_usage(memory_logger, interrupt):
     realtime = pytest.importorskip("pipecat.services.openai.realtime.llm")
     from websockets.asyncio.server import serve
 
@@ -1467,7 +1487,7 @@ async def test_realtime_cached_audio_usage(memory_logger):
     usage = events["response.done"]["response"]["usage"]
     input_details = usage["input_token_details"]
     output_details = usage["output_token_details"]
-    cached_audio_tokens = input_details["cached_tokens_details"]["audio_tokens"]
+    created, release_usage, response_done = asyncio.Event(), asyncio.Event(), asyncio.Event()
 
     async def replay(websocket):
         await websocket.send(json.dumps(events["session.created"]))
@@ -1477,6 +1497,8 @@ async def test_realtime_cached_audio_usage(memory_logger):
                 await websocket.send(json.dumps(events["session.updated"]))
             elif kind == "response.create":
                 await websocket.send(json.dumps(events["response.created"]))
+                created.set()
+                await release_usage.wait()
                 await websocket.send(json.dumps(events["response.done"]))
 
     _instrument()
@@ -1484,7 +1506,37 @@ async def test_realtime_cached_audio_usage(memory_logger):
         port = server.sockets[0].getsockname()[1]
         service = realtime.OpenAIRealtimeLLMService(api_key="test", base_url=f"ws://127.0.0.1:{port}")
         context = LLMContext(messages=[{"role": "user", "content": "Tell me about my order."}])
-        assert not await _run_text_pipeline([service], [context])
+        frames = _frames()
+        Pipeline = _import("pipecat.pipeline.pipeline.Pipeline")
+        PipelineParams = _import("pipecat.pipeline.worker.PipelineParams")
+        worker = _make_worker(
+            Pipeline([service]), params=PipelineParams(enable_metrics=True, enable_usage_metrics=True)
+        )
+        worker.set_reached_downstream_filter((frames.LLMFullResponseEndFrame,))
+
+        @worker.event_handler("on_frame_reached_downstream")
+        async def on_response_done(_worker, _frame):
+            if release_usage.is_set():
+                response_done.set()
+
+        async with _running(worker):
+            await worker.queue_frame(frames.LLMContextFrame(context))
+            await asyncio.wait_for(created.wait(), 5)
+            if interrupt:
+                observer = worker._braintrust_pipecat_observer
+                agent = observer._session.agent
+                assert agent._response is not None
+                await worker.queue_frame(frames.InterruptionFrame())
+
+                # Wait until the real observer has ended the operation before
+                # allowing the provider to report terminal usage.
+                async def wait_for_interruption():
+                    while agent._response is not None:
+                        await asyncio.sleep(0)
+
+                await asyncio.wait_for(wait_for_interruption(), 5)
+            release_usage.set()
+            await asyncio.wait_for(response_done.wait(), 5)
 
     logs = memory_logger.pop()
     task = _single_span(logs, "llm_response")
@@ -1496,8 +1548,14 @@ async def test_realtime_cached_audio_usage(memory_logger):
     assert span["span_parents"] == [task["span_id"]]
     assert span["metadata"]["provider"] == "openai"
     assert span["metadata"]["model"]
+    assert span["metadata"]["contrib.pipecat.response_id"] == events["response.done"]["response"]["id"]
+    assert span["metadata"]["contrib.pipecat.session_id"] == events["session.created"]["session"]["id"]
+    assert span["metadata"]["contrib.pipecat.usage"] == usage
+    assert "contrib.pipecat.usage" not in task["metadata"]
     assert span["context"]["span_origin"]["instrumentation"]["name"] == "pipecat-auto"
     assert span["output"] == task["output"]
+    if interrupt:
+        assert task["metadata"]["contrib.pipecat.interrupted"] is True
     assert span["output"][0]["role"] == "assistant"
     assert task["metrics"]["start"] <= span["metrics"]["start"] <= span["metrics"]["end"] <= task["metrics"]["end"]
     expected = {
@@ -1507,7 +1565,7 @@ async def test_realtime_cached_audio_usage(memory_logger):
         "prompt_audio_tokens": input_details["audio_tokens"],
         "completion_audio_tokens": output_details["audio_tokens"],
         "prompt_cached_tokens": input_details["cached_tokens"],
-        "prompt_cached_audio_tokens": cached_audio_tokens,
+        "prompt_cached_audio_tokens": input_details["cached_tokens_details"]["audio_tokens"],
     }
     assert not expected.keys() & task["metrics"].keys()
     assert {key: span["metrics"][key] for key in expected} == expected
@@ -2139,6 +2197,9 @@ async def test_uncovered_clients_own_model_children_and_usage(
                 assert model["metrics"]["prompt_tokens"] > 0
                 assert model["metrics"]["completion_tokens"] > 0
                 assert (
+                    model["metadata"]["contrib.pipecat.llm_token_usage"]["total_tokens"] == model["metrics"]["tokens"]
+                )
+                assert (
                     model["metrics"]["tokens"]
                     == model["metrics"]["prompt_tokens"] + model["metrics"]["completion_tokens"]
                 )
@@ -2155,6 +2216,7 @@ async def test_uncovered_clients_own_model_children_and_usage(
             else:
                 assert model["input"]["operation"] == "speech"
                 assert model["input"]["prompt"] == parent["input"]["text"]
+                assert sum(model["metadata"]["contrib.pipecat.tts_usage"]) == len(model["input"]["prompt"])
                 if capture:
                     part = model["output"]["content"][0]["file"]
                     assert part["file_data"].reference["type"] == "braintrust_attachment"

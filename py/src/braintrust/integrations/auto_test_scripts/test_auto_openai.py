@@ -116,7 +116,12 @@ with autoinstrument_test_context("test_openai_audio_speech_capture", integration
         assert b"".join(response.iter_bytes()).startswith(b"RIFF")
     (span,) = memory_logger.pop()
     assert span["span_attributes"]["name"] == "custom speech"
-    assert span["metadata"] == {"model": "tts-1", "provider": "openai", "request_tag": "auto-speech-test"}
+    assert span["metadata"] == {
+        "model": "tts-1",
+        "provider": "openai",
+        "request_tag": "auto-speech-test",
+        "contrib.openai.request_id": response.headers["x-request-id"],
+    }
     assert span["span_attributes"]["type"] == "llm"
     assert span["context"]["span_origin"]["instrumentation"]["name"] == "openai-auto"
     assert span["input"] == {

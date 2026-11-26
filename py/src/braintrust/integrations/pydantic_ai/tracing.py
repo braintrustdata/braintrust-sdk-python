@@ -9,7 +9,7 @@ from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass
 from typing import Any
 
-from braintrust.integrations.utils import _materialize_attachment, _timing_metrics
+from braintrust.integrations.utils import _materialize_attachment, _metered_duration_metrics, _timing_metrics
 from braintrust.logger import _internal_get_global_state, current_span
 from braintrust.logger import start_span as _bt_start_span
 
@@ -1498,9 +1498,9 @@ def _extract_response_metrics(
     if first_token_time:
         metrics["time_to_first_token"] = first_token_time - start_time
 
-    if hasattr(response, "usage") and response.usage:
-        usage = response.usage
-
+    usage = getattr(response, "usage", None)
+    metrics.update(_metered_duration_metrics(getattr(usage, "__dict__", {}).get("audio_seconds")))
+    if usage:
         if hasattr(usage, "input_tokens") and usage.input_tokens is not None:
             metrics["prompt_tokens"] = float(usage.input_tokens)
 
@@ -1518,6 +1518,10 @@ def _extract_response_metrics(
 
         if hasattr(usage, "input_audio_tokens") and usage.input_audio_tokens is not None:
             metrics["prompt_audio_tokens"] = float(usage.input_audio_tokens)
+
+        cached_audio = _reported_cached_audio_tokens(usage)
+        if cached_audio is not None:
+            metrics["prompt_cached_audio_tokens"] = cached_audio
 
         if hasattr(usage, "output_audio_tokens") and usage.output_audio_tokens is not None:
             metrics["completion_audio_tokens"] = float(usage.output_audio_tokens)
@@ -1544,21 +1548,39 @@ def _extract_response_metrics(
     return metrics if metrics else None
 
 
+def _reported_cached_audio_tokens(usage: Any) -> int | None:
+    count = getattr(usage, "__dict__", {}).get("cache_audio_read_tokens")
+    if type(count) is not int or count < 0:
+        return None
+    # Older RequestUsage dataclasses populate all defaults on the instance.
+    dataclass_options = getattr(type(usage), "__dataclass_params__", None)
+    return None if count == 0 and getattr(dataclass_options, "init", False) else count
+
+
 def _extract_response_metadata(response: Any) -> dict[str, Any] | None:
     usage = getattr(response, "usage", None)
-    metadata: dict[str, Any] = {}
+    usage_fields = getattr(usage, "__dict__", {})
+    audio_fields = {"audio_seconds": usage_fields["audio_seconds"]} if "audio_seconds" in usage_fields else {}
+    if (cached_audio := _reported_cached_audio_tokens(usage)) is not None:
+        audio_fields["cache_audio_read_tokens"] = cached_audio
+    native_metadata = {"contrib.pydantic_ai.usage": audio_fields} if audio_fields else {}
+    if audio_fields and (response_id := getattr(response, "provider_response_id", None)):
+        native_metadata["contrib.pydantic_ai.provider_response_id"] = response_id
 
-    audio_seconds = getattr(usage, "audio_seconds", None)
-    if audio_seconds is not None:
-        metadata["audio_seconds"] = float(audio_seconds)
+    duration = _metered_duration_metrics(audio_fields.get("audio_seconds"))
+    usage_metadata: dict[str, Any] = {}
+    if duration:
+        usage_metadata["audio_seconds"] = duration["usage_seconds"]
 
     details = getattr(usage, "details", None)
     if isinstance(details, Mapping):
         web_search_requests = details.get("web_search_requests")
         if web_search_requests is not None:
-            metadata["web_search_requests"] = web_search_requests
+            usage_metadata["web_search_requests"] = web_search_requests
 
-    return {"pydantic_ai_usage": metadata} if metadata else None
+    if usage_metadata:
+        native_metadata["pydantic_ai_usage"] = usage_metadata
+    return native_metadata or None
 
 
 class _ContextPropagatingAsyncContextManager(AbstractAsyncContextManager):

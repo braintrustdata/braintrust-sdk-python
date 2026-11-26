@@ -24,6 +24,7 @@ from braintrust.integrations.utils import (
     _image_attachment_from_base64,
     _log_and_end_span,
     _materialize_attachment,
+    _metered_duration_metrics,
     _parse_openai_usage_metrics,
     _prettify_response_params,
     _ServedServiceTierTracker,
@@ -280,7 +281,7 @@ def _handle_transcription_streaming(raw_response: Any, span: Span, start: float,
     deltas: list[str] = []
     done_text: str | None = None
     metrics: dict[str, Any] = {}
-    metadata: dict[str, Any] = {"stream": True}
+    metadata: dict[str, Any] = {"stream": True, **_audio_request_metadata(raw_response)}
 
     def observe(event: Any) -> None:
         nonlocal done_text
@@ -294,7 +295,9 @@ def _handle_transcription_streaming(raw_response: Any, span: Span, start: float,
             if isinstance(text, str):
                 done_text = text
                 deltas.clear()
-            metrics.update(_parse_transcription_usage(_get_field(event, "usage")))
+            usage_metrics, usage_metadata = _transcription_usage(_get_field(event, "usage"))
+            metrics.update(usage_metrics)
+            metadata.update(usage_metadata)
             metadata.update(_transcription_response_metadata(event))
         else:
             return
@@ -722,6 +725,7 @@ def _speech_wrapper(wrapped, instance, args, kwargs):
         speech_response = wrapped(*args, **kwargs)
         span.log(
             metrics=_timing_metrics(start, time.time()),
+            metadata=_audio_request_metadata(speech_response),
             output=_extract_audio_output(
                 speech_response,
                 response_format=kwargs.get("response_format"),
@@ -740,6 +744,7 @@ async def _aspeech_wrapper_async(wrapped, instance, args, kwargs):
         speech_response = await wrapped(*args, **kwargs)
         span.log(
             metrics=_timing_metrics(start, time.time()),
+            metadata=_audio_request_metadata(speech_response),
             output=_extract_audio_output(
                 speech_response,
                 response_format=kwargs.get("response_format"),
@@ -794,10 +799,15 @@ def _trace_transcription(args, kwargs) -> Iterator[Callable[[Any], Any]]:
             stream_owns_span = True
             return stream
 
+        usage_metrics, usage_metadata = _transcription_usage(_get_field(response, "usage"))
         span.log(
-            metrics=_parse_transcription_usage(_get_field(response, "usage")),
+            metrics=usage_metrics,
             output=_extract_transcription_text(response),
-            metadata=_transcription_response_metadata(response),
+            metadata={
+                **_audio_request_metadata(response),
+                **_transcription_response_metadata(response),
+                **usage_metadata,
+            },
         )
         return response
 
@@ -1190,12 +1200,25 @@ def _transcription_response_metadata(response: Any) -> dict[str, Any]:
     return {}
 
 
-def _parse_transcription_usage(usage: Any) -> dict[str, Any]:
+def _audio_request_metadata(response: Any) -> dict[str, str]:
+    hidden = _get_field(response, "_hidden_params")
+    headers = _get_field(hidden, "headers") or _get_field(_get_field(response, "response"), "headers")
+    request_id = headers.get("x-request-id") if hasattr(headers, "get") else None
+    return {"contrib.litellm.request_id": request_id} if isinstance(request_id, str) and request_id else {}
+
+
+def _transcription_usage(usage: Any) -> tuple[dict[str, Any], dict[str, Any]]:
+    usage = usage.model_dump(exclude_none=True) if hasattr(usage, "model_dump") else _try_to_dict(usage)
+    if not isinstance(usage, dict):
+        return {}, {}
     metrics = _parse_metrics_from_usage(usage)
+    metrics.pop("seconds", None)
+    metrics.pop("prompt_audio_seconds", None)
+    metrics.update(_metered_duration_metrics(usage.get("seconds", usage.get("prompt_audio_seconds"))))
     audio_tokens = _get_field(_get_field(usage, "input_token_details"), "audio_tokens")
     if is_numeric(audio_tokens):
         metrics["prompt_audio_tokens"] = audio_tokens
-    return metrics
+    return metrics, {"contrib.litellm.usage": usage}
 
 
 def _parse_metrics_from_usage(usage: Any) -> dict[str, Any]:

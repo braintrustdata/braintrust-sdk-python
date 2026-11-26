@@ -4,6 +4,7 @@ import binascii
 import inspect
 import os
 import struct
+import sys
 import tempfile
 import time
 import zlib
@@ -2195,6 +2196,11 @@ async def test_openai_audio_transcription(memory_logger, is_async, monkeypatch, 
     assert len(memory_logger.upload_attempts) == (1 if enabled else 0)
     assert span["output"] == response.text
     assert response.text.lower() == TEST_TRANSCRIPT.lower()
+    assert span["metadata"]["contrib.openai.usage"]["type"] == "duration"
+    assert span["metrics"]["usage_seconds"] == span["metadata"]["contrib.openai.usage"]["seconds"] == 3
+    assert "usage_seconds" not in span["metadata"]
+    assert span["metadata"]["contrib.openai.request_id"] == response._request_id
+    assert "seconds" not in span["metrics"]
 
 
 @sync_async
@@ -2218,7 +2224,12 @@ async def test_openai_audio_speech_capture(memory_logger, monkeypatch, is_async,
     memory_logger.flush()
     (span,) = memory_logger.pop()
     assert span["span_attributes"]["name"] == "custom speech"
-    assert span["metadata"] == {"model": "tts-1", "provider": "openai", "request_tag": "speech-test"}
+    assert span["metadata"] == {
+        "model": "tts-1",
+        "provider": "openai",
+        "request_tag": "speech-test",
+        "contrib.openai.request_id": response.response.headers["x-request-id"],
+    }
     assert span["input"] == {"operation": "speech", "prompt": "Hi.", "parameters": {"voice": "alloy", "format": "wav"}}
     if capture:
         attachment = span["output"]["content"][0]["file"]["file_data"]
@@ -2308,7 +2319,12 @@ async def test_openai_streaming_speech_preserves_consumption_and_parent(
     assert len(spans) == 2
     assert model["span_parents"] == [parent.span_id]
     assert model["span_attributes"]["type"] == "llm"
-    assert model["metadata"] == {"model": "tts-1", "provider": "openai", "request_tag": "speech-test"}
+    assert model["metadata"] == {
+        "model": "tts-1",
+        "provider": "openai",
+        "request_tag": "speech-test",
+        "contrib.openai.request_id": response.headers["x-request-id"],
+    }
     assert model["context"]["span_origin"]["instrumentation"]["name"] == "openai-auto"
     assert model["input"] == {
         "operation": "speech",
@@ -2432,64 +2448,75 @@ async def test_abandoned_speech_response_finalizes_without_partial_audio(
 
 @sync_async
 @pytest.mark.asyncio
-@pytest.mark.vcr
-async def test_openai_audio_transcription_streaming_early_close(memory_logger, is_async, monkeypatch):
+@pytest.mark.parametrize(
+    "consumption",
+    [
+        "empty",
+        "partial",
+        pytest.param(
+            "exhaust",
+            marks=pytest.mark.skipif(
+                openai.__version__ == "1.92.0" and sys.version_info >= (3, 14),
+                reason="OpenAI 1.92.0 cannot decode terminal transcription events on Python 3.14+",
+            ),
+        ),
+    ],
+)
+async def test_openai_audio_transcription_streaming(memory_logger, is_async, monkeypatch, vcr, consumption):
     monkeypatch.delenv("BRAINTRUST_CAPTURE_USER_AUDIO_ATTACHMENTS", raising=False)
     assert not memory_logger.pop()
 
     client = wrap_openai(_client(is_async))
     start = time.time()
-    with open(TEST_AUDIO_FILE, "rb") as f:
+    recorded_case = "no_events_omits_output" if consumption == "empty" else "early_close"
+    mode = "async" if is_async else "sync"
+    cassette = f"test_openai_audio_transcription_streaming_{recorded_case}[{mode}].yaml"
+    events = []
+    with vcr.use_cassette(cassette), open(TEST_AUDIO_FILE, "rb") as f:
         create_kwargs = dict(model=STREAMING_TRANSCRIPTION_MODEL, file=f, stream=True)
         if is_async:
             stream = await client.audio.transcriptions.create(**create_kwargs)
             async with stream as traced_stream:
-                first_event = await traced_stream.__anext__()
+                if consumption == "exhaust":
+                    events = [event async for event in traced_stream]
+                elif consumption == "partial":
+                    events = [await anext(traced_stream)]
         else:
             with client.audio.transcriptions.create(**create_kwargs) as stream:
-                first_event = next(stream)
+                if consumption == "exhaust":
+                    events = list(stream)
+                elif consumption == "partial":
+                    events = [next(stream)]
     end = time.time()
 
-    assert first_event.type == "transcript.text.delta"
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
     assert span["metadata"]["model"] == STREAMING_TRANSCRIPTION_MODEL
     assert span["metadata"]["stream"] == True
-    assert span["output"] == first_event.delta
     assert span.get("input") is None
     metrics = span["metrics"]
     assert start <= metrics["start"] <= metrics["end"] <= end
     assert metrics["duration"] >= 0
-    assert metrics["time_to_first_token"] >= 0
-
-
-@sync_async
-@pytest.mark.asyncio
-@pytest.mark.vcr
-async def test_openai_audio_transcription_streaming_no_events_omits_output(memory_logger, is_async):
-    assert not memory_logger.pop()
-
-    client = wrap_openai(_client(is_async))
-    with open(TEST_AUDIO_FILE, "rb") as f:
-        create_kwargs = dict(model=STREAMING_TRANSCRIPTION_MODEL, file=f, stream=True)
-        if is_async:
-            stream = await client.audio.transcriptions.create(**create_kwargs)
-            async with stream:
-                pass
-        else:
-            with client.audio.transcriptions.create(**create_kwargs):
-                pass
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span["metadata"]["model"] == STREAMING_TRANSCRIPTION_MODEL
-    assert span["metadata"]["stream"] == True
-    assert "output" not in span
-    metrics = span["metrics"]
-    assert metrics["duration"] >= 0
-    assert "time_to_first_token" not in metrics
+    assert "seconds" not in metrics
+    if events:
+        assert events[0].type == "transcript.text.delta"
+        assert metrics["time_to_first_token"] >= 0
+    else:
+        assert "output" not in span
+        assert "time_to_first_token" not in metrics
+    if consumption == "exhaust":
+        done = events[-1]
+        assert done.type == "transcript.text.done"
+        assert span["output"] == done.text
+        assert metrics["usage_seconds"] == 3
+        native_usage = span["metadata"]["contrib.openai.usage"]
+        assert native_usage["type"] == "duration"
+        assert native_usage["seconds"] == 3
+    else:
+        assert "usage_seconds" not in metrics
+        if events:
+            assert span["output"] == events[0].delta
 
 
 @pytest.mark.vcr

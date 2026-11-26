@@ -1,6 +1,7 @@
 """Pipecat integration patchers."""
 
 import inspect
+import json
 from collections import deque
 from contextlib import ExitStack
 from contextvars import ContextVar
@@ -10,13 +11,12 @@ from typing import Any
 from braintrust._audio.config import AudioRecordingOptions
 from braintrust.bt_json import bt_safe_deep_copy
 from braintrust.integrations.base import CompositeFunctionWrapperPatcher, FunctionWrapperPatcher
-from braintrust.integrations.openai.tracing import _parse_metrics_from_usage
 from braintrust.integrations.utils import _normalize_chat_messages
 
 from .tracing import BraintrustPipecatObserver
 from .tracing._common import LOG, MAX_PENDING, processor_kind
 from .tracing._live import is_live_service
-from .tracing._model import _ACTIVE_MODEL, client_covered, request_metadata
+from .tracing._model import _ACTIVE_MODEL, _REALTIME_USAGE_ATTR, RealtimeUsage, client_covered, request_metadata
 
 
 _DEFAULT_OBSERVER_OPTIONS: dict[str, Any] = {
@@ -33,9 +33,7 @@ def set_default_observer_options(**options: Any) -> None:
 
 
 _OBSERVER_ATTR = "_braintrust_pipecat_observer"
-# The open llm_response span, for usage reported outside the service's frame
-# processing scope (OpenAI Realtime handles response.done in its receive task).
-_RESPONSE_SPAN_ATTR = "_braintrust_pipecat_response_span"
+_REALTIME_RECEIVE: ContextVar[RealtimeUsage | None] = ContextVar("braintrust_pipecat_realtime_receive", default=None)
 _LLM_EXECUTION: ContextVar[Any] = ContextVar("braintrust_pipecat_llm_execution", default=None)
 _ASSISTANT_TURN: ContextVar[Any] = ContextVar("braintrust_pipecat_assistant_turn", default=None)
 # The observer of the running worker. Every processor task inherits it.
@@ -123,14 +121,7 @@ async def traced_llm_push_frame(wrapped: Any, instance: Any, args: tuple[Any, ..
     observer = _ACTIVE_OBSERVER.get()
     frame = args[0] if args else kwargs.get("frame")
     kind = type(frame).__name__
-    if (
-        observer is None
-        or kind not in ("LLMFullResponseStartFrame", "LLMFullResponseEndFrame")
-        or is_live_service(instance)
-    ):
-        return await wrapped(*args, **kwargs)
-    if kind == "LLMFullResponseEndFrame":
-        setattr(instance, _RESPONSE_SPAN_ATTR, None)
+    if observer is None or kind != "LLMFullResponseStartFrame" or is_live_service(instance):
         return await wrapped(*args, **kwargs)
     scope = _LLM_EXECUTION.get()
     if scope is not None and scope.processor is instance:
@@ -139,7 +130,6 @@ async def traced_llm_push_frame(wrapped: Any, instance: Any, args: tuple[Any, ..
         if len(observer._response_executions) > MAX_PENDING:
             observer._response_executions.popitem(last=False)
     result, span = await observer._response_span(frame, lambda: wrapped(*args, **kwargs))
-    setattr(instance, _RESPONSE_SPAN_ATTR, span)
     response = observer._session.agent._response if observer._session is not None else None
     if scope is not None and scope.processor is instance and span is not None:
         operation = response.model if response is not None and response.span.id == span.id else None
@@ -825,35 +815,71 @@ class OpenAILivePatcher(CompositeFunctionWrapperPatcher):
         return super().applies(module, version, target=target)
 
 
-async def traced_realtime_response_done(
-    wrapped: Any, instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]
-) -> Any:
-    observer = _ACTIVE_OBSERVER.get()
-    parent = getattr(instance, _RESPONSE_SPAN_ATTR, None)
-    if observer is not None and parent is not None:
-        try:
-            event = args[0] if args else kwargs.get("evt")
-            reported = getattr(event.response, "usage", None)
-            usage = reported.model_dump(exclude_unset=True) if reported is not None else {}
-            for prefix, names in (
-                ("input", ("audio_tokens", "cached_tokens", "cached_tokens_details")),
-                ("output", ("audio_tokens", "image_tokens", "reasoning_tokens")),
-            ):
-                details = usage.pop(f"{prefix}_token_details", None)
-                if details is not None:
-                    usage[f"{prefix}_tokens_details"] = {name: details[name] for name in names if name in details}
-            # Usage only: the response's model child records output and timing.
-            observer._report_response_usage(parent, _parse_metrics_from_usage(usage))
-        except Exception:
-            LOG.warning("Unable to trace Pipecat Realtime response", exc_info=True)
-    return await wrapped(*args, **kwargs)
+async def traced_realtime_receive(wrapped: Any, instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
+    if _ACTIVE_OBSERVER.get() is None:
+        return await wrapped(*args, **kwargs)
+    usage = RealtimeUsage()
+    setattr(instance, _REALTIME_USAGE_ATTR, usage)
+    token = _REALTIME_RECEIVE.set(usage)
+    try:
+        return await wrapped(*args, **kwargs)
+    finally:
+        _REALTIME_RECEIVE.reset(token)
+        if getattr(instance, _REALTIME_USAGE_ATTR, None) is usage:
+            delattr(instance, _REALTIME_USAGE_ATTR)
 
 
-class OpenAIRealtimeResponseDonePatcher(FunctionWrapperPatcher):
-    name = "openai_realtime_response_done"
+def traced_realtime_server_event(wrapped: Any, _instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
+    event = wrapped(*args, **kwargs)
+    observation = _REALTIME_RECEIVE.get()
+    if observation is None:
+        return event
+    try:
+        kind = getattr(event, "type", None)
+        if kind == "session.created":
+            observation.session_metadata = {
+                key: value
+                for key, value in (
+                    ("contrib.pipecat.session_id", event.session.id),
+                    ("model", event.session.model),
+                )
+                if value is not None
+            }
+        elif kind == "response.created":
+            observation.response_id = event.response.id
+        elif kind == "response.done":
+            # Pipecat's model can drop native breakdowns or default missing
+            # counts to zero. Read usage from the terminal wire event.
+            raw = json.loads(args[0] if args else kwargs["str"])
+            observation.response_done(event.response.id, raw["response"].get("usage"))
+    except Exception:
+        LOG.warning("Unable to trace Pipecat Realtime server event", exc_info=True)
+    return event
+
+
+class OpenAIRealtimeReceivePatcher(FunctionWrapperPatcher):
+    name = "openai_realtime_receive"
     target_module = "pipecat.services.openai.realtime.llm"
-    target_path = "OpenAIRealtimeLLMService._handle_evt_response_done"
-    wrapper = staticmethod(traced_realtime_response_done)
+    target_path = "OpenAIRealtimeLLMService._receive_task_handler"
+    wrapper = staticmethod(traced_realtime_receive)
+
+
+class OpenAIRealtimeServerEventPatcher(FunctionWrapperPatcher):
+    name = "openai_realtime_server_event"
+    target_module = "pipecat.services.openai.realtime.events"
+    target_path = "parse_server_event"
+    wrapper = staticmethod(traced_realtime_server_event)
+
+
+class OpenAIRealtimePatcher(CompositeFunctionWrapperPatcher):
+    name = "openai_realtime"
+    sub_patchers = (OpenAIRealtimeReceivePatcher, OpenAIRealtimeServerEventPatcher)
+
+    @classmethod
+    def applies(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
+        receive = OpenAIRealtimeReceivePatcher.resolve_target(module, version, target=target)
+        parse = OpenAIRealtimeServerEventPatcher.resolve_target(module, version, target=target)
+        return inspect.iscoroutinefunction(receive) and callable(parse) and not inspect.iscoroutinefunction(parse)
 
 
 def wrap_pipeline_worker(
@@ -896,6 +922,6 @@ def wrap_pipeline_worker(
     # Optional on older Pipecat versions; the patchers feature-detect the module.
     if OpenAILivePatcher.applies(None, None):
         OpenAILivePatcher.patch(None, None)
-    if not OpenAIRealtimeResponseDonePatcher.is_patched(None, None):
-        OpenAIRealtimeResponseDonePatcher.patch(None, None)
+    if OpenAIRealtimePatcher.applies(None, None):
+        OpenAIRealtimePatcher.patch(None, None)
     return PipelineWorkerPatcher.wrap_target(PipelineWorker)

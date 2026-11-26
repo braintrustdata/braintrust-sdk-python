@@ -743,6 +743,12 @@ def test_litellm_transcription(memory_logger, is_async):
     assert span["input"]["file"].reference["filename"] == Path(TEST_TRANSCRIPTION_FILE).name
     assert span["input"]["file"].reference["content_type"] in ("audio/x-wav", "audio/wav")  # OS-dependent
     assert span["output"] == response.text
+    assert "seconds" not in span["metrics"]
+    if getattr(response, "usage", None) is not None:
+        assert span["metrics"]["usage_seconds"] == 3
+        assert span["metadata"]["contrib.litellm.usage"] == {"type": "duration", "seconds": 3}
+    else:
+        assert "usage_seconds" not in span["metrics"]
     if "languages" in inspect.signature(litellm.transcription).parameters:
         assert span["metadata"]["languages"] == [{"code": "en"}]
 
@@ -836,12 +842,15 @@ def test_litellm_transcription_streaming(memory_logger, is_async, consumption):
         assert done.type == "transcript.text.done"
         assert "braintrust" in done.text.lower()
         assert span["output"] == done.text
-        assert metrics["seconds"] == done.usage.seconds > 0
+        assert "seconds" not in metrics
+        assert metrics["usage_seconds"] == done.usage.seconds > 0
+        assert span["metadata"]["contrib.litellm.usage"] == {"type": "duration", "seconds": done.usage.seconds}
         assert span["metadata"]["languages"] == [{"code": "en"}]
     else:
         if events:
             assert span["output"] == events[0].delta
         assert "seconds" not in metrics
+        assert "usage_seconds" not in metrics
         assert "languages" not in span["metadata"]
 
     del stream

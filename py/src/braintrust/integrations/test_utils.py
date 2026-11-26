@@ -24,6 +24,8 @@ from braintrust.integrations.utils import (
     _log_error_and_end_span,
     _materialize_attachment,
     _merge_timing_and_usage_metrics,
+    _metered_duration_metrics,
+    _parse_openai_audio_usage_metrics,
     _parse_openai_usage_metrics,
     _prettify_response_params,
     _resolve_audio_attachment_options,
@@ -291,8 +293,8 @@ def test_parse_openai_usage_metrics_handles_nested_token_details():
     }
 
 
-@pytest.mark.parametrize("key", ["input_token_details", "input_tokens_details"])
-@pytest.mark.parametrize("cached_audio", [None, 0, 5])
+@pytest.mark.parametrize("key", ["input_token_details", "input_tokens_details", "prompt_tokens_details"])
+@pytest.mark.parametrize("cached_audio", [None, 0, 5, -1, True])
 def test_parse_openai_usage_metrics_cached_audio(key, cached_audio):
     cached_details = {"text_tokens": 3}
     if cached_audio is not None:
@@ -311,10 +313,57 @@ def test_parse_openai_usage_metrics_cached_audio(key, cached_audio):
     )
 
     assert metrics["prompt_tokens"] == 20
-    if cached_audio is None:
+    if cached_audio is None or cached_audio < 0 or type(cached_audio) is bool:
         assert "prompt_cached_audio_tokens" not in metrics
     else:
         assert metrics["prompt_cached_audio_tokens"] == cached_audio
+
+
+@pytest.mark.parametrize(
+    "seconds,standby_seconds,expected",
+    [
+        (None, None, {}),
+        (0, None, {"usage_seconds": 0}),
+        (6.25, 0, {"usage_seconds": 6.25, "usage_standby_seconds": 0}),
+        (6.25, 1.25, {"usage_seconds": 6.25, "usage_standby_seconds": 1.25}),
+        (6.25, -1, {"usage_seconds": 6.25}),
+        (-1, -1, {}),
+        (float("nan"), float("nan"), {}),
+        (float("inf"), float("inf"), {}),
+        (True, True, {}),
+        ("6.25", "1.25", {}),
+    ],
+)
+def test_metered_duration_metrics(seconds, standby_seconds, expected):
+    assert _metered_duration_metrics(seconds, standby_seconds=standby_seconds) == expected
+
+
+def test_parse_openai_audio_usage_metrics_accepts_chat_token_names():
+    usage = {
+        "prompt_tokens": 12,
+        "completion_tokens": 4,
+        "tokens": 16,
+        "seconds": 0,
+        "prompt_tokens_details": {
+            "audio_tokens": 6,
+            "cached_tokens": 3,
+            "cached_tokens_details": {"audio_tokens": 1},
+            "cache_write_tokens": 2,
+        },
+        "completion_tokens_details": {"audio_tokens": 0},
+    }
+
+    assert _parse_openai_audio_usage_metrics(usage) == {
+        "prompt_tokens": 12,
+        "completion_tokens": 4,
+        "tokens": 16,
+        "prompt_audio_tokens": 6,
+        "prompt_cached_tokens": 3,
+        "prompt_cached_audio_tokens": 1,
+        "prompt_cache_creation_tokens": 2,
+        "completion_audio_tokens": 0,
+        "usage_seconds": 0,
+    }
 
 
 def test_prettify_response_params_filters_not_given_without_mutating_input():
