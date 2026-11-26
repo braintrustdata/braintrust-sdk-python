@@ -12,10 +12,21 @@ from pydantic_ai.models.openai import OpenAIChatModel, OpenAIResponsesModel
 from pydantic_ai.usage import UsageLimits
 
 
-@pytest.mark.vcr
 @pytest.mark.asyncio
-@pytest.mark.parametrize("fails", [False, True], ids=["success", "failure"])
-async def test_harness_background_tool_execution(with_memory_logger, fails):
+@pytest.mark.parametrize(
+    ("fails", "use_iter"),
+    [
+        pytest.param(False, False, id="success", marks=pytest.mark.vcr),
+        pytest.param(True, False, id="failure", marks=pytest.mark.vcr),
+        pytest.param(
+            False,
+            True,
+            id="iter",
+            marks=pytest.mark.vcr(cassette_name="test_harness_background_tool_execution[success]"),
+        ),
+    ],
+)
+async def test_harness_background_tool_execution(with_memory_logger, fails, use_iter):
     background_tools = import_module("pydantic_ai_harness.background_tools")
     project = "test-pydantic-ai-harness"
     assert setup_pydantic_ai(project_name=project)
@@ -37,12 +48,17 @@ async def test_harness_background_tool_execution(with_memory_logger, fails):
             raise ToolFailed(f"failed: {query}")
         return (await child.run(f"Reply with exactly '{query} complete' and nothing else.")).output
 
-    await parent.run(
-        "Call slow exactly once with query 'lookup'. Then answer 'done' without calling any more tools.",
-        usage_limits=UsageLimits(request_limit=6),
-    )
+    prompt = "Call slow exactly once with query 'lookup'. Then answer 'done' without calling any more tools."
+    limits = UsageLimits(request_limit=6)
+    if use_iter:
+        async with parent.iter(prompt, usage_limits=limits) as run:
+            async for _ in run:
+                pass
+    else:
+        await parent.run(prompt, usage_limits=limits)
     spans = with_memory_logger.pop()
     parent_span = find_span_by_name(spans, "agent_run [background_parent]")
+    assert not parent_span.get("span_parents")
     tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
     assert [span["span_attributes"]["name"] for span in tool_spans] == ["slow"]
     (execution,) = tool_spans
