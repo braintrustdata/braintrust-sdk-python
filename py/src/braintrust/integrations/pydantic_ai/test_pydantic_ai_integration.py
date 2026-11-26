@@ -1514,29 +1514,36 @@ async def test_agent_with_tool_execution(memory_logger, method):
     assert calc_tool_span["span_parents"] == [agent_span["span_id"]], "tool span should be nested under agent_run"
 
 
+@pytest.mark.vcr(cassette_name="test_agent_run_async")
 @pytest.mark.asyncio
 @pytest.mark.parametrize("body_raises", [False, True])
 async def test_agent_iter_exits_before_completion(memory_logger, body_raises):
-    from pydantic_ai.models.test import TestModel
-
-    agent = Agent(TestModel(), name="early-exit")
+    agent = Agent(MODEL, name="early-exit", model_settings=ModelSettings(**OPENAI_SETTINGS, max_tokens=50))
     parent_span = logger.current_span()
     start = time.time()
     with pytest.raises(RuntimeError, match="stop iterating") if body_raises else nullcontext():
         async with agent.iter(TEST_PROMPT) as run:
+            request_node = await run.next(run.next_node)
+            assert Agent.is_model_request_node(request_node)
+            await run.next(request_node)
             assert run.result is None
             if body_raises:
                 raise RuntimeError("stop iterating")
     end = time.time()
 
     assert logger.current_span() is parent_span
-    (agent_span,) = memory_logger.pop()
+    spans = memory_logger.pop()
+    assert len(spans) == 2
+    agent_span = _find_agent_span(spans)
+    assert agent_span is not None
     assert agent_span["span_attributes"]["name"] == "agent_run [early-exit]"
     assert agent_span.get("output") is None
     if body_raises:
         assert "stop iterating" in agent_span["error"]
     else:
         assert not agent_span.get("error")
+    (llm_span,) = [span for span in spans if span["span_attributes"]["type"] == SpanTypeAttribute.LLM]
+    assert llm_span["span_parents"] == [agent_span["span_id"]]
     _assert_metrics_are_valid(agent_span["metrics"], start, end)
 
 
