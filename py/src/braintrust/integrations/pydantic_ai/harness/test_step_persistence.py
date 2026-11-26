@@ -18,6 +18,7 @@ from pydantic_ai.models.instrumented import InstrumentationSettings
         pytest.param("fork_run", False, "run", id="fork_run-False"),
         pytest.param("fork_run", True, "run", id="fork_run-True"),
         pytest.param("fork_run", False, "run_stream", id="fork_run-run_stream"),
+        pytest.param("fork_run", False, "iter", id="fork_run-iter"),
     ],
 )
 async def test_step_persistence_lineage(
@@ -55,6 +56,12 @@ async def test_step_persistence_lineage(
     if entrypoint == "run_stream":
         async with branch.run_stream(prompt, run_id="branch-run", message_history=history) as result:
             output = "".join([chunk async for chunk in result.stream_text(delta=True)])
+    elif entrypoint == "iter":
+        async with branch.iter(prompt, run_id="branch-run", message_history=history) as run:
+            async for _ in run:
+                pass
+        assert run.result is not None
+        output = run.result.output
     else:
         output = (await branch.run(prompt, run_id="branch-run", message_history=history)).output
     spans = with_memory_logger.pop()
@@ -62,7 +69,8 @@ async def test_step_persistence_lineage(
     source_record = await store.get_run(run_id="source-run")
     branch_record = await store.get_run(run_id="branch-run")
     source_span = find_span_by_name(spans, "agent_run [source]")
-    branch_span = find_span_by_name(spans, f"agent_{entrypoint} [branch]")
+    branch_span_name = "agent_run_stream" if entrypoint == "run_stream" else "agent_run"
+    branch_span = find_span_by_name(spans, f"{branch_span_name} [branch]")
     assert branch_span["span_attributes"]["type"] == "task"
     assert branch_span["output"]["response"]["parts"][0]["content"] == output
     if entrypoint == "run_stream":
