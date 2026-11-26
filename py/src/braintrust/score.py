@@ -1,5 +1,6 @@
 import dataclasses
 import inspect
+import math
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
@@ -45,8 +46,14 @@ class Score(SerializableDataClass):
         }
 
     def __post_init__(self):
-        if self.score is not None and (self.score < 0 or self.score > 1):
-            raise ValueError(f"score ({self.score}) must be between 0 and 1")
+        if self.score is not None:
+            # bool is a supported scorer return (OneOrMoreScores includes bool), so
+            # it intentionally passes through here; only reject non-finite floats,
+            # which silently poison downstream averages.
+            if isinstance(self.score, float) and not math.isfinite(self.score):
+                raise ValueError(f"score ({self.score}) must be a finite number between 0 and 1")
+            if self.score < 0 or self.score > 1:
+                raise ValueError(f"score ({self.score}) must be between 0 and 1")
         if self.error is not None:
             warnings.warn(
                 "The error field is deprecated, as errors are now propagated to the caller."

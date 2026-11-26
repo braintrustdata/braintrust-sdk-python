@@ -181,5 +181,21 @@ class TestClassification(unittest.TestCase):
             Classification(id="")
 
 
+class TestScoreValidation(unittest.TestCase):
+    def test_rejects_non_finite_values(self):
+        for invalid in (float("nan"), float("inf"), -float("inf")):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                Score(name="invalid", score=invalid)
+
+    def test_accepts_and_round_trips_valid_values(self):
+        # bool is a supported scorer return (OneOrMoreScores includes bool) and
+        # must keep working; the old range-only check accepted it.
+        for valid in (0, 1, 0.5, True, False):
+            with self.subTest(valid=valid):
+                score = Score(name="valid", score=valid)
+                self.assertEqual(score.as_dict()["score"], valid)
+                self.assertEqual(Score.from_dict(score.as_dict()).score, valid)
+
+
 if __name__ == "__main__":
     unittest.main()
