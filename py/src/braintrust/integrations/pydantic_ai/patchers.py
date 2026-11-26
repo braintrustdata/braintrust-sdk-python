@@ -224,7 +224,7 @@ class _BackgroundToolHandlerPatcher(FunctionWrapperPatcher):
 
 class BackgroundToolExecutionPatcher(CompositeFunctionWrapperPatcher):
     name = "pydantic_ai.harness.background_tool_execution"
-    min_version: ClassVar[str] = "2.75.0"
+    version_spec = ">=2.0.0"
     sub_patchers = (_BackgroundToolHandlerPatcher, _BackgroundToolsRunPatcher)
 
     @classmethod

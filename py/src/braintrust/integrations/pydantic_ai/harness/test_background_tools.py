@@ -1,8 +1,10 @@
 import asyncio
 from importlib import import_module
 
+import pydantic_ai
 import pytest
 from braintrust import setup_pydantic_ai
+from braintrust.integrations.pydantic_ai.patchers import BackgroundToolExecutionPatcher
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import find_span_by_name, find_spans_by_type, init_test_logger
 from braintrust.test_helpers import with_memory_logger as with_memory_logger
@@ -10,6 +12,11 @@ from pydantic_ai import Agent, ModelSettings
 from pydantic_ai.exceptions import ToolFailed
 from pydantic_ai.models.openai import OpenAIChatModel, OpenAIResponsesModel
 from pydantic_ai.usage import UsageLimits
+
+
+def test_background_tool_patcher_version_gate():
+    assert BackgroundToolExecutionPatcher.applies(pydantic_ai, "2.75.0")
+    assert not BackgroundToolExecutionPatcher.applies(pydantic_ai, "1.107.9")
 
 
 @pytest.mark.asyncio
