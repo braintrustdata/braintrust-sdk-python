@@ -24,7 +24,7 @@ def spans(with_memory_logger):
 
 @pytest.mark.vcr
 @pytest.mark.asyncio
-@pytest.mark.parametrize("mode", ["mixed", "approval-only", "stream"])
+@pytest.mark.parametrize("mode", ["mixed", "approval-only", "stream", "denied"])
 async def test_declarative_tool_approval(spans, mode):
     lookup_calls = ["lookup"] if mode == "mixed" else []
     agent = Agent(
@@ -66,32 +66,31 @@ async def test_declarative_tool_approval(spans, mode):
             for message in first.new_messages()
         )
     tools = find_spans_by_type(spans.pop(), SpanTypeAttribute.TOOL)
-    assert len(tools) == 1 + len(lookup_calls)
-    gated_span = find_span_by_name(tools, "gated")
-    assert gated_span.get("error") is None
-    assert gated_span.get("output") is None
-    assert gated_span["metrics"]["duration"] >= 0
-    assert gated_span["metadata"] == {
-        "tool_call_id": approval.tool_call_id,
-        "tool_outcome": "deferred",
-        "deferred": "unapproved",
-    }
-    if lookup_calls:
-        lookup_span = find_span_by_name(tools, "lookup")
-        assert lookup_span["metadata"]["tool_outcome"] == "executed"
-        assert lookup_span["output"] == "found"
 
+    approved = mode != "denied"
     await agent.run(
         message_history=first.all_messages(),
-        deferred_tool_results=DeferredToolResults(approvals={approval.tool_call_id: True}),
+        deferred_tool_results=DeferredToolResults(approvals={approval.tool_call_id: approved}),
         model_settings=ModelSettings(tool_choice="none"),
     )
-    assert executed == [*lookup_calls, "gated"]
+    assert executed == ([*lookup_calls, "gated"] if approved else lookup_calls)
+    assert [tool["span_attributes"]["name"] for tool in tools] == lookup_calls
+    if lookup_calls:
+        (lookup_span,) = tools
+        assert lookup_span["metadata"]["tool_outcome"] == "executed"
+        assert "tool_approval" not in lookup_span["metadata"]
+        assert lookup_span["output"] == "found"
+
     (gated_span,) = find_spans_by_type(spans.pop(), SpanTypeAttribute.TOOL)
     assert gated_span["span_attributes"]["name"] == "gated"
-    assert gated_span["metadata"]["tool_outcome"] == "executed"
+    assert gated_span.get("error") is None
     assert gated_span["metadata"]["tool_call_id"] == approval.tool_call_id
-    assert gated_span["output"] == "approved"
+    assert gated_span["metadata"]["tool_approval"] == ("approved" if approved else "denied")
+    if approved:
+        assert gated_span["metadata"]["tool_outcome"] == "executed"
+        assert gated_span["output"] == "approved"
+    else:
+        assert gated_span.get("output") is None
 
 
 @pytest.mark.vcr

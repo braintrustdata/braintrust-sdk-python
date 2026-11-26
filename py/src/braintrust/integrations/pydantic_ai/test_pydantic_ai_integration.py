@@ -1718,8 +1718,7 @@ async def test_call_deferred_tool_is_not_logged_as_error(memory_logger):
 
     tool_span = _single_tool_span(memory_logger.pop(), "run_long_job")
     _assert_deferred_tool_span(tool_span, result.output.calls[0].tool_call_id, "external")
-    if supports_metadata:
-        assert tool_span["metadata"]["deferred_metadata"] == {"job_id": "job-123"}
+    assert "deferred_metadata" not in tool_span["metadata"]
 
 
 @pytest.mark.vcr
@@ -1761,6 +1760,7 @@ async def test_approval_required_tool_is_not_logged_as_error_and_resumes(memory_
     assert approved_span.get("error") is None
     assert approved_span["output"] == "Deleted /tmp/report.txt"
     assert approved_span["metadata"]["tool_call_id"] == tool_call_id
+    assert approved_span["metadata"]["tool_approval"] == "approved"
     assert "deferred" not in approved_span["metadata"]
 
 
