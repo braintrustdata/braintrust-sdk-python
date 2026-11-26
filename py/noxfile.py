@@ -657,6 +657,23 @@ def test_pydantic_ai_wrap_openai(session, version):
     _run_tests(session, f"{INTEGRATION_DIR}/pydantic_ai/test_pydantic_ai_wrap_openai.py", version=version)
 
 
+@nox.session()
+def test_pydantic_ai_harness(session):
+    _skip_if_incompatible(session)
+    _install_test_deps(session)
+    # Harness 0.75 and its matching Pydantic AI releases postdate the global cutoff.
+    _session_install(
+        session,
+        _MATRIX["pydantic-ai-harness"]["latest"],
+        *(
+            f"--exclude-newer-package={package}=2026-11-26"
+            for package in ("pydantic-ai-harness", "pydantic-ai-slim", "pydantic-graph")
+        ),
+        silent=SILENT_INSTALLS,
+    )
+    _run_tests(session, f"{INTEGRATION_DIR}/pydantic_ai/test_pydantic_ai_harness_decisions.py")
+
+
 AUTOEVALS_VERSIONS = _get_matrix_versions("autoevals")
 
 
