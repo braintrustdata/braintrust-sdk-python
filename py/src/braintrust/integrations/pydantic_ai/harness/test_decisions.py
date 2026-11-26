@@ -1,11 +1,23 @@
 from importlib import import_module
 
 import pytest
-from braintrust.integrations.pydantic_ai._test_harness import make_harness_agent
+from braintrust import setup_pydantic_ai
 from braintrust.span_types import SpanTypeAttribute
-from pydantic_ai.messages import ModelResponse, TextPart, ToolCallPart, ToolReturnPart
-from pydantic_ai.models.function import FunctionModel
-from pydantic_ai.models.test import TestModel
+from braintrust.test_helpers import init_test_logger
+from pydantic_ai import Agent, ModelSettings
+
+
+MODEL = "openai-chat:gpt-4.1-mini"
+DEFAULT_ROUTE_MODEL = "openai-chat:gpt-4.1"
+SETTINGS = ModelSettings(temperature=0, max_tokens=32)
+
+
+@pytest.fixture
+def decision_spans(with_memory_logger):
+    project = "test-pydantic-ai-harness-decisions"
+    assert setup_pydantic_ai(project_name=project)
+    init_test_logger(project)
+    return with_memory_logger
 
 
 def _decision_span(spans, name):
@@ -18,100 +30,114 @@ def _decision_span(spans, name):
 
 
 @pytest.mark.asyncio
-async def test_harness_compaction_decision(harness_spans):
+@pytest.mark.vcr
+async def test_harness_compaction_decision(decision_spans):
     compaction = import_module("pydantic_ai_harness.compaction")
-    tool_results = []
 
-    def model(messages, _info):
-        results = [part.content for message in messages for part in message.parts if isinstance(part, ToolReturnPart)]
-        if not results:
-            return ModelResponse(parts=[ToolCallPart("note", {}, tool_call_id="note")])
-        tool_results.extend(results)
-        return ModelResponse(parts=[TextPart("done")])
-
-    agent = make_harness_agent(
-        "harness",
-        FunctionModel(model),
+    agent = Agent(
+        MODEL,
+        name="harness",
+        model_settings=SETTINGS,
         capabilities=[compaction.ClearToolResults(max_messages=1, keep_pairs=0)],
     )
 
     @agent.tool_plain
-    def note():
-        return "old tool result"
+    def add(x: int, y: int) -> int:
+        """Add two integers."""
+        return x + y
 
-    assert (await agent.run("call the tool")).output == "done"
-    assert tool_results == ["[tool result cleared]"]
+    result = await agent.run("Call add with x=1 and y=2 exactly once. After the tool returns, reply only 'done'.")
+    assert "done" in result.output.lower()
 
-    decision = _decision_span(harness_spans.pop(), "compact_messages")
+    spans = decision_spans.pop()
+    decision = _decision_span(spans, "compact_messages")
     assert decision["metadata"]["strategy"] == "ClearToolResults"
     assert decision["input"] == {"messages": 3}
     assert decision["output"] == {"messages": 3}
+    assert any(
+        "[tool result cleared]" in str(span.get("input"))
+        for span in spans
+        if span["span_attributes"]["type"] == SpanTypeAttribute.LLM
+    )
 
 
 @pytest.mark.asyncio
-async def test_harness_memory_injection_decision(harness_spans):
+@pytest.mark.vcr
+async def test_harness_memory_injection_decision(decision_spans):
     memory = import_module("pydantic_ai_harness.memory")
     store = memory.InMemoryMemoryStore()
-    await store.write("main/MEMORY.md", "offline memory token", expected_version=None)
-    agent = make_harness_agent(
-        "harness",
-        TestModel(call_tools=[], custom_output_text="done"),
+    stored = "The saved label is orchid."
+    await store.write("main/MEMORY.md", stored, expected_version=None)
+    agent = Agent(
+        MODEL,
+        name="harness",
+        model_settings=SETTINGS,
         capabilities=[memory.Memory(store=store)],
     )
 
-    assert (await agent.run("remember")).output == "done"
+    result = await agent.run("Reply with only the saved label from your injected memory. Do not call tools.")
+    assert "orchid" in result.output.lower()
 
-    decision = _decision_span(harness_spans.pop(), "memory.inject")
+    decision = _decision_span(decision_spans.pop(), "memory.inject")
     assert decision["output"]["outcome"] == "ok"
     assert decision["output"]["appended"] is True
-    assert decision["output"]["injected_chars"] >= len("offline memory token")
-    assert "offline memory token" not in str(decision)
+    assert decision["output"]["injected_chars"] >= len(stored)
+    assert stored not in str(decision)
 
 
 @pytest.mark.asyncio
-async def test_harness_guardrail_block_decision(harness_spans):
+@pytest.mark.vcr
+async def test_harness_guardrail_block_decision(decision_spans):
     guardrails = import_module("pydantic_ai_harness.guardrails")
 
-    async def deny(_ctx, _output):
-        return guardrails.GuardrailResult.block("blocked by test policy")
+    async def check_output(_ctx, output):
+        if "restricted" in output.lower():
+            return guardrails.GuardrailResult.block("blocked by test policy")
+        return guardrails.GuardrailResult.allow()
 
-    agent = make_harness_agent(
-        "harness",
-        capabilities=[guardrails.OutputGuardrail(deny)],
+    agent = Agent(
+        MODEL,
+        name="harness",
+        model_settings=SETTINGS,
+        capabilities=[guardrails.OutputGuardrail(check_output)],
     )
 
     with pytest.raises(guardrails.OutputBlocked, match="blocked by test policy"):
-        await agent.run("check output")
+        await agent.run("Reply with only the word 'restricted'.")
 
-    decision = _decision_span(harness_spans.pop(), "guardrail blocked output")
+    decision = _decision_span(decision_spans.pop(), "guardrail blocked output")
     assert decision["input"] == {"direction": "output"}
     assert decision["output"] == {"action": "block", "reason": "blocked by test policy"}
     assert not decision.get("error")
 
 
 @pytest.mark.asyncio
+@pytest.mark.vcr(cassette_name="test_harness_model_router_decision")
 @pytest.mark.parametrize("instrument", [False, True])
-async def test_harness_model_router_decision(harness_spans, instrument):
+async def test_harness_model_router_decision(decision_spans, instrument):
     router = import_module("pydantic_ai_harness.model_router")
     capabilities = import_module("pydantic_ai.capabilities")
-    agent = make_harness_agent(
-        "harness",
+    agent = Agent(
+        MODEL,
+        name="harness",
+        model_settings=SETTINGS,
         capabilities=[
             *([capabilities.Instrumentation()] if instrument else []),
             router.ModelRouter(
                 choices={
-                    "default": router.ModelChoice(TestModel(custom_output_text="default"), "default"),
-                    "alternate": router.ModelChoice(TestModel(custom_output_text="alternate"), "alternate"),
+                    "default": router.ModelChoice(DEFAULT_ROUTE_MODEL, "Use for all topics except arithmetic."),
+                    "alternate": router.ModelChoice(MODEL, "Use for arithmetic questions."),
                 },
-                router_model=TestModel(custom_output_args={"choice": "alternate"}),
+                router_model=MODEL,
                 default="default",
             ),
         ],
     )
 
-    assert (await agent.run("route to alternate")).output == "alternate"
+    result = await agent.run("What is 1 + 2? Reply with just the number.")
+    assert "3" in result.output
 
-    spans = harness_spans.pop()
+    spans = decision_spans.pop()
     decision = _decision_span(spans, "model_router.select")
     assert decision["input"] == {"choices": ["default", "alternate"], "default": "default"}
     assert decision["metadata"]["mode"] == "once"
