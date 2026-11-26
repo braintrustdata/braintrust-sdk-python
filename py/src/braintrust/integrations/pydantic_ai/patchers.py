@@ -7,6 +7,7 @@ from braintrust.integrations.base import ClassScanPatcher, CompositeFunctionWrap
 
 from .tracing import (
     _agent_get_model_wrapper,
+    _agent_iter_wrapper,
     _agent_resolve_model_selection_wrapper,
     _agent_run_stream_events_wrapper,
     _agent_run_stream_sync_wrapper,
@@ -33,6 +34,13 @@ class _AgentRunPatcher(FunctionWrapperPatcher):
     target_module = "pydantic_ai.agent.abstract"
     target_path = "AbstractAgent.run"
     wrapper = _agent_run_wrapper
+
+
+class _AgentIterPatcher(FunctionWrapperPatcher):
+    name = "pydantic_ai.agent.iter"
+    target_module = "pydantic_ai"
+    target_path = "Agent.iter"
+    wrapper = _agent_iter_wrapper
 
 
 class _AgentRunSyncPatcher(FunctionWrapperPatcher):
@@ -88,6 +96,7 @@ class AgentPatcher(CompositeFunctionWrapperPatcher):
     name = "pydantic_ai.agent"
     sub_patchers = (
         _AgentRunPatcher,
+        _AgentIterPatcher,
         _AgentRunSyncPatcher,
         _AgentToCliSyncPatcher,
         _AgentRunStreamPatcher,

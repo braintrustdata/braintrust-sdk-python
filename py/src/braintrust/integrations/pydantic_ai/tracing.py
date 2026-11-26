@@ -5,7 +5,7 @@ import logging
 import sys
 import time
 from collections.abc import Mapping
-from contextlib import AbstractAsyncContextManager
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from dataclasses import dataclass
 from typing import Any
 
@@ -15,7 +15,8 @@ from braintrust.logger import start_span as _bt_start_span
 
 
 _INSTRUMENTATION = "pydantic-ai-auto"
-_AGENT_WRAPPER_MODULES = (__name__, "braintrust.integrations.base", "wrapt.wrappers")
+_AGENT_WRAPPER_MODULES = (__name__, "braintrust.integrations.base", "wrapt.wrappers", "contextlib")
+_delegated_iter = contextvars.ContextVar("braintrust_pydantic_ai_delegated_iter", default=False)
 
 
 def start_span(*args, **kwargs):
@@ -186,7 +187,11 @@ async def _agent_run_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any
         tool_trace_token = _start_tool_trace_capture()
         try:
             start_time = time.time()
-            result = await wrapped(*args, **kwargs)
+            iter_token = _delegated_iter.set(True)
+            try:
+                result = await wrapped(*args, **kwargs)
+            finally:
+                _delegated_iter.reset(iter_token)
             end_time = time.time()
 
             _maybe_create_tool_spans_from_messages(result)
@@ -204,6 +209,48 @@ async def _agent_run_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any
             return result
         finally:
             _reset_tool_trace_capture(tool_trace_token)
+
+
+def _agent_iter_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+    if _delegated_iter.get():
+        # Only skip the internal dispatch, not direct iter() calls from run hooks or tools.
+        _delegated_iter.set(False)
+        return wrapped(*args, **kwargs)
+
+    @asynccontextmanager
+    async def traced_iter():
+        iter_kwargs = _infer_agent_name(wrapped, instance, kwargs)
+        input_data, metadata = _build_agent_input_and_metadata(args, iter_kwargs, instance)
+        agent_name = getattr(instance, "name", None)
+
+        with start_span(
+            name=f"agent_run [{agent_name}]" if agent_name else "agent_run",
+            type=SpanTypeAttribute.TASK,
+            input=input_data if input_data else None,
+            metadata=metadata,
+        ) as agent_span:
+            tool_trace_token = _start_tool_trace_capture()
+            start_time = time.time()
+            run = None
+            try:
+                async with wrapped(*args, **iter_kwargs) as run:
+                    yield run
+            finally:
+                try:
+                    result = getattr(run, "result", None)
+                    if result is not None:
+                        _maybe_create_tool_spans_from_messages(result)
+                    _log_agent_result(
+                        agent_span,
+                        input_data,
+                        result,
+                        _shape_result_output(result),
+                        _wrapper_span_metrics(start_time, time.time()),
+                    )
+                finally:
+                    _reset_tool_trace_capture(tool_trace_token)
+
+    return traced_iter()
 
 
 def _agent_run_sync_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
@@ -765,7 +812,11 @@ class _AgentStreamWrapper(AbstractAsyncContextManager):
 
         self._tool_trace_token = _start_tool_trace_capture()
         self.start_time = time.time()
-        self.stream_result = await self.stream_cm.__aenter__()
+        iter_token = _delegated_iter.set(True)
+        try:
+            self.stream_result = await self.stream_cm.__aenter__()
+        finally:
+            _delegated_iter.reset(iter_token)
 
         return _StreamResultProxy(self.stream_result, self)
 

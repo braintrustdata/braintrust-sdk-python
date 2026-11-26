@@ -5,6 +5,7 @@
 import inspect
 import os
 import time
+from contextlib import nullcontext
 from dataclasses import replace
 
 import pydantic_ai
@@ -1391,9 +1392,10 @@ async def test_agent_with_binary_input(memory_logger, data, media_type, prompt, 
     )
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(cassette_name="test_agent_with_tool_execution")
 @pytest.mark.asyncio
-async def test_agent_with_tool_execution(memory_logger):
+@pytest.mark.parametrize("method", ["run", "iter"])
+async def test_agent_with_tool_execution(memory_logger, method):
     """Test that tool execution creates proper span hierarchy.
 
     Verifies that:
@@ -1422,9 +1424,20 @@ async def test_agent_with_tool_execution(memory_logger):
         }
         return str(ops.get(operation, "Invalid operation"))
 
+    prompt = "What is 127 multiplied by 49?"
+    parent_span = logger.current_span()
     start = time.time()
-    result = await agent.run("What is 127 multiplied by 49?")
+    if method == "iter":
+        async with agent.iter(prompt) as run:
+            async for _ in run:
+                pass
+            result = run.result
+            active_span = logger.current_span()
+        assert active_span is not parent_span
+    else:
+        result = await agent.run(prompt)
     end = time.time()
+    assert logger.current_span() is parent_span
 
     assert result.output
     assert "6" in str(result.output) and "223" in str(result.output)  # Result contains 6223 (possibly formatted)
@@ -1439,6 +1452,13 @@ async def test_agent_with_tool_execution(memory_logger):
     # Find agent_run span
     agent_span = _find_agent_span(spans)
     assert agent_span is not None, "agent_run span not found"
+    assert [s for s in spans if not s["span_parents"]] == [agent_span]
+    assert [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.TASK] == [agent_span]
+    assert agent_span["span_attributes"]["name"] == "agent_run [agent]"
+    assert agent_span["input"]["user_prompt"] == prompt
+    assert agent_span["output"]["output"] == result.output
+    assert agent_span["context"]["span_origin"]["instrumentation"]["name"] == "pydantic-ai-auto"
+    _assert_metrics_are_valid(agent_span["metrics"], start, end)
 
     # Verify that toolsets are captured in input with correct tool names
     assert "toolsets" in agent_span["input"], "toolsets should be in input (not metadata)"
@@ -1465,6 +1485,7 @@ async def test_agent_with_tool_execution(memory_logger):
     chat_spans = [s for s in spans if "chat" in s["span_attributes"]["name"]]
     assert chat_spans, "chat span not found"
     for chat_span in chat_spans:
+        assert chat_span["span_parents"] == [agent_span["span_id"]]
         model_tools = chat_span["metadata"]["tools"]
         calculate_tool = next(
             (
@@ -1491,6 +1512,32 @@ async def test_agent_with_tool_execution(memory_logger):
     assert calc_tool_span["input"] is not None, "tool span should have input"
     assert calc_tool_span["output"] is not None, "tool span should have output"
     assert calc_tool_span["span_parents"] == [agent_span["span_id"]], "tool span should be nested under agent_run"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("body_raises", [False, True])
+async def test_agent_iter_exits_before_completion(memory_logger, body_raises):
+    from pydantic_ai.models.test import TestModel
+
+    agent = Agent(TestModel(), name="early-exit")
+    parent_span = logger.current_span()
+    start = time.time()
+    with pytest.raises(RuntimeError, match="stop iterating") if body_raises else nullcontext():
+        async with agent.iter(TEST_PROMPT) as run:
+            assert run.result is None
+            if body_raises:
+                raise RuntimeError("stop iterating")
+    end = time.time()
+
+    assert logger.current_span() is parent_span
+    (agent_span,) = memory_logger.pop()
+    assert agent_span["span_attributes"]["name"] == "agent_run [early-exit]"
+    assert agent_span.get("output") is None
+    if body_raises:
+        assert "stop iterating" in agent_span["error"]
+    else:
+        assert not agent_span.get("error")
+    _assert_metrics_are_valid(agent_span["metrics"], start, end)
 
 
 @pytest.mark.vcr
