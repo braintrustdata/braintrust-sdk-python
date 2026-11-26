@@ -2,6 +2,12 @@
 
 from braintrust.integrations.base import BaseIntegration
 
+from ._harness import (
+    HarnessCompactionPatcher,
+    HarnessGuardrailBlockPatcher,
+    HarnessMemoryInjectionPatcher,
+    HarnessModelRouterPatcher,
+)
 from .harness_patchers import StepPersistencePatcher
 from .patchers import (
     AgentPatcher,
@@ -39,4 +45,8 @@ class PydanticAIIntegration(BaseIntegration):
         StepPersistencePatcher,
         ToolCallClassificationPatcher,
         BackgroundToolExecutionPatcher,
+        HarnessCompactionPatcher,
+        HarnessMemoryInjectionPatcher,
+        HarnessGuardrailBlockPatcher,
+        HarnessModelRouterPatcher,
     )
