@@ -4,7 +4,10 @@ import pytest
 from braintrust import setup_pydantic_ai
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import init_test_logger
-from pydantic_ai import Agent, ModelSettings
+from pydantic_ai import Agent, ModelSettings, RunContext
+from pydantic_ai.messages import ModelRequest, UserPromptPart
+from pydantic_ai.models import ModelRequestContext, ModelRequestParameters, infer_model
+from pydantic_ai.usage import RunUsage
 
 
 MODEL = "openai-chat:gpt-4.1-mini"
@@ -62,6 +65,28 @@ async def test_harness_compaction_decision(decision_spans):
 
 
 @pytest.mark.asyncio
+async def test_harness_background_compaction_retrieval_is_not_traced(decision_spans):
+    compaction = import_module("pydantic_ai_harness.compaction")
+    model = infer_model(MODEL)
+    messages = [ModelRequest(parts=[UserPromptPart(prompt)]) for prompt in ("older context " * 10, "current request")]
+    ctx = RunContext(deps=None, model=model, usage=RunUsage(), messages=messages, conversation_id="background")
+    request = ModelRequestContext(
+        model=model, messages=messages.copy(), model_settings=None, model_request_parameters=ModelRequestParameters()
+    )
+    fallback = compaction.FallbackCompaction(
+        [compaction.SlidingWindowCompaction(keep_messages=1, preserve_first_user_message=False)],
+        max_tokens=100,
+        background_start=0.1,
+    )
+
+    assert await fallback.before_model_request(ctx, request) is request
+    compacted = await fallback.take_background_compaction(messages, model=model, conversation_id="background")
+
+    assert compacted == messages[-1:]
+    assert not decision_spans.pop()
+
+
+@pytest.mark.asyncio
 @pytest.mark.vcr
 async def test_harness_memory_injection_decision(decision_spans):
     memory = import_module("pydantic_ai_harness.memory")
@@ -92,7 +117,7 @@ async def test_harness_guardrail_block_decision(decision_spans):
 
     async def check_output(_ctx, output):
         if "restricted" in output.lower():
-            return guardrails.GuardrailResult.block("blocked by test policy")
+            return guardrails.GuardrailResult.block(f"blocked by test policy: {output}")
         return guardrails.GuardrailResult.allow()
 
     agent = Agent(
@@ -102,12 +127,13 @@ async def test_harness_guardrail_block_decision(decision_spans):
         capabilities=[guardrails.OutputGuardrail(check_output)],
     )
 
-    with pytest.raises(guardrails.OutputBlocked, match="blocked by test policy"):
+    with pytest.raises(guardrails.OutputBlocked, match="blocked by test policy: restricted"):
         await agent.run("Reply with only the word 'restricted'.")
 
     decision = _decision_span(decision_spans.pop(), "guardrail blocked output")
     assert decision["input"] == {"direction": "output"}
-    assert decision["output"] == {"action": "block", "reason": "blocked by test policy"}
+    assert decision["output"] == {"action": "block"}
+    assert "blocked by test policy" not in str(decision)
     assert not decision.get("error")
 
 
@@ -141,6 +167,7 @@ async def test_harness_model_router_decision(decision_spans, instrument):
     decision = _decision_span(spans, "model_router.select")
     assert decision["input"] == {"choices": ["default", "alternate"], "default": "default"}
     assert decision["metadata"]["mode"] == "once"
+    assert set(decision["metadata"]) <= {"mode", "run_step", "probability", "error.type"}
     assert decision["output"] == {"choice": "alternate", "fallback_reason": "none"}
     (router_agent,) = (span for span in spans if span["span_attributes"]["name"] == "agent_run [model_router]")
     assert router_agent["span_parents"] == [decision["span_id"]]

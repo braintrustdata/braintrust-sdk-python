@@ -11,6 +11,9 @@ from .tracing import start_span
 
 
 async def _compact_messages(wrapped, _instance, args, kwargs):
+    background = kwargs.get("background")
+    if background == "used":
+        return await wrapped(*args, **kwargs)
     messages = kwargs["messages"]
     before = len(messages)
     compacted = await wrapped(*args, **kwargs)
@@ -19,8 +22,8 @@ async def _compact_messages(wrapped, _instance, args, kwargs):
         metadata = {"strategy": kwargs["strategy"]}
         if kwargs.get("model_requested"):
             metadata["model_requested"] = True
-        if kwargs.get("background") is not None:
-            metadata["background"] = kwargs["background"]
+        if background is not None:
+            metadata["background"] = background
         start_span(
             name="compact_messages",
             type=SpanTypeAttribute.TASK,
@@ -62,13 +65,19 @@ def _trace_guardrail_block(wrapped, _instance, args, kwargs):
         name=f"guardrail blocked {direction}",
         type=SpanTypeAttribute.TASK,
         input={"direction": direction},
-        output={"action": "block", "reason": kwargs["message"]},
+        output={"action": "block"},
         metadata={"tool_name": tool_name} if tool_name is not None else None,
     ).end()
     return result
 
 
 _router_span = ContextVar[Span | None]("pydantic_ai_harness_router_span", default=None)
+_ROUTER_METADATA_FIELDS = {
+    "model_router.mode": "mode",
+    "model_router.run_step": "run_step",
+    "model_router.probability": "probability",
+    "model_router.error.type": "error.type",
+}
 
 
 async def _select_model(wrapped, instance, args, kwargs):
@@ -92,10 +101,9 @@ def _record_model_selection(wrapped, _instance, args, kwargs):
     span = _router_span.get()
     if span is not None:
         _, attributes, choice, fallback_reason = args
-        prefix = "model_router."
         span.log(
             output={"choice": choice, "fallback_reason": fallback_reason},
-            metadata={key.removeprefix(prefix): value for key, value in attributes.items() if key.startswith(prefix)},
+            metadata={field: attributes[key] for key, field in _ROUTER_METADATA_FIELDS.items() if key in attributes},
         )
     return result
 
