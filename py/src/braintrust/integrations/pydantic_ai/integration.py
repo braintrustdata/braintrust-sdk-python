@@ -2,6 +2,7 @@
 
 from braintrust.integrations.base import BaseIntegration
 
+from .harness_patchers import StepPersistencePatcher
 from .patchers import (
     AgentPatcher,
     DirectModelRequestPatcher,
@@ -33,4 +34,5 @@ class PydanticAIIntegration(BaseIntegration):
         DirectModelRequestStreamPatcher,
         DirectModelRequestStreamSyncPatcher,
         ToolManagerFunctionToolPatcher,
+        StepPersistencePatcher,
     )

@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class _ToolTraceState:
+    agent_span: Any
     emitted: bool = False
 
 
@@ -80,8 +81,15 @@ def _direct_prepare_model_wrapper(wrapped: Any, instance: Any, args: Any, kwargs
     return _wrap_model_instance(wrapped(*args, **kwargs))
 
 
-def _start_tool_trace_capture() -> Any:
-    return _tool_trace_state.set(_ToolTraceState())
+def _start_tool_trace_capture(agent_span: Any) -> Any:
+    return _tool_trace_state.set(_ToolTraceState(agent_span))
+
+
+def _current_agent_span() -> Any:
+    state = _tool_trace_state.get()
+    if state is not None and state.agent_span is current_span():
+        return state.agent_span
+    return None
 
 
 def _reset_tool_trace_capture(token: Any) -> None:
@@ -183,7 +191,7 @@ async def _agent_run_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any
         input=input_data if input_data else None,
         metadata=metadata,
     ) as agent_span:
-        tool_trace_token = _start_tool_trace_capture()
+        tool_trace_token = _start_tool_trace_capture(agent_span)
         try:
             start_time = time.time()
             result = await wrapped(*args, **kwargs)
@@ -216,7 +224,7 @@ def _agent_run_sync_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any)
         input=input_data if input_data else None,
         metadata=metadata,
     ) as agent_span:
-        tool_trace_state = _SyncToolTraceState()
+        tool_trace_state = _SyncToolTraceState(agent_span)
         tool_trace_token = _tool_trace_state.set(tool_trace_state)
         try:
             start_time = time.time()
@@ -286,7 +294,7 @@ def _agent_run_stream_sync_wrapper(wrapped: Any, instance: Any, args: Any, kwarg
         metadata=metadata,
     )
     span = span_cm.__enter__()
-    tool_trace_token = _start_tool_trace_capture()
+    tool_trace_token = _start_tool_trace_capture(span)
     start_time = time.time()
 
     try:
@@ -617,7 +625,7 @@ class _AgentStreamEventsWrapper(AbstractAsyncContextManager):
             metadata=self.metadata,
         )
         self.agent_span = self.span_cm.__enter__()
-        self._tool_trace_token = _start_tool_trace_capture()
+        self._tool_trace_token = _start_tool_trace_capture(self.agent_span)
         self.start_time = time.time()
 
         try:
@@ -763,7 +771,7 @@ class _AgentStreamWrapper(AbstractAsyncContextManager):
         )
         self.span_cm.__enter__()
 
-        self._tool_trace_token = _start_tool_trace_capture()
+        self._tool_trace_token = _start_tool_trace_capture(self.span_cm)
         self.start_time = time.time()
         self.stream_result = await self.stream_cm.__aenter__()
 
