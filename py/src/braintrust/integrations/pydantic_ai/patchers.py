@@ -17,6 +17,7 @@ from .tracing import (
     _agent_run_wrapper,
     _agent_to_cli_sync_wrapper,
     _background_tool_execution_wrapper,
+    _background_tools_run_wrapper,
     _create_direct_model_request_stream_sync_wrapper,
     _create_direct_model_request_stream_wrapper,
     _create_direct_model_request_sync_wrapper,
@@ -26,8 +27,7 @@ from .tracing import (
     _process_tool_calls_wrapper,
     _resolve_retry_model_wrapper,
     _sync_stream_bridge_init_wrapper,
-    _tool_manager_call_function_tool_wrapper,
-    _tool_manager_execute_function_tool_wrapper,
+    _tool_manager_execute_tool_wrapper,
     _wrap_concrete_model_class,
 )
 
@@ -173,14 +173,14 @@ class _ToolManagerExecuteFunctionToolPatcher(FunctionWrapperPatcher):
     # pydantic_ai 1.78.0 relocated ToolManager; `_agent_graph.ToolManager` is a stable alias.
     target_module = "pydantic_ai._agent_graph"
     target_path = "ToolManager._execute_function_tool_call"
-    wrapper = _tool_manager_execute_function_tool_wrapper
+    wrapper = _tool_manager_execute_tool_wrapper
 
 
 class _ToolManagerExecuteToolCallPatcher(FunctionWrapperPatcher):
     name = "pydantic_ai.tool_manager.execute_tool_call"
     target_module = "pydantic_ai._agent_graph"
     target_path = "ToolManager.execute_tool_call"
-    wrapper = _tool_manager_execute_function_tool_wrapper
+    wrapper = _tool_manager_execute_tool_wrapper
     superseded_by = (_ToolManagerExecuteFunctionToolPatcher,)
 
 
@@ -188,7 +188,7 @@ class _ToolManagerCallFunctionToolPatcher(FunctionWrapperPatcher):
     name = "pydantic_ai.tool_manager.call_function_tool"
     target_module = "pydantic_ai._agent_graph"
     target_path = "ToolManager._call_function_tool"
-    wrapper = _tool_manager_call_function_tool_wrapper
+    wrapper = _tool_manager_execute_tool_wrapper
     superseded_by = (_ToolManagerExecuteFunctionToolPatcher,)
 
 
@@ -208,12 +208,30 @@ class ToolCallClassificationPatcher(FunctionWrapperPatcher):
     wrapper = _process_tool_calls_wrapper
 
 
-class BackgroundToolExecutionPatcher(FunctionWrapperPatcher):
-    name = "pydantic_ai.harness.background_tool_execution"
+class _BackgroundToolsRunPatcher(FunctionWrapperPatcher):
+    name = "pydantic_ai.harness.background_tools_run"
     target_module = _BACKGROUND_TOOLS_CAPABILITY_MODULE
-    target_path = "BackgroundTools.wrap_tool_execute"
+    target_path = "BackgroundTools.wrap_run"
+    wrapper = _background_tools_run_wrapper
+
+
+class _BackgroundToolHandlerPatcher(FunctionWrapperPatcher):
+    name = "pydantic_ai.harness.background_tool_handler"
+    target_module = "pydantic_ai.tool_manager"
+    target_path = "ToolManager._run_execution_lifecycle"
     wrapper = _background_tool_execution_wrapper
-    min_version: ClassVar[str] = "2.0.0"
+
+
+class BackgroundToolExecutionPatcher(CompositeFunctionWrapperPatcher):
+    name = "pydantic_ai.harness.background_tool_execution"
+    min_version: ClassVar[str] = "2.75.0"
+    sub_patchers = (_BackgroundToolHandlerPatcher, _BackgroundToolsRunPatcher)
+
+    @classmethod
+    def applies(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
+        return super().applies(module, version, target=target) and all(
+            patcher.applies(module, version, target=target) for patcher in cls.sub_patchers
+        )
 
 
 def wrap_agent(Agent: Any) -> Any:

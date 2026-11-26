@@ -44,13 +44,11 @@ async def test_harness_background_tool_execution(with_memory_logger, fails):
     spans = with_memory_logger.pop()
     parent_span = find_span_by_name(spans, "agent_run [background_parent]")
     tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
-    assert [span["span_attributes"]["name"] for span in tool_spans] == ["slow", "slow"]
-    dispatch = next(s for s in tool_spans if s["span_parents"] == [parent_span["span_id"]])
-    execution = next(s for s in tool_spans if s["span_parents"] == [dispatch["span_id"]])
-    assert "is running in background" in dispatch["output"]
-    assert dispatch.get("error") is None
+    assert [span["span_attributes"]["name"] for span in tool_spans] == ["slow"]
+    (execution,) = tool_spans
+    assert execution["span_parents"] == [parent_span["span_id"]]
     assert execution["input"] == {"query": "lookup"}
-    assert execution["metadata"]["tool_call_id"] == dispatch["metadata"]["tool_call_id"]
+    assert execution["metadata"]["tool_call_id"]
     assert execution["context"]["span_origin"]["instrumentation"]["name"] == "pydantic-ai-auto"
     if fails:
         assert "failed: lookup" in execution["error"]
@@ -60,4 +58,3 @@ async def test_harness_background_tool_execution(with_memory_logger, fails):
         assert execution.get("error") is None
         child_span = find_span_by_name(spans, "agent_run [background_child]")
         assert child_span["span_parents"] == [execution["span_id"]]
-        assert dispatch["metrics"]["end"] <= child_span["metrics"]["start"]
