@@ -1,37 +1,51 @@
 from importlib import import_module
 
 import pytest
-from braintrust import logger
-from braintrust.integrations.pydantic_ai._test_harness import make_harness_agent
-from braintrust.test_helpers import find_span_by_name
+from braintrust import logger, setup_pydantic_ai
+from braintrust.test_helpers import find_span_by_name, init_test_logger
 from opentelemetry.sdk.trace import TracerProvider
+from pydantic_ai import Agent, ModelSettings
 from pydantic_ai.capabilities import Instrumentation
 from pydantic_ai.models.instrumented import InstrumentationSettings
 
 
+@pytest.mark.vcr
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("history_loader", "native_instrumentation"),
     [("continue_run", False), ("fork_run", False), ("fork_run", True)],
 )
-async def test_step_persistence_lineage(harness_spans, history_loader, native_instrumentation, monkeypatch):
+async def test_step_persistence_lineage(with_memory_logger, history_loader, native_instrumentation, monkeypatch):
     persistence = import_module("pydantic_ai_harness.step_persistence")
     capabilities = []
     if native_instrumentation:
         monkeypatch.setenv("BRAINTRUST_OTEL_COMPAT", "1")
         monkeypatch.setattr(logger._internal_get_global_state(), "_context_manager", None)
         capabilities.append(Instrumentation(settings=InstrumentationSettings(tracer_provider=TracerProvider())))
+    project = "test-pydantic-ai-harness-lineage"
+    assert setup_pydantic_ai(project_name=project)
+    init_test_logger(project)
+
     store = persistence.InMemoryStepStore()
-    source = make_harness_agent("source", capabilities=[*capabilities, persistence.StepPersistence(store=store)])
-    branch = make_harness_agent(
-        "branch",
+    model = "openai:gpt-4o-mini"
+    settings = ModelSettings(max_tokens=20)
+    source = Agent(
+        model,
+        name="source",
+        model_settings=settings,
+        capabilities=[*capabilities, persistence.StepPersistence(store=store)],
+    )
+    branch = Agent(
+        model,
+        name="branch",
+        model_settings=settings,
         capabilities=[*capabilities, persistence.StepPersistence(store=store, parent_run_id="source-run")],
     )
 
-    await source.run("start", run_id="source-run")
+    await source.run("Reply with the word ready.", run_id="source-run")
     history = await getattr(persistence, history_loader)(store, run_id="source-run")
-    await branch.run("next", run_id="branch-run", message_history=history)
-    spans = harness_spans.pop()
+    await branch.run("Repeat your previous answer.", run_id="branch-run", message_history=history)
+    spans = with_memory_logger.pop()
 
     source_record = await store.get_run(run_id="source-run")
     branch_record = await store.get_run(run_id="branch-run")
