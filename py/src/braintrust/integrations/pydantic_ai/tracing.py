@@ -10,13 +10,14 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from braintrust.integrations.utils import _materialize_attachment, _metered_duration_metrics, _timing_metrics
-from braintrust.logger import _internal_get_global_state, current_span
+from braintrust.logger import Span, _internal_get_global_state, current_span
 from braintrust.logger import start_span as _bt_start_span
 
 
 _INSTRUMENTATION = "pydantic-ai-auto"
 _AGENT_WRAPPER_MODULES = (__name__, "braintrust.integrations.base", "wrapt.wrappers", "contextlib")
 _delegated_iter = contextvars.ContextVar("braintrust_pydantic_ai_delegated_iter", default=False)
+_BACKGROUND_TOOLS_CAPABILITY_MODULE = "pydantic_ai_harness.background_tools._capability"
 
 
 def start_span(*args, **kwargs):
@@ -47,6 +48,9 @@ class _SyncToolTraceState(_ToolTraceState):
 
 _tool_trace_state: contextvars.ContextVar[_ToolTraceState | None] = contextvars.ContextVar(
     "braintrust_pydantic_ai_tool_trace_state", default=None
+)
+_tool_dispatch: contextvars.ContextVar[tuple[Any, Span] | None] = contextvars.ContextVar(
+    "braintrust_pydantic_ai_tool_dispatch", default=None
 )
 
 
@@ -1197,12 +1201,15 @@ async def _trace_tool_execution(wrapped: Any, args: Any, kwargs: Any):
     deferral: CallDeferred | ApprovalRequired | None = None
     with start_span(name=tool_name, type=SpanTypeAttribute.TOOL, input=input_data, metadata=metadata) as tool_span:
         start_time = time.time()
+        dispatch_token = _tool_dispatch.set((call, tool_span))
         try:
             result = await wrapped(*args, **kwargs)
         except (CallDeferred, ApprovalRequired) as exc:
             # The tool handed the call back to the caller as DeferredToolRequests.
             # That is control flow, not a tool failure, so the span must not record an error.
             deferral = exc
+        finally:
+            _tool_dispatch.reset(dispatch_token)
         end_time = time.time()
         metrics = _timing_metrics(start_time, end_time)
         if deferral is None:
@@ -1228,6 +1235,38 @@ async def _tool_manager_call_function_tool_wrapper(wrapped: Any, instance: Any, 
 
 async def _tool_manager_execute_function_tool_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
     return await _trace_tool_execution(wrapped, args, kwargs)
+
+
+async def _background_tool_execution_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+    backgrounded_call = getattr(sys.modules.get(_BACKGROUND_TOOLS_CAPABILITY_MODULE), "_backgrounded_call", None)
+    call = kwargs.get("call")
+    handler = kwargs.get("handler")
+    if backgrounded_call is None or call is None or handler is None or backgrounded_call.get() is call:
+        return await wrapped(*args, **kwargs)
+
+    dispatch = _tool_dispatch.get()
+    if dispatch is not None and dispatch[0] is call:
+        start_execution_span = dispatch[1].start_span
+    else:
+        start_execution_span = _bt_start_span
+
+    async def trace_handler(tool_args: dict[str, Any]):
+        if backgrounded_call.get() is not call:
+            return await handler(tool_args)
+
+        # Harness sets the marker in its scheduled task, after which ambient context may skip the ended dispatch span.
+        with start_execution_span(
+            name=call.tool_name,
+            type=SpanTypeAttribute.TOOL,
+            input=tool_args,
+            metadata={"tool_call_id": call.tool_call_id},
+            internal={"instrumentation": _INSTRUMENTATION},
+        ) as execution_span:
+            result = await handler(tool_args)
+            execution_span.log(output=result)
+            return result
+
+    return await wrapped(*args, **{**kwargs, "handler": trace_handler})
 
 
 def _create_tool_spans_from_messages(result: Any) -> None:

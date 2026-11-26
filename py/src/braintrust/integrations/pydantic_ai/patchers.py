@@ -6,6 +6,7 @@ from typing import Any, ClassVar
 from braintrust.integrations.base import ClassScanPatcher, CompositeFunctionWrapperPatcher, FunctionWrapperPatcher
 
 from .tracing import (
+    _BACKGROUND_TOOLS_CAPABILITY_MODULE,
     _agent_get_model_wrapper,
     _agent_iter_wrapper,
     _agent_resolve_model_selection_wrapper,
@@ -15,6 +16,7 @@ from .tracing import (
     _agent_run_sync_wrapper,
     _agent_run_wrapper,
     _agent_to_cli_sync_wrapper,
+    _background_tool_execution_wrapper,
     _create_direct_model_request_stream_sync_wrapper,
     _create_direct_model_request_stream_wrapper,
     _create_direct_model_request_sync_wrapper,
@@ -204,6 +206,14 @@ class ToolCallClassificationPatcher(FunctionWrapperPatcher):
     target_module = "pydantic_ai._agent_graph"
     target_path = "process_tool_calls"
     wrapper = _process_tool_calls_wrapper
+
+
+class BackgroundToolExecutionPatcher(FunctionWrapperPatcher):
+    name = "pydantic_ai.harness.background_tool_execution"
+    target_module = _BACKGROUND_TOOLS_CAPABILITY_MODULE
+    target_path = "BackgroundTools.wrap_tool_execute"
+    wrapper = _background_tool_execution_wrapper
+    min_version: ClassVar[str] = "2.0.0"
 
 
 def wrap_agent(Agent: Any) -> Any:
