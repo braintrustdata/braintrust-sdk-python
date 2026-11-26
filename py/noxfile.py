@@ -614,6 +614,7 @@ def test_autogen(session, version):
 # Test both the direct integration and wrap_openai with provider versions
 # that support patched OpenTelemetry releases.
 PYDANTIC_AI_INTEGRATION_VERSIONS = _get_matrix_versions("pydantic-ai-integration")
+PYDANTIC_AI_HARNESS_VERSIONS = _get_matrix_versions("pydantic-ai-harness")
 PYDANTIC_AI_WRAP_OPENAI_VERSIONS = _get_matrix_versions("pydantic-ai-wrap-openai")
 
 
@@ -624,6 +625,16 @@ def test_pydantic_ai_integration(session, version):
     _install_test_deps(session)
     _install_matrix_dep(session, "pydantic-ai-integration", version)
     _run_tests(session, f"{INTEGRATION_DIR}/pydantic_ai/test_pydantic_ai_integration.py", version=version)
+
+
+@nox.session()
+@nox.parametrize("version", PYDANTIC_AI_HARNESS_VERSIONS, ids=PYDANTIC_AI_HARNESS_VERSIONS)
+def test_pydantic_ai_harness(session, version):
+    _skip_if_incompatible(session)
+    _install_test_deps(session)
+    _install_matrix_dep(session, "pydantic-ai-integration", LATEST)
+    _install_matrix_dep(session, "pydantic-ai-harness", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/pydantic_ai/harness", version=version)
 
 
 @nox.session()
