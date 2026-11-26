@@ -6,7 +6,7 @@ import sys
 import time
 from collections.abc import Mapping
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from braintrust.integrations.utils import _materialize_attachment, _metered_duration_metrics, _timing_metrics
@@ -37,6 +37,8 @@ logger = logging.getLogger(__name__)
 class _ToolTraceState:
     agent_span: Any
     emitted: bool = False
+    deferred_call_ids: set[str] = field(default_factory=set)
+    output_call_ids: set[str] = field(default_factory=set)
 
 
 @dataclass
@@ -1129,20 +1131,100 @@ def _extract_tool_call(call_or_validated: Any) -> Any:
     return call_or_validated
 
 
+def _tool_call_input(call: Any) -> Any:
+    try:
+        return call.args_as_dict()
+    except Exception:
+        return getattr(call, "args", None)
+
+
+def _deferred_tool_metadata(kind: str, details: Any) -> dict[str, Any]:
+    metadata: dict[str, Any] = {"tool_outcome": "deferred", "deferred": kind}
+    if details:
+        metadata["deferred_metadata"] = details
+    return metadata
+
+
+def _process_tool_calls_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+    state = _tool_trace_state.get()
+    if state is not None:
+        try:
+            tool_manager = args[0] if args else kwargs["tool_manager"]
+            calls = args[1] if len(args) > 1 else kwargs["tool_calls"]
+            for call in calls:
+                definition = tool_manager.get_tool_def(call.tool_name)
+                if definition is not None and definition.kind == "output":
+                    state.output_call_ids.add(call.tool_call_id)
+        except Exception as e:
+            logger.debug(f"Failed to classify output tool calls for tracing: {e}")
+    return wrapped(*args, **kwargs)
+
+
+async def _resolve_deferred_tool_calls_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+    state = _tool_trace_state.get()
+    if state is not None:
+        requests = args[0] if args else kwargs.get("requests")
+        _trace_deferred_tool_requests(state, requests)
+    return await wrapped(*args, **kwargs)
+
+
+async def _validate_stream_output_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+    output = await wrapped(*args, **kwargs)
+    state = _tool_trace_state.get()
+    if state is not None and not kwargs.get("allow_partial", False):
+        try:
+            from pydantic_ai import DeferredToolRequests
+        except ImportError:
+            return output
+        if isinstance(output, DeferredToolRequests):
+            _trace_deferred_tool_requests(state, output)
+    return output
+
+
+def _trace_deferred_tool_requests(state: _ToolTraceState, requests: Any) -> None:
+    try:
+        details_by_id = getattr(requests, "metadata", {})
+        request_kind = getattr(requests, "kind", None)
+        calls = [(call, "unapproved") for call in getattr(requests, "approvals", ())] + [
+            (call, request_kind(call.tool_call_id) if callable(request_kind) else "external")
+            for call in getattr(requests, "calls", ())
+        ]
+    except Exception as e:
+        logger.debug(f"Failed to trace deferred tool requests: {e}")
+        return
+
+    for call, kind in calls:
+        call_id = call.tool_call_id
+        if call_id in state.deferred_call_ids:
+            continue
+        metadata = _deferred_tool_metadata(kind, details_by_id.get(call_id))
+        metadata["tool_call_id"] = call_id
+        now = time.time()
+        with start_span(
+            name=call.tool_name,
+            type=SpanTypeAttribute.TOOL,
+            input=_tool_call_input(call),
+            metadata=metadata,
+            start_time=now,
+        ) as tool_span:
+            tool_span.log(metrics=_timing_metrics(now, now))
+            tool_span.end(end_time=now)
+        state.deferred_call_ids.add(call_id)
+
+
 async def _trace_tool_execution(wrapped: Any, args: Any, kwargs: Any):
-    call = _extract_tool_call(args[0] if args else kwargs.get("validated") or kwargs.get("call"))
+    call_or_validated = args[0] if args else kwargs.get("validated") or kwargs.get("call")
+    call = _extract_tool_call(call_or_validated)
     if call is None:
         return await wrapped(*args, **kwargs)
 
     tool_name = getattr(call, "tool_name", None) or "unknown_tool"
     tool_call_id = getattr(call, "tool_call_id", None)
 
-    try:
-        input_data = call.args_as_dict()
-    except Exception:
-        input_data = getattr(call, "args", None)
-
-    metadata = {"tool_call_id": tool_call_id} if tool_call_id else None
+    input_data = _tool_call_input(call)
+    metadata = {"tool_call_id": tool_call_id} if tool_call_id else {}
+    if getattr(call_or_validated, "args_valid", True):
+        metadata["tool_outcome"] = "executed"
 
     from pydantic_ai.exceptions import ApprovalRequired, CallDeferred
 
@@ -1161,11 +1243,11 @@ async def _trace_tool_execution(wrapped: Any, args: Any, kwargs: Any):
         if deferral is None:
             tool_span.log(output=result, metrics=metrics)
         else:
-            # Same kind names pydantic_ai uses for deferred tool calls.
-            deferred_metadata = {"deferred": "unapproved" if isinstance(deferral, ApprovalRequired) else "external"}
-            if getattr(deferral, "metadata", None):
-                deferred_metadata["deferred_metadata"] = deferral.metadata
-            tool_span.log(metadata=deferred_metadata, metrics=metrics)
+            state = _tool_trace_state.get()
+            if state is not None and tool_call_id:
+                state.deferred_call_ids.add(tool_call_id)
+            kind = "unapproved" if isinstance(deferral, ApprovalRequired) else getattr(deferral, "kind", "external")
+            tool_span.log(metadata=_deferred_tool_metadata(kind, getattr(deferral, "metadata", None)), metrics=metrics)
     if deferral is not None:
         try:
             raise deferral
@@ -1196,6 +1278,7 @@ def _create_tool_spans_from_messages_impl(result: Any) -> None:
     from pydantic_ai.messages import ToolCallPart, ToolReturnPart
 
     messages = result.new_messages()
+    state = _tool_trace_state.get()
 
     returns_by_id: dict[str, tuple[Any, float | None]] = {}
     for msg in messages:
@@ -1216,18 +1299,18 @@ def _create_tool_spans_from_messages_impl(result: Any) -> None:
 
             tool_name = getattr(part, "tool_name", None) or "unknown_tool"
             tool_call_id = getattr(part, "tool_call_id", None)
+            if state is not None and (
+                tool_call_id in state.output_call_ids or tool_call_id in state.deferred_call_ids
+            ):
+                continue
 
-            try:
-                input_data = part.args_as_dict()
-            except Exception:
-                input_data = getattr(part, "args", None)
-
+            input_data = _tool_call_input(part)
             output_data = None
             return_ts: float | None = None
             if tool_call_id and tool_call_id in returns_by_id:
                 return_part, return_ts = returns_by_id[tool_call_id]
                 output_data = getattr(return_part, "content", None)
-            metadata = {}
+            metadata = {"tool_outcome": "reconstructed"}
             if tool_call_id:
                 metadata["tool_call_id"] = tool_call_id
 
@@ -1236,7 +1319,7 @@ def _create_tool_spans_from_messages_impl(result: Any) -> None:
                 type=SpanTypeAttribute.TOOL,
                 input=input_data,
                 start_time=call_ts,
-                metadata=metadata if metadata else None,
+                metadata=metadata,
             ) as tool_span:
                 metrics = {}
                 if call_ts is not None:

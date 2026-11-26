@@ -720,6 +720,8 @@ async def test_agent_structured_output(memory_logger):
     spans = memory_logger.pop()
     assert len(spans) >= 2, f"Expected at least 2 spans (agent_run + chat), got {len(spans)}"
 
+    assert not [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.TOOL]
+
     # Find agent_run and chat spans
     agent_span = _find_agent_span(spans)
     chat_span = next((s for s in spans if "chat" in s["span_attributes"]["name"]), None)
@@ -1663,6 +1665,7 @@ def test_tool_execution_creates_spans(memory_logger, monkeypatch, trace_tool_exe
         f"Expected one TOOL span per tool call ({tool_call_count}), got {len(tool_spans)}"
     )
     calc_tool_span = _single_tool_span(tool_spans, "calculate")
+    assert calc_tool_span["metadata"]["tool_outcome"] == ("executed" if trace_tool_execution else "reconstructed")
     assert calc_tool_span["input"] is not None, "tool span should have input"
     assert calc_tool_span["output"] is not None, "tool span should have output"
     assert agent_span["span_parents"] == [sync_span["span_id"]]
@@ -1681,7 +1684,56 @@ def _assert_deferred_tool_span(span, tool_call_id, kind):
     assert span.get("output") is None
     assert span["metadata"]["tool_call_id"] == tool_call_id
     assert span["metadata"]["deferred"] == kind
+    assert span["metadata"]["tool_outcome"] == "deferred"
     assert span["metrics"]["duration"] >= 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mode", ["mixed", "approval-only", "stream"])
+async def test_declarative_tool_approval(memory_logger, mode):
+    from pydantic_ai import DeferredToolRequests, DeferredToolResults
+    from pydantic_ai.models.test import TestModel
+
+    lookup_calls = ["lookup"] if mode == "mixed" else []
+    agent = Agent(TestModel(call_tools=["gated", *lookup_calls]), output_type=[str, DeferredToolRequests])
+    executed = []
+
+    @agent.tool_plain(requires_approval=True)
+    def gated() -> str:
+        executed.append("gated")
+        return "approved"
+
+    @agent.tool_plain
+    def lookup() -> str:
+        executed.append("lookup")
+        return "found"
+
+    if mode == "stream":
+        async with agent.run_stream("Request approval") as first:
+            pending = await first.get_output()
+    else:
+        first = await agent.run("Request tool calls")
+        pending = first.output
+    assert executed == lookup_calls
+    assert isinstance(pending, DeferredToolRequests)
+    (approval,) = pending.approvals
+    assert approval.tool_name == "gated"
+    spans = memory_logger.pop()
+    _assert_deferred_tool_span(_single_tool_span(spans, "gated"), approval.tool_call_id, "unapproved")
+    if lookup_calls:
+        lookup_span = _single_tool_span(spans, "lookup")
+        assert lookup_span["metadata"]["tool_outcome"] == "executed"
+        assert lookup_span["output"] == "found"
+
+    await agent.run(
+        message_history=first.all_messages(),
+        deferred_tool_results=DeferredToolResults(approvals={approval.tool_call_id: True}),
+    )
+    assert executed == [*lookup_calls, "gated"]
+    gated_span = _single_tool_span(memory_logger.pop(), "gated")
+    assert gated_span["metadata"]["tool_outcome"] == "executed"
+    assert gated_span["metadata"]["tool_call_id"] == approval.tool_call_id
+    assert gated_span["output"] == "approved"
 
 
 @pytest.mark.vcr
@@ -1779,6 +1831,7 @@ async def test_tool_exception_is_logged_as_error(memory_logger):
     tool_span = _single_tool_span(memory_logger.pop(), "publish_flow")
     assert "publish failed" in tool_span["error"]
     assert "deferred" not in tool_span["metadata"]
+    assert tool_span["metadata"]["tool_outcome"] == "executed"
 
 
 def test_agent_tool_metadata_extraction(memory_logger):
@@ -2018,6 +2071,7 @@ async def test_agent_run_stream_structured_output(memory_logger):
     # Check spans
     spans = memory_logger.pop()
     assert len(spans) >= 2, f"Expected at least 2 spans (agent_run_stream + chat), got {len(spans)}"
+    assert not [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.TOOL]
 
     # Find agent_run_stream and chat spans
     agent_span = next((s for s in spans if "agent_run_stream" in s["span_attributes"]["name"]), None)

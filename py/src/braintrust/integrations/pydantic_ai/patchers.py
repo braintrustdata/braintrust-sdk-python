@@ -21,10 +21,13 @@ from .tracing import (
     _create_direct_model_request_wrapper,
     _create_start_producer_wrapper,
     _direct_prepare_model_wrapper,
+    _process_tool_calls_wrapper,
+    _resolve_deferred_tool_calls_wrapper,
     _resolve_retry_model_wrapper,
     _sync_stream_bridge_init_wrapper,
     _tool_manager_call_function_tool_wrapper,
     _tool_manager_execute_function_tool_wrapper,
+    _validate_stream_output_wrapper,
     _wrap_concrete_model_class,
 )
 
@@ -196,6 +199,27 @@ class ToolManagerFunctionToolPatcher(CompositeFunctionWrapperPatcher):
         _ToolManagerExecuteToolCallPatcher,
         _ToolManagerCallFunctionToolPatcher,
     )
+
+
+class ToolCallClassificationPatcher(FunctionWrapperPatcher):
+    name = "pydantic_ai.process_tool_calls"
+    target_module = "pydantic_ai._agent_graph"
+    target_path = "process_tool_calls"
+    wrapper = _process_tool_calls_wrapper
+
+
+class DeferredToolRequestsPatcher(FunctionWrapperPatcher):
+    name = "pydantic_ai.tool_manager.resolve_deferred_tool_calls"
+    target_module = "pydantic_ai._agent_graph"
+    target_path = "ToolManager.resolve_deferred_tool_calls"
+    wrapper = _resolve_deferred_tool_calls_wrapper
+
+
+class ValidateStreamOutputPatcher(FunctionWrapperPatcher):
+    name = "pydantic_ai.agent_stream.validate_response_output"
+    target_module = "pydantic_ai.result"
+    target_path = "AgentStream.validate_response_output"
+    wrapper = _validate_stream_output_wrapper
 
 
 def wrap_agent(Agent: Any) -> Any:
