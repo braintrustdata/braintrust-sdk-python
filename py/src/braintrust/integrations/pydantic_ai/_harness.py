@@ -25,7 +25,7 @@ async def _compact_messages(wrapped, _instance, args, kwargs):
         if background is not None:
             metadata["background"] = background
         start_span(
-            name="compact_messages",
+            name="harness_message_compaction",
             type=SpanTypeAttribute.TASK,
             input={"messages": before},
             output={"messages": len(compacted)},
@@ -40,7 +40,7 @@ def _record_memory_injection(wrapped, instance, args, kwargs):
     main_chars = len(main.content) if main is not None else 0
     has_memory = bool(main_chars or subfiles or files_truncated)
     start_span(
-        name="memory.inject",
+        name="harness_memory_injection",
         type=SpanTypeAttribute.TASK,
         input={"main_chars": main_chars, "files": len(subfiles)},
         output={
@@ -59,14 +59,15 @@ def _record_memory_injection(wrapped, instance, args, kwargs):
 
 def _trace_guardrail_block(wrapped, _instance, args, kwargs):
     result = wrapped(*args, **kwargs)
-    direction = kwargs["direction"]
+    metadata = {"direction": kwargs["direction"]}
     tool_name = kwargs.get("tool_name")
+    if tool_name is not None:
+        metadata["tool_name"] = tool_name
     start_span(
-        name=f"guardrail blocked {direction}",
+        name="harness_guardrail_block",
         type=SpanTypeAttribute.TASK,
-        input={"direction": direction},
         output={"action": "block"},
-        metadata={"tool_name": tool_name} if tool_name is not None else None,
+        metadata=metadata,
     ).end()
     return result
 
@@ -85,7 +86,7 @@ async def _select_model(wrapped, instance, args, kwargs):
     if instance._run_ctx is None or (instance.mode == "once" and instance._cached_choice is not None):
         return await wrapped(*args, **kwargs)
     with start_span(
-        name="model_router.select",
+        name="harness_model_selection",
         type=SpanTypeAttribute.TASK,
         input={"choices": list(instance.choices), "default": instance.default},
     ) as span:

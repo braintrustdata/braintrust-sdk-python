@@ -53,7 +53,7 @@ async def test_harness_compaction_decision(decision_spans):
     assert "done" in result.output.lower()
 
     spans = decision_spans.pop()
-    decision = _decision_span(spans, "compact_messages")
+    decision = _decision_span(spans, "harness_message_compaction")
     assert decision["metadata"]["strategy"] == "ClearToolResults"
     assert decision["input"] == {"messages": 3}
     assert decision["output"] == {"messages": 3}
@@ -103,7 +103,7 @@ async def test_harness_memory_injection_decision(decision_spans):
     result = await agent.run("Reply with only the saved label from your injected memory. Do not call tools.")
     assert "orchid" in result.output.lower()
 
-    decision = _decision_span(decision_spans.pop(), "memory.inject")
+    decision = _decision_span(decision_spans.pop(), "harness_memory_injection")
     assert decision["output"]["outcome"] == "ok"
     assert decision["output"]["appended"] is True
     assert decision["output"]["injected_chars"] >= len(stored)
@@ -130,8 +130,8 @@ async def test_harness_guardrail_block_decision(decision_spans):
     with pytest.raises(guardrails.OutputBlocked, match="blocked by test policy: restricted"):
         await agent.run("Reply with only the word 'restricted'.")
 
-    decision = _decision_span(decision_spans.pop(), "guardrail blocked output")
-    assert decision["input"] == {"direction": "output"}
+    decision = _decision_span(decision_spans.pop(), "harness_guardrail_block")
+    assert decision["metadata"] == {"direction": "output"}
     assert decision["output"] == {"action": "block"}
     assert "blocked by test policy" not in str(decision)
     assert not decision.get("error")
@@ -164,7 +164,7 @@ async def test_harness_model_router_decision(decision_spans, instrument):
     assert "3" in result.output
 
     spans = decision_spans.pop()
-    decision = _decision_span(spans, "model_router.select")
+    decision = _decision_span(spans, "harness_model_selection")
     assert decision["input"] == {"choices": ["default", "alternate"], "default": "default"}
     assert decision["metadata"]["mode"] == "once"
     assert set(decision["metadata"]) <= {"mode", "run_step", "probability", "error.type"}
