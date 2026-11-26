@@ -1,24 +1,11 @@
+from importlib import import_module
+
 import pytest
-from braintrust import logger, setup_pydantic_ai
+from braintrust.integrations.pydantic_ai._test_harness import make_harness_agent
 from braintrust.span_types import SpanTypeAttribute
-from braintrust.test_helpers import init_test_logger
-from pydantic_ai import Agent
 from pydantic_ai.messages import ModelResponse, TextPart, ToolCallPart, ToolReturnPart
 from pydantic_ai.models.function import FunctionModel
 from pydantic_ai.models.test import TestModel
-
-
-pytest.importorskip("pydantic_ai_harness")
-
-PROJECT_NAME = "test-pydantic-ai-harness-decisions"
-
-
-@pytest.fixture
-def memory_logger():
-    assert setup_pydantic_ai(project_name=PROJECT_NAME)
-    init_test_logger(PROJECT_NAME)
-    with logger._internal_with_memory_background_logger() as bgl:
-        yield bgl
 
 
 def _decision_span(spans, name):
@@ -31,8 +18,8 @@ def _decision_span(spans, name):
 
 
 @pytest.mark.asyncio
-async def test_harness_compaction_decision(memory_logger):
-    compaction = pytest.importorskip("pydantic_ai_harness.compaction")
+async def test_harness_compaction_decision(harness_spans):
+    compaction = import_module("pydantic_ai_harness.compaction")
     tool_results = []
 
     def model(messages, _info):
@@ -42,9 +29,9 @@ async def test_harness_compaction_decision(memory_logger):
         tool_results.extend(results)
         return ModelResponse(parts=[TextPart("done")])
 
-    agent = Agent(
+    agent = make_harness_agent(
+        "harness",
         FunctionModel(model),
-        name="harness",
         capabilities=[compaction.ClearToolResults(max_messages=1, keep_pairs=0)],
     )
 
@@ -55,26 +42,26 @@ async def test_harness_compaction_decision(memory_logger):
     assert (await agent.run("call the tool")).output == "done"
     assert tool_results == ["[tool result cleared]"]
 
-    decision = _decision_span(memory_logger.pop(), "compact_messages")
+    decision = _decision_span(harness_spans.pop(), "compact_messages")
     assert decision["metadata"]["strategy"] == "ClearToolResults"
     assert decision["input"] == {"messages": 3}
     assert decision["output"] == {"messages": 3}
 
 
 @pytest.mark.asyncio
-async def test_harness_memory_injection_decision(memory_logger):
-    memory = pytest.importorskip("pydantic_ai_harness.memory")
+async def test_harness_memory_injection_decision(harness_spans):
+    memory = import_module("pydantic_ai_harness.memory")
     store = memory.InMemoryMemoryStore()
     await store.write("main/MEMORY.md", "offline memory token", expected_version=None)
-    agent = Agent(
+    agent = make_harness_agent(
+        "harness",
         TestModel(call_tools=[], custom_output_text="done"),
-        name="harness",
         capabilities=[memory.Memory(store=store)],
     )
 
     assert (await agent.run("remember")).output == "done"
 
-    decision = _decision_span(memory_logger.pop(), "memory.inject")
+    decision = _decision_span(harness_spans.pop(), "memory.inject")
     assert decision["output"]["outcome"] == "ok"
     assert decision["output"]["appended"] is True
     assert decision["output"]["injected_chars"] >= len("offline memory token")
@@ -82,22 +69,21 @@ async def test_harness_memory_injection_decision(memory_logger):
 
 
 @pytest.mark.asyncio
-async def test_harness_guardrail_block_decision(memory_logger):
-    guardrails = pytest.importorskip("pydantic_ai_harness.guardrails")
+async def test_harness_guardrail_block_decision(harness_spans):
+    guardrails = import_module("pydantic_ai_harness.guardrails")
 
     async def deny(_ctx, _output):
         return guardrails.GuardrailResult.block("blocked by test policy")
 
-    agent = Agent(
-        TestModel(custom_output_text="rejected output"),
-        name="harness",
+    agent = make_harness_agent(
+        "harness",
         capabilities=[guardrails.OutputGuardrail(deny)],
     )
 
     with pytest.raises(guardrails.OutputBlocked, match="blocked by test policy"):
         await agent.run("check output")
 
-    decision = _decision_span(memory_logger.pop(), "guardrail blocked output")
+    decision = _decision_span(harness_spans.pop(), "guardrail blocked output")
     assert decision["input"] == {"direction": "output"}
     assert decision["output"] == {"action": "block", "reason": "blocked by test policy"}
     assert not decision.get("error")
@@ -105,12 +91,11 @@ async def test_harness_guardrail_block_decision(memory_logger):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("instrument", [False, True])
-async def test_harness_model_router_decision(memory_logger, instrument):
-    router = pytest.importorskip("pydantic_ai_harness.model_router")
-    capabilities = pytest.importorskip("pydantic_ai.capabilities")
-    agent = Agent(
-        TestModel(),
-        name="harness",
+async def test_harness_model_router_decision(harness_spans, instrument):
+    router = import_module("pydantic_ai_harness.model_router")
+    capabilities = import_module("pydantic_ai.capabilities")
+    agent = make_harness_agent(
+        "harness",
         capabilities=[
             *([capabilities.Instrumentation()] if instrument else []),
             router.ModelRouter(
@@ -126,7 +111,7 @@ async def test_harness_model_router_decision(memory_logger, instrument):
 
     assert (await agent.run("route to alternate")).output == "alternate"
 
-    spans = memory_logger.pop()
+    spans = harness_spans.pop()
     decision = _decision_span(spans, "model_router.select")
     assert decision["input"] == {"choices": ["default", "alternate"], "default": "default"}
     assert decision["metadata"]["mode"] == "once"

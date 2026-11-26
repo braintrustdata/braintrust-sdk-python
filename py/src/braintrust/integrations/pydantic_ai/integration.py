@@ -2,7 +2,7 @@
 
 from braintrust.integrations.base import BaseIntegration
 
-from .harness import (
+from ._harness import (
     HarnessCompactionPatcher,
     HarnessGuardrailBlockPatcher,
     HarnessMemoryInjectionPatcher,
