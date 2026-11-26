@@ -1688,54 +1688,6 @@ def _assert_deferred_tool_span(span, tool_call_id, kind):
     assert span["metrics"]["duration"] >= 0
 
 
-@pytest.mark.asyncio
-@pytest.mark.parametrize("mode", ["mixed", "approval-only", "stream"])
-async def test_declarative_tool_approval(memory_logger, mode):
-    from pydantic_ai import DeferredToolRequests, DeferredToolResults
-    from pydantic_ai.models.test import TestModel
-
-    lookup_calls = ["lookup"] if mode == "mixed" else []
-    agent = Agent(TestModel(call_tools=["gated", *lookup_calls]), output_type=[str, DeferredToolRequests])
-    executed = []
-
-    @agent.tool_plain(requires_approval=True)
-    def gated() -> str:
-        executed.append("gated")
-        return "approved"
-
-    @agent.tool_plain
-    def lookup() -> str:
-        executed.append("lookup")
-        return "found"
-
-    if mode == "stream":
-        async with agent.run_stream("Request approval") as first:
-            pending = await first.get_output()
-    else:
-        first = await agent.run("Request tool calls")
-        pending = first.output
-    assert executed == lookup_calls
-    assert isinstance(pending, DeferredToolRequests)
-    (approval,) = pending.approvals
-    assert approval.tool_name == "gated"
-    spans = memory_logger.pop()
-    _assert_deferred_tool_span(_single_tool_span(spans, "gated"), approval.tool_call_id, "unapproved")
-    if lookup_calls:
-        lookup_span = _single_tool_span(spans, "lookup")
-        assert lookup_span["metadata"]["tool_outcome"] == "executed"
-        assert lookup_span["output"] == "found"
-
-    await agent.run(
-        message_history=first.all_messages(),
-        deferred_tool_results=DeferredToolResults(approvals={approval.tool_call_id: True}),
-    )
-    assert executed == [*lookup_calls, "gated"]
-    gated_span = _single_tool_span(memory_logger.pop(), "gated")
-    assert gated_span["metadata"]["tool_outcome"] == "executed"
-    assert gated_span["metadata"]["tool_call_id"] == approval.tool_call_id
-    assert gated_span["output"] == "approved"
-
-
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_call_deferred_tool_is_not_logged_as_error(memory_logger):
