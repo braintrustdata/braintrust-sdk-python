@@ -1,29 +1,23 @@
 import asyncio
+from importlib import import_module
 
 import pytest
-from braintrust import setup_pydantic_ai
+from braintrust.integrations.pydantic_ai._test_harness import OFFLINE_ANSWER, make_harness_agent
 from braintrust.span_types import SpanTypeAttribute
-from braintrust.test_helpers import init_test_logger
-from braintrust.test_helpers import with_memory_logger as with_memory_logger
-from pydantic_ai import Agent
+from braintrust.test_helpers import find_span_by_name, find_spans_by_type
 from pydantic_ai.messages import ModelResponse, TextPart, ToolCallPart, ToolReturnPart
 from pydantic_ai.models.function import FunctionModel
-from pydantic_ai.models.test import TestModel
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("fails", [False, True], ids=["success", "failure"])
-async def test_harness_background_tool_execution(with_memory_logger, fails):
-    background_tools = pytest.importorskip("pydantic_ai_harness.background_tools", exc_type=ModuleNotFoundError)
+async def test_harness_background_tool_execution(harness_spans, fails):
     from pydantic_ai.exceptions import ToolFailed
 
-    project = "test-pydantic-ai-harness"
-    assert setup_pydantic_ai(project_name=project)
-    init_test_logger(project)
-
+    background_tools = import_module("pydantic_ai_harness.background_tools")
     call_id = "background-call"
     receipt_seen = asyncio.Event()
-    child = Agent(TestModel(custom_output_text="offline answer"), name="background_child")
+    child = make_harness_agent("background_child")
 
     def respond(messages, _info):
         for message in messages:
@@ -34,7 +28,9 @@ async def test_harness_background_tool_execution(with_memory_logger, fails):
                     return ModelResponse(parts=[TextPart("done")])
         return ModelResponse(parts=[ToolCallPart("slow", {"query": "lookup"}, tool_call_id=call_id)])
 
-    parent = Agent(FunctionModel(respond), name="background_parent", capabilities=[background_tools.BackgroundTools()])
+    parent = make_harness_agent(
+        "background_parent", FunctionModel(respond), capabilities=[background_tools.BackgroundTools()]
+    )
 
     @parent.tool_plain(metadata={"background": True})
     async def slow(query: str) -> str:
@@ -44,9 +40,9 @@ async def test_harness_background_tool_execution(with_memory_logger, fails):
         return (await child.run(query)).output
 
     assert (await parent.run("dispatch background tool")).output == "done"
-    spans = with_memory_logger.pop()
-    parent_span = next(s for s in spans if s["span_attributes"]["name"] == "agent_run [background_parent]")
-    tool_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.TOOL]
+    spans = harness_spans.pop()
+    parent_span = find_span_by_name(spans, "agent_run [background_parent]")
+    tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
     assert [span["span_attributes"]["name"] for span in tool_spans] == ["slow", "slow"]
     dispatch = next(s for s in tool_spans if s["span_parents"] == [parent_span["span_id"]])
     execution = next(s for s in tool_spans if s["span_parents"] == [dispatch["span_id"]])
@@ -59,7 +55,7 @@ async def test_harness_background_tool_execution(with_memory_logger, fails):
         assert "failed: lookup" in execution["error"]
         assert execution.get("output") is None
     else:
-        assert execution["output"] == "offline answer"
+        assert execution["output"] == OFFLINE_ANSWER
         assert execution.get("error") is None
-        child_span = next(s for s in spans if s["span_attributes"]["name"] == "agent_run [background_child]")
+        child_span = find_span_by_name(spans, "agent_run [background_child]")
         assert child_span["span_parents"] == [execution["span_id"]]
