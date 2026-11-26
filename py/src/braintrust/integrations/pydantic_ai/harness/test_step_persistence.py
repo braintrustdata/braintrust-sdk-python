@@ -12,10 +12,17 @@ from pydantic_ai.models.instrumented import InstrumentationSettings
 @pytest.mark.vcr
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    ("history_loader", "native_instrumentation"),
-    [("continue_run", False), ("fork_run", False), ("fork_run", True)],
+    ("history_loader", "native_instrumentation", "entrypoint"),
+    [
+        pytest.param("continue_run", False, "run", id="continue_run-False"),
+        pytest.param("fork_run", False, "run", id="fork_run-False"),
+        pytest.param("fork_run", True, "run", id="fork_run-True"),
+        pytest.param("fork_run", False, "run_stream", id="fork_run-run_stream"),
+    ],
 )
-async def test_step_persistence_lineage(with_memory_logger, history_loader, native_instrumentation, monkeypatch):
+async def test_step_persistence_lineage(
+    with_memory_logger, history_loader, native_instrumentation, entrypoint, monkeypatch
+):
     persistence = import_module("pydantic_ai_harness.step_persistence")
     capabilities = []
     if native_instrumentation:
@@ -44,13 +51,22 @@ async def test_step_persistence_lineage(with_memory_logger, history_loader, nati
 
     await source.run("Reply with the word ready.", run_id="source-run")
     history = await getattr(persistence, history_loader)(store, run_id="source-run")
-    await branch.run("Repeat your previous answer.", run_id="branch-run", message_history=history)
+    prompt = "Repeat your previous answer."
+    if entrypoint == "run_stream":
+        async with branch.run_stream(prompt, run_id="branch-run", message_history=history) as result:
+            output = "".join([chunk async for chunk in result.stream_text(delta=True)])
+    else:
+        output = (await branch.run(prompt, run_id="branch-run", message_history=history)).output
     spans = with_memory_logger.pop()
 
     source_record = await store.get_run(run_id="source-run")
     branch_record = await store.get_run(run_id="branch-run")
     source_span = find_span_by_name(spans, "agent_run [source]")
-    branch_span = find_span_by_name(spans, "agent_run [branch]")
+    branch_span = find_span_by_name(spans, f"agent_{entrypoint} [branch]")
+    assert branch_span["span_attributes"]["type"] == "task"
+    assert branch_span["output"]["response"]["parts"][0]["content"] == output
+    if entrypoint == "run_stream":
+        assert branch_span["metrics"]["time_to_first_token"] >= 0
     assert source_span["metadata"]["step_persistence"] == {"run_id": source_record.run_id}
     assert branch_span["metadata"]["step_persistence"] == {
         "run_id": branch_record.run_id,
