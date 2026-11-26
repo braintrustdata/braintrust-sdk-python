@@ -17,6 +17,7 @@ from braintrust.logger import start_span as _bt_start_span
 _INSTRUMENTATION = "pydantic-ai-auto"
 _AGENT_WRAPPER_MODULES = (__name__, "braintrust.integrations.base", "wrapt.wrappers", "contextlib")
 _delegated_iter = contextvars.ContextVar("braintrust_pydantic_ai_delegated_iter", default=False)
+_BACKGROUND_TOOLS_CAPABILITY_MODULE = "pydantic_ai_harness.background_tools._capability"
 
 
 def start_span(*args, **kwargs):
@@ -47,6 +48,9 @@ class _SyncToolTraceState(_ToolTraceState):
 
 _tool_trace_state: contextvars.ContextVar[_ToolTraceState | None] = contextvars.ContextVar(
     "braintrust_pydantic_ai_tool_trace_state", default=None
+)
+_background_tools_run_id: contextvars.ContextVar[str | None] = contextvars.ContextVar(
+    "braintrust_pydantic_ai_background_tools_run_id", default=None
 )
 
 
@@ -1172,25 +1176,26 @@ async def _process_tool_calls_wrapper(wrapped: Any, instance: Any, args: Any, kw
             yield event
 
 
-async def _trace_tool_execution(wrapped: Any, args: Any, kwargs: Any):
-    call_or_validated = args[0] if args else kwargs.get("validated") or kwargs.get("call")
-    call = _extract_tool_call(call_or_validated)
-    if call is None:
-        return await wrapped(*args, **kwargs)
-
+async def _trace_tool_execution(
+    call: Any,
+    wrapped: Any,
+    args: Any,
+    kwargs: Any,
+    *,
+    ctx: Any,
+    args_valid: bool = True,
+    deferred_is_error: bool = False,
+):
     from pydantic_ai.exceptions import ApprovalRequired, CallDeferred
-
-    if isinstance(getattr(call_or_validated, "deferral", None), (ApprovalRequired, CallDeferred)):
-        return await wrapped(*args, **kwargs)
 
     tool_name = getattr(call, "tool_name", None) or "unknown_tool"
     tool_call_id = getattr(call, "tool_call_id", None)
 
     input_data = _tool_call_input(call)
     metadata = {"tool_call_id": tool_call_id} if tool_call_id else {}
-    if getattr(call_or_validated, "args_valid", True):
+    if args_valid:
         metadata["tool_outcome"] = "executed"
-    if getattr(getattr(call_or_validated, "ctx", None), "tool_call_approved", False):
+    if getattr(ctx, "tool_call_approved", False):
         metadata["tool_approval"] = "approved"
 
     _mark_tool_span_emitted()
@@ -1200,6 +1205,8 @@ async def _trace_tool_execution(wrapped: Any, args: Any, kwargs: Any):
         try:
             result = await wrapped(*args, **kwargs)
         except (CallDeferred, ApprovalRequired) as exc:
+            if deferred_is_error:
+                raise
             # The tool handed the call back to the caller as DeferredToolRequests.
             # That is control flow, not a tool failure, so the span must not record an error.
             deferral = exc
@@ -1222,12 +1229,56 @@ async def _trace_tool_execution(wrapped: Any, args: Any, kwargs: Any):
     return result
 
 
-async def _tool_manager_call_function_tool_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
-    return await _trace_tool_execution(wrapped, args, kwargs)
+async def _tool_manager_execute_tool_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+    from pydantic_ai.exceptions import ApprovalRequired, CallDeferred
+
+    validated = args[0] if args else kwargs.get("validated") or kwargs.get("call")
+    call = _extract_tool_call(validated)
+    if call is None or isinstance(getattr(validated, "deferral", None), (ApprovalRequired, CallDeferred)):
+        return await wrapped(*args, **kwargs)
+
+    ctx = getattr(validated, "ctx", None)
+    args_valid = getattr(validated, "args_valid", True)
+    if (
+        _is_background_tools_run(ctx)
+        and getattr(instance, "root_capability", None) is not None
+        and args_valid
+        and validated.tool.tool_def.kind not in ("output", "external")
+    ):
+        # Only the lifecycle hook sees the actual execution, not the pending receipt.
+        _mark_tool_span_emitted()
+        return await wrapped(*args, **kwargs)
+    return await _trace_tool_execution(call, wrapped, args, kwargs, ctx=ctx, args_valid=args_valid)
 
 
-async def _tool_manager_execute_function_tool_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
-    return await _trace_tool_execution(wrapped, args, kwargs)
+def _is_background_tools_run(ctx: Any) -> bool:
+    run_id = _background_tools_run_id.get()
+    return run_id is not None and getattr(ctx, "run_id", None) == run_id
+
+
+async def _background_tools_run_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+    ctx = args[0] if args else kwargs.get("ctx")
+    token = _background_tools_run_id.set(getattr(ctx, "run_id", None))
+    try:
+        return await wrapped(*args, **kwargs)
+    finally:
+        _background_tools_run_id.reset(token)
+
+
+async def _background_tool_execution_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+    ctx = args[1] if len(args) > 1 else kwargs.get("ctx")
+    call = args[2] if len(args) > 2 else kwargs.get("call")
+    if call is None or not _is_background_tools_run(ctx):
+        return await wrapped(*args, **kwargs)
+    backgrounded_call = getattr(sys.modules.get(_BACKGROUND_TOOLS_CAPABILITY_MODULE), "_backgrounded_call", None)
+    return await _trace_tool_execution(
+        call,
+        wrapped,
+        args,
+        kwargs,
+        ctx=ctx,
+        deferred_is_error=backgrounded_call is not None and backgrounded_call.get() is call,
+    )
 
 
 def _create_tool_spans_from_messages(result: Any) -> None:

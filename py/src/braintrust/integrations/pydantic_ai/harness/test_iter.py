@@ -43,6 +43,7 @@ async def test_harness_iter_traces_model_and_tool():
     assert [span for span in spans if not span.get("span_parents")] == [run]
     assert run["input"]["user_prompt"] == prompt
     assert run["output"]["output"] == agent_run.result.output
+    assert run["metadata"]["step_persistence"] == {"run_id": run_id}
 
     llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
     assert len(llm_spans) == 2
