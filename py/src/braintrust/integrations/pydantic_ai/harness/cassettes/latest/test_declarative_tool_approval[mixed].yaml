@@ -1,0 +1,261 @@
+interactions:
+- request:
+    body: '{"model":"gpt-6-luna","stream":false,"include":["reasoning.encrypted_content"],"input":[{"role":"user","content":"Call
+      the lookup and gated tools in parallel in your first response. Both calls are
+      required."}],"max_output_tokens":200,"reasoning":{"effort":"none","context":"all_turns"},"tool_choice":"auto","tools":[{"name":"gated","parameters":{"additionalProperties":false,"properties":{},"type":"object"},"type":"function","description":null,"strict":false},{"name":"lookup","parameters":{"additionalProperties":false,"properties":{},"type":"object"},"type":"function","description":null,"strict":false}]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '608'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - pydantic-ai/2.75.0
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - Linux
+      x-stainless-package-version:
+      - 3.59.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+    method: POST
+    uri: https://api.openai.com/v1/responses
+  response:
+    body:
+      string: "{\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1795709731,\n  \"created_at\":
+        1795709730,\n  \"error\": null,\n  \"frequency_penalty\": 0.0,\n  \"id\":
+        \"resp_03fd8aec5c6f78d3016b085b2276a087d0b7a4b9d406fce4bd\",\n  \"image\":
+        {\n    \"context_compression\": \"disabled\"\n  },\n  \"incomplete_details\":
+        null,\n  \"input_transformations\": [],\n  \"instructions\": null,\n  \"max_output_tokens\":
+        200,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-6-luna\",\n  \"moderation\":
+        null,\n  \"object\": \"response\",\n  \"output\": [\n    {\n      \"arguments\":
+        \"{}\",\n      \"call_id\": \"call_100c29464c874a7cb5aabbef090e5000\",\n      \"id\":
+        \"fc_03fd8aec5c6f78d3016b085b22eb7487d0addfbe5132de820a\",\n      \"name\":
+        \"lookup\",\n      \"status\": \"completed\",\n      \"type\": \"function_call\"\n
+        \   },\n    {\n      \"arguments\": \"{}\",\n      \"call_id\": \"call_3ee46a88457842938750ce155c6ed605\",\n
+        \     \"id\": \"fc_03fd8aec5c6f78d3016b085b230bf887d0a503c6c86203cf88\",\n
+        \     \"name\": \"gated\",\n      \"status\": \"completed\",\n      \"type\":
+        \"function_call\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\":
+        0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
+        \"24h\",\n  \"reasoning\": {\n    \"context\": \"all_turns\",\n    \"effort\":
+        \"none\",\n    \"mode\": \"standard\",\n    \"summary\": null\n  },\n  \"safety_identifier\":
+        null,\n  \"service_tier\": \"default\",\n  \"status\": \"completed\",\n  \"store\":
+        false,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
+        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
+        \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\":
+        0,\n      \"input_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
+        0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
+        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
+        0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
+        \ \"tools\": [\n    {\n      \"description\": null,\n      \"name\": \"gated\",\n
+        \     \"output_schema\": null,\n      \"parameters\": {\n        \"additionalProperties\":
+        false,\n        \"properties\": {},\n        \"type\": \"object\"\n      },\n
+        \     \"strict\": false,\n      \"type\": \"function\"\n    },\n    {\n      \"description\":
+        null,\n      \"name\": \"lookup\",\n      \"output_schema\": null,\n      \"parameters\":
+        {\n        \"additionalProperties\": false,\n        \"properties\": {},\n
+        \       \"type\": \"object\"\n      },\n      \"strict\": false,\n      \"type\":
+        \"function\"\n    }\n  ],\n  \"top_logprobs\": 0,\n  \"top_p\": 0.98,\n  \"truncation\":
+        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 53,\n    \"input_tokens_details\":
+        {\n      \"cache_write_tokens\": 0,\n      \"cache_write_tokens_details\":
+        {\n        \"ttl_12h_tokens\": 0,\n        \"ttl_30m_tokens\": 0\n      },\n
+        \     \"cached_tokens\": 0\n    },\n    \"output_tokens\": 42,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 95\n  },\n
+        \ \"user\": null,\n  \"metadata\": {}\n}"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID, Server-Timing-Total, X-OpenAI-Inference-Capacity-Reason
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a60a3136fa90ff0e-PDX
+      connection:
+      - keep-alive
+      content-length:
+      - '2904'
+      content-type:
+      - application/json
+      date:
+      - Thu, 26 Nov 2026 16:15:31 GMT
+      openai-processing-ms:
+      - '904'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '180000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '180000000'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_a062021db3d346318b6f32271277c0a1
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"model":"gpt-6-luna","stream":false,"include":["reasoning.encrypted_content"],"input":[{"role":"user","content":"Call
+      the lookup and gated tools in parallel in your first response. Both calls are
+      required."},{"name":"lookup","arguments":"{}","call_id":"call_100c29464c874a7cb5aabbef090e5000","type":"function_call","id":"fc_03fd8aec5c6f78d3016b085b22eb7487d0addfbe5132de820a"},{"name":"gated","arguments":"{}","call_id":"call_3ee46a88457842938750ce155c6ed605","type":"function_call","id":"fc_03fd8aec5c6f78d3016b085b230bf887d0a503c6c86203cf88"},{"type":"function_call_output","call_id":"call_100c29464c874a7cb5aabbef090e5000","output":"found"},{"type":"function_call_output","call_id":"call_3ee46a88457842938750ce155c6ed605","output":"approved"}],"max_output_tokens":200,"prompt_cache_options":{"comparison_response_id":"resp_03fd8aec5c6f78d3016b085b2276a087d0b7a4b9d406fce4bd"},"reasoning":{"effort":"none","context":"all_turns"},"tool_choice":"none","tools":[{"name":"gated","parameters":{"additionalProperties":false,"properties":{},"type":"object"},"type":"function","description":null,"strict":false},{"name":"lookup","parameters":{"additionalProperties":false,"properties":{},"type":"object"},"type":"function","description":null,"strict":false}]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '1254'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - pydantic-ai/2.75.0
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - Linux
+      x-stainless-package-version:
+      - 3.59.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+    method: POST
+    uri: https://api.openai.com/v1/responses
+  response:
+    body:
+      string: "{\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1795709732,\n  \"created_at\":
+        1795709731,\n  \"error\": null,\n  \"frequency_penalty\": 0.0,\n  \"id\":
+        \"resp_03fd8aec5c6f78d3016b085b2385e887d0a3bc79462892e3b9\",\n  \"image\":
+        {\n    \"context_compression\": \"disabled\"\n  },\n  \"incomplete_details\":
+        null,\n  \"input_transformations\": [],\n  \"instructions\": null,\n  \"max_output_tokens\":
+        200,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-6-luna\",\n  \"moderation\":
+        null,\n  \"object\": \"response\",\n  \"output\": [\n    {\n      \"content\":
+        [\n        {\n          \"annotations\": [],\n          \"logprobs\": [],\n
+        \         \"text\": \"Both requested checks completed successfully.\",\n          \"type\":
+        \"output_text\"\n        }\n      ],\n      \"id\": \"msg_03fd8aec5c6f78d3016b085b23ec5487d093fc63f43d5314e1\",\n
+        \     \"phase\": \"final_answer\",\n      \"role\": \"assistant\",\n      \"status\":
+        \"completed\",\n      \"type\": \"message\"\n    }\n  ],\n  \"parallel_tool_calls\":
+        true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_diagnostics\":
+        {\n    \"type\": \"cache_hit\"\n  },\n  \"prompt_cache_key\": null,\n  \"prompt_cache_options\":
+        {\n    \"comparison_response_id\": \"resp_03fd8aec5c6f78d3016b085b2276a087d0b7a4b9d406fce4bd\",\n
+        \   \"mode\": \"implicit\",\n    \"ttl\": \"30m\"\n  },\n  \"prompt_cache_retention\":
+        \"24h\",\n  \"reasoning\": {\n    \"context\": \"all_turns\",\n    \"effort\":
+        \"none\",\n    \"mode\": \"standard\",\n    \"summary\": null\n  },\n  \"safety_identifier\":
+        null,\n  \"service_tier\": \"default\",\n  \"status\": \"completed\",\n  \"store\":
+        false,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
+        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
+        \"none\",\n  \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\":
+        0,\n      \"input_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
+        0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
+        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
+        0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
+        \ \"tools\": [\n    {\n      \"description\": null,\n      \"name\": \"gated\",\n
+        \     \"output_schema\": null,\n      \"parameters\": {\n        \"additionalProperties\":
+        false,\n        \"properties\": {},\n        \"type\": \"object\"\n      },\n
+        \     \"strict\": false,\n      \"type\": \"function\"\n    },\n    {\n      \"description\":
+        null,\n      \"name\": \"lookup\",\n      \"output_schema\": null,\n      \"parameters\":
+        {\n        \"additionalProperties\": false,\n        \"properties\": {},\n
+        \       \"type\": \"object\"\n      },\n      \"strict\": false,\n      \"type\":
+        \"function\"\n    }\n  ],\n  \"top_logprobs\": 0,\n  \"top_p\": 0.98,\n  \"truncation\":
+        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 116,\n    \"input_tokens_details\":
+        {\n      \"cache_write_tokens\": 0,\n      \"cache_write_tokens_details\":
+        {\n        \"ttl_12h_tokens\": 0,\n        \"ttl_30m_tokens\": 0\n      },\n
+        \     \"cached_tokens\": 0\n    },\n    \"output_tokens\": 10,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 126\n  },\n
+        \ \"user\": null,\n  \"metadata\": {}\n}"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID, Server-Timing-Total, X-OpenAI-Inference-Capacity-Reason
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a60a313dae60ff0e-PDX
+      connection:
+      - keep-alive
+      content-length:
+      - '3031'
+      content-type:
+      - application/json
+      date:
+      - Thu, 26 Nov 2026 16:15:32 GMT
+      openai-processing-ms:
+      - '839'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '180000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '180000000'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_27d6d760a9294f4b8a6ace966c92c57a
+    status:
+      code: 200
+      message: OK
+version: 1

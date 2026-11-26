@@ -1,0 +1,252 @@
+interactions:
+- request:
+    body: '{"model":"gpt-6-luna","stream":true,"include":["reasoning.encrypted_content"],"input":[{"role":"user","content":"Call
+      the gated tool now. Do not answer with text."}],"max_output_tokens":200,"reasoning":{"effort":"none","context":"all_turns"},"tool_choice":"auto","tools":[{"name":"gated","parameters":{"additionalProperties":false,"properties":{},"type":"object"},"type":"function","description":null,"strict":false}]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '418'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - pydantic-ai/2.75.0
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - Linux
+      x-stainless-package-version:
+      - 3.59.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+    method: POST
+    uri: https://api.openai.com/v1/responses
+  response:
+    body:
+      string: 'event: response.created
+
+        data: {"type":"response.created","sequence_number":0,"response":{"input_transformations":[],"id":"resp_05a1d387da7cb97e016b085b268c7c87d0ae86931a17336bfc","object":"response","created_at":1795709734,"completed_at":null,"status":"in_progress","background":false,"frequency_penalty":0.0,"presence_penalty":0.0,"moderation":null,"model":"gpt-6-luna","access_programs":null,"previous_response_id":null,"instructions":null,"output":[],"error":null,"incomplete_details":null,"tools":[{"type":"function","name":"gated","description":null,"parameters":{"additionalProperties":false,"properties":{},"type":"object"},"output_schema":null,"strict":false}],"tool_choice":"auto","parallel_tool_calls":true,"prompt_cache_key":null,"prompt_cache_retention":"24h","text":{"format":{"type":"text"},"verbosity":"medium"},"top_p":0.98,"top_logprobs":0,"temperature":1.0,"reasoning":{"effort":"none","context":"all_turns","summary":null,"mode":"standard"},"user":null,"usage":null,"tool_usage":{"image_gen":{"input_tokens":0,"output_tokens":0,"total_tokens":0,"input_tokens_details":{"text_tokens":0,"image_tokens":0},"output_tokens_details":{"image_tokens":0,"text_tokens":0}},"web_search":{"num_requests":0}},"safety_identifier":null,"store":false,"metadata":{},"max_output_tokens":200,"max_tool_calls":null,"service_tier":"auto","truncation":"disabled","image":{"context_compression":"disabled"}}}
+
+
+        event: response.in_progress
+
+        data: {"type":"response.in_progress","sequence_number":1,"response":{"input_transformations":[],"id":"resp_05a1d387da7cb97e016b085b268c7c87d0ae86931a17336bfc","object":"response","created_at":1795709734,"completed_at":null,"status":"in_progress","background":false,"frequency_penalty":0.0,"presence_penalty":0.0,"moderation":null,"model":"gpt-6-luna","access_programs":null,"previous_response_id":null,"instructions":null,"output":[],"error":null,"incomplete_details":null,"tools":[{"type":"function","name":"gated","description":null,"parameters":{"additionalProperties":false,"properties":{},"type":"object"},"output_schema":null,"strict":false}],"tool_choice":"auto","parallel_tool_calls":true,"prompt_cache_key":null,"prompt_cache_retention":"24h","text":{"format":{"type":"text"},"verbosity":"medium"},"top_p":0.98,"top_logprobs":0,"temperature":1.0,"reasoning":{"effort":"none","context":"all_turns","summary":null,"mode":"standard"},"user":null,"usage":null,"tool_usage":{"image_gen":{"input_tokens":0,"output_tokens":0,"total_tokens":0,"input_tokens_details":{"text_tokens":0,"image_tokens":0},"output_tokens_details":{"image_tokens":0,"text_tokens":0}},"web_search":{"num_requests":0}},"safety_identifier":null,"store":false,"metadata":{},"max_output_tokens":200,"max_tool_calls":null,"service_tier":"auto","truncation":"disabled","image":{"context_compression":"disabled"}}}
+
+
+        event: response.output_item.added
+
+        data: {"type":"response.output_item.added","sequence_number":2,"output_index":0,"item":{"type":"function_call","id":"fc_05a1d387da7cb97e016b085b27171887d08379401d7fa14b93","call_id":"call_de5d438aadbc49158667859c5309e7c8","name":"gated","arguments":"","status":"in_progress"}}
+
+
+        event: response.function_call_arguments.delta
+
+        data: {"type":"response.function_call_arguments.delta","sequence_number":3,"item_id":"fc_05a1d387da7cb97e016b085b27171887d08379401d7fa14b93","output_index":0,"delta":"{}","obfuscation":"Wl49X9TI7gsaIJ"}
+
+
+        event: response.function_call_arguments.done
+
+        data: {"type":"response.function_call_arguments.done","sequence_number":4,"item_id":"fc_05a1d387da7cb97e016b085b27171887d08379401d7fa14b93","output_index":0,"arguments":"{}"}
+
+
+        event: response.output_item.done
+
+        data: {"type":"response.output_item.done","sequence_number":5,"output_index":0,"item":{"type":"function_call","id":"fc_05a1d387da7cb97e016b085b27171887d08379401d7fa14b93","call_id":"call_de5d438aadbc49158667859c5309e7c8","name":"gated","arguments":"{}","status":"completed"}}
+
+
+        event: response.completed
+
+        data: {"type":"response.completed","sequence_number":6,"response":{"input_transformations":[],"id":"resp_05a1d387da7cb97e016b085b268c7c87d0ae86931a17336bfc","object":"response","created_at":1795709734,"completed_at":1795709735,"status":"completed","background":false,"frequency_penalty":0.0,"presence_penalty":0.0,"moderation":null,"model":"gpt-6-luna","access_programs":null,"previous_response_id":null,"instructions":null,"output":[{"type":"function_call","id":"fc_05a1d387da7cb97e016b085b27171887d08379401d7fa14b93","call_id":"call_de5d438aadbc49158667859c5309e7c8","name":"gated","arguments":"{}","status":"completed"}],"error":null,"incomplete_details":null,"tools":[{"type":"function","name":"gated","description":null,"parameters":{"additionalProperties":false,"properties":{},"type":"object"},"output_schema":null,"strict":false}],"tool_choice":"auto","parallel_tool_calls":true,"prompt_cache_key":null,"prompt_cache_retention":"24h","text":{"format":{"type":"text"},"verbosity":"medium"},"top_p":0.98,"top_logprobs":0,"temperature":1.0,"reasoning":{"effort":"none","context":"all_turns","summary":null,"mode":"standard"},"user":null,"usage":{"input_tokens":40,"input_tokens_details":{"cached_tokens":0,"cache_write_tokens":0,"cache_write_tokens_details":{"ttl_30m_tokens":0,"ttl_12h_tokens":0}},"output_tokens":14,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":54},"tool_usage":{"image_gen":{"input_tokens":0,"output_tokens":0,"total_tokens":0,"input_tokens_details":{"text_tokens":0,"image_tokens":0},"output_tokens_details":{"image_tokens":0,"text_tokens":0}},"web_search":{"num_requests":0}},"safety_identifier":null,"store":false,"metadata":{},"max_output_tokens":200,"max_tool_calls":null,"service_tier":"default","truncation":"disabled","image":{"context_compression":"disabled"}}}
+
+
+        '
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID, Server-Timing-Total, X-OpenAI-Inference-Capacity-Reason
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cache-control:
+      - no-cache
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a60a31508835fc83-PDX
+      connection:
+      - keep-alive
+      content-type:
+      - text/event-stream
+      date:
+      - Thu, 26 Nov 2026 16:15:34 GMT
+      openai-processing-ms:
+      - '212'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '180000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '179999436'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_b5970771488b40d6bf7d00230b6e0306
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"model":"gpt-6-luna","stream":false,"include":["reasoning.encrypted_content"],"input":[{"role":"user","content":"Call
+      the gated tool now. Do not answer with text."},{"name":"gated","arguments":"{}","call_id":"call_de5d438aadbc49158667859c5309e7c8","type":"function_call","id":"fc_05a1d387da7cb97e016b085b27171887d08379401d7fa14b93"},{"type":"function_call_output","call_id":"call_de5d438aadbc49158667859c5309e7c8","output":"approved"}],"max_output_tokens":200,"prompt_cache_options":{"comparison_response_id":"resp_05a1d387da7cb97e016b085b268c7c87d0ae86931a17336bfc"},"reasoning":{"effort":"none","context":"all_turns"},"tool_choice":"none","tools":[{"name":"gated","parameters":{"additionalProperties":false,"properties":{},"type":"object"},"type":"function","description":null,"strict":false}]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '797'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - pydantic-ai/2.75.0
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - Linux
+      x-stainless-package-version:
+      - 3.59.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+    method: POST
+    uri: https://api.openai.com/v1/responses
+  response:
+    body:
+      string: "{\n  \"access_programs\": null,\n  \"background\": false,\n  \"billing\":
+        {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1795709737,\n  \"created_at\":
+        1795709735,\n  \"error\": null,\n  \"frequency_penalty\": 0.0,\n  \"id\":
+        \"resp_05a1d387da7cb97e016b085b275aa487d0a142b857c48c4534\",\n  \"image\":
+        {\n    \"context_compression\": \"disabled\"\n  },\n  \"incomplete_details\":
+        null,\n  \"input_transformations\": [],\n  \"instructions\": null,\n  \"max_output_tokens\":
+        200,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-6-luna\",\n  \"moderation\":
+        null,\n  \"object\": \"response\",\n  \"output\": [\n    {\n      \"content\":
+        [\n        {\n          \"annotations\": [],\n          \"logprobs\": [],\n
+        \         \"text\": \"I can\u2019t perform that action right now.\",\n          \"type\":
+        \"output_text\"\n        }\n      ],\n      \"id\": \"msg_05a1d387da7cb97e016b085b27d19c87d0bbb55d1c6774078d\",\n
+        \     \"phase\": \"final_answer\",\n      \"role\": \"assistant\",\n      \"status\":
+        \"completed\",\n      \"type\": \"message\"\n    }\n  ],\n  \"parallel_tool_calls\":
+        true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_diagnostics\":
+        {\n    \"type\": \"cache_hit\"\n  },\n  \"prompt_cache_key\": null,\n  \"prompt_cache_options\":
+        {\n    \"comparison_response_id\": \"resp_05a1d387da7cb97e016b085b268c7c87d0ae86931a17336bfc\",\n
+        \   \"mode\": \"implicit\",\n    \"ttl\": \"30m\"\n  },\n  \"prompt_cache_retention\":
+        \"24h\",\n  \"reasoning\": {\n    \"context\": \"all_turns\",\n    \"effort\":
+        \"none\",\n    \"mode\": \"standard\",\n    \"summary\": null\n  },\n  \"safety_identifier\":
+        null,\n  \"service_tier\": \"default\",\n  \"status\": \"completed\",\n  \"store\":
+        false,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
+        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
+        \"none\",\n  \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\":
+        0,\n      \"input_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
+        0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
+        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
+        0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
+        \ \"tools\": [\n    {\n      \"description\": null,\n      \"name\": \"gated\",\n
+        \     \"output_schema\": null,\n      \"parameters\": {\n        \"additionalProperties\":
+        false,\n        \"properties\": {},\n        \"type\": \"object\"\n      },\n
+        \     \"strict\": false,\n      \"type\": \"function\"\n    }\n  ],\n  \"top_logprobs\":
+        0,\n  \"top_p\": 0.98,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n
+        \   \"input_tokens\": 66,\n    \"input_tokens_details\": {\n      \"cache_write_tokens\":
+        0,\n      \"cache_write_tokens_details\": {\n        \"ttl_12h_tokens\": 0,\n
+        \       \"ttl_30m_tokens\": 0\n      },\n      \"cached_tokens\": 0\n    },\n
+        \   \"output_tokens\": 13,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        0\n    },\n    \"total_tokens\": 79\n  },\n  \"user\": null,\n  \"metadata\":
+        {}\n}"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID, Server-Timing-Total, X-OpenAI-Inference-Capacity-Reason
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a60a31558d73fc83-PDX
+      connection:
+      - keep-alive
+      content-length:
+      - '2762'
+      content-type:
+      - application/json
+      date:
+      - Thu, 26 Nov 2026 16:15:37 GMT
+      openai-processing-ms:
+      - '2532'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '180000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '180000000'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_a68cafe56fb44402b85ab7072e5b3d2b
+    status:
+      code: 200
+      message: OK
+version: 1
