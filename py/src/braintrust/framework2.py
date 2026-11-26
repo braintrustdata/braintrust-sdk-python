@@ -31,17 +31,18 @@ if TYPE_CHECKING:
 class ProjectIdCache:
     def __init__(self):
         self._cache: dict[Project, str] = {}
-        self._name_cache: dict[str, str] = {}
+        self._name_cache: dict[tuple[str, str, str | None], str] = {}
 
     def get_by_name(self, project_name: str, project_group_name: str | None = None) -> str:
-        if project_name not in self._name_cache:
-            state = _internal_get_global_state()
+        state = _internal_get_global_state()
+        project_identity = (state.org_name, project_name, project_group_name)
+        if project_identity not in self._name_cache:
             body: _CreateProjectRequest = {"name": project_name, "org_name": state.org_name}
             if project_group_name is not None:
                 body["project_group_name"] = project_group_name
             project = state.api_client().projects.post_project(body=body)
-            self._name_cache[project_name] = project["id"]
-        return self._name_cache[project_name]
+            self._name_cache[project_identity] = project["id"]
+        return self._name_cache[project_identity]
 
     def get(self, project: "Project") -> str:
         if project not in self._cache:
