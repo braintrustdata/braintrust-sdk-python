@@ -1,21 +1,22 @@
 import logging
 
-# pylint: disable=no-name-in-module
-from ...aws import LazyClient, cloudformation
+from ._deprecation import add_deprecated_parser
 
 
 _logger = logging.getLogger("braintrust.install.logs")
 
 
 def build_parser(subparsers, parents):
-    parser = subparsers.add_parser(
-        "bump-versions", help="Bump the version of each serverless function", parents=parents
+    parser = add_deprecated_parser(
+        subparsers, "bump-versions", "Bump the version of each serverless function", parents, main
     )
     parser.add_argument("name", help="Name of the CloudFormation stack")
-    parser.set_defaults(func=main)
 
 
 def main(args):
+    # pylint: disable-next=no-name-in-module
+    from ...aws import LazyClient, cloudformation
+
     resources = cloudformation.describe_stack_resources(StackName=args.name)
     lambda_ = LazyClient("lambda")
 

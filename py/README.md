@@ -64,6 +64,10 @@ Available extras:
 - `temporal`: installs Temporal integration dependencies
 - `all`: installs all optional extras
 
+The `braintrust install` commands for AWS CloudFormation are deprecated. Use the
+[CloudFormation guide](https://docs.braintrust.dev/admin/self-hosting/aws-cloudformation)
+to manage existing stacks. Terraform is the recommended option for AWS self-hosting.
+
 ### Audio encoding
 
 `braintrust[audio]` requires Python 3.12+ and uses PyAV's bundled FFmpeg codecs.
