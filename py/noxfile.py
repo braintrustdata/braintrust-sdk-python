@@ -931,6 +931,14 @@ def test_audio_codecs(session):
     session.run("pytest", "src/braintrust/_audio/test_codec.py", *session.posargs)
 
 
+@nox.session()
+def test_voice(session):
+    _install_test_deps(session)
+    _install_group_locked(session, "test-voice")
+    _session_install(session, "-e", ".[voice]")
+    _run_tests(session, [f"{SRC_DIR}/voice/test_session.py", f"{SRC_DIR}/voice/test_call.py"])
+
+
 # Not a default session: it needs a wheel from `make build`, so a bare `nox`
 # (`make test`) must not pick it up.
 @nox.session(default=False)
