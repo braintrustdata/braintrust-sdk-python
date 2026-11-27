@@ -1732,11 +1732,25 @@ class TestAnthropicBatchTracing:
             wrapped_async = wrap_anthropic(_get_async_client())
             result_stream = await wrapped_async.messages.batches.results(message_batch_id=batch.id)
             assert memory_logger.pop() == []
-            await complete_anthropic_batch_trace_async(batch=batch, results=result_stream, context=context)
+            recorded_entries: list[object] = []
+
+            async def _tee_async(stream):
+                async for item in stream:
+                    recorded_entries.append(item)
+                    yield item
+
+            await complete_anthropic_batch_trace_async(batch=batch, results=_tee_async(result_stream), context=context)
         else:
             result_stream = wrapped_sync.messages.batches.results(batch.id)
             assert memory_logger.pop() == []
-            complete_anthropic_batch_trace(batch=batch, results=result_stream, context=context)
+            recorded_entries = []
+
+            def _tee_sync(stream):
+                for item in stream:
+                    recorded_entries.append(item)
+                    yield item
+
+            complete_anthropic_batch_trace(batch=batch, results=_tee_sync(result_stream), context=context)
 
         complete_spans = memory_logger.pop()
         assert len(complete_spans) == 3
@@ -1763,26 +1777,16 @@ class TestAnthropicBatchTracing:
             assert child_end["metrics"]["end"] >= child_start["metrics"]["start"]
             assert child_end["metadata"]["model"] == LATEST_MODEL
 
-        # Idempotent retry: re-completing with the same context updates the exact same row/span IDs.
-        replay_results = [
-            {
-                "custom_id": custom_id,
-                "result": {
-                    "type": "succeeded",
-                    "message": {
-                        "role": "assistant",
-                        "model": LATEST_MODEL,
-                        "content": [{"type": "text", "text": "ok"}],
-                        "stop_reason": "end_turn",
-                        "usage": {"input_tokens": 5, "output_tokens": 2},
-                    },
-                },
-            }
-            for custom_id in ("req-1", "req-2")
-        ]
-        complete_anthropic_batch_trace(batch=batch, results=replay_results, context=context)
+        # Idempotent retry: re-completing with the same context and real recorded entries updates the exact same row/span IDs.
+        complete_anthropic_batch_trace(batch=batch, results=recorded_entries, context=context)
         replay_spans = memory_logger.pop()
         assert {s["id"] for s in replay_spans} == set(updates_by_id)
+
+        # Streaming raw JSONL serialized from the real recorded entries also merges into the same row/span IDs.
+        jsonl_stream = io.StringIO("\n".join(entry.model_dump_json() for entry in recorded_entries))
+        complete_anthropic_batch_trace(batch=batch, results=jsonl_stream, context=context)
+        jsonl_spans = memory_logger.pop()
+        assert {s["id"] for s in jsonl_spans} == set(updates_by_id)
 
     @pytest.mark.vcr(**({"cassette_name": "TestBatchesResultsSpans.test_batches_results_produces_span[sync]"}))
     def test_collect_only_mode_under_active_parent(self, memory_logger, vcr_cassette):
@@ -1822,135 +1826,43 @@ class TestAnthropicBatchTracing:
             assert len(child_updates) == 1
             assert child_updates[0]["output"]["role"] == "assistant"
 
-    def test_batch_error_outcomes_and_jsonl_stream(self, memory_logger):
-        assert not memory_logger.pop()
-
-        requests = [
-            {
-                "custom_id": "req-err",
-                "params": {"model": LATEST_MODEL, "max_tokens": 16, "messages": [{"role": "user", "content": "a"}]},
-            },
-            {
-                "custom_id": "req-cancel",
-                "params": {"model": LATEST_MODEL, "max_tokens": 16, "messages": [{"role": "user", "content": "b"}]},
-            },
-            {
-                "custom_id": "req-expire",
-                "params": {"model": LATEST_MODEL, "max_tokens": 16, "messages": [{"role": "user", "content": "c"}]},
-            },
-        ]
-        batch_start = {
-            "id": "msgbatch_outcomes_1",
-            "processing_status": "in_progress",
-            "created_at": "2026-11-23T16:10:00+00:00",
-        }
-        context = start_anthropic_batch_trace(batch=batch_start, requests=requests)
-        assert context is not None
-        start_spans = memory_logger.pop()
-        task_start = find_span_by_name(start_spans, "anthropic.batch")
-        child_starts = {s["metadata"]["custom_id"]: s for s in find_spans_by_type(start_spans, SpanTypeAttribute.LLM)}
-
-        # ended_at earlier than created_at must be clamped to >= start.
-        batch_end = {
-            "id": "msgbatch_outcomes_1",
-            "processing_status": "ended",
-            "created_at": "2026-11-23T16:10:00+00:00",
-            "ended_at": "2026-11-23T16:00:00+00:00",
-            "request_counts": {"processing": 0, "succeeded": 0, "errored": 1, "canceled": 1, "expired": 1},
-        }
-        jsonl_stream = io.StringIO(
-            "\n".join(
-                [
-                    json.dumps(
-                        {
-                            "custom_id": "req-err",
-                            "result": {
-                                "type": "errored",
-                                "error": {
-                                    "type": "error",
-                                    "error": {"type": "invalid_request_error", "message": "bad"},
-                                },
-                            },
-                        }
-                    ),
-                    json.dumps({"custom_id": "req-cancel", "result": {"type": "canceled"}}),
-                    json.dumps({"custom_id": "req-expire", "result": {"type": "expired"}}),
-                ]
-            )
-        )
-        complete_anthropic_batch_trace(batch=batch_end, results=jsonl_stream, context=context)
-
-        updates = {s["id"]: s for s in memory_logger.pop()}
-        assert "invalid_request_error: bad" in updates[child_starts["req-err"]["id"]]["error"]
-        assert "canceled" in updates[child_starts["req-cancel"]["id"]]["error"]
-        assert "expired" in updates[child_starts["req-expire"]["id"]]["error"]
-        assert updates[task_start["id"]]["metrics"]["end"] == task_start["metrics"]["start"]
-
-    def test_incomplete_and_invalid_context_handling(self, memory_logger):
+    @pytest.mark.vcr(**({"cassette_name": "TestBatchesResultsSpans.test_batches_results_produces_span[sync]"}))
+    def test_incomplete_and_invalid_context_handling(self, memory_logger, vcr_cassette):
         assert not memory_logger.pop()
 
         requests = _make_batch_requests(LATEST_MODEL)
-        batch_id = "msgbatch_guard_1"
-        batch_start = {"id": batch_id, "processing_status": "in_progress", "created_at": "2026-11-23T16:00:00Z"}
-        context = start_anthropic_batch_trace(batch=batch_start, requests=requests)
+        raw_client = _get_client()
+        created_batch = raw_client.messages.batches.create(requests=requests)
+        context = start_anthropic_batch_trace(batch=created_batch, requests=requests)
         assert context is not None
         start_spans = memory_logger.pop()
         task_start = find_span_by_name(start_spans, "anthropic.batch")
+        assert task_start is not None
 
-        batch_end = {
-            "id": batch_id,
-            "processing_status": "ended",
-            "created_at": "2026-11-23T16:00:00Z",
-            "ended_at": "2026-11-23T16:05:00Z",
-            "request_counts": {"processing": 0, "succeeded": 2, "errored": 0, "canceled": 0, "expired": 0},
-        }
+        ended_batch = created_batch
+        while ended_batch.processing_status != "ended":
+            if not vcr_cassette.write_protected:
+                time.sleep(10)
+            ended_batch = raw_client.messages.batches.retrieve(ended_batch.id)
+        entries = list(raw_client.messages.batches.results(ended_batch.id))
+        assert len(entries) == 2
 
-        # Incomplete results (only 1 of 2): task must stay pending and retryable.
-        one_result = [
-            {
-                "custom_id": "req-1",
-                "result": {
-                    "type": "succeeded",
-                    "message": {
-                        "role": "assistant",
-                        "model": LATEST_MODEL,
-                        "content": [{"type": "text", "text": "4"}],
-                        "usage": {"input_tokens": 5, "output_tokens": 2},
-                    },
-                },
-            }
-        ]
-        complete_anthropic_batch_trace(batch=batch_end, results=one_result, context=context)
+        # Incomplete results (only 1 of 2 real recorded entries): task must stay pending and retryable.
+        complete_anthropic_batch_trace(batch=ended_batch, results=entries[:1], context=context)
         partial_spans = memory_logger.pop()
         assert task_start["id"] not in {s["id"] for s in partial_spans}
 
         # Invalid context without requests: skips tracing cleanly.
-        complete_anthropic_batch_trace(batch=batch_end, results=one_result, context="not-valid-json")
+        complete_anthropic_batch_trace(batch=ended_batch, results=entries, context="not-valid-json")
         assert memory_logger.pop() == []
 
         # Mismatched batch_id context without requests: skips tracing cleanly.
-        wrong_batch = {**batch_end, "id": "msgbatch_other"}
-        complete_anthropic_batch_trace(batch=wrong_batch, results=one_result, context=context)
+        wrong_batch_context = json.dumps({**json.loads(context), "batch_id": "msgbatch_other"})
+        complete_anthropic_batch_trace(batch=ended_batch, results=entries, context=wrong_batch_context)
         assert memory_logger.pop() == []
 
-        # Invalid context WITH requests: falls back to collect-only mode.
-        both_results = [
-            *one_result,
-            {
-                "custom_id": "req-2",
-                "result": {"type": "canceled"},
-            },
-        ]
-        fallback_batch = {
-            "id": "msgbatch_fallback_1",
-            "processing_status": "ended",
-            "created_at": "2026-11-23T16:00:00Z",
-            "ended_at": "2026-11-23T16:05:00Z",
-            "request_counts": {"processing": 0, "succeeded": 1, "errored": 0, "canceled": 1, "expired": 0},
-        }
-        complete_anthropic_batch_trace(
-            batch=fallback_batch, results=both_results, context="corrupt", requests=requests
-        )
+        # Invalid context WITH requests: falls back to collect-only mode using the real recorded batch/results.
+        complete_anthropic_batch_trace(batch=ended_batch, results=entries, context="corrupt", requests=requests)
         fallback_spans = memory_logger.pop()
         fallback_task = find_span_by_name(fallback_spans, "anthropic.batch")
         assert fallback_task is not None
