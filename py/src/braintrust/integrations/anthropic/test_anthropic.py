@@ -1847,10 +1847,14 @@ class TestAnthropicBatchTracing:
         entries = list(raw_client.messages.batches.results(ended_batch.id))
         assert len(entries) == 2
 
-        # Incomplete results (only 1 of 2 real recorded entries): task must stay pending and retryable.
+        # Incomplete results (only 1 of 2 real recorded entries): task and children stay pending and retryable.
         complete_anthropic_batch_trace(batch=ended_batch, results=entries[:1], context=context)
-        partial_spans = memory_logger.pop()
-        assert task_start["id"] not in {s["id"] for s in partial_spans}
+        assert memory_logger.pop() == []
+
+        # Unknown custom_id in saved-context mode: writes zero stray child rows and leaves task pending.
+        unknown_entries = [entries[0], entries[1].model_copy(update={"custom_id": "req-unknown"})]
+        complete_anthropic_batch_trace(batch=ended_batch, results=unknown_entries, context=context)
+        assert memory_logger.pop() == []
 
         # Invalid context without requests: skips tracing cleanly.
         complete_anthropic_batch_trace(batch=ended_batch, results=entries, context="not-valid-json")
@@ -1860,6 +1864,22 @@ class TestAnthropicBatchTracing:
         wrong_batch_context = json.dumps({**json.loads(context), "batch_id": "msgbatch_other"})
         complete_anthropic_batch_trace(batch=ended_batch, results=entries, context=wrong_batch_context)
         assert memory_logger.pop() == []
+
+        # Provider privacy policy redacts output/error/content-bearing metadata on completion updates.
+        from braintrust._instrumentation import provider_content_allowed
+
+        token = provider_content_allowed.set(lambda: False)
+        try:
+            complete_anthropic_batch_trace(batch=ended_batch, results=entries, context=context)
+        finally:
+            provider_content_allowed.reset(token)
+        redacted_spans = memory_logger.pop()
+        assert len(redacted_spans) == 3
+        for span in redacted_spans:
+            assert "output" not in span
+            assert "error" not in span
+            if "metadata" in span:
+                assert set(span["metadata"]).issubset({"model", "provider"})
 
         # Invalid context WITH requests: falls back to collect-only mode using the real recorded batch/results.
         complete_anthropic_batch_trace(batch=ended_batch, results=entries, context="corrupt", requests=requests)

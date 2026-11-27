@@ -16,6 +16,7 @@ from collections.abc import AsyncIterable, Iterable, Mapping
 from datetime import datetime, timezone
 from typing import Any
 
+from braintrust._instrumentation import provider_content_allowed
 from braintrust.integrations.anthropic._utils import _try_to_dict, extract_anthropic_usage
 from braintrust.integrations.anthropic.tracing import (
     _INSTRUMENTATION,
@@ -443,7 +444,18 @@ def _prepare_completion(
     return parsed, known_ids, end_time
 
 
-def _process_result_entry(
+def _apply_provider_privacy(event: dict[str, Any]) -> dict[str, Any]:
+    policy = provider_content_allowed.get()
+    if policy is None or policy():
+        return event
+    redacted = {k: v for k, v in event.items() if k not in ("input", "output", "error")}
+    metadata = redacted.get("metadata")
+    if isinstance(metadata, dict):
+        redacted["metadata"] = {k: metadata[k] for k in ("model", "provider") if k in metadata}
+    return redacted
+
+
+def _build_child_update_event(
     entry: Any,
     *,
     batch_id: str,
@@ -451,41 +463,45 @@ def _process_result_entry(
     end_time: float,
     seen_ids: set[str],
     known_ids: set[str] | None,
-) -> bool:
+    expected_count: int,
+) -> tuple[str, dict[str, Any]] | None:
     custom_id = _get_field(entry, "custom_id")
     if not isinstance(custom_id, str) or not custom_id:
         log.debug("Anthropic batch completion paused: malformed result missing custom_id")
-        return False
+        return None
     if custom_id in seen_ids:
         log.debug("Anthropic batch completion paused: duplicate custom_id %r", custom_id)
-        return False
+        return None
     if known_ids is not None and custom_id not in known_ids:
         log.debug("Anthropic batch completion paused: unknown custom_id %r", custom_id)
-        return False
+        return None
+    if len(seen_ids) >= expected_count:
+        log.debug("Anthropic batch completion paused: result count exceeds started request count (%d)", expected_count)
+        return None
 
     result = _get_field(entry, "result")
     result_type = _get_field(result, "type")
     if result_type not in _VALID_RESULT_TYPES:
         log.debug("Anthropic batch completion paused: invalid result type %r for %r", result_type, custom_id)
-        return False
+        return None
 
     exported = _child_slug(task_components, batch_id, custom_id)
     if result_type == "succeeded":
         message = _get_field(result, "message")
         if message is None:
             log.debug("Anthropic batch completion paused: missing message for succeeded result %r", custom_id)
-            return False
-        update_span(exported=exported, **_build_succeeded_update(message, end_time))
+            return None
+        event = _build_succeeded_update(message, end_time)
     elif result_type == "errored":
         error_msg = _extract_error_message(_get_field(result, "error"), "Anthropic batch request errored")
-        update_span(exported=exported, error=error_msg, metrics={"end": end_time})
+        event = {"error": error_msg, "metrics": {"end": end_time}}
     elif result_type == "canceled":
-        update_span(exported=exported, error="Anthropic batch request canceled", metrics={"end": end_time})
+        event = {"error": "Anthropic batch request canceled", "metrics": {"end": end_time}}
     else:
-        update_span(exported=exported, error="Anthropic batch request expired", metrics={"end": end_time})
+        event = {"error": "Anthropic batch request expired", "metrics": {"end": end_time}}
 
     seen_ids.add(custom_id)
-    return True
+    return exported, _apply_provider_privacy(event)
 
 
 def _finalize_task_span(
@@ -493,6 +509,7 @@ def _finalize_task_span(
     parsed: dict[str, Any],
     seen_ids: set[str],
     end_time: float,
+    pending_updates: list[tuple[str, dict[str, Any]]] | None = None,
 ) -> None:
     if len(seen_ids) != parsed["request_count"] or _request_ids_digest(seen_ids) != parsed["request_ids_digest"]:
         log.debug(
@@ -517,6 +534,10 @@ def _finalize_task_span(
                 parsed["request_count"],
             )
             return
+
+    if pending_updates:
+        for exported, child_event in pending_updates:
+            update_span(exported=exported, **child_event)
 
     task_metadata: dict[str, Any] = {
         "provider": "anthropic",
@@ -547,7 +568,7 @@ def _finalize_task_span(
     }
     if task_error is not None:
         event["error"] = task_error
-    update_span(exported=parsed["task_slug"], **event)
+    update_span(exported=parsed["task_slug"], **_apply_provider_privacy(event))
 
 
 def start_anthropic_batch_trace(
@@ -605,19 +626,26 @@ def complete_anthropic_batch_trace(
             return
 
         seen_ids: set[str] = set()
+        pending_updates: list[tuple[str, dict[str, Any]]] | None = [] if known_ids is None else None
         for entry in _iter_records(results):
-            ok = _process_result_entry(
+            built = _build_child_update_event(
                 entry,
                 batch_id=parsed["batch_id"],
                 task_components=parsed["task_components"],
                 end_time=end_time,
                 seen_ids=seen_ids,
                 known_ids=known_ids,
+                expected_count=parsed["request_count"],
             )
-            if not ok:
+            if built is None:
                 return
+            if pending_updates is not None:
+                pending_updates.append(built)
+            else:
+                exported, child_event = built
+                update_span(exported=exported, **child_event)
 
-        _finalize_task_span(batch, parsed, seen_ids, end_time)
+        _finalize_task_span(batch, parsed, seen_ids, end_time, pending_updates=pending_updates)
     except Exception as e:
         log.debug("Could not complete Anthropic batch trace: %s", e)
 
@@ -645,18 +673,25 @@ async def complete_anthropic_batch_trace_async(
             return
 
         seen_ids: set[str] = set()
+        pending_updates: list[tuple[str, dict[str, Any]]] | None = [] if known_ids is None else None
         async for entry in _aiter_records(results):
-            ok = _process_result_entry(
+            built = _build_child_update_event(
                 entry,
                 batch_id=parsed["batch_id"],
                 task_components=parsed["task_components"],
                 end_time=end_time,
                 seen_ids=seen_ids,
                 known_ids=known_ids,
+                expected_count=parsed["request_count"],
             )
-            if not ok:
+            if built is None:
                 return
+            if pending_updates is not None:
+                pending_updates.append(built)
+            else:
+                exported, child_event = built
+                update_span(exported=exported, **child_event)
 
-        _finalize_task_span(batch, parsed, seen_ids, end_time)
+        _finalize_task_span(batch, parsed, seen_ids, end_time, pending_updates=pending_updates)
     except Exception as e:
         log.debug("Could not complete Anthropic batch trace: %s", e)
