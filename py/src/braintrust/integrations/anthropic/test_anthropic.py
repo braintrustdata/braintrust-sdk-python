@@ -3,14 +3,21 @@ Tests to ensure we reliably wrap the Anthropic API.
 """
 
 import inspect
+import io
 import json
 import time
-import unittest.mock
 from types import SimpleNamespace
 
 import anthropic
 import pytest
-from braintrust import Attachment, logger
+from braintrust import (
+    Attachment,
+    complete_anthropic_batch_trace,
+    complete_anthropic_batch_trace_async,
+    logger,
+    start_anthropic_batch_trace,
+    start_span,
+)
 from braintrust.integrations.anthropic import AnthropicIntegration, wrap_anthropic
 from braintrust.integrations.anthropic._utils import _try_to_dict, extract_anthropic_usage
 from braintrust.integrations.anthropic.tracing import TracedMessageStream, _normalize_anthropic_input
@@ -1626,8 +1633,8 @@ def _make_batch_requests(model=MODEL):
     ]
 
 
-class TestBatchesCreateSpans:
-    """Tests verifying that batches.create() produces correct spans."""
+class TestAnthropicBatchTracing:
+    """Tests for spec-compliant Anthropic batch tracing (no auto-instrumentation + explicit APIs)."""
 
     @pytest.mark.vcr
     @pytest.mark.asyncio
@@ -1641,7 +1648,7 @@ class TestBatchesCreateSpans:
         ],
         ids=["sync", "async", "beta-sync", "beta-async"],
     )
-    async def test_batches_create_produces_span(self, memory_logger, is_async, beta, vcr_cassette_name):
+    async def test_batches_create_not_auto_instrumented(self, memory_logger, is_async, beta, vcr_cassette_name):
         assert not memory_logger.pop()
 
         client = wrap_anthropic(_get_async_client() if is_async else _get_client())
@@ -1652,137 +1659,354 @@ class TestBatchesCreateSpans:
 
         assert result.id
         assert result.processing_status == "in_progress"
+        assert memory_logger.pop() == []
 
-        spans = memory_logger.pop()
-        assert len(spans) == 1
-        span = spans[0]
-        assert span["span_attributes"]["name"] == "anthropic.messages.batches.create"
-        assert span["span_attributes"]["type"] == "task"
-        assert span["metadata"]["provider"] == "anthropic"
-        assert span["metadata"]["num_requests"] == 2
-        assert span["metadata"]["model"] == MODEL
-        assert span["input"] == [{"custom_id": "req-1"}, {"custom_id": "req-2"}]
-        assert span["output"]["id"] == result.id
-        assert span["output"]["processing_status"] == "in_progress"
-        assert span["output"]["request_counts"]["processing"] == 2
-
-    @pytest.mark.vcr
-    def test_sync_batches_create_logs_error_on_failure(self, memory_logger):
-        assert not memory_logger.pop()
-
-        client = wrap_anthropic(_get_client())
-        # Empty requests list triggers a 400 error
-        with pytest.raises(Exception):
-            client.messages.batches.create(requests=[])
-
-        spans = memory_logger.pop()
-        assert len(spans) == 1
-        span = spans[0]
-        assert span["span_attributes"]["name"] == "anthropic.messages.batches.create"
-        assert span["error"]
-
-    @pytest.mark.vcr
-    def test_sync_batches_create_multi_model_metadata(self, memory_logger):
-        """When batch requests use different models, metadata should include 'models' list."""
-        assert not memory_logger.pop()
-
-        client = wrap_anthropic(_get_client())
-
-        requests = [
-            {
-                "custom_id": "req-1",
-                "params": {
-                    "model": MODEL,
-                    "max_tokens": 100,
-                    "messages": [{"role": "user", "content": "Hi"}],
-                },
-            },
-            {
-                "custom_id": "req-2",
-                "params": {
-                    "model": "claude-sonnet-5-5",
-                    "max_tokens": 100,
-                    "messages": [{"role": "user", "content": "Hello"}],
-                },
-            },
-        ]
-        result = client.messages.batches.create(requests=requests)
-        assert result.id
-
-        spans = memory_logger.pop()
-        assert len(spans) == 1
-        span = spans[0]
-        assert "model" not in span["metadata"]
-        assert span["metadata"]["models"] == sorted([MODEL, "claude-sonnet-5-5"])
-
-
-class TestBatchesResultsSpans:
-    """Tests verifying that batches.results() produces correct spans.
-
-    The success test creates its own small batch and polls until it ends, so the
-    cassette only ever contains this suite's requests. Small batches usually end
-    within a few minutes; polls only sleep while recording.
-    """
-
-    # The setup requests and JSONL payload are identical for both result
-    # iterators; share the latest recording to avoid submitting two batches.
     @pytest.mark.vcr(**({"cassette_name": "TestBatchesResultsSpans.test_batches_results_produces_span[sync]"}))
     @pytest.mark.asyncio
-    # The sync case passes the batch id positionally and the async case by keyword,
-    # covering both argument-extraction paths.
-    @pytest.mark.parametrize("is_async,positional", [(False, True), (True, False)], ids=["sync", "async"])
-    async def test_batches_results_produces_span(self, memory_logger, vcr_cassette, is_async, positional):
+    @pytest.mark.parametrize("is_async", [False, True], ids=["sync", "async"])
+    async def test_explicit_start_and_complete_batch_trace(self, memory_logger, vcr_cassette, is_async):
+        assert not memory_logger.pop()
+
+        requests = _make_batch_requests(LATEST_MODEL)
+        wrapped_sync = wrap_anthropic(_get_client())
+        created_batch = wrapped_sync.messages.batches.create(requests=requests)
+        assert memory_logger.pop() == []
+
+        # Start explicit batch trace after Anthropic accepts the batch.
+        context = start_anthropic_batch_trace(batch=created_batch, requests=requests)
+        assert isinstance(context, str)
+        parsed_ctx = json.loads(context)
+        assert parsed_ctx["version"] == 1
+        assert parsed_ctx["batch_id"] == created_batch.id
+        assert parsed_ctx["request_count"] == 2
+        assert len(parsed_ctx["request_ids_digest"]) == 64
+        # Context must not contain prompts or propagated event payloads.
+        assert "What is 2+2?" not in context
+        assert "What is 3+3?" not in context
+
+        start_spans = memory_logger.pop()
+        assert len(start_spans) == 3
+        task_start = find_span_by_name(start_spans, "anthropic.batch")
+        assert task_start is not None
+        assert task_start["span_attributes"]["type"] == SpanTypeAttribute.TASK.value
+        assert task_start["context"]["span_origin"]["instrumentation"]["name"] == "anthropic-auto"
+        assert task_start["metadata"]["provider"] == "anthropic"
+        assert task_start["metadata"]["batch_id"] == created_batch.id
+        assert task_start["metadata"]["processing_status"] == "in_progress"
+        assert "input" not in task_start
+        assert "output" not in task_start
+        assert "start" in task_start["metrics"]
+        assert "end" not in task_start["metrics"]
+
+        child_starts = {s["metadata"]["custom_id"]: s for s in find_spans_by_type(start_spans, SpanTypeAttribute.LLM)}
+        assert set(child_starts) == {"req-1", "req-2"}
+        for custom_id, child in child_starts.items():
+            assert child["span_attributes"]["name"] == "anthropic.messages.create"
+            assert child["context"]["span_origin"]["instrumentation"]["name"] == "anthropic-auto"
+            assert child["span_parents"] == [task_start["span_id"]]
+            assert child["root_span_id"] == task_start["root_span_id"]
+            assert child["metadata"]["provider"] == "anthropic"
+            assert child["metadata"]["model"] == LATEST_MODEL
+            assert child["metadata"]["batch_id"] == created_batch.id
+            assert child["metadata"]["custom_id"] == custom_id
+            assert isinstance(child["input"], list) and len(child["input"]) == 1
+            assert "start" in child["metrics"]
+            assert "end" not in child["metrics"]
+
+        # Non-terminal batch leaves task and children pending.
+        complete_anthropic_batch_trace(batch=created_batch, context=context)
+        assert memory_logger.pop() == []
+
+        # Poll until ended (replayed from cassette).
+        batch = created_batch
+        deadline = time.time() + 15 * 60
+        while batch.processing_status != "ended":
+            assert time.time() < deadline, f"batch {batch.id} did not end within 15 minutes"
+            if not vcr_cassette.write_protected:
+                time.sleep(10)
+            batch = wrapped_sync.messages.batches.retrieve(batch.id)
+        assert memory_logger.pop() == []
+
+        # Fetch results via wrapped client (must emit zero auto spans) and stream into complete API.
+        if is_async:
+            wrapped_async = wrap_anthropic(_get_async_client())
+            result_stream = await wrapped_async.messages.batches.results(message_batch_id=batch.id)
+            assert memory_logger.pop() == []
+            recorded_entries: list[object] = []
+
+            async def _tee_async(stream):
+                async for item in stream:
+                    recorded_entries.append(item)
+                    yield item
+
+            await complete_anthropic_batch_trace_async(batch=batch, results=_tee_async(result_stream), context=context)
+        else:
+            result_stream = wrapped_sync.messages.batches.results(batch.id)
+            assert memory_logger.pop() == []
+            recorded_entries = []
+
+            def _tee_sync(stream):
+                for item in stream:
+                    recorded_entries.append(item)
+                    yield item
+
+            complete_anthropic_batch_trace(batch=batch, results=_tee_sync(result_stream), context=context)
+
+        complete_spans = memory_logger.pop()
+        assert len(complete_spans) == 3
+
+        updates_by_id = {s["id"]: s for s in complete_spans}
+        assert task_start["id"] in updates_by_id
+        task_end = updates_by_id[task_start["id"]]
+        assert task_end["span_id"] == task_start["span_id"]
+        assert task_end["root_span_id"] == task_start["root_span_id"]
+        assert task_end["metrics"]["end"] >= task_start["metrics"]["start"]
+        assert task_end["metadata"]["processing_status"] == "ended"
+        assert task_end["metadata"]["request_counts"]["succeeded"] == 2
+        assert "error" not in task_end
+
+        for custom_id, child_start in child_starts.items():
+            child_end = updates_by_id[child_start["id"]]
+            assert child_end["span_id"] == child_start["span_id"]
+            assert child_end["root_span_id"] == child_start["root_span_id"]
+            assert child_end["output"]["role"] == "assistant"
+            assert child_end["output"]["content"]
+            assert child_end["metrics"]["prompt_tokens"] > 0
+            assert child_end["metrics"]["completion_tokens"] > 0
+            assert child_end["metrics"]["tokens"] > 0
+            assert child_end["metrics"]["end"] >= child_start["metrics"]["start"]
+            assert child_end["metadata"]["model"] == LATEST_MODEL
+
+        # Idempotent retry: re-completing with the same context and real recorded entries updates the exact same row/span IDs.
+        complete_anthropic_batch_trace(batch=batch, results=recorded_entries, context=context)
+        replay_spans = memory_logger.pop()
+        assert {s["id"] for s in replay_spans} == set(updates_by_id)
+
+        # Streaming raw JSONL serialized from the real recorded entries also merges into the same row/span IDs.
+        jsonl_stream = io.StringIO("\n".join(entry.model_dump_json() for entry in recorded_entries))
+        complete_anthropic_batch_trace(batch=batch, results=jsonl_stream, context=context)
+        jsonl_spans = memory_logger.pop()
+        assert {s["id"] for s in jsonl_spans} == set(updates_by_id)
+
+    @pytest.mark.vcr(**({"cassette_name": "TestBatchesResultsSpans.test_batches_results_produces_span[sync]"}))
+    def test_collect_only_mode_under_active_parent(self, memory_logger, vcr_cassette):
+        assert not memory_logger.pop()
+
+        requests = _make_batch_requests(LATEST_MODEL)
         raw_client = _get_client()
-        batch = raw_client.messages.batches.create(requests=_make_batch_requests(LATEST_MODEL))
+        batch = raw_client.messages.batches.create(requests=requests)
         deadline = time.time() + 15 * 60
         while batch.processing_status != "ended":
             assert time.time() < deadline, f"batch {batch.id} did not end within 15 minutes"
             if not vcr_cassette.write_protected:
                 time.sleep(10)
             batch = raw_client.messages.batches.retrieve(batch.id)
-        batch_id = batch.id
-        # Drop setup spans: test_setup_creates_spans may have auto-instrumented the raw client.
+        entries = list(raw_client.messages.batches.results(batch.id))
         memory_logger.pop()
 
-        client = wrap_anthropic(_get_async_client() if is_async else _get_client())
-        if positional:
-            result = client.messages.batches.results(batch_id)
-        else:
-            result = client.messages.batches.results(message_batch_id=batch_id)
-        if is_async:
-            result = await result
-            entries = [entry async for entry in result]
-        else:
-            entries = list(result)
-
-        assert {entry.custom_id for entry in entries} == {"req-1", "req-2"}
-        assert any(entry.result.type == "succeeded" for entry in entries)
+        with start_span(name="outer-workflow") as outer:
+            complete_anthropic_batch_trace(batch=batch, results=entries, requests=requests)
 
         spans = memory_logger.pop()
-        assert len(spans) == 1
-        span = spans[0]
-        assert span["span_attributes"]["name"] == "anthropic.messages.batches.results"
-        assert span["span_attributes"]["type"] == "task"
-        assert span["metadata"]["provider"] == "anthropic"
-        assert span["input"]["message_batch_id"] == batch_id
-        assert span["output"]["type"] == "jsonl_stream"
+        outer_span = find_span_by_name(spans, "outer-workflow")
+        assert outer_span is not None
+        task_starts = [s for s in spans if s.get("span_attributes", {}).get("name") == "anthropic.batch"]
+        assert len(task_starts) == 1
+        task_start = task_starts[0]
+        assert task_start["span_parents"] == [outer_span["span_id"]]
+        assert task_start["root_span_id"] == outer_span["root_span_id"]
 
-    def test_sync_batches_results_logs_error_on_failure(self, memory_logger):
+        # Both start rows and update rows are emitted for task + 2 children.
+        task_updates = [s for s in spans if s["id"] == task_start["id"] and "end" in s.get("metrics", {})]
+        assert len(task_updates) == 1
+        child_starts = [s for s in spans if s.get("span_attributes", {}).get("name") == "anthropic.messages.create"]
+        assert len(child_starts) == 2
+        for child in child_starts:
+            assert child["span_parents"] == [task_start["span_id"]]
+            assert child["root_span_id"] == outer_span["root_span_id"]
+            child_updates = [s for s in spans if s["id"] == child["id"] and "end" in s.get("metrics", {})]
+            assert len(child_updates) == 1
+            assert child_updates[0]["output"]["role"] == "assistant"
+
+    @pytest.mark.vcr(**({"cassette_name": "TestBatchesResultsSpans.test_batches_results_produces_span[sync]"}))
+    def test_incomplete_and_invalid_context_handling(self, memory_logger, vcr_cassette):
         assert not memory_logger.pop()
 
-        client = wrap_anthropic(_get_client())
-        with unittest.mock.patch(
-            "anthropic.resources.messages.batches.Batches.results",
-            side_effect=Exception("results fetch failed"),
-        ):
-            with pytest.raises(Exception, match="results fetch failed"):
-                client.messages.batches.results("msgbatch_abc123")
+        requests = _make_batch_requests(LATEST_MODEL)
+        raw_client = _get_client()
+        created_batch = raw_client.messages.batches.create(requests=requests)
+        context = start_anthropic_batch_trace(batch=created_batch, requests=requests)
+        assert context is not None
+        start_spans = memory_logger.pop()
+        task_start = find_span_by_name(start_spans, "anthropic.batch")
+        assert task_start is not None
 
-        spans = memory_logger.pop()
-        assert len(spans) == 1
-        span = spans[0]
-        assert span["span_attributes"]["name"] == "anthropic.messages.batches.results"
-        assert "results fetch failed" in span["error"]
+        ended_batch = created_batch
+        deadline = time.time() + 15 * 60
+        while ended_batch.processing_status != "ended":
+            assert time.time() < deadline, f"batch {ended_batch.id} did not end within 15 minutes"
+            if not vcr_cassette.write_protected:
+                time.sleep(10)
+            ended_batch = raw_client.messages.batches.retrieve(ended_batch.id)
+        entries = list(raw_client.messages.batches.results(ended_batch.id))
+        assert len(entries) == 2
+
+        # Incomplete results (only 1 of 2 real recorded entries): task and children stay pending and retryable.
+        complete_anthropic_batch_trace(batch=ended_batch, results=entries[:1], context=context)
+        assert memory_logger.pop() == []
+
+        # Unknown custom_id in saved-context mode: writes zero stray child rows and leaves task pending.
+        unknown_entries = [entries[0], entries[1].model_copy(update={"custom_id": "req-unknown"})]
+        complete_anthropic_batch_trace(batch=ended_batch, results=unknown_entries, context=context)
+        assert memory_logger.pop() == []
+
+        # Invalid context without requests: skips tracing cleanly.
+        complete_anthropic_batch_trace(batch=ended_batch, results=entries, context="not-valid-json")
+        assert memory_logger.pop() == []
+
+        # Mismatched batch_id context without requests: skips tracing cleanly.
+        wrong_batch_context = json.dumps({**json.loads(context), "batch_id": "msgbatch_other"})
+        complete_anthropic_batch_trace(batch=ended_batch, results=entries, context=wrong_batch_context)
+        assert memory_logger.pop() == []
+
+        # Provider privacy policy redacts output/error/content-bearing metadata on completion updates.
+        from braintrust._instrumentation import provider_content_allowed
+
+        token = provider_content_allowed.set(lambda: False)
+        try:
+            complete_anthropic_batch_trace(batch=ended_batch, results=entries, context=context)
+        finally:
+            provider_content_allowed.reset(token)
+        redacted_spans = memory_logger.pop()
+        assert len(redacted_spans) == 3
+        for span in redacted_spans:
+            assert "output" not in span
+            assert "error" not in span
+            if "metadata" in span:
+                assert set(span["metadata"]).issubset({"model", "provider"})
+
+        # Invalid context WITH requests: falls back to collect-only mode using the real recorded batch/results.
+        complete_anthropic_batch_trace(batch=ended_batch, results=entries, context="corrupt", requests=requests)
+        fallback_spans = memory_logger.pop()
+        fallback_task = find_span_by_name(fallback_spans, "anthropic.batch")
+        assert fallback_task is not None
+        assert any(s["id"] == fallback_task["id"] and "end" in s.get("metrics", {}) for s in fallback_spans)
+
+    @pytest.mark.vcr
+    def test_errored_batch_outcome(self, memory_logger, vcr_cassette):
+        assert not memory_logger.pop()
+
+        requests = [
+            {
+                "custom_id": "req-ok",
+                "params": {
+                    "model": LATEST_MODEL,
+                    "max_tokens": 32,
+                    "messages": [{"role": "user", "content": "Reply with OK."}],
+                },
+            },
+            {
+                "custom_id": "req-err",
+                "params": {
+                    "model": "claude-nonexistent-batch-test",
+                    "max_tokens": 16,
+                    "messages": [{"role": "user", "content": "hi"}],
+                },
+            },
+        ]
+        client = wrap_anthropic(_get_client())
+        created_batch = client.messages.batches.create(requests=requests)
+        assert memory_logger.pop() == []
+
+        context = start_anthropic_batch_trace(batch=created_batch, requests=requests)
+        assert context is not None
+        start_spans = memory_logger.pop()
+        task_start = find_span_by_name(start_spans, "anthropic.batch")
+        assert task_start is not None
+        child_starts = {s["metadata"]["custom_id"]: s for s in find_spans_by_type(start_spans, SpanTypeAttribute.LLM)}
+        assert set(child_starts) == {"req-ok", "req-err"}
+
+        batch = created_batch
+        deadline = time.time() + 15 * 60
+        while batch.processing_status != "ended":
+            assert time.time() < deadline, f"batch {batch.id} did not end within 15 minutes"
+            if not vcr_cassette.write_protected:
+                time.sleep(5)
+            batch = client.messages.batches.retrieve(batch.id)
+        assert memory_logger.pop() == []
+
+        result_stream = client.messages.batches.results(batch.id)
+        assert memory_logger.pop() == []
+        complete_anthropic_batch_trace(batch=batch, results=result_stream, context=context)
+
+        updates = {s["id"]: s for s in memory_logger.pop()}
+        assert len(updates) == 3
+
+        task_end = updates[task_start["id"]]
+        assert task_end["metadata"]["processing_status"] == "ended"
+        assert task_end["metadata"]["request_counts"]["succeeded"] == 1
+        assert task_end["metadata"]["request_counts"]["errored"] == 1
+        assert task_end["metrics"]["end"] >= task_start["metrics"]["start"]
+
+        ok_end = updates[child_starts["req-ok"]["id"]]
+        assert ok_end["output"]["role"] == "assistant"
+        assert ok_end["metrics"]["tokens"] > 0
+        assert "error" not in ok_end
+
+        err_end = updates[child_starts["req-err"]["id"]]
+        assert "not_found_error" in err_end["error"]
+        assert "claude-nonexistent-batch-test" in err_end["error"]
+        assert err_end["metrics"]["end"] >= child_starts["req-err"]["metrics"]["start"]
+
+    @pytest.mark.vcr
+    def test_canceled_batch_outcome(self, memory_logger, vcr_cassette):
+        assert not memory_logger.pop()
+
+        requests = _make_batch_requests(LATEST_MODEL)
+        client = wrap_anthropic(_get_client())
+        created_batch = client.messages.batches.create(requests=requests)
+        assert memory_logger.pop() == []
+
+        context = start_anthropic_batch_trace(batch=created_batch, requests=requests)
+        assert context is not None
+        start_spans = memory_logger.pop()
+        task_start = find_span_by_name(start_spans, "anthropic.batch")
+        assert task_start is not None
+        child_starts = {s["metadata"]["custom_id"]: s for s in find_spans_by_type(start_spans, SpanTypeAttribute.LLM)}
+        assert set(child_starts) == {"req-1", "req-2"}
+
+        batch = client.messages.batches.cancel(created_batch.id)
+        assert memory_logger.pop() == []
+
+        deadline = time.time() + 15 * 60
+        while batch.processing_status != "ended":
+            assert time.time() < deadline, f"batch {batch.id} did not end within 15 minutes"
+            if not vcr_cassette.write_protected:
+                time.sleep(5)
+            batch = client.messages.batches.retrieve(batch.id)
+        assert memory_logger.pop() == []
+        assert batch.request_counts.canceled >= 1
+
+        entries = list(client.messages.batches.results(batch.id))
+        assert memory_logger.pop() == []
+        complete_anthropic_batch_trace(batch=batch, results=entries, context=context)
+
+        updates = {s["id"]: s for s in memory_logger.pop()}
+        assert len(updates) == 3
+
+        task_end = updates[task_start["id"]]
+        assert task_end["metadata"]["processing_status"] == "ended"
+        assert task_end["metadata"]["request_counts"]["canceled"] >= 1
+        assert task_end["metrics"]["end"] >= task_start["metrics"]["start"]
+
+        for entry in entries:
+            child_end = updates[child_starts[entry.custom_id]["id"]]
+            assert child_end["metrics"]["end"] >= child_starts[entry.custom_id]["metrics"]["start"]
+            if entry.result.type == "canceled":
+                assert "canceled" in child_end["error"]
+            elif entry.result.type == "succeeded":
+                assert child_end["output"]["role"] == "assistant"
+                assert child_end["metrics"]["tokens"] > 0
 
 
 def _addition_tool(is_async):

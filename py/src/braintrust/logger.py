@@ -3378,25 +3378,45 @@ def _internal_start_span_with_initial_merge(
     *,
     parent: str,
     span_id: str,
-    root_span_id: str,
+    root_span_id: str | None = None,
+    start_time: float | None = None,
     state: BraintrustState | None = None,
     type: SpanTypeAttribute | None = None,
     span_attributes: SpanAttributes | Mapping[str, Any] | None = None,
+    internal: SpanInternalOptions | None = None,
     **event: Any,
 ) -> Span:
     """Start a deterministic SDK-owned span whose first row is merge-safe."""
-    return start_span(
+    if not state:
+        state = _state
+
+    parent_obj = SpanComponentsV4.from_str(parent)
+    if parent_obj.row_id and _parent_span_ids_usable(parent_obj.span_id, parent_obj.root_span_id):
+        parent_span_ids = ParentSpanIds(span_id=parent_obj.span_id, root_span_id=parent_obj.root_span_id)
+    else:
+        parent_span_ids = None
+
+    merged_internal: dict[str, Any] = dict(internal or {})
+    merged_internal["initial_span_write_as_merge"] = True
+    merged_internal["span_id"] = span_id
+    if root_span_id is not None:
+        merged_internal["root_span_id"] = root_span_id
+
+    return _start_span_impl(
+        parent_object_type=parent_obj.object_type,
+        parent_object_id=LazyValue(_span_components_to_object_id_lambda(parent_obj), use_mutex=False),
+        parent_compute_object_metadata_args=parent_obj.compute_object_metadata_args,
+        parent_span_ids=parent_span_ids,
         name=name,
-        parent=parent,
-        state=state,
         type=type,
         span_attributes=span_attributes,
-        internal={
-            "initial_span_write_as_merge": True,
-            "span_id": span_id,
-            "root_span_id": root_span_id,
-        },
-        **event,
+        start_time=start_time,
+        set_current=False,
+        propagated_event=parent_obj.propagated_event,
+        event=event,
+        state=state,
+        lookup_span_parent=False,
+        internal=cast(SpanInternalOptions, merged_internal),
     )
 
 

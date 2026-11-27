@@ -94,6 +94,38 @@ def wrap_anthropic(client: _Any) -> _Any:
     return _wrap_anthropic(client)
 
 
+def start_anthropic_batch_trace(*, batch: _Any, requests: _Any) -> str | None:
+    from .integrations.anthropic import start_anthropic_batch_trace as _start_anthropic_batch_trace
+
+    return _start_anthropic_batch_trace(batch=batch, requests=requests)
+
+
+def complete_anthropic_batch_trace(
+    *,
+    batch: _Any,
+    results: _Any | None = None,
+    context: str | None = None,
+    requests: _Any | None = None,
+) -> None:
+    from .integrations.anthropic import complete_anthropic_batch_trace as _complete_anthropic_batch_trace
+
+    return _complete_anthropic_batch_trace(batch=batch, results=results, context=context, requests=requests)
+
+
+async def complete_anthropic_batch_trace_async(
+    *,
+    batch: _Any,
+    results: _Any | None = None,
+    context: str | None = None,
+    requests: _Any | None = None,
+) -> None:
+    from .integrations.anthropic import complete_anthropic_batch_trace_async as _complete_anthropic_batch_trace_async
+
+    return await _complete_anthropic_batch_trace_async(
+        batch=batch, results=results, context=context, requests=requests
+    )
+
+
 def wrap_instructor(client: _Any) -> _Any:
     from .integrations.instructor import wrap_instructor as _wrap_instructor
 

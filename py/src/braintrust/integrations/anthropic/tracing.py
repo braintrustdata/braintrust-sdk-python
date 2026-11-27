@@ -118,10 +118,6 @@ class AsyncMessages(Wrapper):
             return traced_parse
         return super().__getattr__(name)
 
-    @property
-    def batches(self):
-        return AsyncBatches(self.__messages.batches)
-
     async def create(self, *args, **kwargs):
         if kwargs.get("stream", False):
             return await self.__create_with_stream_true(*args, **kwargs)
@@ -214,10 +210,6 @@ class Messages(Wrapper):
 
             return traced_parse
         return super().__getattr__(name)
-
-    @property
-    def batches(self):
-        return Batches(self.__messages.batches)
 
     def stream(self, *args, **kwargs):
         return self.__trace_stream(self.__messages.stream, *args, **kwargs)
@@ -621,70 +613,6 @@ class AsyncSessionEvents(Wrapper):
             span.log(error=e)
             span.end()
             raise
-
-
-class Batches(Wrapper):
-    """Wrapper for sync Anthropic Messages Batches resource."""
-
-    def __init__(self, batches):
-        super().__init__(batches)
-        self.__batches = batches
-
-    def create(self, *args, **kwargs):
-        span = _start_batch_create_span(kwargs)
-        try:
-            result = self.__batches.create(*args, **kwargs)
-            _log_batch_create_to_span(result, span)
-            return result
-        except Exception as e:
-            span.log(error=e)
-            raise
-        finally:
-            span.end()
-
-    def results(self, *args, **kwargs):
-        span = _start_batch_results_span(args, kwargs)
-        try:
-            result = self.__batches.results(*args, **kwargs)
-            span.log(output={"type": "jsonl_stream"})
-            return result
-        except Exception as e:
-            span.log(error=e)
-            raise
-        finally:
-            span.end()
-
-
-class AsyncBatches(Wrapper):
-    """Wrapper for async Anthropic Messages Batches resource."""
-
-    def __init__(self, batches):
-        super().__init__(batches)
-        self.__batches = batches
-
-    async def create(self, *args, **kwargs):
-        span = _start_batch_create_span(kwargs)
-        try:
-            result = await self.__batches.create(*args, **kwargs)
-            _log_batch_create_to_span(result, span)
-            return result
-        except Exception as e:
-            span.log(error=e)
-            raise
-        finally:
-            span.end()
-
-    async def results(self, *args, **kwargs):
-        span = _start_batch_results_span(args, kwargs)
-        try:
-            result = await self.__batches.results(*args, **kwargs)
-            span.log(output={"type": "jsonl_stream"})
-            return result
-        except Exception as e:
-            span.log(error=e)
-            raise
-        finally:
-            span.end()
 
 
 def _traced_messages_helper(messages, name):
@@ -1676,57 +1604,6 @@ def _log_managed_agents_stream_to_span(events: list[dict[str, Any]], span) -> No
     _log_managed_agents_tool_spans(events, span)
 
 
-def _start_batch_create_span(kwargs):
-    requests = list(kwargs.get("requests", []))
-    # Extract models from the batch requests for metadata
-    models = set()
-    for req in requests:
-        params = req.get("params", {}) if isinstance(req, dict) else getattr(req, "params", {})
-        model = params.get("model") if isinstance(params, dict) else getattr(params, "model", None)
-        if model:
-            models.add(model)
-
-    metadata = {"provider": "anthropic", "num_requests": len(requests)}
-    if len(models) == 1:
-        metadata["model"] = next(iter(models))
-    elif models:
-        metadata["models"] = sorted(models)
-
-    _input = [
-        {"custom_id": req.get("custom_id") if isinstance(req, dict) else getattr(req, "custom_id", None)}
-        for req in requests
-    ]
-
-    return start_span(name="anthropic.messages.batches.create", type="task", metadata=metadata, input=_input)
-
-
-def _log_batch_create_to_span(result, span):
-    output = {}
-    if hasattr(result, "id"):
-        output["id"] = result.id
-    if hasattr(result, "processing_status"):
-        output["processing_status"] = result.processing_status
-    if hasattr(result, "request_counts"):
-        rc = result.request_counts
-        output["request_counts"] = {
-            "processing": getattr(rc, "processing", 0),
-            "succeeded": getattr(rc, "succeeded", 0),
-            "errored": getattr(rc, "errored", 0),
-            "canceled": getattr(rc, "canceled", 0),
-            "expired": getattr(rc, "expired", 0),
-        }
-
-    span.log(output=output)
-
-
-def _start_batch_results_span(args, kwargs):
-    # message_batch_id can be passed as first positional arg or as kwarg
-    batch_id = args[0] if args else kwargs.get("message_batch_id")
-    metadata = {"provider": "anthropic"}
-    _input = {"message_batch_id": batch_id}
-    return start_span(name="anthropic.messages.batches.results", type="task", metadata=metadata, input=_input)
-
-
 def _convert_base64_source_to_attachment(block_type, source):
     if not isinstance(source, dict):
         return None
@@ -1986,22 +1863,23 @@ def _log_server_tool_spans(content: Any, parent_span) -> None:
 
 
 def _message_output(message, *, include_parsed_output: bool = False):
-    content = getattr(message, "content", None)
+    getter = message.get if isinstance(message, dict) else lambda k, default=None: getattr(message, k, default)
+    content = getter("content", None)
     output = {
         k: v
         for k, v in {
-            "role": getattr(message, "role", None),
+            "role": getter("role", None),
             "content": content,
-            "model": getattr(message, "model", None),
-            "stop_reason": getattr(message, "stop_reason", None),
-            "stop_sequence": getattr(message, "stop_sequence", None),
-            "stop_details": getattr(message, "stop_details", None),
+            "model": getter("model", None),
+            "stop_reason": getter("stop_reason", None),
+            "stop_sequence": getter("stop_sequence", None),
+            "stop_details": getter("stop_details", None),
         }.items()
         if v is not None
     }
 
     if include_parsed_output:
-        parsed_output = getattr(message, "parsed_output", None)
+        parsed_output = getter("parsed_output", None)
         if parsed_output is not None:
             output["parsed_output"] = _normalize_anthropic_data(parsed_output)
 

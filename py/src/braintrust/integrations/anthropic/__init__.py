@@ -1,5 +1,10 @@
 import warnings
 
+from .batch import (
+    complete_anthropic_batch_trace,
+    complete_anthropic_batch_trace_async,
+    start_anthropic_batch_trace,
+)
 from .integration import AnthropicIntegration
 from .tracing import _wrap_anthropic
 
@@ -18,6 +23,9 @@ def wrap_anthropic_client(client):
 
 __all__ = [
     "AnthropicIntegration",
+    "complete_anthropic_batch_trace",
+    "complete_anthropic_batch_trace_async",
+    "start_anthropic_batch_trace",
     "wrap_anthropic",
     "wrap_anthropic_client",
 ]
