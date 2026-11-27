@@ -39,17 +39,10 @@ Eval(
 )
 ```
 
-On macOS or Linux, [install the standalone `bt` CLI](https://github.com/braintrustdata/bt#install) and run:
+[Install the standalone `bt` CLI](https://github.com/braintrustdata/bt#install) and run:
 
 ```bash
 BRAINTRUST_API_KEY="YOUR_BRAINTRUST_API_KEY" bt eval eval_hello.py
-```
-
-On native Windows, use the Python SDK CLI:
-
-```powershell
-$env:BRAINTRUST_API_KEY = "YOUR_BRAINTRUST_API_KEY"
-braintrust eval eval_hello.py
 ```
 
 ### API Reference
