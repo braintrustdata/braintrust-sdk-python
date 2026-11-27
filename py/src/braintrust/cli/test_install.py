@@ -29,7 +29,7 @@ def test_install_help(cli, command):
     assert result.returncode == 0, result.stderr
     assert result.stderr == ""
     assert "deprecated" in result.stdout
-    assert "Terraform" in result.stdout
+    assert "Terraform" not in result.stdout
     assert GUIDE_URL in result.stdout
     if not command:
         assert result.stdout.count("(deprecated)") == len(COMMANDS)
@@ -56,7 +56,7 @@ def test_install_warns_on_stderr_before_aws_setup(cli, command, tmp_path):
     warning = result.stderr.splitlines()[0]
     assert warning.startswith("Warning:")
     assert "deprecated" in warning
-    assert "Terraform" in warning
+    assert "Terraform" not in warning
     assert GUIDE_URL in warning
     assert GUIDE_URL not in result.stdout
 

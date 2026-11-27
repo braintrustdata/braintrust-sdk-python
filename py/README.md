@@ -66,7 +66,7 @@ Available extras:
 
 The `braintrust install` commands for AWS CloudFormation are deprecated. Use the
 [CloudFormation guide](https://docs.braintrust.dev/admin/self-hosting/aws-cloudformation)
-to manage existing stacks. Terraform is the recommended option for AWS self-hosting.
+to manage existing stacks.
 
 ### Audio encoding
 

@@ -7,8 +7,7 @@ from functools import wraps
 DEPRECATION = (
     "The braintrust install commands are deprecated.\n"
     "Use the CloudFormation guide for existing stacks:\n"
-    "https://docs.braintrust.dev/admin/self-hosting/aws-cloudformation\n"
-    "Terraform is the recommended option for AWS self-hosting."
+    "https://docs.braintrust.dev/admin/self-hosting/aws-cloudformation"
 )
 
 
