@@ -7,12 +7,14 @@ Two minimal `Eval()` examples:
 
 ## Run
 
+[Install the standalone `bt` CLI](https://github.com/braintrustdata/bt#install) and run from this directory:
+
 ```bash
-export BRAINTRUST_API_KEY=...
+export BRAINTRUST_API_KEY="YOUR_API_KEY"
 
 uv sync
-uv run braintrust eval simple_eval.py
-uv run braintrust eval eval_example.py
+bt eval simple_eval.py
+bt eval eval_example.py
 ```
 
 The second example is async, so the scorer prints span info to stdout as the eval runs.

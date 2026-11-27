@@ -339,7 +339,7 @@ class Evaluator(Generic[Input, Output, Expected]):
     optimal performance, it is recommended to provide asynchronous implementations).
 
     You should not create Evaluators directly if you plan to use the Braintrust eval framework. Instead, you should
-    create them using the `Eval()` method, which will register them so that `braintrust eval ...` can find them.
+    create them using the `Eval()` method, which will register them so that `bt eval ...` can find them.
     """
 
     project_name: str
@@ -584,7 +584,7 @@ class ReporterDef(SerializableDataClass, Generic[Input, Output, Expected, EvalRe
     report_run: Callable[[list[EvalReport], bool, bool], bool | Awaitable[bool]]
     """
     A function that takes all evaluator results and returns a boolean indicating whether the run was successful.
-    If you return false, the `braintrust eval` command will exit with a non-zero status code.
+    If you return false, the Python SDK's `braintrust eval` command will exit with a non-zero status code.
     """
 
     async def _call_report_eval(
@@ -786,7 +786,7 @@ def _EvalCommon(
     else:
         if isinstance(reporter, str):
             raise ValueError(
-                "Must specify a reporter object, not a name. Can only specify reporter names when running 'braintrust eval'"
+                "Must specify a reporter object, not a name. Specify reporter names when running an eval from the CLI."
             )
 
         reporter = reporter or default_reporter

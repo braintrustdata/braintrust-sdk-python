@@ -22,7 +22,7 @@ uv add braintrust autoevals
 pip install braintrust autoevals
 ```
 
-Create `tutorial_eval.py`:
+Create `eval_tutorial.py`:
 
 ```python
 from autoevals import LevenshteinScorer
@@ -39,10 +39,10 @@ Eval(
 )
 ```
 
-Run it:
+[Install the standalone `bt` CLI](https://github.com/braintrustdata/bt#install) and run:
 
 ```bash
-BRAINTRUST_API_KEY=<YOUR_API_KEY> braintrust eval tutorial_eval.py
+BRAINTRUST_API_KEY="YOUR_API_KEY" bt eval eval_tutorial.py
 ```
 
 ## Packages
