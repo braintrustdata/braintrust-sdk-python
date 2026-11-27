@@ -1868,6 +1868,122 @@ class TestAnthropicBatchTracing:
         assert fallback_task is not None
         assert any(s["id"] == fallback_task["id"] and "end" in s.get("metrics", {}) for s in fallback_spans)
 
+    @pytest.mark.vcr
+    def test_errored_batch_outcome(self, memory_logger, vcr_cassette):
+        assert not memory_logger.pop()
+
+        requests = [
+            {
+                "custom_id": "req-ok",
+                "params": {
+                    "model": LATEST_MODEL,
+                    "max_tokens": 32,
+                    "messages": [{"role": "user", "content": "Reply with OK."}],
+                },
+            },
+            {
+                "custom_id": "req-err",
+                "params": {
+                    "model": "claude-nonexistent-batch-test",
+                    "max_tokens": 16,
+                    "messages": [{"role": "user", "content": "hi"}],
+                },
+            },
+        ]
+        client = wrap_anthropic(_get_client())
+        created_batch = client.messages.batches.create(requests=requests)
+        assert memory_logger.pop() == []
+
+        context = start_anthropic_batch_trace(batch=created_batch, requests=requests)
+        assert context is not None
+        start_spans = memory_logger.pop()
+        task_start = find_span_by_name(start_spans, "anthropic.batch")
+        assert task_start is not None
+        child_starts = {s["metadata"]["custom_id"]: s for s in find_spans_by_type(start_spans, SpanTypeAttribute.LLM)}
+        assert set(child_starts) == {"req-ok", "req-err"}
+
+        batch = created_batch
+        deadline = time.time() + 15 * 60
+        while batch.processing_status != "ended":
+            assert time.time() < deadline, f"batch {batch.id} did not end within 15 minutes"
+            if not vcr_cassette.write_protected:
+                time.sleep(5)
+            batch = client.messages.batches.retrieve(batch.id)
+        assert memory_logger.pop() == []
+
+        result_stream = client.messages.batches.results(batch.id)
+        assert memory_logger.pop() == []
+        complete_anthropic_batch_trace(batch=batch, results=result_stream, context=context)
+
+        updates = {s["id"]: s for s in memory_logger.pop()}
+        assert len(updates) == 3
+
+        task_end = updates[task_start["id"]]
+        assert task_end["metadata"]["processing_status"] == "ended"
+        assert task_end["metadata"]["request_counts"]["succeeded"] == 1
+        assert task_end["metadata"]["request_counts"]["errored"] == 1
+        assert task_end["metrics"]["end"] >= task_start["metrics"]["start"]
+
+        ok_end = updates[child_starts["req-ok"]["id"]]
+        assert ok_end["output"]["role"] == "assistant"
+        assert ok_end["metrics"]["tokens"] > 0
+        assert "error" not in ok_end
+
+        err_end = updates[child_starts["req-err"]["id"]]
+        assert "not_found_error" in err_end["error"]
+        assert "claude-nonexistent-batch-test" in err_end["error"]
+        assert err_end["metrics"]["end"] >= child_starts["req-err"]["metrics"]["start"]
+
+    @pytest.mark.vcr
+    def test_canceled_batch_outcome(self, memory_logger, vcr_cassette):
+        assert not memory_logger.pop()
+
+        requests = _make_batch_requests(LATEST_MODEL)
+        client = wrap_anthropic(_get_client())
+        created_batch = client.messages.batches.create(requests=requests)
+        assert memory_logger.pop() == []
+
+        context = start_anthropic_batch_trace(batch=created_batch, requests=requests)
+        assert context is not None
+        start_spans = memory_logger.pop()
+        task_start = find_span_by_name(start_spans, "anthropic.batch")
+        assert task_start is not None
+        child_starts = {s["metadata"]["custom_id"]: s for s in find_spans_by_type(start_spans, SpanTypeAttribute.LLM)}
+        assert set(child_starts) == {"req-1", "req-2"}
+
+        batch = client.messages.batches.cancel(created_batch.id)
+        assert memory_logger.pop() == []
+
+        deadline = time.time() + 15 * 60
+        while batch.processing_status != "ended":
+            assert time.time() < deadline, f"batch {batch.id} did not end within 15 minutes"
+            if not vcr_cassette.write_protected:
+                time.sleep(5)
+            batch = client.messages.batches.retrieve(batch.id)
+        assert memory_logger.pop() == []
+        assert batch.request_counts.canceled >= 1
+
+        entries = list(client.messages.batches.results(batch.id))
+        assert memory_logger.pop() == []
+        complete_anthropic_batch_trace(batch=batch, results=entries, context=context)
+
+        updates = {s["id"]: s for s in memory_logger.pop()}
+        assert len(updates) == 3
+
+        task_end = updates[task_start["id"]]
+        assert task_end["metadata"]["processing_status"] == "ended"
+        assert task_end["metadata"]["request_counts"]["canceled"] >= 1
+        assert task_end["metrics"]["end"] >= task_start["metrics"]["start"]
+
+        for entry in entries:
+            child_end = updates[child_starts[entry.custom_id]["id"]]
+            assert child_end["metrics"]["end"] >= child_starts[entry.custom_id]["metrics"]["start"]
+            if entry.result.type == "canceled":
+                assert "canceled" in child_end["error"]
+            elif entry.result.type == "succeeded":
+                assert child_end["output"]["role"] == "assistant"
+                assert child_end["metrics"]["tokens"] > 0
+
 
 def _addition_tool(is_async):
     @anthropic.beta_tool
