@@ -647,7 +647,7 @@ class Project:
 
     def publish(self):
         if _is_lazy_load():
-            eprint(f"{bcolors.WARNING}publish() is a no-op when running `braintrust push`.{bcolors.ENDC}")
+            eprint(f"{bcolors.WARNING}publish() is a no-op when the CLI loads definitions.{bcolors.ENDC}")
             return
 
         login()
@@ -656,7 +656,7 @@ class Project:
         definitions: list[dict[str, Any]] = []
         if self._publishable_code_functions:
             eprint(
-                f"{bcolors.WARNING}Code functions cannot be published directly. Use `braintrust push` instead.{bcolors.ENDC}"
+                f"{bcolors.WARNING}Code functions cannot be published directly. Use `bt functions push` instead.{bcolors.ENDC}"
             )
 
         for prompt in self._publishable_prompts:

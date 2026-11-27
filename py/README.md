@@ -14,7 +14,7 @@ pip install braintrust
 
 ## Quickstart
 
-Run a simple evaluation:
+Save this evaluation as `eval_tutorial.py`:
 
 ```python
 from braintrust import Eval
@@ -35,10 +35,17 @@ Eval(
 )
 ```
 
-Then run:
+On macOS or Linux, [install the standalone `bt` CLI](https://github.com/braintrustdata/bt#install) and run:
 
 ```bash
-BRAINTRUST_API_KEY=<YOUR_API_KEY> braintrust eval tutorial_eval.py
+BRAINTRUST_API_KEY="YOUR_API_KEY" bt eval eval_tutorial.py
+```
+
+On native Windows, use the Python SDK CLI:
+
+```powershell
+$env:BRAINTRUST_API_KEY = "YOUR_API_KEY"
+braintrust eval eval_tutorial.py
 ```
 
 ## Optional Extras
