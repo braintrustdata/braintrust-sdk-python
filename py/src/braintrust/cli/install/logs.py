@@ -2,22 +2,23 @@ import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
 
-# pylint: disable=no-name-in-module
-from ...aws import cloudformation, logs
+from ._deprecation import add_deprecated_parser
 
 
 _logger = logging.getLogger("braintrust.install.logs")
 
 
 def build_parser(subparsers, parents):
-    parser = subparsers.add_parser("logs", help="Capture recent logs", parents=parents)
+    parser = add_deprecated_parser(subparsers, "logs", "Capture recent logs", parents, main)
     parser.add_argument("name", help="Name of the CloudFormation stack to collect logs from")
     parser.add_argument("--service", help="Name of the service", default="api", choices=["api", "brainstore", "all"])
     parser.add_argument("--hours", help="Number of hours in the past to collect logs from", default=1, type=float)
-    parser.set_defaults(func=main)
 
 
 def main(args):
+    # pylint: disable-next=no-name-in-module
+    from ...aws import cloudformation, logs
+
     stacks = cloudformation.describe_stacks(StackName=args.name)["Stacks"]
     if len(stacks) == 0:
         raise ValueError(f"Stack with name {args.name} does not exist")

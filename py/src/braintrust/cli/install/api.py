@@ -3,12 +3,10 @@ import os
 import textwrap
 import time
 
-from botocore.exceptions import ClientError
 from braintrust.logger import app_conn, login
 
-# pylint: disable=no-name-in-module
-from ...aws import cloudformation
 from ...util import response_raise_for_status
+from ._deprecation import add_deprecated_parser
 
 
 _logger = logging.getLogger("braintrust.install.api")
@@ -60,7 +58,7 @@ LATEST_TEMPLATE = "https://braintrust-cf.s3.amazonaws.com/braintrust-latest.yaml
 
 
 def build_parser(subparsers, parents):
-    parser = subparsers.add_parser("api", help="Install the Braintrust function API", parents=parents)
+    parser = add_deprecated_parser(subparsers, "api", "Install the Braintrust function API", parents, main)
 
     parser.add_argument("name", help="Name of the CloudFormation stack to create or update")
     parser.add_argument(
@@ -275,10 +273,13 @@ def build_parser(subparsers, parents):
         default=None,
     )
 
-    parser.set_defaults(func=main)
-
 
 def main(args):
+    from botocore.exceptions import ClientError
+
+    # pylint: disable-next=no-name-in-module
+    from ...aws import cloudformation
+
     template = args.template or LATEST_TEMPLATE
 
     status = None
