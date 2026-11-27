@@ -1795,7 +1795,9 @@ class TestAnthropicBatchTracing:
         requests = _make_batch_requests(LATEST_MODEL)
         raw_client = _get_client()
         batch = raw_client.messages.batches.create(requests=requests)
+        deadline = time.time() + 15 * 60
         while batch.processing_status != "ended":
+            assert time.time() < deadline, f"batch {batch.id} did not end within 15 minutes"
             if not vcr_cassette.write_protected:
                 time.sleep(10)
             batch = raw_client.messages.batches.retrieve(batch.id)
@@ -1840,7 +1842,9 @@ class TestAnthropicBatchTracing:
         assert task_start is not None
 
         ended_batch = created_batch
+        deadline = time.time() + 15 * 60
         while ended_batch.processing_status != "ended":
+            assert time.time() < deadline, f"batch {ended_batch.id} did not end within 15 minutes"
             if not vcr_cassette.write_protected:
                 time.sleep(10)
             ended_batch = raw_client.messages.batches.retrieve(ended_batch.id)

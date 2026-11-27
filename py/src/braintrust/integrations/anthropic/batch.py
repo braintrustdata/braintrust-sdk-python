@@ -10,6 +10,7 @@ import io
 import json
 import logging
 import math
+import tempfile
 import time
 import uuid
 from collections.abc import AsyncIterable, Iterable, Mapping
@@ -17,6 +18,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from braintrust._instrumentation import provider_content_allowed
+from braintrust.bt_json import bt_dumps
 from braintrust.integrations.anthropic._utils import _try_to_dict, extract_anthropic_usage
 from braintrust.integrations.anthropic.tracing import (
     _INSTRUMENTATION,
@@ -504,12 +506,15 @@ def _build_child_update_event(
     return exported, _apply_provider_privacy(event)
 
 
+_SPOOL_MAX_BYTES = 1024 * 1024
+
+
 def _finalize_task_span(
     batch: Any,
     parsed: dict[str, Any],
     seen_ids: set[str],
     end_time: float,
-    pending_updates: list[tuple[str, dict[str, Any]]] | None = None,
+    staged_updates: "tempfile.SpooledTemporaryFile[str] | None" = None,
 ) -> None:
     if len(seen_ids) != parsed["request_count"] or _request_ids_digest(seen_ids) != parsed["request_ids_digest"]:
         log.debug(
@@ -535,8 +540,10 @@ def _finalize_task_span(
             )
             return
 
-    if pending_updates:
-        for exported, child_event in pending_updates:
+    if staged_updates is not None:
+        staged_updates.seek(0)
+        for line in staged_updates:
+            exported, child_event = json.loads(line)
             update_span(exported=exported, **child_event)
 
     task_metadata: dict[str, Any] = {
@@ -626,26 +633,34 @@ def complete_anthropic_batch_trace(
             return
 
         seen_ids: set[str] = set()
-        pending_updates: list[tuple[str, dict[str, Any]]] | None = [] if known_ids is None else None
-        for entry in _iter_records(results):
-            built = _build_child_update_event(
-                entry,
-                batch_id=parsed["batch_id"],
-                task_components=parsed["task_components"],
-                end_time=end_time,
-                seen_ids=seen_ids,
-                known_ids=known_ids,
-                expected_count=parsed["request_count"],
-            )
-            if built is None:
-                return
-            if pending_updates is not None:
-                pending_updates.append(built)
-            else:
+        staged_updates = (
+            tempfile.SpooledTemporaryFile(max_size=_SPOOL_MAX_BYTES, mode="w+", encoding="utf-8")
+            if known_ids is None
+            else None
+        )
+        try:
+            for entry in _iter_records(results):
+                built = _build_child_update_event(
+                    entry,
+                    batch_id=parsed["batch_id"],
+                    task_components=parsed["task_components"],
+                    end_time=end_time,
+                    seen_ids=seen_ids,
+                    known_ids=known_ids,
+                    expected_count=parsed["request_count"],
+                )
+                if built is None:
+                    return
                 exported, child_event = built
-                update_span(exported=exported, **child_event)
+                if staged_updates is not None:
+                    staged_updates.write(bt_dumps([exported, child_event], separators=(",", ":")) + "\n")
+                else:
+                    update_span(exported=exported, **child_event)
 
-        _finalize_task_span(batch, parsed, seen_ids, end_time, pending_updates=pending_updates)
+            _finalize_task_span(batch, parsed, seen_ids, end_time, staged_updates=staged_updates)
+        finally:
+            if staged_updates is not None:
+                staged_updates.close()
     except Exception as e:
         log.debug("Could not complete Anthropic batch trace: %s", e)
 
@@ -673,25 +688,33 @@ async def complete_anthropic_batch_trace_async(
             return
 
         seen_ids: set[str] = set()
-        pending_updates: list[tuple[str, dict[str, Any]]] | None = [] if known_ids is None else None
-        async for entry in _aiter_records(results):
-            built = _build_child_update_event(
-                entry,
-                batch_id=parsed["batch_id"],
-                task_components=parsed["task_components"],
-                end_time=end_time,
-                seen_ids=seen_ids,
-                known_ids=known_ids,
-                expected_count=parsed["request_count"],
-            )
-            if built is None:
-                return
-            if pending_updates is not None:
-                pending_updates.append(built)
-            else:
+        staged_updates = (
+            tempfile.SpooledTemporaryFile(max_size=_SPOOL_MAX_BYTES, mode="w+", encoding="utf-8")
+            if known_ids is None
+            else None
+        )
+        try:
+            async for entry in _aiter_records(results):
+                built = _build_child_update_event(
+                    entry,
+                    batch_id=parsed["batch_id"],
+                    task_components=parsed["task_components"],
+                    end_time=end_time,
+                    seen_ids=seen_ids,
+                    known_ids=known_ids,
+                    expected_count=parsed["request_count"],
+                )
+                if built is None:
+                    return
                 exported, child_event = built
-                update_span(exported=exported, **child_event)
+                if staged_updates is not None:
+                    staged_updates.write(bt_dumps([exported, child_event], separators=(",", ":")) + "\n")
+                else:
+                    update_span(exported=exported, **child_event)
 
-        _finalize_task_span(batch, parsed, seen_ids, end_time, pending_updates=pending_updates)
+            _finalize_task_span(batch, parsed, seen_ids, end_time, staged_updates=staged_updates)
+        finally:
+            if staged_updates is not None:
+                staged_updates.close()
     except Exception as e:
         log.debug("Could not complete Anthropic batch trace: %s", e)
