@@ -10,6 +10,7 @@ Span shape follows the JS plugin (`js/src/instrumentation/plugins/cohere-plugin.
                 derived from ``usage`` / ``meta.billed_units`` / ``meta.tokens``.
 """
 
+import asyncio
 import logging
 import time
 from typing import Any
@@ -696,7 +697,7 @@ async def _trace_async_call(name: str, span_input: Any, metadata: dict[str, Any]
     start_time = time.time()
     try:
         result = await wrapped(*args, **kwargs)
-    except Exception as error:
+    except (Exception, asyncio.CancelledError) as error:
         _log_error_and_end_span(span, error)
         raise
 
@@ -794,7 +795,7 @@ async def _async_chat_stream_wrapper(wrapped, instance, args, kwargs):  # noqa: 
     start_time = time.time()
     try:
         iterator = wrapped(*args, **kwargs)
-    except Exception as error:
+    except (Exception, asyncio.CancelledError) as error:
         _log_error_and_end_span(span, error)
         raise
 
@@ -803,7 +804,7 @@ async def _async_chat_stream_wrapper(wrapped, instance, args, kwargs):  # noqa: 
     if hasattr(iterator, "__await__"):
         try:
             iterator = await iterator
-        except Exception as error:
+        except (Exception, asyncio.CancelledError) as error:
             _log_error_and_end_span(span, error)
             raise
 
@@ -823,6 +824,9 @@ class _ChatStreamTracker:
         self._first_token_time: float | None = None
         self._chunks: list[Any] = []
         self._finished = False
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._iterator, name)
 
     def _record(self, event: Any) -> None:
         if self._first_token_time is None:
@@ -867,7 +871,11 @@ class _TracedChatStream(_ChatStreamTracker):
         context_manager = getattr(self, "_context_manager", self._iterator)
         exit_method = getattr(context_manager, "__exit__", None)
         if exit_method is not None:
-            suppress = bool(exit_method(exc_type, exc_value, traceback))
+            try:
+                suppress = bool(exit_method(exc_type, exc_value, traceback))
+            except (Exception, asyncio.CancelledError) as error:
+                self._finish(error=error)
+                raise
         if exc_value is not None:
             self._finish(error=exc_value)
         else:
@@ -883,11 +891,22 @@ class _TracedChatStream(_ChatStreamTracker):
         except StopIteration:
             self._finish()
             raise
-        except Exception as error:
+        except (Exception, asyncio.CancelledError) as error:
             self._finish(error=error)
             raise
         self._record(event)
         return event
+
+    def close(self) -> None:
+        close_method = getattr(self._iterator, "close", None)
+        try:
+            if callable(close_method):
+                close_method()
+        except (Exception, asyncio.CancelledError) as error:
+            self._finish(error=error)
+            raise
+        else:
+            self._finish()
 
 
 class _AsyncTracedChatStream(_ChatStreamTracker):
@@ -906,7 +925,11 @@ class _AsyncTracedChatStream(_ChatStreamTracker):
         context_manager = getattr(self, "_context_manager", self._iterator)
         aexit = getattr(context_manager, "__aexit__", None)
         if aexit is not None:
-            suppress = bool(await aexit(exc_type, exc_value, traceback))
+            try:
+                suppress = bool(await aexit(exc_type, exc_value, traceback))
+            except (Exception, asyncio.CancelledError) as error:
+                self._finish(error=error)
+                raise
         if exc_value is not None:
             self._finish(error=exc_value)
         else:
@@ -922,11 +945,35 @@ class _AsyncTracedChatStream(_ChatStreamTracker):
         except StopAsyncIteration:
             self._finish()
             raise
-        except Exception as error:
+        except (Exception, asyncio.CancelledError) as error:
             self._finish(error=error)
             raise
         self._record(event)
         return event
+
+    async def aclose(self) -> None:
+        aclose_method = getattr(self._iterator, "aclose", None)
+        try:
+            if callable(aclose_method):
+                res = aclose_method()
+                if hasattr(res, "__await__"):
+                    await res
+        except (Exception, asyncio.CancelledError) as error:
+            self._finish(error=error)
+            raise
+        else:
+            self._finish()
+
+    def close(self) -> None:
+        close_method = getattr(self._iterator, "close", None)
+        try:
+            if callable(close_method):
+                close_method()
+        except (Exception, asyncio.CancelledError) as error:
+            self._finish(error=error)
+            raise
+        else:
+            self._finish()
 
 
 # ---------------------------------------------------------------------------
